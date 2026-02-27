@@ -82,13 +82,13 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .stat-value { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; font-weight: 900; color: var(--neon-green); }
     .stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
     .hero-btns { display: flex; gap: 1rem; }
-    .hero-visual { position: absolute; top: 52%; right: -5%; transform: translateY(calc(-48% + 90px)); bottom: auto; z-index: 2; pointer-events: none; width: 900px; height: 1050px; }
+    .hero-visual { position: absolute; top: -60px; right: -5%; bottom: auto; left: auto; transform: none; z-index: 2; pointer-events: none; width: 900px; height: 1050px; }
     .mascot-container { position: relative; width: 900px; height: 1050px; }
     .mascot-ring { position: absolute; top: -60px; left: -60px; right: -60px; bottom: -60px; border-radius: 50%; border: 2px solid rgba(255,45,120,0.2); animation: ring-rotate 20s linear infinite; }
     .mascot-ring::before { content: ''; position: absolute; top: -7px; left: 50%; width: 14px; height: 14px; background: var(--neon-green); border-radius: 50%; box-shadow: var(--glow-green); }
     @keyframes ring-rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .mascot-img { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -48%); width: 900px; height: auto; filter: drop-shadow(0 0 80px rgba(255,45,120,0.35)); animation: hero-mascot-breathe 4.5s ease-in-out infinite, hero-mascot-eyes 3.2s ease-in-out infinite; }
-    @keyframes hero-mascot-breathe { 0%, 100% { transform: translate(-50%, -48%) translateY(0) scale(1); } 50% { transform: translate(-50%, -48%) translateY(-8px) scale(1.008); } }
+    .mascot-img { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 900px; height: auto; filter: drop-shadow(0 0 80px rgba(255,45,120,0.35)); animation: hero-mascot-breathe 4.5s ease-in-out infinite, hero-mascot-eyes 3.2s ease-in-out infinite; }
+    @keyframes hero-mascot-breathe { 0%, 100% { transform: translateX(-50%) translateY(0) scale(1); } 50% { transform: translateX(-50%) translateY(-8px) scale(1.008); } }
     @keyframes hero-mascot-eyes {
       0%, 100% { filter: drop-shadow(0 0 45px rgba(255,45,120,0.5)) drop-shadow(0 0 90px rgba(255,45,120,0.2)); }
       30% { filter: drop-shadow(0 0 55px rgba(255,45,120,0.7)) drop-shadow(0 0 110px rgba(255,45,120,0.35)) drop-shadow(0 0 8px rgba(255,160,200,0.9)); }
@@ -502,7 +502,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .hero-text { text-align: center; max-width: 100%; } .hero-stats { justify-content: center; gap: 1.5rem; }
       .hero-btns { justify-content: center; flex-wrap: wrap; }
       /* Mascotte + effets visibles jusqu'à 768px, cachés en dessous */
-      .hero-visual { display: block; transform: translateY(calc(-48% + 90px)) scale(0.55); transform-origin: center right; }
+      .hero-visual { display: block; top: -40px; transform: scale(0.55); transform-origin: top right; }
       .features-grid, .reviews-grid { grid-template-columns: 1fr; }
       .pricing-grid { grid-template-columns: 1fr 1fr; max-width: 700px; margin-left: auto; margin-right: auto; }
       .price-card.featured { transform: none; } .stake-banner { grid-template-columns: 1fr; }
@@ -547,11 +547,11 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     }
     @media (min-width: 1600px) {
       .mascot-container { width: 1050px; height: 1200px; }
-      .mascot-img { width: 1050px !important; } .hero-visual { right: -3%; top: 52%; transform: translateY(calc(-48% + 90px)); bottom: auto; }
+      .mascot-img { width: 1050px !important; } .hero-visual { right: -3%; top: -60px; transform: none; bottom: auto; }
     }
     @media (max-width: 1200px) {
       .mascot-container { width: 700px; height: 820px; }
-      .mascot-img { width: 700px !important; } .hero-visual { right: -8%; top: 52%; transform: translateY(calc(-48% + 90px)); bottom: auto; }
+      .mascot-img { width: 700px !important; } .hero-visual { right: -8%; top: -60px; transform: none; bottom: auto; }
     }
   </style>
   <!-- PWA -->
