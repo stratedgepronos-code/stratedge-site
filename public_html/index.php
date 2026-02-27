@@ -63,12 +63,12 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
     /* HERO */
-    .hero { min-height: 100vh; height: auto; display: flex; position: relative; padding: 0; overflow: visible; max-width: 100vw; }
+    .hero { min-height: max(100vh, 1080px); height: auto; display: flex; position: relative; padding: 0; overflow: visible; max-width: 100vw; }
     .hero-bg-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,45,120,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,45,120,0.03) 1px, transparent 1px); background-size: 60px 60px; mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, black 30%, transparent 70%); }
     .hero-glow { position: absolute; width: 900px; height: 900px; background: radial-gradient(circle, rgba(255,45,120,0.1) 0%, transparent 70%); top: -200px; left: -200px; pointer-events: none; }
     .hero-glow-2 { position: absolute; width: 700px; height: 700px; background: radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%); bottom: -300px; right: -150px; pointer-events: none; }
     .hero-glow-mascot { position: absolute; width: 800px; height: 800px; background: radial-gradient(circle, rgba(255,45,120,0.12) 0%, transparent 60%); bottom: -450px; left: 50%; transform: translateX(-50%); pointer-events: none; }
-    .hero-inner { max-width: 1440px; width: 100%; margin: 0 auto; position: relative; z-index: 1; padding: 0 5rem; padding-top: 6rem; padding-bottom: 2rem; display: flex; flex-direction: column; justify-content: center; }
+    .hero-inner { max-width: 1440px; width: 100%; margin: 0 auto; position: relative; z-index: 1; padding: 0 5rem; padding-top: 90px; padding-bottom: 3rem; display: flex; flex-direction: column; justify-content: center; }
     .hero-text { max-width: 700px; position: relative; z-index: 10; }
     .hero-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255,45,120,0.08); border: 1px solid rgba(255,45,120,0.25); color: var(--neon-green); padding: 0.4rem 1rem; border-radius: 50px; font-size: 0.85rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; animation: pulse-badge 2s ease-in-out infinite; }
     @keyframes pulse-badge { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,45,120,0.25); } 50% { box-shadow: 0 0 0 8px rgba(255,45,120,0); } }
@@ -82,7 +82,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .stat-value { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; font-weight: 900; color: var(--neon-green); }
     .stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
     .hero-btns { display: flex; gap: 1rem; }
-    .hero-visual { position: absolute; top: 78px; right: -5%; bottom: auto; left: auto; transform: none; z-index: 2; pointer-events: none; width: 900px; height: 1050px; }
+    .hero-visual { position: absolute; bottom: 0; top: auto; right: -5%; left: auto; transform: none; z-index: 2; pointer-events: none; width: 900px; height: 1050px; }
     .mascot-container { position: relative; width: 900px; height: 1050px; }
     .mascot-ring { position: absolute; top: -60px; left: -60px; right: -60px; bottom: -60px; border-radius: 50%; border: 2px solid rgba(255,45,120,0.2); animation: ring-rotate 20s linear infinite; }
     .mascot-ring::before { content: ''; position: absolute; top: -7px; left: 50%; width: 14px; height: 14px; background: var(--neon-green); border-radius: 50%; box-shadow: var(--glow-green); }
@@ -502,7 +502,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .hero-text { text-align: center; max-width: 100%; } .hero-stats { justify-content: center; gap: 1.5rem; }
       .hero-btns { justify-content: center; flex-wrap: wrap; }
       /* Mascotte + effets visibles jusqu'à 768px, cachés en dessous */
-      .hero-visual { display: block; top: 70px; transform: scale(0.55); transform-origin: top right; }
+      .hero-visual { display: block; bottom: 0; top: auto; transform: scale(0.55); transform-origin: bottom right; }
       .features-grid, .reviews-grid { grid-template-columns: 1fr; }
       .pricing-grid { grid-template-columns: 1fr 1fr; max-width: 700px; margin-left: auto; margin-right: auto; }
       .price-card.featured { transform: none; } .stake-banner { grid-template-columns: 1fr; }
@@ -546,12 +546,13 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .feature-card { padding: 1.5rem; }
     }
     @media (min-width: 1600px) {
+      .hero { min-height: max(100vh, 1250px); }
       .mascot-container { width: 1050px; height: 1200px; }
-      .mascot-img { width: 1050px !important; } .hero-visual { right: -3%; top: 0; transform: none; bottom: auto; }
+      .mascot-img { width: 1050px !important; } .hero-visual { right: -3%; bottom: 0; top: auto; transform: none; }
     }
     @media (max-width: 1200px) {
       .mascot-container { width: 700px; height: 820px; }
-      .mascot-img { width: 700px !important; } .hero-visual { right: -8%; top: 78px; transform: none; bottom: auto; }
+      .mascot-img { width: 700px !important; } .hero-visual { right: -8%; bottom: 0; top: auto; transform: none; }
     }
   </style>
   <!-- PWA -->
