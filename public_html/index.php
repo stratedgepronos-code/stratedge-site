@@ -63,7 +63,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
     /* HERO */
-    .hero { min-height: max(100vh, 1080px); height: auto; display: flex; position: relative; padding: 0; overflow: visible; max-width: 100vw; }
+    .hero { height: 100vh; min-height: 100vh; display: flex; position: relative; padding: 0; overflow: visible; max-width: 100vw; }
     .hero-bg-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,45,120,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,45,120,0.03) 1px, transparent 1px); background-size: 60px 60px; mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, black 30%, transparent 70%); }
     .hero-glow { position: absolute; width: 900px; height: 900px; background: radial-gradient(circle, rgba(255,45,120,0.1) 0%, transparent 70%); top: -200px; left: -200px; pointer-events: none; }
     .hero-glow-2 { position: absolute; width: 700px; height: 700px; background: radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%); bottom: -300px; right: -150px; pointer-events: none; }
@@ -546,7 +546,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .feature-card { padding: 1.5rem; }
     }
     @media (min-width: 1600px) {
-      .hero { min-height: max(100vh, 1250px); }
       .mascot-container { width: 1050px; height: 1200px; }
       .mascot-img { width: 1050px !important; } .hero-visual { right: -3%; bottom: 0; top: auto; transform: none; }
     }
