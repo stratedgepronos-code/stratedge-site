@@ -1,0 +1,30 @@
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# IDE
+.vscode/
+.cursor/
+*.swp
+*.swo
+
+# Logs
+*.log
+error_log
+
+# Secrets / env
+.env
+.env.*
+*.env
+
+# Cache
+__pycache__/
+*.pyc
+
+# Dependencies
+node_modules/
+vendor/
+
+# Uploads (optionnel — décommenter si tu ne veux pas versionner les uploads)
+# public_html/uploads/

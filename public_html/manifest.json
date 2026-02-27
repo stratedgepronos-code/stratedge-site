@@ -1,0 +1,27 @@
+{
+  "name": "StratEdge Pronos",
+  "short_name": "StratEdge",
+  "description": "Analyses sportives data-driven — Value bets identifiés",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#050810",
+  "theme_color": "#0a0e17",
+  "icons": [
+    {
+      "src": "/assets/images/favicon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/images/favicon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["sports", "entertainment"],
+  "lang": "fr"
+}

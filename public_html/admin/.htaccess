@@ -1,0 +1,8 @@
+# Bloquer accès direct au dossier admin
+# L'accès se fait uniquement via /panel-x9k3m/
+
+# Autoriser seulement si vient du rewrite
+RewriteEngine On
+RewriteCond %{REQUEST_URI} ^/admin/
+RewriteCond %{THE_REQUEST} ^[A-Z]{3,9}\ /admin/ [NC]
+RewriteRule .* - [F,L]

@@ -1,0 +1,44 @@
+name: Deploy StratEdgePronos to Hostinger
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  SSH_PORT: 65002
+  SSH_USER: ${{ secrets.FTP_USERNAME }}@${{ secrets.FTP_SERVER }}
+  WEBROOT: /home/${{ secrets.FTP_USERNAME }}/domains/stratedgepronos.fr/public_html
+
+jobs:
+  deploy:
+    name: Deploy via SSH
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install sshpass and rsync
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y sshpass rsync
+
+      - name: Install PHP dependencies with Composer (if needed)
+        run: |
+          if [ -f composer.json ]; then
+            composer install --no-dev --prefer-dist --no-progress --no-interaction
+          fi
+
+      - name: Deploy application via rsync
+        run: |
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" rsync -avz --delete \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='*.sql' \
+            --exclude='node_modules/' \
+            --exclude='tests/' \
+            -e "ssh -o StrictHostKeyChecking=no -p $SSH_PORT" \
+            ./ \
+            $SSH_USER:$WEBROOT/
+
