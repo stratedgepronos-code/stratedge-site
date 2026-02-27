@@ -63,7 +63,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
     /* HERO */
-    .hero { height: 100vh; min-height: 100vh; display: flex; position: relative; padding: 0; overflow: visible; max-width: 100vw; }
+    .hero { height: 100vh; min-height: 100vh; display: flex; position: relative; padding: 0; overflow: hidden; max-width: 100vw; }
     .hero-bg-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,45,120,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,45,120,0.03) 1px, transparent 1px); background-size: 60px 60px; mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, black 30%, transparent 70%); }
     .hero-glow { position: absolute; width: 900px; height: 900px; background: radial-gradient(circle, rgba(255,45,120,0.1) 0%, transparent 70%); top: -200px; left: -200px; pointer-events: none; }
     .hero-glow-2 { position: absolute; width: 700px; height: 700px; background: radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%); bottom: -300px; right: -150px; pointer-events: none; }
@@ -82,7 +82,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .stat-value { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; font-weight: 900; color: var(--neon-green); }
     .stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
     .hero-btns { display: flex; gap: 1rem; }
-    .hero-visual { position: absolute; bottom: 0; top: auto; right: -5%; left: auto; transform: none; z-index: 2; pointer-events: none; width: 900px; height: 1050px; }
+    .hero-visual { position: absolute; bottom: 0; top: auto; right: -5%; left: auto; transform: scale(0.88); transform-origin: bottom right; z-index: 2; pointer-events: none; width: 900px; height: 1050px; }
     .mascot-container { position: relative; width: 900px; height: 1050px; }
     .mascot-ring { position: absolute; top: -60px; left: -60px; right: -60px; bottom: -60px; border-radius: 50%; border: 2px solid rgba(255,45,120,0.2); animation: ring-rotate 20s linear infinite; }
     .mascot-ring::before { content: ''; position: absolute; top: -7px; left: 50%; width: 14px; height: 14px; background: var(--neon-green); border-radius: 50%; box-shadow: var(--glow-green); }
@@ -547,7 +547,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     }
     @media (min-width: 1600px) {
       .mascot-container { width: 1050px; height: 1200px; }
-      .mascot-img { width: 1050px !important; } .hero-visual { right: -3%; bottom: 0; top: auto; transform: none; }
+      .mascot-img { width: 1050px !important; } .hero-visual { right: -3%; bottom: 0; top: auto; transform: scale(0.75); transform-origin: bottom right; }
     }
     @media (max-width: 1200px) {
       .mascot-container { width: 700px; height: 820px; }
