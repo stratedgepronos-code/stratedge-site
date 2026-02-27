@@ -42,8 +42,8 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       --glow-blue: 0 0 30px rgba(0,212,255,0.3);
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; overflow-x: hidden; }
-    body { font-family: 'Rajdhani', sans-serif; background: var(--bg-dark); color: var(--text-primary); overflow-x: hidden; line-height: 1.6; max-width: 100vw; }
+    html { scroll-behavior: smooth; overflow-x: hidden; overflow-y: visible; }
+    body { font-family: 'Rajdhani', sans-serif; background: var(--bg-dark); color: var(--text-primary); overflow-x: hidden; overflow-y: visible; line-height: 1.6; max-width: 100vw; }
     body::before { content: ''; position: fixed; inset: 0; background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"); pointer-events: none; z-index: 9999; }
 
     /* NAVBAR */
@@ -82,7 +82,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .stat-value { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; font-weight: 900; color: var(--neon-green); }
     .stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
     .hero-btns { display: flex; gap: 1rem; }
-    .hero-visual { position: absolute; top: -60px; right: -5%; bottom: auto; left: auto; transform: none; z-index: 2; pointer-events: none; width: 900px; height: 1050px; }
+    .hero-visual { position: absolute; top: 70px; right: -5%; bottom: auto; left: auto; transform: none; z-index: 2; pointer-events: none; width: 900px; height: 1050px; }
     .mascot-container { position: relative; width: 900px; height: 1050px; }
     .mascot-ring { position: absolute; top: -60px; left: -60px; right: -60px; bottom: -60px; border-radius: 50%; border: 2px solid rgba(255,45,120,0.2); animation: ring-rotate 20s linear infinite; }
     .mascot-ring::before { content: ''; position: absolute; top: -7px; left: 50%; width: 14px; height: 14px; background: var(--neon-green); border-radius: 50%; box-shadow: var(--glow-green); }
@@ -502,7 +502,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .hero-text { text-align: center; max-width: 100%; } .hero-stats { justify-content: center; gap: 1.5rem; }
       .hero-btns { justify-content: center; flex-wrap: wrap; }
       /* Mascotte + effets visibles jusqu'à 768px, cachés en dessous */
-      .hero-visual { display: block; top: -40px; transform: scale(0.55); transform-origin: top right; }
+      .hero-visual { display: block; top: 60px; transform: scale(0.55); transform-origin: top right; }
       .features-grid, .reviews-grid { grid-template-columns: 1fr; }
       .pricing-grid { grid-template-columns: 1fr 1fr; max-width: 700px; margin-left: auto; margin-right: auto; }
       .price-card.featured { transform: none; } .stake-banner { grid-template-columns: 1fr; }
@@ -547,11 +547,11 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     }
     @media (min-width: 1600px) {
       .mascot-container { width: 1050px; height: 1200px; }
-      .mascot-img { width: 1050px !important; } .hero-visual { right: -3%; top: -60px; transform: none; bottom: auto; }
+      .mascot-img { width: 1050px !important; } .hero-visual { right: -3%; top: 70px; transform: none; bottom: auto; }
     }
     @media (max-width: 1200px) {
       .mascot-container { width: 700px; height: 820px; }
-      .mascot-img { width: 700px !important; } .hero-visual { right: -8%; top: -60px; transform: none; bottom: auto; }
+      .mascot-img { width: 700px !important; } .hero-visual { right: -8%; top: 70px; transform: none; bottom: auto; }
     }
   </style>
   <!-- PWA -->
