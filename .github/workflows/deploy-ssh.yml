@@ -1,0 +1,36 @@
+# Déploiement automatique vers Hostinger via SSH (comme Sortir Monde)
+# Déclenché à chaque push sur master — tu n'as rien à faire.
+name: Deploy to Hostinger (SSH)
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+env:
+  SSH_PORT: 65002
+  # Chemin distant Hostinger (modifier ici si ton chemin est différent, ex: /home/${{ secrets.FTP_USER }}/public_html)
+  WEBROOT: /home/${{ secrets.FTP_USER }}/domains/stratedgepronos.fr/public_html
+
+jobs:
+  deploy:
+    name: Deploy via SSH
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install sshpass
+        run: sudo apt-get update && sudo apt-get install -y sshpass rsync
+
+      - name: Deploy public_html via rsync
+        run: |
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" rsync -avz --delete \
+            -e "ssh -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }}" \
+            public_html/ \
+            ${{ secrets.FTP_USER }}@${{ secrets.FTP_HOST }}:${{ env.WEBROOT }}/
+
+      - name: Vérification
+        run: |
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }} \
+            ${{ secrets.FTP_USER }}@${{ secrets.FTP_HOST }} "ls -la ${{ env.WEBROOT }}/index.php"

@@ -1,8 +1,8 @@
 name: Deploy to FTP (Hostinger)
 
+# Désactivé : déploiement via deploy-ssh.yml (SSH port 65002) à la place
 on:
-  push:
-    branches: [master]
+  workflow_dispatch:
 
 jobs:
   deploy:
