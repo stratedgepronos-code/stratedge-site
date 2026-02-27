@@ -63,7 +63,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
     /* HERO */
-    .hero { height: 100vh; display: flex; position: relative; padding: 0; overflow: visible; max-width: 100vw; }
+    .hero { min-height: 100vh; height: auto; display: flex; position: relative; padding: 0; overflow: visible; max-width: 100vw; }
     .hero-bg-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,45,120,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,45,120,0.03) 1px, transparent 1px); background-size: 60px 60px; mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, black 30%, transparent 70%); }
     .hero-glow { position: absolute; width: 900px; height: 900px; background: radial-gradient(circle, rgba(255,45,120,0.1) 0%, transparent 70%); top: -200px; left: -200px; pointer-events: none; }
     .hero-glow-2 { position: absolute; width: 700px; height: 700px; background: radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%); bottom: -300px; right: -150px; pointer-events: none; }
@@ -82,12 +82,12 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .stat-value { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; font-weight: 900; color: var(--neon-green); }
     .stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
     .hero-btns { display: flex; gap: 1rem; }
-    .hero-visual { position: absolute; top: 70px; right: -5%; bottom: auto; left: auto; transform: none; z-index: 2; pointer-events: none; width: 900px; height: 1050px; }
+    .hero-visual { position: absolute; top: 0; right: -5%; bottom: auto; left: auto; transform: none; z-index: 2; pointer-events: none; width: 900px; height: 1050px; }
     .mascot-container { position: relative; width: 900px; height: 1050px; }
     .mascot-ring { position: absolute; top: -60px; left: -60px; right: -60px; bottom: -60px; border-radius: 50%; border: 2px solid rgba(255,45,120,0.2); animation: ring-rotate 20s linear infinite; }
     .mascot-ring::before { content: ''; position: absolute; top: -7px; left: 50%; width: 14px; height: 14px; background: var(--neon-green); border-radius: 50%; box-shadow: var(--glow-green); }
     @keyframes ring-rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .mascot-img { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 900px; height: auto; filter: drop-shadow(0 0 80px rgba(255,45,120,0.35)); animation: hero-mascot-breathe 4.5s ease-in-out infinite, hero-mascot-eyes 3.2s ease-in-out infinite; }
+    .mascot-img { position: absolute; top: -140px; left: 50%; transform: translateX(-50%); width: 900px; height: auto; filter: drop-shadow(0 0 80px rgba(255,45,120,0.35)); animation: hero-mascot-breathe 4.5s ease-in-out infinite, hero-mascot-eyes 3.2s ease-in-out infinite; }
     @keyframes hero-mascot-breathe { 0%, 100% { transform: translateX(-50%) translateY(0) scale(1); } 50% { transform: translateX(-50%) translateY(-8px) scale(1.008); } }
     @keyframes hero-mascot-eyes {
       0%, 100% { filter: drop-shadow(0 0 45px rgba(255,45,120,0.5)) drop-shadow(0 0 90px rgba(255,45,120,0.2)); }
@@ -502,7 +502,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .hero-text { text-align: center; max-width: 100%; } .hero-stats { justify-content: center; gap: 1.5rem; }
       .hero-btns { justify-content: center; flex-wrap: wrap; }
       /* Mascotte + effets visibles jusqu'à 768px, cachés en dessous */
-      .hero-visual { display: block; top: 60px; transform: scale(0.55); transform-origin: top right; }
+      .hero-visual { display: block; top: 0; transform: scale(0.55); transform-origin: top right; }
       .features-grid, .reviews-grid { grid-template-columns: 1fr; }
       .pricing-grid { grid-template-columns: 1fr 1fr; max-width: 700px; margin-left: auto; margin-right: auto; }
       .price-card.featured { transform: none; } .stake-banner { grid-template-columns: 1fr; }
@@ -547,11 +547,11 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     }
     @media (min-width: 1600px) {
       .mascot-container { width: 1050px; height: 1200px; }
-      .mascot-img { width: 1050px !important; } .hero-visual { right: -3%; top: 70px; transform: none; bottom: auto; }
+      .mascot-img { width: 1050px !important; } .hero-visual { right: -3%; top: 0; transform: none; bottom: auto; }
     }
     @media (max-width: 1200px) {
       .mascot-container { width: 700px; height: 820px; }
-      .mascot-img { width: 700px !important; } .hero-visual { right: -8%; top: 70px; transform: none; bottom: auto; }
+      .mascot-img { width: 700px !important; } .hero-visual { right: -8%; top: 0; transform: none; bottom: auto; }
     }
   </style>
   <!-- PWA -->
