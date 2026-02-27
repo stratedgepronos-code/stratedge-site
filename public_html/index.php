@@ -87,7 +87,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .mascot-ring { position: absolute; top: -60px; left: -60px; right: -60px; bottom: -60px; border-radius: 50%; border: 2px solid rgba(255,45,120,0.2); animation: ring-rotate 20s linear infinite; }
     .mascot-ring::before { content: ''; position: absolute; top: -7px; left: 50%; width: 14px; height: 14px; background: var(--neon-green); border-radius: 50%; box-shadow: var(--glow-green); }
     @keyframes ring-rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .mascot-img { position: absolute; top: -170px; left: 50%; transform: translateX(-50%); width: 900px; height: auto; filter: drop-shadow(0 0 80px rgba(255,45,120,0.35)); animation: hero-mascot-breathe 4.5s ease-in-out infinite, hero-mascot-eyes 3.2s ease-in-out infinite; }
+    .mascot-img { position: absolute; top: -60px; left: 50%; transform: translateX(-50%); width: 900px; height: auto; filter: drop-shadow(0 0 80px rgba(255,45,120,0.35)); animation: hero-mascot-breathe 4.5s ease-in-out infinite, hero-mascot-eyes 3.2s ease-in-out infinite; }
     @keyframes hero-mascot-breathe { 0%, 100% { transform: translateX(-50%) translateY(0) scale(1); } 50% { transform: translateX(-50%) translateY(-8px) scale(1.008); } }
     @keyframes hero-mascot-eyes {
       0%, 100% { filter: drop-shadow(0 0 45px rgba(255,45,120,0.5)) drop-shadow(0 0 90px rgba(255,45,120,0.2)); }
