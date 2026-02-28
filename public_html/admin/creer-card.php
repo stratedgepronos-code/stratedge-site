@@ -15,7 +15,7 @@ $db = getDB();
   <link rel="icon" type="image/png" href="../assets/images/mascotte.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Créer une Card — Admin StratEdge</title>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <style>
     :root {
@@ -178,7 +178,7 @@ $db = getDB();
       position:fixed; top:-99999px; left:-99999px;
       overflow:visible; pointer-events:none; opacity:0;
     }
-    .render-zone iframe { min-height:1800px; border:none; display:block; }
+    .render-zone iframe { border:none; display:block; }
 
     @media (max-width:1100px) { .creator-layout { grid-template-columns:1fr; } .form-card { position:static; } }
     @media (max-width:768px) { .main { margin-left:0; padding-top:68px; } .cards-grid { grid-template-columns:1fr; } }
@@ -255,13 +255,8 @@ $db = getDB();
           <label>Cote</label>
           <input type="number" id="f-live-cote" step="0.01" min="1" placeholder="Ex: 1.58">
         </div>
-        <div class="field">
-          <label>Confiance (0-100, optionnel)</label>
-          <input type="number" id="f-live-confiance" min="0" max="100" placeholder="Ex: 75 — laisser vide pour laisser Claude estimer">
-        </div>
         <div class="help-box">
-          💡 Claude trouvera la compétition, les drapeaux, la date et l'heure (Europe/Paris).<br>
-          <strong>Ensuite :</strong> téléchargez les 2 images et uploadez-les dans <strong>Poster un bet</strong> en choisissant le type <strong>⚡ Live</strong>.
+          💡 Claude trouvera automatiquement le sport, la compétition, les drapeaux, la date et l'heure du match.
         </div>
       </div>
 
@@ -276,8 +271,7 @@ $db = getDB();
           <code>Match 2 : Celta vs PAOK</code><br>
           <code>Prono 2 : +0.5 Celta 2ème MT</code><br>
           <code>Cote 2 : 2.49</code><br><br>
-          💡 Claude trouvera les dates, heures, drapeaux et compétitions. Il calcule la cote totale.<br>
-          <strong>Ensuite :</strong> téléchargez les 2 images et uploadez-les dans <strong>Poster un bet</strong> en choisissant le type <strong>🎯 Fun</strong>.
+          💡 Claude trouvera les dates, heures, drapeaux et compétitions automatiquement.
         </div>
         <div class="field">
           <label>Matchs + Pronos + Cotes</label>
@@ -349,6 +343,72 @@ $db = getDB();
 </div>
 
 <script>
+// ── Cache des fonts en base64 (chargées une fois) ────────────
+let _fontsBase64Css = null;
+
+// Télécharge les fonts Google côté navigateur → base64
+// Le navigateur parent peut accéder à fonts.gstatic.com sans problème CORS
+// (Access-Control-Allow-Origin: * sur les fichiers woff2)
+async function loadFontsAsBase64() {
+  if (_fontsBase64Css) return _fontsBase64Css; // cache
+
+  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36';
+
+  // Étape 1 : récupérer le CSS Google Fonts pour avoir les URLs woff2
+  // Inclure tous les poids utilisés dans les cards (Bebas Neue, Rajdhani 400-700, Orbitron 700/900)
+  const apiUrl = 'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Orbitron:wght@700;900&family=Rajdhani:wght@400;500;600;700&display=swap';
+  let googleCss = '';
+  try {
+    const resp = await fetch(apiUrl, {
+      headers: { 'User-Agent': UA }
+    });
+    googleCss = await resp.text();
+  } catch(e) {
+    console.warn('Impossible de charger Google Fonts CSS:', e);
+    return '';
+  }
+
+  // Étape 2 : extraire toutes les URLs woff2
+  const woff2Regex = /url\((https:\/\/fonts\.gstatic\.com[^)]+\.woff2)\)/g;
+  const urls = [];
+  let m;
+  while ((m = woff2Regex.exec(googleCss)) !== null) {
+    urls.push(m[1]);
+  }
+
+  // Étape 3 : extraire les @font-face complets du CSS Google Fonts
+  // et remplacer chaque url(https://...) par une data URI base64
+  let enrichedCss = googleCss;
+
+  await Promise.all(urls.map(async (url) => {
+    try {
+      const resp = await fetch(url, { mode: 'cors' });
+      const buf  = await resp.arrayBuffer();
+      // Convertir ArrayBuffer → base64
+      const bytes = new Uint8Array(buf);
+      let binary  = '';
+      for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+      const b64 = btoa(binary);
+      enrichedCss = enrichedCss.split(url).join('data:font/woff2;base64,' + b64);
+    } catch(e) {
+      console.warn('Impossible de télécharger font:', url, e);
+    }
+  }));
+
+  // Étape 4 : garder uniquement les @font-face (pas les unicode-range commentaires)
+  const faceBlocks = [];
+  const faceRegex  = /@font-face\s*\{[^}]+\}/g;
+  let fm;
+  while ((fm = faceRegex.exec(enrichedCss)) !== null) {
+    // Ne garder que les blocs avec base64 (les autres n'ont pas été convertis)
+    if (fm[0].includes('base64')) faceBlocks.push(fm[0]);
+  }
+
+  _fontsBase64Css = faceBlocks.join('\n');
+  console.log('✅ Fonts chargées en base64:', faceBlocks.length, 'variantes');
+  return _fontsBase64Css;
+}
+
 // ── Variables globales ──────────────────────────────────────
 let jpegNormalUrl = '';
 let jpegLockedUrl = '';
@@ -402,8 +462,6 @@ async function generateCard() {
     const match = document.getElementById('f-live-match').value.trim();
     const prono = document.getElementById('f-live-prono').value.trim();
     const cote  = document.getElementById('f-live-cote').value.trim();
-    const confianceEl = document.getElementById('f-live-confiance');
-    const confiance = confianceEl && confianceEl.value.trim() !== '' ? confianceEl.value.trim() : null;
     if (!match || !prono || !cote) {
       showError('⚠️ Remplissez : Match, Prono et Cote.');
       return;
@@ -411,7 +469,6 @@ async function generateCard() {
     payload.match = match;
     payload.prono = prono;
     payload.cote  = cote;
-    if (confiance !== null) payload.confiance = confiance;
     currentMatchName = match.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '') + '_Live';
 
   } else { // Fun
@@ -424,9 +481,11 @@ async function generateCard() {
     currentMatchName = 'FunBet_Combine';
   }
 
+  // Nettoyer les styles de card précédents injectés dans le head
+  document.querySelectorAll('[data-card-style]').forEach(e => e.remove());
+
   setState('loading');
   setGenerateBtn(true);
-  updateLoadingStepsForType(currentType);
   startLoadingAnimation();
 
   // Mettre la bonne largeur dans la zone de rendu
@@ -486,45 +545,129 @@ async function generateCard() {
 }
 
 // ── Injection HTML dans iframe ──────────────────────────────
-function injectAndWait(iframeId, html) {
+// ── Injection HTML dans un DIV de la page parent ───────────
+// Pas d'iframe = pas de problème d'origine CORS.
+// Les fonts (Orbitron, Bebas Neue, Rajdhani) sont déjà chargées
+// par le <link> dans le <head> de cette page.
+async function injectAndWait(iframeId, html) {
+  // ── Injecter les fonts base64 dans le HTML de la card ──────
+  // Le navigateur parent télécharge les fonts, les encode en base64,
+  // puis on les injecte directement dans le <style> de l'iframe.
+  // Aucune requête réseau depuis l'iframe → zéro CORS.
+  const fontsCss = await loadFontsAsBase64();
+  if (fontsCss) {
+    // Injecter les @font-face en base64 dans le <style> (disponibles immédiatement, pas de CORS)
+    html = html.replace('</style>', fontsCss + '\n</style>');
+    // Retirer le <link> Google Fonts pour éviter double chargement et échec CORS dans l'iframe
+    html = html.replace(/<link[^>]*href=["']?https?:\/\/fonts\.googleapis\.com[^>]*>/gi, '');
+  }
+
   return new Promise((resolve) => {
     const iframe = document.getElementById(iframeId);
     iframe.onload = () => {
-      // Attendre fonts + images (mascotte, logo)
-      setTimeout(resolve, 3000);
+      const iDoc = iframe.contentDocument || iframe.contentWindow.document;
+      // Attendre les images (logo, mascotte)
+      const imgs = iDoc.querySelectorAll('img');
+      const waitImages = () => {
+        if (imgs.length === 0) return Promise.resolve();
+        return Promise.all(Array.from(imgs).map(img => {
+          if (img.complete) return Promise.resolve();
+          return new Promise(r => { img.onload = r; img.onerror = r; });
+        }));
+      };
+      const waitFonts = () => {
+        if (iDoc.fonts && iDoc.fonts.ready) return iDoc.fonts.ready;
+        return Promise.resolve();
+      };
+      waitImages().then(() => waitFonts()).then(() => {
+        // Délai supplémentaire pour que le rendu applique bien les fonts avant capture
+        setTimeout(resolve, 400);
+      });
+      setTimeout(resolve, 5000); // timeout sécurité max
     };
     iframe.srcdoc = html;
   });
 }
 
-// ── Capture iframe → JPEG (largeur dynamique) ───────────────
+
 async function captureIframeToJpeg(iframeId, cardWidth) {
   const iframe = document.getElementById(iframeId);
-  const iDoc = iframe.contentDocument || iframe.contentWindow.document;
-  const body = iDoc.body;
+  const iDoc   = iframe.contentDocument || iframe.contentWindow.document;
+  const body   = iDoc.body;
 
-  // Hauteur dynamique : lire le scrollHeight réel du contenu
-  const realHeight = Math.max(body.scrollHeight, body.offsetHeight, 600);
+  body.style.margin   = '0';
+  body.style.padding  = '0';
+  body.style.overflow = 'hidden';
+  body.style.width    = cardWidth + 'px';
 
-  // Redimensionner l'iframe à la vraie hauteur
+  let cardEl = body.querySelector('.card-wrapper')
+            || body.querySelector('.card')
+            || body.querySelector('[class*="wrapper"]')
+            || body.querySelector('body > div')
+            || body;
+
+  // Attendre que les fonts soient appliquées avant html2canvas
+  if (iDoc.fonts && iDoc.fonts.ready) await iDoc.fonts.ready;
+  await new Promise(r => setTimeout(r, 300));
+
+  const realHeight = Math.max(cardEl.scrollHeight, cardEl.offsetHeight, 300);
+
+  iframe.style.width  = cardWidth + 'px';
   iframe.style.height = realHeight + 'px';
 
-  // Petit délai pour le re-render
-  await new Promise(r => setTimeout(r, 500));
+  await new Promise(r => setTimeout(r, 200));
 
-  const canvas = await html2canvas(body, {
-    width: cardWidth,
-    height: realHeight,
-    backgroundColor: '#0a0a0a',
-    scale: 1,
-    useCORS: true,
-    allowTaint: true,
-    logging: false,
-    imageTimeout: 5000,
+  const canvas = await html2canvas(cardEl, {
+    width:          cardWidth,
+    height:         realHeight,
+    backgroundColor: null,
+    scale:           1,
+    useCORS:         true,
+    allowTaint:      true,
+    logging:         false,
+    imageTimeout:    8000,
   });
 
+  // Crop intelligent (enlever bandes noires)
+  const ctx       = canvas.getContext('2d');
+  const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const pixels    = imageData.data;
+
+  let topCrop = 0;
+  for (let y = 0; y < canvas.height; y++) {
+    let hasContent = false;
+    for (let x = 0; x < canvas.width; x += 4) {
+      const i = (y * canvas.width + x) * 4;
+      if (pixels[i] > 15 || pixels[i+1] > 15 || pixels[i+2] > 15) { hasContent = true; break; }
+    }
+    if (hasContent) { topCrop = y; break; }
+  }
+
+  let bottomCrop = canvas.height;
+  for (let y = canvas.height - 1; y >= topCrop; y--) {
+    let hasContent = false;
+    for (let x = 0; x < canvas.width; x += 4) {
+      const i = (y * canvas.width + x) * 4;
+      if (pixels[i] > 15 || pixels[i+1] > 15 || pixels[i+2] > 15) { hasContent = true; break; }
+    }
+    if (hasContent) { bottomCrop = y + 1; break; }
+  }
+  bottomCrop = Math.min(bottomCrop + 2, canvas.height);
+  const croppedHeight = bottomCrop - topCrop;
+
+  if (croppedHeight > 100 && (topCrop > 5 || (canvas.height - bottomCrop) > 5)) {
+    const cropped    = document.createElement('canvas');
+    cropped.width    = cardWidth;
+    cropped.height   = croppedHeight;
+    const croppedCtx = cropped.getContext('2d');
+    croppedCtx.fillStyle = '#0a0a0a';
+    croppedCtx.fillRect(0, 0, cardWidth, croppedHeight);
+    croppedCtx.drawImage(canvas, 0, topCrop, cardWidth, croppedHeight, 0, 0, cardWidth, croppedHeight);
+    return cropped.toDataURL('image/jpeg', 0.92);
+  }
   return canvas.toDataURL('image/jpeg', 0.92);
 }
+
 
 // ── Télécharger les deux ────────────────────────────────────
 function downloadBoth() {
@@ -551,17 +694,8 @@ function showError(msg) {
 function setGenerateBtn(loading) {
   const btn = document.getElementById('btn-generate');
   btn.disabled = loading;
-  const label = currentType === 'Live' ? 'card Live' : currentType === 'Fun' ? 'card Fun' : 'cards';
   document.getElementById('btn-icon').textContent = loading ? '⏳' : '✨';
-  document.getElementById('btn-text').textContent = loading ? ('Génération ' + label + ' (~1-2 min)...') : 'Générer les Cards';
-}
-
-function updateLoadingStepsForType(type) {
-  const step2 = document.getElementById('step2');
-  if (!step2) return;
-  if (type === 'Live') step2.textContent = 'Récupération infos match live...';
-  else if (type === 'Fun') step2.textContent = 'Analyse des matchs du combiné...';
-  else step2.textContent = 'Analyse du match & statistiques...';
+  document.getElementById('btn-text').textContent = loading ? 'Génération en cours (~2-3 min)...' : 'Générer les Cards';
 }
 
 // ── Animation des étapes de chargement ──────────────────────
@@ -579,7 +713,7 @@ function startLoadingAnimation() {
       currentStep++;
       document.getElementById(stepIds[currentStep]).classList.add('active');
     }
-  }, 3500);
+  }, 6000);
 }
 
 function markStep(stepNum) {
