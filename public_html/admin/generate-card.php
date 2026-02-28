@@ -97,60 +97,77 @@ debugLog("Sport: $sport | Type: $typeBet | Model: " . CLAUDE_MODEL);
 // MODE LIVE — Template PHP fixe + Claude enrichit les données
 // ═══════════════════════════════════════════════════════════
 if ($typeBet === 'Live') {
-    require_once __DIR__ . '/live-card-template.php';
+    try {
+        $templatePath = __DIR__ . '/live-card-template.php';
+        if (!is_readable($templatePath)) {
+            throw new Exception('Template Live introuvable (admin/live-card-template.php).');
+        }
+        require_once $templatePath;
 
-    $match = $data['match'] ?? '';
-    $prono = $data['prono'] ?? '';
-    $cote  = $data['cote']  ?? '1.50';
+        if (!function_exists('generateLiveCards')) {
+            throw new Exception('Fonction generateLiveCards manquante dans le template.');
+        }
+        if (!defined('CLAUDE_LIVE_ENRICH_PROMPT')) {
+            throw new Exception('Constante CLAUDE_LIVE_ENRICH_PROMPT manquante (claude-config.php).');
+        }
 
-    $userMsg = "Sport : $sport\nMatch : $match\nPronostic : $prono\nCote : $cote\n\nDate du jour : " . date('d/m/Y') . ". Heure = fuseau Europe/Paris.";
-    debugLog("LIVE — Enrichissement via Claude...");
+        $match = $data['match'] ?? '';
+        $prono = $data['prono'] ?? '';
+        $cote  = $data['cote']  ?? '1.50';
 
-    $result = callClaude(CLAUDE_LIVE_ENRICH_PROMPT, $userMsg, 1000);
-    if (isset($result['error'])) {
-        debugLog("LIVE ENRICH ERROR: " . $result['error']);
+        $userMsg = "Sport : $sport\nMatch : $match\nPronostic : $prono\nCote : $cote\n\nDate du jour : " . date('d/m/Y') . ". Heure = fuseau Europe/Paris.";
+        debugLog("LIVE — Enrichissement via Claude...");
+
+        $result = callClaude(CLAUDE_LIVE_ENRICH_PROMPT, $userMsg, 1000);
+        if (isset($result['error'])) {
+            debugLog("LIVE ENRICH ERROR: " . $result['error']);
+            http_response_code(500);
+            echo json_encode(['error' => $result['error']]);
+            exit;
+        }
+
+        debugLog("LIVE enrich text: " . $result['text']);
+        $enriched = parseClaudeJson($result['text']);
+        debugLog("Enriched: " . json_encode($enriched));
+
+        if (!$enriched) {
+            debugLog("WARN: enrichissement échoué, valeurs par défaut");
+            $parts = preg_split('/\s+vs?\s+/i', $match);
+            $enriched = [
+                'date_fr'     => date('d/m/Y'),
+                'time_fr'     => date('H:i'),
+                'player1'     => strtoupper(trim($parts[0] ?? 'Joueur 1')),
+                'player2'     => strtoupper(trim($parts[1] ?? 'Joueur 2')),
+                'flag1'       => '🏳️',
+                'flag2'       => '🏳️',
+                'competition' => '',
+            ];
+        }
+
+        $coteFloat  = floatval($cote);
+        $confidence = ($coteFloat > 0) ? min(95, max(30, round(115 / $coteFloat))) : 60;
+
+        $cards = generateLiveCards([
+            'sport'       => $sport,
+            'date_fr'     => $enriched['date_fr']    ?? date('d/m/Y'),
+            'time_fr'     => $enriched['time_fr']    ?? date('H:i'),
+            'player1'     => $enriched['player1']    ?? 'JOUEUR 1',
+            'player2'     => $enriched['player2']    ?? 'JOUEUR 2',
+            'flag1'       => $enriched['flag1']      ?? '🏳️',
+            'flag2'       => $enriched['flag2']      ?? '🏳️',
+            'competition' => $enriched['competition']?? '',
+            'prono'       => $prono,
+            'cote'        => $cote,
+            'confidence'  => $confidence,
+        ]);
+
+        debugLog("LIVE OK! normal=" . strlen($cards['html_normal']) . " locked=" . strlen($cards['html_locked']));
+        echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Live', 'card_width' => 720]);
+    } catch (Throwable $e) {
+        debugLog("LIVE EXCEPTION: " . $e->getMessage());
         http_response_code(500);
-        echo json_encode(['error' => $result['error']]);
-        exit;
+        echo json_encode(['error' => 'Erreur génération Live : ' . $e->getMessage()]);
     }
-
-    debugLog("LIVE enrich text: " . $result['text']);
-    $enriched = parseClaudeJson($result['text']);
-    debugLog("Enriched: " . json_encode($enriched));
-
-    if (!$enriched) {
-        debugLog("WARN: enrichissement échoué, valeurs par défaut");
-        $parts = preg_split('/\s+vs?\s+/i', $match);
-        $enriched = [
-            'date_fr'     => date('d/m/Y'),
-            'time_fr'     => date('H:i'),
-            'player1'     => strtoupper(trim($parts[0] ?? 'Joueur 1')),
-            'player2'     => strtoupper(trim($parts[1] ?? 'Joueur 2')),
-            'flag1'       => '🏳️',
-            'flag2'       => '🏳️',
-            'competition' => '',
-        ];
-    }
-
-    $coteFloat  = floatval($cote);
-    $confidence = ($coteFloat > 0) ? min(95, max(30, round(115 / $coteFloat))) : 60;
-
-    $cards = generateLiveCards([
-        'sport'       => $sport,
-        'date_fr'     => $enriched['date_fr']    ?? date('d/m/Y'),
-        'time_fr'     => $enriched['time_fr']    ?? date('H:i'),
-        'player1'     => $enriched['player1']    ?? 'JOUEUR 1',
-        'player2'     => $enriched['player2']    ?? 'JOUEUR 2',
-        'flag1'       => $enriched['flag1']      ?? '🏳️',
-        'flag2'       => $enriched['flag2']      ?? '🏳️',
-        'competition' => $enriched['competition']?? '',
-        'prono'       => $prono,
-        'cote'        => $cote,
-        'confidence'  => $confidence,
-    ]);
-
-    debugLog("LIVE OK! normal=" . strlen($cards['html_normal']) . " locked=" . strlen($cards['html_locked']));
-    echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Live', 'card_width' => 720]);
     exit;
 }
 

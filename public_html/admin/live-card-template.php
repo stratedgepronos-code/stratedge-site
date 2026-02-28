@@ -13,78 +13,68 @@
 // Cache dans /assets/fonts/cache/ — téléchargement unique.
 // ────────────────────────────────────────────────────────────
 function getLocalFontsCss() {
-    $cacheDir  = dirname(__DIR__) . '/assets/fonts/cache/';
-    $cacheFile = $cacheDir . 'fonts-b64.css';
+    $fallback = "@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap');\n";
+    try {
+        $cacheDir  = dirname(__DIR__) . '/assets/fonts/cache/';
+        $cacheFile = $cacheDir . 'fonts-b64.css';
 
-    // Retourner le cache s'il existe et est valide (>50KB)
-    if (file_exists($cacheFile) && filesize($cacheFile) > 50000) {
-        return file_get_contents($cacheFile);
-    }
-
-    if (!is_dir($cacheDir)) {
-        mkdir($cacheDir, 0755, true);
-    }
-
-    // Fonts à télécharger : [famille, poids, URL woff2 directe]
-    // URLs récupérées depuis l'API Google Fonts avec User-Agent Chrome
-    $ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36';
-
-    $fonts = [
-        ['Orbitron',   700, null, 'https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap'],
-        ['Orbitron',   900, null, 'https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap'],
-        ['Bebas Neue', 400, null, 'https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap'],
-        ['Rajdhani',   400, null, 'https://fonts.googleapis.com/css2?family=Rajdhani:wght@400&display=swap'],
-        ['Rajdhani',   600, null, 'https://fonts.googleapis.com/css2?family=Rajdhani:wght@600&display=swap'],
-        ['Rajdhani',   700, null, 'https://fonts.googleapis.com/css2?family=Rajdhani:wght@700&display=swap'],
-    ];
-
-    $blocks = [];
-
-    foreach ($fonts as &$font) {
-        [$family, $weight, , $apiUrl] = $font;
-        $slug      = strtolower(str_replace(' ', '-', $family)) . '-' . $weight;
-        $cacheWoff = $cacheDir . $slug . '.woff2';
-
-        // Étape 1 : charger depuis le cache disque si dispo
-        if (file_exists($cacheWoff) && filesize($cacheWoff) > 500) {
-            $woff2 = file_get_contents($cacheWoff);
-        } else {
-            // Étape 2 : demander le CSS à Google Fonts (serveur→Google, pas de CORS)
-            $css = _curlFetch($apiUrl, $ua);
-            if (!$css) continue;
-
-            // Extraire l'URL woff2 (subset latin en dernier dans le CSS)
-            preg_match_all('/url\((https:\/\/fonts\.gstatic\.com[^)]+\.woff2)\)/', $css, $m);
-            if (empty($m[1])) continue;
-            // Prendre la dernière URL = subset latin (le plus compact)
-            $woff2Url = end($m[1]);
-
-            // Étape 3 : télécharger le fichier woff2
-            $woff2 = _curlFetch($woff2Url);
-            if (!$woff2 || strlen($woff2) < 500) continue;
-
-            file_put_contents($cacheWoff, $woff2);
+        if (file_exists($cacheFile) && @filesize($cacheFile) > 50000) {
+            $c = @file_get_contents($cacheFile);
+            if ($c !== false) return $c;
         }
 
-        // Étape 4 : encoder en base64 → @font-face data URI
-        $b64 = base64_encode($woff2);
-        $blocks[] = "@font-face{"
-            . "font-family:'{$family}';"
-            . "font-weight:{$weight};"
-            . "font-style:normal;"
-            . "font-display:block;"
-            . "src:url('data:font/woff2;base64,{$b64}') format('woff2');"
-            . "}";
-    }
+        if (!is_dir($cacheDir)) {
+            if (!@mkdir($cacheDir, 0755, true)) return $fallback;
+        }
+        if (!is_writable($cacheDir)) {
+            // On continue sans cache : on va construire les blocs en mémoire
+        }
 
-    if (empty($blocks)) {
-        // Fallback d'urgence : Google Fonts via @import (marchera pas dans srcdoc mais au moins ça compile)
-        return "@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap');\n";
-    }
+        $ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36';
+        $fonts = [
+            ['Orbitron',   700, 'https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap'],
+            ['Orbitron',   900, 'https://fonts.googleapis.com/css2?family=Orbitron:wght@900&display=swap'],
+            ['Bebas Neue', 400, 'https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap'],
+            ['Rajdhani',   400, 'https://fonts.googleapis.com/css2?family=Rajdhani:wght@400&display=swap'],
+            ['Rajdhani',   600, 'https://fonts.googleapis.com/css2?family=Rajdhani:wght@600&display=swap'],
+            ['Rajdhani',   700, 'https://fonts.googleapis.com/css2?family=Rajdhani:wght@700&display=swap'],
+        ];
 
-    $css = implode("\n", $blocks) . "\n";
-    file_put_contents($cacheFile, $css);
-    return $css;
+        $blocks = [];
+        foreach ($fonts as $font) {
+            [$family, $weight, $apiUrl] = $font;
+            $slug      = strtolower(str_replace(' ', '-', $family)) . '-' . $weight;
+            $cacheWoff = $cacheDir . $slug . '.woff2';
+
+            $woff2 = null;
+            if (file_exists($cacheWoff) && @filesize($cacheWoff) > 500) {
+                $woff2 = @file_get_contents($cacheWoff);
+            }
+            if (!$woff2 || strlen($woff2) < 500) {
+                $css = _curlFetch($apiUrl, $ua);
+                if (!$css) continue;
+                preg_match_all('/url\((https:\/\/fonts\.gstatic\.com[^)]+\.woff2)\)/', $css, $m);
+                if (empty($m[1])) continue;
+                $woff2Url = end($m[1]);
+                $woff2 = _curlFetch($woff2Url);
+                if (!$woff2 || strlen($woff2) < 500) continue;
+                @file_put_contents($cacheWoff, $woff2);
+            }
+
+            $b64 = base64_encode($woff2);
+            $blocks[] = "@font-face{"
+                . "font-family:'{$family}';font-weight:{$weight};font-style:normal;font-display:block;"
+                . "src:url('data:font/woff2;base64,{$b64}') format('woff2');}";
+        }
+
+        if (empty($blocks)) return $fallback;
+
+        $css = implode("\n", $blocks) . "\n";
+        if (is_writable($cacheDir)) @file_put_contents($cacheFile, $css);
+        return $css;
+    } catch (Throwable $e) {
+        return $fallback;
+    }
 }
 
 function _curlFetch($url, $ua = '') {
