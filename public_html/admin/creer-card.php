@@ -255,8 +255,13 @@ $db = getDB();
           <label>Cote</label>
           <input type="number" id="f-live-cote" step="0.01" min="1" placeholder="Ex: 1.58">
         </div>
+        <div class="field">
+          <label>Confiance (0-100, optionnel)</label>
+          <input type="number" id="f-live-confiance" min="0" max="100" placeholder="Ex: 75 — laisser vide pour laisser Claude estimer">
+        </div>
         <div class="help-box">
-          💡 Claude trouvera automatiquement le sport, la compétition, les drapeaux, la date et l'heure du match.
+          💡 Claude trouvera la compétition, les drapeaux, la date et l'heure (Europe/Paris).<br>
+          <strong>Ensuite :</strong> téléchargez les 2 images et uploadez-les dans <strong>Poster un bet</strong> en choisissant le type <strong>⚡ Live</strong>.
         </div>
       </div>
 
@@ -271,7 +276,8 @@ $db = getDB();
           <code>Match 2 : Celta vs PAOK</code><br>
           <code>Prono 2 : +0.5 Celta 2ème MT</code><br>
           <code>Cote 2 : 2.49</code><br><br>
-          💡 Claude trouvera les dates, heures, drapeaux et compétitions automatiquement.
+          💡 Claude trouvera les dates, heures, drapeaux et compétitions. Il calcule la cote totale.<br>
+          <strong>Ensuite :</strong> téléchargez les 2 images et uploadez-les dans <strong>Poster un bet</strong> en choisissant le type <strong>🎯 Fun</strong>.
         </div>
         <div class="field">
           <label>Matchs + Pronos + Cotes</label>
@@ -396,6 +402,8 @@ async function generateCard() {
     const match = document.getElementById('f-live-match').value.trim();
     const prono = document.getElementById('f-live-prono').value.trim();
     const cote  = document.getElementById('f-live-cote').value.trim();
+    const confianceEl = document.getElementById('f-live-confiance');
+    const confiance = confianceEl && confianceEl.value.trim() !== '' ? confianceEl.value.trim() : null;
     if (!match || !prono || !cote) {
       showError('⚠️ Remplissez : Match, Prono et Cote.');
       return;
@@ -403,6 +411,7 @@ async function generateCard() {
     payload.match = match;
     payload.prono = prono;
     payload.cote  = cote;
+    if (confiance !== null) payload.confiance = confiance;
     currentMatchName = match.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '') + '_Live';
 
   } else { // Fun
@@ -417,6 +426,7 @@ async function generateCard() {
 
   setState('loading');
   setGenerateBtn(true);
+  updateLoadingStepsForType(currentType);
   startLoadingAnimation();
 
   // Mettre la bonne largeur dans la zone de rendu
@@ -541,8 +551,17 @@ function showError(msg) {
 function setGenerateBtn(loading) {
   const btn = document.getElementById('btn-generate');
   btn.disabled = loading;
+  const label = currentType === 'Live' ? 'card Live' : currentType === 'Fun' ? 'card Fun' : 'cards';
   document.getElementById('btn-icon').textContent = loading ? '⏳' : '✨';
-  document.getElementById('btn-text').textContent = loading ? 'Génération en cours (~1-2 min)...' : 'Générer les Cards';
+  document.getElementById('btn-text').textContent = loading ? ('Génération ' + label + ' (~1-2 min)...') : 'Générer les Cards';
+}
+
+function updateLoadingStepsForType(type) {
+  const step2 = document.getElementById('step2');
+  if (!step2) return;
+  if (type === 'Live') step2.textContent = 'Récupération infos match live...';
+  else if (type === 'Fun') step2.textContent = 'Analyse des matchs du combiné...';
+  else step2.textContent = 'Analyse du match & statistiques...';
 }
 
 // ── Animation des étapes de chargement ──────────────────────

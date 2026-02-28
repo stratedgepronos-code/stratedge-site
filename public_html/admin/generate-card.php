@@ -28,14 +28,111 @@ if (!$data) {
 $sport   = $data['sport']    ?? '';
 $typeBet = $data['type_bet'] ?? 'Safe';
 
+// ── LIVE : template PHP + Claude enrichissement uniquement (visuel garanti) ──
+if ($typeBet === 'Live') {
+    $match     = $data['match'] ?? '';
+    $prono     = $data['prono'] ?? '';
+    $cote      = $data['cote']  ?? '';
+    $confiance = isset($data['confiance']) && $data['confiance'] !== '' ? (int) trim($data['confiance']) : 73;
+    if ($confiance < 0 || $confiance > 100) $confiance = 73;
+
+    $dateInfo = "Nous sommes le " . date('d/m/Y') . ". Heure = fuseau Europe/Paris.\n\n";
+    $userMsg  = $dateInfo . "Sport : " . $sport . "\nMatch : " . $match . "\nPronostic : " . $prono . "\nCote : " . $cote . "\n\nRetourne le JSON avec date_fr, time_fr, player1, player2, flag1, flag2, competition.";
+
+    $apiPayload = [
+        'model'      => CLAUDE_MODEL,
+        'max_tokens' => 2000,
+        'system'     => CLAUDE_LIVE_ENRICH_PROMPT,
+        'messages'   => [['role' => 'user', 'content' => $userMsg]]
+    ];
+    $ch = curl_init('https://api.anthropic.com/v1/messages');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_POST           => true,
+        CURLOPT_POSTFIELDS     => json_encode($apiPayload, JSON_UNESCAPED_UNICODE),
+        CURLOPT_TIMEOUT        => 60,
+        CURLOPT_HTTPHEADER     => [
+            'Content-Type: application/json',
+            'x-api-key: ' . CLAUDE_API_KEY,
+            'anthropic-version: 2023-06-01',
+        ],
+    ]);
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    $date_fr = date('d/m/Y'); $time_fr = ''; $player1 = ''; $player2 = ''; $flag1 = ''; $flag2 = ''; $competition = '';
+    if ($httpCode === 200 && $response) {
+        $dec = json_decode($response, true);
+        $text = '';
+        if (isset($dec['content']) && is_array($dec['content'])) {
+            foreach ($dec['content'] as $b) {
+                if (isset($b['type'], $b['text']) && $b['type'] === 'text') { $text = $b['text']; break; }
+            }
+        }
+        $text = trim(preg_replace('/^```(?:json)?\s*|\s*```$/m', '', $text));
+        $enrich = json_decode($text, true);
+        if ($enrich && is_array($enrich)) {
+            $date_fr     = $enrich['date_fr'] ?? $date_fr;
+            $time_fr     = $enrich['time_fr'] ?? $time_fr;
+            $player1     = $enrich['player1'] ?? $player1;
+            $player2     = $enrich['player2'] ?? $player2;
+            $flag1       = $enrich['flag1'] ?? $flag1;
+            $flag2       = $enrich['flag2'] ?? $flag2;
+            $competition = $enrich['competition'] ?? $competition;
+        }
+    }
+    // Fallback : extraire joueurs du match (ex: "Garin vs Baez" ou "Garin C. vs Baez S.")
+    if ($player1 === '' || $player2 === '') {
+        if (preg_match('/^(.+?)\s+vs\.?\s+(.+)$/i', trim($match), $m)) {
+            $player1 = trim($m[1]);
+            $player2 = trim($m[2]);
+        } else {
+            $player1 = $match;
+            $player2 = '—';
+        }
+    }
+    if ($time_fr === '') $time_fr = '--:--';
+
+    $isTennis = (stripos($sport, 'tennis') !== false);
+    $mascotte_url = $isTennis
+        ? 'https://stratedgepronos.fr/assets/images/mascotte-tennis.jpg'
+        : 'https://stratedgepronos.fr/assets/images/mascotte.png';
+    $logo_url = 'https://stratedgepronos.fr/assets/images/logo_site_transparent.png';
+    if ($isTennis) {
+        $badge_style = 'background:rgba(57,255,20,0.12);border:1.5px solid rgba(57,255,20,0.6);color:#39ff14;';
+        $sport_emoji = '🎾';
+        $promo_sport_pro = 'Tennis Pro';
+    } else {
+        $badge_style = 'background:rgba(255,45,122,0.12);border:1.5px solid rgba(255,45,122,0.6);color:#ff2d7a;';
+        $sport_emoji = (stripos($sport, 'foot') !== false) ? '⚽' : ((stripos($sport, 'basket') !== false) ? '🏀' : '🏆');
+        $promo_sport_pro = trim($sport) . ' Pro';
+        if ($promo_sport_pro === ' Pro') $promo_sport_pro = 'Pro';
+    }
+
+    ob_start();
+    $is_locked = false;
+    require __DIR__ . '/../includes/live-card-template.php';
+    $html_normal = ob_get_clean();
+    ob_start();
+    $is_locked = true;
+    require __DIR__ . '/../includes/live-card-template.php';
+    $html_locked = ob_get_clean();
+
+    echo json_encode([
+        'success'     => true,
+        'html_normal' => $html_normal,
+        'html_locked' => $html_locked,
+        'type_bet'    => 'Live',
+        'card_width'  => 720,
+    ]);
+    exit;
+}
+
 // ── Choisir le bon prompt selon le type ────────────────────
 // Safe  → CLAUDE_CARD_PROMPT (analyse détaillée, 1080px)
-// Live  → CLAUDE_LIVE_PROMPT (1 match, 720px, mascotte latérale)
 // Fun   → CLAUDE_FUN_PROMPT  (combiné multi-matchs, 760px, mascotte latérale)
 switch ($typeBet) {
-    case 'Live':
-        $systemPrompt = CLAUDE_LIVE_PROMPT;
-        break;
     case 'Fun':
         $systemPrompt = CLAUDE_FUN_PROMPT;
         break;
@@ -58,14 +155,6 @@ if ($typeBet === 'Safe') {
     ], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
 
     $userMessage = $dateInfo . "Utilise les stats de carrière ET les stats de la saison en cours. Ne mets pas de stats futures ou inventées.\n\nGénère une card de bet StratEdge avec ces données :\n\n" . $betData;
-
-} elseif ($typeBet === 'Live') {
-    // Mode Live : match + prono + cote → Claude trouve les infos du match
-    $match = $data['match'] ?? '';
-    $prono = $data['prono'] ?? '';
-    $cote  = $data['cote']  ?? '';
-
-    $userMessage = $dateInfo . "Sport : " . $sport . "\nType : LIVE BET\n\nMatch : " . $match . "\nPronostic : " . $prono . "\nCote : " . $cote . "\n\nTrouve les infos du match (compétition, drapeaux, date, heure Europe/Paris). Génère la card.";
 
 } else {
     // Mode Fun : textarea brute (multi-matchs + pronos + cotes) → Claude trouve les infos

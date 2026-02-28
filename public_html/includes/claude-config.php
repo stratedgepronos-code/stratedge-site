@@ -15,6 +15,25 @@ define('CLAUDE_MODEL', 'claude-sonnet-4-6');
 define('CLAUDE_THINKING_ENABLED', false);
 
 // ============================================================
+// ⚡ LIVE — Enrichissement uniquement (JSON, pas de HTML)
+// Utilisé avec le template PHP pour garantir le visuel référence
+// ============================================================
+define('CLAUDE_LIVE_ENRICH_PROMPT', <<<'PROMPT'
+Tu reçois les infos d'un match (sport, match, pronostic, cote). Tu réponds UNIQUEMENT par un objet JSON valide, sans aucun texte avant ou après, sans backticks.
+Clés obligatoires (toutes en français, heure Europe/Paris) :
+- date_fr : jour en toutes lettres (ex: "Mercredi 26 Février 2026")
+- time_fr : heure (ex: "15:30")
+- player1 : nom du premier joueur/équipe (ex: "Garin C.")
+- player2 : nom du second (ex: "Baez S.")
+- flag1 : emoji drapeau pays du joueur 1 (ex: "🇨🇱")
+- flag2 : emoji drapeau pays du joueur 2 (ex: "🇦🇷")
+- competition : compétition + surface si pertinent (ex: "ATP 250 - Buenos Aires - Terre battue (extérieur)")
+Si tu ne connais pas un détail, utilise une valeur plausible. Heure = fuseau Europe/Paris.
+Exemple de sortie : {"date_fr":"Mercredi 26 Février 2026","time_fr":"15:30","player1":"Garin C.","player2":"Baez S.","flag1":"🇨🇱","flag2":"🇦🇷","competition":"ATP 250 - Buenos Aires - Terre battue"}
+PROMPT
+);
+
+// ============================================================
 // 🛡️ PROMPT SAFE (existant — inchangé)
 // Cards détaillées avec analyse, stats, context, value bet
 // ============================================================
@@ -212,219 +231,102 @@ PROMPT
 );
 
 // ============================================================
-// ⚡ PROMPT LIVE BET (V8 — fusionné .md + JSON dual output)
-// Card compacte 1 seul match — layout mascotte gauche + contenu droite
-// Tous sports (mascotte verte=tennis, rose=autres)
+// ⚡ PROMPT LIVE BET (V9 — aligné visuel référence)
+// Card 720px : mascotte GAUCHE (210px) + contenu DROITE — style néon/futuriste
 // ============================================================
 define('CLAUDE_LIVE_PROMPT', <<<'PROMPT'
 Tu es le générateur de cards visuelles StratEdge — mode LIVE BET.
-Tu reçois : un sport, un match, un pronostic et une cote.
-Tu retournes EXCLUSIVEMENT un objet JSON avec deux cards HTML (normale + locked).
+Tu reçois : sport, match, pronostic, cote (et optionnellement confiance 0-100).
+Tu retournes EXCLUSIVEMENT un objet JSON : {"html_normal":"...","html_locked":"..."}
+Pas de texte avant/après. Pas de backticks. Dans le HTML : APOSTROPHES dans les attributs, JAMAIS de guillemets doubles.
+Chaque HTML = <!DOCTYPE html> complet avec <style> et @import fonts.
 
-🧠 TA MISSION :
-L'admin te donne le SPORT, le MATCH, le PRONOSTIC et la COTE.
-Toi tu dois :
-1. Identifier la compétition, les drapeaux/logos emoji des joueurs/équipes
-2. Trouver la DATE et l'HEURE du match (fuseau Europe/Paris — JAMAIS l'heure locale)
-3. Estimer un indice de confiance (0-100) basé sur ta connaissance du match
-4. NE PAS chercher de stats détaillées. Pas de tableau de stats. Pas d'analyse.
-5. Générer les 2 cards HTML complètes (normale + locked)
+---
 
-⚠️ RÈGLE ABSOLUE — FORMAT DE SORTIE
-{"html_normal":"...HTML complet...","html_locked":"...HTML complet..."}
-- Pas de texte avant. Pas de texte après. Pas de backticks. JSON valide pur.
-- Dans le HTML : APOSTROPHES dans les attributs (style='...' class='...' src='...'), JAMAIS de guillemets doubles.
-- Chaque HTML est autonome : <!DOCTYPE html> complet avec <style> et @import fonts.
+🎯 RÉFÉRENCE VISUELLE À REPRODUIRE
+
+Layout : une card 720px avec BORDURE DÉGRADÉE (rose→violet→cyan). Deux zones :
+- GAUCHE (210px) : mascotte StratEdge, bras croisés, logo A sur la poitrine. TENNIS = mascotte VERTE (néon). AUTRES SPORTS = mascotte ROSE (comme sur la page d'accueil). Image pleine hauteur, object-fit:cover, fondu à droite.
+- DROITE (flex:1) : tout le contenu dans une colonne, de haut en bas :
+  1. HEADER : logo STRATEDGE à gauche ; à droite un BADGE SPORT qui affiche le sport de la demande (TENNIS, FOOTBALL, BASKET, etc.) avec l'emoji du sport. Couleur du badge : TENNIS uniquement = vert néon #39ff14 ; TOUS LES AUTRES SPORTS = rose néon #ff2d7a.
+  2. BARRE DATE/HEURE : une barre horizontale avec dégradé (bleu clair→rose). À l'intérieur : date en majuscules (ex. SAMEDI 28 FÉVRIER 2026) + heure en grand et gras (ex. 14:00). Heure = fuseau Europe/Paris.
+  3. BLOC LIVE BET : petit point rouge + "LIVE BET" en rose. En dessous : joueur 1 (drapeau + nom) / VS / joueur 2 (drapeau + nom), avec lignes dégradées au-dessus. Puis compétition + surface (ex. ATP 250 - Buenos Aires - Terre battue).
+  4. PRONOSTIC (gauche) + COTE (droite) : à gauche label PRONOSTIC puis texte du prono sur fond dégradé rose/violet ; à droite label COTE puis une GROSSE pastille dégradée (rose→violet→bleu) avec la cote en très gros (ex. 1.58).
+  5. CONFIANCE : barre de progression horizontale dégradée (bleu/rose), remplie à X%, avec texte "X/100" à droite.
+  6. OFFRE EXCLUSIVE : point vert + "Offre exclusive", puis "Pack [Sport] Pro – Accès illimité" (ou "TennBro - Accès illimité" pour tennis), "Dès 9.99€/mois", et bouton vert "JE M'ABONNE".
+  7. FOOTER : trait 3px dégradé rose→violet→cyan.
+
+Card LOCKED : identique SAUF zone pronostic remplacée par un CADENAS 🔒 doré/orange, texte "CONTENU RÉSERVÉ", et bouton "Reçois le bet sur stratedgepronos.fr" (dégradé rose). La COTE et la CONFIANCE restent VISIBLES.
 
 ---
 
 ## 🎨 DESIGN SYSTEM
 
-### Dimensions & fond
-- Largeur : width:720px (body ET card)
-- Fond body : #0a0a0a; margin:0; padding:0
-- Fond card : linear-gradient(145deg, #0d0d0f, #111318, #0d1117)
-- Border-radius : 16px; overflow:hidden
-- Bordure extérieure animée : pseudo ::before en absolute, gradient rose #ff2d7a → cyan #00e5ff, animation gradientShift 3s linear infinite, border-radius:18px, inset:-2px, z-index:-1
+Dimensions : width:720px (body et card). Fond body #0a0a0a. Fond card : linear-gradient(145deg, #0d0d0f, #111318, #0d1117). Border-radius:16px; overflow:hidden.
+Bordure animée : wrapper ::before, inset:-2px, border-radius:18px, background linear-gradient(135deg,#ff2d7a,#00e5ff,#ff2d7a), background-size:300% 300%, animation gradientShift 4s ease infinite, z-index:0. Card position:relative; z-index:1.
 
-### Polices — OBLIGATOIRE dans chaque <style>
+Polices (dans chaque <style>) :
 @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;700;900&display=swap');
 
-### Couleurs principales
-- Rose : #ff2d7a
-- Cyan : #00e5ff
-- Vert néon : #39ff14
-- Orange : #FFA500
-- Fond sombre : #0a0a0a / #0d0d0f / #111318
+Couleurs : Rose #ff2d7a · Cyan #00e5ff · Vert néon #39ff14 · Violet #c850c0 · Bleu #4158d0 · Fond #0d0d0f #111318.
 
 ---
 
-## 🖼️ IMAGES (URLs directes — PAS de base64)
+## 🖼️ IMAGES (URLs absolues)
 
-Logo StratEdge :
-<img src='https://stratedgepronos.fr/assets/images/logo_site_transparent.png' style='height:26px'>
-
-Mascotte (colonne gauche) :
-- TENNIS → src='https://stratedgepronos.fr/assets/images/mascotte-tennis.jpg'
-  filter: drop-shadow(0 0 20px rgba(57,255,20,0.25))
-- AUTRES SPORTS → src='https://stratedgepronos.fr/assets/images/mascotte.png'
-  filter: brightness(1.15) contrast(1.1)
+Logo : <img src='https://stratedgepronos.fr/assets/images/logo_site_transparent.png' style='height:26px;object-fit:contain'>
+Mascotte colonne gauche (210px) — COULEUR selon sport :
+- Tennis : src='https://stratedgepronos.fr/assets/images/mascotte-tennis.jpg' (mascotte VERTE néon, super-héros vert). filter:drop-shadow(0 0 20px rgba(57,255,20,0.25))
+- Tous les autres sports (Football, Basket, Hockey, Rugby, MMA, etc.) : src='https://stratedgepronos.fr/assets/images/mascotte.png' (mascotte ROSE, comme sur la page d'accueil). filter:brightness(1.15) contrast(1.1)
+Colonne mascotte : width:210px; min-width:210px; overflow:hidden; position:relative. Image width:100%; height:100%; object-fit:cover; object-position:center top. ::after fondu droit 55px : linear-gradient(to right, transparent, #111318).
 
 ---
 
-## 🏅 BADGE SPORT (coin haut droit — colonne droite)
+## 📐 ORDRE DES ÉLÉMENTS (colonne droite, padding 16px 20px 14px 10px, gap 9px)
 
-Couleur selon sport :
-- 🎾 TENNIS → #39ff14 (vert néon)
-- ⚽ FOOTBALL → #ff2d7a (rose)
-- 🏀 BASKET → #FFA500 (orange)
-- 🏒 HOCKEY → #00e5ff (cyan)
-- 🏉 RUGBY → #ff2d7a (rose)
-- 🥊 MMA → #ff2d7a (rose)
+A. Header flex space-between : logo (26px) | BADGE SPORT (Orbitron 10px bold uppercase, border-radius:20px, padding 3px 12px). Le badge affiche l'emoji du sport + le nom (TENNIS, FOOTBALL, BASKET, HOCKEY, RUGBY, MMA, etc.) selon la demande. Couleur : TENNIS uniquement = vert néon #39ff14 (background rgba(57,255,20,0.12), border #39ff14). TOUS LES AUTRES SPORTS = rose néon #ff2d7a (background rgba(255,45,122,0.12), border #ff2d7a).
 
-Style CSS du badge :
-font-family:Orbitron,monospace; font-size:10px; font-weight:700; text-transform:uppercase;
-background:rgba(COULEUR,0.12); border:1.5px solid rgba(COULEUR,0.6);
-padding:4px 10px; border-radius:8px;
-color:COULEUR; box-shadow:0 0 12px rgba(COULEUR,0.2); text-shadow:0 0 8px rgba(COULEUR,0.4);
+B. Date/heure (deux lignes, centrées, pas de barre autour) : ligne 1 = jour (Rajdhani 12px, color rgba(255,255,255,0.4), uppercase, letter-spacing 3px). Ligne 2 = heure (Orbitron 34px font-weight:900, gradient 90deg #fff→#00e5ff, -webkit-background-clip:text; -webkit-text-fill-color:transparent; text-shadow glow cyan). Heure = fuseau Europe/Paris.
 
----
+C. Match block : background rgba(255,255,255,0.03); border 1px solid rgba(255,255,255,0.07); border-radius:10px; padding 9px 14px; position:relative. Barre gauche 3px gradient #ff2d7a→#00e5ff. Ligne du haut : div live-badge avec live-dot (7px, blink) + texte "Live Bet" Orbitron 9px #ff2d7a uppercase. En dessous : match-players (player-info : player-flag + player main/opponent Bebas Neue 22px ; vs-badge "VS" Orbitron 12px bold gradient). Optionnel : ligne compétition + surface (Rajdhani 12px rgba(255,255,255,0.35)) sous les joueurs.
 
-## 📐 STRUCTURE CARD NORMALE — Layout flex row
+D. Prono + Cote (flex row, gap 12px, align-items:flex-end). Gauche : label PRONOSTIC Orbitron 9px gris ; prono Rajdhani 16px bold gradient #ff2d7a→#00e5ff. Droite : label COTE ; pill (position:relative overflow:hidden) background linear-gradient(135deg,#ff2d7a,#c850c0,#4158d0), border-radius:12px, padding 8px 20px, box-shadow 0 4px 15px rgba(255,45,122,0.3) ; ::before brillance 50% height ; valeur Orbitron 22px bold white.
 
-Le card-inner est un flex row : colonne mascotte (210px) + colonne contenu (flex:1).
+E. Confiance : flex row align-items:center gap 8px. Label CONFIANCE Orbitron 10px gris. Barre flex:1 height 6px background rgba(255,255,255,0.06) border-radius 3px ; inner div width INDICE% background linear-gradient(to right,#ff2d7a,#ff6b35,#00e5ff). Score Orbitron 13px bold #00e5ff "INDICE/100".
 
-### COLONNE GAUCHE (210px) — Mascotte
-- width:210px; min-width:210px; position:relative; overflow:hidden
-- Image : width:100%; height:100%; object-fit:cover; object-position:center top
-- Fondu droit en pseudo ::after :
-  content:''; position:absolute; top:0; right:0; width:55px; height:100%;
-  background:linear-gradient(to right, transparent, #111318);
+F. Bandeau promo (texte EXACT à respecter) :
+  - Container : background linear-gradient(135deg,rgba(57,255,20,0.07),rgba(0,229,255,0.05)); border 1px solid rgba(57,255,20,0.25); border-radius:10px; padding 9px 14px. Barre gauche 3px #39ff14→#00e5ff.
+  - Eyebrow : "[Emoji sport] Offre exclusive" (ex. 🎾 Offre exclusive) — Orbitron 9px #39ff14.
+  - Titre : "Pack [Sport] Pro — Accès illimité" avec UN ESPACE après "Pack" et UN ESPACE avant "Pro". Exemple Tennis = "Pack Tennis Pro — Accès illimité". Bebas Neue 17px ; mettre uniquement la partie "[Sport] Pro" dans un <em> (gradient rose→violet). JAMAIS "PacTennPro" ni sans espaces.
+  - Sous-titre : "Pronostics experts · Analyses live · " puis "Dès 9.99€/mois" en cyan (Rajdhani/Orbitron 10px).
+  - Bouton : "🚀 Je m'abonne" — fond linear-gradient(135deg,#39ff14,#00c896), couleur #000, Orbitron 9px bold, padding 7px 13px, border-radius 8px.
 
-### COLONNE DROITE (flex:1)
-padding:16px 20px 14px 10px; display:flex; flex-direction:column; gap:9px;
+G. Footer : div avec height 3px, background linear-gradient(90deg,#ff2d7a,#c850c0,#00e5ff). Class recommandée : card-footer-gradient.
+
+Structure HTML à reproduire (mêmes noms de classes que la référence stratedge_card_live.html) :
+- card-wrapper > card > card-body (display:flex) > mascotte-section (210px) + content-section (flex:1).
+- Dans content-section, dans l'ordre : card-header (logo-img + sport-badge) ; datetime-block (datetime-day, datetime-time) ; match-block (match-top-row avec live-badge et live-dot, match-players avec player-info et vs-badge) ; prono-block (prono-left avec prono-label et prono-text em, cote-block avec cote-label et cote-pill contenant cote-value) ; confidence-section (confidence-label, confidence-bar-bg avec confidence-bar-fill en width:INDICE%, confidence-score) ; promo-banner (promo-text-block : promo-eyebrow, promo-main avec em, promo-sub avec span ; promo-cta) ; card-footer-gradient.
+- Date/heure : deux lignes (jour puis heure), pas une seule barre. Pas de barre englobante autour de la date et l'heure.
 
 ---
 
-### A. HEADER (flex row, space-between, align-items center)
-- Gauche : logo StratEdge (height:26px)
-- Droite : badge sport (voir ci-dessus)
+## 🔒 CARD LOCKED
 
-### B. DATE / HEURE (text-align:center)
-- Jour : Rajdhani 12px, color:rgba(255,255,255,0.4), text-transform:uppercase, letter-spacing:3px
-- Heure : Orbitron 34px, font-weight:900
-  background:linear-gradient(to right,#ffffff,#00e5ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-  text-shadow: 0 0 30px rgba(0,229,255,0.3)
-  (⚠️ pour le text-shadow avec gradient text, utiliser un filter:drop-shadow sur un wrapper)
-- ⚠️ HEURE = fuseau EUROPE/PARIS. Jamais l'heure locale du lieu du match.
-
-### C. MATCH BLOCK
-- Container : background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:10px 12px; position:relative
-- Barre gauche : position:absolute; left:0; top:0; bottom:0; width:3px;
-  background:linear-gradient(to bottom,#ff2d7a,#00e5ff); border-radius:3px 0 0 3px
-- Badge LIVE BET (en haut du bloc) :
-  - Point rouge clignotant : display:inline-block; width:7px; height:7px; background:#ff0040; border-radius:50%; animation:blink 1s infinite; margin-right:5px
-  - Texte : Orbitron 10px, #ff2d7a, uppercase, letter-spacing:2px
-  - @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
-- Joueur principal : drapeau emoji + nom Bebas Neue 22px, color:white, text-shadow:0 0 10px rgba(0,229,255,0.2)
-- VS : Orbitron 12px bold, background:linear-gradient(to right,#ff2d7a,#00e5ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin:2px 0
-- Adversaire : drapeau emoji + nom Bebas Neue 22px, color:rgba(255,255,255,0.5)
-- Compétition / surface : Rajdhani 12px, color:rgba(255,255,255,0.35), margin-top:4px
-
-### D. PRONO + COTE (flex row, gap:12px, align-items:flex-end)
-**Bloc gauche (flex:1) :**
-- Label : "PRONOSTIC" — Orbitron 9px, rgba(255,255,255,0.3), uppercase, letter-spacing:2px
-- Texte prono : Rajdhani 16px, font-weight:700
-  background:linear-gradient(to right,#ff2d7a,#00e5ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent
-
-**Bloc droit (cote) :**
-- Label : "COTE" — Orbitron 9px, rgba(255,255,255,0.3), uppercase, letter-spacing:2px
-- Pill : position:relative; overflow:hidden
-  background:linear-gradient(135deg,#ff2d7a,#c850c0,#4158d0); border-radius:12px; padding:8px 20px
-  box-shadow:0 4px 15px rgba(255,45,122,0.3)
-- Brillance (pseudo ::before) : content:''; position:absolute; top:0; left:0; right:0; height:50%;
-  background:linear-gradient(to bottom,rgba(255,255,255,0.13),transparent); border-radius:12px 12px 0 0
-- Valeur : Orbitron 22px, font-weight:700, color:white, text-shadow:0 0 10px rgba(255,255,255,0.3); position:relative; z-index:1
-
-### E. CONFIANCE (flex row, align-items:center, gap:8px)
-- Label : "CONFIANCE" — Orbitron 10px, rgba(255,255,255,0.3), uppercase, letter-spacing:1px, min-width:fit-content
-- Barre (flex:1) :
-  height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden
-  Inner div : height:100%; width:INDICE%; border-radius:3px;
-  background:linear-gradient(to right,#ff2d7a,#ff6b35,#00e5ff); animation:pulse 2s ease-in-out infinite
-  @keyframes pulse { 0%,100%{opacity:0.85} 50%{opacity:1} }
-- Score : Orbitron 13px, font-weight:700, color:#00e5ff, text-shadow:0 0 8px rgba(0,229,255,0.4)
-  Afficher "INDICE/100"
-
-### F. BANDEAU PROMO
-- Container : background:linear-gradient(135deg,rgba(57,255,20,0.07),rgba(0,229,255,0.05));
-  border:1px solid rgba(57,255,20,0.25); border-radius:10px; padding:10px 14px; position:relative
-- Barre gauche 3px : gradient #39ff14 → #00e5ff (même technique que match block)
-- Layout intérieur flex row (info gauche + bouton droite) :
-  **Gauche :**
-  - Eyebrow : "[Emoji sport] Offre exclusive" — Orbitron 9px, #39ff14, letter-spacing:1px
-  - Titre : "Pack [Sport] Pro — Accès illimité" — Bebas Neue 17px
-    "[Sport] Pro" en gradient : background:linear-gradient(to right,#ff2d7a,#c850c0); -webkit-background-clip:text; -webkit-text-fill-color:transparent
-  - Prix : "Dès 9.99€/mois" — Orbitron 11px, #00e5ff
-  **Droite :**
-  - Bouton "🚀 Je m'abonne" :
-    background:linear-gradient(135deg,#39ff14,#00c896); color:#000; font-family:Orbitron,monospace;
-    font-size:9px; font-weight:700; padding:8px 16px; border-radius:8px; text-transform:uppercase;
-    box-shadow:0 0 15px rgba(57,255,20,0.3); animation:glowPulse 2s ease-in-out infinite
-    @keyframes glowPulse { 0%,100%{box-shadow:0 0 15px rgba(57,255,20,0.3)} 50%{box-shadow:0 0 25px rgba(57,255,20,0.5)} }
-
-### G. FOOTER
-- height:3px; background:linear-gradient(to right,#ff2d7a,#c850c0,#00e5ff)
-- Placé tout en bas de la card, APRÈS la colonne droite (en dehors du flex row)
-- ⚠️ Le screenshot doit être croppé juste après ce trait (pas de bande noire en dessous)
+Même structure. Éléments visibles : header, date/heure, match block, COTE (même pill), confiance (barre + score), bandeau promo, footer.
+À la place du bloc pronostic : div centré avec 🔒 (font-size 50px), puis "CONTENU RÉSERVÉ" Orbitron 11px #ff2d7a opacity 0.7, puis bouton "🔓 Reçois le bet sur stratedgepronos.fr" background linear-gradient(135deg,#FF2D78,#d6245f), color white, Orbitron 11px bold, padding 10px 28px, border-radius 10px.
 
 ---
 
-## 🔒 STRUCTURE CARD LOCKED
+## ⚠️ RAPPELS
 
-Même layout (mascotte gauche + colonne droite), même largeur 720px, même fond, même bordure animée.
-
-### ✅ ÉLÉMENTS IDENTIQUES (visibles) :
-- Header (logo + badge sport)
-- Date / heure
-- Match block complet (badge LIVE BET, noms joueurs, drapeaux, compétition)
-- ⚠️ COTE VISIBLE — Même pill gradient, même taille (Orbitron 22px)
-- Barre confiance + score confiance (VISIBLE)
-- Bandeau promo
-- Footer trait gradient
-
-### 🔒 ÉLÉMENTS MODIFIÉS :
-**Zone pronostic → remplacée par :**
-- Cadenas centré :
-  <div style='text-align:center'>
-    <div style='font-size:50px;line-height:1;margin:6px 0'>🔒</div>
-  </div>
-- Texte "CONTENU RÉSERVÉ" sous le cadenas :
-  Orbitron 11px, #ff2d7a, opacity:0.7, letter-spacing:2px, text-align:center
-
-**Sous la cote, ajouter :**
-- Bouton CTA :
-  <div style='text-align:center;margin:8px 0'>
-    <div style='background:linear-gradient(135deg,#FF2D78,#d6245f);color:white;padding:10px 28px;border-radius:10px;font-family:Orbitron,monospace;font-size:11px;font-weight:700;display:inline-block;letter-spacing:1px'>🔓 Reçois le bet sur stratedgepronos.fr</div>
-  </div>
-
----
-
-## ⚠️ RAPPELS CRITIQUES
-
-1. SORTIE = JSON pur : {"html_normal":"...","html_locked":"..."}. Rien d'autre.
-2. HTML : apostrophes UNIQUEMENT dans les attributs. JAMAIS de guillemets doubles.
-3. Card NORMALE : pronostic visible + cote visible (Orbitron 22px pill gradient).
-4. Card LOCKED : pronostic remplacé par 🔒 + "CONTENU RÉSERVÉ". COTE RESTE VISIBLE. Confiance RESTE VISIBLE (barre + score).
-5. Les 2 cards font EXACTEMENT 720px. Même structure, mêmes proportions.
-6. Heure = fuseau Europe/Paris. JAMAIS l'heure locale du match.
-7. Tout en français.
-8. Drapeaux emoji obligatoires à côté des noms (tu connais les nationalités).
-9. Badge sport en haut à droite avec couleur selon le sport.
-10. Mascotte verte (tennis) ou rose (autres) selon le sport.
-11. PAS DE STATS. PAS DE TABLEAU. PAS D'ANALYSE. Juste la card visuelle.
-12. Footer = trait 3px gradient. Cropper juste après (pas de bande noire).
-13. Chaque HTML est COMPLET et AUTONOME (<!DOCTYPE html>, <style> avec @import fonts, etc.).
+1. Sortie = JSON pur {"html_normal":"...","html_locked":"..."}. Rien d'autre.
+2. Attributs HTML : apostrophes uniquement (style='...').
+3. 720px partout. Mascotte à GAUCHE, contenu à DROITE.
+4. Mascotte : Tennis = verte (mascotte-tennis.jpg). Autres sports = rose (mascotte.png, comme page d'accueil).
+5. Badge sport (coin haut droit) : afficher le sport de la demande (TENNIS, FOOTBALL, etc.). Tennis = vert #39ff14. Tous les autres = rose néon #ff2d7a.
+6. Heure = Europe/Paris. Drapeaux emoji obligatoires. Pas de stats, pas d'analyse.
+7. Card locked : cote ET confiance VISIBLES ; prono remplacé par cadenas + CONTENU RÉSERVÉ + CTA.
+8. Chaque HTML complet et autonome (DOCTYPE, head, body, style avec @import fonts).
 PROMPT
 );
 
@@ -518,12 +420,8 @@ Le card-inner est un flex row : colonne mascotte (210px) + colonne contenu (flex
 - Halo bas : pseudo ::before, radial-gradient(ellipse at center bottom, rgba(180,0,100,0.18), transparent 70%)
 - Fondu droit en pseudo ::after :
   content:''; position:absolute; top:0; right:0; width:55px; height:100%;
-  background:linear-gradient(to right, transparent, #0e0b12);
-- Hauteur auto via JS :
-  <script>
-  function adjustMascotte(){var i=document.getElementById('card-inner'),c=document.getElementById('mascotte-col');if(i&&c){c.style.height=i.offsetHeight+'px'}}
-  window.addEventListener('load',adjustMascotte);window.addEventListener('resize',adjustMascotte);
-  </script>
+  background:linear-gradient(to right, transparent, #111018); z-index:3
+- Référence : stratedge_funbet_v5.html. Utiliser les mêmes classes (card-inner, mascotte-col, content-col, funbet-badge, datetime-block, section-title, bets-container, bet-line, bet-num, bet-content, bet-match, bet-prono, bet-cote-mini, confidence-col, conf-header, conf-label, conf-score, conf-bar-bg, conf-bar-fill, cote-totale-block, total-pill, total-cote, promo-block). Barres gauche bet-line : nth-child(1)::before #ff2d7a→#c850c0 ; nth-child(2)::before #c850c0→#4158d0 ; nth-child(3)::before #4158d0→#00e5ff ; puis cycle.
 
 ### COLONNE DROITE (flex:1)
 padding:16px 20px 16px 10px; display:flex; flex-direction:column; gap:9px;
