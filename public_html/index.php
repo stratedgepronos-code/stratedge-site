@@ -82,7 +82,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .stat-value { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; font-weight: 900; color: var(--neon-green); }
     .stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
     .hero-btns { display: flex; gap: 1rem; }
-    .hero-visual { position: absolute; bottom: 0; top: auto; right: -12%; left: auto; transform: scale(0.88); transform-origin: bottom right; z-index: 2; pointer-events: none; width: 900px; height: 1050px; }
+    .hero-visual { position: absolute; bottom: 0; top: auto; right: 2%; left: auto; transform: scale(0.96); transform-origin: bottom right; z-index: 2; pointer-events: none; width: 900px; height: 1050px; }
     .mascot-container { position: relative; width: 900px; height: 1050px; }
     .mascot-ring { position: absolute; top: -60px; left: -60px; right: -60px; bottom: -60px; border-radius: 50%; border: 2px solid rgba(255,45,120,0.2); animation: ring-rotate 20s linear infinite; }
     .mascot-ring::before { content: ''; position: absolute; top: -7px; left: 50%; width: 14px; height: 14px; background: var(--neon-green); border-radius: 50%; box-shadow: var(--glow-green); }
@@ -547,11 +547,11 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     }
     @media (min-width: 1600px) {
       .mascot-container { width: 1050px; height: 1200px; }
-      .mascot-img { width: 1050px !important; } .hero-visual { right: -10%; bottom: 0; top: auto; transform: scale(0.75); transform-origin: bottom right; }
+      .mascot-img { width: 1050px !important; } .hero-visual { right: 2%; bottom: 0; top: auto; transform: scale(0.9); transform-origin: bottom right; }
     }
     @media (max-width: 1200px) {
       .mascot-container { width: 700px; height: 820px; }
-      .mascot-img { width: 700px !important; } .hero-visual { right: -15%; bottom: 0; top: auto; transform: scale(0.88); transform-origin: bottom right; }
+      .mascot-img { width: 700px !important; } .hero-visual { right: 0; bottom: 0; top: auto; transform: scale(0.94); transform-origin: bottom right; }
     }
   </style>
   <!-- PWA -->
