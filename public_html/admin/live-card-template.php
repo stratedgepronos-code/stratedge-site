@@ -127,8 +127,8 @@ function sportConfig($sport) {
             'emoji'        => '🎾',
             'label'        => 'Tennis',
             'pack'         => 'Tennis Pro',
-            'mascotte_url'   => 'https://stratedgepronos.fr/assets/images/mascotte-tennis.png',
-            // Tennis : fond noir pur → mix-blend-mode:screen rend le fond invisible
+            'mascotte_url'   => 'https://stratedgepronos.fr/assets/images/mascotte_tennis.png',
+            // Tennis : fond noir pur → mix-blend-mode:screen rend le fond invisible (mascotte transparente comme Live foot)
             'mascotte_style' => "mix-blend-mode:screen; opacity:0.35;",
             'mascotte_locked'=> "mix-blend-mode:screen; opacity:0.18;",
             // Badge vert neon
@@ -142,8 +142,8 @@ function sportConfig($sport) {
             'time_shadow'  => '0 0 30px rgba(57,255,20,0.5)',
             // Glow extérieur de la card
             'glow_gradient'=> 'linear-gradient(135deg,#39ff14,#00e5ff,#39ff14)',
-            // Barre confiance
-            'conf_gradient'=> 'linear-gradient(90deg,#39ff14,#00e5ff)',
+            // Barre confiance (réf. visuelle : cyan → bleu)
+            'conf_gradient'=> 'linear-gradient(90deg,#00FFFF,#007BFF)',
             'conf_color'   => '#39ff14',
             'conf_shadow'  => '0 0 10px rgba(57,255,20,0.6)',
             // Promo
@@ -191,7 +191,9 @@ function sportConfig($sport) {
 //  mascotte en watermark centré transparent
 // ════════════════════════════════════════════════════════════
 function generateLiveCards($d) {
-    $sc     = sportConfig($d['sport'] ?? 'football');
+    $sport  = strtolower(trim($d['sport'] ?? 'football'));
+    $sc     = sportConfig($sport);
+    $is_tennis = ($sport === 'tennis');
     $date   = htmlspecialchars($d['date_fr']    ?? '', ENT_QUOTES, 'UTF-8');
     $time   = htmlspecialchars($d['time_fr']    ?? '00:00', ENT_QUOTES, 'UTF-8');
     $p1     = htmlspecialchars($d['player1']    ?? 'Joueur 1', ENT_QUOTES, 'UTF-8');
@@ -308,6 +310,34 @@ body { background:#0a0a0a; margin:0; padding:0; width:720px; font-family:'Orbitr
 
 .card-footer-gradient { height:3px; background:{$sc['footer_gradient']}; position:relative; z-index:2; }
 CSS;
+    // Overrides Tennis Live uniquement (réf. visuelle : fond #0A0A0A, cote rose→violet, offre #1A361A)
+    if ($is_tennis) {
+        $css .= <<<TENNIS
+
+/* Tennis Live — couleurs et offre alignées sur la maquette */
+.card-wrapper.tennis .card { background:#0a0a0a; border-color:rgba(57,255,20,0.2); }
+.card-wrapper.tennis .match-left-bar { background:linear-gradient(to bottom,#E7337B,#7D41E7); }
+.card-wrapper.tennis .live-badge { color:#39ff14; }
+.card-wrapper.tennis .live-dot { background:#39ff14; box-shadow:0 0 6px #39ff14; }
+.card-wrapper.tennis .vs-badge { color:rgba(255,255,255,0.5); }
+.card-wrapper.tennis .prono-text { color:#fff; }
+.card-wrapper.tennis .cote-pill { background:linear-gradient(135deg,#E7337B 0%,#7D41E7 100%); box-shadow:0 4px 20px rgba(231,51,123,0.5),inset 0 0 0 1px rgba(255,255,255,0.12); }
+.card-wrapper.tennis .promo-banner { background:#1A361A; border:1px solid rgba(57,255,20,0.35); }
+.card-wrapper.tennis .promo-eyebrow { color:#39ff14; }
+.card-wrapper.tennis .promo-cta { background:linear-gradient(135deg,#39ff14,#00c896); color:#000; box-shadow:0 0 14px rgba(57,255,20,0.5); }
+.card-wrapper.tennis .locked-reserved { color:#39ff14; }
+.card-wrapper.tennis .locked-cta-btn { background:linear-gradient(135deg,#39ff14,#00c896); color:#000; }
+.card-wrapper.tennis .promo-option { font-size:7px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-top:4px; }
+.card-wrapper.tennis .promo-option .promo-main-hl { font-size:14px; color:#fff; font-family:'Bebas Neue',cursive; }
+TENNIS;
+    }
+
+    $wrapper_class = $is_tennis ? 'card-wrapper tennis' : 'card-wrapper';
+    $promo_eyebrow = $is_tennis ? 'OFFRE EXCLUSIVE' : $sc['emoji'] . ' Offre exclusive';
+    $promo_main   = $is_tennis ? 'PACK TENNIS PRO - ACCÈS ILLIMITÉ' : "Pack <span class='promo-main-hl'>{$sc['pack']}</span> — Accès illimité";
+    $promo_sub    = $is_tennis ? 'Pronostics experts - Analyses live - Dès 9.99€/mois' : "Pronostics experts · Analyses live · <span>Dès 9.99€/mois</span>";
+    $promo_extra  = $is_tennis ? "<div class='promo-option'>EN OPTION DÈS <span class='promo-main-hl'>9.99€/mois</span></div>" : '';
+    $promo_cta_text = $is_tennis ? "JE M'ABONNE →" : "🚀 Je m'abonne";
 
     // CARD NORMALE
     $html_normal = <<<HTML
@@ -319,7 +349,7 @@ CSS;
 <style>{$css}</style>
 </head>
 <body>
-<div class='card-wrapper'>
+<div class='{$wrapper_class}'>
   <div class='border-glow'></div>
   <div class='card'>
     <div class='mascotte-watermark'>
@@ -362,11 +392,12 @@ CSS;
       <div class='promo-banner'>
         <div class='promo-left-bar'></div>
         <div class='promo-text-block'>
-          <div class='promo-eyebrow'>{$sc['emoji']} Offre exclusive</div>
-          <div class='promo-main'>Pack <span class='promo-main-hl'>{$sc['pack']}</span> — Accès illimité</div>
-          <div class='promo-sub'>Pronostics experts · Analyses live · <span>Dès 9.99€/mois</span></div>
+          <div class='promo-eyebrow'>{$promo_eyebrow}</div>
+          <div class='promo-main'>{$promo_main}</div>
+          <div class='promo-sub'>{$promo_sub}</div>
+          {$promo_extra}
         </div>
-        <div class='promo-cta'>🚀 Je m'abonne</div>
+        <div class='promo-cta'>{$promo_cta_text}</div>
       </div>
     </div>
     <div class='card-footer-gradient'></div>
@@ -385,7 +416,7 @@ HTML;
 <style>{$css}</style>
 </head>
 <body>
-<div class='card-wrapper'>
+<div class='{$wrapper_class}'>
   <div class='border-glow'></div>
   <div class='card'>
     <div class='mascotte-watermark'>
@@ -427,11 +458,12 @@ HTML;
       <div class='promo-banner'>
         <div class='promo-left-bar'></div>
         <div class='promo-text-block'>
-          <div class='promo-eyebrow'>{$sc['emoji']} Offre exclusive</div>
-          <div class='promo-main'>Pack <span class='promo-main-hl'>{$sc['pack']}</span> — Accès illimité</div>
-          <div class='promo-sub'>Pronostics experts · Analyses live · <span>Dès 9.99€/mois</span></div>
+          <div class='promo-eyebrow'>{$promo_eyebrow}</div>
+          <div class='promo-main'>{$promo_main}</div>
+          <div class='promo-sub'>{$promo_sub}</div>
+          {$promo_extra}
         </div>
-        <div class='promo-cta'>🚀 Je m'abonne</div>
+        <div class='promo-cta'>{$promo_cta_text}</div>
       </div>
     </div>
     <div class='card-footer-gradient'></div>
