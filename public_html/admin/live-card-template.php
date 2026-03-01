@@ -1,7 +1,7 @@
 <?php
 // ============================================================
 // STRATEDGE — live-card-template.php V8
-// V8 : fonts embarquées en base64 (fix CORS srcdoc null origin) — mascotte tennis PNG + screen
+// V8 : fonts embarquées en base64 (fix CORS srcdoc null origin)
 // V7 : nouveau design watermark (sans colonne mascotte)
 //      mascotte centrée transparente (mix-blend-mode:screen)
 //      + generateFunCards() ajouté (même approche template)
@@ -125,10 +125,10 @@ function sportConfig($sport) {
             'emoji'        => '🎾',
             'label'        => 'Tennis',
             'pack'         => 'Tennis Pro',
-            'mascotte_url'   => 'https://stratedgepronos.fr/assets/images/mascotte-tennis.png?v=2',
-            // Tennis : mix-blend-mode:screen pour que le fond noir du fichier disparaisse sur la card noire
-            'mascotte_style' => "opacity:0.35; mix-blend-mode:screen; background:none !important;",
-            'mascotte_locked'=> "opacity:0.18; mix-blend-mode:screen; background:none !important;",
+            'mascotte_url'   => 'https://stratedgepronos.fr/assets/images/mascotte-tennis.png',
+            // Tennis : PNG avec fond transparent (opacity seule)
+            'mascotte_style' => "opacity:0.35; background:none !important;",
+            'mascotte_locked'=> "opacity:0.18; background:none !important;",
             // Badge vert neon
             'badge_bg'     => 'rgba(57,255,20,0.12)',
             'badge_border' => 'rgba(57,255,20,0.6)',
@@ -313,9 +313,9 @@ CSS;
         $css .= <<<TENNIS
 
 /* Tennis Live — couleurs et offre alignées sur la maquette */
-.card-wrapper.tennis .card { background:#000; border-color:rgba(57,255,20,0.2); }
+.card-wrapper.tennis .card { background:#0a0a0a; border-color:rgba(57,255,20,0.2); }
 .card-wrapper.tennis .mascotte-watermark { background:transparent !important; }
-.card-wrapper.tennis .mascotte-watermark img { background:none !important; box-shadow:none !important; mix-blend-mode:screen !important; }
+.card-wrapper.tennis .mascotte-watermark img { background:none !important; box-shadow:none !important; }
 .card-wrapper.tennis .match-left-bar { background:linear-gradient(to bottom,#E7337B,#7D41E7); }
 .card-wrapper.tennis .live-badge { color:#39ff14; }
 .card-wrapper.tennis .live-dot { background:#39ff14; box-shadow:0 0 6px #39ff14; }
