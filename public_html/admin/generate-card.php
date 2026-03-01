@@ -187,7 +187,7 @@ if ($typeBet === 'Live') {
         ]);
 
         debugLog("LIVE OK! normal=" . strlen($cards['html_normal']) . " locked=" . strlen($cards['html_locked']));
-        echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Live', 'card_width' => 720]);
+        echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Live', 'card_width' => 1080]);
     } catch (Throwable $e) {
         debugLog("LIVE EXCEPTION: " . $e->getMessage());
         http_response_code(500);
@@ -255,7 +255,7 @@ if ($typeBet === 'Fun') {
     ]);
 
     debugLog("FUN OK! normal=" . strlen($cards['html_normal']) . " locked=" . strlen($cards['html_locked']));
-    echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Fun', 'card_width' => 760]);
+    echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Fun', 'card_width' => 1080]);
     exit;
 }
 

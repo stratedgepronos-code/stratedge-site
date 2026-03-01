@@ -1,6 +1,7 @@
 <?php
 // ============================================================
-// STRATEDGE — live-card-template.php V9
+// STRATEDGE — live-card-template.php V10
+// V10 : résolution cartes 1080px (Live + Fun)
 // V9 : marqueur version pour vérif FTP + mascotte tennis / VS dégradé
 // V8 : fonts embarquées en base64 (fix CORS srcdoc null origin)
 // V7 : nouveau design watermark (sans colonne mascotte)
@@ -248,9 +249,9 @@ function generateLiveCards($d) {
     $css = $embeddedFonts . <<<CSS
 
 * { margin:0; padding:0; box-sizing:border-box; }
-body { background:#0a0a0a; margin:0; padding:0; width:720px; font-family:'Orbitron',sans-serif; }
+body { background:#0a0a0a; margin:0; padding:0; width:1080px; font-family:'Orbitron',sans-serif; }
 
-.card-wrapper { position:relative; width:720px; }
+.card-wrapper { position:relative; width:1080px; }
 
 /* Glow extérieur — z-index:-1 pour ne jamais créer de voile */
 .border-glow {
@@ -262,7 +263,7 @@ body { background:#0a0a0a; margin:0; padding:0; width:720px; font-family:'Orbitr
 @keyframes gradientShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
 
 .card {
-  position:relative; z-index:1; width:720px; background:#0d0d0f;
+  position:relative; z-index:1; width:1080px; background:#0d0d0f;
   border-radius:16px; overflow:hidden; display:flex; flex-direction:column;
   border:1px solid rgba(255,255,255,0.05); isolation:isolate;
 }
@@ -279,74 +280,74 @@ body { background:#0a0a0a; margin:0; padding:0; width:720px; font-family:'Orbitr
 }
 
 /* Contenu par-dessus le watermark */
-.card-body { position:relative; z-index:2; padding:20px 24px 16px; display:flex; flex-direction:column; gap:10px; }
+.card-body { position:relative; z-index:2; padding:28px 36px 22px; display:flex; flex-direction:column; gap:14px; }
 
 .card-header { display:flex; align-items:center; justify-content:space-between; }
-.logo-img { height:26px; object-fit:contain; }
+.logo-img { height:38px; object-fit:contain; }
 .sport-badge {
-  display:flex; align-items:center; gap:5px;
+  display:flex; align-items:center; gap:6px;
   background:{$sc['badge_bg']}; border:1.5px solid {$sc['badge_border']};
-  border-radius:20px; padding:3px 12px;
-  font-family:'Orbitron',sans-serif; font-size:10px; font-weight:700;
+  border-radius:20px; padding:4px 16px;
+  font-family:'Orbitron',sans-serif; font-size:14px; font-weight:700;
   color:{$sc['badge_color']}; letter-spacing:1px; text-transform:uppercase;
   box-shadow:{$sc['badge_shadow']}; text-shadow:{$sc['badge_tshadow']};
 }
 
-.datetime-block { text-align:center; padding:2px 0; }
-.datetime-day { font-family:'Orbitron',sans-serif; font-size:12px; font-weight:600; color:rgba(255,255,255,0.35); text-transform:uppercase; letter-spacing:3px; margin-bottom:2px; }
-.datetime-time { font-family:'Orbitron',sans-serif; font-size:38px; font-weight:900; letter-spacing:4px; line-height:1; color:{$sc['time_color']}; text-shadow:{$sc['time_shadow']}; }
+.datetime-block { text-align:center; padding:3px 0; }
+.datetime-day { font-family:'Orbitron',sans-serif; font-size:16px; font-weight:600; color:rgba(255,255,255,0.35); text-transform:uppercase; letter-spacing:3px; margin-bottom:3px; }
+.datetime-time { font-family:'Orbitron',sans-serif; font-size:54px; font-weight:900; letter-spacing:4px; line-height:1; color:{$sc['time_color']}; text-shadow:{$sc['time_shadow']}; }
 
-.match-block { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:10px 16px; position:relative; }
-.match-left-bar { position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(to bottom,#ff2d7a,#00e5ff); border-radius:3px 0 0 3px; }
-.live-badge { display:flex; align-items:center; gap:5px; justify-content:center; margin-bottom:6px; font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; color:#ff2d7a; letter-spacing:2px; text-transform:uppercase; }
-.live-dot { width:7px; height:7px; border-radius:50%; background:#ff2d7a; box-shadow:0 0 6px #ff2d7a; animation:blink 1.2s ease-in-out infinite; }
+.match-block { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:14px 22px; position:relative; }
+.match-left-bar { position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(to bottom,#ff2d7a,#00e5ff); border-radius:4px 0 0 4px; }
+.live-badge { display:flex; align-items:center; gap:6px; justify-content:center; margin-bottom:8px; font-family:'Orbitron',sans-serif; font-size:12px; font-weight:700; color:#ff2d7a; letter-spacing:2px; text-transform:uppercase; }
+.live-dot { width:10px; height:10px; border-radius:50%; background:#ff2d7a; box-shadow:0 0 8px #ff2d7a; animation:blink 1.2s ease-in-out infinite; }
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
-.match-players { display:flex; align-items:center; justify-content:center; gap:14px; }
-.player-info { display:flex; align-items:center; gap:6px; }
-.player { font-family:'Bebas Neue',cursive; font-size:23px; letter-spacing:1px; line-height:1; }
+.match-players { display:flex; align-items:center; justify-content:center; gap:20px; }
+.player-info { display:flex; align-items:center; gap:8px; }
+.player { font-family:'Bebas Neue',cursive; font-size:32px; letter-spacing:1px; line-height:1; }
 .player.main { color:#fff; }
 .player.opponent { color:rgba(255,255,255,0.5); }
-.vs-badge { font-family:'Orbitron',sans-serif; font-size:12px; font-weight:900; color:#ff2d7a; }
-.match-comp { font-family:'Orbitron',sans-serif; font-size:8px; color:rgba(255,255,255,0.3); text-align:center; margin-top:5px; letter-spacing:1px; }
+.vs-badge { font-family:'Orbitron',sans-serif; font-size:16px; font-weight:900; color:#ff2d7a; }
+.match-comp { font-family:'Orbitron',sans-serif; font-size:11px; color:rgba(255,255,255,0.3); text-align:center; margin-top:6px; letter-spacing:1px; }
 
-.prono-block { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:10px; padding:10px 16px; display:flex; align-items:center; justify-content:space-between; gap:14px; }
+.prono-block { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:14px 22px; display:flex; align-items:center; justify-content:space-between; gap:20px; }
 .prono-left { flex:1; }
-.prono-label { font-size:9px; color:rgba(255,255,255,0.28); text-transform:uppercase; letter-spacing:2px; margin-bottom:4px; font-weight:600; }
+.prono-label { font-size:12px; color:rgba(255,255,255,0.28); text-transform:uppercase; letter-spacing:2px; margin-bottom:5px; font-weight:600; }
 .prono-text {
-  font-family:'Orbitron',sans-serif; font-weight:700; font-size:13px;
+  font-family:'Orbitron',sans-serif; font-weight:700; font-size:18px;
   color: #ff2d7a;
 }
 .cote-block { text-align:center; flex-shrink:0; }
-.cote-label { font-size:9px; color:rgba(255,255,255,0.28); text-transform:uppercase; letter-spacing:2px; margin-bottom:5px; font-weight:600; }
-.cote-pill { position:relative; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#ff2d7a 0%,#c850c0 45%,#4158d0 100%); border-radius:12px; padding:9px 22px; min-width:90px; box-shadow:0 4px 20px rgba(255,45,122,0.5),inset 0 0 0 1px rgba(255,255,255,0.12); }
-.cote-pill-shine { position:absolute; top:0; left:0; right:0; height:50%; background:rgba(255,255,255,0.13); border-radius:12px 12px 0 0; }
-.cote-value { font-family:'Orbitron',sans-serif; font-size:24px; font-weight:900; color:#fff; position:relative; z-index:1; }
+.cote-label { font-size:12px; color:rgba(255,255,255,0.28); text-transform:uppercase; letter-spacing:2px; margin-bottom:6px; font-weight:600; }
+.cote-pill { position:relative; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#ff2d7a 0%,#c850c0 45%,#4158d0 100%); border-radius:14px; padding:12px 30px; min-width:120px; box-shadow:0 4px 20px rgba(255,45,122,0.5),inset 0 0 0 1px rgba(255,255,255,0.12); }
+.cote-pill-shine { position:absolute; top:0; left:0; right:0; height:50%; background:rgba(255,255,255,0.13); border-radius:14px 14px 0 0; }
+.cote-value { font-family:'Orbitron',sans-serif; font-size:34px; font-weight:900; color:#fff; position:relative; z-index:1; }
 
-.confidence-section { display:flex; align-items:center; gap:10px; }
-.confidence-label { font-size:10px; color:rgba(255,255,255,0.32); text-transform:uppercase; letter-spacing:1.5px; font-weight:600; white-space:nowrap; flex-shrink:0; }
-.confidence-bar-bg { flex:1; height:6px; background:rgba(255,255,255,0.06); border-radius:10px; overflow:hidden; }
+.confidence-section { display:flex; align-items:center; gap:14px; }
+.confidence-label { font-size:13px; color:rgba(255,255,255,0.32); text-transform:uppercase; letter-spacing:1.5px; font-weight:600; white-space:nowrap; flex-shrink:0; }
+.confidence-bar-bg { flex:1; height:8px; background:rgba(255,255,255,0.06); border-radius:10px; overflow:hidden; }
 .confidence-bar-fill { height:100%; width:{$conf}%; background:{$sc['conf_gradient']}; border-radius:10px; animation:barPulse 2s ease-in-out infinite; }
 @keyframes barPulse { 0%,100%{opacity:1} 50%{opacity:0.8} }
-.confidence-score { font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; color:{$sc['conf_color']}; flex-shrink:0; text-shadow:{$sc['conf_shadow']}; }
+.confidence-score { font-family:'Orbitron',sans-serif; font-size:17px; font-weight:700; color:{$sc['conf_color']}; flex-shrink:0; text-shadow:{$sc['conf_shadow']}; }
 
-.promo-banner { background:rgba(14,22,14,0.95); border:1px solid rgba(57,255,20,0.18); border-radius:10px; padding:9px 12px; position:relative; display:flex; align-items:center; justify-content:space-between; gap:10px; }
-.promo-left-bar { position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(to bottom,#39ff14,#00e5ff); border-radius:3px 0 0 3px; }
-.promo-text-block { flex:1; padding-left:8px; display:flex; flex-direction:column; gap:2px; }
-.promo-eyebrow { font-size:8px; color:#39ff14; text-transform:uppercase; letter-spacing:2px; font-weight:700; font-family:'Orbitron',sans-serif; }
-.promo-main { font-family:'Bebas Neue',cursive; font-size:14px; letter-spacing:0.8px; color:#fff; }
+.promo-banner { background:rgba(14,22,14,0.95); border:1px solid rgba(57,255,20,0.18); border-radius:14px; padding:14px 18px; position:relative; display:flex; align-items:center; justify-content:space-between; gap:14px; }
+.promo-left-bar { position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(to bottom,#39ff14,#00e5ff); border-radius:4px 0 0 4px; }
+.promo-text-block { flex:1; padding-left:10px; display:flex; flex-direction:column; gap:3px; }
+.promo-eyebrow { font-size:11px; color:#39ff14; text-transform:uppercase; letter-spacing:2px; font-weight:700; font-family:'Orbitron',sans-serif; }
+.promo-main { font-family:'Bebas Neue',cursive; font-size:20px; letter-spacing:0.8px; color:#fff; }
 .promo-main-hl { color:{$sc['promo_price_color']}; }
-.promo-sub { font-size:7px; color:rgba(255,255,255,0.35); font-weight:500; font-family:'Orbitron',sans-serif; }
+.promo-sub { font-size:10px; color:rgba(255,255,255,0.35); font-weight:500; font-family:'Orbitron',sans-serif; }
 .promo-sub span { color:{$sc['promo_price_color']}; font-weight:700; }
-.promo-cta { display:inline-flex; align-items:center; gap:4px; background:linear-gradient(135deg,#39ff14,#00c896); color:#000; font-family:'Orbitron',sans-serif; font-size:8px; font-weight:900; letter-spacing:0.8px; text-transform:uppercase; padding:7px 12px; border-radius:8px; white-space:nowrap; box-shadow:0 0 14px rgba(57,255,20,0.4); }
+.promo-cta { display:inline-flex; align-items:center; gap:5px; background:linear-gradient(135deg,#39ff14,#00c896); color:#000; font-family:'Orbitron',sans-serif; font-size:11px; font-weight:900; letter-spacing:0.8px; text-transform:uppercase; padding:10px 16px; border-radius:10px; white-space:nowrap; box-shadow:0 0 14px rgba(57,255,20,0.4); }
 
 /* Locked */
-.locked-zone { text-align:center; padding:10px 0; }
-.locked-padlock { font-size:42px; line-height:1; }
-.locked-reserved { font-family:'Orbitron',sans-serif; font-size:10px; color:#ff2d7a; opacity:0.7; letter-spacing:2px; margin:6px 0; }
-.locked-cta-btn { background:linear-gradient(135deg,#FF2D78,#d6245f); color:white; font-family:'Orbitron',sans-serif; font-size:10px; font-weight:700; padding:8px 24px; border-radius:10px; display:inline-block; letter-spacing:1px; }
-.locked-cote-center { text-align:center; margin:4px 0; }
+.locked-zone { text-align:center; padding:14px 0; }
+.locked-padlock { font-size:56px; line-height:1; }
+.locked-reserved { font-family:'Orbitron',sans-serif; font-size:14px; color:#ff2d7a; opacity:0.7; letter-spacing:2px; margin:8px 0; }
+.locked-cta-btn { background:linear-gradient(135deg,#FF2D78,#d6245f); color:white; font-family:'Orbitron',sans-serif; font-size:14px; font-weight:700; padding:10px 30px; border-radius:12px; display:inline-block; letter-spacing:1px; }
+.locked-cote-center { text-align:center; margin:6px 0; }
 
-.card-footer-gradient { height:3px; background:{$sc['footer_gradient']}; position:relative; z-index:2; }
+.card-footer-gradient { height:4px; background:{$sc['footer_gradient']}; position:relative; z-index:2; }
 CSS;
     // Overrides Tennis Live uniquement (réf. visuelle : fond #0A0A0A, cote rose→violet, offre #1A361A)
     if ($is_tennis) {
@@ -363,7 +364,7 @@ CSS;
 .card-wrapper.tennis .vs-badge { background:none !important; background-image:none !important; box-shadow:none !important; border:none !important; padding:0 !important; margin:0 !important; }
 .card-wrapper.tennis .vs-badge svg { display:block; }
 .card-wrapper.tennis .prono-block { background:linear-gradient(90deg,rgba(57,255,20,0.14),rgba(144,255,128,0.06)) !important; border-color:rgba(57,255,20,0.2); }
-.card-wrapper.tennis .prono-text { color:#fff; font-size:16px; }
+.card-wrapper.tennis .prono-text { color:#fff; font-size:20px; }
 .card-wrapper.tennis .cote-pill { background:linear-gradient(135deg,#E7337B 0%,#7D41E7 100%); box-shadow:0 4px 16px rgba(231,51,123,0.35); }
 .card-wrapper.tennis .cote-pill-shine { display:none !important; }
 .card-wrapper.tennis .cote-value { background:transparent !important; box-shadow:none !important; }
@@ -378,7 +379,7 @@ TENNIS;
         $css .= <<<TEAMSPORT
 
 /* Team sport (foot, NBA, hockey) — logos + dégradé rose néon → bleu néon sur prono et VS */
-.card-wrapper.team-sport .team-logo { height:18px; width:auto; max-width:28px; object-fit:contain; vertical-align:middle; }
+.card-wrapper.team-sport .team-logo { height:26px; width:auto; max-width:40px; object-fit:contain; vertical-align:middle; }
 .card-wrapper.team-sport .prono-text {
   background:linear-gradient(90deg,#E7337B 0%,#00e5ff 100%);
   -webkit-background-clip:text; background-clip:text;
@@ -421,7 +422,7 @@ TEAMSPORT;
 
     // Tennis : VS = SVG uniquement (dégradé sur le texte, zéro background)
     $vs_html = $is_tennis
-        ? "<span class='vs-badge' style='display:inline-block;width:42px;height:26px;background:none!important;border:none;padding:0;margin:0;line-height:0;vertical-align:middle;'><svg xmlns='http://www.w3.org/2000/svg' width='42' height='26' viewBox='0 0 42 26' style='display:block;'><defs><linearGradient id='vsg' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:#E7337B'/><stop offset='100%' style='stop-color:#00e5ff'/></linearGradient></defs><text x='21' y='21' text-anchor='middle' fill='url(#vsg)' font-family='Orbitron,sans-serif' font-size='20' font-weight='900'>VS</text></svg></span>"
+        ? "<span class='vs-badge' style='display:inline-block;width:60px;height:36px;background:none!important;border:none;padding:0;margin:0;line-height:0;vertical-align:middle;'><svg xmlns='http://www.w3.org/2000/svg' width='60' height='36' viewBox='0 0 42 26' style='display:block;'><defs><linearGradient id='vsg' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:#E7337B'/><stop offset='100%' style='stop-color:#00e5ff'/></linearGradient></defs><text x='21' y='21' text-anchor='middle' fill='url(#vsg)' font-family='Orbitron,sans-serif' font-size='20' font-weight='900'>VS</text></svg></span>"
         : "<div class='vs-badge'>VS</div>";
 
     $locked_cta_text = $is_tennis ? '🔓 Souscris au pack Tennis pour recevoir le bet' : '🔓 Reçois le bet sur stratedgepronos.fr';
@@ -601,20 +602,20 @@ function generateFunCards($d) {
     $css = $embeddedFonts . "\n/* Fallback Google Fonts si embarquées absentes (iframe/srcdoc) */\n@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Bebas+Neue&display=swap');\n" . <<<CSS
 
 * { margin:0; padding:0; box-sizing:border-box; }
-body { background:#0a0a0a; margin:0; padding:0; width:760px; font-family:'Orbitron',sans-serif; }
+body { background:#0a0a0a; margin:0; padding:0; width:1080px; font-family:'Orbitron',sans-serif; }
 
-.card-wrapper { position:relative; width:760px; }
+.card-wrapper { position:relative; width:1080px; }
 .border-glow {
-  position:absolute; inset:-2px; border-radius:20px;
+  position:absolute; inset:-2px; border-radius:24px;
   background:linear-gradient(135deg,#ff2d7a,#c850c0,#ff2d7a);
   background-size:300% 300%; animation:gradientShift 4s ease infinite;
-  z-index:-1; filter:blur(8px); opacity:0.75;
+  z-index:-1; filter:blur(10px); opacity:0.75;
 }
 @keyframes gradientShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
 
 .card {
-  position:relative; z-index:1; width:760px; background:#0e0b12;
-  border-radius:16px; overflow:hidden; display:flex; flex-direction:column;
+  position:relative; z-index:1; width:1080px; background:#0e0b12;
+  border-radius:20px; overflow:hidden; display:flex; flex-direction:column;
   border:1px solid rgba(255,45,122,0.1); isolation:isolate;
 }
 
@@ -629,84 +630,84 @@ body { background:#0a0a0a; margin:0; padding:0; width:760px; font-family:'Orbitr
   opacity:0.12;
 }
 
-.card-body { position:relative; z-index:2; padding:18px 22px 16px; display:flex; flex-direction:column; gap:9px; }
+.card-body { position:relative; z-index:2; padding:26px 32px 22px; display:flex; flex-direction:column; gap:12px; }
 
 /* HEADER */
 .card-header { display:flex; align-items:center; justify-content:space-between; }
-.logo-img { height:24px; object-fit:contain; }
+.logo-img { height:34px; object-fit:contain; }
 .funbet-badge {
-  display:flex; align-items:center; gap:6px;
+  display:flex; align-items:center; gap:8px;
   background:rgba(255,45,122,0.1); border:1.5px solid rgba(255,45,122,0.45);
-  border-radius:20px; padding:4px 14px;
-  font-family:'Orbitron',sans-serif; font-size:10px; font-weight:900;
+  border-radius:22px; padding:5px 18px;
+  font-family:'Orbitron',sans-serif; font-size:14px; font-weight:900;
   color:#ff2d7a; letter-spacing:2px; text-transform:uppercase;
   box-shadow:0 0 10px rgba(255,45,122,0.2); text-shadow:0 0 8px rgba(255,45,122,0.5);
 }
 
 /* DATE / HEURE */
-.datetime-block { text-align:center; padding:2px 0; }
-.datetime-day { font-family:'Orbitron',sans-serif; font-size:11px; font-weight:600; color:rgba(255,255,255,0.32); text-transform:uppercase; letter-spacing:3px; margin-bottom:1px; }
-.datetime-time { font-family:'Orbitron',sans-serif; font-size:32px; font-weight:900; letter-spacing:3px; line-height:1; color:#ff2d7a; text-shadow:0 0 25px rgba(255,45,122,0.5); }
-.datetime-sub { font-size:9px; color:rgba(255,255,255,0.2); font-family:'Orbitron',sans-serif; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; margin-top:1px; }
+.datetime-block { text-align:center; padding:3px 0; }
+.datetime-day { font-family:'Orbitron',sans-serif; font-size:15px; font-weight:600; color:rgba(255,255,255,0.32); text-transform:uppercase; letter-spacing:3px; margin-bottom:2px; }
+.datetime-time { font-family:'Orbitron',sans-serif; font-size:44px; font-weight:900; letter-spacing:3px; line-height:1; color:#ff2d7a; text-shadow:0 0 25px rgba(255,45,122,0.5); }
+.datetime-sub { font-size:12px; color:rgba(255,255,255,0.2); font-family:'Orbitron',sans-serif; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; margin-top:2px; }
 
 /* SECTION TITLE */
-.section-title { display:flex; align-items:center; gap:6px; }
-.section-title-text { font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; color:rgba(255,45,122,0.6); text-transform:uppercase; letter-spacing:2.5px; white-space:nowrap; }
+.section-title { display:flex; align-items:center; gap:8px; }
+.section-title-text { font-family:'Orbitron',sans-serif; font-size:12px; font-weight:700; color:rgba(255,45,122,0.6); text-transform:uppercase; letter-spacing:2.5px; white-space:nowrap; }
 .section-title-line { flex:1; height:1px; background:linear-gradient(to right,rgba(255,45,122,0.3),transparent); }
 
 /* LIGNES DE PARIS */
-.bets-container { display:flex; flex-direction:column; gap:6px; }
-.bet-line { background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.055); border-radius:8px; padding:8px 10px 8px 14px; position:relative; display:flex; flex-direction:column; gap:3px; }
-.bet-left-bar { position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:3px 0 0 3px; }
+.bets-container { display:flex; flex-direction:column; gap:8px; }
+.bet-line { background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.055); border-radius:10px; padding:11px 14px 11px 18px; position:relative; display:flex; flex-direction:column; gap:4px; }
+.bet-left-bar { position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:4px 0 0 4px; }
 .bet-top-row { display:flex; align-items:center; justify-content:space-between; }
-.bet-num-match { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
-.bet-num { font-family:'Orbitron',sans-serif; font-size:10px; color:rgba(255,140,200,0.6); }
-.bet-match { font-family:'Orbitron',sans-serif; font-size:10px; color:rgba(255,255,255,0.5); letter-spacing:0.5px; font-weight:600; }
-.bet-heure { font-family:'Orbitron',sans-serif; font-size:9px; color:rgba(255,45,122,0.85); font-weight:700; margin-left:4px; white-space:nowrap; }
-.bet-line .fun-team-logo { height:14px; width:auto; max-width:20px; object-fit:contain; vertical-align:middle; }
-.bet-cote-pill { background:rgba(255,45,122,0.08); border:1px solid rgba(255,45,122,0.2); border-radius:6px; padding:2px 8px; font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; color:#ff8c6b; }
-.bet-prono { font-family:'Orbitron',sans-serif; font-size:10px; font-weight:700; color:rgba(255,255,255,0.9); }
+.bet-num-match { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.bet-num { font-family:'Orbitron',sans-serif; font-size:13px; color:rgba(255,140,200,0.6); }
+.bet-match { font-family:'Orbitron',sans-serif; font-size:14px; color:rgba(255,255,255,0.5); letter-spacing:0.5px; font-weight:600; }
+.bet-heure { font-family:'Orbitron',sans-serif; font-size:12px; color:rgba(255,45,122,0.85); font-weight:700; margin-left:6px; white-space:nowrap; }
+.bet-line .fun-team-logo { height:20px; width:auto; max-width:28px; object-fit:contain; vertical-align:middle; }
+.bet-cote-pill { background:rgba(255,45,122,0.08); border:1px solid rgba(255,45,122,0.2); border-radius:8px; padding:4px 11px; font-family:'Orbitron',sans-serif; font-size:17px; font-weight:700; color:#ff8c6b; }
+.bet-prono { font-family:'Orbitron',sans-serif; font-size:14px; font-weight:700; color:rgba(255,255,255,0.9); }
 
 /* CONFIANCE */
-.confidence-col { display:flex; flex-direction:column; gap:4px; }
+.confidence-col { display:flex; flex-direction:column; gap:5px; }
 .conf-header { display:flex; justify-content:space-between; align-items:center; }
-.conf-label { font-family:'Orbitron',sans-serif; font-size:9px; color:rgba(255,255,255,0.28); text-transform:uppercase; letter-spacing:2px; font-weight:700; }
-.conf-score { font-family:'Orbitron',sans-serif; font-size:14px; font-weight:900; color:#ff2d7a; text-shadow:0 0 8px rgba(255,45,122,0.3); }
-.conf-bar-bg { height:6px; background:rgba(255,255,255,0.05); border-radius:3px; overflow:hidden; }
-.conf-bar-fill { height:100%; width:{$conf}%; background:linear-gradient(to right,#ff2d7a,#c850c0,#ff8c42); border-radius:3px; animation:barPulse 2s ease-in-out infinite; }
+.conf-label { font-family:'Orbitron',sans-serif; font-size:12px; color:rgba(255,255,255,0.28); text-transform:uppercase; letter-spacing:2px; font-weight:700; }
+.conf-score { font-family:'Orbitron',sans-serif; font-size:18px; font-weight:900; color:#ff2d7a; text-shadow:0 0 8px rgba(255,45,122,0.3); }
+.conf-bar-bg { height:8px; background:rgba(255,255,255,0.05); border-radius:4px; overflow:hidden; }
+.conf-bar-fill { height:100%; width:{$conf}%; background:linear-gradient(to right,#ff2d7a,#c850c0,#ff8c42); border-radius:4px; animation:barPulse 2s ease-in-out infinite; }
 @keyframes barPulse { 0%,100%{opacity:0.85} 50%{opacity:1} }
 
 /* COTE TOTALE */
-.cote-totale-block { display:flex; align-items:center; gap:14px; background:rgba(255,45,122,0.06); border:1px solid rgba(255,45,122,0.14); border-radius:10px; padding:9px 14px; }
+.cote-totale-block { display:flex; align-items:center; gap:18px; background:rgba(255,45,122,0.06); border:1px solid rgba(255,45,122,0.14); border-radius:14px; padding:12px 18px; }
 .cote-total-info { flex:1; }
-.cote-eyebrow { font-family:'Orbitron',sans-serif; font-size:8px; color:rgba(255,255,255,0.25); text-transform:uppercase; letter-spacing:2px; font-weight:700; margin-bottom:2px; }
-.cote-desc { font-family:'Orbitron',sans-serif; font-size:9px; color:rgba(255,255,255,0.45); letter-spacing:1px; }
-.total-pill { position:relative; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#ff2d7a 0%,#c850c0 50%,#4158d0 100%); border-radius:12px; padding:9px 24px; flex-shrink:0; box-shadow:0 4px 22px rgba(255,45,122,0.5),inset 0 0 0 1px rgba(255,255,255,0.12); }
-.total-pill-shine { position:absolute; top:0; left:0; right:0; height:50%; background:rgba(255,255,255,0.13); border-radius:12px 12px 0 0; }
-.total-cote { font-family:'Orbitron',sans-serif; font-size:26px; font-weight:900; color:#fff; letter-spacing:2px; position:relative; z-index:1; }
+.cote-eyebrow { font-family:'Orbitron',sans-serif; font-size:11px; color:rgba(255,255,255,0.25); text-transform:uppercase; letter-spacing:2px; font-weight:700; margin-bottom:3px; }
+.cote-desc { font-family:'Orbitron',sans-serif; font-size:12px; color:rgba(255,255,255,0.45); letter-spacing:1px; }
+.total-pill { position:relative; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#ff2d7a 0%,#c850c0 50%,#4158d0 100%); border-radius:14px; padding:12px 32px; flex-shrink:0; box-shadow:0 4px 22px rgba(255,45,122,0.5),inset 0 0 0 1px rgba(255,255,255,0.12); }
+.total-pill-shine { position:absolute; top:0; left:0; right:0; height:50%; background:rgba(255,255,255,0.13); border-radius:14px 14px 0 0; }
+.total-cote { font-family:'Orbitron',sans-serif; font-size:34px; font-weight:900; color:#fff; letter-spacing:2px; position:relative; z-index:1; }
 
 /* PROMO — Option Sport Daily, Week-end, Weekly (fonts forcées pour lisibilité) */
-.promo-banner { background:rgba(14,22,14,0.95); border:1px solid rgba(57,255,20,0.18); border-radius:10px; padding:10px 14px; position:relative; display:flex; align-items:center; justify-content:space-between; gap:10px; }
-.promo-left-bar { position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(to bottom,#39ff14,#00e5ff); border-radius:3px 0 0 3px; }
-.promo-text-block { flex:1; padding-left:8px; display:flex; flex-direction:column; gap:4px; }
-.promo-eyebrow { font-family:'Orbitron',sans-serif !important; font-size:10px !important; color:#39ff14; text-transform:uppercase; letter-spacing:2px; font-weight:700; }
-.promo-main { font-family:'Bebas Neue','Orbitron',sans-serif !important; font-size:16px !important; letter-spacing:0.8px; color:#fff; line-height:1.25; min-height:1.25em; }
+.promo-banner { background:rgba(14,22,14,0.95); border:1px solid rgba(57,255,20,0.18); border-radius:14px; padding:14px 18px; position:relative; display:flex; align-items:center; justify-content:space-between; gap:14px; }
+.promo-left-bar { position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(to bottom,#39ff14,#00e5ff); border-radius:4px 0 0 4px; }
+.promo-text-block { flex:1; padding-left:10px; display:flex; flex-direction:column; gap:5px; }
+.promo-eyebrow { font-family:'Orbitron',sans-serif !important; font-size:13px !important; color:#39ff14; text-transform:uppercase; letter-spacing:2px; font-weight:700; }
+.promo-main { font-family:'Bebas Neue','Orbitron',sans-serif !important; font-size:22px !important; letter-spacing:0.8px; color:#fff; line-height:1.25; min-height:1.25em; }
 .promo-main-hl { color:#ff2d7a; font-family:inherit !important; }
-.promo-packs { display:flex; gap:5px; flex-wrap:wrap; }
-.pack-tag { font-family:'Orbitron',sans-serif !important; font-size:10px !important; font-weight:700; padding:4px 9px; border-radius:4px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.6); text-transform:uppercase; }
+.promo-packs { display:flex; gap:6px; flex-wrap:wrap; }
+.pack-tag { font-family:'Orbitron',sans-serif !important; font-size:13px !important; font-weight:700; padding:5px 11px; border-radius:5px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.6); text-transform:uppercase; }
 .pack-tag-max { color:#39ff14; border-color:rgba(57,255,20,0.3); background:rgba(57,255,20,0.07); }
-.promo-price { font-family:'Orbitron',sans-serif !important; font-size:10px !important; color:rgba(255,255,255,0.55); }
-.promo-price span { font-family:'Orbitron',sans-serif !important; font-size:15px !important; font-weight:700; color:#00e5ff; }
-.promo-right { display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0; }
-.promo-cta { display:inline-flex; align-items:center; gap:4px; background:linear-gradient(135deg,#39ff14,#00c896); color:#000; font-family:'Orbitron',sans-serif !important; font-size:10px !important; font-weight:900; letter-spacing:0.8px; text-transform:uppercase; padding:8px 14px; border-radius:8px; white-space:nowrap; box-shadow:0 0 14px rgba(57,255,20,0.4); }
+.promo-price { font-family:'Orbitron',sans-serif !important; font-size:13px !important; color:rgba(255,255,255,0.55); }
+.promo-price span { font-family:'Orbitron',sans-serif !important; font-size:20px !important; font-weight:700; color:#00e5ff; }
+.promo-right { display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0; }
+.promo-cta { display:inline-flex; align-items:center; gap:5px; background:linear-gradient(135deg,#39ff14,#00c896); color:#000; font-family:'Orbitron',sans-serif !important; font-size:13px !important; font-weight:900; letter-spacing:0.8px; text-transform:uppercase; padding:10px 18px; border-radius:10px; white-space:nowrap; box-shadow:0 0 14px rgba(57,255,20,0.4); }
 
 /* Locked */
-.locked-zone { text-align:center; margin:4px 0; }
-.locked-padlock { font-size:40px; line-height:1; }
-.locked-reserved { font-family:'Orbitron',sans-serif; font-size:10px; color:#ff2d7a; opacity:0.7; letter-spacing:2px; margin:6px 0; }
-.locked-cta-btn { background:linear-gradient(135deg,#FF2D78,#d6245f); color:white; font-family:'Orbitron',sans-serif; font-size:10px; font-weight:700; padding:8px 24px; border-radius:10px; display:inline-block; letter-spacing:1px; }
+.locked-zone { text-align:center; margin:6px 0; }
+.locked-padlock { font-size:54px; line-height:1; }
+.locked-reserved { font-family:'Orbitron',sans-serif; font-size:14px; color:#ff2d7a; opacity:0.7; letter-spacing:2px; margin:8px 0; }
+.locked-cta-btn { background:linear-gradient(135deg,#FF2D78,#d6245f); color:white; font-family:'Orbitron',sans-serif; font-size:14px; font-weight:700; padding:10px 30px; border-radius:12px; display:inline-block; letter-spacing:1px; }
 
-.card-footer-gradient { height:3px; background:linear-gradient(to right,#ff2d7a,#c850c0,#4158d0); position:relative; z-index:2; }
+.card-footer-gradient { height:4px; background:linear-gradient(to right,#ff2d7a,#c850c0,#4158d0); position:relative; z-index:2; }
 CSS;
 
     // ── Générer les lignes de paris ──
