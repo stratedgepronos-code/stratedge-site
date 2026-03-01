@@ -203,6 +203,19 @@ function generateLiveCards($d) {
     $conf   = intval($d['confidence'] ?? 70);
     $flag1  = flagImg($d['flag1'] ?? '');
     $flag2  = flagImg($d['flag2'] ?? '');
+    $logo1_url = trim($d['team1_logo'] ?? '');
+    $logo2_url = trim($d['team2_logo'] ?? '');
+    $is_team_sport = in_array($sport, ['football', 'basket', 'hockey']);
+    if ($is_team_sport && $logo1_url !== '' && filter_var($logo1_url, FILTER_VALIDATE_URL)) {
+        $team1_display = '<img src="' . htmlspecialchars($logo1_url, ENT_QUOTES, 'UTF-8') . '" class="team-logo" alt="">';
+    } else {
+        $team1_display = $flag1;
+    }
+    if ($is_team_sport && $logo2_url !== '' && filter_var($logo2_url, FILTER_VALIDATE_URL)) {
+        $team2_display = '<img src="' . htmlspecialchars($logo2_url, ENT_QUOTES, 'UTF-8') . '" class="team-logo" alt="">';
+    } else {
+        $team2_display = $flag2;
+    }
     $logo   = 'https://stratedgepronos.fr/assets/images/logo_site_transparent.png';
     $pronoJoueur = (int)($d['prono_joueur'] ?? 1);
     $p1_class = ($pronoJoueur === 1) ? 'player main' : 'player opponent';
@@ -338,13 +351,47 @@ CSS;
 .card-wrapper.tennis .locked-cta-btn { background:linear-gradient(135deg,#39ff14,#00c896); color:#000 !important; font-family:'Orbitron',sans-serif !important; font-size:10px; font-weight:700; }
 TENNIS;
     }
+    if ($is_team_sport) {
+        $css .= <<<TEAMSPORT
+
+/* Team sport (foot, NBA, hockey) — logos + dégradé rose néon → bleu néon sur prono et VS */
+.card-wrapper.team-sport .team-logo { height:18px; width:auto; max-width:28px; object-fit:contain; vertical-align:middle; }
+.card-wrapper.team-sport .prono-text {
+  background:linear-gradient(90deg,#E7337B 0%,#00e5ff 100%);
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent; color:transparent;
+  font-family:'Orbitron',sans-serif; font-weight:700; font-size:13px;
+}
+.card-wrapper.team-sport .vs-badge {
+  background:linear-gradient(90deg,#E7337B 0%,#00e5ff 100%);
+  -webkit-background-clip:text; background-clip:text;
+  -webkit-text-fill-color:transparent; color:transparent;
+  font-family:'Orbitron',sans-serif; font-size:12px; font-weight:900;
+}
+TEAMSPORT;
+    }
 
     $wrapper_class = $is_tennis ? 'card-wrapper tennis' : 'card-wrapper';
-    $promo_eyebrow = $is_tennis ? 'OFFRE EXCLUSIVE' : $sc['emoji'] . ' Offre exclusive';
-    $promo_main   = $is_tennis ? 'PACK TENNIS PRO - <span class="promo-main-hl">15€/semaine</span>' : "Pack <span class='promo-main-hl'>{$sc['pack']}</span> — Accès illimité";
-    $promo_sub    = $is_tennis ? 'Pronostics experts - Analyses live - Accès illimité' : "Pronostics experts · Analyses live · <span>Dès 9.99€/mois</span>";
+    if ($is_team_sport) {
+        $wrapper_class .= ' team-sport';
+    }
+    if ($is_tennis) {
+        $promo_eyebrow = 'OFFRE EXCLUSIVE';
+        $promo_main   = 'PACK TENNIS PRO - <span class="promo-main-hl">15€/semaine</span>';
+        $promo_sub    = 'Pronostics experts - Analyses live - Accès illimité';
+        $promo_cta_text = "JE M'ABONNE →";
+    } elseif ($is_team_sport) {
+        $promo_eyebrow = 'PACK DAILY';
+        $promo_main   = 'Souscris par SMS à <span class="promo-main-hl">4,50€</span>';
+        $promo_sub    = 'Pronostics chaque jour par SMS';
+        $promo_cta_text = "Je m'abonne";
+    } else {
+        $promo_eyebrow = $sc['emoji'] . ' Offre exclusive';
+        $promo_main   = "Pack <span class='promo-main-hl'>{$sc['pack']}</span> — Accès illimité";
+        $promo_sub    = "Pronostics experts · Analyses live · <span>Dès 9.99€/mois</span>";
+        $promo_cta_text = "🚀 Je m'abonne";
+    }
     $promo_extra  = $is_tennis ? '' : '';
-    $promo_cta_text = $is_tennis ? "JE M'ABONNE →" : "🚀 Je m'abonne";
     $cote_pill_inner = $is_tennis
         ? "<div class='cote-value'>{$cote}</div>"
         : "<div class='cote-pill-shine'></div><div class='cote-value'>{$cote}</div>";
@@ -387,9 +434,9 @@ TENNIS;
         <div class='match-left-bar'></div>
         <div class='live-badge'><div class='live-dot'></div> Live Bet</div>
         <div class='match-players'>
-          <div class='player-info'>{$flag1}<div class='player main'>{$p1}</div></div>
+          <div class='player-info'>{$team1_display}<div class='player main'>{$p1}</div></div>
           {$vs_html}
-          <div class='player-info'>{$flag2}<div class='player opponent'>{$p2}</div></div>
+          <div class='player-info'>{$team2_display}<div class='player opponent'>{$p2}</div></div>
         </div>
         <div class='match-comp'>{$comp}</div>
       </div>
@@ -454,9 +501,9 @@ HTML;
         <div class='match-left-bar'></div>
         <div class='live-badge'><div class='live-dot'></div> Live Bet</div>
         <div class='match-players'>
-          <div class='player-info'>{$flag1}<div class='{$p1_class}'>{$p1}</div></div>
+          <div class='player-info'>{$team1_display}<div class='{$p1_class}'>{$p1}</div></div>
           {$vs_html}
-          <div class='player-info'>{$flag2}<div class='{$p2_class}'>{$p2}</div></div>
+          <div class='player-info'>{$team2_display}<div class='{$p2_class}'>{$p2}</div></div>
         </div>
         <div class='match-comp'>{$comp}</div>
       </div>
@@ -589,9 +636,11 @@ body { background:#0a0a0a; margin:0; padding:0; width:760px; font-family:'Orbitr
 .bet-line { background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.055); border-radius:8px; padding:8px 10px 8px 14px; position:relative; display:flex; flex-direction:column; gap:3px; }
 .bet-left-bar { position:absolute; left:0; top:0; bottom:0; width:3px; border-radius:3px 0 0 3px; }
 .bet-top-row { display:flex; align-items:center; justify-content:space-between; }
-.bet-num-match { display:flex; align-items:center; gap:4px; }
+.bet-num-match { display:flex; align-items:center; gap:4px; flex-wrap:wrap; }
 .bet-num { font-family:'Orbitron',sans-serif; font-size:10px; color:rgba(255,140,200,0.6); }
 .bet-match { font-family:'Orbitron',sans-serif; font-size:10px; color:rgba(255,255,255,0.5); letter-spacing:0.5px; font-weight:600; }
+.bet-heure { font-family:'Orbitron',sans-serif; font-size:9px; color:rgba(255,45,122,0.85); font-weight:700; margin-left:4px; white-space:nowrap; }
+.bet-line .fun-team-logo { height:14px; width:auto; max-width:20px; object-fit:contain; vertical-align:middle; }
 .bet-cote-pill { background:rgba(255,45,122,0.08); border:1px solid rgba(255,45,122,0.2); border-radius:6px; padding:2px 8px; font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; color:#ff8c6b; }
 .bet-prono { font-family:'Orbitron',sans-serif; font-size:10px; font-weight:700; color:rgba(255,255,255,0.9); }
 
@@ -617,16 +666,16 @@ body { background:#0a0a0a; margin:0; padding:0; width:760px; font-family:'Orbitr
 .promo-banner { background:rgba(14,22,14,0.95); border:1px solid rgba(57,255,20,0.18); border-radius:10px; padding:9px 12px; position:relative; display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .promo-left-bar { position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(to bottom,#39ff14,#00e5ff); border-radius:3px 0 0 3px; }
 .promo-text-block { flex:1; padding-left:8px; display:flex; flex-direction:column; gap:3px; }
-.promo-eyebrow { font-family:'Orbitron',sans-serif; font-size:8px; color:#39ff14; text-transform:uppercase; letter-spacing:2px; font-weight:700; }
-.promo-main { font-family:'Bebas Neue',cursive; font-size:14px; letter-spacing:0.8px; color:#fff; }
-.promo-main-hl { color:#ff2d7a; }
+.promo-eyebrow { font-family:'Orbitron',sans-serif; font-size:9px; color:#39ff14; text-transform:uppercase; letter-spacing:2px; font-weight:700; }
+.promo-main { font-family:'Bebas Neue','Orbitron',sans-serif; font-size:15px; letter-spacing:0.8px; color:#fff; line-height:1.2; }
+.promo-main-hl { color:#ff2d7a; font-family:inherit; }
 .promo-packs { display:flex; gap:4px; flex-wrap:wrap; }
-.pack-tag { font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; padding:2px 6px; border-radius:4px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.4); text-transform:uppercase; }
+.pack-tag { font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; padding:3px 8px; border-radius:4px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.5); text-transform:uppercase; }
 .pack-tag-max { color:#39ff14; border-color:rgba(57,255,20,0.3); background:rgba(57,255,20,0.07); }
-.promo-price { font-family:'Orbitron',sans-serif; font-size:7px; color:rgba(255,255,255,0.35); }
-.promo-price span { font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; color:#00e5ff; }
+.promo-price { font-family:'Orbitron',sans-serif; font-size:9px; color:rgba(255,255,255,0.5); }
+.promo-price span { font-family:'Orbitron',sans-serif; font-size:14px; font-weight:700; color:#00e5ff; }
 .promo-right { display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0; }
-.promo-cta { display:inline-flex; align-items:center; gap:4px; background:linear-gradient(135deg,#39ff14,#00c896); color:#000; font-family:'Orbitron',sans-serif; font-size:8px; font-weight:900; letter-spacing:0.8px; text-transform:uppercase; padding:7px 12px; border-radius:8px; white-space:nowrap; box-shadow:0 0 14px rgba(57,255,20,0.4); }
+.promo-cta { display:inline-flex; align-items:center; gap:4px; background:linear-gradient(135deg,#39ff14,#00c896); color:#000; font-family:'Orbitron',sans-serif; font-size:9px; font-weight:900; letter-spacing:0.8px; text-transform:uppercase; padding:7px 12px; border-radius:8px; white-space:nowrap; box-shadow:0 0 14px rgba(57,255,20,0.4); }
 
 /* Locked */
 .locked-zone { text-align:center; margin:4px 0; }
@@ -645,8 +694,22 @@ CSS;
         $match  = htmlspecialchars($bet['match'] ?? '', ENT_QUOTES, 'UTF-8');
         $prono  = htmlspecialchars($bet['prono'] ?? '', ENT_QUOTES, 'UTF-8');
         $bcote  = htmlspecialchars($bet['cote']  ?? '1.00', ENT_QUOTES, 'UTF-8');
-        $f1     = flagImg($bet['flag1'] ?? '');
-        $f2     = flagImg($bet['flag2'] ?? '');
+        $heure  = htmlspecialchars($bet['heure'] ?? $bet['time'] ?? '', ENT_QUOTES, 'UTF-8');
+        $heureSpan = $heure !== '' ? "<span class='bet-heure'>{$heure}</span>" : '';
+
+        $logo1Url = trim($bet['team1_logo'] ?? '');
+        $logo2Url = trim($bet['team2_logo'] ?? '');
+        if ($logo1Url !== '' && filter_var($logo1Url, FILTER_VALIDATE_URL)) {
+            $ico1 = '<img src="' . htmlspecialchars($logo1Url, ENT_QUOTES, 'UTF-8') . '" class="fun-team-logo" alt="">';
+        } else {
+            $ico1 = flagImg($bet['flag1'] ?? '');
+        }
+        if ($logo2Url !== '' && filter_var($logo2Url, FILTER_VALIDATE_URL)) {
+            $ico2 = '<img src="' . htmlspecialchars($logo2Url, ENT_QUOTES, 'UTF-8') . '" class="fun-team-logo" alt="">';
+        } else {
+            $ico2 = flagImg($bet['flag2'] ?? '');
+        }
+
         $barColor = $barColors[$i % 3];
 
         $betLinesNormal .= <<<HTML
@@ -655,9 +718,10 @@ CSS;
       <div class='bet-top-row'>
         <div class='bet-num-match'>
           <span class='bet-num'>{$num}</span>
-          <span>{$f1}</span>
+          <span>{$ico1}</span>
           <span class='bet-match'>{$match}</span>
-          <span>{$f2}</span>
+          {$heureSpan}
+          <span>{$ico2}</span>
         </div>
         <div class='bet-cote-pill'>{$bcote}</div>
       </div>
@@ -671,9 +735,10 @@ HTML;
       <div class='bet-top-row'>
         <div class='bet-num-match'>
           <span class='bet-num'>{$num}</span>
-          <span>{$f1}</span>
+          <span>{$ico1}</span>
           <span class='bet-match'>{$match}</span>
-          <span>{$f2}</span>
+          {$heureSpan}
+          <span>{$ico2}</span>
         </div>
         <span style='font-size:18px'>🔒</span>
       </div>

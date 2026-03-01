@@ -29,8 +29,10 @@ Clés obligatoires :
 - flag2 : emoji drapeau pays du joueur 2 (ex: "🇦🇷")
 - competition : compétition + surface si pertinent (ex: "ATP 250 - Buenos Aires - Terre battue")
 - prono_joueur : 1 ou 2 selon le pronostic. Si le pronostic indique que le joueur 1 gagne (ou équipe 1), mets 1. Si le joueur 2 gagne, mets 2. Sinon 1.
+- Pour le football, le basket (NBA) et le hockey : ajoute team1_logo et team2_logo (URLs directes vers une image du logo de l'équipe, de préférence PNG ou JPG, ex: CDN type logos de ligues ou Wikipedia). Si tu ne trouves pas d'URL fiable, mets "".
 Ne modifie jamais date_fr ni time_fr : utilise uniquement les valeurs fournies dans le message.
-Exemple : {"date_fr":"Mercredi 26 Février 2026","time_fr":"15:30","player1":"Garin C.","player2":"Baez S.","flag1":"🇨🇱","flag2":"🇦🇷","competition":"ATP 250 - Buenos Aires - Terre battue","prono_joueur":1}
+Exemple tennis : {"date_fr":"...","time_fr":"15:30","player1":"Garin C.","player2":"Baez S.","flag1":"🇨🇱","flag2":"🇦🇷","competition":"...","prono_joueur":1}
+Exemple foot : {"date_fr":"...","time_fr":"20:00","player1":"PSG","player2":"Marseille","flag1":"🇫🇷","flag2":"🇫🇷","competition":"Ligue 1","prono_joueur":1,"team1_logo":"https://...","team2_logo":"https://..."}
 PROMPT
 );
 
@@ -49,15 +51,21 @@ Structure de sortie OBLIGATOIRE :
   "bets": [
     {
       "match": "RDC Genk vs Dinamo Zagreb",
+      "heure": "20:45",
       "flag1": "🇧🇪",
       "flag2": "🇭🇷",
+      "team1_logo": "https://...",
+      "team2_logo": "https://...",
       "prono": "Les 2 équipes marquent + +4.5 corners Genk",
       "cote": "2.95"
     },
     {
       "match": "Celta Vigo vs PAOK",
+      "heure": "21:00",
       "flag1": "🇪🇸",
       "flag2": "🇬🇷",
+      "team1_logo": "https://...",
+      "team2_logo": "https://...",
       "prono": "2ème MT +0.5 Celta + +4.5 corners Celta",
       "cote": "2.49"
     }
@@ -69,12 +77,16 @@ Structure de sortie OBLIGATOIRE :
 Règles :
 - date_fr = date du PREMIER match (le plus tôt), en toutes lettres en français
 - time_fr = heure du PREMIER match, fuseau Europe/Paris obligatoire
-- bets = tableau ordonné de tous les paris. Chaque entrée : match (équipes), flag1 (emoji drapeau équipe/pays 1), flag2 (emoji drapeau équipe/pays 2), prono (texte du pari tel que fourni), cote (valeur exacte fournie)
+- bets = tableau ordonné de tous les paris. Chaque entrée OBLIGATOIRE :
+  - match : nom des équipes (ex: "Équipe A vs Équipe B")
+  - heure : heure de DÉBUT du match, fuseau Europe/Paris (format HH:MM ou H:MM). Tu dois la déduire ou l'estimer si elle n'est pas fournie (ex: soirée Ligue Europa souvent 18:45 ou 21:00).
+  - flag1, flag2 : emoji drapeau pays équipe 1 et 2
+  - team1_logo, team2_logo : pour le FOOTBALL (et autres sports d'équipes si tu connais des logos), fournis une URL directe vers une image du logo de chaque équipe (PNG/JPG, CDN type ligues, Wikipedia, etc.). Si tu ne trouves pas d'URL fiable, mets "".
+  - prono, cote : texte du pari et cote exacte fournie
 - cote_totale = produit de toutes les cotes individuelles, arrondi à 2 décimales
-- confidence = indice de confiance global estimé entre 40 et 85 (basé sur le nombre de sélections et la hauteur des cotes : moins de sélections + cotes modérées = confiance plus haute)
+- confidence = indice de confiance global estimé entre 40 et 85
 - Les drapeaux : tu connais les nationalités/pays des équipes. Si incertain, utilise le drapeau du pays le plus probable.
-- Heure = TOUJOURS fuseau Europe/Paris, jamais l'heure locale du match.
-- JSON pur uniquement. Aucun texte, aucun commentaire, aucun backtick.
+- Toutes les heures en Europe/Paris. JSON pur uniquement. Aucun texte, aucun commentaire, aucun backtick.
 PROMPT
 );
 

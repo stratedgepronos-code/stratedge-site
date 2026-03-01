@@ -176,6 +176,8 @@ if ($typeBet === 'Live') {
             'player2'     => $enriched['player2']    ?? 'JOUEUR 2',
             'flag1'       => $enriched['flag1']      ?? '🏳️',
             'flag2'       => $enriched['flag2']      ?? '🏳️',
+            'team1_logo'  => $enriched['team1_logo'] ?? '',
+            'team2_logo'  => $enriched['team2_logo'] ?? '',
             'competition' => $enriched['competition']?? '',
             'prono'       => $prono,
             'prono_joueur'=> (int)($enriched['prono_joueur'] ?? 1),
