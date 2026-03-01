@@ -313,7 +313,7 @@ CSS;
         $css .= <<<TENNIS
 
 /* Tennis Live — couleurs et offre alignées sur la maquette */
-.card-wrapper.tennis .card { background:#0a0a0a; border-color:rgba(57,255,20,0.2); }
+.card-wrapper.tennis .card { background:#0d0d0f; border-color:rgba(57,255,20,0.2); }
 .card-wrapper.tennis .mascotte-watermark { background:transparent !important; }
 .card-wrapper.tennis .mascotte-watermark img { background:none !important; box-shadow:none !important; }
 .card-wrapper.tennis .match-left-bar { background:linear-gradient(to bottom,#E7337B,#7D41E7); }

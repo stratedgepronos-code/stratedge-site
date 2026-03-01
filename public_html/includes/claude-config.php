@@ -11,7 +11,7 @@ if (!defined('ABSPATH')) { define('ABSPATH', true); }
 
 define('CLAUDE_API_KEY', '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');
 
-define('CLAUDE_MODEL', 'claude-opus-4-6');
+define('CLAUDE_MODEL', 'claude-sonnet-4-6');
 
 define('CLAUDE_THINKING_ENABLED', false);
 
