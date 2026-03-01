@@ -332,7 +332,7 @@ CSS;
 .card-wrapper.tennis .promo-eyebrow { color:#39ff14; }
 .card-wrapper.tennis .promo-cta { background:linear-gradient(135deg,#39ff14,#00c896); color:#000; box-shadow:0 0 14px rgba(57,255,20,0.5); }
 .card-wrapper.tennis .locked-reserved { color:#39ff14; }
-.card-wrapper.tennis .locked-cta-btn { background:linear-gradient(135deg,#39ff14,#00c896); color:#000 !important; }
+.card-wrapper.tennis .locked-cta-btn { background:linear-gradient(135deg,#39ff14,#00c896); color:#ffffff !important; }
 TENNIS;
     }
 
