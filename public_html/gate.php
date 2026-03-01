@@ -323,8 +323,13 @@ html,body{height:100%;overflow:hidden;font-family:"Rajdhani",sans-serif;backgrou
 @media(max-width:860px){
   html,body{overflow-y:auto;height:auto;overflow-x:hidden}
   .wrapper{flex-direction:column;height:auto;min-height:100dvh}
-  .left{min-height:45vw;max-height:40dvh}
-  .mascot-img{height:40dvh;max-height:350px}
+  .left{min-height:45vw;max-height:40dvh;align-items:flex-end;justify-content:center}
+  .mascot-img{
+    height:40dvh;max-height:350px;
+    object-position:bottom center;
+    animation:mascot-fadein 1.6s cubic-bezier(.22,1,.36,1) both;
+    filter:drop-shadow(0 0 45px rgba(255,45,120,.5)) drop-shadow(0 0 90px rgba(255,45,120,.2));
+  }
   .left-text{display:none}
   .divider{display:none}
   .ground-ring.gr1{width:160px;height:30px}
@@ -337,7 +342,7 @@ html,body{height:100%;overflow:hidden;font-family:"Rajdhani",sans-serif;backgrou
 }
 @media(max-width:480px){
   .left{min-height:35vw;max-height:30dvh}
-  .mascot-img{height:30dvh;max-height:250px}
+  .mascot-img{height:30dvh;max-height:250px;animation:mascot-fadein 1.6s cubic-bezier(.22,1,.36,1) both;}
   .ground-ring.gr1{width:120px;height:22px}
   .ground-ring.gr2{width:200px;height:38px}
   .ground-ring.gr3{width:280px;height:55px}
