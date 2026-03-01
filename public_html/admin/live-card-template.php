@@ -129,8 +129,8 @@ function sportConfig($sport) {
             'pack'         => 'Tennis Pro',
             'mascotte_url'   => 'https://stratedgepronos.fr/assets/images/mascotte-tennis.jpg',
             // Tennis : fond transparent comme card mascotte noir et rose néon (mix-blend-mode:screen)
-            'mascotte_style' => "mix-blend-mode:screen; opacity:0.35;",
-            'mascotte_locked'=> "mix-blend-mode:screen; opacity:0.18;",
+            'mascotte_style' => "mix-blend-mode:screen; opacity:0.35; background:none !important;",
+            'mascotte_locked'=> "mix-blend-mode:screen; opacity:0.18; background:none !important;",
             // Badge vert neon
             'badge_bg'     => 'rgba(57,255,20,0.12)',
             'badge_border' => 'rgba(57,255,20,0.6)',
@@ -316,13 +316,15 @@ CSS;
 
 /* Tennis Live — couleurs et offre alignées sur la maquette */
 .card-wrapper.tennis .card { background:#0a0a0a; border-color:rgba(57,255,20,0.2); }
+.card-wrapper.tennis .mascotte-watermark { background:transparent !important; }
+.card-wrapper.tennis .mascotte-watermark img { background:none !important; box-shadow:none !important; }
 .card-wrapper.tennis .match-left-bar { background:linear-gradient(to bottom,#E7337B,#7D41E7); }
 .card-wrapper.tennis .live-badge { color:#39ff14; }
 .card-wrapper.tennis .live-dot { background:#39ff14; box-shadow:0 0 6px #39ff14; }
-.card-wrapper.tennis .vs-badge { background:linear-gradient(90deg,#E7337B,#00e5ff); -webkit-background-clip:text; background-clip:text; color:transparent; font-weight:900; }
+.card-wrapper.tennis .vs-badge { background:linear-gradient(90deg,#E7337B,#00e5ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; font-weight:900; border:none; padding:0; }
 .card-wrapper.tennis .prono-text { color:#fff; font-size:16px; }
-.card-wrapper.tennis .cote-pill { background:linear-gradient(135deg,#E7337B 0%,#7D41E7 100%); box-shadow:0 4px 20px rgba(231,51,123,0.5),inset 0 0 0 1px rgba(255,255,255,0.12); }
-.card-wrapper.tennis .cote-pill-shine { background:linear-gradient(180deg,rgba(255,255,255,0.07) 0%,transparent 60%); border-radius:12px 12px 0 0; }
+.card-wrapper.tennis .cote-pill { background:linear-gradient(135deg,#E7337B 0%,#7D41E7 100%); box-shadow:0 4px 20px rgba(231,51,123,0.4),inset 0 0 0 1px rgba(255,255,255,0.08); }
+.card-wrapper.tennis .cote-pill-shine { display:none; }
 .card-wrapper.tennis .promo-banner { background:#1A361A; border:1px solid rgba(57,255,20,0.35); }
 .card-wrapper.tennis .promo-eyebrow { color:#39ff14; }
 .card-wrapper.tennis .promo-cta { background:linear-gradient(135deg,#39ff14,#00c896); color:#000; box-shadow:0 0 14px rgba(57,255,20,0.5); }
