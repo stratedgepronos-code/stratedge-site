@@ -1,6 +1,7 @@
 <?php
 // ============================================================
-// STRATEDGE — live-card-template.php V8
+// STRATEDGE — live-card-template.php V9
+// V9 : marqueur version pour vérif FTP + mascotte tennis / VS dégradé
 // V8 : fonts embarquées en base64 (fix CORS srcdoc null origin)
 // V7 : nouveau design watermark (sans colonne mascotte)
 //      mascotte centrée transparente (mix-blend-mode:screen)
@@ -348,10 +349,10 @@ TENNIS;
 <html lang='fr'>
 <head>
 <meta charset='UTF-8'>
-
 <style>{$css}</style>
 </head>
 <body>
+<!-- StratEdge card template v9 2026-03 -->
 <div class='{$wrapper_class}'>
   <div class='border-glow'></div>
   <div class='card'>
