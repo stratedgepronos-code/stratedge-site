@@ -218,6 +218,12 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     }
     .price-card-vip:hover .vip-card-inner { transform: translateY(-6px); box-shadow: 0 30px 80px rgba(245,200,66,0.12); transition: all 0.3s; }
     .vip-card-svg { position: absolute; inset: -2px; pointer-events: none; z-index: 5; overflow: visible; border-radius: 22px; }
+    .vip-card-inner{
+      box-shadow:
+        0 0 8px rgba(245,200,66,0.15),
+        0 0 25px rgba(245,200,66,0.06),
+        inset 0 0 15px rgba(245,200,66,0.03);
+    }
     .vip-badge-tag {
       display: inline-flex; align-items: center; gap: 0.3rem;
       font-family: 'Orbitron', sans-serif; font-size: 0.52rem; letter-spacing: 2px;
@@ -1100,77 +1106,119 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
 </script>
 
 <script>
-/* ── Éblouissement VIP Max ── */
+/* ── Éclairs VIP Max — arcs électriques fixes autour de la bordure ── */
 (function(){
-  function ptRR(t,w,h,r){
-    const perim=2*(w-2*r)+2*(h-2*r)+2*Math.PI*r;let d=t*perim;
-    const segs=[
-      {l:w-2*r,tp:'l',x:r,   y:0,   dx:1, dy:0 },
-      {l:Math.PI/2*r,tp:'a', cx:w-r,cy:r,   sa:-Math.PI/2},
-      {l:h-2*r,tp:'l',x:w,   y:r,   dx:0, dy:1 },
-      {l:Math.PI/2*r,tp:'a', cx:w-r,cy:h-r, sa:0},
-      {l:w-2*r,tp:'l',x:w-r, y:h,   dx:-1,dy:0 },
-      {l:Math.PI/2*r,tp:'a', cx:r,  cy:h-r, sa:Math.PI/2},
-      {l:h-2*r,tp:'l',x:0,   y:h-r, dx:0, dy:-1},
-      {l:Math.PI/2*r,tp:'a', cx:r,  cy:r,   sa:Math.PI}
-    ];
-    for(const s of segs){
-      if(d<=s.l){const f=d/s.l;
-        if(s.tp==='l')return{x:s.x+s.dx*d,y:s.y+s.dy*d};
-        const a=s.sa+f*Math.PI/2;return{x:s.cx+Math.cos(a)*r,y:s.cy+Math.sin(a)*r};
-      }d-=s.l;
-    }return{x:r,y:0};
-  }
-
   window.addEventListener('load',function(){
     setTimeout(function(){
-      const card=document.getElementById('vipMaxCard');
-      const svg =document.getElementById('vipMaxSvg');
+      var card=document.getElementById('vipMaxCard');
+      var svg =document.getElementById('vipMaxSvg');
       if(!svg||!card)return;
-      const rc=card.getBoundingClientRect(),W=rc.width+4,H=rc.height+4,R=22;
+      var rc=card.getBoundingClientRect(),W=rc.width+4,H=rc.height+4;
       svg.setAttribute('width',W);svg.setAttribute('height',H);
       svg.setAttribute('viewBox','0 0 '+W+' '+H);
-      const ns='http://www.w3.org/2000/svg';
-      const df=document.createElementNS(ns,'defs');
+      var ns='http://www.w3.org/2000/svg';
 
-      function mkRg(id,stops){
-        const g=document.createElementNS(ns,'radialGradient');
-        g.setAttribute('id',id);g.setAttribute('cx','50%');g.setAttribute('cy','50%');g.setAttribute('r','50%');
-        stops.forEach(function(s){const e=document.createElementNS(ns,'stop');e.setAttribute('offset',s.o);e.setAttribute('stop-color',s.c);e.setAttribute('stop-opacity',s.a);g.appendChild(e);});
-        df.appendChild(g);
-      }
-      mkRg('vmfg',[{o:'0%',c:'#fff',a:'1'},{o:'15%',c:'#fff',a:'0.95'},{o:'30%',c:'#fffbe6',a:'0.85'},{o:'50%',c:'#ffd700',a:'0.55'},{o:'75%',c:'#f5c842',a:'0.25'},{o:'100%',c:'#f5c842',a:'0'}]);
-      mkRg('vmhg',[{o:'0%',c:'#ffd700',a:'0.2'},{o:'50%',c:'#f5c842',a:'0.07'},{o:'100%',c:'#f5c842',a:'0'}]);
-
-      function mkFlt(id,sd){
-        const f=document.createElementNS(ns,'filter');
-        f.setAttribute('id',id);f.setAttribute('x','-100%');f.setAttribute('y','-100%');
-        f.setAttribute('width','300%');f.setAttribute('height','300%');
-        const b=document.createElementNS(ns,'feGaussianBlur');b.setAttribute('stdDeviation',sd);
-        f.appendChild(b);df.appendChild(f);
-      }
-      mkFlt('vmfbh','5');mkFlt('vmfbf','2');
+      var df=document.createElementNS(ns,'defs');
+      var flt=document.createElementNS(ns,'filter');
+      flt.setAttribute('id','vipBoltGlow');flt.setAttribute('x','-50%');flt.setAttribute('y','-50%');
+      flt.setAttribute('width','200%');flt.setAttribute('height','200%');
+      var blur=document.createElementNS(ns,'feGaussianBlur');blur.setAttribute('stdDeviation','3');blur.setAttribute('result','blur');
+      var merge=document.createElementNS(ns,'feMerge');
+      var m1=document.createElementNS(ns,'feMergeNode');m1.setAttribute('in','blur');
+      var m2=document.createElementNS(ns,'feMergeNode');m2.setAttribute('in','SourceGraphic');
+      merge.appendChild(m1);merge.appendChild(m2);
+      flt.appendChild(blur);flt.appendChild(merge);df.appendChild(flt);
       svg.appendChild(df);
 
-      function el(tag,attrs){
-        const e=document.createElementNS(ns,tag);
-        Object.keys(attrs).forEach(function(k){e.setAttribute(k,attrs[k]);});
-        svg.appendChild(e);return e;
-      }
-      const halo =el('ellipse',{rx:'38',ry:'38',fill:'url(#vmhg)',filter:'url(#vmfbh)'});
-      const flare=el('ellipse',{rx:'38',ry:'38',fill:'url(#vmfg)',filter:'url(#vmfbf)'});
-      const core =el('circle', {r:'5',fill:'#ffffff',opacity:'0.95'});
+      var boltPositions=[
+        {x:W*0.15,y:0,a:Math.PI/2},
+        {x:W*0.5, y:0,a:Math.PI*0.55},
+        {x:W*0.82,y:0,a:Math.PI*0.45},
+        {x:W,y:H*0.2,a:Math.PI},
+        {x:W,y:H*0.55,a:Math.PI*0.9},
+        {x:W,y:H*0.85,a:Math.PI*1.1},
+        {x:W*0.8,y:H,a:-Math.PI/2},
+        {x:W*0.45,y:H,a:-Math.PI*0.55},
+        {x:W*0.15,y:H,a:-Math.PI*0.4},
+        {x:0,y:H*0.78,a:0},
+        {x:0,y:H*0.45,a:Math.PI*0.05},
+        {x:0,y:H*0.15,a:-Math.PI*0.05}
+      ];
 
-      var prog=0;
-      (function loop(){
-        prog=(prog+0.0018)%1;
-        var hp=(prog-0.015+1)%1;
-        var pos=ptRR(prog,W,H,R), ph=ptRR(hp,W,H,R);
-        flare.setAttribute('cx',pos.x);flare.setAttribute('cy',pos.y);
-        core.setAttribute('cx',pos.x);core.setAttribute('cy',pos.y);
-        halo.setAttribute('cx',ph.x);halo.setAttribute('cy',ph.y);
-        requestAnimationFrame(loop);
-      })();
+      function buildBolt(ox,oy,angle,len){
+        var pts=[{x:ox,y:oy}];
+        var cx=ox,cy=oy;
+        var segs=4+Math.floor(Math.random()*4);
+        var segLen=len/segs;
+        for(var i=0;i<segs;i++){
+          var jitter=(Math.random()-0.5)*segLen*1.6;
+          var perpA=angle+Math.PI/2;
+          cx+=Math.cos(angle)*segLen+Math.cos(perpA)*jitter;
+          cy+=Math.sin(angle)*segLen+Math.sin(perpA)*jitter;
+          pts.push({x:cx,y:cy});
+        }
+        return pts;
+      }
+
+      function drawBolt(pts,opacity,width,color){
+        var g=document.createElementNS(ns,'g');
+        g.setAttribute('filter','url(#vipBoltGlow)');
+        g.setAttribute('opacity',opacity);
+
+        var d='M'+pts[0].x.toFixed(1)+','+pts[0].y.toFixed(1);
+        for(var i=1;i<pts.length;i++) d+=' L'+pts[i].x.toFixed(1)+','+pts[i].y.toFixed(1);
+
+        var glow=document.createElementNS(ns,'path');
+        glow.setAttribute('d',d);glow.setAttribute('fill','none');
+        glow.setAttribute('stroke',color);glow.setAttribute('stroke-width',width+2);
+        glow.setAttribute('stroke-linecap','round');glow.setAttribute('stroke-linejoin','round');
+        glow.setAttribute('opacity','0.4');
+        g.appendChild(glow);
+
+        var main=document.createElementNS(ns,'path');
+        main.setAttribute('d',d);main.setAttribute('fill','none');
+        main.setAttribute('stroke','#fffbe6');main.setAttribute('stroke-width',width);
+        main.setAttribute('stroke-linecap','round');main.setAttribute('stroke-linejoin','round');
+        g.appendChild(main);
+
+        svg.appendChild(g);
+        return g;
+      }
+
+      var bolts=[];
+      boltPositions.forEach(function(bp){
+        var len=18+Math.random()*28;
+        var pts=buildBolt(bp.x,bp.y,bp.a,len);
+        var w=0.8+Math.random()*1.2;
+        var op=0.5+Math.random()*0.5;
+        var color='#ffd700';
+        if(Math.random()>0.6) color='#f5c842';
+        var g=drawBolt(pts,op,w,color);
+        bolts.push({g:g,bp:bp,len:len,phase:Math.random()*Math.PI*2,speed:1.5+Math.random()*3,baseOp:op});
+      });
+
+      var t=0;
+      function flicker(){
+        t+=0.05;
+        bolts.forEach(function(b){
+          var pulse=0.4+0.6*Math.abs(Math.sin(t*b.speed+b.phase));
+          var crack=Math.random()>0.97?0.15:0;
+          b.g.setAttribute('opacity',(b.baseOp*pulse+crack).toFixed(2));
+        });
+        requestAnimationFrame(flicker);
+      }
+      flicker();
+
+      setInterval(function(){
+        var idx=Math.floor(Math.random()*bolts.length);
+        var b=bolts[idx];
+        svg.removeChild(b.g);
+        var pts=buildBolt(b.bp.x,b.bp.y,b.bp.a,b.len);
+        var w=0.8+Math.random()*1.2;
+        var color=Math.random()>0.6?'#f5c842':'#ffd700';
+        b.g=drawBolt(pts,b.baseOp,w,color);
+      },800);
+
     },100);
   });
 })();
