@@ -128,8 +128,8 @@ function sportConfig($sport) {
             'pack'         => 'Tennis Pro',
             'mascotte_url'   => 'https://stratedgepronos.fr/assets/images/mascotte-tennis.png?v=1',
             // Tennis : mascotte-tennis.png, fond transparent (opacity seule)
-            'mascotte_style' => "opacity:0.35; background:none !important;",
-            'mascotte_locked'=> "opacity:0.18; background:none !important;",
+            'mascotte_style' => "opacity:0.42; background:none !important; height:100%; width:auto; object-fit:contain;",
+            'mascotte_locked'=> "opacity:0.22; background:none !important; height:100%; width:auto; object-fit:contain;",
             // Badge vert neon
             'badge_bg'     => 'rgba(57,255,20,0.12)',
             'badge_border' => 'rgba(57,255,20,0.6)',
@@ -315,8 +315,8 @@ CSS;
 
 /* Tennis Live — couleurs et offre alignées sur la maquette */
 .card-wrapper.tennis .card { background:#0d0d0f; border-color:rgba(57,255,20,0.2); }
-.card-wrapper.tennis .mascotte-watermark { background:transparent !important; }
-.card-wrapper.tennis .mascotte-watermark img { background:none !important; box-shadow:none !important; }
+.card-wrapper.tennis .mascotte-watermark { background:transparent !important; z-index:0; pointer-events:none; display:flex !important; align-items:center; justify-content:center; }
+.card-wrapper.tennis .mascotte-watermark img { background:none !important; box-shadow:none !important; max-height:100%; width:auto; object-fit:contain; }
 .card-wrapper.tennis .match-left-bar { background:linear-gradient(to bottom,#E7337B,#7D41E7); }
 .card-wrapper.tennis .live-badge { color:#39ff14; }
 .card-wrapper.tennis .live-dot { background:#39ff14; box-shadow:0 0 6px #39ff14; }
@@ -343,6 +343,11 @@ TENNIS;
         ? "<div class='cote-value'>{$cote}</div>"
         : "<div class='cote-pill-shine'></div><div class='cote-value'>{$cote}</div>";
 
+    // Tennis : VS = texte uniquement, dégradé rose néon → bleu néon (inline pour forcer l'affichage)
+    $vs_html = $is_tennis
+        ? "<span class='vs-badge' style='background:linear-gradient(90deg,#E7337B,#00e5ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;font-weight:900;font-family:Orbitron,sans-serif;font-size:12px;background-color:transparent!important;border:none;padding:0;margin:0;'>VS</span>"
+        : "<div class='vs-badge'>VS</div>";
+
     // CARD NORMALE
     $html_normal = <<<HTML
 <!DOCTYPE html>
@@ -352,7 +357,7 @@ TENNIS;
 <style>{$css}</style>
 </head>
 <body>
-<!-- StratEdge card template v9 2026-03 -->
+<!-- StratEdge card template v10 2026-03 (VS degrade + mascotte fond) -->
 <div class='{$wrapper_class}'>
   <div class='border-glow'></div>
   <div class='card'>
@@ -373,7 +378,7 @@ TENNIS;
         <div class='live-badge'><div class='live-dot'></div> Live Bet</div>
         <div class='match-players'>
           <div class='player-info'>{$flag1}<div class='player main'>{$p1}</div></div>
-          <div class='vs-badge'>VS</div>
+          {$vs_html}
           <div class='player-info'>{$flag2}<div class='player opponent'>{$p2}</div></div>
         </div>
         <div class='match-comp'>{$comp}</div>
@@ -440,7 +445,7 @@ HTML;
         <div class='live-badge'><div class='live-dot'></div> Live Bet</div>
         <div class='match-players'>
           <div class='player-info'>{$flag1}<div class='player main'>{$p1}</div></div>
-          <div class='vs-badge'>VS</div>
+          {$vs_html}
           <div class='player-info'>{$flag2}<div class='player opponent'>{$p2}</div></div>
         </div>
         <div class='match-comp'>{$comp}</div>
