@@ -125,8 +125,8 @@ function sportConfig($sport) {
             'emoji'        => '🎾',
             'label'        => 'Tennis',
             'pack'         => 'Tennis Pro',
-            'mascotte_url'   => 'https://stratedgepronos.fr/assets/images/mascotte-tennis.png',
-            // Tennis : PNG avec fond transparent (opacity seule)
+            'mascotte_url'   => 'https://stratedgepronos.fr/assets/images/mascotte-tennis.png?v=1',
+            // Tennis : mascotte-tennis.png, fond transparent (opacity seule)
             'mascotte_style' => "opacity:0.35; background:none !important;",
             'mascotte_locked'=> "opacity:0.18; background:none !important;",
             // Badge vert neon
@@ -319,7 +319,7 @@ CSS;
 .card-wrapper.tennis .match-left-bar { background:linear-gradient(to bottom,#E7337B,#7D41E7); }
 .card-wrapper.tennis .live-badge { color:#39ff14; }
 .card-wrapper.tennis .live-dot { background:#39ff14; box-shadow:0 0 6px #39ff14; }
-.card-wrapper.tennis .vs-badge { background:linear-gradient(90deg,#E7337B,#00e5ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; font-weight:900; border:none; padding:0; }
+.card-wrapper.tennis .vs-badge { background:linear-gradient(90deg,#E7337B,#00e5ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; font-weight:900; background-color:transparent !important; border:none; padding:0; margin:0; box-shadow:none; display:inline-block; }
 .card-wrapper.tennis .prono-text { color:#fff; font-size:16px; }
 .card-wrapper.tennis .cote-pill { background:linear-gradient(135deg,#E7337B 0%,#7D41E7 100%); box-shadow:0 4px 16px rgba(231,51,123,0.35); }
 .card-wrapper.tennis .cote-pill-shine { display:none !important; }
