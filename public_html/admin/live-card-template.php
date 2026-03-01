@@ -347,7 +347,7 @@ TENNIS;
 
     // Tennis : VS = SVG uniquement (dégradé sur le texte, zéro background)
     $vs_html = $is_tennis
-        ? "<span class='vs-badge' style='display:inline-block;width:24px;height:14px;background:none!important;border:none;padding:0;margin:0;line-height:0;vertical-align:middle;'><svg xmlns='http://www.w3.org/2000/svg' width='24' height='14' viewBox='0 0 24 14' style='display:block;'><defs><linearGradient id='vsg' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:#E7337B'/><stop offset='100%' style='stop-color:#00e5ff'/></linearGradient></defs><text x='12' y='11' text-anchor='middle' fill='url(#vsg)' font-family='Orbitron,sans-serif' font-size='10' font-weight='900'>VS</text></svg></span>"
+        ? "<span class='vs-badge' style='display:inline-block;width:42px;height:26px;background:none!important;border:none;padding:0;margin:0;line-height:0;vertical-align:middle;'><svg xmlns='http://www.w3.org/2000/svg' width='42' height='26' viewBox='0 0 42 26' style='display:block;'><defs><linearGradient id='vsg' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:#E7337B'/><stop offset='100%' style='stop-color:#00e5ff'/></linearGradient></defs><text x='21' y='21' text-anchor='middle' fill='url(#vsg)' font-family='Orbitron,sans-serif' font-size='20' font-weight='900'>VS</text></svg></span>"
         : "<div class='vs-badge'>VS</div>";
 
     $font_link = "<link href=\"https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap\" rel=\"stylesheet\">";
