@@ -1106,118 +1106,185 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
 </script>
 
 <script>
-/* ── Éclairs VIP Max — arcs électriques fixes autour de la bordure ── */
+/* ── Électricité VIP Max — paquets d'arcs aléatoires crépitant sur la bordure ── */
 (function(){
   window.addEventListener('load',function(){
     setTimeout(function(){
       var card=document.getElementById('vipMaxCard');
       var svg =document.getElementById('vipMaxSvg');
       if(!svg||!card)return;
-      var rc=card.getBoundingClientRect(),W=rc.width+4,H=rc.height+4;
+      var rc=card.getBoundingClientRect(),W=rc.width+4,H=rc.height+4,R=22;
       svg.setAttribute('width',W);svg.setAttribute('height',H);
       svg.setAttribute('viewBox','0 0 '+W+' '+H);
       var ns='http://www.w3.org/2000/svg';
 
       var df=document.createElementNS(ns,'defs');
-      var flt=document.createElementNS(ns,'filter');
-      flt.setAttribute('id','vipBoltGlow');flt.setAttribute('x','-50%');flt.setAttribute('y','-50%');
-      flt.setAttribute('width','200%');flt.setAttribute('height','200%');
-      var blur=document.createElementNS(ns,'feGaussianBlur');blur.setAttribute('stdDeviation','3');blur.setAttribute('result','blur');
-      var merge=document.createElementNS(ns,'feMerge');
-      var m1=document.createElementNS(ns,'feMergeNode');m1.setAttribute('in','blur');
-      var m2=document.createElementNS(ns,'feMergeNode');m2.setAttribute('in','SourceGraphic');
-      merge.appendChild(m1);merge.appendChild(m2);
-      flt.appendChild(blur);flt.appendChild(merge);df.appendChild(flt);
+      ['vbg1','vbg2','vbg3'].forEach(function(id,i){
+        var f=document.createElementNS(ns,'filter');
+        f.setAttribute('id',id);f.setAttribute('x','-80%');f.setAttribute('y','-80%');
+        f.setAttribute('width','260%');f.setAttribute('height','260%');
+        var b=document.createElementNS(ns,'feGaussianBlur');
+        b.setAttribute('stdDeviation',[2,5,8][i]);b.setAttribute('result','b');
+        var mg=document.createElementNS(ns,'feMerge');
+        var n1=document.createElementNS(ns,'feMergeNode');n1.setAttribute('in','b');
+        var n2=document.createElementNS(ns,'feMergeNode');n2.setAttribute('in','SourceGraphic');
+        mg.appendChild(n1);mg.appendChild(n2);f.appendChild(b);f.appendChild(mg);df.appendChild(f);
+      });
       svg.appendChild(df);
 
-      var boltPositions=[
-        {x:W*0.15,y:0,a:Math.PI/2},
-        {x:W*0.5, y:0,a:Math.PI*0.55},
-        {x:W*0.82,y:0,a:Math.PI*0.45},
-        {x:W,y:H*0.2,a:Math.PI},
-        {x:W,y:H*0.55,a:Math.PI*0.9},
-        {x:W,y:H*0.85,a:Math.PI*1.1},
-        {x:W*0.8,y:H,a:-Math.PI/2},
-        {x:W*0.45,y:H,a:-Math.PI*0.55},
-        {x:W*0.15,y:H,a:-Math.PI*0.4},
-        {x:0,y:H*0.78,a:0},
-        {x:0,y:H*0.45,a:Math.PI*0.05},
-        {x:0,y:H*0.15,a:-Math.PI*0.05}
-      ];
+      var perim=2*(W-2*R)+2*(H-2*R)+2*Math.PI*R;
 
-      function buildBolt(ox,oy,angle,len){
+      function ptOnBorder(t){
+        var d=((t%1)+1)%1*perim;
+        var segs=[
+          {l:W-2*R,tp:'l',x:R,y:0,dx:1,dy:0},
+          {l:Math.PI/2*R,tp:'a',cx:W-R,cy:R,sa:-Math.PI/2},
+          {l:H-2*R,tp:'l',x:W,y:R,dx:0,dy:1},
+          {l:Math.PI/2*R,tp:'a',cx:W-R,cy:H-R,sa:0},
+          {l:W-2*R,tp:'l',x:W-R,y:H,dx:-1,dy:0},
+          {l:Math.PI/2*R,tp:'a',cx:R,cy:H-R,sa:Math.PI/2},
+          {l:H-2*R,tp:'l',x:0,y:H-R,dx:0,dy:-1},
+          {l:Math.PI/2*R,tp:'a',cx:R,cy:R,sa:Math.PI}
+        ];
+        for(var i=0;i<segs.length;i++){
+          var s=segs[i];
+          if(d<=s.l){
+            var f=d/s.l;
+            if(s.tp==='l')return{x:s.x+s.dx*d,y:s.y+s.dy*d,nx:s.dy,ny:-s.dx};
+            var a=s.sa+f*Math.PI/2;
+            return{x:s.cx+Math.cos(a)*R,y:s.cy+Math.sin(a)*R,nx:Math.cos(a),ny:Math.sin(a)};
+          }
+          d-=s.l;
+        }
+        return{x:R,y:0,nx:0,ny:-1};
+      }
+
+      function normalAt(t){
+        var p=ptOnBorder(t);
+        return{x:p.x,y:p.y,nx:p.nx,ny:p.ny};
+      }
+
+      function buildArc(ox,oy,angle,len,segs){
         var pts=[{x:ox,y:oy}];
         var cx=ox,cy=oy;
-        var segs=4+Math.floor(Math.random()*4);
-        var segLen=len/segs;
+        var sl=len/segs;
         for(var i=0;i<segs;i++){
-          var jitter=(Math.random()-0.5)*segLen*1.6;
-          var perpA=angle+Math.PI/2;
-          cx+=Math.cos(angle)*segLen+Math.cos(perpA)*jitter;
-          cy+=Math.sin(angle)*segLen+Math.sin(perpA)*jitter;
+          var jit=(Math.random()-0.5)*sl*2.2;
+          var pa=angle+Math.PI/2;
+          cx+=Math.cos(angle)*sl+Math.cos(pa)*jit;
+          cy+=Math.sin(angle)*sl+Math.sin(pa)*jit;
           pts.push({x:cx,y:cy});
         }
         return pts;
       }
 
-      function drawBolt(pts,opacity,width,color){
-        var g=document.createElementNS(ns,'g');
-        g.setAttribute('filter','url(#vipBoltGlow)');
-        g.setAttribute('opacity',opacity);
-
+      function ptsToD(pts){
         var d='M'+pts[0].x.toFixed(1)+','+pts[0].y.toFixed(1);
         for(var i=1;i<pts.length;i++) d+=' L'+pts[i].x.toFixed(1)+','+pts[i].y.toFixed(1);
+        return d;
+      }
 
-        var glow=document.createElementNS(ns,'path');
-        glow.setAttribute('d',d);glow.setAttribute('fill','none');
-        glow.setAttribute('stroke',color);glow.setAttribute('stroke-width',width+2);
-        glow.setAttribute('stroke-linecap','round');glow.setAttribute('stroke-linejoin','round');
-        glow.setAttribute('opacity','0.4');
-        g.appendChild(glow);
+      var clusters=[];
 
-        var main=document.createElementNS(ns,'path');
-        main.setAttribute('d',d);main.setAttribute('fill','none');
-        main.setAttribute('stroke','#fffbe6');main.setAttribute('stroke-width',width);
-        main.setAttribute('stroke-linecap','round');main.setAttribute('stroke-linejoin','round');
-        g.appendChild(main);
+      function spawnCluster(){
+        var t=Math.random();
+        var p=normalAt(t);
+        var g=document.createElementNS(ns,'g');
+        var numArcs=3+Math.floor(Math.random()*5);
+        var inward=Math.atan2(-p.ny,-p.nx);
+
+        for(var i=0;i<numArcs;i++){
+          var spread=(Math.random()-0.5)*1.8;
+          var angle=inward+spread;
+          var len=8+Math.random()*30;
+          var segs=3+Math.floor(Math.random()*4);
+          var ox=p.x+(Math.random()-0.5)*14*Math.abs(p.ny);
+          var oy=p.y+(Math.random()-0.5)*14*Math.abs(p.nx);
+          var pts=buildArc(ox,oy,angle,len,segs);
+          var d=ptsToD(pts);
+
+          var w=0.4+Math.random()*1.4;
+
+          var glow=document.createElementNS(ns,'path');
+          glow.setAttribute('d',d);glow.setAttribute('fill','none');
+          glow.setAttribute('stroke','#ffd700');
+          glow.setAttribute('stroke-width',(w+3).toFixed(1));
+          glow.setAttribute('stroke-linecap','round');glow.setAttribute('stroke-linejoin','round');
+          glow.setAttribute('opacity','0.25');
+          glow.setAttribute('filter','url(#vbg2)');
+          g.appendChild(glow);
+
+          var mid=document.createElementNS(ns,'path');
+          mid.setAttribute('d',d);mid.setAttribute('fill','none');
+          mid.setAttribute('stroke','#f5c842');
+          mid.setAttribute('stroke-width',(w+1).toFixed(1));
+          mid.setAttribute('stroke-linecap','round');mid.setAttribute('stroke-linejoin','round');
+          mid.setAttribute('opacity','0.6');
+          mid.setAttribute('filter','url(#vbg1)');
+          g.appendChild(mid);
+
+          var core=document.createElementNS(ns,'path');
+          core.setAttribute('d',d);core.setAttribute('fill','none');
+          core.setAttribute('stroke','#fffbe6');
+          core.setAttribute('stroke-width',w.toFixed(1));
+          core.setAttribute('stroke-linecap','round');core.setAttribute('stroke-linejoin','round');
+          g.appendChild(core);
+
+          if(Math.random()>0.5&&segs>2){
+            var branchIdx=1+Math.floor(Math.random()*(pts.length-2));
+            var bp=pts[branchIdx];
+            var ba=angle+(Math.random()-0.5)*2;
+            var bl=5+Math.random()*12;
+            var bpts=buildArc(bp.x,bp.y,ba,bl,2+Math.floor(Math.random()*2));
+            var bd=ptsToD(bpts);
+            var branch=document.createElementNS(ns,'path');
+            branch.setAttribute('d',bd);branch.setAttribute('fill','none');
+            branch.setAttribute('stroke','#fffbe6');
+            branch.setAttribute('stroke-width',(w*0.6).toFixed(1));
+            branch.setAttribute('stroke-linecap','round');branch.setAttribute('stroke-linejoin','round');
+            branch.setAttribute('opacity','0.7');
+            g.appendChild(branch);
+          }
+        }
 
         svg.appendChild(g);
-        return g;
+        var life=80+Math.floor(Math.random()*180);
+        clusters.push({g:g,life:life,maxLife:life,born:performance.now()});
       }
 
-      var bolts=[];
-      boltPositions.forEach(function(bp){
-        var len=18+Math.random()*28;
-        var pts=buildBolt(bp.x,bp.y,bp.a,len);
-        var w=0.8+Math.random()*1.2;
-        var op=0.5+Math.random()*0.5;
-        var color='#ffd700';
-        if(Math.random()>0.6) color='#f5c842';
-        var g=drawBolt(pts,op,w,color);
-        bolts.push({g:g,bp:bp,len:len,phase:Math.random()*Math.PI*2,speed:1.5+Math.random()*3,baseOp:op});
-      });
+      for(var i=0;i<6;i++) spawnCluster();
 
-      var t=0;
-      function flicker(){
-        t+=0.05;
-        bolts.forEach(function(b){
-          var pulse=0.4+0.6*Math.abs(Math.sin(t*b.speed+b.phase));
-          var crack=Math.random()>0.97?0.15:0;
-          b.g.setAttribute('opacity',(b.baseOp*pulse+crack).toFixed(2));
-        });
-        requestAnimationFrame(flicker);
+      function loop(){
+        var now=performance.now();
+
+        for(var i=clusters.length-1;i>=0;i--){
+          var c=clusters[i];
+          var age=now-c.born;
+          var progress=age/(c.maxLife*16.67);
+
+          if(progress>=1){
+            svg.removeChild(c.g);
+            clusters.splice(i,1);
+            continue;
+          }
+
+          var fadeIn=Math.min(progress*8,1);
+          var fadeOut=progress>0.6?1-(progress-0.6)/0.4:1;
+          var flicker=0.7+0.3*Math.random();
+          var op=(fadeIn*fadeOut*flicker).toFixed(2);
+          c.g.setAttribute('opacity',op);
+        }
+
+        if(clusters.length<8&&Math.random()>0.65){
+          spawnCluster();
+        }
+        if(clusters.length<4){
+          spawnCluster();
+        }
+
+        requestAnimationFrame(loop);
       }
-      flicker();
-
-      setInterval(function(){
-        var idx=Math.floor(Math.random()*bolts.length);
-        var b=bolts[idx];
-        svg.removeChild(b.g);
-        var pts=buildBolt(b.bp.x,b.bp.y,b.bp.a,b.len);
-        var w=0.8+Math.random()*1.2;
-        var color=Math.random()>0.6?'#f5c842':'#ffd700';
-        b.g=drawBolt(pts,b.baseOp,w,color);
-      },800);
+      loop();
 
     },100);
   });
