@@ -115,7 +115,26 @@ if ($typeBet === 'Live') {
         $prono = $data['prono'] ?? '';
         $cote  = $data['cote']  ?? '1.50';
 
-        $userMsg = "Sport : $sport\nMatch : $match\nPronostic : $prono\nCote : $cote\n\nDate du jour : " . date('d/m/Y') . ". Heure = fuseau Europe/Paris.";
+        // Date et heure fiables : serveur Europe/Paris ou champs envoyés par le formulaire
+        $tz = new DateTimeZone('Europe/Paris');
+        $now = new DateTime('now', $tz);
+        if (!empty($data['date_fr']) && !empty($data['time_fr'])) {
+            $date_fr = trim($data['date_fr']);
+            $time_fr = preg_replace('/[^0-9:]/', '', trim($data['time_fr']));
+            if (strlen($time_fr) < 4) $time_fr = $now->format('H:i');
+        } else {
+            if (class_exists('IntlDateFormatter')) {
+                $formatter = new IntlDateFormatter('fr_FR', IntlDateFormatter::FULL, IntlDateFormatter::NONE, 'Europe/Paris', IntlDateFormatter::GREGORIAN);
+                $date_fr = ucfirst($formatter->format($now));
+            } else {
+                $jours = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+                $mois = ['','janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+                $date_fr = $jours[(int)$now->format('w')] . ' ' . $now->format('d') . ' ' . $mois[(int)$now->format('n')] . ' ' . $now->format('Y');
+            }
+            $time_fr = $now->format('H:i');
+        }
+
+        $userMsg = "Sport : $sport\nMatch : $match\nPronostic : $prono\nCote : $cote\n\nDate et heure à utiliser telles quelles : date_fr = \"$date_fr\" , time_fr = \"$time_fr\" (fuseau Europe/Paris).";
         debugLog("LIVE — Enrichissement via Claude...");
 
         $result = callClaude(CLAUDE_LIVE_ENRICH_PROMPT, $userMsg, 1000);
@@ -134,8 +153,6 @@ if ($typeBet === 'Live') {
             debugLog("WARN: enrichissement échoué, valeurs par défaut");
             $parts = preg_split('/\s+vs?\s+/i', $match);
             $enriched = [
-                'date_fr'     => date('d/m/Y'),
-                'time_fr'     => date('H:i'),
                 'player1'     => strtoupper(trim($parts[0] ?? 'Joueur 1')),
                 'player2'     => strtoupper(trim($parts[1] ?? 'Joueur 2')),
                 'flag1'       => '🏳️',
@@ -144,13 +161,17 @@ if ($typeBet === 'Live') {
             ];
         }
 
+        // Toujours utiliser nos date/heure (pas celles de Claude)
+        $enriched['date_fr'] = $date_fr;
+        $enriched['time_fr'] = $time_fr;
+
         $coteFloat  = floatval($cote);
         $confidence = ($coteFloat > 0) ? min(95, max(30, round(115 / $coteFloat))) : 60;
 
         $cards = generateLiveCards([
             'sport'       => $sport,
-            'date_fr'     => $enriched['date_fr']    ?? date('d/m/Y'),
-            'time_fr'     => $enriched['time_fr']    ?? date('H:i'),
+            'date_fr'     => $enriched['date_fr'],
+            'time_fr'     => $enriched['time_fr'],
             'player1'     => $enriched['player1']    ?? 'JOUEUR 1',
             'player2'     => $enriched['player2']    ?? 'JOUEUR 2',
             'flag1'       => $enriched['flag1']      ?? '🏳️',

@@ -19,17 +19,17 @@ define('CLAUDE_THINKING_ENABLED', false);
 // ⚡ LIVE — Enrichissement uniquement (JSON, pas de HTML)
 // ============================================================
 define('CLAUDE_LIVE_ENRICH_PROMPT', <<<'PROMPT'
-Tu reçois les infos d'un match (sport, match, pronostic, cote). Tu réponds UNIQUEMENT par un objet JSON valide, sans aucun texte avant ou après, sans backticks.
-Clés obligatoires (toutes en français, heure Europe/Paris) :
-- date_fr : jour en toutes lettres (ex: "Mercredi 26 Février 2026")
-- time_fr : heure (ex: "15:30")
+Tu reçois les infos d'un match (sport, match, pronostic, cote) et une date/heure fournies. Tu réponds UNIQUEMENT par un objet JSON valide, sans aucun texte avant ou après, sans backticks.
+Clés obligatoires :
+- date_fr : recopie EXACTEMENT la valeur "date_fr" donnée dans le message (date du match).
+- time_fr : recopie EXACTEMENT la valeur "time_fr" donnée dans le message (heure du match).
 - player1 : nom du premier joueur/équipe (ex: "Garin C.")
 - player2 : nom du second (ex: "Baez S.")
 - flag1 : emoji drapeau pays du joueur 1 (ex: "🇨🇱")
 - flag2 : emoji drapeau pays du joueur 2 (ex: "🇦🇷")
 - competition : compétition + surface si pertinent (ex: "ATP 250 - Buenos Aires - Terre battue")
-- prono_joueur : 1 ou 2 selon le pronostic. Si le pronostic indique que le joueur 1 gagne (ou équipe 1), mets 1. Si le pronostic indique que le joueur 2 gagne (ou équipe 2), mets 2. Sinon 1.
-Si tu ne connais pas un détail, utilise une valeur plausible. Heure = fuseau Europe/Paris.
+- prono_joueur : 1 ou 2 selon le pronostic. Si le pronostic indique que le joueur 1 gagne (ou équipe 1), mets 1. Si le joueur 2 gagne, mets 2. Sinon 1.
+Ne modifie jamais date_fr ni time_fr : utilise uniquement les valeurs fournies dans le message.
 Exemple : {"date_fr":"Mercredi 26 Février 2026","time_fr":"15:30","player1":"Garin C.","player2":"Baez S.","flag1":"🇨🇱","flag2":"🇦🇷","competition":"ATP 250 - Buenos Aires - Terre battue","prono_joueur":1}
 PROMPT
 );
