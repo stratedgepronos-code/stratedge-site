@@ -181,10 +181,8 @@ html,body{height:100%;overflow:hidden;font-family:"Rajdhani",sans-serif;backgrou
   position:relative;z-index:3;
   height:96vh;width:auto;max-width:none;
   object-fit:contain;object-position:bottom center;
-  /* Entrée d'abord, puis idle + yeux en combinaison */
   animation:
     mascot-in      1.6s cubic-bezier(.22,1,.36,1) both,
-    mascot-breathe 4.5s ease-in-out 2s infinite,
     mascot-eyes    3.2s ease-in-out 2s infinite;
 }
 
