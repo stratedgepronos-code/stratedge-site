@@ -321,8 +321,8 @@ CSS;
 .card-wrapper.tennis .match-block { background:transparent !important; border-color:rgba(255,255,255,0.06); }
 .card-wrapper.tennis .live-badge { color:#ff2d7a !important; }
 .card-wrapper.tennis .live-dot { background:#ff2d7a !important; box-shadow:0 0 6px #ff2d7a; }
-.card-wrapper.tennis .vs-badge { background:none !important; background-image:none !important; box-shadow:none !important; border:none !important; padding:0 !important; margin:0 !important; min-width:0 !important; }
-.card-wrapper.tennis .vs-gradient-text { background:linear-gradient(90deg,#E7337B,#00e5ff); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; font-weight:900; font-family:'Orbitron',sans-serif; font-size:12px; display:inline; }
+.card-wrapper.tennis .vs-badge { background:none !important; background-image:none !important; box-shadow:none !important; border:none !important; padding:0 !important; margin:0 !important; }
+.card-wrapper.tennis .vs-badge svg { display:block; }
 .card-wrapper.tennis .prono-text { color:#fff; font-size:16px; }
 .card-wrapper.tennis .cote-pill { background:linear-gradient(135deg,#E7337B 0%,#7D41E7 100%); box-shadow:0 4px 16px rgba(231,51,123,0.35); }
 .card-wrapper.tennis .cote-pill-shine { display:none !important; }
@@ -345,9 +345,9 @@ TENNIS;
         ? "<div class='cote-value'>{$cote}</div>"
         : "<div class='cote-pill-shine'></div><div class='cote-value'>{$cote}</div>";
 
-    // Tennis : VS = aucun fond, seul le texte en dégradé rose→bleu (span interne pour éviter tout bloc)
+    // Tennis : VS = SVG uniquement (dégradé sur le texte, zéro background)
     $vs_html = $is_tennis
-        ? "<span class='vs-badge' style='background:none!important;border:none;padding:0;margin:0;display:inline;'><span class='vs-gradient-text' style='background:linear-gradient(90deg,#E7337B,#00e5ff);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;font-weight:900;font-family:Orbitron,sans-serif;font-size:12px;'>VS</span></span>"
+        ? "<span class='vs-badge' style='display:inline-block;width:24px;height:14px;background:none!important;border:none;padding:0;margin:0;line-height:0;vertical-align:middle;'><svg xmlns='http://www.w3.org/2000/svg' width='24' height='14' viewBox='0 0 24 14' style='display:block;'><defs><linearGradient id='vsg' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:#E7337B'/><stop offset='100%' style='stop-color:#00e5ff'/></linearGradient></defs><text x='12' y='11' text-anchor='middle' fill='url(#vsg)' font-family='Orbitron,sans-serif' font-size='10' font-weight='900'>VS</text></svg></span>"
         : "<div class='vs-badge'>VS</div>";
 
     $font_link = "<link href=\"https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap\" rel=\"stylesheet\">";
