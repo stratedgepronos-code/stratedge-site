@@ -558,33 +558,75 @@ $membre = getMembre();
     }
 
     @media (max-width:860px) {
+      html,body{overflow-x:hidden;}
       .layout { grid-template-columns:1fr; }
-      .hero-title { font-size:1.8rem; }
-      .page { padding:2rem 1rem 4rem; }
-      .nav-inner { flex-wrap:wrap; gap:0.5rem; height:auto; min-height:60px; padding:0.6rem 0; }
-      .nav-logo img { height:32px; }
-      .nav-back { font-size:0.78rem; order:3; width:100%; justify-content:center; padding-bottom:0.3rem; }
-      .nav-badge { font-size:0.58rem; padding:0.2rem 0.7rem; }
+      .hero-title { font-size:1.6rem; }
+      .hero-subtitle{font-size:0.9rem;}
+      .page { padding:1.5rem 0.8rem 5rem; }
+      nav{padding:0 0.8rem;}
+      .nav-inner { flex-wrap:wrap; gap:0.4rem; height:auto; min-height:50px; padding:0.5rem 0; }
+      .nav-logo img { height:28px; }
+      .nav-back { font-size:0.75rem; order:3; width:100%; justify-content:center; padding-bottom:0.3rem; }
+      .nav-badge { font-size:0.55rem; padding:0.2rem 0.6rem; }
+      .offre-card{border-radius:16px;}
+      .payment-block{border-radius:16px;padding:1.5rem;}
+      .np-info-box{flex-direction:column;align-items:flex-start;gap:0.4rem;}
+      .np-amount-value{font-size:1.5rem;}
+      .np-success-title{font-size:1.1rem;}
+      .btn-generate{font-size:0.85rem;padding:0.85rem;}
+      .btn-crypto{font-size:0.72rem;padding:0.8rem;}
+      .other-offers{padding:1.2rem 1rem;border-radius:16px;}
     }
     @media (max-width:480px) {
-      .hero { margin-bottom:2.5rem; }
-      .hero-title { font-size:1.4rem; }
-      .hero-subtitle { font-size:0.88rem; }
-      .page { padding:1.5rem 0.75rem 3rem; }
-      .offre-card-top { padding:1.5rem; }
-      .offre-avantages { padding:1.2rem 1.5rem; }
-      .offre-prix .num { font-size:3.2rem; }
-      .offre-video-wrap { width:90px; height:90px; }
-      .payment-block { padding:1.5rem; border-radius:16px; }
-      .sp-wrap { padding:1rem; }
-      .crypto-tabs { gap:0.4rem; }
-      .crypto-tab { padding:0.35rem 0.7rem; font-size:0.62rem; }
-      .wallet-addr { font-size:0.62rem; }
-      .sec-badges { gap:0.4rem; }
-      .sec-badge { font-size:0.65rem; padding:0.25rem 0.6rem; }
-      .other-offers { padding:1.2rem 1rem; border-radius:16px; }
-      .other-pill { font-size:0.78rem; padding:0.4rem 0.8rem; }
-      .membre-chip { margin:0 1.5rem 1.2rem; padding:0.6rem 0.8rem; font-size:0.78rem; }
+      .hero { margin-bottom:2rem; }
+      .hero-title { font-size:1.3rem; }
+      .hero-subtitle { font-size:0.85rem; }
+      .hero-tag{font-size:0.6rem;letter-spacing:2px;padding:0.3rem 0.9rem;}
+      .page { padding:1.2rem 0.6rem 4rem; }
+      .offre-card-top { padding:1.2rem; }
+      .offre-avantages { padding:1rem 1.2rem; }
+      .offre-prix .num { font-size:3rem; }
+      .offre-prix .cur{font-size:1.3rem;}
+      .offre-video-wrap { width:80px; height:80px; }
+      .offre-badge{font-size:0.55rem;}
+      .offre-duree{font-size:0.78rem;}
+      .avantage{font-size:0.85rem;padding:0.5rem 0;}
+      .payment-block { padding:1.2rem; border-radius:14px; }
+      .block-title{font-size:0.72rem;}
+      .block-desc{font-size:0.78rem;}
+      .sp-wrap { padding:0.9rem; }
+      .sp-wrap p{font-size:0.78rem;}
+      .crypto-tabs { gap:0.35rem; }
+      .crypto-tab { padding:0.3rem 0.6rem; font-size:0.58rem; }
+      .wallet-box{padding:0.6rem 0.8rem;border-radius:8px;}
+      .wallet-addr { font-size:0.58rem; }
+      .copy-btn{font-size:0.68rem;padding:0.25rem 0.5rem;}
+      .sec-badges { gap:0.35rem; }
+      .sec-badge { font-size:0.62rem; padding:0.2rem 0.5rem; }
+      .other-pill { font-size:0.75rem; padding:0.35rem 0.7rem; }
+      .other-pill .pill-price{font-size:0.68rem;}
+      .membre-chip { margin:0 1.2rem 1rem; padding:0.5rem 0.7rem; font-size:0.75rem; }
+      .note-box{padding:0.8rem 1rem;border-radius:10px;}
+      .note-box p{font-size:0.75rem;}
+      .tx-form{padding:1rem;border-radius:10px;}
+      .tx-title{font-size:0.72rem;}
+      .tx-desc{font-size:0.75rem;}
+      .np-address-block{padding:1rem;border-radius:10px;}
+      .np-amount-value{font-size:1.3rem;}
+      .np-warning{font-size:0.72rem;padding:0.6rem 0.8rem;}
+      .np-status-icon{font-size:1.6rem;}
+      .np-status-msg{font-size:0.85rem;}
+      .np-success-icon{font-size:2.5rem;}
+      .np-success-title{font-size:1rem;}
+      .np-success-desc{font-size:0.82rem;}
+    }
+    @media (max-width:360px){
+      .page{padding:1rem 0.4rem 4rem;}
+      .offre-card-top{padding:1rem;}
+      .offre-avantages{padding:0.8rem 1rem;}
+      .offre-prix .num{font-size:2.5rem;}
+      .payment-block{padding:1rem;border-radius:12px;}
+      .hero-title{font-size:1.15rem;}
     }
   </style>
 </head>

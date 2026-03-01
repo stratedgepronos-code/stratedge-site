@@ -493,6 +493,14 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .tennis-price-row { justify-content:center; }
       .tennis-payment { width:100%; }
     }
+    @media(max-width:600px){
+      .tennis-wrapper{padding:0 0.8rem;margin:1rem auto 0;}
+      .price-card-tennis{padding:1.3rem 1rem;border-radius:16px;gap:1rem;}
+      .tennis-mascot{width:80px;height:80px;}
+      .tennis-payment{min-width:auto;}
+      .tennis-btn{font-size:0.85rem;padding:0.6rem 1rem;min-height:44px;}
+      .tennis-btn-crypto{font-size:0.72rem;padding:0.5rem 0.8rem;min-height:44px;}
+    }
     .fade-up.visible { opacity: 1; transform: translateY(0); }
 
     /* RESPONSIVE */
@@ -502,80 +510,105 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .hero-visual { right: 0; bottom: 0; top: auto; transform: scale(0.94); transform-origin: bottom right; }
     }
     @media (max-width: 900px) {
+      html,body{overflow-x:hidden;}
       .hamburger { display: flex; } .nav-links { display: none; }
-      .hero { height: auto; min-height: 100vh; overflow: hidden; }
-      .hero-inner { padding: 100px 1.5rem 3rem; }
+      .hero { height: auto; min-height: auto; overflow: hidden; width:100%; }
+      .hero-inner { padding: 80px 1.2rem 2.5rem; }
       .hero-text { text-align: center; max-width: 100%; }
-      .hero-stats { justify-content: center; gap: 1.5rem; flex-wrap: wrap; }
+      .hero-stats { justify-content: center; gap: 1.2rem; flex-wrap: wrap; }
       .hero-btns { justify-content: center; flex-wrap: wrap; }
       .hero-visual { display: none; }
       .hero-glow, .hero-glow-2, .hero-glow-mascot { display: none; }
+      .hero-bg-grid { display: none; }
       .features-grid, .reviews-grid { grid-template-columns: 1fr; }
       .pricing-grid { grid-template-columns: 1fr 1fr; max-width: 700px; margin-left: auto; margin-right: auto; }
       .price-card.featured { transform: none; }
-      .price-card.featured:hover { transform: translateY(-6px); }
+      .price-card.featured:hover { transform: translateY(-4px); }
       .stake-banner { grid-template-columns: 1fr; }
       .stake-visual { display: none; }
-      .section-title { font-size: 1.8rem; }
-      .footer-main { grid-template-columns: 1fr 1fr; gap: 2rem; }
-      .stat-value { font-size: 2rem; }
+      .section-title { font-size: 1.6rem; }
+      .footer-main { grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+      .stat-value { font-size: 1.8rem; }
     }
     @media (max-width: 600px) {
-      nav { padding: 0 1rem; }
-      .logo img, .logo-img { height: 36px; }
-      .hero-inner { padding: 85px 1rem 2.5rem; }
-      .hero h1 { font-size: clamp(1.6rem, 7vw, 2.2rem); }
-      .hero-slogan { font-size: 0.95rem; letter-spacing: 1px; }
-      .hero-desc { font-size: 0.95rem; }
-      .hero-stats { flex-wrap: wrap; gap: 0.8rem; justify-content: center; }
-      .stat { min-width: 90px; text-align: center; }
-      .stat-value { font-size: 1.6rem; }
-      .stat-label { font-size: 0.7rem; }
-      .hero-btns { flex-direction: column; width: 100%; gap: 0.75rem; }
-      .hero-btns a, .hero-btns button { width: 100%; text-align: center; justify-content: center; }
-      .hero-badge { font-size: 0.72rem; padding: 0.35rem 0.75rem; }
-      section { padding: 3rem 1rem !important; }
-      .section-title { font-size: 1.4rem; }
-      .section-subtitle { font-size: 0.9rem; }
+      nav { padding: 0 0.8rem; }
+      .nav-inner{height:50px;}
+      .logo img, .logo-img { height: 30px; }
+      .mobile-menu{top:50px;width:100%;}
+      .hero-inner { padding: 70px 0.8rem 2rem; }
+      .hero h1 { font-size: clamp(1.5rem, 7vw, 2rem); }
+      .hero-slogan { font-size: 0.9rem; letter-spacing: 0.8px; }
+      .hero-desc { font-size: 0.9rem; }
+      .hero-stats { flex-wrap: wrap; gap: 0.7rem; justify-content: center; }
+      .stat { min-width: 85px; text-align: center; }
+      .stat-value { font-size: 1.5rem; }
+      .stat-label { font-size: 0.65rem; }
+      .hero-btns { flex-direction: column; width: 100%; gap: 0.7rem; }
+      .hero-btns a, .hero-btns button { width: 100%; text-align: center; justify-content: center; min-height:48px; }
+      .hero-badge { font-size: 0.68rem; padding: 0.3rem 0.65rem; }
+      section { padding: 2.5rem 0.8rem !important; }
+      .section-tag{font-size:0.65rem;}
+      .section-title { font-size: 1.3rem; }
+      .section-subtitle { font-size: 0.85rem; }
       .pricing-grid { max-width: 100%; padding: 0; gap: 1rem; grid-template-columns: 1fr; }
-      .price-card { padding: 1.5rem 1rem; }
-      .price-amount { font-size: 2.2rem; }
-      .price-mascot { width: 110px; height: 110px; }
-      .vip-price-num { font-size: 2.2rem; }
-      .vip-mascot { width: 110px; height: 110px; }
-      .vip-logo-vip { font-size: 1rem; }
+      .price-card { padding: 1.3rem 1rem; border-radius:16px; }
+      .price-amount { font-size: 2rem; }
+      .price-mascot { width: 100px; height: 100px; }
+      .price-name{font-size:1.3rem;}
+      .price-features li{font-size:0.88rem;}
+      .starpass-zone{padding:0.8rem 1rem;}
+      .vip-price-num { font-size: 2rem; }
+      .vip-mascot { width: 100px; height: 100px; }
+      .vip-logo-vip { font-size: 0.95rem; }
       .fondateur-strip { flex-direction: column; gap: 0.3rem; text-align: center; }
-      .fondateur-strip-left { font-size: 0.52rem; }
-      .fondateur-strip-right { font-size: 0.55rem; }
-      .footer-main { grid-template-columns: 1fr; gap: 2rem; }
-      .footer-bottom { flex-direction: column; text-align: center; gap: 0.75rem; }
-      .footer-legal { flex-wrap: wrap; justify-content: center; gap: 1rem; }
-      .footer-cta h2 { font-size: 1.3rem; }
+      .fondateur-strip-left { font-size: 0.5rem; }
+      .fondateur-strip-right { font-size: 0.52rem; }
+      .footer-main { grid-template-columns: 1fr; gap: 1.5rem; }
+      .footer-bottom { flex-direction: column; text-align: center; gap: 0.6rem; }
+      .footer-legal { flex-wrap: wrap; justify-content: center; gap: 0.8rem; font-size:0.78rem; }
+      .footer-cta{padding:2rem 1rem;}
+      .footer-cta h2 { font-size: 1.2rem; }
+      .footer-cta p{font-size:0.88rem;}
       .footer-cta-btns { flex-direction: column; align-items: center; }
-      .footer-cta-btns a { width: 100%; text-align: center; justify-content: center; }
-      .mobile-menu { width: 100%; }
-      .stake-banner { padding: 1.5rem 1rem; border-radius: 16px; }
-      .stake-content h3 { font-size: 1.3rem; }
-      .step { gap: 1rem; padding: 1.5rem 0; }
-      .step-number { width: 44px; height: 44px; font-size: 1rem; flex-shrink: 0; }
-      .steps-container::before { left: 21px; }
-      .features-grid { gap: 1rem; }
-      .feature-card { padding: 1.5rem; }
-      .review-card { padding: 1.5rem; }
-      .review-text { font-size: 0.9rem; }
-      .starpass-btn { font-size: 0.9rem; padding: 0.65rem 1rem; }
-      .crypto-btn { font-size: 0.78rem; padding: 12px 16px; }
+      .footer-cta-btns a { width: 100%; text-align: center; justify-content: center; min-height:48px; }
+      .stake-banner { padding: 1.3rem 0.8rem; border-radius: 14px; }
+      .stake-content h3 { font-size: 1.2rem; }
+      .stake-content p{font-size:0.88rem;}
+      .btn-stake{min-height:48px;font-size:0.9rem;}
+      .step { gap: 0.8rem; padding: 1.2rem 0; }
+      .step-number { width: 40px; height: 40px; font-size: 0.95rem; flex-shrink: 0; }
+      .step-content h4{font-size:1rem;}
+      .step-content p{font-size:0.88rem;}
+      .steps-container::before { left: 19px; }
+      .features-grid { gap: 0.8rem; }
+      .feature-card { padding: 1.2rem; border-radius:14px; }
+      .feature-icon{font-size:1.8rem;}
+      .feature-card h3{font-size:1.05rem;}
+      .feature-card p{font-size:0.85rem;}
+      .review-card { padding: 1.2rem; border-radius:14px; }
+      .review-text { font-size: 0.88rem; }
+      .review-avatar{width:36px;height:36px;}
+      .starpass-btn { font-size: 0.85rem; padding: 0.6rem 0.9rem; min-height:44px; }
+      .crypto-btn { font-size: 0.75rem; padding: 10px 14px; min-height:44px; }
+      .discount-badge{font-size:0.6rem;}
     }
     @media (max-width: 380px) {
-      .hero h1 { font-size: 1.5rem; }
-      .hero-slogan { font-size: 0.85rem; letter-spacing: 0.5px; }
-      .stat { min-width: 80px; }
-      .stat-value { font-size: 1.4rem; }
-      .price-name { font-size: 1.2rem; }
-      .price-amount { font-size: 1.8rem; }
-      .section-title { font-size: 1.2rem; }
-      .btn-primary { padding: 0.85rem 1.5rem; font-size: 1rem; }
-      .btn-outline { padding: 0.85rem 1.5rem; font-size: 0.95rem; }
+      .hero-inner{padding:60px 0.6rem 1.5rem;}
+      .hero h1 { font-size: 1.35rem; }
+      .hero-slogan { font-size: 0.8rem; letter-spacing: 0.4px; }
+      .stat { min-width: 75px; }
+      .stat-value { font-size: 1.3rem; }
+      .stat-label{font-size:0.58rem;}
+      .price-name { font-size: 1.1rem; }
+      .price-amount { font-size: 1.7rem; }
+      .price-card{padding:1.1rem 0.8rem;}
+      .section-title { font-size: 1.1rem; }
+      section{padding:2rem 0.6rem !important;}
+      .btn-primary { padding: 0.75rem 1.2rem; font-size: 0.92rem; }
+      .btn-outline { padding: 0.75rem 1.2rem; font-size: 0.88rem; }
+      .feature-card{padding:1rem;}
+      .review-card{padding:1rem;}
+      .footer-cta h2{font-size:1.05rem;}
     }
     @media (min-width: 1600px) {
       .mascot-container { width: 1050px; height: 1200px; }

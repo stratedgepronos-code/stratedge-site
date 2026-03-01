@@ -115,7 +115,40 @@ $statutLabels = ['ouvert'=>'🟡 Ouvert','en_cours'=>'🔵 En cours','resolu'=>'
 .btn-send{background:linear-gradient(135deg,var(--pink),var(--pink-dim));color:#fff;padding:0 1.5rem;height:80px;border:none;border-radius:10px;font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:700;cursor:pointer;transition:all .3s;}
 .ticket-header-info{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.07);border-radius:12px;padding:1.2rem;margin-bottom:1.5rem;}
 .ticket-header-info h4{font-family:'Orbitron',sans-serif;font-size:0.95rem;margin-bottom:0.4rem;}
-@media(max-width:768px){.ticket-item{flex-direction:column;align-items:flex-start;gap:0.5rem;}.chat-form{flex-direction:column;}.btn-send{height:48px;width:100%;}.btn-submit{width:100%;}}
+@media(max-width:768px){
+  .page-title{font-size:1.2rem;}
+  .page-sub{font-size:0.85rem;margin-bottom:1.2rem;}
+  .sec{padding:1.1rem 0.9rem;border-radius:12px;margin-bottom:1rem;}
+  .sec h3{font-size:0.88rem;margin-bottom:1rem;}
+  .ticket-item{flex-direction:column;align-items:flex-start;gap:0.4rem;padding:0.9rem;border-radius:10px;margin-bottom:0.6rem;}
+  .ticket-item:hover{transform:none;}
+  .ticket-sujet{font-size:0.92rem;}
+  .ticket-date{font-size:0.75rem;}
+  .statut-badge{font-size:0.75rem;padding:0.25rem 0.7rem;}
+  .chat-form{flex-direction:column;gap:0.6rem;}
+  .chat-form textarea{height:70px;font-size:0.92rem;padding:0.7rem 0.8rem;}
+  .btn-send{height:48px;width:100%;border-radius:10px;min-height:48px;}
+  .btn-submit{width:100%;padding:0.8rem 1.5rem;font-size:0.92rem;min-height:48px;}
+  .chat-area{padding:1rem;border-radius:10px;max-height:350px;}
+  .msg-content{padding:0.65rem 0.9rem;font-size:0.88rem;border-radius:10px;}
+  .msg-bubble{max-width:88%;}
+  .msg-meta{font-size:0.68rem;}
+  .form-group label{font-size:0.78rem;}
+  .form-group input,.form-group textarea,.form-group select{padding:0.75rem 1rem;font-size:0.92rem;border-radius:8px;}
+  .form-group textarea{min-height:100px;}
+  .ticket-header-info{padding:1rem;border-radius:10px;margin-bottom:1rem;}
+  .ticket-header-info h4{font-size:0.85rem;}
+  .back-btn{font-size:0.85rem;margin-bottom:1rem;}
+  .alert-success,.alert-error{font-size:0.88rem;padding:0.8rem;border-radius:8px;}
+}
+@media(max-width:380px){
+  .page-title{font-size:1.05rem;}
+  .sec{padding:0.8rem 0.6rem;}
+  .ticket-item{padding:0.7rem;}
+  .chat-area{padding:0.7rem;}
+  .msg-content{font-size:0.82rem;padding:0.5rem 0.7rem;}
+  .form-group input,.form-group textarea{padding:0.65rem 0.8rem;font-size:0.88rem;}
+}
 </style>
 </head>
 <body>

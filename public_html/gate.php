@@ -144,46 +144,18 @@ html,body{height:100%;overflow:hidden;font-family:"Rajdhani",sans-serif;backgrou
   margin-bottom:20px;
   animation:fadeinL 1s 1.2s both}
 
-/* ══ ANIMATIONS MASCOTTE ══ */
-
-/* 1. Entrée power-charge : apparition + tremblement bref */
-@keyframes mascot-in{
-  0%  {opacity:0;transform:translateY(60px) scale(.93);filter:drop-shadow(0 0 0px rgba(255,45,120,0))}
-  60% {opacity:1;transform:translateY(-6px) scale(1.02);filter:drop-shadow(0 0 80px rgba(255,45,120,.8)) drop-shadow(0 0 160px rgba(255,45,120,.4))}
-  72% {transform:translateY(-6px) scale(1.02) translateX(-3px)}
-  76% {transform:translateY(-6px) scale(1.02) translateX(3px)}
-  80% {transform:translateY(-6px) scale(1.02) translateX(-2px)}
-  84% {transform:translateY(-6px) scale(1.02) translateX(2px)}
-  100%{opacity:1;transform:translateY(0) scale(1);filter:drop-shadow(0 0 45px rgba(255,45,120,.5)) drop-shadow(0 0 90px rgba(255,45,120,.2))}
-}
-
-/* 2. Idle : respiration lente */
-@keyframes mascot-breathe{
-  0%,100%{transform:translateY(0) scale(1)}
-  50%    {transform:translateY(-8px) scale(1.008)}
-}
-
-/* 3. Glow des yeux qui pulse (via filter drop-shadow rose) */
-@keyframes mascot-eyes{
-  0%,100%{filter:
-    drop-shadow(0 0 45px rgba(255,45,120,.50))
-    drop-shadow(0 0 90px rgba(255,45,120,.20))}
-  30%{filter:
-    drop-shadow(0 0 55px rgba(255,45,120,.70))
-    drop-shadow(0 0 110px rgba(255,45,120,.35))
-    drop-shadow(0 0 8px rgba(255,160,200,.9))}
-  60%{filter:
-    drop-shadow(0 0 40px rgba(255,45,120,.45))
-    drop-shadow(0 0 80px rgba(255,45,120,.15))}
+/* ══ MASCOTTE — entrée simple puis FIXE ══ */
+@keyframes mascot-fadein{
+  0%  {opacity:0}
+  100%{opacity:1}
 }
 
 .mascot-img{
   position:relative;z-index:3;
   height:96vh;width:auto;max-width:none;
   object-fit:contain;object-position:bottom center;
-  animation:
-    mascot-in      1.6s cubic-bezier(.22,1,.36,1) both,
-    mascot-eyes    3.2s ease-in-out 2s infinite;
+  filter:drop-shadow(0 0 45px rgba(255,45,120,.5)) drop-shadow(0 0 90px rgba(255,45,120,.2));
+  animation:mascot-fadein 1.6s cubic-bezier(.22,1,.36,1) both;
 }
 
 /* Texte gauche */
@@ -330,16 +302,38 @@ html,body{height:100%;overflow:hidden;font-family:"Rajdhani",sans-serif;backgrou
 
 /* ── RESPONSIVE ── */
 @media(max-width:860px){
-  html,body{overflow-y:auto;height:auto}
-  .wrapper{flex-direction:column;height:auto;min-height:100vh}
-  .left{min-height:55vw}
-  .mascot-img{height:55vw}
+  html,body{overflow-y:auto;height:auto;overflow-x:hidden}
+  .wrapper{flex-direction:column;height:auto;min-height:100dvh}
+  .left{min-height:45vw;max-height:40dvh}
+  .mascot-img{height:40dvh;max-height:350px}
   .left-text{display:none}
-  .right{width:100%;padding:28px 20px 70px}
+  .divider{display:none}
+  .ground-ring,.ground-glow{display:none}
+  .particles{display:none}
+  #ki-canvas{display:none}
+  .right{width:100%;padding:24px 16px 60px}
+  .site-logo{width:140px}
+  .tagline{font-size:9px;margin-bottom:20px}
 }
 @media(max-width:480px){
-  .card{padding:28px 18px 24px}
-  .card-bar{margin:-28px -18px 28px}
+  .left{min-height:35vw;max-height:30dvh}
+  .mascot-img{height:30dvh;max-height:250px}
+  .card{padding:24px 16px 20px}
+  .card-bar{margin:-24px -16px 24px}
+  .card-title{font-size:24px}
+  .card-sub{font-size:12px;margin-bottom:20px}
+  .input{padding:12px 12px 12px 40px;font-size:14px}
+  .btn-body{height:50px;padding:0 16px}
+  .btn-text{font-size:16px;letter-spacing:3px}
+  .right{padding:16px 12px 50px}
+  .site-logo{width:120px}
+}
+@media(max-width:360px){
+  .left{max-height:25dvh}
+  .mascot-img{max-height:200px}
+  .card{padding:20px 14px 18px}
+  .card-bar{margin:-20px -14px 20px}
+  .right{padding:12px 10px 40px}
 }
 </style>
 </head>

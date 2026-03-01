@@ -69,21 +69,30 @@ $stmt = $db->prepare("SELECT * FROM chat_messages WHERE chat_id = ? ORDER BY dat
 .chat-hint{font-size:0.8rem;color:var(--txt3);margin-top:0.6rem;}
 .notif-ok{background:rgba(255,45,120,0.08);border:1px solid rgba(255,45,120,0.2);color:var(--pink);border-radius:10px;padding:0.8rem 1rem;font-size:0.92rem;margin-bottom:1rem;font-weight:600;max-width:820px;margin-left:auto;margin-right:auto;}
 @media(max-width:768px){
-  .chat-input-row{flex-direction:column;}
-  .btn-send{width:100%;height:48px;border-radius:12px;}
-  .chat-messages{max-height:calc(100vh - 420px);min-height:250px;padding:1rem;}
-  .chat-header{padding:1rem 1.2rem;border-radius:14px 14px 0 0;}
-  .chat-header-info h3{font-size:0.95rem;}
-  .chat-header-info p{font-size:0.78rem;}
-  .chat-avatar{width:40px;height:40px;}
-  .chat-input-area{padding:1rem 1.2rem;}
-  .chat-input-row textarea{height:70px;font-size:0.95rem;}
-  .msg-bubble{max-width:85%;font-size:0.92rem;padding:0.75rem 1rem;border-radius:14px;}
-  .chat-hint{font-size:0.72rem;}
+  .chat-box{max-width:100%;}
+  .chat-input-row{flex-direction:column;gap:0.6rem;}
+  .btn-send{width:100%;height:48px;border-radius:12px;font-size:1.1rem;min-height:48px;}
+  .chat-messages{max-height:calc(100dvh - 340px);min-height:200px;padding:0.8rem;border-radius:0;}
+  .chat-header{padding:0.8rem 1rem;border-radius:12px 12px 0 0;}
+  .chat-header-info h3{font-size:0.9rem;}
+  .chat-header-info p{font-size:0.75rem;}
+  .chat-avatar{width:36px;height:36px;}
+  .chat-input-area{padding:0.8rem 1rem;border-radius:0 0 12px 12px;}
+  .chat-input-row textarea{height:60px;font-size:0.92rem;padding:0.7rem 1rem;border-radius:10px;}
+  .msg-bubble{max-width:85%;font-size:0.9rem;padding:0.65rem 0.9rem;border-radius:12px;}
+  .msg-av-sm{width:28px;height:28px;font-size:0.85rem;}
+  .msg-meta{font-size:0.65rem;}
+  .chat-hint{font-size:0.7rem;}
+  .chat-empty span{font-size:2.2rem;}
+  .chat-empty strong{font-size:0.95rem;}
+  .notif-ok{font-size:0.85rem;padding:0.7rem 0.8rem;border-radius:8px;max-width:100%;}
 }
 @media(max-width:380px){
-  .chat-messages{padding:0.7rem;max-height:calc(100vh - 440px);}
-  .msg-bubble{max-width:90%;font-size:0.88rem;}
+  .chat-messages{padding:0.5rem;max-height:calc(100dvh - 360px);}
+  .msg-bubble{max-width:92%;font-size:0.85rem;padding:0.55rem 0.75rem;}
+  .msg-av-sm{width:24px;height:24px;font-size:0.75rem;}
+  .chat-header{padding:0.6rem 0.8rem;}
+  .chat-input-area{padding:0.6rem 0.8rem;}
 }
 </style>
 </head>

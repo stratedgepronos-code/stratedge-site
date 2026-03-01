@@ -165,24 +165,48 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
 .nf-ev .ev-t{font-weight:700;font-size:0.95rem;margin-bottom:0.2rem;}
 .nf-ev .ev-d{font-size:0.85rem;color:var(--txt3);line-height:1.4;}
 
-@media(max-width:900px){.grid3{grid-template-columns:1fr 1fr;}.p-grid{grid-template-columns:1fr;}.fr.two{grid-template-columns:1fr;}.nf-grid{grid-template-columns:1fr;}}
+@media(max-width:900px){
+  .grid3{grid-template-columns:1fr 1fr;}
+  .p-grid{grid-template-columns:1fr;}
+  .fr.two{grid-template-columns:1fr;}
+  .nf-grid{grid-template-columns:1fr;}
+}
 @media(max-width:768px){
   .grid3{grid-template-columns:1fr;}
   .abo-box{flex-direction:column;align-items:flex-start;}
-  .btn-pk{width:100%;justify-content:center;}
-  .sec{padding:1.3rem 1.1rem;}
+  .btn-pk{width:100%;justify-content:center;padding:0.7rem 1.2rem;font-size:0.92rem;}
+  .sec{padding:1.1rem 0.9rem;border-radius:12px;margin-bottom:1rem;}
+  .sec h3{font-size:0.92rem;margin-bottom:1rem;}
   .ht{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap;}
-  .st-card .val{font-size:1.3rem;}
-  .st-card .lb{font-size:0.65rem;}
-  .crd{padding:1.3rem 1rem;}
+  .st-card{padding:1rem 1.1rem;border-radius:10px;}
+  .st-card .val{font-size:1.2rem;}
+  .st-card .lb{font-size:0.62rem;letter-spacing:1px;}
+  .st-card .sub{font-size:0.82rem;}
+  .crd{padding:1.1rem 0.9rem;border-radius:12px;}
   .crd-h .tl{font-size:0.82rem;}
-  .av-card{padding:1.5rem 1rem;}
-  .av-circle{width:80px;height:80px;font-size:1.8rem;}
-  .av-name{font-size:0.95rem;}
-  .nf-card{padding:1.8rem 1.2rem;}
-  .nf-desc{font-size:0.9rem;}
-  .nf-title{font-size:1rem;}
-  .nf-help .step-t{font-size:0.88rem;}
+  .av-card{padding:1.3rem 0.9rem;border-radius:14px;}
+  .av-circle{width:72px;height:72px;font-size:1.6rem;}
+  .av-name{font-size:0.92rem;}
+  .av-email{font-size:0.78rem;}
+  .nf-card{padding:1.5rem 1rem;border-radius:12px;}
+  .nf-ico{font-size:2.5rem;}
+  .nf-desc{font-size:0.85rem;max-width:none;}
+  .nf-title{font-size:0.95rem;}
+  .btn-nf{padding:0.8rem 1.5rem;font-size:0.95rem;width:100%;}
+  .nf-help{padding:1rem 1.2rem;max-width:none;margin:1rem 0;}
+  .nf-help .step-t{font-size:0.85rem;}
+  .nf-help .step-n{width:22px;height:22px;font-size:0.7rem;}
+  .chat-lk{padding:0.7rem 1rem;font-size:0.9rem;width:100%;justify-content:center;}
+  .sav-btn{padding:0.7rem 1rem;font-size:0.9rem;width:100%;justify-content:center;}
+  .alert{font-size:0.9rem;padding:0.8rem 1rem;border-radius:10px;}
+}
+@media(max-width:380px){
+  .st-card .val{font-size:1rem;}
+  .sec{padding:0.9rem 0.7rem;}
+  .crd{padding:0.9rem 0.7rem;}
+  .nf-card{padding:1.2rem 0.8rem;}
+  .av-circle{width:60px;height:60px;font-size:1.3rem;}
+  .btn-nf{font-size:0.85rem;padding:0.7rem 1rem;}
 }
 </style>
 </head>

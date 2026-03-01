@@ -89,7 +89,7 @@ $tauxReussite = ($stats['total'] > 0 && ($stats['gagnes'] + $stats['perdus']) > 
     .filter-btn.f-annule.active{background:rgba(245,158,11,0.1);border-color:#f59e0b;color:#f59e0b;}
 
     /* GRILLE BETS */
-    .bets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.5rem;}
+    .bets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr));gap:1.5rem;}
     .bet-card{background:var(--bg-card);border-radius:16px;overflow:hidden;transition:all 0.3s;position:relative;}
     .bet-card:hover{transform:translateY(-4px);box-shadow:0 20px 50px rgba(0,0,0,0.4);}
 
@@ -127,34 +127,50 @@ $tauxReussite = ($stats['total'] > 0 && ($stats['gagnes'] + $stats['perdus']) > 
 
     @media(max-width:900px){
       .stats-bar{grid-template-columns:repeat(3,1fr);}
+      .main{padding:2rem 1.5rem;}
     }
-    @media(max-width:600px){
-      nav { padding:0 1rem; }
-      .logo img { height:36px; }
-      .page-header { padding:2rem 1rem; }
-      .page-title { font-size:1.5rem; }
-      .page-sub { font-size:0.88rem; }
-      .main { padding:1.5rem 1rem; }
-      .stats-bar { grid-template-columns:repeat(2,1fr); gap:0.75rem; }
-      .stat-value { font-size:1.5rem; }
-      .stat-label { font-size:0.7rem; }
-      .stat-card { padding:1rem 0.8rem; }
-      .bets-grid { grid-template-columns:1fr; gap:1rem; }
-      .bet-card:hover { transform:none; }
-      .filters { gap:0.4rem; }
-      .filter-btn { padding:0.4rem 0.9rem; font-size:0.82rem; }
-      .bet-footer { flex-direction:column; gap:0.3rem; align-items:flex-start; }
-      .result-icon { font-size:3rem; }
-      .result-label { font-size:1rem; }
+    @media(max-width:768px){
+      html{overflow-x:hidden;}
+      body{overflow-x:hidden;}
+      nav{padding:0 0.8rem;}
+      .nav-inner{height:50px;}
+      .logo img{height:28px;}
+      .mobile-menu{top:50px;}
+      .page-header{padding:1.8rem 0.8rem;overflow:hidden;}
+      .page-header::before{width:400px;height:250px;top:-100px;}
+      .page-title{font-size:1.5rem;}
+      .page-tag{font-size:0.62rem;letter-spacing:2px;}
+      .page-sub{font-size:0.85rem;}
+      .main{padding:1.2rem 0.8rem;}
+      .stats-bar{grid-template-columns:repeat(2,1fr);gap:0.7rem;}
+      .stat-value{font-size:1.4rem;}
+      .stat-label{font-size:0.65rem;letter-spacing:0.5px;}
+      .stat-card{padding:0.9rem 0.7rem;border-radius:10px;}
+      .bets-grid{grid-template-columns:1fr;gap:1rem;}
+      .bet-card{border-radius:12px;}
+      .bet-card:hover{transform:none;box-shadow:none;}
+      .filters{gap:0.4rem;}
+      .filter-btn{padding:0.4rem 0.85rem;font-size:0.8rem;min-height:36px;}
+      .bet-footer{flex-direction:column;gap:0.3rem;align-items:flex-start;padding:0.6rem 1rem;}
+      .result-icon{font-size:2.8rem;}
+      .result-label{font-size:0.95rem;}
+      .empty-state{padding:3rem 1.5rem;}
+      .empty-state .big{font-size:2.2rem;}
+      .empty-state h3{font-size:1rem;}
+      .lightbox-img{max-height:80dvh;border-radius:8px;}
     }
     @media(max-width:380px){
-      .stats-bar { grid-template-columns:1fr 1fr; gap:0.5rem; }
-      .stat-value { font-size:1.2rem; }
-      .page-title { font-size:1.25rem; }
-      .filter-btn { padding:0.35rem 0.65rem; font-size:0.75rem; }
-      .bet-card-header { padding:0.7rem 1rem; }
-      .bet-type-badge { font-size:0.55rem; }
-      .bet-titre { font-size:0.78rem; padding:0 1rem 0.5rem; }
+      .stats-bar{grid-template-columns:1fr 1fr;gap:0.5rem;}
+      .stat-value{font-size:1.1rem;}
+      .stat-card{padding:0.7rem 0.5rem;}
+      .page-title{font-size:1.2rem;}
+      .main{padding:1rem 0.5rem;}
+      .filter-btn{padding:0.3rem 0.55rem;font-size:0.72rem;}
+      .bet-card-header{padding:0.6rem 0.8rem;}
+      .bet-type-badge{font-size:0.52rem;}
+      .bet-titre{font-size:0.75rem;padding:0 0.8rem 0.5rem;}
+      .result-badge{font-size:0.7rem;padding:0.2rem 0.6rem;}
+      .result-date{font-size:0.68rem;}
     }
   </style>
   <!-- PWA -->
