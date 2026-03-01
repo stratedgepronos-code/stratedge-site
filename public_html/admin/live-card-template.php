@@ -332,7 +332,7 @@ CSS;
 .card-wrapper.tennis .promo-eyebrow { color:#39ff14; }
 .card-wrapper.tennis .promo-cta { background:linear-gradient(135deg,#39ff14,#00c896); color:#000; box-shadow:0 0 14px rgba(57,255,20,0.5); }
 .card-wrapper.tennis .locked-reserved { color:#39ff14; }
-.card-wrapper.tennis .locked-cta-btn { background:linear-gradient(135deg,#39ff14,#00c896); color:#000; }
+.card-wrapper.tennis .locked-cta-btn { background:linear-gradient(135deg,#39ff14,#00c896); color:#000 !important; }
 TENNIS;
     }
 
@@ -351,6 +351,7 @@ TENNIS;
         ? "<span class='vs-badge' style='display:inline-block;width:42px;height:26px;background:none!important;border:none;padding:0;margin:0;line-height:0;vertical-align:middle;'><svg xmlns='http://www.w3.org/2000/svg' width='42' height='26' viewBox='0 0 42 26' style='display:block;'><defs><linearGradient id='vsg' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:#E7337B'/><stop offset='100%' style='stop-color:#00e5ff'/></linearGradient></defs><text x='21' y='21' text-anchor='middle' fill='url(#vsg)' font-family='Orbitron,sans-serif' font-size='20' font-weight='900'>VS</text></svg></span>"
         : "<div class='vs-badge'>VS</div>";
 
+    $locked_cta_text = $is_tennis ? 'Souscris au pack Tennis pour recevoir le bet' : '🔓 Reçois le bet sur stratedgepronos.fr';
     $font_link = "<link href=\"https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap\" rel=\"stylesheet\">";
 
     // CARD NORMALE
@@ -459,7 +460,7 @@ HTML;
       <div class='locked-zone'>
         <div class='locked-padlock'>🔒</div>
         <div class='locked-reserved'>CONTENU RÉSERVÉ</div>
-        <div class='locked-cta-btn'>🔓 Reçois le bet sur stratedgepronos.fr</div>
+        <div class='locked-cta-btn'>{$locked_cta_text}</div>
       </div>
       <div class='locked-cote-center'>
         <div class='cote-label'>Cote</div>
