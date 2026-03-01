@@ -1,7 +1,7 @@
 <?php
 // ============================================================
 // STRATEDGE — live-card-template.php V8
-// V8 : fonts embarquées en base64 (fix CORS srcdoc null origin)
+// V8 : fonts embarquées en base64 (fix CORS srcdoc null origin) — mascotte tennis PNG + screen
 // V7 : nouveau design watermark (sans colonne mascotte)
 //      mascotte centrée transparente (mix-blend-mode:screen)
 //      + generateFunCards() ajouté (même approche template)
