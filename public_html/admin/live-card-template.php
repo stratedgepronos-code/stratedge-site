@@ -24,11 +24,9 @@ function getLocalFontsCss() {
         }
 
         if (!is_dir($cacheDir)) {
-            if (!@mkdir($cacheDir, 0755, true)) return $fallback;
+            @mkdir($cacheDir, 0755, true);
         }
-        if (!is_writable($cacheDir)) {
-            // On continue sans cache : on va construire les blocs en mémoire
-        }
+        // Même si le cache n'est pas inscriptible, on construit les @font-face en mémoire (évite fallback @import en iframe)
 
         $ua = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36';
         $fonts = [
