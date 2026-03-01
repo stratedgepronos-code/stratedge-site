@@ -15,6 +15,7 @@ requireAdmin();
 
 if (!defined('ABSPATH')) { define('ABSPATH', true); }
 require_once __DIR__ . '/../includes/claude-config.php';
+require_once __DIR__ . '/../includes/logo-fallback.php';
 
 header('Content-Type: application/json; charset=utf-8');
 

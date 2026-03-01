@@ -206,6 +206,14 @@ function generateLiveCards($d) {
     $logo1_url = trim($d['team1_logo'] ?? '');
     $logo2_url = trim($d['team2_logo'] ?? '');
     $is_team_sport = in_array($sport, ['football', 'basket', 'hockey']);
+    if ($is_team_sport) {
+        if ($logo1_url === '' || !filter_var($logo1_url, FILTER_VALIDATE_URL)) {
+            $logo1_url = function_exists('stratedge_fetch_team_logo_url') ? stratedge_fetch_team_logo_url($d['player1'] ?? '') : '';
+        }
+        if ($logo2_url === '' || !filter_var($logo2_url, FILTER_VALIDATE_URL)) {
+            $logo2_url = function_exists('stratedge_fetch_team_logo_url') ? stratedge_fetch_team_logo_url($d['player2'] ?? '') : '';
+        }
+    }
     if ($is_team_sport && $logo1_url !== '' && filter_var($logo1_url, FILTER_VALIDATE_URL)) {
         $team1_display = '<img src="' . htmlspecialchars($logo1_url, ENT_QUOTES, 'UTF-8') . '" class="team-logo" alt="">';
     } else {
@@ -699,6 +707,16 @@ CSS;
 
         $logo1Url = trim($bet['team1_logo'] ?? '');
         $logo2Url = trim($bet['team2_logo'] ?? '');
+        $matchRaw = $bet['match'] ?? '';
+        $matchParts = preg_split('/\s+vs\.?\s+/i', $matchRaw, 2);
+        $team1Name = trim($matchParts[0] ?? '');
+        $team2Name = trim($matchParts[1] ?? '');
+        if (($logo1Url === '' || !filter_var($logo1Url, FILTER_VALIDATE_URL)) && $team1Name !== '' && function_exists('stratedge_fetch_team_logo_url')) {
+            $logo1Url = stratedge_fetch_team_logo_url($team1Name);
+        }
+        if (($logo2Url === '' || !filter_var($logo2Url, FILTER_VALIDATE_URL)) && $team2Name !== '' && function_exists('stratedge_fetch_team_logo_url')) {
+            $logo2Url = stratedge_fetch_team_logo_url($team2Name);
+        }
         if ($logo1Url !== '' && filter_var($logo1Url, FILTER_VALIDATE_URL)) {
             $ico1 = '<img src="' . htmlspecialchars($logo1Url, ENT_QUOTES, 'UTF-8') . '" class="fun-team-logo" alt="">';
         } else {
