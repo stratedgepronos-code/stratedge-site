@@ -93,6 +93,21 @@ function _curlFetch($url, $ua = '') {
 
 
 // ────────────────────────────────────────────────────────────
+// UTILITAIRE : URL logo → proxy même origine (affichage garanti)
+// ────────────────────────────────────────────────────────────
+function logoProxyUrl($url) {
+    if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) return '';
+    $host = parse_url($url, PHP_URL_HOST);
+    $proxyHosts = ['upload.wikimedia.org', 'commons.wikimedia.org', 'en.wikipedia.org'];
+    if (in_array($host, $proxyHosts, true)) {
+        $base = 'https://stratedgepronos.fr';
+        $u = str_replace(['+', '/'], ['-', '_'], base64_encode($url));
+        return $base . '/assets/logo-proxy.php?u=' . $u;
+    }
+    return $url;
+}
+
+// ────────────────────────────────────────────────────────────
 // UTILITAIRE : emoji drapeau → img flagcdn.com
 // ────────────────────────────────────────────────────────────
 function flagImg($emoji) {
@@ -215,12 +230,12 @@ function generateLiveCards($d) {
         }
     }
     if ($is_team_sport && $logo1_url !== '' && filter_var($logo1_url, FILTER_VALIDATE_URL)) {
-        $team1_display = '<img src="' . htmlspecialchars($logo1_url, ENT_QUOTES, 'UTF-8') . '" class="team-logo" alt="">';
+        $team1_display = '<img src="' . htmlspecialchars(logoProxyUrl($logo1_url), ENT_QUOTES, 'UTF-8') . '" class="team-logo" alt="">';
     } else {
         $team1_display = $flag1;
     }
     if ($is_team_sport && $logo2_url !== '' && filter_var($logo2_url, FILTER_VALIDATE_URL)) {
-        $team2_display = '<img src="' . htmlspecialchars($logo2_url, ENT_QUOTES, 'UTF-8') . '" class="team-logo" alt="">';
+        $team2_display = '<img src="' . htmlspecialchars(logoProxyUrl($logo2_url), ENT_QUOTES, 'UTF-8') . '" class="team-logo" alt="">';
     } else {
         $team2_display = $flag2;
     }
@@ -583,7 +598,7 @@ function generateFunCards($d) {
     ];
 
     $embeddedFonts = getLocalFontsCss();
-    $css = $embeddedFonts . <<<CSS
+    $css = $embeddedFonts . "\n/* Fallback Google Fonts si embarquées absentes (iframe/srcdoc) */\n@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Bebas+Neue&display=swap');\n" . <<<CSS
 
 * { margin:0; padding:0; box-sizing:border-box; }
 body { background:#0a0a0a; margin:0; padding:0; width:760px; font-family:'Orbitron',sans-serif; }
@@ -670,20 +685,20 @@ body { background:#0a0a0a; margin:0; padding:0; width:760px; font-family:'Orbitr
 .total-pill-shine { position:absolute; top:0; left:0; right:0; height:50%; background:rgba(255,255,255,0.13); border-radius:12px 12px 0 0; }
 .total-cote { font-family:'Orbitron',sans-serif; font-size:26px; font-weight:900; color:#fff; letter-spacing:2px; position:relative; z-index:1; }
 
-/* PROMO */
-.promo-banner { background:rgba(14,22,14,0.95); border:1px solid rgba(57,255,20,0.18); border-radius:10px; padding:9px 12px; position:relative; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+/* PROMO — Option Sport Daily, Week-end, Weekly (fonts forcées pour lisibilité) */
+.promo-banner { background:rgba(14,22,14,0.95); border:1px solid rgba(57,255,20,0.18); border-radius:10px; padding:10px 14px; position:relative; display:flex; align-items:center; justify-content:space-between; gap:10px; }
 .promo-left-bar { position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(to bottom,#39ff14,#00e5ff); border-radius:3px 0 0 3px; }
-.promo-text-block { flex:1; padding-left:8px; display:flex; flex-direction:column; gap:3px; }
-.promo-eyebrow { font-family:'Orbitron',sans-serif; font-size:9px; color:#39ff14; text-transform:uppercase; letter-spacing:2px; font-weight:700; }
-.promo-main { font-family:'Bebas Neue','Orbitron',sans-serif; font-size:15px; letter-spacing:0.8px; color:#fff; line-height:1.2; }
-.promo-main-hl { color:#ff2d7a; font-family:inherit; }
-.promo-packs { display:flex; gap:4px; flex-wrap:wrap; }
-.pack-tag { font-family:'Orbitron',sans-serif; font-size:9px; font-weight:700; padding:3px 8px; border-radius:4px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.5); text-transform:uppercase; }
+.promo-text-block { flex:1; padding-left:8px; display:flex; flex-direction:column; gap:4px; }
+.promo-eyebrow { font-family:'Orbitron',sans-serif !important; font-size:10px !important; color:#39ff14; text-transform:uppercase; letter-spacing:2px; font-weight:700; }
+.promo-main { font-family:'Bebas Neue','Orbitron',sans-serif !important; font-size:16px !important; letter-spacing:0.8px; color:#fff; line-height:1.25; min-height:1.25em; }
+.promo-main-hl { color:#ff2d7a; font-family:inherit !important; }
+.promo-packs { display:flex; gap:5px; flex-wrap:wrap; }
+.pack-tag { font-family:'Orbitron',sans-serif !important; font-size:10px !important; font-weight:700; padding:4px 9px; border-radius:4px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.6); text-transform:uppercase; }
 .pack-tag-max { color:#39ff14; border-color:rgba(57,255,20,0.3); background:rgba(57,255,20,0.07); }
-.promo-price { font-family:'Orbitron',sans-serif; font-size:9px; color:rgba(255,255,255,0.5); }
-.promo-price span { font-family:'Orbitron',sans-serif; font-size:14px; font-weight:700; color:#00e5ff; }
+.promo-price { font-family:'Orbitron',sans-serif !important; font-size:10px !important; color:rgba(255,255,255,0.55); }
+.promo-price span { font-family:'Orbitron',sans-serif !important; font-size:15px !important; font-weight:700; color:#00e5ff; }
 .promo-right { display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0; }
-.promo-cta { display:inline-flex; align-items:center; gap:4px; background:linear-gradient(135deg,#39ff14,#00c896); color:#000; font-family:'Orbitron',sans-serif; font-size:9px; font-weight:900; letter-spacing:0.8px; text-transform:uppercase; padding:7px 12px; border-radius:8px; white-space:nowrap; box-shadow:0 0 14px rgba(57,255,20,0.4); }
+.promo-cta { display:inline-flex; align-items:center; gap:4px; background:linear-gradient(135deg,#39ff14,#00c896); color:#000; font-family:'Orbitron',sans-serif !important; font-size:10px !important; font-weight:900; letter-spacing:0.8px; text-transform:uppercase; padding:8px 14px; border-radius:8px; white-space:nowrap; box-shadow:0 0 14px rgba(57,255,20,0.4); }
 
 /* Locked */
 .locked-zone { text-align:center; margin:4px 0; }
@@ -718,12 +733,12 @@ CSS;
             $logo2Url = stratedge_fetch_team_logo_url($team2Name);
         }
         if ($logo1Url !== '' && filter_var($logo1Url, FILTER_VALIDATE_URL)) {
-            $ico1 = '<img src="' . htmlspecialchars($logo1Url, ENT_QUOTES, 'UTF-8') . '" class="fun-team-logo" alt="">';
+            $ico1 = '<img src="' . htmlspecialchars(logoProxyUrl($logo1Url), ENT_QUOTES, 'UTF-8') . '" class="fun-team-logo" alt="">';
         } else {
             $ico1 = flagImg($bet['flag1'] ?? '');
         }
         if ($logo2Url !== '' && filter_var($logo2Url, FILTER_VALIDATE_URL)) {
-            $ico2 = '<img src="' . htmlspecialchars($logo2Url, ENT_QUOTES, 'UTF-8') . '" class="fun-team-logo" alt="">';
+            $ico2 = '<img src="' . htmlspecialchars(logoProxyUrl($logo2Url), ENT_QUOTES, 'UTF-8') . '" class="fun-team-logo" alt="">';
         } else {
             $ico2 = flagImg($bet['flag2'] ?? '');
         }

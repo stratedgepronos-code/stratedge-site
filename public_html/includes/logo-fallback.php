@@ -44,7 +44,7 @@ function _stratedge_wikipedia_logo($teamName) {
 
     $titles = $data[1];
     foreach ($titles as $title) {
-        $titleEnc = str_replace(' ', '%20', $title);
+        $titleEnc = rawurlencode(str_replace(' ', '_', $title));
         $imgUrl = $apiBase . '?action=query&titles=' . $titleEnc . '&prop=pageimages&format=json&pithumbsize=120&piprop=thumbnail';
         $imgJson = _stratedge_curl($imgUrl);
         if (!$imgJson) continue;
