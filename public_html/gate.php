@@ -144,10 +144,26 @@ html,body{height:100%;overflow:hidden;font-family:"Rajdhani",sans-serif;backgrou
   margin-bottom:20px;
   animation:fadeinL 1s 1.2s both}
 
-/* ══ MASCOTTE — entrée simple puis FIXE ══ */
+/* ══ ANIMATIONS MASCOTTE ══ */
 @keyframes mascot-fadein{
   0%  {opacity:0}
   100%{opacity:1}
+}
+@keyframes mascot-breathe{
+  0%,100%{transform:translateY(0) scale(1)}
+  50%    {transform:translateY(-8px) scale(1.008)}
+}
+@keyframes mascot-eyes{
+  0%,100%{filter:
+    drop-shadow(0 0 45px rgba(255,45,120,.50))
+    drop-shadow(0 0 90px rgba(255,45,120,.20))}
+  30%{filter:
+    drop-shadow(0 0 55px rgba(255,45,120,.70))
+    drop-shadow(0 0 110px rgba(255,45,120,.35))
+    drop-shadow(0 0 8px rgba(255,160,200,.9))}
+  60%{filter:
+    drop-shadow(0 0 40px rgba(255,45,120,.45))
+    drop-shadow(0 0 80px rgba(255,45,120,.15))}
 }
 
 .mascot-img{
@@ -155,7 +171,10 @@ html,body{height:100%;overflow:hidden;font-family:"Rajdhani",sans-serif;backgrou
   height:96vh;width:auto;max-width:none;
   object-fit:contain;object-position:bottom center;
   filter:drop-shadow(0 0 45px rgba(255,45,120,.5)) drop-shadow(0 0 90px rgba(255,45,120,.2));
-  animation:mascot-fadein 1.6s cubic-bezier(.22,1,.36,1) both;
+  animation:
+    mascot-fadein   1.6s cubic-bezier(.22,1,.36,1) both,
+    mascot-breathe  4.5s ease-in-out 2s infinite,
+    mascot-eyes     3.2s ease-in-out 2s infinite;
 }
 
 /* Texte gauche */
@@ -308,9 +327,10 @@ html,body{height:100%;overflow:hidden;font-family:"Rajdhani",sans-serif;backgrou
   .mascot-img{height:40dvh;max-height:350px}
   .left-text{display:none}
   .divider{display:none}
-  .ground-ring,.ground-glow{display:none}
-  .particles{display:none}
-  #ki-canvas{display:none}
+  .ground-ring.gr1{width:160px;height:30px}
+  .ground-ring.gr2{width:260px;height:50px}
+  .ground-ring.gr3{width:360px;height:70px}
+  .ground-glow{width:280px;height:35px}
   .right{width:100%;padding:24px 16px 60px}
   .site-logo{width:140px}
   .tagline{font-size:9px;margin-bottom:20px}
@@ -318,6 +338,10 @@ html,body{height:100%;overflow:hidden;font-family:"Rajdhani",sans-serif;backgrou
 @media(max-width:480px){
   .left{min-height:35vw;max-height:30dvh}
   .mascot-img{height:30dvh;max-height:250px}
+  .ground-ring.gr1{width:120px;height:22px}
+  .ground-ring.gr2{width:200px;height:38px}
+  .ground-ring.gr3{width:280px;height:55px}
+  .ground-glow{width:200px;height:28px}
   .card{padding:24px 16px 20px}
   .card-bar{margin:-24px -16px 24px}
   .card-title{font-size:24px}
@@ -331,6 +355,10 @@ html,body{height:100%;overflow:hidden;font-family:"Rajdhani",sans-serif;backgrou
 @media(max-width:360px){
   .left{max-height:25dvh}
   .mascot-img{max-height:200px}
+  .ground-ring.gr1{width:100px;height:18px}
+  .ground-ring.gr2{width:160px;height:30px}
+  .ground-ring.gr3{display:none}
+  .ground-glow{width:160px;height:22px}
   .card{padding:20px 14px 18px}
   .card-bar{margin:-20px -14px 20px}
   .right{padding:12px 10px 40px}
