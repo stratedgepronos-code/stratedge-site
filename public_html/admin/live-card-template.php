@@ -127,8 +127,8 @@ function sportConfig($sport) {
             'emoji'        => '🎾',
             'label'        => 'Tennis',
             'pack'         => 'Tennis Pro',
-            'mascotte_url'   => 'https://stratedgepronos.fr/assets/images/mascotte_tennis.png',
-            // Tennis : fond noir pur → mix-blend-mode:screen rend le fond invisible (mascotte transparente comme Live foot)
+            'mascotte_url'   => 'https://stratedgepronos.fr/assets/images/mascotte-tennis.jpg',
+            // Tennis : fond transparent comme card mascotte noir et rose néon (mix-blend-mode:screen)
             'mascotte_style' => "mix-blend-mode:screen; opacity:0.35;",
             'mascotte_locked'=> "mix-blend-mode:screen; opacity:0.18;",
             // Badge vert neon
@@ -319,24 +319,23 @@ CSS;
 .card-wrapper.tennis .match-left-bar { background:linear-gradient(to bottom,#E7337B,#7D41E7); }
 .card-wrapper.tennis .live-badge { color:#39ff14; }
 .card-wrapper.tennis .live-dot { background:#39ff14; box-shadow:0 0 6px #39ff14; }
-.card-wrapper.tennis .vs-badge { color:rgba(255,255,255,0.5); }
-.card-wrapper.tennis .prono-text { color:#fff; }
+.card-wrapper.tennis .vs-badge { background:linear-gradient(90deg,#E7337B,#00e5ff); -webkit-background-clip:text; background-clip:text; color:transparent; font-weight:900; }
+.card-wrapper.tennis .prono-text { color:#fff; font-size:16px; }
 .card-wrapper.tennis .cote-pill { background:linear-gradient(135deg,#E7337B 0%,#7D41E7 100%); box-shadow:0 4px 20px rgba(231,51,123,0.5),inset 0 0 0 1px rgba(255,255,255,0.12); }
+.card-wrapper.tennis .cote-pill-shine { background:linear-gradient(180deg,rgba(255,255,255,0.07) 0%,transparent 60%); border-radius:12px 12px 0 0; }
 .card-wrapper.tennis .promo-banner { background:#1A361A; border:1px solid rgba(57,255,20,0.35); }
 .card-wrapper.tennis .promo-eyebrow { color:#39ff14; }
 .card-wrapper.tennis .promo-cta { background:linear-gradient(135deg,#39ff14,#00c896); color:#000; box-shadow:0 0 14px rgba(57,255,20,0.5); }
 .card-wrapper.tennis .locked-reserved { color:#39ff14; }
 .card-wrapper.tennis .locked-cta-btn { background:linear-gradient(135deg,#39ff14,#00c896); color:#000; }
-.card-wrapper.tennis .promo-option { font-size:7px; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:1px; margin-top:4px; }
-.card-wrapper.tennis .promo-option .promo-main-hl { font-size:14px; color:#fff; font-family:'Bebas Neue',cursive; }
 TENNIS;
     }
 
     $wrapper_class = $is_tennis ? 'card-wrapper tennis' : 'card-wrapper';
     $promo_eyebrow = $is_tennis ? 'OFFRE EXCLUSIVE' : $sc['emoji'] . ' Offre exclusive';
-    $promo_main   = $is_tennis ? 'PACK TENNIS PRO - ACCÈS ILLIMITÉ' : "Pack <span class='promo-main-hl'>{$sc['pack']}</span> — Accès illimité";
-    $promo_sub    = $is_tennis ? 'Pronostics experts - Analyses live - Dès 9.99€/mois' : "Pronostics experts · Analyses live · <span>Dès 9.99€/mois</span>";
-    $promo_extra  = $is_tennis ? "<div class='promo-option'>EN OPTION DÈS <span class='promo-main-hl'>9.99€/mois</span></div>" : '';
+    $promo_main   = $is_tennis ? 'PACK TENNIS PRO - <span class="promo-main-hl">15€/semaine</span>' : "Pack <span class='promo-main-hl'>{$sc['pack']}</span> — Accès illimité";
+    $promo_sub    = $is_tennis ? 'Pronostics experts - Analyses live - Accès illimité' : "Pronostics experts · Analyses live · <span>Dès 9.99€/mois</span>";
+    $promo_extra  = $is_tennis ? '' : '';
     $promo_cta_text = $is_tennis ? "JE M'ABONNE →" : "🚀 Je m'abonne";
 
     // CARD NORMALE
