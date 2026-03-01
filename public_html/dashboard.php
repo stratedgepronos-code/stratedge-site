@@ -166,7 +166,24 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
 .nf-ev .ev-d{font-size:0.85rem;color:var(--txt3);line-height:1.4;}
 
 @media(max-width:900px){.grid3{grid-template-columns:1fr 1fr;}.p-grid{grid-template-columns:1fr;}.fr.two{grid-template-columns:1fr;}.nf-grid{grid-template-columns:1fr;}}
-@media(max-width:768px){.grid3{grid-template-columns:1fr;}.abo-box{flex-direction:column;align-items:flex-start;}.btn-pk{width:100%;justify-content:center;}.sec{padding:1.3rem 1.1rem;}}
+@media(max-width:768px){
+  .grid3{grid-template-columns:1fr;}
+  .abo-box{flex-direction:column;align-items:flex-start;}
+  .btn-pk{width:100%;justify-content:center;}
+  .sec{padding:1.3rem 1.1rem;}
+  .ht{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap;}
+  .st-card .val{font-size:1.3rem;}
+  .st-card .lb{font-size:0.65rem;}
+  .crd{padding:1.3rem 1rem;}
+  .crd-h .tl{font-size:0.82rem;}
+  .av-card{padding:1.5rem 1rem;}
+  .av-circle{width:80px;height:80px;font-size:1.8rem;}
+  .av-name{font-size:0.95rem;}
+  .nf-card{padding:1.8rem 1.2rem;}
+  .nf-desc{font-size:0.9rem;}
+  .nf-title{font-size:1rem;}
+  .nf-help .step-t{font-size:0.88rem;}
+}
 </style>
 </head>
 <body>

@@ -68,7 +68,23 @@ $stmt = $db->prepare("SELECT * FROM chat_messages WHERE chat_id = ? ORDER BY dat
 .btn-send:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(255,45,120,0.3);}
 .chat-hint{font-size:0.8rem;color:var(--txt3);margin-top:0.6rem;}
 .notif-ok{background:rgba(255,45,120,0.08);border:1px solid rgba(255,45,120,0.2);color:var(--pink);border-radius:10px;padding:0.8rem 1rem;font-size:0.92rem;margin-bottom:1rem;font-weight:600;max-width:820px;margin-left:auto;margin-right:auto;}
-@media(max-width:768px){.chat-input-row{flex-direction:column;}.btn-send{width:100%;height:48px;}.chat-messages{max-height:calc(100vh - 400px);min-height:280px;padding:1.2rem;}}
+@media(max-width:768px){
+  .chat-input-row{flex-direction:column;}
+  .btn-send{width:100%;height:48px;border-radius:12px;}
+  .chat-messages{max-height:calc(100vh - 420px);min-height:250px;padding:1rem;}
+  .chat-header{padding:1rem 1.2rem;border-radius:14px 14px 0 0;}
+  .chat-header-info h3{font-size:0.95rem;}
+  .chat-header-info p{font-size:0.78rem;}
+  .chat-avatar{width:40px;height:40px;}
+  .chat-input-area{padding:1rem 1.2rem;}
+  .chat-input-row textarea{height:70px;font-size:0.95rem;}
+  .msg-bubble{max-width:85%;font-size:0.92rem;padding:0.75rem 1rem;border-radius:14px;}
+  .chat-hint{font-size:0.72rem;}
+}
+@media(max-width:380px){
+  .chat-messages{padding:0.7rem;max-height:calc(100vh - 440px);}
+  .msg-bubble{max-width:90%;font-size:0.88rem;}
+}
 </style>
 </head>
 <body>

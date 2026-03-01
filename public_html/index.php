@@ -63,7 +63,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
     /* HERO */
-    .hero { height: 100vh; min-height: 100vh; display: flex; position: relative; padding: 0; overflow: hidden; max-width: 100vw; }
+    .hero { height: 100vh; min-height: 100vh; display: flex; position: relative; padding: 0; overflow: hidden; max-width: 100vw; width: 100%; }
     .hero-bg-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,45,120,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,45,120,0.03) 1px, transparent 1px); background-size: 60px 60px; mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, black 30%, transparent 70%); }
     .hero-glow { position: absolute; width: 900px; height: 900px; background: radial-gradient(circle, rgba(255,45,120,0.1) 0%, transparent 70%); top: -200px; left: -200px; pointer-events: none; }
     .hero-glow-2 { position: absolute; width: 700px; height: 700px; background: radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%); bottom: -300px; right: -150px; pointer-events: none; }
@@ -496,33 +496,44 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .fade-up.visible { opacity: 1; transform: translateY(0); }
 
     /* RESPONSIVE */
+    @media (max-width: 1200px) {
+      .mascot-container { width: 700px; height: 820px; }
+      .mascot-img { width: 700px !important; }
+      .hero-visual { right: 0; bottom: 0; top: auto; transform: scale(0.94); transform-origin: bottom right; }
+    }
     @media (max-width: 900px) {
       .hamburger { display: flex; } .nav-links { display: none; }
-      .hero { height: auto; min-height: 100vh; } .hero-inner { padding: 100px 1.5rem 3rem; }
-      .hero-text { text-align: center; max-width: 100%; } .hero-stats { justify-content: center; gap: 1.5rem; }
+      .hero { height: auto; min-height: 100vh; overflow: hidden; }
+      .hero-inner { padding: 100px 1.5rem 3rem; }
+      .hero-text { text-align: center; max-width: 100%; }
+      .hero-stats { justify-content: center; gap: 1.5rem; flex-wrap: wrap; }
       .hero-btns { justify-content: center; flex-wrap: wrap; }
-      /* Mascotte + effets visibles jusqu'à 768px, cachés en dessous */
-      .hero-visual { display: block; bottom: 0; top: auto; transform: scale(0.55); transform-origin: bottom right; }
+      .hero-visual { display: none; }
+      .hero-glow, .hero-glow-2, .hero-glow-mascot { display: none; }
       .features-grid, .reviews-grid { grid-template-columns: 1fr; }
       .pricing-grid { grid-template-columns: 1fr 1fr; max-width: 700px; margin-left: auto; margin-right: auto; }
-      .price-card.featured { transform: none; } .stake-banner { grid-template-columns: 1fr; }
-      .stake-visual { display: none; } .section-title { font-size: 1.8rem; }
+      .price-card.featured { transform: none; }
+      .price-card.featured:hover { transform: translateY(-6px); }
+      .stake-banner { grid-template-columns: 1fr; }
+      .stake-visual { display: none; }
+      .section-title { font-size: 1.8rem; }
       .footer-main { grid-template-columns: 1fr 1fr; gap: 2rem; }
-    }
-    @media (max-width: 768px) {
-      .hero-visual { display: none; }
+      .stat-value { font-size: 2rem; }
     }
     @media (max-width: 600px) {
       nav { padding: 0 1rem; }
-      .logo img { height: 36px; }
+      .logo img, .logo-img { height: 36px; }
       .hero-inner { padding: 85px 1rem 2.5rem; }
       .hero h1 { font-size: clamp(1.6rem, 7vw, 2.2rem); }
-      .hero-slogan { font-size: 0.95rem; }
+      .hero-slogan { font-size: 0.95rem; letter-spacing: 1px; }
       .hero-desc { font-size: 0.95rem; }
       .hero-stats { flex-wrap: wrap; gap: 0.8rem; justify-content: center; }
-      .stat { min-width: 120px; text-align: center; }
+      .stat { min-width: 90px; text-align: center; }
+      .stat-value { font-size: 1.6rem; }
+      .stat-label { font-size: 0.7rem; }
       .hero-btns { flex-direction: column; width: 100%; gap: 0.75rem; }
       .hero-btns a, .hero-btns button { width: 100%; text-align: center; justify-content: center; }
+      .hero-badge { font-size: 0.72rem; padding: 0.35rem 0.75rem; }
       section { padding: 3rem 1rem !important; }
       .section-title { font-size: 1.4rem; }
       .section-subtitle { font-size: 0.9rem; }
@@ -530,28 +541,46 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .price-card { padding: 1.5rem 1rem; }
       .price-amount { font-size: 2.2rem; }
       .price-mascot { width: 110px; height: 110px; }
+      .vip-price-num { font-size: 2.2rem; }
+      .vip-mascot { width: 110px; height: 110px; }
+      .vip-logo-vip { font-size: 1rem; }
+      .fondateur-strip { flex-direction: column; gap: 0.3rem; text-align: center; }
+      .fondateur-strip-left { font-size: 0.52rem; }
+      .fondateur-strip-right { font-size: 0.55rem; }
       .footer-main { grid-template-columns: 1fr; gap: 2rem; }
       .footer-bottom { flex-direction: column; text-align: center; gap: 0.75rem; }
       .footer-legal { flex-wrap: wrap; justify-content: center; gap: 1rem; }
       .footer-cta h2 { font-size: 1.3rem; }
       .footer-cta-btns { flex-direction: column; align-items: center; }
       .footer-cta-btns a { width: 100%; text-align: center; justify-content: center; }
-      .mobile-menu { padding: 1.5rem 1rem; }
-      .mobile-menu a { font-size: 1.05rem; padding: 0.9rem 0; }
+      .mobile-menu { width: 100%; }
       .stake-banner { padding: 1.5rem 1rem; border-radius: 16px; }
       .stake-content h3 { font-size: 1.3rem; }
       .step { gap: 1rem; padding: 1.5rem 0; }
       .step-number { width: 44px; height: 44px; font-size: 1rem; flex-shrink: 0; }
+      .steps-container::before { left: 21px; }
       .features-grid { gap: 1rem; }
       .feature-card { padding: 1.5rem; }
+      .review-card { padding: 1.5rem; }
+      .review-text { font-size: 0.9rem; }
+      .starpass-btn { font-size: 0.9rem; padding: 0.65rem 1rem; }
+      .crypto-btn { font-size: 0.78rem; padding: 12px 16px; }
+    }
+    @media (max-width: 380px) {
+      .hero h1 { font-size: 1.5rem; }
+      .hero-slogan { font-size: 0.85rem; letter-spacing: 0.5px; }
+      .stat { min-width: 80px; }
+      .stat-value { font-size: 1.4rem; }
+      .price-name { font-size: 1.2rem; }
+      .price-amount { font-size: 1.8rem; }
+      .section-title { font-size: 1.2rem; }
+      .btn-primary { padding: 0.85rem 1.5rem; font-size: 1rem; }
+      .btn-outline { padding: 0.85rem 1.5rem; font-size: 0.95rem; }
     }
     @media (min-width: 1600px) {
       .mascot-container { width: 1050px; height: 1200px; }
-      .mascot-img { width: 1050px !important; } .hero-visual { right: 2%; bottom: 0; top: auto; transform: scale(0.9); transform-origin: bottom right; }
-    }
-    @media (max-width: 1200px) {
-      .mascot-container { width: 700px; height: 820px; }
-      .mascot-img { width: 700px !important; } .hero-visual { right: 0; bottom: 0; top: auto; transform: scale(0.94); transform-origin: bottom right; }
+      .mascot-img { width: 1050px !important; }
+      .hero-visual { right: 2%; bottom: 0; top: auto; transform: scale(0.9); transform-origin: bottom right; }
     }
   </style>
   <!-- PWA -->
@@ -659,9 +688,9 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
   <div class="hero-glow-mascot"></div>
   <div class="hero-inner">
     <div class="hero-text">
-      <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1.5rem; justify-content:center; max-width:100%;">
+      <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1.5rem; justify-content:center; max-width:100%; overflow:hidden;">
         <div class="hero-badge">🔥 SMS · Paysafecard · Crypto</div>
-        <div class="hero-badge" style="background: linear-gradient(135deg, rgba(247,147,26,0.15), rgba(247,147,26,0.05)); border-color: rgba(247,147,26,0.3); color: #f7931a;">₿ Paiement par Crypto disponible</div>
+        <div class="hero-badge" style="background: linear-gradient(135deg, rgba(247,147,26,0.15), rgba(247,147,26,0.05)); border-color: rgba(247,147,26,0.3); color: #f7931a;">₿ Paiement Crypto</div>
       </div>
       <h1>Analyse précise.<br><span class="highlight">Data croisée.</span><br>Bets LIVE.</h1>
       <p class="hero-slogan">Ta stratégie. Notre Edge. <span>Leur défaite.</span></p>

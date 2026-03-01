@@ -69,5 +69,14 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--txt);min
   .content{padding:1.3rem 1rem;}
   .mascotte-bg{width:300px;opacity:0.08;}
   .full-bleed{margin-left:-1rem;margin-right:-1rem;padding-left:1rem;padding-right:1rem;}
+  .top-nav{padding:0 1rem;height:52px;}
+  .nav-logo img{height:26px;}
+  .mob-tabs .s-link{padding:0.7rem 0.85rem;font-size:0.82rem;}
+  .mob-tabs .s-link .ico{font-size:1.1rem;}
+}
+@media(max-width:380px){
+  .content{padding:1rem 0.7rem;}
+  .mob-tabs .s-link{padding:0.65rem 0.6rem;font-size:0.75rem;gap:0.4rem;}
+  .mob-tabs .s-link .ico{font-size:0.95rem;width:22px;}
 }
 </style>

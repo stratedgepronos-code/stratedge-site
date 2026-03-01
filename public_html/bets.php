@@ -115,9 +115,22 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
   .bets-grid{grid-template-columns:1fr;gap:1.2rem;}
   .abo-b{padding:1.1rem;flex-direction:column;align-items:flex-start;}
   .btn-sub{width:100%;justify-content:center;}
-  .bets-hero{margin-left:-1.3rem;margin-right:-1rem;margin-top:-1.3rem;padding:2rem 1.5rem 2rem 1.5rem;}
+  .bets-hero{margin-left:-1rem !important;margin-right:-1rem !important;margin-top:-1.3rem;padding:2rem 1rem 2rem 1rem !important;}
   .bets-title{font-size:1.7rem;}
+  .bets-sub{font-size:0.92rem;}
   .bets-wrap{padding:1.5rem 0;}
+  .bet-card:hover{transform:none;box-shadow:none;}
+  .lock-ov .lock-t{font-size:0.92rem;}
+  .lock-ov .lock-s{font-size:0.82rem;}
+  .lock-ov .lock-b{font-size:0.85rem;padding:0.6rem 1.2rem;}
+}
+@media(max-width:480px){
+  .bets-title{font-size:1.4rem;}
+  .bets-tag{font-size:0.65rem;letter-spacing:2px;}
+  .bet-top{padding:0.9rem 1rem 0.5rem;}
+  .bet-titre{padding:0 1rem 0.7rem;font-size:0.85rem;}
+  .bet-badge{font-size:0.6rem;padding:0.25rem 0.65rem;}
+  .bet-date{font-size:0.65rem;}
 }
 </style>
 </head>

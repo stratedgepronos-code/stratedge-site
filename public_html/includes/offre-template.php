@@ -561,6 +561,30 @@ $membre = getMembre();
       .layout { grid-template-columns:1fr; }
       .hero-title { font-size:1.8rem; }
       .page { padding:2rem 1rem 4rem; }
+      .nav-inner { flex-wrap:wrap; gap:0.5rem; height:auto; min-height:60px; padding:0.6rem 0; }
+      .nav-logo img { height:32px; }
+      .nav-back { font-size:0.78rem; order:3; width:100%; justify-content:center; padding-bottom:0.3rem; }
+      .nav-badge { font-size:0.58rem; padding:0.2rem 0.7rem; }
+    }
+    @media (max-width:480px) {
+      .hero { margin-bottom:2.5rem; }
+      .hero-title { font-size:1.4rem; }
+      .hero-subtitle { font-size:0.88rem; }
+      .page { padding:1.5rem 0.75rem 3rem; }
+      .offre-card-top { padding:1.5rem; }
+      .offre-avantages { padding:1.2rem 1.5rem; }
+      .offre-prix .num { font-size:3.2rem; }
+      .offre-video-wrap { width:90px; height:90px; }
+      .payment-block { padding:1.5rem; border-radius:16px; }
+      .sp-wrap { padding:1rem; }
+      .crypto-tabs { gap:0.4rem; }
+      .crypto-tab { padding:0.35rem 0.7rem; font-size:0.62rem; }
+      .wallet-addr { font-size:0.62rem; }
+      .sec-badges { gap:0.4rem; }
+      .sec-badge { font-size:0.65rem; padding:0.25rem 0.6rem; }
+      .other-offers { padding:1.2rem 1rem; border-radius:16px; }
+      .other-pill { font-size:0.78rem; padding:0.4rem 0.8rem; }
+      .membre-chip { margin:0 1.5rem 1.2rem; padding:0.6rem 0.8rem; font-size:0.78rem; }
     }
   </style>
 </head>
