@@ -1169,7 +1169,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         var cx=ox,cy=oy;
         var sl=len/segs;
         for(var i=0;i<segs;i++){
-          var jit=(Math.random()-0.5)*sl*2.2;
+          var jit=(Math.random()-0.5)*sl*2.8;
           var pa=angle+Math.PI/2;
           cx+=Math.cos(angle)*sl+Math.cos(pa)*jit;
           cy+=Math.sin(angle)*sl+Math.sin(pa)*jit;
@@ -1190,36 +1190,36 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         var t=Math.random();
         var p=normalAt(t);
         var g=document.createElementNS(ns,'g');
-        var numArcs=3+Math.floor(Math.random()*5);
+        var numArcs=5+Math.floor(Math.random()*7);
         var inward=Math.atan2(-p.ny,-p.nx);
 
         for(var i=0;i<numArcs;i++){
-          var spread=(Math.random()-0.5)*1.8;
+          var spread=(Math.random()-0.5)*2.4;
           var angle=inward+spread;
-          var len=8+Math.random()*30;
-          var segs=3+Math.floor(Math.random()*4);
-          var ox=p.x+(Math.random()-0.5)*14*Math.abs(p.ny);
-          var oy=p.y+(Math.random()-0.5)*14*Math.abs(p.nx);
+          var len=30+Math.random()*80;
+          var segs=5+Math.floor(Math.random()*6);
+          var ox=p.x+(Math.random()-0.5)*22*Math.abs(p.ny);
+          var oy=p.y+(Math.random()-0.5)*22*Math.abs(p.nx);
           var pts=buildArc(ox,oy,angle,len,segs);
           var d=ptsToD(pts);
 
-          var w=0.4+Math.random()*1.4;
+          var w=0.6+Math.random()*2;
 
           var glow=document.createElementNS(ns,'path');
           glow.setAttribute('d',d);glow.setAttribute('fill','none');
           glow.setAttribute('stroke','#ffd700');
-          glow.setAttribute('stroke-width',(w+3).toFixed(1));
+          glow.setAttribute('stroke-width',(w+5).toFixed(1));
           glow.setAttribute('stroke-linecap','round');glow.setAttribute('stroke-linejoin','round');
-          glow.setAttribute('opacity','0.25');
-          glow.setAttribute('filter','url(#vbg2)');
+          glow.setAttribute('opacity','0.3');
+          glow.setAttribute('filter','url(#vbg3)');
           g.appendChild(glow);
 
           var mid=document.createElementNS(ns,'path');
           mid.setAttribute('d',d);mid.setAttribute('fill','none');
           mid.setAttribute('stroke','#f5c842');
-          mid.setAttribute('stroke-width',(w+1).toFixed(1));
+          mid.setAttribute('stroke-width',(w+2).toFixed(1));
           mid.setAttribute('stroke-linecap','round');mid.setAttribute('stroke-linejoin','round');
-          mid.setAttribute('opacity','0.6');
+          mid.setAttribute('opacity','0.7');
           mid.setAttribute('filter','url(#vbg1)');
           g.appendChild(mid);
 
@@ -1230,29 +1230,39 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
           core.setAttribute('stroke-linecap','round');core.setAttribute('stroke-linejoin','round');
           g.appendChild(core);
 
-          if(Math.random()>0.5&&segs>2){
-            var branchIdx=1+Math.floor(Math.random()*(pts.length-2));
-            var bp=pts[branchIdx];
-            var ba=angle+(Math.random()-0.5)*2;
-            var bl=5+Math.random()*12;
-            var bpts=buildArc(bp.x,bp.y,ba,bl,2+Math.floor(Math.random()*2));
-            var bd=ptsToD(bpts);
-            var branch=document.createElementNS(ns,'path');
-            branch.setAttribute('d',bd);branch.setAttribute('fill','none');
-            branch.setAttribute('stroke','#fffbe6');
-            branch.setAttribute('stroke-width',(w*0.6).toFixed(1));
-            branch.setAttribute('stroke-linecap','round');branch.setAttribute('stroke-linejoin','round');
-            branch.setAttribute('opacity','0.7');
-            g.appendChild(branch);
+          if(Math.random()>0.3){
+            var numBranches=1+Math.floor(Math.random()*3);
+            for(var br=0;br<numBranches;br++){
+              var branchIdx=1+Math.floor(Math.random()*(pts.length-2));
+              var bpt=pts[branchIdx];
+              var ba=angle+(Math.random()-0.5)*2.5;
+              var bl=12+Math.random()*35;
+              var bpts=buildArc(bpt.x,bpt.y,ba,bl,2+Math.floor(Math.random()*3));
+              var bd=ptsToD(bpts);
+              var bglow=document.createElementNS(ns,'path');
+              bglow.setAttribute('d',bd);bglow.setAttribute('fill','none');
+              bglow.setAttribute('stroke','#ffd700');
+              bglow.setAttribute('stroke-width',(w*0.8+2).toFixed(1));
+              bglow.setAttribute('stroke-linecap','round');bglow.setAttribute('stroke-linejoin','round');
+              bglow.setAttribute('opacity','0.25');bglow.setAttribute('filter','url(#vbg2)');
+              g.appendChild(bglow);
+              var branch=document.createElementNS(ns,'path');
+              branch.setAttribute('d',bd);branch.setAttribute('fill','none');
+              branch.setAttribute('stroke','#fffbe6');
+              branch.setAttribute('stroke-width',(w*0.5).toFixed(1));
+              branch.setAttribute('stroke-linecap','round');branch.setAttribute('stroke-linejoin','round');
+              branch.setAttribute('opacity','0.8');
+              g.appendChild(branch);
+            }
           }
         }
 
         svg.appendChild(g);
-        var life=80+Math.floor(Math.random()*180);
+        var life=120+Math.floor(Math.random()*250);
         clusters.push({g:g,life:life,maxLife:life,born:performance.now()});
       }
 
-      for(var i=0;i<6;i++) spawnCluster();
+      for(var i=0;i<8;i++) spawnCluster();
 
       function loop(){
         var now=performance.now();
@@ -1275,11 +1285,11 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
           c.g.setAttribute('opacity',op);
         }
 
-        if(clusters.length<8&&Math.random()>0.65){
+        if(clusters.length<10&&Math.random()>0.5){
           spawnCluster();
         }
-        if(clusters.length<4){
-          spawnCluster();
+        if(clusters.length<6){
+          spawnCluster();spawnCluster();
         }
 
         requestAnimationFrame(loop);
