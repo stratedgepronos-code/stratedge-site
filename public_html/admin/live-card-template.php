@@ -204,6 +204,9 @@ function generateLiveCards($d) {
     $flag1  = flagImg($d['flag1'] ?? '');
     $flag2  = flagImg($d['flag2'] ?? '');
     $logo   = 'https://stratedgepronos.fr/assets/images/logo_site_transparent.png';
+    $pronoJoueur = (int)($d['prono_joueur'] ?? 1);
+    $p1_class = ($pronoJoueur === 1) ? 'player main' : 'player opponent';
+    $p2_class = ($pronoJoueur === 2) ? 'player main' : 'player opponent';
 
     $embeddedFonts = getLocalFontsCss();
     $css = $embeddedFonts . <<<CSS
@@ -332,7 +335,7 @@ CSS;
 .card-wrapper.tennis .promo-eyebrow { color:#39ff14; }
 .card-wrapper.tennis .promo-cta { background:linear-gradient(135deg,#39ff14,#00c896); color:#000; box-shadow:0 0 14px rgba(57,255,20,0.5); }
 .card-wrapper.tennis .locked-reserved { color:#39ff14; }
-.card-wrapper.tennis .locked-cta-btn { background:linear-gradient(135deg,#39ff14,#00c896); color:#ffffff !important; }
+.card-wrapper.tennis .locked-cta-btn { background:linear-gradient(135deg,#39ff14,#00c896); color:#000 !important; font-family:'Orbitron',sans-serif !important; font-size:10px; font-weight:700; }
 TENNIS;
     }
 
@@ -351,7 +354,7 @@ TENNIS;
         ? "<span class='vs-badge' style='display:inline-block;width:42px;height:26px;background:none!important;border:none;padding:0;margin:0;line-height:0;vertical-align:middle;'><svg xmlns='http://www.w3.org/2000/svg' width='42' height='26' viewBox='0 0 42 26' style='display:block;'><defs><linearGradient id='vsg' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' style='stop-color:#E7337B'/><stop offset='100%' style='stop-color:#00e5ff'/></linearGradient></defs><text x='21' y='21' text-anchor='middle' fill='url(#vsg)' font-family='Orbitron,sans-serif' font-size='20' font-weight='900'>VS</text></svg></span>"
         : "<div class='vs-badge'>VS</div>";
 
-    $locked_cta_text = $is_tennis ? 'Souscris au pack Tennis pour recevoir le bet' : '🔓 Reçois le bet sur stratedgepronos.fr';
+    $locked_cta_text = $is_tennis ? '🔓 Souscris au pack Tennis pour recevoir le bet' : '🔓 Reçois le bet sur stratedgepronos.fr';
     $font_link = "<link href=\"https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap\" rel=\"stylesheet\">";
 
     // CARD NORMALE
@@ -451,9 +454,9 @@ HTML;
         <div class='match-left-bar'></div>
         <div class='live-badge'><div class='live-dot'></div> Live Bet</div>
         <div class='match-players'>
-          <div class='player-info'>{$flag1}<div class='player main'>{$p1}</div></div>
+          <div class='player-info'>{$flag1}<div class='{$p1_class}'>{$p1}</div></div>
           {$vs_html}
-          <div class='player-info'>{$flag2}<div class='player opponent'>{$p2}</div></div>
+          <div class='player-info'>{$flag2}<div class='{$p2_class}'>{$p2}</div></div>
         </div>
         <div class='match-comp'>{$comp}</div>
       </div>
