@@ -584,7 +584,10 @@ HTML;
 //  ]
 // ════════════════════════════════════════════════════════════
 function generateFunCards($d) {
-    $mascotteUrl = 'https://stratedgepronos.fr/assets/images/mascotte.png';
+    $isTennis    = (strtolower($d['sport'] ?? '') === 'tennis');
+    $mascotteUrl = $isTennis
+        ? 'https://stratedgepronos.fr/assets/images/mascotte-tennis.png'
+        : 'https://stratedgepronos.fr/assets/images/mascotte.png';
     $logo        = 'https://stratedgepronos.fr/assets/images/logo_site_transparent.png';
 
     $date    = htmlspecialchars($d['date_fr']    ?? '', ENT_QUOTES, 'UTF-8');
@@ -594,12 +597,20 @@ function generateFunCards($d) {
     $bets    = $d['bets'] ?? [];
     $nbBets  = count($bets);
 
-    // Couleurs alternées pour les barres gauche
-    $barColors = [
-        'linear-gradient(to bottom,#ff2d7a,#c850c0)',
-        'linear-gradient(to bottom,#c850c0,#4158d0)',
-        'linear-gradient(to bottom,#4158d0,#00e5ff)',
-    ];
+    // Couleurs : tennis = vert néon, sinon rose/bleu
+    if ($isTennis) {
+        $barColors = [
+            'linear-gradient(to bottom,#39ff14,#00d46a)',
+            'linear-gradient(to bottom,#00d46a,#00c896)',
+            'linear-gradient(to bottom,#00c896,#00e5ff)',
+        ];
+    } else {
+        $barColors = [
+            'linear-gradient(to bottom,#ff2d7a,#c850c0)',
+            'linear-gradient(to bottom,#c850c0,#4158d0)',
+            'linear-gradient(to bottom,#4158d0,#00e5ff)',
+        ];
+    }
 
     $embeddedFonts = getLocalFontsCss();
     $css = $embeddedFonts . "\n/* Fallback Google Fonts si embarquées absentes (iframe/srcdoc) */\n@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Bebas+Neue&display=swap');\n" . <<<CSS
@@ -711,6 +722,28 @@ body { background:#0a0a0a; margin:0; padding:0; width:1080px; font-family:'Orbit
 .locked-cta-btn { background:linear-gradient(135deg,#FF2D78,#d6245f); color:white; font-family:'Orbitron',sans-serif; font-size:14px; font-weight:700; padding:10px 30px; border-radius:12px; display:inline-block; letter-spacing:1px; }
 
 .card-footer-gradient { height:4px; background:linear-gradient(to right,#ff2d7a,#c850c0,#4158d0); position:relative; z-index:2; }
+
+/* Tennis Fun — vert néon (mascotte tennis, couleurs vertes) */
+.card-wrapper.tennis-fun .border-glow { background:linear-gradient(135deg,#39ff14,#00d46a,#00c896); }
+.card-wrapper.tennis-fun .card { border-color:rgba(57,255,20,0.2); background:#0a0e0a; }
+.card-wrapper.tennis-fun .funbet-badge { background:rgba(57,255,20,0.12); border-color:rgba(57,255,20,0.5); color:#39ff14; box-shadow:0 0 10px rgba(57,255,20,0.25); text-shadow:0 0 8px rgba(57,255,20,0.4); }
+.card-wrapper.tennis-fun .datetime-time { color:#39ff14; text-shadow:0 0 25px rgba(57,255,20,0.5); }
+.card-wrapper.tennis-fun .section-title-text { color:rgba(57,255,20,0.8); }
+.card-wrapper.tennis-fun .section-title-line { background:linear-gradient(to right,rgba(57,255,20,0.35),transparent); }
+.card-wrapper.tennis-fun .bet-num { color:rgba(144,255,128,0.7); }
+.card-wrapper.tennis-fun .bet-heure { color:rgba(57,255,20,0.9); }
+.card-wrapper.tennis-fun .bet-cote-pill { background:rgba(57,255,20,0.1); border-color:rgba(57,255,20,0.25); color:#7dff5c; }
+.card-wrapper.tennis-fun .conf-score { color:#39ff14; text-shadow:0 0 8px rgba(57,255,20,0.35); }
+.card-wrapper.tennis-fun .conf-bar-fill { background:linear-gradient(to right,#39ff14,#00d46a,#00c896); }
+.card-wrapper.tennis-fun .cote-totale-block { background:rgba(57,255,20,0.06); border-color:rgba(57,255,20,0.18); }
+.card-wrapper.tennis-fun .total-pill { background:linear-gradient(135deg,#39ff14 0%,#00d46a 50%,#00c896 100%); box-shadow:0 4px 22px rgba(57,255,20,0.45); }
+.card-wrapper.tennis-fun .card-footer-gradient { background:linear-gradient(to right,#39ff14,#00d46a,#00c896); }
+.card-wrapper.tennis-fun .promo-banner { background:rgba(10,28,10,0.95); border-color:rgba(57,255,20,0.25); }
+.card-wrapper.tennis-fun .promo-left-bar { background:linear-gradient(to bottom,#39ff14,#00e5ff); }
+.card-wrapper.tennis-fun .promo-eyebrow { color:#39ff14; }
+.card-wrapper.tennis-fun .promo-main-hl { color:#39ff14; }
+.card-wrapper.tennis-fun .locked-reserved { color:#39ff14; }
+.card-wrapper.tennis-fun .locked-cta-btn { background:linear-gradient(135deg,#39ff14,#00c896); color:#000; }
 CSS;
 
     // ── Générer les lignes de paris ──
@@ -785,7 +818,25 @@ HTML;
 HTML;
     }
 
-    $promoBlock = <<<HTML
+    if ($isTennis) {
+        $promoBlock = <<<HTML
+  <div class='promo-banner'>
+    <div class='promo-left-bar'></div>
+    <div class='promo-text-block'>
+      <div class='promo-eyebrow'>🎾 Fun Bet Tennis — Combiné ATP / WTA</div>
+      <div class='promo-main'>Inclus dans <span class='promo-main-hl'>Pack Tennis Pro</span> · 15€/semaine</div>
+      <div class='promo-packs'>
+        <span class='pack-tag pack-tag-max'>🎾 Tennis Weekly</span>
+      </div>
+      <div class='promo-price'>Abonne-toi au pack <span>Tennis Pro</span></div>
+    </div>
+    <div class='promo-right'>
+      <div class='promo-cta'>🎾 Je m'abonne</div>
+    </div>
+  </div>
+HTML;
+    } else {
+        $promoBlock = <<<HTML
   <div class='promo-banner'>
     <div class='promo-left-bar'></div>
     <div class='promo-text-block'>
@@ -804,6 +855,11 @@ HTML;
     </div>
   </div>
 HTML;
+    }
+
+    $wrapperClass = $isTennis ? 'card-wrapper tennis-fun' : 'card-wrapper';
+    $funBadgeText = $isTennis ? '🎾 Fun Bet Tennis' : '⚡ Fun Bet';
+    $sectionTitle = $isTennis ? '🎾 Sélection multi-paris Tennis' : '⚡ Sélection multi-paris';
 
     // CARD NORMALE
     $html_normal = <<<HTML
@@ -815,7 +871,7 @@ HTML;
 <style>{$css}</style>
 </head>
 <body>
-<div class='card-wrapper'>
+<div class='{$wrapperClass}'>
   <div class='border-glow'></div>
   <div class='card'>
     <div class='mascotte-watermark'>
@@ -824,7 +880,7 @@ HTML;
     <div class='card-body'>
       <div class='card-header'>
         <img src='{$logo}' class='logo-img' alt='StratEdge'>
-        <div class='funbet-badge'>⚡ Fun Bet</div>
+        <div class='funbet-badge'>{$funBadgeText}</div>
       </div>
       <div class='datetime-block'>
         <div class='datetime-day'>{$date}</div>
@@ -832,7 +888,7 @@ HTML;
         <div class='datetime-sub'>heure du 1er match</div>
       </div>
       <div class='section-title'>
-        <span class='section-title-text'>⚡ Sélection multi-paris</span>
+        <span class='section-title-text'>{$sectionTitle}</span>
         <div class='section-title-line'></div>
       </div>
       <div class='bets-container'>
@@ -870,7 +926,7 @@ HTML;
 <style>{$css}</style>
 </head>
 <body>
-<div class='card-wrapper'>
+<div class='{$wrapperClass}'>
   <div class='border-glow'></div>
   <div class='card'>
     <div class='mascotte-watermark'>
@@ -879,7 +935,7 @@ HTML;
     <div class='card-body'>
       <div class='card-header'>
         <img src='{$logo}' class='logo-img' alt='StratEdge'>
-        <div class='funbet-badge'>⚡ Fun Bet</div>
+        <div class='funbet-badge'>{$funBadgeText}</div>
       </div>
       <div class='datetime-block'>
         <div class='datetime-day'>{$date}</div>
@@ -887,7 +943,7 @@ HTML;
         <div class='datetime-sub'>heure du 1er match</div>
       </div>
       <div class='section-title'>
-        <span class='section-title-text'>⚡ Sélection multi-paris</span>
+        <span class='section-title-text'>{$sectionTitle}</span>
         <div class='section-title-line'></div>
       </div>
       <div class='bets-container'>
