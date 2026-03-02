@@ -739,11 +739,14 @@ body { background:#0a0a0a; margin:0; padding:0; width:1080px; font-family:'Orbit
 .card-wrapper.tennis-fun .cote-totale-block { background:rgba(57,255,20,0.06); border-color:rgba(57,255,20,0.18); }
 .card-wrapper.tennis-fun .total-pill { background:linear-gradient(135deg,#39ff14 0%,#00d46a 50%,#00c896 100%); box-shadow:0 4px 22px rgba(57,255,20,0.45); }
 .card-wrapper.tennis-fun .card-footer-gradient { background:linear-gradient(to right,#39ff14,#00d46a,#00c896); }
-.card-wrapper.tennis-fun .promo-banner { background:rgba(10,28,10,0.95); border-color:rgba(57,255,20,0.25); }
-.card-wrapper.tennis-fun .promo-left-bar { background:linear-gradient(to bottom,#39ff14,#00e5ff); }
-.card-wrapper.tennis-fun .promo-eyebrow { color:#39ff14; }
+.card-wrapper.tennis-fun .promo-banner { background:rgba(20,8,14,0.95); border:1px solid rgba(255,45,120,0.25); }
+.card-wrapper.tennis-fun .promo-left-bar { background:linear-gradient(to bottom,#ff2d78,#c850c0); }
+.card-wrapper.tennis-fun .promo-eyebrow { color:#ff2d78; }
 .card-wrapper.tennis-fun .promo-main { font-size:18px; letter-spacing:0.3px; line-height:1.4; }
-.card-wrapper.tennis-fun .promo-main-hl { color:#39ff14; }
+.card-wrapper.tennis-fun .promo-main-hl { color:#ff2d78; }
+.card-wrapper.tennis-fun .promo-cta { background:linear-gradient(135deg,#ff2d78,#c850c0); color:#fff; box-shadow:0 0 14px rgba(255,45,120,0.5); }
+.card-wrapper.tennis-fun .promo-price span { color:#ff2d78; }
+.card-wrapper.tennis-fun .pack-tag-max { color:#ff2d78; border-color:rgba(255,45,120,0.35); background:rgba(255,45,120,0.08); }
 .card-wrapper.tennis-fun .locked-reserved { color:#39ff14; }
 .card-wrapper.tennis-fun .locked-cta-btn { background:linear-gradient(135deg,#39ff14,#00c896); color:#000; }
 CSS;

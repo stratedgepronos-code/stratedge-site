@@ -416,7 +416,7 @@ let currentMatchName = '';
 let currentType = 'Safe';
 
 // Largeurs par type de card
-const CARD_WIDTHS = { Safe: 1080, Live: 720, Fun: 760 };
+const CARD_WIDTHS = { Safe: 1080, Live: 720, Fun: 1080 };
 
 // ── Sélection du type de bet ────────────────────────────────
 function selectType(type) {

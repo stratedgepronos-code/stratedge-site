@@ -275,7 +275,7 @@ if ($typeBet === 'Fun') {
     }
 
     debugLog("FUN OK! normal=" . strlen($cards['html_normal']) . " locked=" . strlen($cards['html_locked']));
-    echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Fun', 'card_width' => 1440]);
+    echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Fun', 'card_width' => 1080]);
     exit;
 }
 
