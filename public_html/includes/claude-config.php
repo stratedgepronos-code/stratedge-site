@@ -175,31 +175,53 @@ Mascotte (position:absolute; left:50%; transform:translateX(-50%); top:0; height
    - VS en rose
    - Stade/surface (14px #8A9BB0)
    - Dots forme CERCLES 30x30px (V=vert glow, D=rouge glow, N=gris)
-5. Contexte (flex; gap:16px; margin:16px 28px) : 2 boxes, titre cyan + texte #8A9BB0
-6. Bloc prono (margin:20px 28px; padding:28px; text-align:center; border-radius:14px; background:linear-gradient(135deg,rgba(255,45,120,0.06),rgba(168,85,247,0.06),rgba(0,212,255,0.06)); border:1px solid rgba(255,45,120,0.15)) :
+5. ⚠️ SECTION STATS OBLIGATOIRE (margin:16px 28px; display:flex; gap:16px) — 2 colonnes côte à côte :
+   - Colonne gauche "JOUEUR 1 / ÉQUIPE 1" (flex:1; padding:16px; background:rgba(0,212,255,0.04); border:1px solid rgba(0,212,255,0.08); border-radius:10px) :
+     • Titre : nom du joueur/équipe (Orbitron 13px cyan uppercase)
+     • Stats clés (Rajdhani 14px #8A9BB0) : classement/position, bilan saison (V-D ou V-N-D), forme récente (5 derniers matchs), stat pertinente au sport (aces pour tennis, buts pour foot, etc.)
+   - Colonne droite "JOUEUR 2 / ÉQUIPE 2" : même structure
+   - ⚠️ Utilise tes connaissances pour fournir des stats RÉELLES et à jour. Si tu ne connais pas les stats exactes, donne une estimation crédible basée sur ce que tu sais du joueur/équipe.
+6. Contexte H2H (margin:0 28px 16px; padding:16px 20px; background:rgba(255,45,120,0.04); border:1px solid rgba(255,45,120,0.08); border-radius:10px) :
+   - Titre "FACE À FACE" (Orbitron 11px rose uppercase)
+   - Historique confrontations directes (Rajdhani 14px #8A9BB0) : bilan H2H, dernier résultat
+7. Bloc prono (margin:20px 28px; padding:28px; text-align:center; border-radius:14px; background:linear-gradient(135deg,rgba(255,45,120,0.06),rgba(168,85,247,0.06),rgba(0,212,255,0.06)); border:1px solid rgba(255,45,120,0.15)) :
    - Badge type (Safe) : Orbitron 12px, background:linear-gradient(90deg,#00FF88,#00D4FF), color:#080A12, padding:6px 20px, border-radius:20px
    - Nom du bet (Orbitron 18px #FF2D78, margin:14px 0)
    - ⚠️ COTE OBLIGATOIRE — C'est l'élément central de la card. TOUJOURS l'afficher :
      Cote (Orbitron 64px 900 #FF2D78, glow text-shadow, margin:10px 0)
    - Probabilité réelle estimée (Rajdhani 16px #8A9BB0)
    - Value (si positive : Vert #00FF88 "VALUE +X%" | si nulle/négative : gris "Valeur neutre")
-7. Bankroll (margin:0 28px; padding:16px 20px; background:rgba(0,255,136,0.04); border:1px solid rgba(0,255,136,0.1); border-radius:10px) :
+8. Bankroll (margin:0 28px; padding:16px 20px; background:rgba(0,255,136,0.04); border:1px solid rgba(0,255,136,0.1); border-radius:10px) :
    - Mise conseillée + % bankroll + gain potentiel (Rajdhani 15px)
-8. Analyse (margin:16px 28px 20px; padding:20px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:10px) :
+9. Analyse (margin:16px 28px 20px; padding:20px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:10px) :
    - Titre "ANALYSE" Orbitron 11px cyan
    - Texte Rajdhani 15px #8A9BB0 (3-4 lignes max, concis)
-9. Ligne gradient bas 4px
+10. Ligne gradient bas 4px
 
 ---
 
 🔒 STRUCTURE CARD LOCKED
 
-Même design Safe mais :
-- Analyse masquée (blocs gris)
-- Pronostic et cote visibles (défloutés)
-- Overlay blur sur analyse : filter:blur(4px); pointer-events:none
-- Bouton CTA "🔓 Accède au pronostic complet" background:linear-gradient(90deg,#FF2D78,#00D4FF)
-- Cadenas 🔒 50px centré au-dessus du CTA
+La card locked DOIT CACHER le contenu premium. Structure identique à la card normale SAUF :
+
+⚠️ CE QUI DOIT ÊTRE CACHÉ (remplacé par du contenu flouté/masqué) :
+- Section Stats (§5) : remplacer le contenu par des barres grises floues (div style='height:14px; background:rgba(255,255,255,0.08); border-radius:4px; margin:6px 0; filter:blur(3px)') — 3 ou 4 barres par colonne, garder les titres visibles
+- Contexte H2H (§6) : même chose, barres grises floues à la place du texte
+- Bloc prono (§7) : le NOM DU BET doit être flouté (filter:blur(8px); user-select:none), la COTE reste visible
+- Analyse (§9) : contenu remplacé par barres grises floues
+- Bankroll (§8) : contenu flouté
+
+⚠️ CE QUI RESTE VISIBLE :
+- Header, logo, badge sport
+- Barre compétition (date, heure, compétition)
+- Match card (noms joueurs, VS, surface) — TOUT VISIBLE
+- La COTE dans le bloc prono (bien visible, pas floutée)
+- Les titres des sections (STATS, FACE À FACE, ANALYSE, etc.)
+
+⚠️ OVERLAY CTA — Après le bloc prono flouté, ajouter un bloc centré :
+- Cadenas 🔒 (font-size:50px; text-align:center)
+- Texte "CONTENU RÉSERVÉ AUX ABONNÉS" (Orbitron 14px, color:rgba(255,255,255,0.5), letter-spacing:2px)
+- Bouton CTA "🔓 Accède au pronostic complet" (display:inline-block; padding:14px 32px; background:linear-gradient(90deg,#FF2D78,#00D4FF); color:#fff; font-family:Orbitron; font-size:14px; font-weight:700; border-radius:12px; text-decoration:none; letter-spacing:1px)
 
 ---
 
