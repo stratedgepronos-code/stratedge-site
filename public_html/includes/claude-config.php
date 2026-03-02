@@ -1,7 +1,8 @@
 <?php
 // ============================================================
 // STRATEDGE — claude-config.php V13
-// V13 : Fix CORS logos (pas de SVG/atptour/wikipedia), drapeaux flagcdn.com obligatoires (pas d'emoji), cote pill simple (pas de shine)
+// V14 : Pas de logo tournoi (texte uniquement), cote pill fond rose néon uni (#FF2D78)
+// V13 : Fix CORS logos, drapeaux flagcdn obligatoires, cote pill simple
 // V12 : Stats enrichies (6-8 lignes par joueur/équipe), logos tournois/compétitions, barre confiance + value universels
 // V11 : Sonnet 4.6 avec extended thinking (Safe uniquement)
 // V10 : Safe card tennis — barre confiance, value, 5 derniers (D en rouge), VS plus grand, drapeaux
@@ -176,23 +177,7 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
 - 5 derniers résultats : dans la section Stats (forme récente), afficher explicitement les 5 derniers matchs (ex: V V D V N). Les défaites (D) doivent être en rouge : color:#e53935; font-weight:700. Les victoires (V) en vert #00FF88, N en gris.
 - VS : pour le tennis, le "VS" entre les deux joueurs doit être plus grand : font-size:32px; font-weight:900; color:#FF2D78 (ou dégradé rose). Bien visible.
 - Drapeaux : la card est exportée en JPG via html2canvas. Utiliser OBLIGATOIREMENT <img src='https://flagcdn.com/w40/{code}.png'> — JAMAIS d'emoji (rendu cassé dans html2canvas), JAMAIS de code texte "CH"/"FR".
-- Logo tournoi : ⚠️ La card est convertie en JPG via html2canvas. Les images doivent être accessibles SANS problème CORS. NE PAS utiliser d'URL en .svg, ni atptour.com, ni wikipedia (CORS bloqué). Utiliser UNIQUEMENT des URLs PNG/JPG qui supportent le cross-origin.
-  FOOTBALL — logos compétitions via API-Football (PNG, CORS OK) :
-  • Ligue 1 : https://media.api-sports.io/football/leagues/61.png
-  • Premier League : https://media.api-sports.io/football/leagues/39.png
-  • La Liga : https://media.api-sports.io/football/leagues/140.png
-  • Serie A : https://media.api-sports.io/football/leagues/135.png
-  • Bundesliga : https://media.api-sports.io/football/leagues/78.png
-  • Champions League : https://media.api-sports.io/football/leagues/2.png
-  • Europa League : https://media.api-sports.io/football/leagues/3.png
-  • Conference League : https://media.api-sports.io/football/leagues/848.png
-  • Ligue 2 : https://media.api-sports.io/football/leagues/62.png
-  • Eredivisie : https://media.api-sports.io/football/leagues/88.png
-  • Liga Portugal : https://media.api-sports.io/football/leagues/94.png
-  • Super Lig : https://media.api-sports.io/football/leagues/203.png
-  TENNIS : NE PAS mettre de logo tournoi (pas d'URL fiable CORS-compatible). Écrire juste le nom du tournoi en texte (ex: "ATP 250 — Buenos Aires — Terre battue").
-  BASKET / HOCKEY : NE PAS mettre de logo tournoi. Écrire le nom en texte.
-  ⚠️ RÈGLE ABSOLUE : ne JAMAIS utiliser d'URL en .svg, ni de sites qui bloquent CORS (wikipedia, atptour.com, nba.com, nhl.com). Uniquement PNG/JPG de CDN autorisés (api-sports.io, flagcdn.com, stratedgepronos.fr).
+- ⚠️ NE PAS afficher de logo tournoi/compétition. Uniquement le NOM de la compétition en texte (ex: "ATP 250 — Buenos Aires — Terre battue", "Ligue 1", "Champions League").
 - ⚠️ NE PAS modifier les polices : garder Orbitron et Rajdhani telles quelles dans tout le HTML. Aucun changement de font-family.
 
 ---
@@ -204,7 +189,7 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
    - <img> logo_site_transparent.png height:70px
    - Badge sport
 3. Barre compétition (margin:0 28px; padding:12px 20px; background:rgba(0,212,255,0.04); border:1px solid rgba(0,212,255,0.08); border-radius:10px; display:flex; justify-content:space-between; align-items:center) :
-   - Gauche : <img> logo compétition/tournoi (height:28px, vertical-align:middle, margin-right:10px) + Compétition + surface/round si pertinent (Orbitron 11px cyan uppercase)
+   - Gauche : Compétition + surface/round si pertinent (Orbitron 11px cyan uppercase) — TEXTE UNIQUEMENT, pas d'image
    - Droite : Date + heure FRANÇAISE
 4. Match card (margin:20px 28px; padding:28px; border:1px solid rgba(255,45,120,0.12); border-radius:14px) :
    - Noms joueurs/équipes (Orbitron 24px 700) avec <img> logo du club (height:30px) OU pour tennis : <img src='https://flagcdn.com/w40/{code}.png' style='height:20px;border-radius:2px;vertical-align:middle;margin-right:6px'> à côté du nom.
@@ -229,11 +214,10 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
 7. Bloc prono (margin:20px 28px; padding:28px; text-align:center; border-radius:14px; background:linear-gradient(135deg,rgba(255,45,120,0.06),rgba(168,85,247,0.06),rgba(0,212,255,0.06)); border:1px solid rgba(255,45,120,0.15)) :
    - Badge type (Safe) : Orbitron 12px, background:linear-gradient(90deg,#00FF88,#00D4FF), color:#080A12, padding:6px 20px, border-radius:20px
    - Nom du bet (Orbitron 18px #FF2D78, margin:14px 0)
-   - ⚠️ COTE OBLIGATOIRE — Afficher le CHIFFRE de la cote (ex: 1.89) bien lisible en BLANC dans un bouton pill dégradé.
-     Le bouton pill : background:linear-gradient(135deg,#FF2D78,#c850c0,#00D4FF); border-radius:18px; padding:18px 48px; display:inline-block; box-shadow:0 4px 22px rgba(255,45,122,0.4); overflow:hidden; position:relative;
-     Le chiffre de la cote DANS le bouton : font-family:Orbitron; font-size:52px; font-weight:900; color:#ffffff; position:relative; z-index:2; ⚠️ color DOIT être #ffffff (blanc pur).
-     ⚠️ NE PAS mettre -webkit-background-clip:text ou -webkit-text-fill-color — le texte doit rester BLANC OPAQUE, pas transparent/clip.
-     ⚠️ NE PAS ajouter de pseudo-élement ::before/::after ou de shine/overlay sur le bouton pill — html2canvas les rend mal. Le pill doit être simple : juste le background gradient + le chiffre blanc. Pas de div shine intérieure.
+   - ⚠️ COTE OBLIGATOIRE — Afficher le CHIFFRE de la cote (ex: 1.89) bien lisible en BLANC dans un bouton pill.
+     Le bouton pill : background:#FF2D78; border-radius:18px; padding:18px 48px; display:inline-block; box-shadow:0 4px 22px rgba(255,45,122,0.5); overflow:hidden; — UNIQUEMENT rose néon uni (#FF2D78), PAS de dégradé.
+     Le chiffre de la cote DANS le bouton : font-family:Orbitron; font-size:52px; font-weight:900; color:#ffffff; ⚠️ color DOIT être #ffffff (blanc pur).
+     ⚠️ NE PAS mettre de gradient sur le pill — background:#FF2D78 uniquement. Pas de ::before/::after, pas de shine, pas de div intérieure.
    - Juste SOUS la cote : barre de confiance horizontale (conteneur height:12px; background:rgba(255,255,255,0.1); border-radius:6px; overflow:hidden; remplissage height:100%; width:XX%; background:linear-gradient(90deg,#00FF88,#00D4FF); border-radius:6px) + label "Confiance XX%" (Rajdhani 12px #8A9BB0). Appliquer à TOUS les sports.
    - Probabilité réelle estimée (Rajdhani 16px #8A9BB0)
    - Value (si positive : Vert #00FF88 "VALUE +X%" | si nulle/négative : gris "Valeur neutre"). Appliquer à TOUS les sports.
@@ -259,7 +243,7 @@ La card locked DOIT CACHER le contenu premium. Structure identique à la card no
 
 ⚠️ CE QUI RESTE VISIBLE :
 - Header, logo, badge sport
-- Barre compétition (date, heure, compétition, logo tournoi) — TOUS SPORTS
+- Barre compétition (date, heure, compétition en texte) — TOUS SPORTS
 - Barre de confiance (Confiance XX%) et value (VALUE +X% ou Valeur neutre) restent visibles sur la locked — TOUS SPORTS
 - Match card (noms joueurs, drapeaux, VS, surface) — TOUT VISIBLE
 - La COTE dans le bloc prono (bien visible, pas floutée)
