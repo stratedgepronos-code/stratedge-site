@@ -144,8 +144,8 @@ function sportConfig($sport) {
             'pack'         => 'Tennis Pro',
             'mascotte_url'   => 'https://stratedgepronos.fr/assets/images/mascotte-tennis.png?v=1',
             // Tennis : mascotte-tennis.png, fond transparent (opacity seule)
-            'mascotte_style' => "opacity:0.42; background:none !important; height:100%; width:auto; object-fit:contain;",
-            'mascotte_locked'=> "opacity:0.22; background:none !important; height:100%; width:auto; object-fit:contain;",
+            'mascotte_style' => "opacity:0.55; background:none !important; height:100%; width:auto; object-fit:contain;",
+            'mascotte_locked'=> "opacity:0.30; background:none !important; height:100%; width:auto; object-fit:contain;",
             // Badge vert neon
             'badge_bg'     => 'rgba(57,255,20,0.12)',
             'badge_border' => 'rgba(57,255,20,0.6)',
@@ -363,6 +363,9 @@ CSS;
 .card-wrapper.tennis .live-dot { background:#ff2d7a !important; box-shadow:0 0 6px #ff2d7a; }
 .card-wrapper.tennis .vs-badge { background:none !important; background-image:none !important; box-shadow:none !important; border:none !important; padding:0 !important; margin:0 !important; }
 .card-wrapper.tennis .vs-badge svg { display:block; }
+.card-wrapper.tennis .player { font-family:'Orbitron',sans-serif !important; font-weight:700; font-size:32px; letter-spacing:1px; }
+.card-wrapper.tennis .promo-main { font-family:'Orbitron',sans-serif !important; font-weight:700; font-size:22px; letter-spacing:0.8px; }
+.card-wrapper.tennis .promo-sub { font-family:'Orbitron',sans-serif !important; font-size:11px; font-weight:500; }
 .card-wrapper.tennis .prono-block { background:linear-gradient(90deg,rgba(57,255,20,0.14),rgba(144,255,128,0.06)) !important; border-color:rgba(57,255,20,0.2); }
 .card-wrapper.tennis .prono-text { color:#fff; font-size:20px; }
 .card-wrapper.tennis .cote-pill { background:linear-gradient(135deg,#E7337B 0%,#7D41E7 100%); box-shadow:0 4px 16px rgba(231,51,123,0.35); }
