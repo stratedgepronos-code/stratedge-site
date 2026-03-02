@@ -275,7 +275,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     pushResultatBet($ab['id'], $ab['type_abo'], $titreResult, $resCode);
                 }
 
-                // ── Tweet résultat via IFTTT ──
+                // ── Tweet résultat via IFTTT / Make (même webhook que les nouveaux bets) ──
                 $twitterResultMsg = '';
                 if ($twitterActif && !empty($twitterConfig['webhook_url']) && $bet) {
                     $titre = $bet['titre'] ? ' — ' . $bet['titre'] : '';
@@ -288,34 +288,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     $texte = $phrases[$resultat];
 
-                    // Image originale en clair pour le tweet résultat
                     $imageUrl = !empty($bet['image_path'])
                         ? 'https://stratedgepronos.fr/' . $bet['image_path']
                         : 'https://stratedgepronos.fr/assets/images/logo_site_transparent.png';
 
-                    // URL IFTTT : même clé, event resultat_bet
-                    $iftttUrl = preg_replace('/trigger\/[^\/]+\//', 'trigger/resultat_bet/', $twitterConfig['webhook_url']);
+                    // Même webhook que pour les nouveaux bets (nouveau_tweet / nouveau_tweet_image) pour que le tweet parte sans créer un 2e applet
+                    $webhookUrl = (!empty($imageUrl) && !empty($twitterConfig['webhook_url_image']))
+                        ? $twitterConfig['webhook_url_image']
+                        : $twitterConfig['webhook_url'];
 
                     $payload = json_encode([
                         'value1' => $texte,
                         'value2' => $imageUrl,
                         'value3' => 'https://stratedgepronos.fr',
-                    ]);
+                    ], JSON_UNESCAPED_UNICODE);
 
-                    $ch = curl_init($iftttUrl);
+                    $ch = curl_init($webhookUrl);
                     curl_setopt_array($ch, [
                         CURLOPT_POST           => true,
                         CURLOPT_POSTFIELDS     => $payload,
                         CURLOPT_RETURNTRANSFER => true,
-                        CURLOPT_HTTPHEADER     => ['Content-Type: application/json'],
+                        CURLOPT_HTTPHEADER     => ['Content-Type: application/json; charset=utf-8'],
                         CURLOPT_TIMEOUT        => 10,
                     ]);
-                    curl_exec($ch);
+                    $twResponse = curl_exec($ch);
                     $twCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
                     curl_close($ch);
                     $twitterResultMsg = ($twCode >= 200 && $twCode < 300)
                         ? ' 🐦 Tweet résultat envoyé !'
-                        : '';
+                        : ' (Twitter: HTTP ' . $twCode . ')';
                 }
 
                 $success = 'Résultat enregistré ✅ — Le bet est passé en historique.' . $twitterResultMsg;
