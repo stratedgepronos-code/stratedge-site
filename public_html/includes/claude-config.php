@@ -143,7 +143,7 @@ Logos clubs/joueurs — ⚠️ IMPORTANT : ajouter les logos à côté des noms 
   • Football-Data.org : https://crests.football-data.org/{fd_id}.png
   Si tu ne connais pas l'ID exact d'un club, utilise le drapeau emoji du pays
 
-- TENNIS : drapeau emoji du pays à côté du nom (ex: 🇪🇸 MASAROVA, 🇺🇸 OSUIGWE)
+- TENNIS : drapeau VISUEL à côté du nom — uniquement emoji Unicode (🇪🇸 🇺🇸 🇫🇷 🇨🇭 etc.) ou <img> avec URL (ex: flagcdn.com). Jamais de code texte "FR", "CH" : la card est exportée en JPG, le drapeau doit être l'image réelle.
 - BASKET NBA : https://cdn.nba.com/logos/nba/{nba_team_id}/primary/L/logo.svg
 - HOCKEY NHL : drapeau emoji ou texte abrégé
 
@@ -163,11 +163,11 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
 
 🎾 TENNIS SAFE CARD — Règles spécifiques (appliquer quand sport = tennis)
 
-- Barre de confiance : afficher une barre horizontale de confiance (0–100%) sur les DEUX cards (normale et locked). Style : conteneur (height:12px; background:rgba(255,255,255,0.1); border-radius:6px; overflow:hidden), remplissage (height:100%; width:XX%; background:linear-gradient(90deg,#00FF88,#00D4FF); border-radius:6px). XX = ton pourcentage de confiance (ex: 72 → width:72%). Placer la barre juste sous la barre compétition ou dans le bloc match, avec un label "Confiance XX%" (Rajdhani 12px #8A9BB0).
+- Barre de confiance : afficher une barre horizontale de confiance (0–100%) sur les DEUX cards (normale et locked). Style : conteneur (height:12px; background:rgba(255,255,255,0.1); border-radius:6px; overflow:hidden), remplissage (height:100%; width:XX%; background:linear-gradient(90deg,#00FF88,#00D4FF); border-radius:6px). XX = ton pourcentage de confiance (ex: 72 → width:72%). ⚠️ Placer la barre SOUS LA COTE : directement sous le bouton pill de la cote, dans le bloc prono, avec un label "Confiance XX%" (Rajdhani 12px #8A9BB0). Ordre dans le bloc prono : badge Safe → nom du bet → COTE (bouton pill) → barre de confiance → probabilité → value.
 - Value : calculer et afficher obligatoirement. Formule : Value = (Probabilité réelle × Cote) - 1, affichée en % (ex: VALUE +5,2% en vert #00FF88, ou "Valeur neutre" en gris si ≤0). Sur card normale ET locked (locked : la value peut rester visible à côté de la cote).
 - 5 derniers résultats : dans la section Stats (forme récente), afficher explicitement les 5 derniers matchs (ex: V V D V N). Les défaites (D) doivent être en rouge : color:#e53935; font-weight:700. Les victoires (V) en vert #00FF88, N en gris.
 - VS : pour le tennis, le "VS" entre les deux joueurs doit être plus grand : font-size:32px; font-weight:900; color:#FF2D78 (ou dégradé rose). Bien visible.
-- Drapeaux : toujours afficher le drapeau emoji du pays (🇫🇷 🇪🇸 🇺🇸 etc.) à côté du nom de chaque joueur dans la match card et dans les titres des colonnes Stats.
+- Drapeaux : la card est exportée en JPG (pas du HTML affiché). Utiliser UNIQUEMENT des drapeaux visuels qui s'affichent dans l'image finale : soit les emoji Unicode (🇫🇷 🇨🇭 🇪🇸 🇺🇸 🇦🇷 etc.), soit une image <img src='...'> avec une URL de drapeau (ex: https://flagcdn.com/w40/fr.png). JAMAIS de code texte type "CH", "FR", "FRA" — ça ne rend pas un vrai drapeau dans le JPG. À côté du nom de chaque joueur dans la match card et dans les titres des colonnes Stats.
 - Logo tournoi : si tu connais une URL fiable d'image du logo du tournoi (ATP, WTA, ou tournoi spécifique), l'afficher en petit (height:28px) à côté du nom de la compétition dans la barre compétition. Sinon, ne pas inventer d'URL.
 - ⚠️ NE PAS modifier les polices : garder Orbitron et Rajdhani telles quelles dans tout le HTML. Aucun changement de font-family.
 
@@ -183,8 +183,8 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
    - Compétition (Orbitron 11px cyan uppercase)
    - Date + heure FRANÇAISE
 4. Match card (margin:20px 28px; padding:28px; border:1px solid rgba(255,45,120,0.12); border-radius:14px) :
-   - Noms joueurs/équipes (Orbitron 24px 700) avec <img> logo du club (height:30px) à côté du nom OU drapeau emoji si tennis (ex: 🇫🇷 NOM JOUEUR)
-   - Format : <img src='...' style='height:30px;vertical-align:middle;margin-right:8px'><span>NOM EQUIPE</span> ou pour tennis : <span>🇫🇷 NOM</span>
+   - Noms joueurs/équipes (Orbitron 24px 700) avec <img> logo du club (height:30px) à côté du nom OU pour tennis : drapeau VISUEL (emoji 🇫🇷 🇨🇭 ou <img src='https://flagcdn.com/w40/xx.png' style='height:24px;vertical-align:middle'>) — jamais "FR"/"CH" en texte, la card sort en JPG.
+   - Format : <img src='...' style='height:30px;vertical-align:middle;margin-right:8px'><span>NOM EQUIPE</span> ou tennis : <span>🇫🇷 NOM</span> ou <img> drapeau + NOM
    - VS en rose — pour TENNIS : font-size:32px; font-weight:900; color:#FF2D78 (bien visible)
    - Stade/surface (14px #8A9BB0)
    - Dots forme CERCLES 30x30px (V=vert glow, D=rouge glow, N=gris)
@@ -204,6 +204,7 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
      Le bouton pill : background:linear-gradient(135deg,#FF2D78,#c850c0,#00D4FF); border-radius:18px; padding:18px 48px; display:inline-block; box-shadow:0 4px 22px rgba(255,45,122,0.4);
      Le chiffre de la cote DANS le bouton : font-family:Orbitron; font-size:52px; font-weight:900; color:#ffffff; ⚠️ color DOIT être #ffffff (blanc pur).
      ⚠️ NE PAS mettre -webkit-background-clip:text ou -webkit-text-fill-color — le texte doit rester BLANC OPAQUE, pas transparent/clip.
+   - Pour TENNIS : juste SOUS la cote, barre de confiance (voir section Tennis) + label "Confiance XX%"
    - Probabilité réelle estimée (Rajdhani 16px #8A9BB0)
    - Value (si positive : Vert #00FF88 "VALUE +X%" | si nulle/négative : gris "Valeur neutre")
 8. Bankroll (margin:0 28px; padding:16px 20px; background:rgba(0,255,136,0.04); border:1px solid rgba(0,255,136,0.1); border-radius:10px) :
