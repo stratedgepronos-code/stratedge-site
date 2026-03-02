@@ -145,15 +145,15 @@ $resultatLabels = ['en_cours'=>'⏳ En cours','gagne'=>'✅ Gagné','perdu'=>'�
 
   <div class="bets-grid" id="betsGrid">
     <?php foreach ($bets as $b):
-      $imgSrc = $b['image_path'] && file_exists(__DIR__ . '/../' . $b['image_path']) ? '../' . $b['image_path'] : '';
-      $lockedSrc = $b['locked_image_path'] && file_exists(__DIR__ . '/../' . $b['locked_image_path']) ? '../' . $b['locked_image_path'] : '';
+      $imgSrc = $b['image_path'] && file_exists(__DIR__ . '/../' . $b['image_path']) ? SITE_URL . '/' . $b['image_path'] : '';
+      $lockedSrc = $b['locked_image_path'] && file_exists(__DIR__ . '/../' . $b['locked_image_path']) ? SITE_URL . '/' . $b['locked_image_path'] : '';
       $resLabel = $resultatLabels[$b['resultat']] ?? $b['resultat'];
       $typeLabel = $typeLabels[$b['type']] ?? $b['type'];
     ?>
     <div class="bet-card" data-search="<?= strtolower(htmlspecialchars($b['titre'] . ' ' . $b['date_post'])) ?>">
-      <div class="bet-thumb" onclick="openLightbox('<?= $imgSrc ?: '' ?>')">
+      <div class="bet-thumb" onclick="openLightbox('<?= htmlspecialchars($imgSrc ?: '', ENT_QUOTES, 'UTF-8') ?>')">
         <?php if ($imgSrc): ?>
-          <img src="<?= htmlspecialchars($imgSrc) ?>" alt="Bet">
+          <img src="<?= htmlspecialchars($imgSrc, ENT_QUOTES, 'UTF-8') ?>" alt="Bet">
         <?php else: ?>
           <div class="no-img">📊</div>
         <?php endif; ?>
