@@ -116,17 +116,18 @@ $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m O
 <?php require_once __DIR__ . '/sidebar.php'; ?>
 
 <div class="main">
-  <div class="page-header">
-    <h1>📊 Tableau de bord</h1>
-    <p>Bienvenue — <?= date('d/m/Y à H:i') ?></p>
-  </div>
-
-  <div class="stats-bar-visiteurs" style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;margin-bottom:1.5rem;padding:1rem 1.25rem;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:14px;">
-    <span style="font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);">Visiteurs</span>
-    <span style="color:var(--text-primary);"><strong><?= number_format($visiteursAujourdhui, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">aujourd'hui</span></span>
-    <span style="color:var(--text-primary);"><strong><?= number_format($visiteursSemaine, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">7 jours</span></span>
-    <span style="color:var(--text-primary);"><strong><?= number_format($visiteursMois, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">30 jours</span></span>
-    <span style="color:var(--text-primary);"><strong><?= number_format($visiteursAll, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">all time</span></span>
+  <div class="page-header" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.5rem;">
+    <div>
+      <h1>📊 Tableau de bord</h1>
+      <p>Bienvenue — <?= date('d/m/Y à H:i') ?></p>
+    </div>
+    <div class="stats-bar-visiteurs" style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;padding:0.75rem 1.25rem;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:14px;">
+      <span style="font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);">Visiteurs</span>
+      <span style="color:var(--text-primary);"><strong><?= number_format($visiteursAujourdhui, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">aujourd'hui</span></span>
+      <span style="color:var(--text-primary);"><strong><?= number_format($visiteursSemaine, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">7 jours</span></span>
+      <span style="color:var(--text-primary);"><strong><?= number_format($visiteursMois, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">30 jours</span></span>
+      <span style="color:var(--text-primary);"><strong><?= number_format($visiteursAll, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">all time</span></span>
+    </div>
   </div>
 
   <div class="stats-grid">
