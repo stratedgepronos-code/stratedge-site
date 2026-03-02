@@ -5,6 +5,12 @@ $pageActive = 'messagerie-interne';
 $db = getDB();
 require_once __DIR__ . '/install-admin-idees.php';
 
+// Supprimer les projets/bugs terminés depuis plus d'une semaine
+try {
+    $db->exec("DELETE FROM admin_inbox WHERE ref_id IN (SELECT id FROM admin_idees WHERE statut = 'termine' AND date_maj < NOW() - INTERVAL 7 DAY)");
+    $db->exec("DELETE FROM admin_idees WHERE statut = 'termine' AND date_maj < NOW() - INTERVAL 7 DAY");
+} catch (Exception $e) { /* ignore */ }
+
 // Marquer comme lu
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? '')) {
     $action = $_POST['action'] ?? '';

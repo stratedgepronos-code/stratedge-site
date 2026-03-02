@@ -10,6 +10,14 @@ $isSuperAdmin = isSuperAdmin();
 // Créer les tables si besoin
 require_once __DIR__ . '/install-admin-idees.php';
 
+// Super admin : supprimer les projets/bugs terminés depuis plus d'une semaine
+if ($isSuperAdmin) {
+    try {
+        $db->exec("DELETE FROM admin_inbox WHERE ref_id IN (SELECT id FROM admin_idees WHERE statut = 'termine' AND date_maj < NOW() - INTERVAL 7 DAY)");
+        $db->exec("DELETE FROM admin_idees WHERE statut = 'termine' AND date_maj < NOW() - INTERVAL 7 DAY");
+    } catch (Exception $e) { /* ignore */ }
+}
+
 $success = '';
 $error = '';
 $adminId = (int)$_SESSION['membre_id'];
@@ -125,6 +133,8 @@ function statutLabel($s) {
     .form-group{margin-bottom:1rem;}
     .form-group label{display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.35rem;}
     .form-group input,.form-group select,.form-group textarea{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.65rem 1rem;color:var(--text-primary);font-family:'Rajdhani',sans-serif;font-size:0.95rem;}
+    .form-group select option{background:var(--bg-card);color:var(--text-primary);}
+    .form-group input::placeholder,.form-group textarea::placeholder{color:var(--text-muted);opacity:0.9;}
     .form-group textarea{min-height:120px;resize:vertical;}
     .form-group input:focus,.form-group textarea:focus,.form-group select:focus{outline:none;border-color:var(--neon-green);}
     .btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.7rem 1.4rem;border-radius:10px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;border:none;text-decoration:none;transition:all 0.2s;}

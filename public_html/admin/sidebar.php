@@ -58,6 +58,20 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
   .sidebar nav a:hover, .sidebar nav a.active {
     color:var(--text-primary); background:rgba(255,45,120,0.06); border-left-color:var(--neon-green);
   }
+  .nav-group { margin-bottom:0.25rem; }
+  .nav-group-toggle {
+    display:flex; align-items:center; gap:0.8rem; width:100%;
+    padding:0.85rem 1.5rem; border:none; background:transparent;
+    color:var(--text-secondary); font-family:inherit; font-size:0.92rem; font-weight:500;
+    text-align:left; cursor:pointer; transition:all 0.2s;
+    border-left:3px solid transparent;
+  }
+  .nav-group-toggle:hover { color:var(--text-primary); background:rgba(255,45,120,0.04); }
+  .nav-group-toggle .chevron { margin-left:auto; opacity:0.6; transition:transform 0.25s ease; }
+  .nav-group.open .nav-group-toggle .chevron { transform:rotate(90deg); }
+  .nav-group-inner { max-height:0; overflow:hidden; transition:max-height 0.3s ease; }
+  .nav-group.open .nav-group-inner { max-height:400px; }
+  .nav-group-inner a { padding-left:2.2rem; font-size:0.88rem; }
   .badge-count {
     background:var(--neon-green); color:white; font-size:0.62rem; font-weight:700;
     padding:0.15rem 0.45rem; border-radius:10px; margin-left:auto;
@@ -143,64 +157,84 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 
   <div class="sidebar-label">Navigation</div>
   <nav>
-    <a href="index.php"       <?= ($pageActive==='index')      ?'class="active"':'' ?>>
+    <a href="index.php" <?= ($pageActive==='index') ?'class="active"':'' ?>>
       <span>📊</span> Tableau de bord
     </a>
-    <a href="poster-bet.php"  <?= ($pageActive==='poster-bet') ?'class="active"':'' ?>>
-      <span>📸</span> Poster un bet
-    </a>
-    <a href="creer-card.php" <?= ($pageActive==='creer-card') ?'class="active"':'' ?> style="<?= $pageActive==='creer-card' ? '' : '' ?>">
-      <span>🎨</span> Créer une Card
-    </a>
-    <?php if (isSuperAdmin()): ?>
-    <a href="vault.php" <?= ($pageActive==='vault') ?'class="active"':'' ?> style="<?= $pageActive!=='vault' ? 'color:rgba(245,200,66,0.6)' : '' ?>">
-      <span>🔐</span> Coffre-Fort
-    </a>
-    <?php endif; ?>
-    <a href="edit-bet-image.php" <?= ($pageActive==='edit-bet-image') ?'class="active"':'' ?>>
-      <span>🖼️</span> Modifier image bet
-    </a>
-    <a href="broadcast.php" <?= ($pageActive==='broadcast') ?'class="active"':'' ?>>
-      <span>📣</span> Broadcast
-    </a>
-    <a href="historique.php"  <?= ($pageActive==='historique') ?'class="active"':'' ?>>
-      <span>📂</span> Historique
-      <?php if($nbBetsHistorique > 0): ?>
-        <span class="badge-count"><?= $nbBetsHistorique ?></span>
-      <?php endif; ?>
-    </a>
-    <a href="membres.php"     <?= ($pageActive==='membres')    ?'class="active"':'' ?>>
-      <span>👥</span> Membres
-    </a>
-    <a href="gestion-admins.php" <?= ($pageActive==='admins') ?'class="active"':'' ?>>
-      <span>👑</span> Admins
-    </a>
+
+    <?php $bettingOpen = in_array($pageActive, ['poster-bet','creer-card','edit-bet-image','historique','vault']); ?>
+    <div class="nav-group <?= $bettingOpen ? 'open' : '' ?>" data-group="betting">
+      <button type="button" class="nav-group-toggle" onclick="toggleNavGroup(this)">
+        <span>📌</span> Betting
+        <span class="chevron">›</span>
+      </button>
+      <div class="nav-group-inner">
+        <a href="poster-bet.php" <?= ($pageActive==='poster-bet') ?'class="active"':'' ?>><span>📸</span> Poster un bet</a>
+        <a href="creer-card.php" <?= ($pageActive==='creer-card') ?'class="active"':'' ?>><span>🎨</span> Créer une Card</a>
+        <a href="edit-bet-image.php" <?= ($pageActive==='edit-bet-image') ?'class="active"':'' ?>><span>🖼️</span> Modifier image bet</a>
+        <a href="historique.php" <?= ($pageActive==='historique') ?'class="active"':'' ?>>
+          <span>📂</span> Historique
+          <?php if ($nbBetsHistorique > 0): ?><span class="badge-count"><?= $nbBetsHistorique ?></span><?php endif; ?>
+        </a>
+        <?php if (isSuperAdmin()): ?>
+        <a href="vault.php" <?= ($pageActive==='vault') ?'class="active"':'' ?> style="color:rgba(245,200,66,0.85);"><span>🔐</span> Coffre-Fort</a>
+        <?php endif; ?>
+      </div>
+    </div>
+
+    <?php $usersOpen = in_array($pageActive, ['membres','admins']); ?>
+    <div class="nav-group <?= $usersOpen ? 'open' : '' ?>" data-group="users">
+      <button type="button" class="nav-group-toggle" onclick="toggleNavGroup(this)">
+        <span>👥</span> Gestion utilisateurs
+        <span class="chevron">›</span>
+      </button>
+      <div class="nav-group-inner">
+        <a href="membres.php" <?= ($pageActive==='membres') ?'class="active"':'' ?>><span>👥</span> Membres</a>
+        <a href="gestion-admins.php" <?= ($pageActive==='admins') ?'class="active"':'' ?>><span>👑</span> Admins</a>
+      </div>
+    </div>
+
     <a href="idees.php" <?= ($pageActive==='idees') ?'class="active"':'' ?>>
       <span>💡</span> Idées & Bugs
     </a>
-    <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
-    <a href="messagerie-interne.php" <?= ($pageActive==='messagerie-interne') ?'class="active"':'' ?>>
-      <span>📥</span> Messagerie interne
-      <?php if (!empty($nbInboxNonLus)): ?><span class="badge-count"><?= $nbInboxNonLus ?></span><?php endif; ?>
-    </a>
-    <?php endif; ?>
-    <a href="messages.php"    <?= ($pageActive==='messages')   ?'class="active"':'' ?>>
-      <span>💬</span> Messages
-      <?php if($nbMsgNonLus > 0): ?>
-        <span class="badge-count"><?= $nbMsgNonLus ?></span>
-      <?php endif; ?>
-    </a>
-    <a href="tickets.php"     <?= ($pageActive==='tickets')    ?'class="active"':'' ?>>
+
+    <?php $msgOpen = in_array($pageActive, ['messagerie-interne','messages']); ?>
+    <div class="nav-group <?= $msgOpen ? 'open' : '' ?>" data-group="messagerie">
+      <button type="button" class="nav-group-toggle" onclick="toggleNavGroup(this)">
+        <span>💬</span> Messagerie
+        <span class="chevron">›</span>
+      </button>
+      <div class="nav-group-inner">
+        <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
+        <a href="messagerie-interne.php" <?= ($pageActive==='messagerie-interne') ?'class="active"':'' ?>>
+          <span>📥</span> Messagerie interne
+          <?php if (!empty($nbInboxNonLus)): ?><span class="badge-count"><?= $nbInboxNonLus ?></span><?php endif; ?>
+        </a>
+        <?php endif; ?>
+        <a href="messages.php" <?= ($pageActive==='messages') ?'class="active"':'' ?>>
+          <span>💬</span> Messages
+          <?php if ($nbMsgNonLus > 0): ?><span class="badge-count"><?= $nbMsgNonLus ?></span><?php endif; ?>
+        </a>
+      </div>
+    </div>
+
+    <a href="tickets.php" <?= ($pageActive==='tickets') ?'class="active"':'' ?>>
       <span>🎫</span> Tickets SAV
-      <?php if($nbTicketsOpen > 0): ?>
-        <span class="badge-count"><?= $nbTicketsOpen ?></span>
-      <?php endif; ?>
+      <?php if ($nbTicketsOpen > 0): ?><span class="badge-count"><?= $nbTicketsOpen ?></span><?php endif; ?>
     </a>
-    <a href="twitter-post.php" <?= ($pageActive==='twitter-post') ?'class="active"':'' ?>>
-      <span style="display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.736-8.847L1.254 2.25H8.08l4.259 5.629L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg>
-      </span> Poster sur X
-    </a>
+
+    <?php $pushOpen = in_array($pageActive, ['broadcast','twitter-post']); ?>
+    <div class="nav-group <?= $pushOpen ? 'open' : '' ?>" data-group="push">
+      <button type="button" class="nav-group-toggle" onclick="toggleNavGroup(this)">
+        <span>📣</span> Push & réseaux sociaux
+        <span class="chevron">›</span>
+      </button>
+      <div class="nav-group-inner">
+        <a href="broadcast.php" <?= ($pageActive==='broadcast') ?'class="active"':'' ?>><span>📣</span> Broadcast</a>
+        <a href="twitter-post.php" <?= ($pageActive==='twitter-post') ?'class="active"':'' ?>>
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.736-8.847L1.254 2.25H8.08l4.259 5.629L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg></span> Poster sur X
+        </a>
+      </div>
+    </div>
   </nav>
 
   <div class="sidebar-footer">
@@ -221,5 +255,9 @@ function toggleSidebar() {
   s.classList.toggle('open');
   h.classList.toggle('open');
   o.classList.toggle('open');
+}
+function toggleNavGroup(btn) {
+  var g = btn.closest('.nav-group');
+  if (g) g.classList.toggle('open');
 }
 </script>
