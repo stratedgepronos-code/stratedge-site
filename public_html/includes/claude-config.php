@@ -148,11 +148,12 @@ Logos clubs/joueurs — ⚠️ IMPORTANT : ajouter les logos à côté des noms 
 - BASKET NBA : https://cdn.nba.com/logos/nba/{nba_team_id}/primary/L/logo.svg
 - HOCKEY NHL : drapeau emoji ou texte abrégé
 
-Mascotte (position:absolute; left:50%; transform:translateX(-50%); top:0; height:100%; object-fit:contain; pointer-events:none) :
-- TENNIS → src='https://stratedgepronos.fr/assets/images/mascotte-tennis.png'
-- Autres sports → src='https://stratedgepronos.fr/assets/images/mascotte-rose.png'
-- Card normale : opacity:0.14; z-index:1
-- Card locked : opacity:0.28; z-index:1
+Mascotte WATERMARK — ⚠️ OBLIGATOIRE, doit occuper toute la hauteur de la card en arrière-plan :
+HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div principale de la card) :
+- TENNIS : <img src='https://stratedgepronos.fr/assets/images/mascotte-tennis.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
+- Autres sports : <img src='https://stratedgepronos.fr/assets/images/mascotte-rose.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
+- Card locked : même chose mais opacity:0.25
+⚠️ La mascotte doit faire 100% de la hauteur de la card, centrée horizontalement, DERRIÈRE le contenu (z-index:1, contenu en z-index:2).
 
 ---
 
@@ -188,8 +189,10 @@ Mascotte (position:absolute; left:50%; transform:translateX(-50%); top:0; height
 7. Bloc prono (margin:20px 28px; padding:28px; text-align:center; border-radius:14px; background:linear-gradient(135deg,rgba(255,45,120,0.06),rgba(168,85,247,0.06),rgba(0,212,255,0.06)); border:1px solid rgba(255,45,120,0.15)) :
    - Badge type (Safe) : Orbitron 12px, background:linear-gradient(90deg,#00FF88,#00D4FF), color:#080A12, padding:6px 20px, border-radius:20px
    - Nom du bet (Orbitron 18px #FF2D78, margin:14px 0)
-   - ⚠️ COTE OBLIGATOIRE — C'est l'élément central de la card. Voici le HTML EXACT à utiliser (remplacer X.XX par la vraie cote) :
-     <div style='display:inline-flex;align-items:center;justify-content:center;padding:18px 48px;min-width:180px;background:linear-gradient(135deg,#FF2D78 0%,#c850c0 45%,#00D4FF 100%);border-radius:18px;box-shadow:0 4px 22px rgba(255,45,122,0.4)'><span style='font-family:Orbitron,sans-serif;font-size:52px;font-weight:900;color:#ffffff;line-height:1'>X.XX</span></div>
+   - ⚠️ COTE OBLIGATOIRE — Afficher le CHIFFRE de la cote (ex: 1.89) bien lisible en BLANC dans un bouton pill dégradé.
+     Le bouton pill : background:linear-gradient(135deg,#FF2D78,#c850c0,#00D4FF); border-radius:18px; padding:18px 48px; display:inline-block; box-shadow:0 4px 22px rgba(255,45,122,0.4);
+     Le chiffre de la cote DANS le bouton : font-family:Orbitron; font-size:52px; font-weight:900; color:#ffffff; ⚠️ color DOIT être #ffffff (blanc pur).
+     ⚠️ NE PAS mettre -webkit-background-clip:text ou -webkit-text-fill-color — le texte doit rester BLANC OPAQUE, pas transparent/clip.
    - Probabilité réelle estimée (Rajdhani 16px #8A9BB0)
    - Value (si positive : Vert #00FF88 "VALUE +X%" | si nulle/négative : gris "Valeur neutre")
 8. Bankroll (margin:0 28px; padding:16px 20px; background:rgba(0,255,136,0.04); border:1px solid rgba(0,255,136,0.1); border-radius:10px) :
