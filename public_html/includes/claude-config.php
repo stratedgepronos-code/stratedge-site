@@ -1,9 +1,8 @@
 <?php
 // ============================================================
-// STRATEDGE — claude-config.php V9
-// V9 : CLAUDE_FUN_ENRICH_PROMPT ajouté
-//      Live + Fun = enrichissement JSON uniquement (template PHP)
-//      Safe = Claude génère le HTML complet (inchangé)
+// STRATEDGE — claude-config.php V10
+// V10 : Safe card tennis — barre confiance, value, 5 derniers (D en rouge), VS plus grand, drapeaux, logo tournoi, ne pas toucher aux fonts
+// V9 : CLAUDE_FUN_ENRICH_PROMPT ajouté, Safe = Claude génère le HTML complet
 // ⚠️  NE JAMAIS exposer ce fichier publiquement
 // ============================================================
 
@@ -162,6 +161,18 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
 
 ---
 
+🎾 TENNIS SAFE CARD — Règles spécifiques (appliquer quand sport = tennis)
+
+- Barre de confiance : afficher une barre horizontale de confiance (0–100%) sur les DEUX cards (normale et locked). Style : conteneur (height:12px; background:rgba(255,255,255,0.1); border-radius:6px; overflow:hidden), remplissage (height:100%; width:XX%; background:linear-gradient(90deg,#00FF88,#00D4FF); border-radius:6px). XX = ton pourcentage de confiance (ex: 72 → width:72%). Placer la barre juste sous la barre compétition ou dans le bloc match, avec un label "Confiance XX%" (Rajdhani 12px #8A9BB0).
+- Value : calculer et afficher obligatoirement. Formule : Value = (Probabilité réelle × Cote) - 1, affichée en % (ex: VALUE +5,2% en vert #00FF88, ou "Valeur neutre" en gris si ≤0). Sur card normale ET locked (locked : la value peut rester visible à côté de la cote).
+- 5 derniers résultats : dans la section Stats (forme récente), afficher explicitement les 5 derniers matchs (ex: V V D V N). Les défaites (D) doivent être en rouge : color:#e53935; font-weight:700. Les victoires (V) en vert #00FF88, N en gris.
+- VS : pour le tennis, le "VS" entre les deux joueurs doit être plus grand : font-size:32px; font-weight:900; color:#FF2D78 (ou dégradé rose). Bien visible.
+- Drapeaux : toujours afficher le drapeau emoji du pays (🇫🇷 🇪🇸 🇺🇸 etc.) à côté du nom de chaque joueur dans la match card et dans les titres des colonnes Stats.
+- Logo tournoi : si tu connais une URL fiable d'image du logo du tournoi (ATP, WTA, ou tournoi spécifique), l'afficher en petit (height:28px) à côté du nom de la compétition dans la barre compétition. Sinon, ne pas inventer d'URL.
+- ⚠️ NE PAS modifier les polices : garder Orbitron et Rajdhani telles quelles dans tout le HTML. Aucun changement de font-family.
+
+---
+
 📐 STRUCTURE CARD NORMALE (de haut en bas)
 
 1. Ligne gradient haut 4px
@@ -172,15 +183,15 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
    - Compétition (Orbitron 11px cyan uppercase)
    - Date + heure FRANÇAISE
 4. Match card (margin:20px 28px; padding:28px; border:1px solid rgba(255,45,120,0.12); border-radius:14px) :
-   - Noms joueurs/équipes (Orbitron 24px 700) avec <img> logo du club (height:30px) à côté du nom OU drapeau emoji si pas de logo
-   - Format : <img src='...' style='height:30px;vertical-align:middle;margin-right:8px'><span>NOM EQUIPE</span>
-   - VS en rose
+   - Noms joueurs/équipes (Orbitron 24px 700) avec <img> logo du club (height:30px) à côté du nom OU drapeau emoji si tennis (ex: 🇫🇷 NOM JOUEUR)
+   - Format : <img src='...' style='height:30px;vertical-align:middle;margin-right:8px'><span>NOM EQUIPE</span> ou pour tennis : <span>🇫🇷 NOM</span>
+   - VS en rose — pour TENNIS : font-size:32px; font-weight:900; color:#FF2D78 (bien visible)
    - Stade/surface (14px #8A9BB0)
    - Dots forme CERCLES 30x30px (V=vert glow, D=rouge glow, N=gris)
 5. ⚠️ SECTION STATS OBLIGATOIRE (margin:16px 28px; display:flex; gap:16px) — 2 colonnes côte à côte :
    - Colonne gauche "JOUEUR 1 / ÉQUIPE 1" (flex:1; padding:16px; background:rgba(0,212,255,0.04); border:1px solid rgba(0,212,255,0.08); border-radius:10px) :
-     • Titre : nom du joueur/équipe (Orbitron 13px cyan uppercase)
-     • Stats clés (Rajdhani 14px #8A9BB0) : classement/position, bilan saison (V-D ou V-N-D), forme récente (5 derniers matchs), stat pertinente au sport (aces pour tennis, buts pour foot, etc.)
+     • Titre : nom du joueur/équipe (Orbitron 13px cyan uppercase) + drapeau emoji si tennis
+     • Stats clés (Rajdhani 14px #8A9BB0) : classement/position, bilan saison (V-D ou V-N-D), forme récente (5 derniers matchs — en tennis afficher ex. V V D V N avec les D en rouge color:#e53935), stat pertinente au sport (aces pour tennis, buts pour foot, etc.)
    - Colonne droite "JOUEUR 2 / ÉQUIPE 2" : même structure
    - ⚠️ Utilise tes connaissances pour fournir des stats RÉELLES et à jour. Si tu ne connais pas les stats exactes, donne une estimation crédible basée sur ce que tu sais du joueur/équipe.
 6. Contexte H2H (margin:0 28px 16px; padding:16px 20px; background:rgba(255,45,120,0.04); border:1px solid rgba(255,45,120,0.08); border-radius:10px) :
@@ -217,8 +228,9 @@ La card locked DOIT CACHER le contenu premium. Structure identique à la card no
 
 ⚠️ CE QUI RESTE VISIBLE :
 - Header, logo, badge sport
-- Barre compétition (date, heure, compétition)
-- Match card (noms joueurs, VS, surface) — TOUT VISIBLE
+- Barre compétition (date, heure, compétition) + logo tournoi si tennis
+- Pour TENNIS : barre de confiance (Confiance XX%) et value (VALUE +X% ou Valeur neutre) restent visibles sur la locked
+- Match card (noms joueurs, drapeaux, VS, surface) — TOUT VISIBLE
 - La COTE dans le bloc prono (bien visible, pas floutée)
 - Les titres des sections (STATS, FACE À FACE, ANALYSE, etc.)
 
@@ -237,5 +249,6 @@ La card locked DOIT CACHER le contenu premium. Structure identique à la card no
 4. Tout en français.
 5. Chaque HTML est COMPLET et AUTONOME (<!DOCTYPE html>, <style> avec @import fonts, etc.).
 6. Le glow extérieur est TOUJOURS en z-index:-1 avec isolation:isolate sur la card.
+7. ⚠️ NE JAMAIS modifier les polices : utiliser uniquement Orbitron et Rajdhani comme indiqué. Pas de changement de font-family.
 PROMPT
 );

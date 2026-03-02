@@ -21,7 +21,7 @@ alwaysApply: true
 - **Sécurité** : pas de clés/mots de passe en clair ; utiliser les constantes (`ADMIN_EMAIL`, `DB_*`) et `includes/db.php`.
 - **UI** : thème sombre, couleurs néon (rose #ff2d78, bleu #00d4ff, or VIP #f5c842). Polices : Orbitron, Rajdhani, Space Mono.
 - **Responsive** : mobile-first, breakpoints cohérents, barre d’onglets en bas sur mobile (sidebar-css), `dvh` / `clamp()` pour typo et hauteurs.
-- **Git** : après modifications cohérentes, commit + push (message en français). Pas de push de fichiers sensibles.
+- **Git** : à chaque fin de requête où des fichiers ont été modifiés, faire **automatiquement** (sans demander) un commit puis un push, avec un message de commit en français. Pas de push de fichiers sensibles.
 
 ## Rôles
 - **Super admin** : email = `ADMIN_EMAIL` (défini dans `includes/db.php`). Accès Coffre-Fort, messagerie interne, gestion idées/bugs (accepter, progression, notes). Projets/bugs « terminés » supprimés automatiquement après 7 jours.
