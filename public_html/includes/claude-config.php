@@ -188,9 +188,8 @@ Mascotte (position:absolute; left:50%; transform:translateX(-50%); top:0; height
 7. Bloc prono (margin:20px 28px; padding:28px; text-align:center; border-radius:14px; background:linear-gradient(135deg,rgba(255,45,120,0.06),rgba(168,85,247,0.06),rgba(0,212,255,0.06)); border:1px solid rgba(255,45,120,0.15)) :
    - Badge type (Safe) : Orbitron 12px, background:linear-gradient(90deg,#00FF88,#00D4FF), color:#080A12, padding:6px 20px, border-radius:20px
    - Nom du bet (Orbitron 18px #FF2D78, margin:14px 0)
-   - ⚠️ COTE OBLIGATOIRE — C'est l'élément central de la card. TOUJOURS l'afficher dans un bouton pill :
-     Bouton cote (display:inline-flex; align-items:center; justify-content:center; padding:18px 48px; min-width:180px; background:linear-gradient(135deg,#FF2D78 0%,#c850c0 45%,#00D4FF 100%); border-radius:18px; box-shadow:0 4px 22px rgba(255,45,122,0.4),inset 0 0 0 1px rgba(255,255,255,0.12))
-     Valeur cote à l'intérieur (Orbitron 52px 900 #fff, color:#fff, text-shadow:none)
+   - ⚠️ COTE OBLIGATOIRE — C'est l'élément central de la card. Voici le HTML EXACT à utiliser (remplacer X.XX par la vraie cote) :
+     <div style='display:inline-flex;align-items:center;justify-content:center;padding:18px 48px;min-width:180px;background:linear-gradient(135deg,#FF2D78 0%,#c850c0 45%,#00D4FF 100%);border-radius:18px;box-shadow:0 4px 22px rgba(255,45,122,0.4)'><span style='font-family:Orbitron,sans-serif;font-size:52px;font-weight:900;color:#ffffff;line-height:1'>X.XX</span></div>
    - Probabilité réelle estimée (Rajdhani 16px #8A9BB0)
    - Value (si positive : Vert #00FF88 "VALUE +X%" | si nulle/négative : gris "Valeur neutre")
 8. Bankroll (margin:0 28px; padding:16px 20px; background:rgba(0,255,136,0.04); border:1px solid rgba(0,255,136,0.1); border-radius:10px) :
