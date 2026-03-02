@@ -24,20 +24,21 @@ function debugLog($msg) {
 }
 
 // ── Appel Claude générique ──────────────────────────────────
-function callClaude($systemPrompt, $userMsg, $maxTokens = 1000) {
+function callClaude($systemPrompt, $userMsg, $maxTokens = 1000, $useThinking = false) {
     $body = [
         'model'      => CLAUDE_MODEL,
         'max_tokens' => $maxTokens,
         'system'     => $systemPrompt,
         'messages'   => [['role' => 'user', 'content' => $userMsg]],
     ];
-    if (defined('CLAUDE_THINKING_ENABLED') && CLAUDE_THINKING_ENABLED) {
-        $body['thinking'] = ['type' => 'enabled', 'budget_tokens' => min(10000, $maxTokens - 1000)];
+    $thinkingActive = $useThinking && defined('CLAUDE_THINKING_ENABLED') && CLAUDE_THINKING_ENABLED && $maxTokens > 2048;
+    if ($thinkingActive) {
+        $body['thinking'] = ['type' => 'enabled', 'budget_tokens' => min(10000, $maxTokens - 1500)];
     }
     $payload = json_encode($body, JSON_UNESCAPED_UNICODE);
 
     $ch = curl_init('https://api.anthropic.com/v1/messages');
-    $timeout = (defined('CLAUDE_THINKING_ENABLED') && CLAUDE_THINKING_ENABLED) ? 240 : 120;
+    $timeout = $thinkingActive ? 240 : 120;
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST           => true,
@@ -295,7 +296,7 @@ $betData = json_encode([
 $userMessage = $dateInfo . "Utilise les stats de carrière ET les stats de la saison en cours. Ne mets pas de stats futures ou inventées.\n\nGénère une card de bet StratEdge avec ces données :\n\n" . $betData;
 
 debugLog("SAFE — Appel Claude HTML...");
-$result = callClaude($systemPrompt, $userMessage, 16000);
+$result = callClaude($systemPrompt, $userMessage, 16000, true);
 
 if (isset($result['error'])) {
     debugLog("SAFE ERROR: " . $result['error']);
