@@ -1,7 +1,8 @@
 <?php
 // ============================================================
-// STRATEDGE — claude-config.php V12
-// V12 : Stats enrichies (6-8 lignes par joueur/équipe), logos tournois/compétitions tous sports, barre confiance + value universels
+// STRATEDGE — claude-config.php V13
+// V13 : Fix CORS logos (pas de SVG/atptour/wikipedia), drapeaux flagcdn.com obligatoires (pas d'emoji), cote pill simple (pas de shine)
+// V12 : Stats enrichies (6-8 lignes par joueur/équipe), logos tournois/compétitions, barre confiance + value universels
 // V11 : Sonnet 4.6 avec extended thinking (Safe uniquement)
 // V10 : Safe card tennis — barre confiance, value, 5 derniers (D en rouge), VS plus grand, drapeaux
 // V9 : CLAUDE_FUN_ENRICH_PROMPT ajouté, Safe = Claude génère le HTML complet
@@ -145,7 +146,12 @@ Logos clubs/joueurs — ⚠️ IMPORTANT : ajouter les logos à côté des noms 
   • Football-Data.org : https://crests.football-data.org/{fd_id}.png
   Si tu ne connais pas l'ID exact d'un club, utilise le drapeau emoji du pays
 
-- TENNIS : drapeau VISUEL à côté du nom — uniquement emoji Unicode (🇪🇸 🇺🇸 🇫🇷 🇨🇭 etc.) ou <img> avec URL (ex: flagcdn.com). Jamais de code texte "FR", "CH" : la card est exportée en JPG, le drapeau doit être l'image réelle.
+- TENNIS : drapeau VISUEL à côté du nom — utiliser OBLIGATOIREMENT une image <img> flagcdn.com :
+  Format : <img src='https://flagcdn.com/w40/{code}.png' style='height:20px;border-radius:2px;vertical-align:middle;margin-right:6px' alt=''>
+  Codes pays courants : fr, es, us, ch, de, it, gb, ar, cl, br, au, ca, jp, rs, hr, gr, cz, pl, ru, cn, kr, no, se, dk, bg, ro, hu, at, pt, nl, be, ge, kz, in, za, tn, dz, ma, il, ua
+  ⚠️ NE PAS utiliser d'emoji drapeau (🇫🇷 etc.) — ils ne se rendent pas correctement dans html2canvas pour l'export JPG.
+  ⚠️ NE PAS écrire de code texte "FR", "CH" — utiliser l'image flagcdn.com.
+  Toujours mettre le drapeau à côté du nom dans la match card ET dans les titres des colonnes Stats.
 - BASKET NBA : https://cdn.nba.com/logos/nba/{nba_team_id}/primary/L/logo.svg
 - HOCKEY NHL : drapeau emoji ou texte abrégé
 
@@ -169,16 +175,9 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
 - Value : calculer et afficher obligatoirement. Formule : Value = (Probabilité réelle × Cote) - 1, affichée en % (ex: VALUE +5,2% en vert #00FF88, ou "Valeur neutre" en gris si ≤0). Sur card normale ET locked (locked : la value peut rester visible à côté de la cote).
 - 5 derniers résultats : dans la section Stats (forme récente), afficher explicitement les 5 derniers matchs (ex: V V D V N). Les défaites (D) doivent être en rouge : color:#e53935; font-weight:700. Les victoires (V) en vert #00FF88, N en gris.
 - VS : pour le tennis, le "VS" entre les deux joueurs doit être plus grand : font-size:32px; font-weight:900; color:#FF2D78 (ou dégradé rose). Bien visible.
-- Drapeaux : la card est exportée en JPG (pas du HTML affiché). Utiliser UNIQUEMENT des drapeaux visuels qui s'affichent dans l'image finale : soit les emoji Unicode (🇫🇷 🇨🇭 🇪🇸 🇺🇸 🇦🇷 etc.), soit une image <img src='...'> avec une URL de drapeau (ex: https://flagcdn.com/w40/fr.png). JAMAIS de code texte type "CH", "FR", "FRA" — ça ne rend pas un vrai drapeau dans le JPG. À côté du nom de chaque joueur dans la match card et dans les titres des colonnes Stats.
-- Logo tournoi : afficher le logo du tournoi/compétition (height:28px) à côté du nom dans la barre compétition. Utiliser ces URLs :
-  TENNIS ATP/WTA — logos officiels :
-  • ATP Tour : https://www.atptour.com/-/media/alias/og-logo
-  • WTA : https://upload.wikimedia.org/wikipedia/en/5/5f/WTA_logo_2010.svg
-  • Roland-Garros : https://upload.wikimedia.org/wikipedia/fr/thumb/5/54/Logo_Roland-Garros.svg/200px-Logo_Roland-Garros.svg.png
-  • Wimbledon : https://upload.wikimedia.org/wikipedia/en/thumb/b/b5/Wimbledon.svg/200px-Wimbledon.svg.png
-  • US Open : https://upload.wikimedia.org/wikipedia/en/thumb/1/18/US_Open_%28tennis%29_logo.svg/200px-US_Open_%28tennis%29_logo.svg.png
-  • Australian Open : https://upload.wikimedia.org/wikipedia/en/thumb/0/07/Australian_Open_logo.svg/200px-Australian_Open_logo.svg.png
-  FOOTBALL — logos compétitions via API-Football :
+- Drapeaux : la card est exportée en JPG via html2canvas. Utiliser OBLIGATOIREMENT <img src='https://flagcdn.com/w40/{code}.png'> — JAMAIS d'emoji (rendu cassé dans html2canvas), JAMAIS de code texte "CH"/"FR".
+- Logo tournoi : ⚠️ La card est convertie en JPG via html2canvas. Les images doivent être accessibles SANS problème CORS. NE PAS utiliser d'URL en .svg, ni atptour.com, ni wikipedia (CORS bloqué). Utiliser UNIQUEMENT des URLs PNG/JPG qui supportent le cross-origin.
+  FOOTBALL — logos compétitions via API-Football (PNG, CORS OK) :
   • Ligue 1 : https://media.api-sports.io/football/leagues/61.png
   • Premier League : https://media.api-sports.io/football/leagues/39.png
   • La Liga : https://media.api-sports.io/football/leagues/140.png
@@ -191,9 +190,9 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
   • Eredivisie : https://media.api-sports.io/football/leagues/88.png
   • Liga Portugal : https://media.api-sports.io/football/leagues/94.png
   • Super Lig : https://media.api-sports.io/football/leagues/203.png
-  BASKET NBA : https://cdn.nba.com/logos/leagues/logo-nba.svg
-  HOCKEY NHL : https://upload.wikimedia.org/wikipedia/en/thumb/3/3a/05_NHL_Shield.svg/200px-05_NHL_Shield.svg.png
-  Si tu ne connais pas l'URL exacte d'un tournoi, ne pas inventer — utiliser le logo de la ligue parente.
+  TENNIS : NE PAS mettre de logo tournoi (pas d'URL fiable CORS-compatible). Écrire juste le nom du tournoi en texte (ex: "ATP 250 — Buenos Aires — Terre battue").
+  BASKET / HOCKEY : NE PAS mettre de logo tournoi. Écrire le nom en texte.
+  ⚠️ RÈGLE ABSOLUE : ne JAMAIS utiliser d'URL en .svg, ni de sites qui bloquent CORS (wikipedia, atptour.com, nba.com, nhl.com). Uniquement PNG/JPG de CDN autorisés (api-sports.io, flagcdn.com, stratedgepronos.fr).
 - ⚠️ NE PAS modifier les polices : garder Orbitron et Rajdhani telles quelles dans tout le HTML. Aucun changement de font-family.
 
 ---
@@ -208,14 +207,15 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
    - Gauche : <img> logo compétition/tournoi (height:28px, vertical-align:middle, margin-right:10px) + Compétition + surface/round si pertinent (Orbitron 11px cyan uppercase)
    - Droite : Date + heure FRANÇAISE
 4. Match card (margin:20px 28px; padding:28px; border:1px solid rgba(255,45,120,0.12); border-radius:14px) :
-   - Noms joueurs/équipes (Orbitron 24px 700) avec <img> logo du club (height:30px) à côté du nom OU pour tennis : drapeau VISUEL (emoji 🇫🇷 🇨🇭 ou <img src='https://flagcdn.com/w40/xx.png' style='height:24px;vertical-align:middle'>) — jamais "FR"/"CH" en texte, la card sort en JPG.
-   - Format : <img src='...' style='height:30px;vertical-align:middle;margin-right:8px'><span>NOM EQUIPE</span> ou tennis : <span>🇫🇷 NOM</span> ou <img> drapeau + NOM
+   - Noms joueurs/équipes (Orbitron 24px 700) avec <img> logo du club (height:30px) OU pour tennis : <img src='https://flagcdn.com/w40/{code}.png' style='height:20px;border-radius:2px;vertical-align:middle;margin-right:6px'> à côté du nom.
+   - Format football : <img src='https://media.api-sports.io/football/teams/{id}.png' style='height:30px;vertical-align:middle;margin-right:8px'><span>NOM EQUIPE</span>
+   - Format tennis : <img src='https://flagcdn.com/w40/{code}.png' style='height:20px;border-radius:2px;vertical-align:middle;margin-right:6px'><span>NOM JOUEUR</span>
    - VS en rose — pour TENNIS : font-size:32px; font-weight:900; color:#FF2D78 (bien visible)
    - Stade/surface (14px #8A9BB0)
    - Dots forme CERCLES 30x30px (V=vert glow, D=rouge glow, N=gris)
 5. ⚠️ SECTION STATS OBLIGATOIRE (margin:16px 28px; display:flex; gap:16px) — 2 colonnes côte à côte, RICHES EN DONNÉES :
    - Colonne gauche "JOUEUR 1 / ÉQUIPE 1" (flex:1; padding:16px; background:rgba(0,212,255,0.04); border:1px solid rgba(0,212,255,0.08); border-radius:10px) :
-     • Titre : nom du joueur/équipe (Orbitron 13px cyan uppercase) + drapeau emoji si tennis
+     • Titre : nom du joueur/équipe (Orbitron 13px cyan uppercase) + pour tennis : <img> drapeau flagcdn.com (height:16px)
      • Stats clés (Rajdhani 14px #8A9BB0), afficher AU MINIMUM 6 à 8 lignes de stats :
        TENNIS : Classement ATP/WTA · Bilan saison (V-D) · Bilan sur surface (terre/dur/gazon) · % 1er service · Aces/match · % break points sauvés · Forme récente (5 derniers : V V D V N avec D en rouge color:#e53935) · Titres saison
        FOOTBALL : Position classement · Points · Bilan domicile/extérieur (V-N-D) · Buts marqués/encaissés · Série en cours · xG moyen · Derniers résultats (5 derniers avec D en rouge)
@@ -230,9 +230,10 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
    - Badge type (Safe) : Orbitron 12px, background:linear-gradient(90deg,#00FF88,#00D4FF), color:#080A12, padding:6px 20px, border-radius:20px
    - Nom du bet (Orbitron 18px #FF2D78, margin:14px 0)
    - ⚠️ COTE OBLIGATOIRE — Afficher le CHIFFRE de la cote (ex: 1.89) bien lisible en BLANC dans un bouton pill dégradé.
-     Le bouton pill : background:linear-gradient(135deg,#FF2D78,#c850c0,#00D4FF); border-radius:18px; padding:18px 48px; display:inline-block; box-shadow:0 4px 22px rgba(255,45,122,0.4);
-     Le chiffre de la cote DANS le bouton : font-family:Orbitron; font-size:52px; font-weight:900; color:#ffffff; ⚠️ color DOIT être #ffffff (blanc pur).
+     Le bouton pill : background:linear-gradient(135deg,#FF2D78,#c850c0,#00D4FF); border-radius:18px; padding:18px 48px; display:inline-block; box-shadow:0 4px 22px rgba(255,45,122,0.4); overflow:hidden; position:relative;
+     Le chiffre de la cote DANS le bouton : font-family:Orbitron; font-size:52px; font-weight:900; color:#ffffff; position:relative; z-index:2; ⚠️ color DOIT être #ffffff (blanc pur).
      ⚠️ NE PAS mettre -webkit-background-clip:text ou -webkit-text-fill-color — le texte doit rester BLANC OPAQUE, pas transparent/clip.
+     ⚠️ NE PAS ajouter de pseudo-élement ::before/::after ou de shine/overlay sur le bouton pill — html2canvas les rend mal. Le pill doit être simple : juste le background gradient + le chiffre blanc. Pas de div shine intérieure.
    - Juste SOUS la cote : barre de confiance horizontale (conteneur height:12px; background:rgba(255,255,255,0.1); border-radius:6px; overflow:hidden; remplissage height:100%; width:XX%; background:linear-gradient(90deg,#00FF88,#00D4FF); border-radius:6px) + label "Confiance XX%" (Rajdhani 12px #8A9BB0). Appliquer à TOUS les sports.
    - Probabilité réelle estimée (Rajdhani 16px #8A9BB0)
    - Value (si positive : Vert #00FF88 "VALUE +X%" | si nulle/négative : gris "Valeur neutre"). Appliquer à TOUS les sports.
