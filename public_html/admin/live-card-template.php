@@ -7,6 +7,7 @@
 // V7 : nouveau design watermark (sans colonne mascotte)
 //      mascotte centrée transparente (mix-blend-mode:screen)
 //      + generateFunCards() ajouté (même approche template)
+// V11 : Fun card tennis — mascotte-tennis, thème vert néon quand sport=tennis
 // ============================================================
 
 // ────────────────────────────────────────────────────────────
