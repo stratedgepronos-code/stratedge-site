@@ -14,7 +14,7 @@ define('CLAUDE_API_KEY', 'sk-ant-api03-e_hIvi6EBw-5GOntfLd635FE8SMf3gnAv88LC_LQM
 
 define('CLAUDE_MODEL', 'claude-sonnet-4-6');
 
-define('CLAUDE_THINKING_ENABLED', true);
+define('CLAUDE_THINKING_ENABLED', false);
 
 // ============================================================
 // ⚡ LIVE — Enrichissement uniquement (JSON, pas de HTML)
