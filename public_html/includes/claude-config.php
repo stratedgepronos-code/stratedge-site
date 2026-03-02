@@ -118,9 +118,10 @@ Confiance 5-6/10→1-2% bankroll, 7/10→3%, 8/10→4%, 9-10/10→5%
 Import Google Fonts dans chaque <style> :
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
 
-Dimensions : width:1080px; overflow:hidden
+Dimensions : width:1440px; overflow:hidden
 ⚠️ PAS de min-height fixe. Hauteur auto, contenu compact, pas de grands vides.
-Les 2 cards (normale et locked) doivent avoir la MÊME largeur (1080px) et des proportions similaires.
+Les 2 cards (normale et locked) doivent avoir la MÊME largeur (1440px) et des proportions similaires.
+⚠️ NETTETÉ : ajouter dans le body : -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility;
 Background : #080A12
 Grille fond (z-index:0) : position:absolute; inset:0; repeating-linear-gradient cyan 2.5% opacity, espacement 40px; pointer-events:none
 Contenu z-index:2; position:relative
@@ -187,8 +188,9 @@ Mascotte (position:absolute; left:50%; transform:translateX(-50%); top:0; height
 7. Bloc prono (margin:20px 28px; padding:28px; text-align:center; border-radius:14px; background:linear-gradient(135deg,rgba(255,45,120,0.06),rgba(168,85,247,0.06),rgba(0,212,255,0.06)); border:1px solid rgba(255,45,120,0.15)) :
    - Badge type (Safe) : Orbitron 12px, background:linear-gradient(90deg,#00FF88,#00D4FF), color:#080A12, padding:6px 20px, border-radius:20px
    - Nom du bet (Orbitron 18px #FF2D78, margin:14px 0)
-   - ⚠️ COTE OBLIGATOIRE — C'est l'élément central de la card. TOUJOURS l'afficher :
-     Cote (Orbitron 64px 900 #FF2D78, glow text-shadow, margin:10px 0)
+   - ⚠️ COTE OBLIGATOIRE — C'est l'élément central de la card. TOUJOURS l'afficher dans un bouton pill :
+     Bouton cote (display:inline-flex; align-items:center; justify-content:center; padding:18px 48px; min-width:180px; background:linear-gradient(135deg,#FF2D78 0%,#c850c0 45%,#00D4FF 100%); border-radius:18px; box-shadow:0 4px 22px rgba(255,45,122,0.4),inset 0 0 0 1px rgba(255,255,255,0.12))
+     Valeur cote à l'intérieur (Orbitron 52px 900 #fff, color:#fff, text-shadow:none)
    - Probabilité réelle estimée (Rajdhani 16px #8A9BB0)
    - Value (si positive : Vert #00FF88 "VALUE +X%" | si nulle/négative : gris "Valeur neutre")
 8. Bankroll (margin:0 28px; padding:16px 20px; background:rgba(0,255,136,0.04); border:1px solid rgba(0,255,136,0.1); border-radius:10px) :
@@ -207,7 +209,7 @@ La card locked DOIT CACHER le contenu premium. Structure identique à la card no
 ⚠️ CE QUI DOIT ÊTRE CACHÉ (remplacé par du contenu flouté/masqué) :
 - Section Stats (§5) : remplacer le contenu par des barres grises floues (div style='height:14px; background:rgba(255,255,255,0.08); border-radius:4px; margin:6px 0; filter:blur(3px)') — 3 ou 4 barres par colonne, garder les titres visibles
 - Contexte H2H (§6) : même chose, barres grises floues à la place du texte
-- Bloc prono (§7) : le NOM DU BET doit être flouté (filter:blur(8px); user-select:none), la COTE reste visible
+- Bloc prono (§7) : le NOM DU BET doit être COMPLÈTEMENT CACHÉ — remplacer le texte du pari par une barre grise floue (div style='height:20px; width:60%; margin:10px auto; background:rgba(255,255,255,0.1); border-radius:6px; filter:blur(6px)'). ⚠️ NE PAS écrire le nom du pari, même flouté. La COTE (le bouton pill dégradé) reste visible.
 - Analyse (§9) : contenu remplacé par barres grises floues
 - Bankroll (§8) : contenu flouté
 
