@@ -1,0 +1,35 @@
+---
+description: Contexte et règles du projet StratEdge Pronos (site pronos, admin, stack)
+alwaysApply: true
+---
+
+# StratEdge Pronos — Contexte projet
+
+## Présentation
+- **Site** : stratedgepronos.fr — pronostics sportifs (betting), abonnements, VIP Max.
+- **Slogan** : « Ta stratégie. Notre Edge. Leur défaite. »
+- **Stack** : PHP natif (pas de framework), MySQL/MariaDB, JavaScript vanilla, CSS (thème sombre / néon).
+
+## Structure principale
+- **Racine web** : `public_html/`
+- **Pages** : `index.php`, `gate.php` (bloque visiteurs), `login.php`, `register.php`, `dashboard.php`, `historique.php`, `chat.php`, `sav.php`, `bets.php`, `offre.php`, `offre-daily.php`, `offre-weekly.php`, `offre-tennis.php`.
+- **Admin** : `public_html/admin/` — `index.php` (tableau de bord), `sidebar.php` (menu avec sous-menus : Betting, Gestion utilisateurs, Messagerie, Push & réseaux sociaux), `idees.php` (idées/bugs), `messagerie-interne.php` (super admin), `membres.php`, `tickets.php`, `messages.php`, `poster-bet.php`, `creer-card.php`, `historique.php`, `broadcast.php`, `twitter-post.php`, etc.
+- **Includes** : `includes/auth.php`, `includes/db.php`, `includes/push.php`, `includes/sidebar.php`, `includes/sidebar-css.php`, `includes/footer-main.php`, `includes/offre-template.php`.
+
+## Conventions
+- **Réponses** : toujours en français.
+- **Sécurité** : pas de clés/mots de passe en clair ; utiliser les constantes (`ADMIN_EMAIL`, `DB_*`) et `includes/db.php`.
+- **UI** : thème sombre, couleurs néon (rose #ff2d78, bleu #00d4ff, or VIP #f5c842). Polices : Orbitron, Rajdhani, Space Mono.
+- **Responsive** : mobile-first, breakpoints cohérents, barre d’onglets en bas sur mobile (sidebar-css), `dvh` / `clamp()` pour typo et hauteurs.
+- **Git** : après modifications cohérentes, commit + push (message en français). Pas de push de fichiers sensibles.
+
+## Rôles
+- **Super admin** : email = `ADMIN_EMAIL` (défini dans `includes/db.php`). Accès Coffre-Fort, messagerie interne, gestion idées/bugs (accepter, progression, notes). Projets/bugs « terminés » supprimés automatiquement après 7 jours.
+- **Admin** : accès panel admin (tableau de bord, betting, membres, messages, tickets, idées & bugs, broadcast, X).
+
+## Points techniques récurrents
+- **Push** : `includes/push.php` — `envoyerPush($membreId, $title, $body, $url, $tag)`.
+- **Visiteurs** : logs dans `public_html/visiteurs/data/visites.jsonl` ; stats jour/semaine/mois/all time sur le tableau de bord admin.
+- **Idées/Bugs** : tables `admin_idees`, `admin_inbox` ; création auto si besoin via `admin/install-admin-idees.php`.
+
+Utiliser ce contexte pour toute tâche sur ce projet (nouvelles features, correctifs, refacto) afin d’avoir le même comportement et les mêmes conventions sur tous les postes (travail / maison).

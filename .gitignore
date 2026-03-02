@@ -6,6 +6,9 @@ desktop.ini
 # IDE
 .vscode/
 .cursor/
+# Exception : versionner les règles Cursor (même config agent à la maison)
+!.cursor/rules/
+!.cursor/rules/*.mdc
 *.swp
 *.swo
 
