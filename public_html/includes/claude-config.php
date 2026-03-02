@@ -1,6 +1,6 @@
 <?php
 // ============================================================
-// STRATEDGE — claude-config.php V13
+// STRATEDGE — claude-config.php V14
 // V14 : Pas de logo tournoi (texte uniquement), cote pill fond rose néon uni (#FF2D78)
 // V13 : Fix CORS logos, drapeaux flagcdn obligatoires, cote pill simple
 // V12 : Stats enrichies (6-8 lignes par joueur/équipe), logos tournois/compétitions, barre confiance + value universels
