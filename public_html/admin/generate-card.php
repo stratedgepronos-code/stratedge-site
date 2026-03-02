@@ -187,15 +187,11 @@ if ($typeBet === 'Live') {
         ]);
 
         debugLog("LIVE OK! normal=" . strlen($cards['html_normal']) . " locked=" . strlen($cards['html_locked']));
-        echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Live', 'card_width' => 1440]);
+        echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Live', 'card_width' => 1080]);
     } catch (Throwable $e) {
-        debugLog("LIVE EXCEPTION: " . $e->getMessage() . " @ " . $e->getFile() . ":" . $e->getLine());
+        debugLog("LIVE EXCEPTION: " . $e->getMessage());
         http_response_code(500);
-        echo json_encode([
-            'error' => 'Erreur génération Live : ' . $e->getMessage(),
-            'file'  => basename($e->getFile()),
-            'line'  => $e->getLine(),
-        ], JSON_UNESCAPED_UNICODE);
+        echo json_encode(['error' => 'Erreur génération Live : ' . $e->getMessage()]);
     }
     exit;
 }
@@ -259,7 +255,7 @@ if ($typeBet === 'Fun') {
     ]);
 
     debugLog("FUN OK! normal=" . strlen($cards['html_normal']) . " locked=" . strlen($cards['html_locked']));
-    echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Fun', 'card_width' => 1440]);
+    echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Fun', 'card_width' => 1080]);
     exit;
 }
 
@@ -309,4 +305,4 @@ if (!$cards || !isset($cards['html_normal']) || !isset($cards['html_locked'])) {
 }
 
 debugLog("SAFE OK! 1080px");
-echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Safe', 'card_width' => 1440]);
+echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Safe', 'card_width' => 1080]);
