@@ -6,3 +6,16 @@ RewriteEngine On
 RewriteCond %{REQUEST_URI} ^/admin/
 RewriteCond %{THE_REQUEST} ^[A-Z]{3,9}\ /admin/ [NC]
 RewriteRule .* - [F,L]
+
+# Timeout étendu pour generate-card.php (appels Claude longs)
+<IfModule mod_reqtimeout.c>
+  RequestReadTimeout body=300
+</IfModule>
+<IfModule mod_proxy.c>
+  ProxyTimeout 300
+</IfModule>
+
+# PHP timeout
+<IfModule mod_php.c>
+  php_value max_execution_time 300
+</IfModule>

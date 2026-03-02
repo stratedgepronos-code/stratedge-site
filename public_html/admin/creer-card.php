@@ -496,11 +496,15 @@ async function generateCard() {
   document.getElementById('render-locked').style.width = cardW + 'px';
 
   try {
+    const controller = new AbortController();
+    const fetchTimeout = setTimeout(() => controller.abort(), 240000);
     const resp = await fetch('generate-card.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal: controller.signal
     });
+    clearTimeout(fetchTimeout);
 
     let data;
     const text = await resp.text();

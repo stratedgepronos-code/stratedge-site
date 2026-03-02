@@ -33,12 +33,14 @@ function callClaude($systemPrompt, $userMsg, $maxTokens = 1000, $useThinking = f
     ];
     $thinkingActive = $useThinking && defined('CLAUDE_THINKING_ENABLED') && CLAUDE_THINKING_ENABLED && $maxTokens > 2048;
     if ($thinkingActive) {
-        $body['thinking'] = ['type' => 'enabled', 'budget_tokens' => min(10000, $maxTokens - 1500)];
+        $body['thinking'] = ['type' => 'enabled', 'budget_tokens' => 4096];
     }
     $payload = json_encode($body, JSON_UNESCAPED_UNICODE);
 
+    debugLog("API call — model:" . CLAUDE_MODEL . " max_tokens:$maxTokens thinking:" . ($thinkingActive ? 'ON(4096)' : 'OFF') . " payload_size:" . strlen($payload));
+
     $ch = curl_init('https://api.anthropic.com/v1/messages');
-    $timeout = $thinkingActive ? 240 : 120;
+    $timeout = $thinkingActive ? 180 : 120;
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST           => true,
@@ -52,15 +54,19 @@ function callClaude($systemPrompt, $userMsg, $maxTokens = 1000, $useThinking = f
         ],
     ]);
 
+    $t0 = microtime(true);
     $response  = curl_exec($ch);
+    $elapsed   = round(microtime(true) - $t0, 1);
     $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $curlError = curl_error($ch);
     curl_close($ch);
 
-    if ($curlError) return ['error' => 'Erreur réseau : ' . $curlError];
+    debugLog("API response — HTTP:$httpCode duration:{$elapsed}s response_size:" . strlen($response ?: ''));
+
+    if ($curlError) return ['error' => 'Erreur réseau (' . $elapsed . 's) : ' . $curlError];
     if ($httpCode !== 200) {
         $err = json_decode($response, true);
-        return ['error' => "Erreur API Claude ($httpCode) : " . ($err['error']['message'] ?? substr($response, 0, 300))];
+        return ['error' => "Erreur API Claude ($httpCode, {$elapsed}s) : " . ($err['error']['message'] ?? substr($response, 0, 300))];
     }
 
     $resp = json_decode($response, true);
