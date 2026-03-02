@@ -23,14 +23,24 @@ jobs:
       - name: Install sshpass
         run: sudo apt-get update && sudo apt-get install -y sshpass rsync
 
-      - name: Deploy public_html via rsync
+      - name: Deploy public_html via rsync (avec retry)
         run: |
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" rsync -avz --delete \
-            -e "ssh -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }}" \
-            public_html/ \
-            ${{ secrets.FTP_USER }}@${{ secrets.FTP_HOST }}:${{ env.WEBROOT }}/
+          MAX=3
+          DELAY=30
+          for i in $(seq 1 $MAX); do
+            echo "=== Tentative $i/$MAX ==="
+            sshpass -p "${{ secrets.SSH_PASSWORD }}" rsync -avz --delete \
+              --timeout=60 \
+              -e "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p ${{ env.SSH_PORT }}" \
+              public_html/ \
+              ${{ secrets.FTP_USER }}@${{ secrets.FTP_HOST }}:${{ env.WEBROOT }}/ \
+              && break
+            echo "Echec tentative $i, nouvelle tentative dans ${DELAY}s..."
+            sleep $DELAY
+            DELAY=$((DELAY * 2))
+          done
 
       - name: Vérification
         run: |
-          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no -p ${{ env.SSH_PORT }} \
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p ${{ env.SSH_PORT }} \
             ${{ secrets.FTP_USER }}@${{ secrets.FTP_HOST }} "ls -la ${{ env.WEBROOT }}/index.php"
