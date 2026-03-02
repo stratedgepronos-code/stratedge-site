@@ -4,6 +4,28 @@ requireAdmin();
 $pageActive = 'index';
 $db = getDB();
 
+// Stats visiteurs (fichier JSONL)
+$visiteursAujourdhui = $visiteursSemaine = $visiteursMois = $visiteursAll = 0;
+$logPath = __DIR__ . '/../visiteurs/data/visites.jsonl';
+if (is_file($logPath)) {
+    $lines = array_filter(array_map('trim', file($logPath)));
+    $visites = [];
+    foreach ($lines as $line) {
+        $v = @json_decode($line, true);
+        if (is_array($v) && isset($v['t'])) $visites[] = $v;
+    }
+    $todayStart = strtotime('today');
+    $weekStart = strtotime('-7 days');
+    $monthStart = strtotime('-30 days');
+    foreach ($visites as $v) {
+        $t = (int)$v['t'];
+        $visiteursAll++;
+        if ($t >= $monthStart) $visiteursMois++;
+        if ($t >= $weekStart) $visiteursSemaine++;
+        if ($t >= $todayStart) $visiteursAujourdhui++;
+    }
+}
+
 $nbMembres    = $db->query("SELECT COUNT(*) FROM membres WHERE email != 'stratedgepronos@gmail.com'")->fetchColumn();
 $nbAboActifs  = $db->query("SELECT COUNT(*) FROM abonnements WHERE actif=1 AND (type='daily' OR date_fin>NOW())")->fetchColumn();
 $nbBets       = $db->query("SELECT COUNT(*) FROM bets WHERE actif=1")->fetchColumn();
@@ -97,6 +119,14 @@ $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m O
   <div class="page-header">
     <h1>📊 Tableau de bord</h1>
     <p>Bienvenue — <?= date('d/m/Y à H:i') ?></p>
+  </div>
+
+  <div class="stats-bar-visiteurs" style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;margin-bottom:1.5rem;padding:1rem 1.25rem;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:14px;">
+    <span style="font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);">Visiteurs</span>
+    <span style="color:var(--text-primary);"><strong><?= number_format($visiteursAujourdhui, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">aujourd'hui</span></span>
+    <span style="color:var(--text-primary);"><strong><?= number_format($visiteursSemaine, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">7 jours</span></span>
+    <span style="color:var(--text-primary);"><strong><?= number_format($visiteursMois, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">30 jours</span></span>
+    <span style="color:var(--text-primary);"><strong><?= number_format($visiteursAll, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">all time</span></span>
   </div>
 
   <div class="stats-grid">
@@ -232,14 +262,6 @@ $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m O
         </tbody>
       </table>
     </div>
-  </div>
-
-  <div class="card" style="background:linear-gradient(135deg,rgba(255,45,120,0.06),rgba(0,212,255,0.03));border-color:rgba(255,45,120,0.2);">
-    <h3>⚡ Action rapide</h3>
-    <p style="color:var(--text-secondary);margin-bottom:1.5rem;">Postez une nouvelle card de bet. Cela expirera automatiquement tous les abonnements <strong style="color:var(--neon-green)">Daily</strong> actifs.</p>
-    <a href="poster-bet.php" style="background:linear-gradient(135deg,var(--neon-green),var(--neon-green-dim));color:white;padding:0.9rem 2rem;border-radius:10px;text-decoration:none;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:1rem;text-transform:uppercase;display:inline-block;">
-      📸 Poster un nouveau bet →
-    </a>
   </div>
 </div>
 </body>

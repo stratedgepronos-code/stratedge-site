@@ -84,6 +84,38 @@ CREATE TABLE IF NOT EXISTS `ticket_messages` (
   FOREIGN KEY (`ticket_id`) REFERENCES `tickets`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- ── TABLE ADMIN IDÉES / BUGS (soumissions admins) ─────────────
+CREATE TABLE IF NOT EXISTS `admin_idees` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `admin_id` int(11) unsigned NOT NULL,
+  `type` enum('idee','bug') NOT NULL,
+  `titre` varchar(255) NOT NULL,
+  `description` text NOT NULL,
+  `statut` enum('en_attente','accepte','refuse','en_cours','termine') NOT NULL DEFAULT 'en_attente',
+  `progression_pct` tinyint(3) unsigned NOT NULL DEFAULT 0,
+  `notes_super` text DEFAULT NULL,
+  `date_creation` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `date_maj` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_admin` (`admin_id`),
+  KEY `idx_statut` (`statut`),
+  KEY `idx_type` (`type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── TABLE MESSAGERIE INTERNE (super admin) ──────────────────
+CREATE TABLE IF NOT EXISTS `admin_inbox` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `type` enum('idee','bug') NOT NULL,
+  `ref_id` int(11) unsigned NOT NULL,
+  `titre` varchar(255) NOT NULL,
+  `contenu` text NOT NULL,
+  `lu` tinyint(1) NOT NULL DEFAULT 0,
+  `date_creation` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_ref` (`ref_id`),
+  KEY `idx_lu` (`lu`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- ── COMPTE ADMIN PAR DÉFAUT ───────────────────────────────
 -- Mot de passe : ChangeMe2024! (à modifier dans le panel)
 INSERT INTO `membres` (`nom`, `email`, `password`, `actif`) VALUES

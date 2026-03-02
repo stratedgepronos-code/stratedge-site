@@ -4,11 +4,12 @@
 // Avant d'inclure, définir : $pageActive = 'index' | 'poster-bet' | 'membres' | 'messages' | 'tickets' | 'historique'
 
 // Toutes les requêtes en try/catch pour éviter crash si colonne/table manquante
-$nbTicketsOpen = 0; $nbMsgNonLus = 0; $nbBetsHistorique = 0; $nbChatNonLus = 0;
+$nbTicketsOpen = 0; $nbMsgNonLus = 0; $nbBetsHistorique = 0; $nbChatNonLus = 0; $nbInboxNonLus = 0;
 try { $nbTicketsOpen    = (int)$db->query("SELECT COUNT(*) FROM tickets WHERE statut != 'resolu'")->fetchColumn(); } catch(Exception $e) {}
 try { $nbMsgNonLus      = (int)$db->query("SELECT COUNT(*) FROM messages WHERE expediteur='membre' AND lu=0")->fetchColumn(); } catch(Exception $e) {}
 try { $nbBetsHistorique = (int)$db->query("SELECT COUNT(*) FROM bets WHERE resultat IS NOT NULL AND resultat NOT IN ('en_cours','pending')")->fetchColumn(); } catch(Exception $e) {}
 try { $nbChatNonLus     = (int)$db->query("SELECT COUNT(*) FROM chat_messages WHERE expediteur='membre' AND lu=0")->fetchColumn(); } catch(Exception $e) {}
+try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (int)$db->query("SELECT COUNT(*) FROM admin_inbox WHERE lu=0")->fetchColumn(); } catch(Exception $e) {}
 ?>
 <!-- ════ STYLES SIDEBAR + RESPONSIVE ════ -->
 <style>
@@ -174,6 +175,15 @@ try { $nbChatNonLus     = (int)$db->query("SELECT COUNT(*) FROM chat_messages WH
     <a href="gestion-admins.php" <?= ($pageActive==='admins') ?'class="active"':'' ?>>
       <span>👑</span> Admins
     </a>
+    <a href="idees.php" <?= ($pageActive==='idees') ?'class="active"':'' ?>>
+      <span>💡</span> Idées & Bugs
+    </a>
+    <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
+    <a href="messagerie-interne.php" <?= ($pageActive==='messagerie-interne') ?'class="active"':'' ?>>
+      <span>📥</span> Messagerie interne
+      <?php if (!empty($nbInboxNonLus)): ?><span class="badge-count"><?= $nbInboxNonLus ?></span><?php endif; ?>
+    </a>
+    <?php endif; ?>
     <a href="messages.php"    <?= ($pageActive==='messages')   ?'class="active"':'' ?>>
       <span>💬</span> Messages
       <?php if($nbMsgNonLus > 0): ?>
