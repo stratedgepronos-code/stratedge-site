@@ -142,7 +142,7 @@ function sportConfig($sport) {
             'emoji'        => '🎾',
             'label'        => 'Tennis',
             'pack'         => 'Tennis Pro',
-            'mascotte_url'   => 'https://stratedgepronos.fr/assets/images/mascotte-tennis.jpg',
+            'mascotte_url'   => 'https://stratedgepronos.fr/assets/images/mascotte-tennis.png',
             // Tennis : mascotte-tennis.png, fond transparent (opacity seule)
             'mascotte_style' => "opacity:0.55; background:none !important; height:100%; width:auto; object-fit:contain;",
             'mascotte_locked'=> "opacity:0.30; background:none !important; height:100%; width:auto; object-fit:contain;",
