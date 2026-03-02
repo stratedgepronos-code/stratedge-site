@@ -283,7 +283,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Image originale en clair pour le tweet résultat
                     $imageUrl = !empty($bet['image_path'])
                         ? 'https://stratedgepronos.fr/' . $bet['image_path']
-                        : 'https://stratedgepronos.fr/assets/images/logo site.png';
+                        : 'https://stratedgepronos.fr/assets/images/logo_site_transparent.png';
 
                     // URL IFTTT : même clé, event resultat_bet
                     $iftttUrl = preg_replace('/trigger\/[^\/]+\//', 'trigger/resultat_bet/', $twitterConfig['webhook_url']);

@@ -291,7 +291,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     // Image originale en clair pour le tweet résultat
                     $imageUrl = !empty($bet['image_path'])
                         ? 'https://stratedgepronos.fr/' . $bet['image_path']
-                        : 'https://stratedgepronos.fr/assets/images/logo site.png';
+                        : 'https://stratedgepronos.fr/assets/images/logo_site_transparent.png';
 
                     // URL IFTTT : même clé, event resultat_bet
                     $iftttUrl = preg_replace('/trigger\/[^\/]+\//', 'trigger/resultat_bet/', $twitterConfig['webhook_url']);
@@ -495,7 +495,7 @@ $resultatConfig = [
             $rc = $resultatConfig[$b['resultat'] ?? 'en_cours'];
           ?>
             <tr>
-              <td><?php if ($b['image_path']): ?><img src="../<?= clean($b['image_path']) ?>" class="bet-thumb"><?php else: ?>📊<?php endif; ?></td>
+              <td><?php if ($b['image_path'] && file_exists(__DIR__ . '/../' . $b['image_path'])): ?><img src="<?= htmlspecialchars(SITE_URL . '/' . $b['image_path']) ?>" class="bet-thumb" alt=""><?php else: ?>📊<?php endif; ?></td>
               <td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?= clean($b['titre'] ?: '—') ?></td>
               <td style="font-size:0.8rem;"><?= clean($b['type']) ?></td>
               <td>
