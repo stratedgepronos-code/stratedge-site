@@ -84,9 +84,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? 
             $success = 'Notes enregistrées.';
         }
     }
+
+    if ($isSuperAdmin && $action === 'delete_idee') {
+        $ideeId = (int)($_POST['idee_id'] ?? 0);
+        if ($ideeId > 0) {
+            $db->prepare("DELETE FROM admin_inbox WHERE ref_id = ?")->execute([$ideeId]);
+            $db->prepare("DELETE FROM admin_idees WHERE id = ?")->execute([$ideeId]);
+            $success = 'Projet supprimé.';
+            header('Location: idees.php?deleted=1');
+            exit;
+        }
+    }
 }
 
 if (isset($_GET['ok'])) $success = 'Idée/Bug enregistré. Vous serez notifié si elle est acceptée.';
+if (isset($_GET['deleted'])) $success = 'Projet supprimé.';
 
 // Mes soumissions (pour tous les admins)
 $mesIdees = $db->prepare("SELECT * FROM admin_idees WHERE admin_id = ? ORDER BY date_creation DESC");
@@ -132,9 +144,10 @@ function statutLabel($s) {
     .card h2{font-family:'Orbitron',sans-serif;font-size:1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;}
     .form-group{margin-bottom:1rem;}
     .form-group label{display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.35rem;}
-    .form-group input,.form-group select,.form-group textarea{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.65rem 1rem;color:var(--text-primary);font-family:'Rajdhani',sans-serif;font-size:0.95rem;}
-    .form-group select option{background:var(--bg-card);color:var(--text-primary);}
-    .form-group input::placeholder,.form-group textarea::placeholder{color:var(--text-muted);opacity:0.9;}
+    .form-group input,.form-group select,.form-group textarea{width:100%;background:#0d1220;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:0.65rem 1rem;color:#f0f4f8;font-family:'Rajdhani',sans-serif;font-size:0.95rem;}
+    .form-group select{color-scheme:dark;}
+    .form-group select option{background:#0d1220;color:#f0f4f8;}
+    .form-group input::placeholder,.form-group textarea::placeholder{color:#8a9bb0;}
     .form-group textarea{min-height:120px;resize:vertical;}
     .form-group input:focus,.form-group textarea:focus,.form-group select:focus{outline:none;border-color:var(--neon-green);}
     .btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.7rem 1.4rem;border-radius:10px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:0.95rem;cursor:pointer;border:none;text-decoration:none;transition:all 0.2s;}
@@ -161,7 +174,10 @@ function statutLabel($s) {
     .idee-desc{color:var(--text-secondary);font-size:0.9rem;margin-top:0.5rem;white-space:pre-wrap;}
     .idee-meta{font-size:0.78rem;color:var(--text-muted);margin-top:0.5rem;}
     .super-actions{display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.75rem;align-items:center;}
-    .super-actions select,.super-actions input[type="number"]{padding:0.4rem 0.6rem;border-radius:6px;border:1px solid var(--border-subtle);background:rgba(255,255,255,0.05);color:var(--text-primary);font-size:0.85rem;}
+    .super-actions select,.super-actions input[type="number"],.super-actions input[type="text"]{padding:0.4rem 0.6rem;border-radius:6px;border:1px solid var(--border-subtle);background:#0d1220;color:#f0f4f8;font-size:0.85rem;}
+    .super-actions input[type="text"]::placeholder{color:#8a9bb0;}
+    .btn-delete{background:rgba(255,80,80,0.15);border:1px solid rgba(255,80,80,0.4);color:#ff6b6b;padding:0.35rem 0.7rem;font-size:0.8rem;border-radius:6px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;}
+    .btn-delete:hover{background:rgba(255,80,80,0.25);}
     .super-actions input[type="number"]{width:70px;}
     .two-cols{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
     @media(max-width:900px){.two-cols{grid-template-columns:1fr;} .main{margin-left:0;padding-top:68px;}}
@@ -278,6 +294,12 @@ function statutLabel($s) {
             <input type="hidden" name="idee_id" value="<?= $i['id'] ?>">
             <input type="text" name="notes_super" placeholder="Notes" value="<?= htmlspecialchars($i['notes_super'] ?? '') ?>" style="min-width:180px;">
             <button type="submit" class="btn btn-secondary" style="padding:0.35rem 0.7rem;font-size:0.8rem;">OK</button>
+          </form>
+          <form method="POST" style="display:inline;" onsubmit="return confirm('Supprimer ce projet définitivement ?');">
+            <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
+            <input type="hidden" name="action" value="delete_idee">
+            <input type="hidden" name="idee_id" value="<?= $i['id'] ?>">
+            <button type="submit" class="btn-delete">🗑 Supprimer</button>
           </form>
         </div>
         <?php if (!empty($i['notes_super'])): ?>
