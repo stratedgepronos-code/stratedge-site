@@ -666,14 +666,35 @@ async function captureIframeToJpeg(iframeId, cardWidth) {
   bottomCrop = Math.min(bottomCrop + 2, canvas.height);
   const croppedHeight = bottomCrop - topCrop;
 
-  if (croppedHeight > 100 && (topCrop > 5 || (canvas.height - bottomCrop) > 5)) {
+  let leftCrop = 0;
+  for (let x = 0; x < canvas.width; x++) {
+    let hasContent = false;
+    for (let y = topCrop; y < bottomCrop; y++) {
+      const i = (y * canvas.width + x) * 4;
+      if (pixels[i] > 15 || pixels[i+1] > 15 || pixels[i+2] > 15) { hasContent = true; break; }
+    }
+    if (hasContent) { leftCrop = x; break; }
+  }
+
+  let rightCrop = canvas.width;
+  for (let x = canvas.width - 1; x >= leftCrop; x--) {
+    let hasContent = false;
+    for (let y = topCrop; y < bottomCrop; y++) {
+      const i = (y * canvas.width + x) * 4;
+      if (pixels[i] > 15 || pixels[i+1] > 15 || pixels[i+2] > 15) { hasContent = true; break; }
+    }
+    if (hasContent) { rightCrop = x + 1; break; }
+  }
+  const croppedWidth = rightCrop - leftCrop;
+
+  if (croppedHeight > 100 && croppedWidth > 100 && (topCrop > 5 || (canvas.height - bottomCrop) > 5 || leftCrop > 5 || (canvas.width - rightCrop) > 5)) {
     const cropped    = document.createElement('canvas');
-    cropped.width    = cardWidth;
+    cropped.width    = croppedWidth;
     cropped.height   = croppedHeight;
     const croppedCtx = cropped.getContext('2d');
     croppedCtx.fillStyle = '#0a0a0a';
-    croppedCtx.fillRect(0, 0, cardWidth, croppedHeight);
-    croppedCtx.drawImage(canvas, 0, topCrop, cardWidth, croppedHeight, 0, 0, cardWidth, croppedHeight);
+    croppedCtx.fillRect(0, 0, croppedWidth, croppedHeight);
+    croppedCtx.drawImage(canvas, leftCrop, topCrop, croppedWidth, croppedHeight, 0, 0, croppedWidth, croppedHeight);
     return cropped.toDataURL('image/jpeg', 0.92);
   }
   return canvas.toDataURL('image/jpeg', 0.92);

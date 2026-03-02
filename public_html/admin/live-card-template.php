@@ -617,9 +617,10 @@ function generateFunCards($d) {
     $css = $embeddedFonts . "\n/* Fallback Google Fonts si embarquées absentes (iframe/srcdoc) */\n@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Bebas+Neue&display=swap');\n" . <<<CSS
 
 * { margin:0; padding:0; box-sizing:border-box; }
-body { background:#0a0a0a; margin:0; padding:0; width:1080px; font-family:'Orbitron',sans-serif; }
+html, body { max-width:1080px; overflow-x:hidden; }
+body { background:#0a0a0a; margin:0; padding:0; width:1080px; min-width:1080px; font-family:'Orbitron',sans-serif; }
 
-.card-wrapper { position:relative; width:1080px; }
+.card-wrapper { position:relative; width:1080px; max-width:1080px; }
 .border-glow {
   position:absolute; inset:-2px; border-radius:24px;
   background:linear-gradient(135deg,#ff2d7a,#c850c0,#ff2d7a);
@@ -629,7 +630,7 @@ body { background:#0a0a0a; margin:0; padding:0; width:1080px; font-family:'Orbit
 @keyframes gradientShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
 
 .card {
-  position:relative; z-index:1; width:1080px; background:#0e0b12;
+  position:relative; z-index:1; width:1080px; max-width:1080px; background:#0e0b12;
   border-radius:20px; overflow:hidden; display:flex; flex-direction:column;
   border:1px solid rgba(255,45,122,0.1); isolation:isolate;
 }
