@@ -725,8 +725,8 @@ body { background:#0a0a0a; margin:0; padding:0; width:1080px; font-family:'Orbit
 .card-footer-gradient { height:4px; background:linear-gradient(to right,#ff2d7a,#c850c0,#4158d0); position:relative; z-index:2; }
 
 /* Tennis Fun — vert néon (mascotte tennis, couleurs vertes) */
-.card-wrapper.tennis-fun .border-glow { background:linear-gradient(135deg,#39ff14,#00d46a,#00c896); }
-.card-wrapper.tennis-fun .card { border-color:rgba(57,255,20,0.2); background:#0a0e0a; }
+.card-wrapper.tennis-fun .border-glow { display:none; }
+.card-wrapper.tennis-fun .card { border:none; background:#0a0e0a; }
 .card-wrapper.tennis-fun .funbet-badge { background:rgba(57,255,20,0.12); border-color:rgba(57,255,20,0.5); color:#39ff14; box-shadow:0 0 10px rgba(57,255,20,0.25); text-shadow:0 0 8px rgba(57,255,20,0.4); }
 .card-wrapper.tennis-fun .datetime-time { color:#39ff14; text-shadow:0 0 25px rgba(57,255,20,0.5); }
 .card-wrapper.tennis-fun .section-title-text { color:rgba(57,255,20,0.8); }
@@ -742,6 +742,7 @@ body { background:#0a0a0a; margin:0; padding:0; width:1080px; font-family:'Orbit
 .card-wrapper.tennis-fun .promo-banner { background:rgba(10,28,10,0.95); border-color:rgba(57,255,20,0.25); }
 .card-wrapper.tennis-fun .promo-left-bar { background:linear-gradient(to bottom,#39ff14,#00e5ff); }
 .card-wrapper.tennis-fun .promo-eyebrow { color:#39ff14; }
+.card-wrapper.tennis-fun .promo-main { font-size:18px; letter-spacing:0.3px; line-height:1.4; }
 .card-wrapper.tennis-fun .promo-main-hl { color:#39ff14; }
 .card-wrapper.tennis-fun .locked-reserved { color:#39ff14; }
 .card-wrapper.tennis-fun .locked-cta-btn { background:linear-gradient(135deg,#39ff14,#00c896); color:#000; }
@@ -825,12 +826,12 @@ HTML;
   <div class='promo-banner'>
     <div class='promo-left-bar'></div>
     <div class='promo-text-block'>
-      <div class='promo-eyebrow'>🎾 Fun Bet Tennis — Combiné ATP / WTA</div>
-      <div class='promo-main'>Inclus dans <span class='promo-main-hl'>Pack Tennis Pro</span> · 15€/semaine</div>
+      <div class='promo-eyebrow'>🎾 FUN BET TENNIS — COMBINÉ ATP / WTA</div>
+      <div class='promo-main'>Inclus dans le <span class='promo-main-hl'>Pack Tennis Pro</span></div>
       <div class='promo-packs'>
-        <span class='pack-tag pack-tag-max'>🎾 Tennis Weekly</span>
+        <span class='pack-tag pack-tag-max'>🎾 Tennis Weekly — 15€/sem</span>
       </div>
-      <div class='promo-price'>Abonne-toi au pack <span>Tennis Pro</span></div>
+      <div class='promo-price'>Abonne-toi au <span>Pack Tennis</span></div>
     </div>
     <div class='promo-right'>
       <div class='promo-cta'>🎾 Je m'abonne</div>
