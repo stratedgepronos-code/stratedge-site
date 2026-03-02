@@ -207,7 +207,14 @@ if ($typeBet === 'Live') {
 // le PHP génère le HTML garanti via generateFunCards()
 // ═══════════════════════════════════════════════════════════
 if ($typeBet === 'Fun') {
-    require_once __DIR__ . '/live-card-template.php';
+    try {
+        require_once __DIR__ . '/live-card-template.php';
+    } catch (Throwable $e) {
+        debugLog("FUN require ERROR: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['error' => 'Chargement template : ' . $e->getMessage()]);
+        exit;
+    }
 
     $rawBet = $data['raw_bet'] ?? '';
 
@@ -250,14 +257,21 @@ if ($typeBet === 'Fun') {
         $coteTotale = $enriched['cote_totale'];
     }
 
-    $cards = generateFunCards([
-        'sport'       => $sport,
-        'date_fr'     => $enriched['date_fr']    ?? date('d/m/Y'),
-        'time_fr'     => $enriched['time_fr']    ?? date('H:i'),
-        'bets'        => $enriched['bets'],
-        'cote_totale' => $coteTotale,
-        'confidence'  => intval($enriched['confidence'] ?? 65),
-    ]);
+    try {
+        $cards = generateFunCards([
+            'sport'       => $sport,
+            'date_fr'     => $enriched['date_fr']    ?? date('d/m/Y'),
+            'time_fr'     => $enriched['time_fr']    ?? date('H:i'),
+            'bets'        => $enriched['bets'],
+            'cote_totale' => $coteTotale,
+            'confidence'  => intval($enriched['confidence'] ?? 65),
+        ]);
+    } catch (Throwable $e) {
+        debugLog("FUN generateFunCards ERROR: " . $e->getMessage() . " @ " . $e->getFile() . ":" . $e->getLine());
+        http_response_code(500);
+        echo json_encode(['error' => 'Erreur génération card : ' . $e->getMessage()]);
+        exit;
+    }
 
     debugLog("FUN OK! normal=" . strlen($cards['html_normal']) . " locked=" . strlen($cards['html_locked']));
     echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Fun', 'card_width' => 1440]);

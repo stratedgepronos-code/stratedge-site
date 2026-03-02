@@ -751,6 +751,7 @@ CSS;
     $betLinesNormal = '';
     $betLinesLocked = '';
     foreach ($bets as $i => $bet) {
+        if (!is_array($bet)) continue;
         $num    = str_pad($i + 1, 2, '0', STR_PAD_LEFT);
         $match  = htmlspecialchars($bet['match'] ?? '', ENT_QUOTES, 'UTF-8');
         $prono  = htmlspecialchars($bet['prono'] ?? '', ENT_QUOTES, 'UTF-8');
@@ -758,9 +759,9 @@ CSS;
         $heure  = htmlspecialchars($bet['heure'] ?? $bet['time'] ?? '', ENT_QUOTES, 'UTF-8');
         $heureSpan = $heure !== '' ? "<span class='bet-heure'>{$heure}</span>" : '';
 
-        $logo1Url = trim($bet['team1_logo'] ?? '');
-        $logo2Url = trim($bet['team2_logo'] ?? '');
-        $matchRaw = $bet['match'] ?? '';
+        $logo1Url = trim((string)($bet['team1_logo'] ?? ''));
+        $logo2Url = trim((string)($bet['team2_logo'] ?? ''));
+        $matchRaw = (string)($bet['match'] ?? '');
         $matchParts = preg_split('/\s+vs\.?\s+/i', $matchRaw, 2);
         $team1Name = trim($matchParts[0] ?? '');
         $team2Name = trim($matchParts[1] ?? '');
@@ -773,12 +774,12 @@ CSS;
         if ($logo1Url !== '' && filter_var($logo1Url, FILTER_VALIDATE_URL)) {
             $ico1 = '<img src="' . htmlspecialchars(logoProxyUrl($logo1Url), ENT_QUOTES, 'UTF-8') . '" class="fun-team-logo" alt="">';
         } else {
-            $ico1 = flagImg($bet['flag1'] ?? '');
+            $ico1 = flagImg(is_string($bet['flag1'] ?? null) ? $bet['flag1'] : '');
         }
         if ($logo2Url !== '' && filter_var($logo2Url, FILTER_VALIDATE_URL)) {
             $ico2 = '<img src="' . htmlspecialchars(logoProxyUrl($logo2Url), ENT_QUOTES, 'UTF-8') . '" class="fun-team-logo" alt="">';
         } else {
-            $ico2 = flagImg($bet['flag2'] ?? '');
+            $ico2 = flagImg(is_string($bet['flag2'] ?? null) ? $bet['flag2'] : '');
         }
 
         $barColor = $barColors[$i % 3];

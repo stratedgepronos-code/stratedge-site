@@ -502,7 +502,14 @@ async function generateCard() {
       body: JSON.stringify(payload)
     });
 
-    const data = await resp.json();
+    let data;
+    const text = await resp.text();
+    try {
+      data = JSON.parse(text);
+    } catch (_) {
+      showError('❌ Le serveur a renvoyé une erreur (HTTP ' + resp.status + '). Réponse non-JSON : ' + escHtml(text.substring(0, 200)));
+      return;
+    }
 
     if (!resp.ok || data.error) {
       showError('❌ ' + (data.error || 'Erreur inconnue.') + (data.raw ? '<br><small style="opacity:0.6">' + escHtml(data.raw) + '</small>' : ''));
