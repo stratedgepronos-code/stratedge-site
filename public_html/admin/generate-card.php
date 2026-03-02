@@ -25,19 +25,24 @@ function debugLog($msg) {
 
 // ── Appel Claude générique ──────────────────────────────────
 function callClaude($systemPrompt, $userMsg, $maxTokens = 1000) {
-    $payload = json_encode([
+    $body = [
         'model'      => CLAUDE_MODEL,
         'max_tokens' => $maxTokens,
         'system'     => $systemPrompt,
         'messages'   => [['role' => 'user', 'content' => $userMsg]],
-    ], JSON_UNESCAPED_UNICODE);
+    ];
+    if (defined('CLAUDE_THINKING_ENABLED') && CLAUDE_THINKING_ENABLED) {
+        $body['thinking'] = ['type' => 'enabled', 'budget_tokens' => min(10000, $maxTokens - 1000)];
+    }
+    $payload = json_encode($body, JSON_UNESCAPED_UNICODE);
 
     $ch = curl_init('https://api.anthropic.com/v1/messages');
+    $timeout = (defined('CLAUDE_THINKING_ENABLED') && CLAUDE_THINKING_ENABLED) ? 240 : 120;
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST           => true,
         CURLOPT_POSTFIELDS     => $payload,
-        CURLOPT_TIMEOUT        => 120,
+        CURLOPT_TIMEOUT        => $timeout,
         CURLOPT_CONNECTTIMEOUT => 10,
         CURLOPT_HTTPHEADER     => [
             'Content-Type: application/json',

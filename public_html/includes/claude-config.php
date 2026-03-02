@@ -1,7 +1,8 @@
 <?php
 // ============================================================
-// STRATEDGE — claude-config.php V10
-// V10 : Safe card tennis — barre confiance, value, 5 derniers (D en rouge), VS plus grand, drapeaux, logo tournoi, ne pas toucher aux fonts
+// STRATEDGE — claude-config.php V11
+// V11 : Sonnet 4.6 avec extended thinking activé (test)
+// V10 : Safe card tennis — barre confiance, value, 5 derniers (D en rouge), VS plus grand, drapeaux, logo tournoi
 // V9 : CLAUDE_FUN_ENRICH_PROMPT ajouté, Safe = Claude génère le HTML complet
 // ⚠️  NE JAMAIS exposer ce fichier publiquement
 // ============================================================
@@ -12,7 +13,7 @@ define('CLAUDE_API_KEY', 'sk-ant-api03-e_hIvi6EBw-5GOntfLd635FE8SMf3gnAv88LC_LQM
 
 define('CLAUDE_MODEL', 'claude-sonnet-4-6');
 
-define('CLAUDE_THINKING_ENABLED', false);
+define('CLAUDE_THINKING_ENABLED', true);
 
 // ============================================================
 // ⚡ LIVE — Enrichissement uniquement (JSON, pas de HTML)
