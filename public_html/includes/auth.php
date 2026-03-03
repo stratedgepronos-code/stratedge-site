@@ -31,7 +31,7 @@ function isSuperAdmin(): bool {
 // ── Obliger le super admin ─────────────────────────────────
 function requireSuperAdmin(): void {
     if (!isSuperAdmin()) {
-        header('Location: /admin/index.php');
+        header('Location: /panel-x9k3m/index.php');
         exit;
     }
 }

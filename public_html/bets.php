@@ -101,8 +101,8 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
 .bet-badge{padding:0.3rem 0.85rem;border-radius:8px;font-family:'Orbitron',sans-serif;font-size:0.68rem;font-weight:700;letter-spacing:1px;display:flex;align-items:center;gap:0.3rem;}
 .bet-date{font-size:0.85rem;color:var(--txt3,#8a9bb0);font-family:'Space Mono',monospace;font-size:0.72rem;}
 .bet-titre{font-family:'Orbitron',sans-serif;font-size:0.95rem;padding:0 1.4rem 0.9rem;color:var(--txt2,#b0bec9);font-weight:600;}
-.bet-img-wrap{position:relative;overflow:hidden;min-height:0;}
-.bet-img{width:100%;height:auto;display:block;vertical-align:top;transition:transform .3s;}
+.bet-img-wrap{position:relative;overflow:hidden;min-height:0;aspect-ratio:16/9;}
+.bet-img{width:100%;height:100%;display:block;object-fit:cover;vertical-align:top;transition:transform .3s;}
 .bet-img.blur{filter:blur(14px);transform:scale(1.08);}
 .bet-img-wrap.zoomable{cursor:zoom-in;}
 .bet-img-wrap.zoomable:hover .bet-img{transform:scale(1.02);}

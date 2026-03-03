@@ -1,30 +1,25 @@
 ---
-description: Push Git automatique à la fin de chaque requête
+description: Push Git automatique après chaque modification (StratEdge)
 alwaysApply: true
 ---
 
-# Push Git automatique
+# Push Git automatique — StratEdge
 
-À la **fin de chaque réponse** que tu donnes à l'utilisateur :
+À la **fin de chaque réponse** où tu as modifié des fichiers dans ce projet :
 
-1. **Vérifier** que le workspace est un dépôt Git (`git rev-parse --is-inside-work-tree` ou présence de `.git`).
+1. **Vérifier** que le workspace est un dépôt Git.
 2. **Si oui** : exécuter dans l'ordre :
    - `git add .` (ou `git add -A`)
    - `git status` pour voir les changements
    - Si des fichiers sont modifiés/ajoutés : `git commit -m "Auto-commit: [résumé court des changements ou date/heure]"`
-   - `git push` (sans demander confirmation à l'utilisateur)
+   - `git push`
 
-3. **Si le dépôt n'est pas initialisé** : ne rien faire pour le push, pas d'erreur.
+3. **Comportement** :
+   - Faire le push **à la fin** de la réponse, après les modifications.
+   - Message de commit : court et descriptif en français.
+   - Ne pas demander à l'utilisateur s'il veut pousser : le faire systématiquement quand il y a des changements.
 
-**Comportement** :
-- Faire le push **à la fin** de ta réponse, après avoir appliqué les modifications demandées.
-- Message de commit : court et descriptif (ex. "Auto-commit: mise à jour config", "Auto-commit: correction formulaire").
-- Ne pas demander à l'utilisateur s'il veut pousser : le faire systématiquement quand il y a des changements et que le repo est un git.
-
-**Exemple de séquence en PowerShell (Windows)** :
+**Exemple PowerShell (Windows)** :
 ```powershell
-git add -A
-git status
-git commit -m "Auto-commit: description des changements"
-git push
+cd "g:\Récup\StratEdge"; git add -A; git status; git commit -m "Auto-commit: description"; git push
 ```
