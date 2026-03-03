@@ -73,7 +73,7 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
 .bets-title span{background:linear-gradient(135deg,#ff2d78,#ff6b9d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .bets-sub{color:var(--txt2,#b0bec9);font-size:1.05rem;max-width:500px;margin:0 auto;}
 
-.bets-wrap{max-width:920px;margin:0 auto;padding:2rem 0.5rem;}
+.bets-wrap{max-width:1400px;margin:0 auto;padding:2rem 0.5rem;}
 
 /* Banner abo */
 .abo-b{border-radius:14px;padding:1.4rem 1.8rem;margin-bottom:2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
@@ -88,19 +88,21 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
 .bets-nav-sections{display:flex;flex-wrap:wrap;gap:0.75rem 1.5rem;margin-bottom:1.5rem;padding:0.75rem 0;}
 .bets-nav-link{font-family:'Orbitron',sans-serif;font-size:0.85rem;font-weight:700;letter-spacing:1px;color:var(--nav-color,#8a9bb0);text-decoration:none;padding:0.4rem 0.8rem;border-radius:8px;border:1px solid rgba(255,255,255,0.1);transition:all .25s;}
 .bets-nav-link:hover{border-color:var(--nav-color);color:var(--nav-color);box-shadow:0 0 12px rgba(0,0,0,0.3);}
-/* Sections Safe | Live | Fun */
-.bets-section{margin-bottom:2.5rem;scroll-margin-top:1rem;}
+/* Sections Safe | Live | Fun — trois colonnes gauche à droite */
+.bets-sections-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.5rem;align-items:start;}
+.bets-section{margin-bottom:0;scroll-margin-top:1rem;min-width:0;}
 .bets-section-title{font-family:'Orbitron',sans-serif;font-size:1.15rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:0.5rem;}
-.bets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(360px,100%),1fr));gap:1.5rem;}
-.bet-card{background:var(--card,#111827);border:1px solid var(--border,rgba(255,45,120,0.15));border-radius:18px;overflow:hidden;transition:all .3s;position:relative;}
+/* Cartes dans chaque section : affichées de gauche à droite (grille) */
+.bets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(280px,100%),1fr));gap:1.5rem;}
+.bet-card{background:var(--card,#111827);border:1px solid var(--border,rgba(255,45,120,0.15));border-radius:18px;overflow:hidden;transition:all .3s;position:relative;min-width:0;}
 .bet-card:hover{transform:translateY(-5px);box-shadow:0 25px 70px rgba(0,0,0,0.5),0 0 20px rgba(255,45,120,0.1);border-color:rgba(255,45,120,0.35);}
 .bet-top{padding:1.1rem 1.4rem 0.7rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;}
 .bet-badges{display:flex;gap:0.5rem;flex-wrap:wrap;}
 .bet-badge{padding:0.3rem 0.85rem;border-radius:8px;font-family:'Orbitron',sans-serif;font-size:0.68rem;font-weight:700;letter-spacing:1px;display:flex;align-items:center;gap:0.3rem;}
 .bet-date{font-size:0.85rem;color:var(--txt3,#8a9bb0);font-family:'Space Mono',monospace;font-size:0.72rem;}
 .bet-titre{font-family:'Orbitron',sans-serif;font-size:0.95rem;padding:0 1.4rem 0.9rem;color:var(--txt2,#b0bec9);font-weight:600;}
-.bet-img-wrap{position:relative;overflow:hidden;}
-.bet-img{width:100%;display:block;transition:transform .3s;}
+.bet-img-wrap{position:relative;overflow:hidden;min-height:0;}
+.bet-img{width:100%;height:auto;display:block;vertical-align:top;transition:transform .3s;}
 .bet-img.blur{filter:blur(14px);transform:scale(1.08);}
 .bet-img-wrap.zoomable{cursor:zoom-in;}
 .bet-img-wrap.zoomable:hover .bet-img{transform:scale(1.02);}
@@ -127,6 +129,12 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
 .lightbox-close:hover{background:#ff2d78;}
 .lightbox-caption{text-align:center;margin-top:0.8rem;color:var(--txt3,#8a9bb0);font-size:0.88rem;}
 
+@media(max-width:1100px){
+  .bets-sections-row{grid-template-columns:1fr;}
+  .bets-section{margin-bottom:2rem;}
+  .bets-section:last-child{margin-bottom:0;}
+  .bets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(360px,100%),1fr));gap:1rem;}
+}
 @media(max-width:768px){
   .bets-grid{grid-template-columns:1fr;gap:1rem;max-width:100%;}
   .abo-b{padding:1rem;flex-direction:column;align-items:flex-start;border-radius:10px;}
@@ -222,7 +230,9 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
       'live' => ['bets' => $betsLive, 'title' => 'Live', 'icon' => '⚡', 'color' => '#ff2d78'],
       'fun'  => ['bets' => $betsFun,  'title' => 'Fun',  'icon' => '🎯', 'color' => '#a855f7'],
     ];
-    foreach ($sections as $key => $sec):
+  ?>
+  <div class="bets-sections-row">
+  <?php foreach ($sections as $key => $sec):
       if (empty($sec['bets'])) continue;
   ?>
   <section class="bets-section" id="section-<?= $key ?>">
@@ -264,7 +274,9 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
     <?php endforeach; ?>
     </div>
   </section>
-  <?php endforeach; endif; ?>
+  <?php endforeach; ?>
+  </div>
+  <?php endif; ?>
 </div>
 
 <?php if ($membre): ?></main></div><?php endif; ?>
