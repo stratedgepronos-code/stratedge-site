@@ -62,6 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate'])) {
     <p><a href="vault.php">→ Ouvrir le coffre-fort</a></p>
   <?php elseif ($newPassword === '' && empty($error)): ?>
     <div class="box">
+      <p class="warn" style="margin-bottom: 1rem;">⚠️ <strong>Attention :</strong> Si tu as déjà des prompts dans le coffre, générer un nouveau mot de passe les rendra <strong>illisibles</strong> (ils restent chiffrés avec l’ancienne clé). Utilise cette page seulement pour un coffre vide ou si tu as tout exporté. En cas d’erreur, utilise <a href="vault-recovery.php">vault-recovery.php</a> pour remettre l’ancien hash.</p>
       <p>Cliquez sur le bouton pour générer un nouveau mot de passe maître du coffre. Le fichier <code>vault-config.php</code> sera mis à jour.</p>
       <form method="post">
         <button type="submit" name="generate" value="1">Générer un nouveau mot de passe</button>
