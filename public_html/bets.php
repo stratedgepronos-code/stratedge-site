@@ -3,14 +3,17 @@ require_once __DIR__ . '/includes/auth.php';
 $db = getDB();
 $membre = isLoggedIn() ? getMembre() : null;
 $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
-$hasAcces = $abonnement !== null;
+// Admins voient tous les bets sans payer
+$hasAcces = ($abonnement !== null) || (isLoggedIn() && isAdmin());
 $currentPage = 'bets';
 $avatarUrl = $membre ? getAvatarUrl($membre) : null;
 
-// Filtrage des bets selon le type d'abonnement
+// Filtrage des bets : admins = tout ; sinon selon type d'abonnement
 $typeAbo = $abonnement['type'] ?? '';
-if ($typeAbo === 'rasstoss') {
-    // Rass-Toss = accès TOTAL (multi + tennis)
+if (isAdmin() && $membre) {
+    // Admin = accès total (multi + tennis), comme Rass-Toss
+    $stmt = $db->query("SELECT * FROM bets WHERE actif = 1 ORDER BY date_post DESC");
+} elseif ($typeAbo === 'rasstoss') {
     $stmt = $db->query("SELECT * FROM bets WHERE actif = 1 ORDER BY date_post DESC");
 } elseif ($typeAbo === 'tennis') {
     $stmt = $db->query("SELECT * FROM bets WHERE actif = 1 AND categorie = 'tennis' ORDER BY date_post DESC");
@@ -176,10 +179,12 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
 <div class="bets-wrap">
   <?php if ($hasAcces): ?>
   <div class="abo-b ok"><div><h3>✅ Accès complet débloqué</h3>
-    <p><?php if ($abonnement['type']==='rasstoss'): ?><span style="color:#ffd700;font-weight:700;">👑 Rass-Toss — Life Time ♾️</span>
-    <?php elseif ($abonnement['type']==='daily'): ?>Daily — expire au prochain bet
-    <?php elseif ($abonnement['type']==='weekend'): ?>Week-End — expire le <?= date('d/m/Y à H:i',strtotime($abonnement['date_fin'])) ?>
-    <?php else: ?>Weekly 7j — expire le <?= date('d/m/Y à H:i',strtotime($abonnement['date_fin'])) ?><?php endif; ?></p>
+    <p><?php if (isAdmin() && $membre && $abonnement === null): ?><span style="color:#00d4ff;font-weight:700;">🔐 Accès admin</span>
+    <?php elseif (!empty($abonnement['type']) && $abonnement['type']==='rasstoss'): ?><span style="color:#ffd700;font-weight:700;">👑 Rass-Toss — Life Time ♾️</span>
+    <?php elseif (!empty($abonnement['type']) && $abonnement['type']==='daily'): ?>Daily — expire au prochain bet
+    <?php elseif (!empty($abonnement['type']) && $abonnement['type']==='weekend'): ?>Week-End — expire le <?= date('d/m/Y à H:i',strtotime($abonnement['date_fin'])) ?>
+    <?php elseif (!empty($abonnement['type'])): ?>Weekly 7j — expire le <?= date('d/m/Y à H:i',strtotime($abonnement['date_fin'])) ?>
+    <?php else: ?><span style="color:#00d4ff;font-weight:700;">🔐 Accès admin</span><?php endif; ?></p>
   </div><span style="font-size:1.6rem;">🔓</span></div>
   <?php else: ?>
   <div class="abo-b no"><div><h3>🔒 Contenu verrouillé</h3><p>Souscris pour accéder aux analyses complètes des bets.</p></div>
