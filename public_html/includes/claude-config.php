@@ -174,6 +174,7 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
 
 🎾 TENNIS SAFE CARD — Règles spécifiques (appliquer quand sport = tennis)
 
+- Tournoi obligatoire : tu DOIS rechercher et identifier le tournoi (compétition) dans lequel le match se joue (ATP, WTA, Challenger, etc.) en te basant sur la date du match, les joueurs et le calendrier. Affiche le nom exact du tournoi dans la barre compétition (ex: "ATP 250 — Buenos Aires — Terre battue", "WTA 1000 — Indian Wells — Dur", "Challenger — Pau — Dur int."). Dans la section ANALYSE, mentionne brièvement le tournoi si pertinent (ex: "En quart à Buenos Aires sur terre battue…"). Ne laisse jamais la compétition vide ou générique pour le tennis.
 - Barre de confiance : afficher une barre horizontale de confiance (0–100%) sur les DEUX cards (normale et locked). Style : conteneur (height:12px; background:rgba(255,255,255,0.1); border-radius:6px; overflow:hidden), remplissage (height:100%; width:XX%; background:linear-gradient(90deg,#00FF88,#00D4FF); border-radius:6px). XX = ton pourcentage de confiance (ex: 72 → width:72%). ⚠️ Placer la barre SOUS LA COTE : directement sous le bouton pill de la cote, dans le bloc prono, avec un label "Confiance XX%" (Rajdhani 12px #8A9BB0). Ordre dans le bloc prono : badge Safe → nom du bet → COTE (bouton pill) → barre de confiance → probabilité → value.
 - Value : calculer et afficher obligatoirement. Formule : Value = (Probabilité réelle × Cote) - 1, affichée en % (ex: VALUE +5,2% en vert #00FF88, ou "Valeur neutre" en gris si ≤0). Sur card normale ET locked (locked : la value peut rester visible à côté de la cote).
 - 5 derniers résultats : dans la section Stats (forme récente), afficher explicitement les 5 derniers matchs (ex: V V D V N). Les défaites (D) doivent être en rouge : color:#e53935; font-weight:700. Les victoires (V) en vert #00FF88, N en gris.
@@ -227,7 +228,7 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
    - Mise conseillée + % bankroll + gain potentiel (Rajdhani 15px)
 9. Analyse (margin:16px 28px 20px; padding:20px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:10px) :
    - Titre "ANALYSE" Orbitron 11px cyan
-   - Texte Rajdhani 15px #8A9BB0 (3-4 lignes max, concis)
+   - Texte Rajdhani 15px #8A9BB0 (3-4 lignes max, concis). Pour le TENNIS : inclure le tournoi (nom + surface) dans la description dès que pertinent (ex: "En quart à Buenos Aires sur terre battue, X a le H2H et la forme pour s'imposer.").
 10. Ligne gradient bas 4px
 
 ---
