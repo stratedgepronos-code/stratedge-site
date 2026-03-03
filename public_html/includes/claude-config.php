@@ -181,8 +181,8 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
 - VS : pour le tennis, le "VS" entre les deux joueurs doit être plus grand : font-size:32px; font-weight:900; color:#FF2D78 (ou dégradé rose). Bien visible.
 - Drapeaux : la card est exportée en JPG via html2canvas. Utiliser OBLIGATOIREMENT <img src='https://flagcdn.com/w40/{code}.png'> — JAMAIS d'emoji (rendu cassé dans html2canvas), JAMAIS de code texte "CH"/"FR".
 - ⚠️ NE PAS afficher de logo tournoi/compétition. Uniquement le NOM de la compétition en texte (ex: "ATP 250 — Buenos Aires — Terre battue", "Ligue 1", "Champions League").
-- Bande promo en bas : pour la card Safe TENNIS uniquement, ajouter en bas de la card (après la ligne gradient) la petite pub comme sur Fun/Live tennis : rectangle vert néon avec "🎾 SAFE TENNIS — PACK ATP / WTA", "Inclus dans le Pack Tennis Pro", tag "🎾 Tennis Weekly — 15€/sem", "Abonne-toi au Pack Tennis" et bouton rose "🎾 Je m'abonne". Sur la card normale ET sur la card locked (même bloc visible). Voir §11 pour le HTML et CSS exacts.
-- Bande promo en bas (foot, basket, hockey) : pour la card Safe FOOTBALL, BASKET ou HOCKEY, ajouter en bas (après la ligne gradient) la bande promo en rose néon : offres Daily 4,50€, Week-End 10€, Weekly 20€, VIP MAX 50€/mois, bouton "Je m'abonne" rose. Sur la card normale ET locked. Voir §12 pour le HTML et CSS exacts (classe promo-banner-multi, couleur #FF2D78).
+- Bande promo : pour la card Safe TENNIS uniquement, ajouter la petite pub comme sur Fun/Live tennis, AVANT la ligne gradient (la barre rose→bleu reste le dernier élément) : rectangle vert néon avec "🎾 SAFE TENNIS — PACK ATP / WTA", "Inclus dans le Pack Tennis Pro", tag "🎾 Tennis Weekly — 15€/sem", "Abonne-toi au Pack Tennis" et bouton rose "🎾 Je m'abonne". Sur la card normale ET sur la card locked (même bloc visible). Voir §11 pour le HTML et CSS exacts.
+- Bande promo (foot, basket, hockey) : pour la card Safe FOOTBALL, BASKET ou HOCKEY, ajouter la bande promo en rose néon AVANT la ligne gradient (la barre rose→bleu reste le dernier élément) : offres Daily 4,50€, Week-End 10€, Weekly 20€, VIP MAX 50€/mois, bouton "Je m'abonne" rose. Sur la card normale ET locked. Voir §12 pour le HTML et CSS exacts (classe promo-banner-multi, couleur #FF2D78).
 - ⚠️ NE PAS modifier les polices : garder Orbitron et Rajdhani telles quelles dans tout le HTML. Aucun changement de font-family.
 
 ---
@@ -231,8 +231,8 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
 9. Analyse (margin:16px 28px 20px; padding:20px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:10px) :
    - Titre "ANALYSE" Orbitron 14px cyan
    - Texte Rajdhani 17px #8A9BB0 (3-4 lignes max, concis). Pour le TENNIS : inclure le tournoi (nom + surface) dans la description dès que pertinent (ex: "En quart à Buenos Aires sur terre battue, X a le H2H et la forme pour s'imposer.").
-10. Ligne gradient bas 4px
-11. (TENNIS Safe UNIQUEMENT) Bande promo en bas (comme sur les cards Fun/Live tennis) — à placer après la ligne gradient, margin:16px 28px 20px ; sur la card NORMALE et sur la card LOCKED (visible aussi sur locked). Structure HTML à inclure dans le <style> + dans le body :
+10. (TENNIS Safe ou FOOT/BASKET/HOCKEY) Bande promo (voir §11 ou §12) — margin:16px 28px 20px ; sur la card NORMALE et sur la card LOCKED.
+11. (TENNIS Safe UNIQUEMENT) Bande promo tennis — à placer AVANT la ligne gradient (donc la barre rose→bleu sera tout en bas). Structure HTML à inclure dans le <style> + dans le body :
 
 CSS à ajouter pour la promo (tennis Safe) :
 .promo-banner { background:rgba(14,22,14,0.95); border:1px solid rgba(57,255,20,0.35); border-radius:14px; padding:14px 18px; position:relative; display:flex; align-items:center; justify-content:space-between; gap:14px; }
@@ -249,10 +249,10 @@ CSS à ajouter pour la promo (tennis Safe) :
 .promo-right { flex-shrink:0; }
 .promo-cta { display:inline-flex; align-items:center; background:linear-gradient(135deg,#ff2d78,#d6245f); color:#fff; font-family:Orbitron,sans-serif; font-size:14px; font-weight:900; letter-spacing:0.8px; text-transform:uppercase; padding:10px 18px; border-radius:10px; box-shadow:0 0 14px rgba(255,45,120,0.5); }
 
-HTML de la bande (à insérer après la ligne gradient bas, pour sport = tennis uniquement) :
+HTML de la bande (à insérer AVANT la ligne gradient bas, pour sport = tennis uniquement) :
 <div class='promo-banner'><div class='promo-left-bar'></div><div class='promo-text-block'><div class='promo-eyebrow'>🎾 SAFE TENNIS — PACK ATP / WTA</div><div class='promo-main'>Inclus dans le <span class='promo-main-hl'>Pack Tennis Pro</span></div><div class='promo-packs'><span class='pack-tag pack-tag-max'>🎾 Tennis Weekly — 15€/sem</span></div><div class='promo-price'>Abonne-toi au <span>Pack Tennis</span></div></div><div class='promo-right'><div class='promo-cta'>🎾 Je m'abonne</div></div></div>
 
-12. (Safe FOOTBALL, BASKET, HOCKEY uniquement — pas tennis) Bande promo en bas (rose néon, comme les offres Plan Cool / Week-End / Weekly / VIP MAX) — après la ligne gradient, margin:16px 28px 20px ; sur card NORMALE et LOCKED. Couleur rose néon (#FF2D78) pour le rectangle, la barre à gauche et les highlights. Bouton "Je m'abonne" rose néon.
+12. (Safe FOOTBALL, BASKET, HOCKEY uniquement — pas tennis) Bande promo (rose néon) — à placer AVANT la ligne gradient. Voir HTML §12. Sur card NORMALE et LOCKED.
 
 CSS à ajouter pour la promo multi (foot/basket/hockey) :
 .promo-banner-multi { background:rgba(20,8,14,0.95); border:1px solid rgba(255,45,120,0.35); border-radius:14px; padding:14px 18px; position:relative; display:flex; align-items:center; justify-content:space-between; gap:14px; }
@@ -263,8 +263,10 @@ CSS à ajouter pour la promo multi (foot/basket/hockey) :
 .promo-banner-multi .pack-tag-max { color:#ff2d78; border-color:rgba(255,45,120,0.35); background:rgba(255,45,120,0.08); }
 .promo-banner-multi .promo-cta { background:linear-gradient(135deg,#ff2d78,#d6245f); color:#fff; box-shadow:0 0 14px rgba(255,45,120,0.5); }
 
-HTML de la bande multi (sport = football, basket ou hockey uniquement) — mentionner les offres du site :
+HTML de la bande multi (sport = football, basket ou hockey uniquement) — à insérer AVANT la ligne gradient :
 <div class='promo-banner promo-banner-multi'><div class='promo-left-bar'></div><div class='promo-text-block'><div class='promo-eyebrow'>🛡️ SAFE — FOOT, NBA, HOCKEY</div><div class='promo-main'>Accès bets Safe &amp; Live · <span class='promo-main-hl'>Daily 4,50€</span> · Week-End 10€ · Weekly 20€</div><div class='promo-packs'><span class='pack-tag'>Daily 4,50€</span><span class='pack-tag'>Week-End 10€</span><span class='pack-tag'>Weekly 20€</span><span class='pack-tag pack-tag-max'>VIP MAX 50€/mois</span></div><div class='promo-price'>Abonne-toi dès <span>4,50€</span> — SMS, CB, Crypto</div></div><div class='promo-right'><div class='promo-cta'>Je m'abonne</div></div></div>
+
+13. Ligne gradient bas (rose néon → bleu néon) 4px — TOUJOURS en DERNIER, après la bande promo si présente. Style : height:4px; background:linear-gradient(90deg,#FF2D78,#00D4FF); width:100%. C'est le tout dernier élément visuel de la card (normale et locked).
 
 ---
 
