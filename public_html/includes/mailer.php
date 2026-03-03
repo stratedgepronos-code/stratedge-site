@@ -2,31 +2,37 @@
 // ============================================================
 // STRATEDGE — Envoi d'emails
 // ============================================================
+//
+// Pour éviter les indésirables (spam), en plus des headers ci‑dessous :
+// 1. SPF  : DNS TXT sur stratedgepronos.fr avec "v=spf1 include:..." pour autoriser ton hébergeur (ex: Hostinger, OVH).
+// 2. DKIM : Activer la signature DKIM dans le panel email (cPanel / Hostinger > Email > Authentication).
+// 3. DMARC: DNS TXT _dmarc.stratedgepronos.fr (ex: "v=DMARC1; p=none; rua=mailto:...") pour renforcer la confiance.
+// 4. Optionnel : utiliser un relais SMTP (Brevo, SendGrid, Mailgun) avec domaine vérifié = meilleure délivrabilité.
+//
+// ============================================================
 
 function envoyerEmail(string $to, string $sujet, string $htmlBody): bool {
     $from    = 'noreply@stratedgepronos.fr';
     $fromNom = 'StratEdge Pronos';
 
-    // ── Headers anti-spam (SPF/DKIM/DMARC alignement) ──────
     $messageId = '<' . time() . '.' . bin2hex(random_bytes(8)) . '@stratedgepronos.fr>';
-    $date      = date('r'); // RFC 2822
+    $date      = date('r');
 
     $headers  = "MIME-Version: 1.0\r\n";
     $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
     $headers .= "Content-Transfer-Encoding: quoted-printable\r\n";
     $headers .= "From: =?UTF-8?B?" . base64_encode($fromNom) . "?= <{$from}>\r\n";
-    // Reply-To sur le meme domaine = alignement DMARC
     $headers .= "Reply-To: support@stratedgepronos.fr\r\n";
     $headers .= "Return-Path: <noreply@stratedgepronos.fr>\r\n";
     $headers .= "Message-ID: {$messageId}\r\n";
     $headers .= "Date: {$date}\r\n";
-    // Lien de desabonnement (requis Gmail/Yahoo 2024)
+    // Lien désabonnement (recommandé Gmail/Yahoo)
     $headers .= "List-Unsubscribe: <mailto:support@stratedgepronos.fr?subject=Desabonnement>\r\n";
     $headers .= "List-Unsubscribe-Post: List-Unsubscribe=One-Click\r\n";
     $headers .= "X-Priority: 3\r\n";
-    $headers .= "Precedence: bulk\r\n";
+    // Ne pas mettre Precedence: bulk (favorise le classement en spam). Transactionnel = pas de Precedence ou "auto".
+    $headers .= "Auto-Submitted: auto-generated\r\n";
 
-    // Encoder le body en quoted-printable pour eviter les filtres spam
     $body = quoted_printable_encode($htmlBody);
 
     return mail($to, '=?UTF-8?B?' . base64_encode($sujet) . '?=', $body, $headers, '-f noreply@stratedgepronos.fr');
