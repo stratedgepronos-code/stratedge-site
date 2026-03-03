@@ -181,6 +181,7 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
 - VS : pour le tennis, le "VS" entre les deux joueurs doit être plus grand : font-size:32px; font-weight:900; color:#FF2D78 (ou dégradé rose). Bien visible.
 - Drapeaux : la card est exportée en JPG via html2canvas. Utiliser OBLIGATOIREMENT <img src='https://flagcdn.com/w40/{code}.png'> — JAMAIS d'emoji (rendu cassé dans html2canvas), JAMAIS de code texte "CH"/"FR".
 - ⚠️ NE PAS afficher de logo tournoi/compétition. Uniquement le NOM de la compétition en texte (ex: "ATP 250 — Buenos Aires — Terre battue", "Ligue 1", "Champions League").
+- Bande promo en bas : pour la card Safe TENNIS uniquement, ajouter en bas de la card (après la ligne gradient) la petite pub comme sur Fun/Live tennis : rectangle vert néon avec "🎾 SAFE TENNIS — PACK ATP / WTA", "Inclus dans le Pack Tennis Pro", tag "🎾 Tennis Weekly — 15€/sem", "Abonne-toi au Pack Tennis" et bouton rose "🎾 Je m'abonne". Sur la card normale ET sur la card locked (même bloc visible). Voir §11 pour le HTML et CSS exacts.
 - ⚠️ NE PAS modifier les polices : garder Orbitron et Rajdhani telles quelles dans tout le HTML. Aucun changement de font-family.
 
 ---
@@ -230,6 +231,25 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
    - Titre "ANALYSE" Orbitron 11px cyan
    - Texte Rajdhani 15px #8A9BB0 (3-4 lignes max, concis). Pour le TENNIS : inclure le tournoi (nom + surface) dans la description dès que pertinent (ex: "En quart à Buenos Aires sur terre battue, X a le H2H et la forme pour s'imposer.").
 10. Ligne gradient bas 4px
+11. (TENNIS Safe UNIQUEMENT) Bande promo en bas (comme sur les cards Fun/Live tennis) — à placer après la ligne gradient, margin:16px 28px 20px ; sur la card NORMALE et sur la card LOCKED (visible aussi sur locked). Structure HTML à inclure dans le <style> + dans le body :
+
+CSS à ajouter pour la promo (tennis Safe) :
+.promo-banner { background:rgba(14,22,14,0.95); border:1px solid rgba(57,255,20,0.35); border-radius:14px; padding:14px 18px; position:relative; display:flex; align-items:center; justify-content:space-between; gap:14px; }
+.promo-left-bar { position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(to bottom,#39ff14,#00e5ff); border-radius:4px 0 0 4px; }
+.promo-text-block { flex:1; padding-left:10px; display:flex; flex-direction:column; gap:5px; }
+.promo-eyebrow { font-family:Orbitron,sans-serif; font-size:11px; color:#39ff14; text-transform:uppercase; letter-spacing:2px; font-weight:700; }
+.promo-main { font-family:Orbitron,sans-serif; font-size:18px; font-weight:700; color:#fff; }
+.promo-main-hl { color:#39ff14; }
+.promo-packs { display:flex; gap:6px; flex-wrap:wrap; }
+.pack-tag { font-family:Orbitron,sans-serif; font-size:11px; font-weight:700; padding:5px 10px; border-radius:5px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.6); }
+.pack-tag-max { color:#39ff14; border-color:rgba(57,255,20,0.35); background:rgba(57,255,20,0.08); }
+.promo-price { font-family:Orbitron,sans-serif; font-size:12px; color:rgba(255,255,255,0.55); }
+.promo-price span { color:#39ff14; font-weight:700; font-size:16px; }
+.promo-right { flex-shrink:0; }
+.promo-cta { display:inline-flex; align-items:center; background:linear-gradient(135deg,#ff2d78,#d6245f); color:#fff; font-family:Orbitron,sans-serif; font-size:12px; font-weight:900; letter-spacing:0.8px; text-transform:uppercase; padding:10px 18px; border-radius:10px; box-shadow:0 0 14px rgba(255,45,120,0.5); }
+
+HTML de la bande (à insérer après la ligne gradient bas, pour sport = tennis uniquement) :
+<div class='promo-banner'><div class='promo-left-bar'></div><div class='promo-text-block'><div class='promo-eyebrow'>🎾 SAFE TENNIS — PACK ATP / WTA</div><div class='promo-main'>Inclus dans le <span class='promo-main-hl'>Pack Tennis Pro</span></div><div class='promo-packs'><span class='pack-tag pack-tag-max'>🎾 Tennis Weekly — 15€/sem</span></div><div class='promo-price'>Abonne-toi au <span>Pack Tennis</span></div></div><div class='promo-right'><div class='promo-cta'>🎾 Je m'abonne</div></div></div>
 
 ---
 
@@ -251,6 +271,7 @@ La card locked DOIT CACHER le contenu premium. Structure identique à la card no
 - Match card (noms joueurs, drapeaux, VS, surface) — TOUT VISIBLE
 - La COTE dans le bloc prono (bien visible, pas floutée)
 - Les titres des sections (STATS, FACE À FACE, ANALYSE, etc.)
+- Pour le TENNIS : la bande promo en bas (§11) reste visible sur la card locked (identique à la card normale).
 
 ⚠️ OVERLAY CTA — Après le bloc prono flouté, ajouter un bloc centré :
 - Cadenas 🔒 (font-size:50px; text-align:center)
