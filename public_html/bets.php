@@ -193,7 +193,9 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
   <?php else: ?>
   <div class="bets-grid">
     <?php foreach ($bets as $bet):
-      $types = explode(',',$bet['type']); $imgSrc = $bet['image_path'] && file_exists(__DIR__.'/'.$bet['image_path']) ? clean($bet['image_path']) : '';
+      $types  = explode(',', $bet['type']);
+      // Afficher l'image dès que image_path est en BDD (ne pas dépendre de file_exists, souvent faux en prod)
+      $imgSrc = !empty($bet['image_path']) ? (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($bet['image_path'],'/') : clean($bet['image_path'])) : '';
     ?>
     <div class="bet-card">
       <div class="bet-top">
@@ -206,9 +208,10 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
       </div>
       <?php if ($bet['titre']): ?><div class="bet-titre"><?= clean($bet['titre']) ?></div><?php endif; ?>
       <div class="bet-img-wrap <?= ($hasAcces && $imgSrc)?'zoomable':'' ?>"
-           <?= ($hasAcces && $imgSrc)?'data-src="'.clean($bet['image_path']).'" data-caption="'.htmlspecialchars($bet['titre']?:'Bet StratEdge',ENT_QUOTES).'"':'' ?>>
+           <?= ($hasAcces && $imgSrc)?'data-src="'.clean($imgSrc).'" data-caption="'.htmlspecialchars($bet['titre']?:'Bet StratEdge',ENT_QUOTES).'"':'' ?>>
         <?php if ($imgSrc): ?>
-        <img src="<?= $imgSrc ?>" alt="Bet" class="bet-img <?= !$hasAcces?'blur':'' ?>">
+        <img src="<?= clean($imgSrc) ?>" alt="Bet" class="bet-img <?= !$hasAcces?'blur':'' ?>" onerror="this.onerror=null;this.style.display='none';var w=this.closest('.bet-img-wrap');var p=w&&w.querySelector('.bet-no-img');if(p)p.style.display='flex';">
+        <div class="bet-no-img <?= !$hasAcces?'blur':'' ?>" style="display:none" aria-hidden="true">📊</div>
         <?php if ($hasAcces): ?><div class="zoom-tip">🔍 Cliquer pour agrandir</div><?php endif; ?>
         <?php else: ?><div class="bet-no-img <?= !$hasAcces?'blur':'' ?>">📊</div><?php endif; ?>
         <?php if (!$hasAcces): ?>
