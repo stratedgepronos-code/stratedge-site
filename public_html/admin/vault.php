@@ -399,6 +399,9 @@ $csrf = $_SESSION['vault_csrf'];
   <?php endif; ?>
   <?php if ($vaultError): ?>
     <div class="alert-err"><?= htmlspecialchars($vaultError) ?></div>
+    <?php if (strpos($vaultError, 'incorrect') !== false): ?>
+    <p style="font-size:0.9rem;color:var(--txt3);margin-top:0.5rem;">Si tu viens de générer un mot de passe et qu’il ne fonctionne plus (ex. après une récupération), <a href="vault-gen-password.php" style="color:#f5c842;">régénère-en un nouveau</a> et sauvegarde-le tout de suite.</p>
+    <?php endif; ?>
   <?php endif; ?>
 
   <?php if (!$vaultOpen): ?>

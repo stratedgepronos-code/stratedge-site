@@ -55,9 +55,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['generate'])) {
   <h1>🔐 Nouveau mot de passe coffre-fort</h1>
   <?php if ($done): ?>
     <div class="box">
-      <p><strong>Nouveau mot de passe (copiez-le et gardez-le en lieu sûr) :</strong></p>
+      <p><strong>Nouveau mot de passe — copiez-le maintenant et gardez-le en lieu sûr :</strong></p>
       <p class="pwd"><?= htmlspecialchars($newPassword) ?></p>
-      <p class="warn">⚠️ La config a été mise à jour. Utilisez ce mot de passe pour ouvrir le coffre. Puis supprimez ce fichier (admin/vault-gen-password.php) pour la sécurité.</p>
+      <p class="warn">⚠️ Copiez ce mot de passe tout de suite (avant de fermer l’onglet). C’est le seul endroit où il s’affiche. Si vous fermez sans le sauvegarder, vous devrez régénérer un nouveau mot de passe avec cette même page.</p>
+      <p class="warn">La config a été mise à jour. Utilisez ce mot de passe pour ouvrir le coffre. Puis supprimez ce fichier (vault-gen-password.php) pour la sécurité.</p>
     </div>
     <p><a href="vault.php">→ Ouvrir le coffre-fort</a></p>
   <?php elseif ($newPassword === '' && empty($error)): ?>
