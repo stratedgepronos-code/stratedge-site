@@ -21,6 +21,13 @@ if (isAdmin() && $membre) {
     $stmt = $db->query("SELECT * FROM bets WHERE actif = 1 AND categorie = 'multi' ORDER BY date_post DESC");
 }
 $bets = $stmt->fetchAll();
+// Répartition par section : Safe | Live | Fun (selon le type choisi à la création en admin)
+$betsSafe = array_filter($bets, function($b) {
+    $t = $b['type'];
+    return (strpos($t, 'safe') !== false) && (strpos($t, 'live') === false) && (strpos($t, 'fun') === false);
+});
+$betsLive = array_filter($bets, function($b) { return strpos($b['type'], 'live') !== false; });
+$betsFun  = array_filter($bets, function($b) { return strpos($b['type'], 'fun') !== false; });
 $typeLabels = ['safe'=>'🛡️ Safe','fun'=>'🎯 Fun','live'=>'⚡ Live'];
 $typeColors = ['safe'=>'#00d4ff','fun'=>'#a855f7','live'=>'#ff2d78'];
 ?>
@@ -77,7 +84,13 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
 .btn-sub{background:linear-gradient(135deg,#ff2d78,#d6245f);color:#fff;padding:0.75rem 1.6rem;border-radius:10px;text-decoration:none;font-weight:700;font-size:1rem;text-transform:uppercase;letter-spacing:1px;transition:all .3s;display:inline-flex;align-items:center;gap:0.4rem;}
 .btn-sub:hover{box-shadow:0 0 30px rgba(255,45,120,0.35);transform:translateY(-2px);}
 
-/* Bets grid */
+/* Nav sections Safe | Live | Fun */
+.bets-nav-sections{display:flex;flex-wrap:wrap;gap:0.75rem 1.5rem;margin-bottom:1.5rem;padding:0.75rem 0;}
+.bets-nav-link{font-family:'Orbitron',sans-serif;font-size:0.85rem;font-weight:700;letter-spacing:1px;color:var(--nav-color,#8a9bb0);text-decoration:none;padding:0.4rem 0.8rem;border-radius:8px;border:1px solid rgba(255,255,255,0.1);transition:all .25s;}
+.bets-nav-link:hover{border-color:var(--nav-color);color:var(--nav-color);box-shadow:0 0 12px rgba(0,0,0,0.3);}
+/* Sections Safe | Live | Fun */
+.bets-section{margin-bottom:2.5rem;scroll-margin-top:1rem;}
+.bets-section-title{font-family:'Orbitron',sans-serif;font-size:1.15rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:0.5rem;}
 .bets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(360px,100%),1fr));gap:1.5rem;}
 .bet-card{background:var(--card,#111827);border:1px solid var(--border,rgba(255,45,120,0.15));border-radius:18px;overflow:hidden;transition:all .3s;position:relative;}
 .bet-card:hover{transform:translateY(-5px);box-shadow:0 25px 70px rgba(0,0,0,0.5),0 0 20px rgba(255,45,120,0.1);border-color:rgba(255,45,120,0.35);}
@@ -193,13 +206,30 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
   </div>
   <?php endif; ?>
 
+  <?php if (!empty($bets)): ?>
+  <nav class="bets-nav-sections" aria-label="Sections des bets">
+    <?php if (!empty($betsSafe)): ?><a href="#section-safe" class="bets-nav-link" style="--nav-color:#00d4ff">🛡️ Safe</a><?php endif; ?>
+    <?php if (!empty($betsLive)): ?><a href="#section-live" class="bets-nav-link" style="--nav-color:#ff2d78">⚡ Live</a><?php endif; ?>
+    <?php if (!empty($betsFun)): ?><a href="#section-fun" class="bets-nav-link" style="--nav-color:#a855f7">🎯 Fun</a><?php endif; ?>
+  </nav>
+  <?php endif; ?>
+
   <?php if (empty($bets)): ?>
   <div class="no-bets"><div class="big">🎯</div><h3>Aucun bet disponible</h3><p>Les nouvelles analyses arrivent bientôt, reste connecté !</p></div>
-  <?php else: ?>
-  <div class="bets-grid">
-    <?php foreach ($bets as $bet):
+  <?php else:
+    $sections = [
+      'safe' => ['bets' => $betsSafe, 'title' => 'Safe', 'icon' => '🛡️', 'color' => '#00d4ff'],
+      'live' => ['bets' => $betsLive, 'title' => 'Live', 'icon' => '⚡', 'color' => '#ff2d78'],
+      'fun'  => ['bets' => $betsFun,  'title' => 'Fun',  'icon' => '🎯', 'color' => '#a855f7'],
+    ];
+    foreach ($sections as $key => $sec):
+      if (empty($sec['bets'])) continue;
+  ?>
+  <section class="bets-section" id="section-<?= $key ?>">
+    <h2 class="bets-section-title" style="color:<?= $sec['color'] ?>"><?= $sec['icon'] ?> <?= $sec['title'] ?></h2>
+    <div class="bets-grid">
+    <?php foreach ($sec['bets'] as $bet):
       $types = explode(',', $bet['type']);
-      // Image : image_path en priorité, sinon locked_image_path (Fun/Live parfois en locked seulement)
       $rawPath = !empty($bet['image_path']) ? $bet['image_path'] : ($bet['locked_image_path'] ?? '');
       if (!empty($rawPath)) {
         $imgSrc = (strpos($rawPath, 'http') === 0) ? $rawPath : (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($rawPath,'/') : $rawPath);
@@ -232,8 +262,9 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
       </div>
     </div>
     <?php endforeach; ?>
-  </div>
-  <?php endif; ?>
+    </div>
+  </section>
+  <?php endforeach; endif; ?>
 </div>
 
 <?php if ($membre): ?></main></div><?php endif; ?>

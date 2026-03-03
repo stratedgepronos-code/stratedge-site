@@ -182,6 +182,7 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
 - Drapeaux : la card est exportée en JPG via html2canvas. Utiliser OBLIGATOIREMENT <img src='https://flagcdn.com/w40/{code}.png'> — JAMAIS d'emoji (rendu cassé dans html2canvas), JAMAIS de code texte "CH"/"FR".
 - ⚠️ NE PAS afficher de logo tournoi/compétition. Uniquement le NOM de la compétition en texte (ex: "ATP 250 — Buenos Aires — Terre battue", "Ligue 1", "Champions League").
 - Bande promo en bas : pour la card Safe TENNIS uniquement, ajouter en bas de la card (après la ligne gradient) la petite pub comme sur Fun/Live tennis : rectangle vert néon avec "🎾 SAFE TENNIS — PACK ATP / WTA", "Inclus dans le Pack Tennis Pro", tag "🎾 Tennis Weekly — 15€/sem", "Abonne-toi au Pack Tennis" et bouton rose "🎾 Je m'abonne". Sur la card normale ET sur la card locked (même bloc visible). Voir §11 pour le HTML et CSS exacts.
+- Bande promo en bas (foot, basket, hockey) : pour la card Safe FOOTBALL, BASKET ou HOCKEY, ajouter en bas (après la ligne gradient) la bande promo en rose néon : offres Daily 4,50€, Week-End 10€, Weekly 20€, VIP MAX 50€/mois, bouton "Je m'abonne" rose. Sur la card normale ET locked. Voir §12 pour le HTML et CSS exacts (classe promo-banner-multi, couleur #FF2D78).
 - ⚠️ NE PAS modifier les polices : garder Orbitron et Rajdhani telles quelles dans tout le HTML. Aucun changement de font-family.
 
 ---
@@ -251,6 +252,20 @@ CSS à ajouter pour la promo (tennis Safe) :
 HTML de la bande (à insérer après la ligne gradient bas, pour sport = tennis uniquement) :
 <div class='promo-banner'><div class='promo-left-bar'></div><div class='promo-text-block'><div class='promo-eyebrow'>🎾 SAFE TENNIS — PACK ATP / WTA</div><div class='promo-main'>Inclus dans le <span class='promo-main-hl'>Pack Tennis Pro</span></div><div class='promo-packs'><span class='pack-tag pack-tag-max'>🎾 Tennis Weekly — 15€/sem</span></div><div class='promo-price'>Abonne-toi au <span>Pack Tennis</span></div></div><div class='promo-right'><div class='promo-cta'>🎾 Je m'abonne</div></div></div>
 
+12. (Safe FOOTBALL, BASKET, HOCKEY uniquement — pas tennis) Bande promo en bas (rose néon, comme les offres Plan Cool / Week-End / Weekly / VIP MAX) — après la ligne gradient, margin:16px 28px 20px ; sur card NORMALE et LOCKED. Couleur rose néon (#FF2D78) pour le rectangle, la barre à gauche et les highlights. Bouton "Je m'abonne" rose néon.
+
+CSS à ajouter pour la promo multi (foot/basket/hockey) :
+.promo-banner-multi { background:rgba(20,8,14,0.95); border:1px solid rgba(255,45,120,0.35); border-radius:14px; padding:14px 18px; position:relative; display:flex; align-items:center; justify-content:space-between; gap:14px; }
+.promo-banner-multi .promo-left-bar { background:linear-gradient(to bottom,#ff2d78,#d6245f); }
+.promo-banner-multi .promo-eyebrow { color:#ff2d78; }
+.promo-banner-multi .promo-main-hl { color:#ff2d78; }
+.promo-banner-multi .promo-price span { color:#ff2d78; }
+.promo-banner-multi .pack-tag-max { color:#ff2d78; border-color:rgba(255,45,120,0.35); background:rgba(255,45,120,0.08); }
+.promo-banner-multi .promo-cta { background:linear-gradient(135deg,#ff2d78,#d6245f); color:#fff; box-shadow:0 0 14px rgba(255,45,120,0.5); }
+
+HTML de la bande multi (sport = football, basket ou hockey uniquement) — mentionner les offres du site :
+<div class='promo-banner promo-banner-multi'><div class='promo-left-bar'></div><div class='promo-text-block'><div class='promo-eyebrow'>🛡️ SAFE — FOOT, NBA, HOCKEY</div><div class='promo-main'>Accès bets Safe &amp; Live · <span class='promo-main-hl'>Daily 4,50€</span> · Week-End 10€ · Weekly 20€</div><div class='promo-packs'><span class='pack-tag'>Daily 4,50€</span><span class='pack-tag'>Week-End 10€</span><span class='pack-tag'>Weekly 20€</span><span class='pack-tag pack-tag-max'>VIP MAX 50€/mois</span></div><div class='promo-price'>Abonne-toi dès <span>4,50€</span> — SMS, CB, Crypto</div></div><div class='promo-right'><div class='promo-cta'>Je m'abonne</div></div></div>
+
 ---
 
 🔒 STRUCTURE CARD LOCKED
@@ -272,6 +287,7 @@ La card locked DOIT CACHER le contenu premium. Structure identique à la card no
 - La COTE dans le bloc prono (bien visible, pas floutée)
 - Les titres des sections (STATS, FACE À FACE, ANALYSE, etc.)
 - Pour le TENNIS : la bande promo en bas (§11) reste visible sur la card locked (identique à la card normale).
+- Pour FOOTBALL, BASKET, HOCKEY : la bande promo en bas (§12) reste visible sur la card locked (identique à la card normale).
 
 ⚠️ OVERLAY CTA — Après le bloc prono flouté, ajouter un bloc centré :
 - Cadenas 🔒 (font-size:50px; text-align:center)
