@@ -100,7 +100,7 @@ function _curlFetch($url, $ua = '') {
 function logoProxyUrl($url) {
     if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) return '';
     $host = parse_url($url, PHP_URL_HOST);
-    $proxyHosts = ['upload.wikimedia.org', 'commons.wikimedia.org', 'en.wikipedia.org'];
+    $proxyHosts = ['upload.wikimedia.org', 'commons.wikimedia.org', 'en.wikipedia.org', 'a.espncdn.com'];
     if (in_array($host, $proxyHosts, true)) {
         $base = 'https://stratedgepronos.fr';
         $u = str_replace(['+', '/'], ['-', '_'], base64_encode($url));
@@ -131,6 +131,50 @@ function flagImg($emoji) {
     $code = $map[$emoji] ?? '';
     if (!$code) return "<span style='font-size:16px'>{$emoji}</span>";
     return "<img src='https://flagcdn.com/w40/{$code}.png' style='height:14px;border-radius:2px;vertical-align:middle;' alt=''>";
+}
+
+// ────────────────────────────────────────────────────────────
+// NHL : nom d'équipe → URL logo ESPN (scoreboard 500px)
+// ────────────────────────────────────────────────────────────
+function nhlLogoUrl($teamName) {
+    $name = strtolower(trim(preg_replace('/[^a-z0-9\s]/i', '', $teamName)));
+    $map = [
+        'anaheim' => 'ana', 'ducks' => 'ana',
+        'boston' => 'bos', 'bruins' => 'bos',
+        'buffalo' => 'buf', 'sabres' => 'buf',
+        'carolina' => 'car', 'hurricanes' => 'car',
+        'columbus' => 'cbj', 'blue jackets' => 'cbj',
+        'calgary' => 'cgy', 'flames' => 'cgy',
+        'chicago' => 'chi', 'blackhawks' => 'chi',
+        'colorado' => 'col', 'avalanche' => 'col',
+        'dallas' => 'dal', 'stars' => 'dal',
+        'detroit' => 'det', 'red wings' => 'det',
+        'edmonton' => 'edm', 'oilers' => 'edm',
+        'florida' => 'fla', 'panthers' => 'fla',
+        'los angeles' => 'la', 'kings' => 'la', 'la ' => 'la',
+        'minnesota' => 'min', 'wild' => 'min',
+        'montreal' => 'mtl', 'canadiens' => 'mtl', 'habitans' => 'mtl',
+        'new jersey' => 'nj', 'devils' => 'nj',
+        'nashville' => 'nsh', 'predators' => 'nsh',
+        'new york islanders' => 'nyi', 'islanders' => 'nyi',
+        'new york rangers' => 'nyr', 'rangers' => 'nyr',
+        'ottawa' => 'ott', 'senators' => 'ott',
+        'philadelphia' => 'phi', 'flyers' => 'phi',
+        'pittsburgh' => 'pit', 'penguins' => 'pit',
+        'seattle' => 'sea', 'kraken' => 'sea',
+        'san jose' => 'sjs', 'sharks' => 'sjs',
+        'st louis' => 'stl', 'blues' => 'stl',
+        'tampa bay' => 'tb', 'lightning' => 'tb',
+        'toronto' => 'tor', 'maple leafs' => 'tor', 'leafs' => 'tor',
+        'utah' => 'utah', 'utah hockey' => 'utah',
+        'vegas' => 'vgk', 'golden knights' => 'vgk',
+        'washington' => 'wsh', 'capitals' => 'wsh', 'caps' => 'wsh',
+        'winnipeg' => 'wpg', 'jets' => 'wpg',
+    ];
+    foreach ($map as $key => $abbrev) {
+        if (strpos($name, $key) !== false) return 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/nhl/500/scoreboard/' . $abbrev . '.png';
+    }
+    return '';
 }
 
 // ────────────────────────────────────────────────────────────
@@ -320,7 +364,7 @@ body { background:#0a0a0a; margin:0; padding:0; width:1080px; font-family:'Orbit
 }
 .cote-block { text-align:center; flex-shrink:0; }
 .cote-label { font-size:12px; color:rgba(255,255,255,0.28); text-transform:uppercase; letter-spacing:2px; margin-bottom:6px; font-weight:600; }
-.cote-pill { position:relative; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#ff2d7a 0%,#c850c0 45%,#4158d0 100%); border-radius:14px; padding:12px 30px; min-width:120px; box-shadow:0 4px 20px rgba(255,45,122,0.5),inset 0 0 0 1px rgba(255,255,255,0.12); }
+.cote-pill { position:relative; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; background:#FF2D78; border-radius:14px; padding:12px 30px; min-width:120px; box-shadow:0 4px 20px rgba(255,45,122,0.5),inset 0 0 0 1px rgba(255,255,255,0.12); }
 .cote-pill-shine { position:absolute; top:0; left:0; right:0; height:50%; background:rgba(255,255,255,0.13); border-radius:14px 14px 0 0; }
 .cote-value { font-family:'Orbitron',sans-serif; font-size:34px; font-weight:900; color:#fff; position:relative; z-index:1; }
 
@@ -369,7 +413,7 @@ CSS;
 .card-wrapper.tennis .promo-sub { font-family:'Orbitron',sans-serif !important; font-size:11px; font-weight:500; }
 .card-wrapper.tennis .prono-block { background:linear-gradient(90deg,rgba(57,255,20,0.14),rgba(144,255,128,0.06)) !important; border-color:rgba(57,255,20,0.2); }
 .card-wrapper.tennis .prono-text { color:#fff; font-size:20px; }
-.card-wrapper.tennis .cote-pill { background:linear-gradient(135deg,#E7337B 0%,#7D41E7 100%); box-shadow:0 4px 16px rgba(231,51,123,0.35); }
+.card-wrapper.tennis .cote-pill { background:#FF2D78; box-shadow:0 4px 16px rgba(255,45,122,0.5); }
 .card-wrapper.tennis .cote-pill-shine { display:none !important; }
 .card-wrapper.tennis .cote-value { background:transparent !important; box-shadow:none !important; }
 .card-wrapper.tennis .promo-banner { background:#1A361A; border:1px solid rgba(57,255,20,0.35); }
@@ -681,7 +725,7 @@ body { background:#0a0a0a; margin:0; padding:0; width:1080px; min-width:1080px; 
 .bet-match { font-family:'Orbitron',sans-serif; font-size:14px; color:rgba(255,255,255,0.5); letter-spacing:0.5px; font-weight:600; }
 .bet-heure { font-family:'Orbitron',sans-serif; font-size:12px; color:rgba(255,45,122,0.85); font-weight:700; margin-left:6px; white-space:nowrap; }
 .bet-line .fun-team-logo { height:20px; width:auto; max-width:28px; object-fit:contain; vertical-align:middle; }
-.bet-cote-pill { background:rgba(255,45,122,0.08); border:1px solid rgba(255,45,122,0.2); border-radius:8px; padding:4px 11px; font-family:'Orbitron',sans-serif; font-size:17px; font-weight:700; color:#ff8c6b; }
+.bet-cote-pill { background:#FF2D78; border:1px solid rgba(255,255,255,0.2); border-radius:8px; padding:4px 11px; font-family:'Orbitron',sans-serif; font-size:17px; font-weight:700; color:#fff; }
 .bet-prono { font-family:'Orbitron',sans-serif; font-size:14px; font-weight:700; color:rgba(255,255,255,0.9); }
 
 /* CONFIANCE */
@@ -698,7 +742,7 @@ body { background:#0a0a0a; margin:0; padding:0; width:1080px; min-width:1080px; 
 .cote-total-info { flex:1; }
 .cote-eyebrow { font-family:'Orbitron',sans-serif; font-size:11px; color:rgba(255,255,255,0.25); text-transform:uppercase; letter-spacing:2px; font-weight:700; margin-bottom:3px; }
 .cote-desc { font-family:'Orbitron',sans-serif; font-size:12px; color:rgba(255,255,255,0.45); letter-spacing:1px; }
-.total-pill { position:relative; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#ff2d7a 0%,#c850c0 50%,#4158d0 100%); border-radius:14px; padding:12px 32px; flex-shrink:0; box-shadow:0 4px 22px rgba(255,45,122,0.5),inset 0 0 0 1px rgba(255,255,255,0.12); }
+.total-pill { position:relative; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; background:#FF2D78; border-radius:14px; padding:12px 32px; flex-shrink:0; box-shadow:0 4px 22px rgba(255,45,122,0.5),inset 0 0 0 1px rgba(255,255,255,0.12); }
 .total-pill-shine { position:absolute; top:0; left:0; right:0; height:50%; background:rgba(255,255,255,0.13); border-radius:14px 14px 0 0; }
 .total-cote { font-family:'Orbitron',sans-serif; font-size:34px; font-weight:900; color:#fff; letter-spacing:2px; position:relative; z-index:1; }
 
@@ -707,7 +751,7 @@ body { background:#0a0a0a; margin:0; padding:0; width:1080px; min-width:1080px; 
 .promo-left-bar { position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(to bottom,#39ff14,#00e5ff); border-radius:4px 0 0 4px; }
 .promo-text-block { flex:1; padding-left:10px; display:flex; flex-direction:column; gap:5px; }
 .promo-eyebrow { font-family:'Orbitron',sans-serif !important; font-size:13px !important; color:#39ff14; text-transform:uppercase; letter-spacing:2px; font-weight:700; }
-.promo-main { font-family:'Bebas Neue','Orbitron',sans-serif !important; font-size:22px !important; letter-spacing:0.8px; color:#fff; line-height:1.25; min-height:1.25em; }
+.promo-main { font-family:'Orbitron',sans-serif !important; font-size:22px !important; font-weight:700; letter-spacing:0.8px; color:#fff; line-height:1.25; min-height:1.25em; }
 .promo-main-hl { color:#ff2d7a; font-family:inherit !important; }
 .promo-packs { display:flex; gap:6px; flex-wrap:wrap; }
 .pack-tag { font-family:'Orbitron',sans-serif !important; font-size:13px !important; font-weight:700; padding:5px 11px; border-radius:5px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.6); text-transform:uppercase; }
@@ -734,11 +778,11 @@ body { background:#0a0a0a; margin:0; padding:0; width:1080px; min-width:1080px; 
 .card-wrapper.tennis-fun .section-title-line { background:linear-gradient(to right,rgba(57,255,20,0.35),transparent); }
 .card-wrapper.tennis-fun .bet-num { color:rgba(144,255,128,0.7); }
 .card-wrapper.tennis-fun .bet-heure { color:rgba(57,255,20,0.9); }
-.card-wrapper.tennis-fun .bet-cote-pill { background:rgba(57,255,20,0.1); border-color:rgba(57,255,20,0.25); color:#7dff5c; }
+.card-wrapper.tennis-fun .bet-cote-pill { background:#FF2D78; border-color:rgba(255,255,255,0.2); color:#fff; }
 .card-wrapper.tennis-fun .conf-score { color:#39ff14; text-shadow:0 0 8px rgba(57,255,20,0.35); }
 .card-wrapper.tennis-fun .conf-bar-fill { background:linear-gradient(to right,#39ff14,#00d46a,#00c896); }
 .card-wrapper.tennis-fun .cote-totale-block { background:rgba(57,255,20,0.06); border-color:rgba(57,255,20,0.18); }
-.card-wrapper.tennis-fun .total-pill { background:linear-gradient(135deg,#39ff14 0%,#00d46a 50%,#00c896 100%); box-shadow:0 4px 22px rgba(57,255,20,0.45); }
+.card-wrapper.tennis-fun .total-pill { background:#FF2D78; box-shadow:0 4px 22px rgba(255,45,122,0.5); }
 .card-wrapper.tennis-fun .card-footer-gradient { background:linear-gradient(to right,#39ff14,#00d46a,#00c896); }
 .card-wrapper.tennis-fun .promo-banner { background:rgba(20,8,14,0.95); border:1px solid rgba(255,45,120,0.25); }
 .card-wrapper.tennis-fun .promo-left-bar { background:linear-gradient(to bottom,#ff2d78,#c850c0); }
@@ -775,6 +819,15 @@ CSS;
         }
         if (($logo2Url === '' || !filter_var($logo2Url, FILTER_VALIDATE_URL)) && $team2Name !== '' && function_exists('stratedge_fetch_team_logo_url')) {
             $logo2Url = stratedge_fetch_team_logo_url($team2Name);
+        }
+        $isHockey = (strtolower($d['sport'] ?? '') === 'hockey');
+        if ($isHockey) {
+            if ($logo1Url === '' || !filter_var($logo1Url, FILTER_VALIDATE_URL)) {
+                $logo1Url = nhlLogoUrl($team1Name);
+            }
+            if ($logo2Url === '' || !filter_var($logo2Url, FILTER_VALIDATE_URL)) {
+                $logo2Url = nhlLogoUrl($team2Name);
+            }
         }
         if ($logo1Url !== '' && filter_var($logo1Url, FILTER_VALIDATE_URL)) {
             $ico1 = '<img src="' . htmlspecialchars(logoProxyUrl($logo1Url), ENT_QUOTES, 'UTF-8') . '" class="fun-team-logo" alt="">';

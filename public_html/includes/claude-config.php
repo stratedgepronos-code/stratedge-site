@@ -84,7 +84,9 @@ Règles :
   - match : nom des équipes (ex: "Équipe A vs Équipe B")
   - heure : heure de DÉBUT du match, fuseau Europe/Paris (format HH:MM ou H:MM). Tu dois la déduire ou l'estimer si elle n'est pas fournie (ex: soirée Ligue Europa souvent 18:45 ou 21:00).
   - flag1, flag2 : emoji drapeau pays équipe 1 et 2
-  - team1_logo, team2_logo : pour le FOOTBALL (et autres sports d'équipes si tu connais des logos), fournis une URL directe vers une image du logo de chaque équipe (PNG/JPG, CDN type ligues, Wikipedia, etc.). Si tu ne trouves pas d'URL fiable, mets "".
+  - team1_logo, team2_logo : pour le FOOTBALL et le HOCKEY NHL, fournis une URL directe vers le logo de chaque équipe.
+    FOOTBALL : API-Football https://media.api-sports.io/football/teams/{id}.png ou FotMob, ou "".
+    HOCKEY NHL : ESPN CDN https://a.espncdn.com/combiner/i?img=/i/teamlogos/nhl/500/scoreboard/{abbrev}.png avec abbrev en minuscules (ana, bos, buf, car, cbj, cgy, chi, col, dal, det, edm, fla, la, min, mtl, nj, nsh, nyi, nyr, ott, phi, pit, sea, sjs, stl, tb, tor, utah, vgk, wsh, wpg). Si tu ne trouves pas, mets "".
   - prono, cote : texte du pari et cote exacte fournie
 - cote_totale = produit de toutes les cotes individuelles, arrondi à 2 décimales
 - confidence = indice de confiance global estimé entre 40 et 85
