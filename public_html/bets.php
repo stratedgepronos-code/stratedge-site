@@ -198,9 +198,14 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
   <?php else: ?>
   <div class="bets-grid">
     <?php foreach ($bets as $bet):
-      $types  = explode(',', $bet['type']);
-      // Afficher l'image dès que image_path est en BDD (ne pas dépendre de file_exists, souvent faux en prod)
-      $imgSrc = !empty($bet['image_path']) ? (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($bet['image_path'],'/') : clean($bet['image_path'])) : '';
+      $types = explode(',', $bet['type']);
+      // Image : image_path en priorité, sinon locked_image_path (Fun/Live parfois en locked seulement)
+      $rawPath = !empty($bet['image_path']) ? $bet['image_path'] : ($bet['locked_image_path'] ?? '');
+      if (!empty($rawPath)) {
+        $imgSrc = (strpos($rawPath, 'http') === 0) ? $rawPath : (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($rawPath,'/') : $rawPath);
+      } else {
+        $imgSrc = '';
+      }
     ?>
     <div class="bet-card">
       <div class="bet-top">
