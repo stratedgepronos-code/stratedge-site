@@ -1,7 +1,9 @@
 <?php
 require_once __DIR__ . '/gate.php';
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/visiteurs-log.php';
 $membre = isLoggedIn() ? getMembre() : null;
+log_visite();
 
 // ── Places fondateur VIP Max ──────────────────────────────
 $fondateurPlaces  = 0;
