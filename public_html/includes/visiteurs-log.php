@@ -1,18 +1,15 @@
 <?php
 /**
  * StratEdge — Enregistrement des visites pour le compteur (dashboard admin).
- * Chaque appel ajoute une ligne dans visiteurs/data/visites.jsonl.
- * Le dashboard admin lit ce fichier pour afficher aujourd'hui / 7j / 30j / all time.
+ * Stockage en base de données (table visites) pour ne pas être remis à zéro au déploiement.
  */
 
 function log_visite(): void {
-    $baseDir = defined('PUBLIC_HTML_PATH') ? PUBLIC_HTML_PATH : (__DIR__ . '/..');
-    $dataDir = $baseDir . '/visiteurs/data';
-    $file    = $dataDir . '/visites.jsonl';
-
-    if (!is_dir($dataDir)) {
-        @mkdir($dataDir, 0755, true);
+    try {
+        $db = getDB();
+        $stmt = $db->prepare("INSERT INTO visites (t) VALUES (?)");
+        $stmt->execute([time()]);
+    } catch (Throwable $e) {
+        // Table peut ne pas exister encore : silence pour ne pas casser la page
     }
-    $line = json_encode(['t' => time(), 'u' => $_SERVER['REQUEST_URI'] ?? '/']) . "\n";
-    @file_put_contents($file, $line, FILE_APPEND | LOCK_EX);
 }
