@@ -298,6 +298,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $betId    = (int)($_POST['bet_id'] ?? 0);
             $resultat = $_POST['resultat'] ?? '';
             if ($betId && in_array($resultat, ['gagne','perdu','annule'])) {
+                $bet = null;
                 try {
                     // Récupérer les infos du bet (titre + images) avant de le clore
                     $betInfo = $db->prepare("SELECT titre, type, image_path, locked_image_path FROM bets WHERE id = ?");
@@ -306,77 +307,90 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     $db->prepare("UPDATE bets SET resultat=?, date_resultat=NOW(), actif=0 WHERE id=?")
                        ->execute([$resultat, $betId]);
+                } catch (Throwable $e) {
+                    error_log('[poster-bet] set_resultat UPDATE: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine() . "\n" . $e->getTraceAsString());
+                    $error = 'Erreur lors de l\'enregistrement du résultat. Réessaie ou contacte le support.';
+                }
 
+                if (empty($error)) {
                     $resMap = ['gagne' => 'win', 'perdu' => 'lose', 'annule' => 'void'];
                     $resCode = $resMap[$resultat] ?? $resultat;
                     $titreResult = ($bet && isset($bet['titre'])) ? $bet['titre'] : 'Bet StratEdge';
 
-                    // ── Push + Email résultat à tous les abonnés actifs ──
-                    $stmtAbo = $db->prepare("
-                        SELECT DISTINCT m.id, m.email, m.nom, a.type as type_abo
-                        FROM membres m JOIN abonnements a ON a.membre_id = m.id
-                        WHERE a.actif = 1 AND m.email != ?
-                        AND (m.accepte_emails IS NULL OR m.accepte_emails = 1)
-                    ");
-                    $stmtAbo->execute([ADMIN_EMAIL]);
-                    $abonnesResult = $stmtAbo->fetchAll(PDO::FETCH_ASSOC);
-                    foreach ($abonnesResult as $ab) {
-                        try {
-                            emailResultatBet($ab['email'], $ab['nom'], $titreResult, $resCode, $ab['type_abo'] ?? '');
-                        } catch (Throwable $e) {
-                            error_log('[poster-bet] emailResultatBet: ' . $e->getMessage());
-                        }
-                        if (!empty($ab['id'])) {
+                    // ── Push + Email résultat (ne pas faire échouer la page) ──
+                    try {
+                        $stmtAbo = $db->prepare("
+                            SELECT DISTINCT m.id, m.email, m.nom, a.type as type_abo
+                            FROM membres m JOIN abonnements a ON a.membre_id = m.id
+                            WHERE a.actif = 1 AND m.email != ?
+                            AND (m.accepte_emails IS NULL OR m.accepte_emails = 1)
+                        ");
+                        $stmtAbo->execute([ADMIN_EMAIL]);
+                        $abonnesResult = $stmtAbo->fetchAll(PDO::FETCH_ASSOC);
+                        foreach ($abonnesResult as $ab) {
                             try {
-                                pushResultatBet((int)$ab['id'], $ab['type_abo'] ?? '', $titreResult, $resCode);
+                                emailResultatBet($ab['email'], $ab['nom'], $titreResult, $resCode, $ab['type_abo'] ?? '');
                             } catch (Throwable $e) {
-                                error_log('[poster-bet] pushResultatBet: ' . $e->getMessage());
+                                error_log('[poster-bet] emailResultatBet: ' . $e->getMessage());
+                            }
+                            if (!empty($ab['id'])) {
+                                try {
+                                    pushResultatBet((int)$ab['id'], $ab['type_abo'] ?? '', $titreResult, $resCode);
+                                } catch (Throwable $e) {
+                                    error_log('[poster-bet] pushResultatBet: ' . $e->getMessage());
+                                }
                             }
                         }
+                    } catch (Throwable $e) {
+                        error_log('[poster-bet] set_resultat push/email: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
                     }
 
-                    // ── Tweet résultat via IFTTT / Make ──
+                    // ── Tweet résultat via IFTTT / Make (ne pas faire échouer la page) ──
                     $twitterResultMsg = '';
-                    if ($twitterActif && !empty($twitterConfig['webhook_url']) && $bet) {
-                        $titre = !empty($bet['titre']) ? ' — ' . $bet['titre'] : '';
-                        $phrases = [
-                            'gagne'  => "✅ BET GAGNÉ{$titre} ! 🎉\n\nNous l'avions dit, c'est passé ! 💰\n\n📲 Prends ton abonnement sur stratedgepronos.fr pour avoir accès au prochain bet !",
-                            'perdu'  => "❌ Bet perdu{$titre}. Ça arrive !\n\nOn reste la tête haute et on revient plus fort 💪\n\n📲 Abonne-toi sur stratedgepronos.fr pour ne rater aucun des prochains !",
-                            'annule' => "↺ Bet annulé{$titre} — remboursement en cours pour les abonnés.\n\n📲 Rejoins la communauté sur stratedgepronos.fr",
-                        ];
-                        $texte = $phrases[$resultat];
-                        // Tweet résultat = image normale (pas la locked), pour montrer le prono dévoilé
-                        $imageUrl = !empty($bet['image_path'])
-                            ? 'https://stratedgepronos.fr/' . ltrim($bet['image_path'], '/')
-                            : 'https://stratedgepronos.fr/assets/images/logo_site_transparent.png';
-                        $webhookUrl = (!empty($bet['image_path']) && !empty($twitterConfig['webhook_url_image']))
-                            ? $twitterConfig['webhook_url_image']
-                            : $twitterConfig['webhook_url'];
-                        $payload = json_encode([
-                            'value1' => $texte,
-                            'value2' => $imageUrl,
-                            'value3' => 'https://stratedgepronos.fr',
-                        ], JSON_UNESCAPED_UNICODE);
-                        $ch = curl_init($webhookUrl);
-                        curl_setopt_array($ch, [
-                            CURLOPT_POST           => true,
-                            CURLOPT_POSTFIELDS     => $payload,
-                            CURLOPT_RETURNTRANSFER => true,
-                            CURLOPT_HTTPHEADER     => ['Content-Type: application/json; charset=utf-8'],
-                            CURLOPT_TIMEOUT        => 10,
-                        ]);
-                        curl_exec($ch);
-                        $twCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-                        curl_close($ch);
-                        $twitterResultMsg = ($twCode >= 200 && $twCode < 300)
-                            ? ' 🐦 Tweet résultat envoyé !'
-                            : ' (Twitter: HTTP ' . $twCode . ')';
+                    try {
+                        if ($twitterActif && !empty($twitterConfig['webhook_url']) && $bet) {
+                            $titre = !empty($bet['titre']) ? ' — ' . $bet['titre'] : '';
+                            $phrases = [
+                                'gagne'  => "✅ BET GAGNÉ{$titre} ! 🎉\n\nNous l'avions dit, c'est passé ! 💰\n\n📲 Prends ton abonnement sur stratedgepronos.fr pour avoir accès au prochain bet !",
+                                'perdu'  => "❌ Bet perdu{$titre}. Ça arrive !\n\nOn reste la tête haute et on revient plus fort 💪\n\n📲 Abonne-toi sur stratedgepronos.fr pour ne rater aucun des prochains !",
+                                'annule' => "↺ Bet annulé{$titre} — remboursement en cours pour les abonnés.\n\n📲 Rejoins la communauté sur stratedgepronos.fr",
+                            ];
+                            $texte = $phrases[$resultat];
+                            $imgPath = isset($bet['image_path']) ? trim($bet['image_path']) : '';
+                            if ($imgPath !== '' && strpos(ltrim($imgPath, '/'), 'uploads/') !== 0) {
+                                $imgPath = 'uploads/bets/' . ltrim($imgPath, '/');
+                            }
+                            $imageUrl = $imgPath !== ''
+                                ? 'https://stratedgepronos.fr/' . ltrim($imgPath, '/')
+                                : 'https://stratedgepronos.fr/assets/images/logo_site_transparent.png';
+                            $webhookUrl = ($imgPath !== '' && !empty($twitterConfig['webhook_url_image']))
+                                ? $twitterConfig['webhook_url_image']
+                                : $twitterConfig['webhook_url'];
+                            $payload = json_encode([
+                                'value1' => $texte,
+                                'value2' => $imageUrl,
+                                'value3' => 'https://stratedgepronos.fr',
+                            ], JSON_UNESCAPED_UNICODE);
+                            $ch = curl_init($webhookUrl);
+                            curl_setopt_array($ch, [
+                                CURLOPT_POST           => true,
+                                CURLOPT_POSTFIELDS     => $payload,
+                                CURLOPT_RETURNTRANSFER => true,
+                                CURLOPT_HTTPHEADER     => ['Content-Type: application/json; charset=utf-8'],
+                                CURLOPT_TIMEOUT        => 10,
+                            ]);
+                            curl_exec($ch);
+                            $twCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                            curl_close($ch);
+                            $twitterResultMsg = ($twCode >= 200 && $twCode < 300)
+                                ? ' 🐦 Tweet résultat envoyé !'
+                                : ' (Twitter: HTTP ' . $twCode . ')';
+                        }
+                    } catch (Throwable $e) {
+                        error_log('[poster-bet] set_resultat twitter: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
                     }
 
                     $success = 'Résultat enregistré ✅ — Le bet est passé en historique.' . $twitterResultMsg;
-                } catch (Throwable $e) {
-                    error_log('[poster-bet] set_resultat: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
-                    $error = 'Erreur lors de l\'enregistrement du résultat. Réessaie ou contacte le support.';
                 }
             }
         }

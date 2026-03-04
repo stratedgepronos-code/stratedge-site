@@ -16,6 +16,9 @@ CREATE TABLE IF NOT EXISTS `membres` (
   `date_inscription` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `actif`            TINYINT(1) NOT NULL DEFAULT 1,
   `banni`            TINYINT(1) NOT NULL DEFAULT 0,
+  `role`             VARCHAR(20) DEFAULT NULL,
+  `photo_profil`     VARCHAR(255) DEFAULT NULL,
+  `accepte_emails`   TINYINT(1) NOT NULL DEFAULT 1,
   PRIMARY KEY (`id`),
   KEY `idx_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -24,7 +27,7 @@ CREATE TABLE IF NOT EXISTS `membres` (
 CREATE TABLE IF NOT EXISTS `abonnements` (
   `id`           INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
   `membre_id`    INT(11) UNSIGNED NOT NULL,
-  `type`         ENUM('daily','weekend','weekly') NOT NULL,
+  `type`         VARCHAR(30) NOT NULL DEFAULT 'daily',
   `date_achat`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `date_fin`     DATETIME DEFAULT NULL,   -- NULL = daily (expire au prochain bet posté)
   `actif`        TINYINT(1) NOT NULL DEFAULT 1,
@@ -37,13 +40,17 @@ CREATE TABLE IF NOT EXISTS `abonnements` (
 
 -- ── TABLE BETS ────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS `bets` (
-  `id`         INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `titre`      VARCHAR(200) NOT NULL,
-  `image_path` VARCHAR(300) NOT NULL,
-  `type`       SET('safe','fun','live') NOT NULL DEFAULT 'safe',
-  `description` TEXT DEFAULT NULL,
-  `actif`      TINYINT(1) NOT NULL DEFAULT 1,
-  `date_post`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `id`                INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `titre`             VARCHAR(200) NOT NULL,
+  `image_path`        VARCHAR(300) NOT NULL,
+  `locked_image_path` VARCHAR(255) DEFAULT NULL,
+  `type`              SET('safe','fun','live') NOT NULL DEFAULT 'safe',
+  `categorie`         VARCHAR(30) NOT NULL DEFAULT 'multi',
+  `description`       TEXT DEFAULT NULL,
+  `actif`             TINYINT(1) NOT NULL DEFAULT 1,
+  `resultat`          ENUM('en_cours','gagne','perdu','annule') NOT NULL DEFAULT 'en_cours',
+  `date_resultat`     DATETIME DEFAULT NULL,
+  `date_post`         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
