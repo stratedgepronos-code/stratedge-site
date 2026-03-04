@@ -543,12 +543,7 @@ $resultatConfig = [
             $rc = $resultatConfig[$b['resultat'] ?? 'en_cours'];
           ?>
             <tr>
-              <td><?php
-                $imgPath = !empty($b['image_path']) ? $b['image_path'] : '';
-                if ($imgPath && strpos(ltrim($imgPath, '/'), 'uploads/') !== 0) {
-                    $imgPath = 'uploads/bets/' . ltrim($imgPath, '/');
-                }
-                if ($imgPath): ?><img src="<?= htmlspecialchars(rtrim(SITE_URL,'/').'/'.ltrim($imgPath,'/')) ?>" class="bet-thumb" alt=""><?php else: ?>📊<?php endif; ?></td>
+              <td><?php if (!empty($b['image_path'])): ?><img src="<?= htmlspecialchars(betImageUrl($b['image_path'])) ?>" class="bet-thumb" alt=""><?php else: ?>📊<?php endif; ?></td>
               <td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?= clean($b['titre'] ?: '—') ?></td>
               <td style="font-size:0.8rem;"><?= clean($b['type']) ?></td>
               <td>

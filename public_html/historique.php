@@ -269,12 +269,7 @@ $tauxReussite = ($stats['total'] > 0 && ($stats['gagnes'] + $stats['perdus']) > 
         $rc  = $resultatConfig[$bet['resultat']];
         $types = explode(',', $bet['type']);
         $rawPath = !empty($bet['image_path']) ? $bet['image_path'] : ($bet['locked_image_path'] ?? '');
-        if (!empty($rawPath)) {
-          $rawPath = str_replace('\\', '/', trim($rawPath));
-          $imgSrc = (strpos($rawPath, 'http') === 0) ? $rawPath : (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($rawPath,'/') : '/'.ltrim($rawPath,'/'));
-        } else {
-          $imgSrc = '';
-        }
+        $imgSrc = !empty($rawPath) ? betImageUrl($rawPath) : '';
       ?>
       <div class="bet-card" style="border:1px solid <?= $rc['border'] ?>;">
         <div class="bet-card-header">

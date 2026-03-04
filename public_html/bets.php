@@ -241,11 +241,7 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
     <?php foreach ($sec['bets'] as $bet):
       $types = explode(',', $bet['type']);
       $rawPath = !empty($bet['image_path']) ? $bet['image_path'] : ($bet['locked_image_path'] ?? '');
-      if (!empty($rawPath)) {
-        $imgSrc = (strpos($rawPath, 'http') === 0) ? $rawPath : (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($rawPath,'/') : $rawPath);
-      } else {
-        $imgSrc = '';
-      }
+      $imgSrc = !empty($rawPath) ? betImageUrl($rawPath) : '';
     ?>
     <div class="bet-card">
       <div class="bet-top">

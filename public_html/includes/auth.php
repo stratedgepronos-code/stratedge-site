@@ -254,6 +254,16 @@ function clean(string $str): string {
     return htmlspecialchars(trim($str), ENT_QUOTES, 'UTF-8');
 }
 
+// ── Normaliser image_path : garantir le préfixe uploads/... ──
+function betImageUrl(string $path, string $subdir = 'bets'): string {
+    $path = str_replace('\\', '/', trim($path));
+    if (strpos($path, 'http') === 0) return $path;
+    if (strpos(ltrim($path, '/'), 'uploads/') !== 0) {
+        $path = 'uploads/' . $subdir . '/' . ltrim($path, '/');
+    }
+    return rtrim(SITE_URL, '/') . '/' . ltrim($path, '/');
+}
+
 // ── Générer un token CSRF ─────────────────────────────────
 function csrfToken(): string {
     if (empty($_SESSION['csrf_token'])) {

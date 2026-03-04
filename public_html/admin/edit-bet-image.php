@@ -145,8 +145,8 @@ $resultatLabels = ['en_cours'=>'⏳ En cours','gagne'=>'✅ Gagné','perdu'=>'�
 
   <div class="bets-grid" id="betsGrid">
     <?php foreach ($bets as $b):
-      $imgSrc = $b['image_path'] && file_exists(__DIR__ . '/../' . $b['image_path']) ? SITE_URL . '/' . $b['image_path'] : '';
-      $lockedSrc = $b['locked_image_path'] && file_exists(__DIR__ . '/../' . $b['locked_image_path']) ? SITE_URL . '/' . $b['locked_image_path'] : '';
+      $imgSrc = !empty($b['image_path']) ? betImageUrl($b['image_path']) : '';
+      $lockedSrc = !empty($b['locked_image_path']) ? betImageUrl($b['locked_image_path'], 'locked') : '';
       $resLabel = $resultatLabels[$b['resultat']] ?? $b['resultat'];
       $typeLabel = $typeLabels[$b['type']] ?? $b['type'];
     ?>
