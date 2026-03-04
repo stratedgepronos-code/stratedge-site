@@ -196,35 +196,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         . " | lastType=" . $lastType
                         . " | lastTitre=" . $lastTitre . "\n";
 
-                    // Notifier uniquement les abonnés de la bonne catégorie
-                    // Rass-Toss reçoit TOUJOURS les notifications (multi + tennis)
-                    if ($lastCategorie === 'tennis') {
-                        $stmtAb = $db->prepare("
-                            SELECT DISTINCT m.id, m.email, m.nom, a.type as type_abo
-                            FROM membres m JOIN abonnements a ON a.membre_id = m.id
-                            WHERE a.actif = 1
-                            AND (
-                                (a.type = 'tennis' AND a.date_fin > NOW())
-                                OR a.type = 'rasstoss'
-                            )
-                            AND m.email != ?
-                        ");
-                        $stmtAb->execute([ADMIN_EMAIL]);
-                        $abonnesActifs = $stmtAb->fetchAll(PDO::FETCH_ASSOC);
-                    } else {
-                        $stmtAb = $db->prepare("
-                            SELECT DISTINCT m.id, m.email, m.nom, a.type as type_abo
-                            FROM membres m JOIN abonnements a ON a.membre_id = m.id
-                            WHERE a.actif = 1
-                            AND (
-                                (a.type NOT IN ('tennis') AND (a.type = 'daily' OR a.date_fin > NOW()))
-                                OR a.type = 'rasstoss'
-                            )
-                            AND m.email != ?
-                        ");
-                        $stmtAb->execute([ADMIN_EMAIL]);
-                        $abonnesActifs = $stmtAb->fetchAll(PDO::FETCH_ASSOC);
-                    }
+                    // Tous les abonnés actifs (hors admin) reçoivent push + email nouveau bet
+                    $stmtAb = $db->prepare("
+                        SELECT DISTINCT m.id, m.email, m.nom, COALESCE(a.type, 'daily') as type_abo
+                        FROM membres m
+                        JOIN abonnements a ON a.membre_id = m.id AND a.actif = 1
+                        WHERE m.email != ?
+                    ");
+                    $stmtAb->execute([ADMIN_EMAIL]);
+                    $abonnesActifs = $stmtAb->fetchAll(PDO::FETCH_ASSOC);
 
                     $notifLog .= "  → Abonnés trouvés : " . count($abonnesActifs) . "\n";
                     foreach ($abonnesActifs as $idx => $ab) {
@@ -379,10 +359,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $webhookUrl = ($imgPath !== '' && !empty($twitterConfig['webhook_url_image']))
                                 ? $twitterConfig['webhook_url_image']
                                 : $twitterConfig['webhook_url'];
+                            // Même format que nouveau bet / twitter-post : value1=texte, value2=title, value3=imageUrl
                             $payload = json_encode([
                                 'value1' => $texte,
-                                'value2' => $imageUrl,
-                                'value3' => 'https://stratedgepronos.fr',
+                                'value2' => 'StratEdge Pronos',
+                                'value3' => $imageUrl,
                             ], JSON_UNESCAPED_UNICODE);
                             $ch = curl_init($webhookUrl);
                             curl_setopt_array($ch, [
