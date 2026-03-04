@@ -195,8 +195,9 @@ $accentBorder = $onglet === 'tennis' ? 'rgba(0,212,106,0.25)' : 'rgba(0,212,255,
       <div class="bet-grid">
         <?php foreach ($betsDuMois as $b):
           $rc = $resultatConfig[$b['resultat']];
-          $imgSrc = $b['image_path'] && file_exists(__DIR__ . '/../' . $b['image_path'])
-                    ? SITE_URL . '/' . $b['image_path'] : '';
+          $imgSrc = !empty($b['image_path'])
+                    ? rtrim(SITE_URL, '/') . '/' . ltrim($b['image_path'], '/')
+                    : '';
           $dateR  = $b['date_resultat'] ? date('d/m/Y', strtotime($b['date_resultat'])) : date('d/m/Y', strtotime($b['date_post']));
           $types  = explode(',', $b['type']);
           $isTennis = ($b['categorie'] ?? 'multi') === 'tennis';

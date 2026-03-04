@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? 
             $super->execute([ADMIN_EMAIL]);
             $superId = $super->fetchColumn();
             if ($superId && function_exists('envoyerPush')) {
-                envoyerPush((int)$superId, 'Nouvelle ' . $typeLabel . ' admin', $titre, '/admin/messagerie-interne.php', 'admin_idees');
+                envoyerPush((int)$superId, 'Nouvelle ' . $typeLabel . ' admin', $titre, '/panel-x9k3m/messagerie-interne.php', 'admin_idees');
             }
             $success = $typeLabel . ' enregistrée. Vous serez notifié si elle est acceptée.';
             header('Location: idees.php?ok=1');
