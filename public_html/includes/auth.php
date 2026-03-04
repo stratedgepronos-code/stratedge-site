@@ -257,11 +257,13 @@ function clean(string $str): string {
 // ── Normaliser image_path : garantir le préfixe uploads/... ──
 function betImageUrl(string $path, string $subdir = 'bets'): string {
     $path = str_replace('\\', '/', trim($path));
+    if ($path === '') return '';
     if (strpos($path, 'http') === 0) return $path;
     if (strpos(ltrim($path, '/'), 'uploads/') !== 0) {
         $path = 'uploads/' . $subdir . '/' . ltrim($path, '/');
     }
-    return rtrim(SITE_URL, '/') . '/' . ltrim($path, '/');
+    $base = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
+    return $base ? ($base . '/' . ltrim($path, '/')) : ('/' . ltrim($path, '/'));
 }
 
 // ── Générer un token CSRF ─────────────────────────────────

@@ -65,8 +65,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 try {
                 $uploadDir  = __DIR__ . '/../uploads/bets/';
                 $lockedDir  = __DIR__ . '/../uploads/locked/';
-                if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
-                if (!is_dir($lockedDir)) mkdir($lockedDir, 0755, true);
+                if (!is_dir($uploadDir)) @mkdir($uploadDir, 0755, true);
+                if (!is_dir($lockedDir)) @mkdir($lockedDir, 0755, true);
+                if (!is_writable($uploadDir)) {
+                    $error = 'Le dossier uploads/bets/ n\'est pas accessible en écriture. Vérifie les droits sur le serveur (CHMOD 755 ou 775).';
+                } else {
 
                 $lastType        = 'safe';
                 $lastTitre       = '';
@@ -75,13 +78,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $lastCategorie   = 'multi';
                 $twitterMsg      = '';
 
-                // DEBUG locked — à supprimer une fois confirmé résolu
-                file_put_contents(__DIR__ . '/../locked_debug.log',
-                    date('Y-m-d H:i:s') . " | nbFichiers=" . $nbFichiers
-                    . " | locked keys=" . json_encode(array_keys($lockedImages['name'] ?? []))
-                    . " | locked errors=" . json_encode($lockedImages['error'] ?? [])
-                    . " | locked names=" . json_encode($lockedImages['name'] ?? [])
-                    . "\n", FILE_APPEND);
+                // DEBUG locked (ne pas faire échouer l'envoi)
+                try {
+                    @file_put_contents(__DIR__ . '/../locked_debug.log',
+                        date('Y-m-d H:i:s') . " | nbFichiers=" . $nbFichiers
+                        . " | locked keys=" . json_encode(array_keys($lockedImages['name'] ?? []))
+                        . " | locked errors=" . json_encode($lockedImages['error'] ?? [])
+                        . " | locked names=" . json_encode($lockedImages['name'] ?? [])
+                        . "\n", FILE_APPEND);
+                } catch (Throwable $e) { /* ignore */ }
 
                 for ($i = 0; $i < $nbFichiers; $i++) {
                     if ($images['error'][$i] !== UPLOAD_ERR_OK) continue;
@@ -177,6 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 if ($nbPostes > 0) {
+                    try {
                     // ── DEBUG NOTIFICATIONS ──
                     $notifLog = date('Y-m-d H:i:s') . " | nbPostes=" . $nbPostes
                         . " | lastCategorie=" . ($lastCategorie ?? 'NON_DEFINI')
@@ -272,12 +278,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     } else {
                         $success = $nbPostes . ' bet' . ($nbPostes > 1 ? 's postés' : ' posté') . ' ✅ — Emails envoyés.' . $twitterMsg;
                     }
+                    } catch (Throwable $notifE) {
+                        error_log('[poster-bet] notifications: ' . $notifE->getMessage() . ' in ' . $notifE->getFile() . ':' . $notifE->getLine() . "\n" . $notifE->getTraceAsString());
+                        $success = $nbPostes . ' bet' . ($nbPostes > 1 ? 's postés' : ' posté') . ' ✅ (notifications partiellement en erreur).' . $twitterMsg;
+                    }
                 } else {
                     $error = 'Aucun fichier valide uploadé.';
                 }
+                }
                 } catch (Throwable $e) {
-                    error_log('[poster-bet] post_bets: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
-                    $error = 'Erreur lors de l\'envoi. Réessaie ou contacte le support. (détails dans les logs serveur)';
+                    error_log('[poster-bet] post_bets: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine() . "\n" . $e->getTraceAsString());
+                    $error = 'Erreur lors de l\'envoi : ' . (strlen($e->getMessage()) < 120 ? $e->getMessage() : substr($e->getMessage(), 0, 117) . '…') . ' — Vérifier les logs serveur ou contacter le support.';
                 }
             }
         }
