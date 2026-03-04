@@ -120,8 +120,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             }
                         }
 
-                        $stmt = $db->prepare("INSERT INTO bets (titre, image_path, locked_image_path, type, categorie, description) VALUES (?, ?, ?, ?, ?, ?)");
-                        $stmt->execute([$lastTitre, $lastImagePath, $lastLockedPath ?: null, $lastType, $lastCategorie, trim($descs[$i] ?? '')]);
+                        try {
+                            $stmt = $db->prepare("INSERT INTO bets (titre, image_path, locked_image_path, type, categorie, description) VALUES (?, ?, ?, ?, ?, ?)");
+                            $stmt->execute([$lastTitre, $lastImagePath, $lastLockedPath ?: null, $lastType, $lastCategorie, trim($descs[$i] ?? '')]);
+                        } catch (Throwable $insErr) {
+                            // Fallback : colonnes categorie / locked_image_path / description absentes
+                            error_log('[poster-bet] INSERT fallback (colonne manquante?) : ' . $insErr->getMessage());
+                            $stmt = $db->prepare("INSERT INTO bets (titre, image_path, type) VALUES (?, ?, ?)");
+                            $stmt->execute([$lastTitre, $lastImagePath, $lastType]);
+                        }
                         $nbPostes++;
 
                         // ── Tweet immédiat pour CETTE image ──
@@ -201,7 +208,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 OR a.type = 'rasstoss'
                             )
                             AND m.email != ?
-                            AND (m.accepte_emails IS NULL OR m.accepte_emails = 1)
                         ");
                         $stmtAb->execute([ADMIN_EMAIL]);
                         $abonnesActifs = $stmtAb->fetchAll(PDO::FETCH_ASSOC);
@@ -215,7 +221,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 OR a.type = 'rasstoss'
                             )
                             AND m.email != ?
-                            AND (m.accepte_emails IS NULL OR m.accepte_emails = 1)
                         ");
                         $stmtAb->execute([ADMIN_EMAIL]);
                         $abonnesActifs = $stmtAb->fetchAll(PDO::FETCH_ASSOC);
@@ -267,7 +272,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             SELECT DISTINCT m.id, m.email, m.nom FROM membres m
                             JOIN abonnements a ON a.membre_id = m.id
                             WHERE a.type = 'daily' AND a.actif = 1
-                            AND (m.accepte_emails IS NULL OR m.accepte_emails = 1)
                         ")->fetchAll();
                         $db->exec("UPDATE abonnements SET actif = 0 WHERE type = 'daily' AND actif = 1");
                         foreach ($dailyMembres as $dm) {
@@ -288,7 +292,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 } catch (Throwable $e) {
                     error_log('[poster-bet] post_bets: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine() . "\n" . $e->getTraceAsString());
-                    $error = 'Erreur lors de l\'envoi : ' . (strlen($e->getMessage()) < 120 ? $e->getMessage() : substr($e->getMessage(), 0, 117) . '…') . ' — Vérifier les logs serveur ou contacter le support.';
+                    $error = 'Erreur post_bets : ' . mb_substr($e->getMessage(), 0, 200) . ' — Vérifie les logs serveur.';
                 }
             }
         }
@@ -300,16 +304,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($betId && in_array($resultat, ['gagne','perdu','annule'])) {
                 $bet = null;
                 try {
-                    // Récupérer les infos du bet (titre + images) avant de le clore
-                    $betInfo = $db->prepare("SELECT titre, type, image_path, locked_image_path FROM bets WHERE id = ?");
+                    $betInfo = $db->prepare("SELECT * FROM bets WHERE id = ?");
                     $betInfo->execute([$betId]);
                     $bet = $betInfo->fetch(PDO::FETCH_ASSOC);
 
-                    $db->prepare("UPDATE bets SET resultat=?, date_resultat=NOW(), actif=0 WHERE id=?")
-                       ->execute([$resultat, $betId]);
+                    // UPDATE : compatible même si resultat/date_resultat n'existent pas encore
+                    try {
+                        $db->prepare("UPDATE bets SET resultat=?, date_resultat=NOW(), actif=0 WHERE id=?")
+                           ->execute([$resultat, $betId]);
+                    } catch (Throwable $colErr) {
+                        // Colonne resultat/date_resultat absente → fallback simple
+                        $db->prepare("UPDATE bets SET actif=0 WHERE id=?")->execute([$betId]);
+                        error_log('[poster-bet] set_resultat colonne resultat manquante, fallback actif=0 : ' . $colErr->getMessage());
+                    }
                 } catch (Throwable $e) {
                     error_log('[poster-bet] set_resultat UPDATE: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine() . "\n" . $e->getTraceAsString());
-                    $error = 'Erreur lors de l\'enregistrement du résultat. Réessaie ou contacte le support.';
+                    $error = 'Erreur résultat : ' . mb_substr($e->getMessage(), 0, 150) . ' — Vérifie les logs serveur.';
                 }
 
                 if (empty($error)) {
@@ -319,14 +329,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     // ── Push + Email résultat (ne pas faire échouer la page) ──
                     try {
+                        // Requête compatible : pas de référence à accepte_emails (colonne potentiellement absente)
                         $stmtAbo = $db->prepare("
                             SELECT DISTINCT m.id, m.email, m.nom, a.type as type_abo
                             FROM membres m JOIN abonnements a ON a.membre_id = m.id
                             WHERE a.actif = 1 AND m.email != ?
-                            AND (m.accepte_emails IS NULL OR m.accepte_emails = 1)
                         ");
                         $stmtAbo->execute([ADMIN_EMAIL]);
                         $abonnesResult = $stmtAbo->fetchAll(PDO::FETCH_ASSOC);
+
+                        error_log('[poster-bet] set_resultat notif: ' . count($abonnesResult) . ' abonnés trouvés pour résultat');
+
                         foreach ($abonnesResult as $ab) {
                             try {
                                 emailResultatBet($ab['email'], $ab['nom'], $titreResult, $resCode, $ab['type_abo'] ?? '');
