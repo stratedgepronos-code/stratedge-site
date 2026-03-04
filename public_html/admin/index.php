@@ -4,18 +4,19 @@ requireAdmin();
 $pageActive = 'index';
 $db = getDB();
 
-// Stats visiteurs (table visites en BDD — ne se remet plus à zéro au déploiement)
+// Stats visiteurs UNIQUES (un visiteur = un même visitor_id, pas les pages vues)
 $visiteursAujourdhui = $visiteursSemaine = $visiteursMois = $visiteursAll = 0;
 try {
     $todayStart = strtotime('today');
     $weekStart = strtotime('-7 days');
     $monthStart = strtotime('-30 days');
-    $visiteursAll = (int)$db->query("SELECT COUNT(*) FROM visites")->fetchColumn();
-    $visiteursMois = (int)$db->query("SELECT COUNT(*) FROM visites WHERE t >= $monthStart")->fetchColumn();
-    $visiteursSemaine = (int)$db->query("SELECT COUNT(*) FROM visites WHERE t >= $weekStart")->fetchColumn();
-    $visiteursAujourdhui = (int)$db->query("SELECT COUNT(*) FROM visites WHERE t >= $todayStart")->fetchColumn();
+    // COUNT(DISTINCT ...) : anciennes lignes sans visitor_id comptées via COALESCE(visitor_id, id)
+    $visiteursAll = (int)$db->query("SELECT COUNT(DISTINCT COALESCE(visitor_id, id)) FROM visites")->fetchColumn();
+    $visiteursMois = (int)$db->query("SELECT COUNT(DISTINCT COALESCE(visitor_id, id)) FROM visites WHERE t >= $monthStart")->fetchColumn();
+    $visiteursSemaine = (int)$db->query("SELECT COUNT(DISTINCT COALESCE(visitor_id, id)) FROM visites WHERE t >= $weekStart")->fetchColumn();
+    $visiteursAujourdhui = (int)$db->query("SELECT COUNT(DISTINCT COALESCE(visitor_id, id)) FROM visites WHERE t >= $todayStart")->fetchColumn();
 } catch (Throwable $e) {
-    // Table visites peut ne pas exister
+    // Table visites peut ne pas exister ou colonne visitor_id absente
 }
 
 $nbMembres    = $db->query("SELECT COUNT(*) FROM membres WHERE email != 'stratedgepronos@gmail.com'")->fetchColumn();
@@ -114,7 +115,7 @@ $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m O
       <p>Bienvenue — <?= date('d/m/Y à H:i') ?></p>
     </div>
     <div class="stats-bar-visiteurs" style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;padding:0.75rem 1.25rem;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:14px;">
-      <span style="font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);">Visiteurs</span>
+      <span style="font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);">Visiteurs uniques</span>
       <span style="color:var(--text-primary);"><strong><?= number_format($visiteursAujourdhui, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">aujourd'hui</span></span>
       <span style="color:var(--text-primary);"><strong><?= number_format($visiteursSemaine, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">7 jours</span></span>
       <span style="color:var(--text-primary);"><strong><?= number_format($visiteursMois, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">30 jours</span></span>

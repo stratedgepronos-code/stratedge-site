@@ -52,7 +52,13 @@ PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 ALTER TABLE abonnements MODIFY COLUMN `type` VARCHAR(30) NOT NULL DEFAULT 'daily';
 
 
--- ── 4. Table PUSH_SUBSCRIPTIONS (si pas encore créée) ───────
+-- ── 4. Table VISITES : visiteurs uniques (visitor_id) ───────
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'visites' AND COLUMN_NAME = 'visitor_id');
+SET @sql = IF(@col_exists = 0, 'ALTER TABLE visites ADD COLUMN visitor_id VARCHAR(64) DEFAULT NULL COMMENT ''Hash IP+UA'' AFTER id, ADD KEY idx_visitor_t (visitor_id, t)', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+
+-- ── 5. Table PUSH_SUBSCRIPTIONS (si pas encore créée) ───────
 
 CREATE TABLE IF NOT EXISTS `push_subscriptions` (
   `id`         INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -66,7 +72,7 @@ CREATE TABLE IF NOT EXISTS `push_subscriptions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
--- ── 5. Vérification ─────────────────────────────────────────
+-- ── 6. Vérification ─────────────────────────────────────────
 -- Après exécution, vérifier avec :
 -- DESCRIBE bets;
 -- DESCRIBE membres;
