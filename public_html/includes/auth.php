@@ -31,7 +31,7 @@ function isSuperAdmin(): bool {
 // ── Obliger le super admin ─────────────────────────────────
 function requireSuperAdmin(): void {
     if (!isSuperAdmin()) {
-        header('Location: /admin/index.php');
+        header('Location: /panel-x9k3m/index.php');
         exit;
     }
 }
@@ -108,7 +108,8 @@ function loginMembre(string $email, string $password): array {
 }
 
 // ── Inscription d'un membre ────────────────────────────────
-function registerMembre(string $nom, string $email, string $password): array {
+// $accepte_emails : 1 = accepte les notifications par email (RGPD/LCEN), 0 = non
+function registerMembre(string $nom, string $email, string $password, int $accepte_emails = 1): array {
     $db = getDB();
 
     // Vérifier si l'email existe déjà
@@ -119,9 +120,17 @@ function registerMembre(string $nom, string $email, string $password): array {
     }
 
     $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
-    $stmt = $db->prepare("INSERT INTO membres (nom, email, password) VALUES (?, ?, ?)");
-    $stmt->execute([$nom, $email, $hash]);
-
+    try {
+        $stmt = $db->prepare("INSERT INTO membres (nom, email, password, accepte_emails) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$nom, $email, $hash, $accepte_emails]);
+    } catch (PDOException $e) {
+        if (strpos($e->getMessage(), 'accepte_emails') !== false) {
+            $stmt = $db->prepare("INSERT INTO membres (nom, email, password) VALUES (?, ?, ?)");
+            $stmt->execute([$nom, $email, $hash]);
+        } else {
+            throw $e;
+        }
+    }
     return ['success' => true, 'id' => $db->lastInsertId()];
 }
 
@@ -142,16 +151,24 @@ function logoutMembre(): void {
 function getMembre(): ?array {
     if (!isLoggedIn()) return null;
     $db = getDB();
-    // Essayer avec photo_profil (migration effectuée), sinon fallback sans
+    // Essayer avec photo_profil + accepte_emails, sinon fallback
     try {
-        $stmt = $db->prepare("SELECT id, nom, email, date_inscription, photo_profil FROM membres WHERE id = ? LIMIT 1");
+        $stmt = $db->prepare("SELECT id, nom, email, date_inscription, photo_profil, accepte_emails FROM membres WHERE id = ? LIMIT 1");
         $stmt->execute([$_SESSION['membre_id']]);
     } catch (Exception $e) {
-        $stmt = $db->prepare("SELECT id, nom, email, date_inscription FROM membres WHERE id = ? LIMIT 1");
-        $stmt->execute([$_SESSION['membre_id']]);
+        try {
+            $stmt = $db->prepare("SELECT id, nom, email, date_inscription, photo_profil FROM membres WHERE id = ? LIMIT 1");
+            $stmt->execute([$_SESSION['membre_id']]);
+        } catch (Exception $e2) {
+            $stmt = $db->prepare("SELECT id, nom, email, date_inscription FROM membres WHERE id = ? LIMIT 1");
+            $stmt->execute([$_SESSION['membre_id']]);
+        }
     }
     $row = $stmt->fetch();
-    if ($row && !isset($row['photo_profil'])) $row['photo_profil'] = null;
+    if ($row) {
+        if (!isset($row['photo_profil'])) $row['photo_profil'] = null;
+        if (!isset($row['accepte_emails'])) $row['accepte_emails'] = 1;
+    }
     return $row ?: null;
 }
 

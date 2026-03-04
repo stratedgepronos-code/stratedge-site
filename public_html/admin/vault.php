@@ -69,8 +69,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!verifVaultCsrf($_POST['csrf'] ?? '')) {
             $vaultError = 'Erreur de sécurité.';
         } else {
-            $mdp = $_POST['master_password'] ?? '';
-            if (password_verify($mdp, VAULT_MASTER_HASH)) {
+            $mdp = trim((string) ($_POST['master_password'] ?? ''));
+            if ($mdp !== '' && password_verify($mdp, VAULT_MASTER_HASH)) {
                 $key = vaultDeriveKey($mdp);
                 $_SESSION['vault_open']          = true;
                 $_SESSION['vault_key_b64']        = base64_encode($key);
@@ -399,6 +399,9 @@ $csrf = $_SESSION['vault_csrf'];
   <?php endif; ?>
   <?php if ($vaultError): ?>
     <div class="alert-err"><?= htmlspecialchars($vaultError) ?></div>
+    <?php if (strpos($vaultError, 'incorrect') !== false): ?>
+    <p style="font-size:0.9rem;color:var(--txt3);margin-top:0.5rem;">Tu peux <a href="vault-gen-password.php" style="color:#f5c842;">générer un nouveau mot de passe</a> (le hash sera correctement enregistré).</p>
+    <?php endif; ?>
   <?php endif; ?>
 
   <?php if (!$vaultOpen): ?>

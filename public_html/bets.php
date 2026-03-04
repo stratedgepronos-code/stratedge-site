@@ -3,14 +3,17 @@ require_once __DIR__ . '/includes/auth.php';
 $db = getDB();
 $membre = isLoggedIn() ? getMembre() : null;
 $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
-$hasAcces = $abonnement !== null;
+// Admins voient tous les bets sans payer
+$hasAcces = ($abonnement !== null) || (isLoggedIn() && isAdmin());
 $currentPage = 'bets';
 $avatarUrl = $membre ? getAvatarUrl($membre) : null;
 
-// Filtrage des bets selon le type d'abonnement
+// Filtrage des bets : admins = tout ; sinon selon type d'abonnement
 $typeAbo = $abonnement['type'] ?? '';
-if ($typeAbo === 'rasstoss') {
-    // Rass-Toss = accès TOTAL (multi + tennis)
+if (isAdmin() && $membre) {
+    // Admin = accès total (multi + tennis), comme Rass-Toss
+    $stmt = $db->query("SELECT * FROM bets WHERE actif = 1 ORDER BY date_post DESC");
+} elseif ($typeAbo === 'rasstoss') {
     $stmt = $db->query("SELECT * FROM bets WHERE actif = 1 ORDER BY date_post DESC");
 } elseif ($typeAbo === 'tennis') {
     $stmt = $db->query("SELECT * FROM bets WHERE actif = 1 AND categorie = 'tennis' ORDER BY date_post DESC");
@@ -18,6 +21,13 @@ if ($typeAbo === 'rasstoss') {
     $stmt = $db->query("SELECT * FROM bets WHERE actif = 1 AND categorie = 'multi' ORDER BY date_post DESC");
 }
 $bets = $stmt->fetchAll();
+// Répartition par section : Safe | Live | Fun (selon le type choisi à la création en admin)
+$betsSafe = array_filter($bets, function($b) {
+    $t = $b['type'];
+    return (strpos($t, 'safe') !== false) && (strpos($t, 'live') === false) && (strpos($t, 'fun') === false);
+});
+$betsLive = array_filter($bets, function($b) { return strpos($b['type'], 'live') !== false; });
+$betsFun  = array_filter($bets, function($b) { return strpos($b['type'], 'fun') !== false; });
 $typeLabels = ['safe'=>'🛡️ Safe','fun'=>'🎯 Fun','live'=>'⚡ Live'];
 $typeColors = ['safe'=>'#00d4ff','fun'=>'#a855f7','live'=>'#ff2d78'];
 ?>
@@ -63,7 +73,7 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
 .bets-title span{background:linear-gradient(135deg,#ff2d78,#ff6b9d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .bets-sub{color:var(--txt2,#b0bec9);font-size:1.05rem;max-width:500px;margin:0 auto;}
 
-.bets-wrap{max-width:920px;margin:0 auto;padding:2rem 0.5rem;}
+.bets-wrap{max-width:1400px;margin:0 auto;padding:2rem 0.5rem;}
 
 /* Banner abo */
 .abo-b{border-radius:14px;padding:1.4rem 1.8rem;margin-bottom:2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
@@ -74,17 +84,25 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
 .btn-sub{background:linear-gradient(135deg,#ff2d78,#d6245f);color:#fff;padding:0.75rem 1.6rem;border-radius:10px;text-decoration:none;font-weight:700;font-size:1rem;text-transform:uppercase;letter-spacing:1px;transition:all .3s;display:inline-flex;align-items:center;gap:0.4rem;}
 .btn-sub:hover{box-shadow:0 0 30px rgba(255,45,120,0.35);transform:translateY(-2px);}
 
-/* Bets grid */
-.bets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(360px,100%),1fr));gap:1.5rem;}
-.bet-card{background:var(--card,#111827);border:1px solid var(--border,rgba(255,45,120,0.15));border-radius:18px;overflow:hidden;transition:all .3s;position:relative;}
+/* Nav sections Safe | Live | Fun */
+.bets-nav-sections{display:flex;flex-wrap:wrap;gap:0.75rem 1.5rem;margin-bottom:1.5rem;padding:0.75rem 0;}
+.bets-nav-link{font-family:'Orbitron',sans-serif;font-size:0.85rem;font-weight:700;letter-spacing:1px;color:var(--nav-color,#8a9bb0);text-decoration:none;padding:0.4rem 0.8rem;border-radius:8px;border:1px solid rgba(255,255,255,0.1);transition:all .25s;}
+.bets-nav-link:hover{border-color:var(--nav-color);color:var(--nav-color);box-shadow:0 0 12px rgba(0,0,0,0.3);}
+/* Sections Safe | Live | Fun — trois colonnes gauche à droite */
+.bets-sections-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1.5rem;align-items:start;}
+.bets-section{margin-bottom:0;scroll-margin-top:1rem;min-width:0;}
+.bets-section-title{font-family:'Orbitron',sans-serif;font-size:1.15rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;margin-bottom:1rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(255,255,255,0.08);display:flex;align-items:center;gap:0.5rem;}
+/* Cartes dans chaque section : affichées de gauche à droite (grille) */
+.bets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(280px,100%),1fr));gap:1.5rem;}
+.bet-card{background:var(--card,#111827);border:1px solid var(--border,rgba(255,45,120,0.15));border-radius:18px;overflow:hidden;transition:all .3s;position:relative;min-width:0;}
 .bet-card:hover{transform:translateY(-5px);box-shadow:0 25px 70px rgba(0,0,0,0.5),0 0 20px rgba(255,45,120,0.1);border-color:rgba(255,45,120,0.35);}
 .bet-top{padding:1.1rem 1.4rem 0.7rem;display:flex;align-items:center;justify-content:space-between;gap:0.5rem;}
 .bet-badges{display:flex;gap:0.5rem;flex-wrap:wrap;}
 .bet-badge{padding:0.3rem 0.85rem;border-radius:8px;font-family:'Orbitron',sans-serif;font-size:0.68rem;font-weight:700;letter-spacing:1px;display:flex;align-items:center;gap:0.3rem;}
 .bet-date{font-size:0.85rem;color:var(--txt3,#8a9bb0);font-family:'Space Mono',monospace;font-size:0.72rem;}
 .bet-titre{font-family:'Orbitron',sans-serif;font-size:0.95rem;padding:0 1.4rem 0.9rem;color:var(--txt2,#b0bec9);font-weight:600;}
-.bet-img-wrap{position:relative;overflow:hidden;}
-.bet-img{width:100%;display:block;transition:transform .3s;}
+.bet-img-wrap{position:relative;overflow:hidden;min-height:0;aspect-ratio:16/9;}
+.bet-img{width:100%;height:100%;display:block;object-fit:cover;vertical-align:top;transition:transform .3s;}
 .bet-img.blur{filter:blur(14px);transform:scale(1.08);}
 .bet-img-wrap.zoomable{cursor:zoom-in;}
 .bet-img-wrap.zoomable:hover .bet-img{transform:scale(1.02);}
@@ -111,6 +129,12 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
 .lightbox-close:hover{background:#ff2d78;}
 .lightbox-caption{text-align:center;margin-top:0.8rem;color:var(--txt3,#8a9bb0);font-size:0.88rem;}
 
+@media(max-width:1100px){
+  .bets-sections-row{grid-template-columns:1fr;}
+  .bets-section{margin-bottom:2rem;}
+  .bets-section:last-child{margin-bottom:0;}
+  .bets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(360px,100%),1fr));gap:1rem;}
+}
 @media(max-width:768px){
   .bets-grid{grid-template-columns:1fr;gap:1rem;max-width:100%;}
   .abo-b{padding:1rem;flex-direction:column;align-items:flex-start;border-radius:10px;}
@@ -176,10 +200,12 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
 <div class="bets-wrap">
   <?php if ($hasAcces): ?>
   <div class="abo-b ok"><div><h3>✅ Accès complet débloqué</h3>
-    <p><?php if ($abonnement['type']==='rasstoss'): ?><span style="color:#ffd700;font-weight:700;">👑 Rass-Toss — Life Time ♾️</span>
-    <?php elseif ($abonnement['type']==='daily'): ?>Daily — expire au prochain bet
-    <?php elseif ($abonnement['type']==='weekend'): ?>Week-End — expire le <?= date('d/m/Y à H:i',strtotime($abonnement['date_fin'])) ?>
-    <?php else: ?>Weekly 7j — expire le <?= date('d/m/Y à H:i',strtotime($abonnement['date_fin'])) ?><?php endif; ?></p>
+    <p><?php if (isAdmin() && $membre && $abonnement === null): ?><span style="color:#00d4ff;font-weight:700;">🔐 Accès admin</span>
+    <?php elseif (!empty($abonnement['type']) && $abonnement['type']==='rasstoss'): ?><span style="color:#ffd700;font-weight:700;">👑 Rass-Toss — Life Time ♾️</span>
+    <?php elseif (!empty($abonnement['type']) && $abonnement['type']==='daily'): ?>Daily — expire au prochain bet
+    <?php elseif (!empty($abonnement['type']) && $abonnement['type']==='weekend'): ?>Week-End — expire le <?= date('d/m/Y à H:i',strtotime($abonnement['date_fin'])) ?>
+    <?php elseif (!empty($abonnement['type'])): ?>Weekly 7j — expire le <?= date('d/m/Y à H:i',strtotime($abonnement['date_fin'])) ?>
+    <?php else: ?><span style="color:#00d4ff;font-weight:700;">🔐 Accès admin</span><?php endif; ?></p>
   </div><span style="font-size:1.6rem;">🔓</span></div>
   <?php else: ?>
   <div class="abo-b no"><div><h3>🔒 Contenu verrouillé</h3><p>Souscris pour accéder aux analyses complètes des bets.</p></div>
@@ -188,12 +214,38 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
   </div>
   <?php endif; ?>
 
+  <?php if (!empty($bets)): ?>
+  <nav class="bets-nav-sections" aria-label="Sections des bets">
+    <?php if (!empty($betsSafe)): ?><a href="#section-safe" class="bets-nav-link" style="--nav-color:#00d4ff">🛡️ Safe</a><?php endif; ?>
+    <?php if (!empty($betsLive)): ?><a href="#section-live" class="bets-nav-link" style="--nav-color:#ff2d78">⚡ Live</a><?php endif; ?>
+    <?php if (!empty($betsFun)): ?><a href="#section-fun" class="bets-nav-link" style="--nav-color:#a855f7">🎯 Fun</a><?php endif; ?>
+  </nav>
+  <?php endif; ?>
+
   <?php if (empty($bets)): ?>
   <div class="no-bets"><div class="big">🎯</div><h3>Aucun bet disponible</h3><p>Les nouvelles analyses arrivent bientôt, reste connecté !</p></div>
-  <?php else: ?>
-  <div class="bets-grid">
-    <?php foreach ($bets as $bet):
-      $types = explode(',',$bet['type']); $imgSrc = $bet['image_path'] && file_exists(__DIR__.'/'.$bet['image_path']) ? clean($bet['image_path']) : '';
+  <?php else:
+    $sections = [
+      'safe' => ['bets' => $betsSafe, 'title' => 'Safe', 'icon' => '🛡️', 'color' => '#00d4ff'],
+      'live' => ['bets' => $betsLive, 'title' => 'Live', 'icon' => '⚡', 'color' => '#ff2d78'],
+      'fun'  => ['bets' => $betsFun,  'title' => 'Fun',  'icon' => '🎯', 'color' => '#a855f7'],
+    ];
+  ?>
+  <div class="bets-sections-row">
+  <?php foreach ($sections as $key => $sec):
+      if (empty($sec['bets'])) continue;
+  ?>
+  <section class="bets-section" id="section-<?= $key ?>">
+    <h2 class="bets-section-title" style="color:<?= $sec['color'] ?>"><?= $sec['icon'] ?> <?= $sec['title'] ?></h2>
+    <div class="bets-grid">
+    <?php foreach ($sec['bets'] as $bet):
+      $types = explode(',', $bet['type']);
+      $rawPath = !empty($bet['image_path']) ? $bet['image_path'] : ($bet['locked_image_path'] ?? '');
+      if (!empty($rawPath)) {
+        $imgSrc = (strpos($rawPath, 'http') === 0) ? $rawPath : (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($rawPath,'/') : $rawPath);
+      } else {
+        $imgSrc = '';
+      }
     ?>
     <div class="bet-card">
       <div class="bet-top">
@@ -206,9 +258,10 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
       </div>
       <?php if ($bet['titre']): ?><div class="bet-titre"><?= clean($bet['titre']) ?></div><?php endif; ?>
       <div class="bet-img-wrap <?= ($hasAcces && $imgSrc)?'zoomable':'' ?>"
-           <?= ($hasAcces && $imgSrc)?'data-src="'.clean($bet['image_path']).'" data-caption="'.htmlspecialchars($bet['titre']?:'Bet StratEdge',ENT_QUOTES).'"':'' ?>>
+           <?= ($hasAcces && $imgSrc)?'data-src="'.clean($imgSrc).'" data-caption="'.htmlspecialchars($bet['titre']?:'Bet StratEdge',ENT_QUOTES).'"':'' ?>>
         <?php if ($imgSrc): ?>
-        <img src="<?= $imgSrc ?>" alt="Bet" class="bet-img <?= !$hasAcces?'blur':'' ?>">
+        <img src="<?= clean($imgSrc) ?>" alt="Bet" class="bet-img <?= !$hasAcces?'blur':'' ?>" onerror="this.onerror=null;this.style.display='none';var w=this.closest('.bet-img-wrap');var p=w&&w.querySelector('.bet-no-img');if(p)p.style.display='flex';">
+        <div class="bet-no-img <?= !$hasAcces?'blur':'' ?>" style="display:none" aria-hidden="true">📊</div>
         <?php if ($hasAcces): ?><div class="zoom-tip">🔍 Cliquer pour agrandir</div><?php endif; ?>
         <?php else: ?><div class="bet-no-img <?= !$hasAcces?'blur':'' ?>">📊</div><?php endif; ?>
         <?php if (!$hasAcces): ?>
@@ -219,6 +272,9 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
       </div>
     </div>
     <?php endforeach; ?>
+    </div>
+  </section>
+  <?php endforeach; ?>
   </div>
   <?php endif; ?>
 </div>

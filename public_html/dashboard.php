@@ -60,6 +60,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? 
         $p = __DIR__.'/uploads/avatars/'.basename($membre['photo_profil']); if (file_exists($p)) unlink($p);
         $db->prepare("UPDATE membres SET photo_profil = NULL WHERE id = ?")->execute([$membre['id']]); $membre['photo_profil'] = null; $success = 'Photo supprimée.'; $activeTab = 'profil';
     }
+    if ($action === 'update_accepte_emails') {
+        $val = isset($_POST['accepte_emails']) ? 1 : 0;
+        try {
+            $db->prepare("UPDATE membres SET accepte_emails = ? WHERE id = ?")->execute([$val, $membre['id']]);
+            $membre['accepte_emails'] = $val;
+            $success = $val ? 'Notifications par email activées.' : 'Notifications par email désactivées.';
+        } catch (Exception $e) {
+            $errors['accepte_emails'] = 'Option non disponible (migration base requise).';
+        }
+        $activeTab = 'profil';
+    }
 }
 
 $stmtNl = $db->prepare("SELECT COUNT(*) FROM messages WHERE membre_id = ? AND expediteur = 'admin' AND lu = 0");
@@ -290,6 +301,16 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
   <div class="fg"><label>Confirmer</label><input type="password" name="confirm_mdp" placeholder="••••••••" required id="confirmPwd"></div></div></div>
   <div id="pwdMatch" style="font-size:0.82rem;margin-top:0.3rem;display:none;"></div>
   <button type="submit" class="btn-sv">Changer le mot de passe</button></form></div>
+
+  <div class="crd"><div class="crd-h"><span class="ico">📧</span><span class="tl">Préférences email</span></div>
+  <p style="color:var(--txt3);font-size:0.9rem;margin-bottom:1rem;">Recevoir les notifications par email (nouveaux bets, résultats, messages). Conformité RGPD — vous pouvez vous désinscrire à tout moment.</p>
+  <?php if(!empty($errors['accepte_emails'])):?><div class="alert alert-err">⚠️ <?=htmlspecialchars($errors['accepte_emails'])?></div><?php endif;?>
+  <form method="POST"><input type="hidden" name="csrf_token" value="<?=csrfToken()?>"><input type="hidden" name="action" value="update_accepte_emails">
+  <label style="display:flex;align-items:center;gap:0.6rem;cursor:pointer;">
+    <input type="checkbox" name="accepte_emails" value="1" <?= !empty($membre['accepte_emails']) ? 'checked' : '' ?>>
+    <span>Recevoir les notifications par email</span>
+  </label>
+  <button type="submit" class="btn-sv" style="margin-top:0.75rem;">Enregistrer</button></form></div>
 
   <div class="crd"><div class="crd-h"><span class="ico">⚡</span><span class="tl">Mon abonnement</span></div>
   <?php if($abo):?>

@@ -161,7 +161,7 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
       <span>📊</span> Tableau de bord
     </a>
 
-    <?php $bettingOpen = in_array($pageActive, ['poster-bet','creer-card','edit-bet-image','historique','vault']); ?>
+    <?php $bettingOpen = in_array($pageActive, ['poster-bet','creer-card','edit-bet-image','historique']); ?>
     <div class="nav-group <?= $bettingOpen ? 'open' : '' ?>" data-group="betting">
       <button type="button" class="nav-group-toggle" onclick="toggleNavGroup(this)">
         <span>📌</span> Betting
@@ -175,9 +175,6 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
           <span>📂</span> Historique
           <?php if ($nbBetsHistorique > 0): ?><span class="badge-count"><?= $nbBetsHistorique ?></span><?php endif; ?>
         </a>
-        <?php if (isSuperAdmin()): ?>
-        <a href="vault.php" <?= ($pageActive==='vault') ?'class="active"':'' ?> style="color:rgba(245,200,66,0.85);"><span>🔐</span> Coffre-Fort</a>
-        <?php endif; ?>
       </div>
     </div>
 
@@ -196,6 +193,12 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
     <a href="idees.php" <?= ($pageActive==='idees') ?'class="active"':'' ?>>
       <span>💡</span> Idées & Bugs
     </a>
+
+    <?php if (isSuperAdmin()): ?>
+    <a href="vault.php" <?= ($pageActive==='vault') ?'class="active"':'' ?> style="color:rgba(245,200,66,0.9);">
+      <span>🔐</span> Coffre-Fort
+    </a>
+    <?php endif; ?>
 
     <?php $msgOpen = in_array($pageActive, ['messagerie-interne','messages']); ?>
     <div class="nav-group <?= $msgOpen ? 'open' : '' ?>" data-group="messagerie">

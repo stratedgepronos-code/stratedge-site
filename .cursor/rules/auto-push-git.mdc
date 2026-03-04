@@ -1,0 +1,25 @@
+---
+description: Push Git automatique après chaque modification (StratEdge)
+alwaysApply: true
+---
+
+# Push Git automatique — StratEdge
+
+À la **fin de chaque réponse** où tu as modifié des fichiers dans ce projet :
+
+1. **Vérifier** que le workspace est un dépôt Git.
+2. **Si oui** : exécuter dans l'ordre :
+   - `git add .` (ou `git add -A`)
+   - `git status` pour voir les changements
+   - Si des fichiers sont modifiés/ajoutés : `git commit -m "Auto-commit: [résumé court des changements ou date/heure]"`
+   - `git push`
+
+3. **Comportement** :
+   - Faire le push **à la fin** de la réponse, après les modifications.
+   - Message de commit : court et descriptif en français.
+   - Ne pas demander à l'utilisateur s'il veut pousser : le faire systématiquement quand il y a des changements.
+
+**Exemple PowerShell (Windows)** :
+```powershell
+cd "g:\Récup\StratEdge"; git add -A; git status; git commit -m "Auto-commit: description"; git push
+```

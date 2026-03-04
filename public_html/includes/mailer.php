@@ -2,38 +2,63 @@
 // ============================================================
 // STRATEDGE — Envoi d'emails
 // ============================================================
+//
+// Pour éviter les indésirables (spam), en plus des headers ci‑dessous :
+// 1. SPF  : DNS TXT sur stratedgepronos.fr avec "v=spf1 include:..." pour autoriser ton hébergeur (ex: Hostinger, OVH).
+// 2. DKIM : Activer la signature DKIM dans le panel email (cPanel / Hostinger > Email > Authentication).
+// 3. DMARC: DNS TXT _dmarc.stratedgepronos.fr (ex: "v=DMARC1; p=none; rua=mailto:...") pour renforcer la confiance.
+// 4. Optionnel : utiliser un relais SMTP (Brevo, SendGrid, Mailgun) avec domaine vérifié = meilleure délivrabilité.
+//
+// ============================================================
+
+if (!defined('SECRET_KEY')) {
+    require_once __DIR__ . '/db.php';
+}
+
+/** Lien de désinscription (RGPD/LCEN) — un clic = désinscription */
+function getUnsubscribeUrl(string $email): string {
+    $e = base64_encode($email);
+    $h = hash_hmac('sha256', $email, SECRET_KEY);
+    return SITE_URL . '/desabonnement-emails.php?e=' . urlencode($e) . '&h=' . urlencode($h);
+}
 
 function envoyerEmail(string $to, string $sujet, string $htmlBody): bool {
     $from    = 'noreply@stratedgepronos.fr';
     $fromNom = 'StratEdge Pronos';
 
-    // ── Headers anti-spam (SPF/DKIM/DMARC alignement) ──────
     $messageId = '<' . time() . '.' . bin2hex(random_bytes(8)) . '@stratedgepronos.fr>';
-    $date      = date('r'); // RFC 2822
+    $date      = date('r');
+
+    $unsubUrl  = getUnsubscribeUrl($to);
 
     $headers  = "MIME-Version: 1.0\r\n";
     $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
     $headers .= "Content-Transfer-Encoding: quoted-printable\r\n";
     $headers .= "From: =?UTF-8?B?" . base64_encode($fromNom) . "?= <{$from}>\r\n";
-    // Reply-To sur le meme domaine = alignement DMARC
     $headers .= "Reply-To: support@stratedgepronos.fr\r\n";
     $headers .= "Return-Path: <noreply@stratedgepronos.fr>\r\n";
     $headers .= "Message-ID: {$messageId}\r\n";
     $headers .= "Date: {$date}\r\n";
-    // Lien de desabonnement (requis Gmail/Yahoo 2024)
-    $headers .= "List-Unsubscribe: <mailto:support@stratedgepronos.fr?subject=Desabonnement>\r\n";
+    // Lien désabonnement (obligatoire RGPD/LCEN — Gmail one-click)
+    $headers .= "List-Unsubscribe: <{$unsubUrl}>\r\n";
     $headers .= "List-Unsubscribe-Post: List-Unsubscribe=One-Click\r\n";
     $headers .= "X-Priority: 3\r\n";
-    $headers .= "Precedence: bulk\r\n";
+    // Ne pas mettre Precedence: bulk (favorise le classement en spam). Transactionnel = pas de Precedence ou "auto".
+    $headers .= "Auto-Submitted: auto-generated\r\n";
 
-    // Encoder le body en quoted-printable pour eviter les filtres spam
     $body = quoted_printable_encode($htmlBody);
 
     return mail($to, '=?UTF-8?B?' . base64_encode($sujet) . '?=', $body, $headers, '-f noreply@stratedgepronos.fr');
 }
 
 // ── Template HTML de base ─────────────────────────────────
-function emailTemplate(string $titre, string $contenu): string {
+// $emailForUnsubscribe : si fourni, affiche le lien de désinscription (RGPD/LCEN)
+function emailTemplate(string $titre, string $contenu, ?string $emailForUnsubscribe = null): string {
+    $footerDesabonnement = '';
+    if ($emailForUnsubscribe !== null && $emailForUnsubscribe !== '') {
+        $urlDesabo = getUnsubscribeUrl($emailForUnsubscribe);
+        $footerDesabonnement = '<div style="margin-top:12px;"><a href="' . htmlspecialchars($urlDesabo) . '" style="color:#8a9bb0;font-size:0.75rem;text-decoration:underline;">Se désabonner des notifications par email</a></div>';
+    }
     return '<!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -72,6 +97,7 @@ function emailTemplate(string $titre, string $contenu): string {
             <div style="margin-top:10px;">
               <a href="https://stratedgepronos.fr" style="color:#ff2d78;font-size:0.8rem;text-decoration:none;">stratedgepronos.fr</a>
             </div>
+            ' . $footerDesabonnement . '
           </div>
         </td>
       </tr>
@@ -137,7 +163,7 @@ function emailBienvenue(string $email, string $nom, string $password = ''): bool
             </table>
         </div>';
 
-    return envoyerEmail($email, '⚡ Bienvenue sur StratEdge Pronos — Vos identifiants', emailTemplate('Bienvenue sur StratEdge', $contenu));
+    return envoyerEmail($email, '⚡ Bienvenue sur StratEdge Pronos — Vos identifiants', emailTemplate('Bienvenue sur StratEdge', $contenu, $email));
 }
 
 // ── Email 2 : Confirmation d'abonnement ───────────────────
@@ -222,7 +248,7 @@ function emailConfirmationAbonnement(string $email, string $nom, string $type): 
             </p>
         </div>';
 
-    return envoyerEmail($email, '✅ Abonnement ' . strip_tags($info['label']) . ' activé — StratEdge Pronos', emailTemplate('Confirmation abonnement', $contenu));
+    return envoyerEmail($email, '✅ Abonnement ' . strip_tags($info['label']) . ' activé — StratEdge Pronos', emailTemplate('Confirmation abonnement', $contenu, $email));
 }
 
 // ── Email 3 : Nouveau bet disponible ─────────────────────
@@ -259,7 +285,7 @@ function emailNouveauBet(string $email, string $nom, string $typeBet, string $ti
             <a href="https://stratedgepronos.fr/bets.php" style="color:#ff2d78;">stratedgepronos.fr/bets.php</a>
         </p>';
 
-    return envoyerEmail($email, '🔥 Nouveau bet disponible — ' . strip_tags($typeLabel) . ' | StratEdge', emailTemplate('Nouveau bet', $contenu));
+    return envoyerEmail($email, '🔥 Nouveau bet disponible — ' . strip_tags($typeLabel) . ' | StratEdge', emailTemplate('Nouveau bet', $contenu, $email));
 }
 
 // ── Email 4 : Abonnement expiré ───────────────────────────
@@ -304,7 +330,7 @@ function emailAbonnementExpire(string $email, string $nom, string $type): bool {
             </p>
         </div>';
 
-    return envoyerEmail($email, '⏰ Votre abonnement ' . $typeLabel . ' est terminé — StratEdge Pronos', emailTemplate('Abonnement expiré', $contenu));
+    return envoyerEmail($email, '⏰ Votre abonnement ' . $typeLabel . ' est terminé — StratEdge Pronos', emailTemplate('Abonnement expiré', $contenu, $email));
 }
 
 // ── Email 5 : Résultat d'un bet ───────────────────────────
@@ -334,7 +360,7 @@ function emailResultatBet(string $email, string $nom, string $titre, string $res
             </a>
         </div>';
 
-    return envoyerEmail($email, $icon . ' Résultat : ' . $label . ' — StratEdge Pronos', emailTemplate('Résultat du bet', $contenu));
+    return envoyerEmail($email, $icon . ' Résultat : ' . $label . ' — StratEdge Pronos', emailTemplate('Résultat du bet', $contenu, $email));
 }
 
 // ── Email 6 : Réponse ticket SAV ──────────────────────────
@@ -360,7 +386,7 @@ function emailReponseTicket(string $email, string $nom, string $sujet, string $r
             </a>
         </div>';
 
-    return envoyerEmail($email, '🎫 Réponse à ton ticket — StratEdge Pronos', emailTemplate('Réponse ticket SAV', $contenu));
+    return envoyerEmail($email, '🎫 Réponse à ton ticket — StratEdge Pronos', emailTemplate('Réponse ticket SAV', $contenu, $email));
 }
 
 // ── Email 7 : Nouveau message chat ────────────────────────
@@ -381,7 +407,7 @@ function emailNouveauMessageChat(string $email, string $nom, string $contenuMsg)
             </a>
         </div>';
 
-    return envoyerEmail($email, '💬 Nouveau message — StratEdge Pronos', emailTemplate('Nouveau message', $contenu));
+    return envoyerEmail($email, '💬 Nouveau message — StratEdge Pronos', emailTemplate('Nouveau message', $contenu, $email));
 }
 
 
@@ -414,7 +440,7 @@ function emailResetPassword(string $email, string $nom, string $token): bool {
             Lien direct : <a href="' . htmlspecialchars($lien) . '" style="color:#ff2d78;word-break:break-all;">' . htmlspecialchars($lien) . '</a>
         </p>';
 
-    return envoyerEmail($email, '🔑 Modifier ton mot de passe — StratEdge Pronos', emailTemplate('Mot de passe', $contenu));
+    return envoyerEmail($email, '🔑 Modifier ton mot de passe — StratEdge Pronos', emailTemplate('Mot de passe', $contenu, $email));
 }
 
 // ── Email 9 : Confirmation changement email ──────────────────
@@ -450,5 +476,5 @@ function emailChangementEmail(string $ancienEmail, string $nom, string $nouvelEm
             </a>
         </div>';
 
-    return envoyerEmail($ancienEmail, '📧 Ton adresse email a été modifiée — StratEdge Pronos', emailTemplate('Changement email', $contenu));
+    return envoyerEmail($ancienEmail, '📧 Ton adresse email a été modifiée — StratEdge Pronos', emailTemplate('Changement email', $contenu, $ancienEmail));
 }

@@ -8,6 +8,8 @@ require_once __DIR__ . '/includes/auth.php';
 
 if (isLoggedIn()) { return; }
 
+require_once __DIR__ . '/includes/visiteurs-log.php';
+
 $gate_error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['gate_submit'])) {
     $csrf = $_POST['gate_csrf'] ?? '';
@@ -32,6 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['gate_submit'])) {
     }
 }
 
+log_visite();
 stratedge_render_gate($gate_error, csrfToken());
 exit;
 

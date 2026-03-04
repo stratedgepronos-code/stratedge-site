@@ -4,26 +4,18 @@ requireAdmin();
 $pageActive = 'index';
 $db = getDB();
 
-// Stats visiteurs (fichier JSONL)
+// Stats visiteurs (table visites en BDD — ne se remet plus à zéro au déploiement)
 $visiteursAujourdhui = $visiteursSemaine = $visiteursMois = $visiteursAll = 0;
-$logPath = __DIR__ . '/../visiteurs/data/visites.jsonl';
-if (is_file($logPath)) {
-    $lines = array_filter(array_map('trim', file($logPath)));
-    $visites = [];
-    foreach ($lines as $line) {
-        $v = @json_decode($line, true);
-        if (is_array($v) && isset($v['t'])) $visites[] = $v;
-    }
+try {
     $todayStart = strtotime('today');
     $weekStart = strtotime('-7 days');
     $monthStart = strtotime('-30 days');
-    foreach ($visites as $v) {
-        $t = (int)$v['t'];
-        $visiteursAll++;
-        if ($t >= $monthStart) $visiteursMois++;
-        if ($t >= $weekStart) $visiteursSemaine++;
-        if ($t >= $todayStart) $visiteursAujourdhui++;
-    }
+    $visiteursAll = (int)$db->query("SELECT COUNT(*) FROM visites")->fetchColumn();
+    $visiteursMois = (int)$db->query("SELECT COUNT(*) FROM visites WHERE t >= $monthStart")->fetchColumn();
+    $visiteursSemaine = (int)$db->query("SELECT COUNT(*) FROM visites WHERE t >= $weekStart")->fetchColumn();
+    $visiteursAujourdhui = (int)$db->query("SELECT COUNT(*) FROM visites WHERE t >= $todayStart")->fetchColumn();
+} catch (Throwable $e) {
+    // Table visites peut ne pas exister
 }
 
 $nbMembres    = $db->query("SELECT COUNT(*) FROM membres WHERE email != 'stratedgepronos@gmail.com'")->fetchColumn();

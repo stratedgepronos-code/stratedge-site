@@ -16,7 +16,7 @@ if (!isset($nbNonLus)) {
     <a href="/historique.php">Historique</a>
     <a href="/bets.php">📊 Les Bets</a>
     <a href="/#pricing" class="nav-btn">Souscrire</a>
-    <?php if (isAdmin()): ?><a href="/admin/index.php" class="nav-admin">⚙️ Panel</a><?php endif; ?>
+    <?php if (isAdmin()): ?><a href="/panel-x9k3m/index.php" class="nav-admin">⚙️ Panel</a><?php endif; ?>
     <a href="/logout.php" style="color:var(--txt3);">Déconnexion</a>
   </div>
   <button class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></button>
@@ -28,7 +28,7 @@ if (!isset($nbNonLus)) {
   <a href="/bets.php">🔥 Les Bets</a>
   <a href="/#pricing">💳 Souscrire</a>
   <a href="/sav.php">🎫 SAV</a>
-  <?php if (isAdmin()): ?><a href="/admin/index.php">⚙️ Panel</a><?php endif; ?>
+  <?php if (isAdmin()): ?><a href="/panel-x9k3m/index.php">⚙️ Panel</a><?php endif; ?>
   <a href="/logout.php">🚪 Déconnexion</a>
 </div>
 <div class="mob-tabs">
