@@ -270,7 +270,8 @@ $tauxReussite = ($stats['total'] > 0 && ($stats['gagnes'] + $stats['perdus']) > 
         $types = explode(',', $bet['type']);
         $rawPath = !empty($bet['image_path']) ? $bet['image_path'] : ($bet['locked_image_path'] ?? '');
         if (!empty($rawPath)) {
-          $imgSrc = (strpos($rawPath, 'http') === 0) ? $rawPath : (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($rawPath,'/') : $rawPath);
+          $rawPath = str_replace('\\', '/', trim($rawPath));
+          $imgSrc = (strpos($rawPath, 'http') === 0) ? $rawPath : (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($rawPath,'/') : '/'.ltrim($rawPath,'/'));
         } else {
           $imgSrc = '';
         }
@@ -293,9 +294,9 @@ $tauxReussite = ($stats['total'] > 0 && ($stats['gagnes'] + $stats['perdus']) > 
 
         <?php if ($imgSrc): ?>
           <div class="bet-image-wrap"
-               data-src="<?= $imgSrc ?>"
+               data-src="<?= htmlspecialchars($imgSrc, ENT_QUOTES, 'UTF-8') ?>"
                data-caption="<?= htmlspecialchars($bet['titre'] ?: 'Bet StratEdge', ENT_QUOTES) ?>">
-            <img src="<?= $imgSrc ?>" class="bet-image" alt="Bet">
+            <img src="<?= htmlspecialchars($imgSrc, ENT_QUOTES, 'UTF-8') ?>" class="bet-image" alt="Bet">
             <!-- Overlay résultat semi-transparent sur l'image -->
             <div class="result-overlay" style="background:<?= $rc['overlay'] ?>;backdrop-filter:blur(1px);">
               <div class="result-icon" style="color:<?= $rc['color'] ?>;"><?= $rc['icon'] ?></div>
