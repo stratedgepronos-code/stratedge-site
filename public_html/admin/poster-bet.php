@@ -35,11 +35,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $categories  = $_POST['categorie']  ?? [];
             $images      = $_FILES['images'] ?? [];
             $expireDaily = isset($_POST['expire_daily']);
-            $nbFichiers  = count($images['name'] ?? []);
+
+            // Normaliser $_FILES : en single file, PHP peut renvoyer name/tmp_name en string
+            if (!empty($images['name']) && !is_array($images['name'])) {
+                $images = [
+                    'name'     => [$images['name']],
+                    'type'     => [$images['type'] ?? ''],
+                    'tmp_name' => [$images['tmp_name'] ?? ''],
+                    'error'    => [$images['error'] ?? UPLOAD_ERR_NO_FILE],
+                    'size'     => [$images['size'] ?? 0],
+                ];
+            }
+            $lockedImages = $_FILES['locked_images'] ?? [];
+            if (!empty($lockedImages['name']) && !is_array($lockedImages['name'])) {
+                $lockedImages = [
+                    'name'     => [$lockedImages['name']],
+                    'type'     => [$lockedImages['type'] ?? ''],
+                    'tmp_name' => [$lockedImages['tmp_name'] ?? ''],
+                    'error'    => [$lockedImages['error'] ?? UPLOAD_ERR_NO_FILE],
+                    'size'     => [$lockedImages['size'] ?? 0],
+                ];
+            }
+
+            $nbFichiers = count($images['name'] ?? []);
 
             if ($nbFichiers === 0) {
                 $error = 'Veuillez sélectionner au moins une image.';
             } else {
+                try {
                 $uploadDir  = __DIR__ . '/../uploads/bets/';
                 $lockedDir  = __DIR__ . '/../uploads/locked/';
                 if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
@@ -50,7 +73,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $lastImagePath   = '';
                 $lastLockedPath  = '';
                 $lastCategorie   = 'multi';
-                $lockedImages    = $_FILES['locked_images'] ?? [];
                 $twitterMsg      = '';
 
                 // DEBUG locked — à supprimer une fois confirmé résolu
@@ -83,8 +105,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         // ── Locked image : uploadée manuellement si fournie ──
                         $lastLockedPath = '';
-                        if (!empty($lockedImages['tmp_name'][$i]) && $lockedImages['error'][$i] === UPLOAD_ERR_OK) {
-                            $lext = strtolower(pathinfo($lockedImages['name'][$i], PATHINFO_EXTENSION));
+                        if (isset($lockedImages['tmp_name'][$i], $lockedImages['error'][$i]) && !empty($lockedImages['tmp_name'][$i]) && $lockedImages['error'][$i] === UPLOAD_ERR_OK) {
+                            $lext = strtolower(pathinfo($lockedImages['name'][$i] ?? '', PATHINFO_EXTENSION));
                             if (in_array($lext, ['jpg','jpeg','png','webp','gif'])) {
                                 $lname = 'locked_' . time() . '_' . $i . '_' . bin2hex(random_bytes(3)) . '.' . $lext;
                                 if (move_uploaded_file($lockedImages['tmp_name'][$i], $lockedDir . $lname)) {
@@ -120,14 +142,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     'value1' => $texte,
                                     'value2' => 'StratEdge Pronos',
                                     'value3' => $imageUrl,
-                                ]);
+                                ], JSON_UNESCAPED_UNICODE);
                             } else {
                                 $webhookUrl = $twitterConfig['webhook_url'];
                                 $payload = json_encode([
                                     'value1' => $texte,
                                     'value2' => 'StratEdge Pronos',
                                     'value3' => '',
-                                ]);
+                                ], JSON_UNESCAPED_UNICODE);
                             }
 
                             $ch = curl_init($webhookUrl);
@@ -219,11 +241,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
 
                         // Push ciblé par membre (comme broadcast.php qui fonctionne)
-                        try {
-                            envoyerPush((int)$ab['id'], $pushTitle, $pushBody, '/bets.php', 'nouveau-bet');
-                            $pushEnvoyes++;
-                        } catch (Exception $e) {
-                            $notifLog .= "  ⚠️ ECHEC push pour id=" . $ab['id'] . " : " . $e->getMessage() . "\n";
+                        if (!empty($ab['id'])) {
+                            try {
+                                envoyerPush((int)$ab['id'], $pushTitle, $pushBody, '/bets.php', 'nouveau-bet');
+                                $pushEnvoyes++;
+                            } catch (Throwable $e) {
+                                $notifLog .= "  ⚠️ ECHEC push pour id=" . $ab['id'] . " : " . $e->getMessage() . "\n";
+                            }
                         }
                     }
                     $notifLog .= "  → Emails: " . $emailsEnvoyes . " envoyés, " . $emailsEchecs . " échecs\n";
@@ -250,6 +274,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 } else {
                     $error = 'Aucun fichier valide uploadé.';
+                }
+                } catch (Throwable $e) {
+                    error_log('[poster-bet] post_bets: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+                    $error = 'Erreur lors de l\'envoi. Réessaie ou contacte le support. (détails dans les logs serveur)';
                 }
             }
         }
@@ -283,14 +311,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $abonnesResult = $stmtAbo->fetchAll(PDO::FETCH_ASSOC);
                     foreach ($abonnesResult as $ab) {
                         try {
-                            emailResultatBet($ab['email'], $ab['nom'], $titreResult, $resCode, $ab['type_abo']);
+                            emailResultatBet($ab['email'], $ab['nom'], $titreResult, $resCode, $ab['type_abo'] ?? '');
                         } catch (Throwable $e) {
                             error_log('[poster-bet] emailResultatBet: ' . $e->getMessage());
                         }
-                        try {
-                            pushResultatBet((int)$ab['id'], $ab['type_abo'], $titreResult, $resCode);
-                        } catch (Throwable $e) {
-                            error_log('[poster-bet] pushResultatBet: ' . $e->getMessage());
+                        if (!empty($ab['id'])) {
+                            try {
+                                pushResultatBet((int)$ab['id'], $ab['type_abo'] ?? '', $titreResult, $resCode);
+                            } catch (Throwable $e) {
+                                error_log('[poster-bet] pushResultatBet: ' . $e->getMessage());
+                            }
                         }
                     }
 
