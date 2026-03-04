@@ -83,3 +83,16 @@ Cela permet de recevoir des rapports sur l’usage de ton domaine et d’amélio
 2) DKIM activé dans le panel email du domaine.  
 3) DMARC en `p=none` sur `_dmarc.stratedgepronos.fr`.  
 4) Vérifier avec un envoi test et les en-têtes Gmail.
+
+---
+
+## 5. Conformité RGPD / LCEN (rapports d’abus, désinscription)
+
+Pour limiter les signalements « spam » et respecter la loi (France/UE) :
+
+- **Consentement à l’inscription** : case à cocher « J’accepte de recevoir les notifications par email » (optionnelle). Les nouveaux inscrits peuvent refuser.
+- **Lien de désinscription** : présent dans **chaque** email (pied de page) et dans les en-têtes (`List-Unsubscribe` + `List-Unsubscribe-Post` pour le one-click Gmail). Lien : **https://stratedgepronos.fr/desabonnement-emails.php** (avec token pour désabonnement en un clic).
+- **Préférences dans l’espace membre** : tableau de bord → Profil → « Préférences email » pour activer/désactiver les notifications sans cliquer dans un mail.
+- **Exclusion des désinscrits** : les membres avec `accepte_emails = 0` ne reçoivent plus les envois « notification » (nouveaux bets, résultats, abonnement expiré, etc.). Les emails strictement transactionnels (réponse SAV, reset mot de passe, changement d’email) restent autorisés.
+
+**Migration base** : exécuter une fois **admin/add_accepte_emails.sql** pour ajouter la colonne `accepte_emails` à la table `membres`.

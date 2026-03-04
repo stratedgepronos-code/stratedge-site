@@ -173,6 +173,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 OR a.type = 'rasstoss'
                             )
                             AND m.email != 'stratedgepronos@gmail.com'
+                            AND (m.accepte_emails IS NULL OR m.accepte_emails = 1)
                         ")->fetchAll();
                     } else {
                         $abonnesActifs = $db->query("
@@ -184,6 +185,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 OR a.type = 'rasstoss'
                             )
                             AND m.email != 'stratedgepronos@gmail.com'
+                            AND (m.accepte_emails IS NULL OR m.accepte_emails = 1)
                         ")->fetchAll();
                     }
 
@@ -231,6 +233,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             SELECT DISTINCT m.id, m.email, m.nom FROM membres m
                             JOIN abonnements a ON a.membre_id = m.id
                             WHERE a.type = 'daily' AND a.actif = 1
+                            AND (m.accepte_emails IS NULL OR m.accepte_emails = 1)
                         ")->fetchAll();
                         $db->exec("UPDATE abonnements SET actif = 0 WHERE type = 'daily' AND actif = 1");
                         foreach ($dailyMembres as $dm) {
@@ -269,6 +272,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     SELECT DISTINCT m.id, m.email, m.nom, a.type as type_abo
                     FROM membres m JOIN abonnements a ON a.membre_id = m.id
                     WHERE a.actif = 1 AND m.email != '" . ADMIN_EMAIL . "'
+                    AND (m.accepte_emails IS NULL OR m.accepte_emails = 1)
                 ")->fetchAll();
                 foreach ($abonnesResult as $ab) {
                     emailResultatBet($ab['email'], $ab['nom'], $titreResult, $resCode, $ab['type_abo']);

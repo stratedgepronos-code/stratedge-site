@@ -29,7 +29,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif ($password !== $confirm) {
             $error = 'Les mots de passe ne correspondent pas.';
         } else {
-            $result = registerMembre($nom, $email, $password);
+            $accepte_emails = isset($_POST['accepte_emails']) ? 1 : 0;
+            $result = registerMembre($nom, $email, $password, $accepte_emails);
             if ($result['success']) {
                 // Connexion automatique après inscription
                 loginMembre($email, $password);
@@ -139,6 +140,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="form-group">
           <label for="confirm">Confirmer le mot de passe</label>
           <input type="password" id="confirm" name="confirm" placeholder="Répétez votre mot de passe" required>
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-start;gap:0.6rem;">
+          <input type="checkbox" id="accepte_emails" name="accepte_emails" value="1" <?= !empty($_POST['accepte_emails']) ? 'checked' : '' ?> style="margin-top:0.35rem;width:auto;">
+          <label for="accepte_emails" style="margin:0;font-size:0.9rem;font-weight:400;color:var(--text-secondary);">J'accepte de recevoir les notifications par email (nouveaux bets, résultats). Vous pourrez vous désinscrire à tout moment.</label>
         </div>
 
         <button type="submit" class="btn-submit">Créer mon compte →</button>
