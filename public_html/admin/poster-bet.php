@@ -406,8 +406,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-$bets     = $db->query("SELECT * FROM bets ORDER BY date_post DESC")->fetchAll();
+$betsRaw  = $db->query("SELECT * FROM bets ORDER BY date_post DESC")->fetchAll();
 $nbDaily  = $db->query("SELECT COUNT(*) FROM abonnements WHERE type='daily' AND actif=1")->fetchColumn();
+
+// Grouper par semaine (lundi–dimanche) pour affichage par dossier/semaine
+$betsByWeek = [];
+foreach ($betsRaw as $b) {
+    $ts = strtotime($b['date_post']);
+    $lundi = strtotime('monday this week', $ts);
+    if ($lundi === false) $lundi = strtotime('last monday', $ts);
+    $cle = date('Y-m-d', $lundi);
+    if (!isset($betsByWeek[$cle])) $betsByWeek[$cle] = [];
+    $betsByWeek[$cle][] = $b;
+}
+// Trier les semaines de la plus récente à la plus ancienne
+krsort($betsByWeek, SORT_STRING);
 
 $resultatConfig = [
     'en_cours' => ['label'=>'⏳ En cours', 'color'=>'#8a9bb0', 'bg'=>'rgba(255,255,255,0.05)'],
@@ -494,7 +507,11 @@ $resultatConfig = [
     th{text-align:left;font-family:'Space Mono',monospace;font-size:0.62rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);padding:0.7rem;border-bottom:1px solid rgba(255,255,255,0.05);}
     td{padding:0.75rem 0.7rem;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--text-secondary);font-size:0.84rem;vertical-align:middle;}
     tr:last-child td{border-bottom:none;}
-    .bet-thumb{width:55px;height:38px;object-fit:cover;border-radius:6px;}
+    .bet-thumb{width:55px;height:38px;object-fit:cover;border-radius:6px;display:block;}
+    .bet-thumb-wrap{position:relative;width:55px;height:38px;flex-shrink:0;}
+    .bet-thumb-placeholder{display:inline-flex!important;align-items:center;justify-content:center;width:55px;height:38px;background:rgba(255,255,255,0.06);border-radius:6px;font-size:1.1rem;}
+    .week-header{background:rgba(255,45,120,0.08);border-left:3px solid var(--neon-green);font-family:'Orbitron',sans-serif;font-size:0.75rem;font-weight:700;color:var(--text-primary);padding:0.5rem 0.7rem;}
+    .week-header td{padding:0.5rem 0.7rem!important;border-bottom:1px solid rgba(255,45,120,0.15);}
     .btn-sm{padding:0.3rem 0.7rem;border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:0.82rem;font-weight:700;cursor:pointer;border:none;transition:all 0.2s;}
     .btn-danger{background:rgba(255,45,120,0.1);color:#ff6b9d;border:1px solid rgba(255,45,120,0.2);}
     .btn-toggle{background:rgba(255,255,255,0.06);color:var(--text-secondary);border:1px solid rgba(255,255,255,0.1);}
@@ -551,18 +568,30 @@ $resultatConfig = [
 
     <!-- LISTE BETS -->
     <div class="card">
-      <h3>Bets publiés (<?= count($bets) ?>)</h3>
-      <?php if (empty($bets)): ?>
+      <h3>Bets publiés (<?= count($betsRaw) ?>)</h3>
+      <?php if (empty($betsByWeek)): ?>
         <div class="no-bets">Aucun bet pour le moment.</div>
       <?php else: ?>
         <table>
           <thead><tr><th>Image</th><th>Titre</th><th>Type</th><th>Catégorie</th><th>Date</th><th>Résultat</th><th>Visible</th><th></th></tr></thead>
           <tbody>
-          <?php foreach ($bets as $b):
-            $rc = $resultatConfig[$b['resultat'] ?? 'en_cours'];
+          <?php foreach ($betsByWeek as $weekKey => $weekBets):
+            $lundiTs = strtotime($weekKey);
+            $dimancheTs = strtotime('+6 days', $lundiTs);
+            $weekLabel = 'Semaine du ' . date('d/m', $lundiTs) . ' → ' . date('d/m/Y', $dimancheTs);
+          ?>
+            <tr class="week-header"><td colspan="8">📁 <?= $weekLabel ?> (<?= count($weekBets) ?> bet<?= count($weekBets) > 1 ? 's' : '' ?>)</td></tr>
+          <?php foreach ($weekBets as $b):
+            $resKey = isset($b['resultat']) ? (is_string($b['resultat']) ? strtolower(trim($b['resultat'])) : 'en_cours') : 'en_cours';
+            if (!isset($resultatConfig[$resKey])) $resKey = 'en_cours';
+            $rc = $resultatConfig[$resKey];
+            // Image : priorité image_path (bets), sinon locked_image_path (locked) — chemins canoniques
+            $imgSrc = '';
+            if (!empty($b['image_path'])) $imgSrc = betImageUrl(trim($b['image_path']), 'bets');
+            if ($imgSrc === '' && !empty($b['locked_image_path'])) $imgSrc = betImageUrl(trim($b['locked_image_path']), 'locked');
           ?>
             <tr>
-              <td><?php if (!empty($b['image_path'])): ?><img src="<?= htmlspecialchars(betImageUrl($b['image_path'])) ?>" class="bet-thumb" alt=""><?php else: ?>📊<?php endif; ?></td>
+              <td><span class="bet-thumb-wrap"><?php if ($imgSrc !== ''): ?><img src="<?= htmlspecialchars($imgSrc) ?>" class="bet-thumb" alt="" onerror="this.onerror=null;this.style.display='none';var s=this.nextElementSibling;if(s)s.style.display='flex';"><span class="bet-thumb-placeholder" style="display:none;">📊</span><?php else: ?><span class="bet-thumb-placeholder">📊</span><?php endif; ?></span></td>
               <td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?= clean($b['titre'] ?: '—') ?></td>
               <td style="font-size:0.8rem;"><?= clean($b['type']) ?></td>
               <td>
@@ -574,12 +603,13 @@ $resultatConfig = [
               </td>
               <td style="font-size:0.78rem;white-space:nowrap;"><?= date('d/m H:i', strtotime($b['date_post'])) ?></td>
 
-              <!-- RÉSULTAT (modifiable même après validation) -->
+              <!-- RÉSULTAT : toujours modifiable (même pour les anciens bets) -->
               <td>
-                <?php $currentResult = $b['resultat'] ?? 'en_cours'; ?>
+                <?php $currentResult = $resKey; ?>
                 <?php if ($currentResult !== 'en_cours'): ?>
                   <span style="background:<?= $rc['bg'] ?>;color:<?= $rc['color'] ?>;padding:0.25rem 0.5rem;border-radius:6px;font-size:0.78rem;font-weight:700;margin-right:0.35rem;"><?= $rc['label'] ?></span>
                 <?php endif; ?>
+                <span style="font-size:0.7rem;color:var(--text-muted);margin-right:0.25rem;">Modifier :</span>
                 <div style="display:inline-flex;gap:0.25rem;flex-wrap:wrap;align-items:center;">
                   <form method="POST" style="display:inline;" onsubmit="return confirm('<?= $currentResult === 'gagne' ? 'Déjà gagné. Changer quand même ?' : 'Marquer comme GAGNÉ ?' ?>')">
                     <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
@@ -622,6 +652,7 @@ $resultatConfig = [
                 </form>
               </td>
             </tr>
+          <?php endforeach; ?>
           <?php endforeach; ?>
           </tbody>
         </table>
