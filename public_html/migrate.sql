@@ -22,6 +22,11 @@ SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_S
 SET @sql = IF(@col_exists = 0, 'ALTER TABLE membres ADD COLUMN photo_profil VARCHAR(255) DEFAULT NULL', 'SELECT 1');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
+-- date_naissance
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'membres' AND COLUMN_NAME = 'date_naissance');
+SET @sql = IF(@col_exists = 0, 'ALTER TABLE membres ADD COLUMN date_naissance DATE DEFAULT NULL', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
 
 -- ── 2. Table BETS : colonnes manquantes ─────────────────────
 
@@ -82,9 +87,50 @@ CREATE TABLE IF NOT EXISTS `push_subscriptions` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
--- ── 6. Vérification ─────────────────────────────────────────
+-- ── 6. Tables CODES PROMO + anniversaire ─────────────────────
+CREATE TABLE IF NOT EXISTS `codes_promo` (
+  `id`                INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `code`              VARCHAR(50) NOT NULL,
+  `type`              ENUM('percent','fixed') NOT NULL DEFAULT 'percent',
+  `value`             DECIMAL(10,2) NOT NULL,
+  `offres`            VARCHAR(200) NOT NULL DEFAULT '',
+  `max_utilisations`  INT(11) UNSIGNED NOT NULL DEFAULT 0,
+  `utilisations`      INT(11) UNSIGNED NOT NULL DEFAULT 0,
+  `date_expir`        DATE DEFAULT NULL,
+  `actif`             TINYINT(1) NOT NULL DEFAULT 1,
+  `date_creation`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `code` (`code`),
+  KEY `idx_actif` (`actif`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `code_promo_utilisations` (
+  `id`            INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `code_promo_id` INT(11) UNSIGNED NOT NULL,
+  `membre_id`     INT(11) UNSIGNED NOT NULL,
+  `offre`         VARCHAR(30) NOT NULL,
+  `montant_avant` DECIMAL(10,2) NOT NULL,
+  `montant_apres` DECIMAL(10,2) NOT NULL,
+  `date_utilisation` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_code` (`code_promo_id`),
+  KEY `idx_membre` (`membre_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `promo_anniversaire_use` (
+  `id`         INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `membre_id`  INT(11) UNSIGNED NOT NULL,
+  `annee`      SMALLINT UNSIGNED NOT NULL,
+  `offre`      VARCHAR(30) NOT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `membre_annee` (`membre_id`,`annee`),
+  KEY `idx_membre` (`membre_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- ── 7. Vérification ─────────────────────────────────────────
 -- Après exécution, vérifier avec :
 -- DESCRIBE bets;
 -- DESCRIBE membres;
--- DESCRIBE abonnements;
--- SELECT * FROM push_subscriptions LIMIT 1;
+-- DESCRIBE codes_promo;

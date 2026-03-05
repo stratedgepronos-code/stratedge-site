@@ -109,7 +109,8 @@ function loginMembre(string $email, string $password): array {
 
 // ── Inscription d'un membre ────────────────────────────────
 // $accepte_emails : 1 = accepte les notifications par email (RGPD/LCEN), 0 = non
-function registerMembre(string $nom, string $email, string $password, int $accepte_emails = 1): array {
+// $date_naissance : date au format Y-m-d ou null
+function registerMembre(string $nom, string $email, string $password, int $accepte_emails = 1, ?string $date_naissance = null): array {
     $db = getDB();
 
     // Vérifier si l'email existe déjà
@@ -120,13 +121,27 @@ function registerMembre(string $nom, string $email, string $password, int $accep
     }
 
     $hash = password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]);
+    $dateNaissance = null;
+    if ($date_naissance !== null && $date_naissance !== '') {
+        $t = strtotime($date_naissance);
+        if ($t !== false) $dateNaissance = date('Y-m-d', $t);
+    }
     try {
-        $stmt = $db->prepare("INSERT INTO membres (nom, email, password, accepte_emails) VALUES (?, ?, ?, ?)");
-        $stmt->execute([$nom, $email, $hash, $accepte_emails]);
+        $stmt = $db->prepare("INSERT INTO membres (nom, email, password, accepte_emails, date_naissance) VALUES (?, ?, ?, ?, ?)");
+        $stmt->execute([$nom, $email, $hash, $accepte_emails, $dateNaissance]);
     } catch (PDOException $e) {
-        if (strpos($e->getMessage(), 'accepte_emails') !== false) {
-            $stmt = $db->prepare("INSERT INTO membres (nom, email, password) VALUES (?, ?, ?)");
-            $stmt->execute([$nom, $email, $hash]);
+        if (strpos($e->getMessage(), 'date_naissance') !== false || strpos($e->getMessage(), 'accepte_emails') !== false) {
+            try {
+                $stmt = $db->prepare("INSERT INTO membres (nom, email, password, accepte_emails) VALUES (?, ?, ?, ?)");
+                $stmt->execute([$nom, $email, $hash, $accepte_emails]);
+            } catch (PDOException $e2) {
+                if (strpos($e2->getMessage(), 'accepte_emails') !== false) {
+                    $stmt = $db->prepare("INSERT INTO membres (nom, email, password) VALUES (?, ?, ?)");
+                    $stmt->execute([$nom, $email, $hash]);
+                } else {
+                    throw $e2;
+                }
+            }
         } else {
             throw $e;
         }

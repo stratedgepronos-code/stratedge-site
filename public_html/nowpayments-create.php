@@ -7,6 +7,7 @@
 
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/nowpayments-config.php';
+require_once __DIR__ . '/includes/promo.php';
 
 // ── Sécurité : uniquement POST + connecté ──────────────────
 header('Content-Type: application/json');
@@ -30,8 +31,8 @@ $coin  = trim($_POST['crypto']  ?? '');
 $type  = trim($_POST['offre']   ?? '');
 
 $validCoins  = array_keys(NP_CRYPTO_MAP);
-$validTypes  = ['daily', 'weekend', 'weekly', 'tennis'];
-$montants    = ['daily' => 4.50, 'weekend' => 10.00, 'weekly' => 20.00, 'tennis' => 15.00];
+$validTypes  = ['daily', 'weekend', 'weekly', 'tennis', 'vip_max'];
+$montants    = ['daily' => 4.50, 'weekend' => 10.00, 'weekly' => 20.00, 'tennis' => 15.00, 'vip_max' => 50.00];
 
 if (!in_array($coin, $validCoins) || !in_array($type, $validTypes)) {
     http_response_code(400);
@@ -39,7 +40,23 @@ if (!in_array($coin, $validCoins) || !in_array($type, $validTypes)) {
     exit;
 }
 
-$montant_eur   = $montants[$type];
+$prix_base    = $montants[$type];
+$code_saisi   = trim($_POST['code_promo'] ?? '');
+$promo        = calculerPrixAvecPromo($prix_base, $type, (int)$membre['id'], $code_saisi);
+$montant_eur  = $promo['montant'];
+
+if ($montant_eur <= 0) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Montant invalide après réduction.']);
+    exit;
+}
+
+// Consommer le code promo ou l'anniversaire dès la génération de l'adresse (1 utilisation)
+if ($promo['code_promo_id']) {
+    useCodePromo($promo['code_promo_id'], (int)$membre['id'], $type, $prix_base, $montant_eur);
+} elseif ($promo['anniversaire']) {
+    useAnniversairePromo((int)$membre['id'], $type);
+}
 $np_currency   = NP_CRYPTO_MAP[$coin];
 
 // ── order_id unique : permet de retrouver membre + offre dans l'IPN ──
@@ -126,14 +143,19 @@ try {
 }
 
 // ── Retourner les infos au client ──────────────────────────
-echo json_encode([
+$out = [
     'payment_id'   => $data['payment_id'],
     'pay_address'  => $data['pay_address'],
-    'pay_amount'   => $data['pay_amount'],    // montant exact en crypto
+    'pay_amount'   => $data['pay_amount'],
     'pay_currency' => strtoupper($coin),
     'expires_at'   => time() + NP_PAYMENT_TTL,
     'network'      => getNetworkLabel($coin),
-]);
+];
+if ($promo['label']) {
+    $out['promo_label'] = $promo['label'];
+    $out['montant_eur'] = $montant_eur;
+}
+echo json_encode($out);
 
 // ── Helper : libellé réseau ────────────────────────────────
 function getNetworkLabel(string $coin): string {

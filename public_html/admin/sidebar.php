@@ -194,6 +194,10 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
       <span>💡</span> Idées & Bugs
     </a>
 
+    <a href="code-promo.php" <?= ($pageActive==='code-promo') ?'class="active"':'' ?>>
+      <span>🎟️</span> Code promo
+    </a>
+
     <?php if (isSuperAdmin()): ?>
     <a href="vault.php" <?= ($pageActive==='vault') ?'class="active"':'' ?> style="color:rgba(245,200,66,0.9);">
       <span>🔐</span> Coffre-Fort

@@ -19,6 +19,7 @@ CREATE TABLE IF NOT EXISTS `membres` (
   `role`             VARCHAR(20) DEFAULT NULL,
   `photo_profil`     VARCHAR(255) DEFAULT NULL,
   `accepte_emails`   TINYINT(1) NOT NULL DEFAULT 1,
+  `date_naissance`   DATE DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `idx_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
@@ -121,6 +122,49 @@ CREATE TABLE IF NOT EXISTS `admin_inbox` (
   PRIMARY KEY (`id`),
   KEY `idx_ref` (`ref_id`),
   KEY `idx_lu` (`lu`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── CODES PROMO (admin) ───────────────────────────────────
+CREATE TABLE IF NOT EXISTS `codes_promo` (
+  `id`                INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `code`              VARCHAR(50) NOT NULL,
+  `type`              ENUM('percent','fixed') NOT NULL DEFAULT 'percent',
+  `value`             DECIMAL(10,2) NOT NULL COMMENT 'pourcent (0-100) ou montant €',
+  `offres`            VARCHAR(200) NOT NULL DEFAULT '' COMMENT 'daily,weekly,weekend,tennis,vip_max',
+  `max_utilisations`  INT(11) UNSIGNED NOT NULL DEFAULT 0 COMMENT '0=illimité',
+  `utilisations`      INT(11) UNSIGNED NOT NULL DEFAULT 0,
+  `date_expir`        DATE DEFAULT NULL,
+  `actif`             TINYINT(1) NOT NULL DEFAULT 1,
+  `date_creation`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `code` (`code`),
+  KEY `idx_actif` (`actif`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── Utilisation des codes promo (qui a utilisé quel code) ───
+CREATE TABLE IF NOT EXISTS `code_promo_utilisations` (
+  `id`            INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `code_promo_id` INT(11) UNSIGNED NOT NULL,
+  `membre_id`     INT(11) UNSIGNED NOT NULL,
+  `offre`         VARCHAR(30) NOT NULL,
+  `montant_avant` DECIMAL(10,2) NOT NULL,
+  `montant_apres` DECIMAL(10,2) NOT NULL,
+  `date_utilisation` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_code` (`code_promo_id`),
+  KEY `idx_membre` (`membre_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── Anniversaire : 1 utilisation par membre par an ─────────
+CREATE TABLE IF NOT EXISTS `promo_anniversaire_use` (
+  `id`         INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `membre_id`  INT(11) UNSIGNED NOT NULL,
+  `annee`      SMALLINT UNSIGNED NOT NULL,
+  `offre`      VARCHAR(30) NOT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `membre_annee` (`membre_id`,`annee`),
+  KEY `idx_membre` (`membre_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- ── COMPTE ADMIN PAR DÉFAUT ───────────────────────────────

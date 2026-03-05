@@ -17,9 +17,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $email    = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
         $confirm  = $_POST['confirm'] ?? '';
+        $date_naissance = trim($_POST['date_naissance'] ?? '');
 
         if (empty($nom) || empty($email) || empty($password)) {
             $error = 'Veuillez remplir tous les champs.';
+        } elseif ($date_naissance !== '' && (($t = strtotime($date_naissance)) === false || $t > time())) {
+            $error = 'Date de naissance invalide.';
         } elseif (strlen($nom) < 2 || strlen($nom) > 80) {
             $error = 'Le nom doit faire entre 2 et 80 caractères.';
         } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
@@ -30,7 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Les mots de passe ne correspondent pas.';
         } else {
             $accepte_emails = isset($_POST['accepte_emails']) ? 1 : 0;
-            $result = registerMembre($nom, $email, $password, $accepte_emails);
+            $result = registerMembre($nom, $email, $password, $accepte_emails, $date_naissance !== '' ? $date_naissance : null);
             if ($result['success']) {
                 // Connexion automatique après inscription
                 loginMembre($email, $password);
@@ -131,6 +134,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <label for="email">Adresse email</label>
           <input type="email" id="email" name="email" placeholder="votre@email.com" required
                  value="<?= clean($_POST['email'] ?? '') ?>">
+        </div>
+        <div class="form-group">
+          <label for="date_naissance">Date de naissance</label>
+          <input type="date" id="date_naissance" name="date_naissance" placeholder="JJ/MM/AAAA"
+                 value="<?= clean($_POST['date_naissance'] ?? '') ?>">
+          <p class="hint">Optionnel</p>
         </div>
         <div class="form-group">
           <label for="password">Mot de passe</label>

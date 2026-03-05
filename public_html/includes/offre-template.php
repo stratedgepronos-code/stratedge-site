@@ -4,6 +4,7 @@
 // ============================================================
 
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/promo.php';
 requireLogin();
 
 $offres = [
@@ -358,6 +359,11 @@ $membre = getMembre();
     .btn-generate:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 8px 30px rgba(247,147,26,0.4); }
     .btn-generate:disabled { opacity:0.6; cursor:not-allowed; }
     .np-generate-hint { text-align:center; font-size:0.75rem; color:var(--txt3); margin-top:0.5rem; }
+.np-promo-anniv {
+      background:rgba(255,193,7,0.08); border:1px solid rgba(255,193,7,0.25);
+      border-radius:10px; padding:0.65rem 1rem; margin-bottom:1rem;
+      font-size:0.85rem; color:#e6d44c;
+    }
 
     .np-address-block { background:rgba(0,0,0,0.3); border-radius:14px; padding:1.4rem; margin-bottom:1rem; }
     .np-step-label { font-size:0.8rem; color:var(--txt3); margin-bottom:0.7rem; text-transform:uppercase; letter-spacing:1px; }
@@ -722,6 +728,20 @@ $membre = getMembre();
 
         <!-- Étape 1 : Choix de la crypto -->
         <div id="np-step1">
+          <?php
+          $anniv_eligible = isAnniversaireEligible((int)$membre['id']);
+          $anniv_pct = $anniv_eligible ? getAnniversairePercent($type) : 0;
+          ?>
+          <?php if ($anniv_eligible && $anniv_pct > 0): ?>
+          <div class="np-promo-anniv">
+            🎂 Réduction anniversaire : <strong>-<?= $anniv_pct ?>%</strong> sur cette formule (utilisable une fois cette année)
+          </div>
+          <?php endif; ?>
+          <div class="form-group np-code-wrap" style="margin-bottom:1rem;">
+            <label for="code_promo" style="display:block;font-size:0.8rem;color:var(--txt3);margin-bottom:0.4rem;">Code promo (optionnel)</label>
+            <input type="text" id="code_promo" name="code_promo" placeholder="Ex. BIENVENUE" maxlength="50" autocomplete="off"
+                   style="width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:8px;padding:0.6rem 0.9rem;color:var(--txt);font-size:0.9rem;">
+          </div>
           <div class="crypto-tabs" id="cryptoTabs">
             <button class="crypto-tab active" data-coin="btc"  onclick="selectCoin('btc',this)">₿ BTC</button>
             <button class="crypto-tab"        data-coin="eth"  onclick="selectCoin('eth',this)">Ξ ETH</button>
@@ -857,7 +877,7 @@ async function genererAdresse() {
     const resp = await fetch('nowpayments-create.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `crypto=${selectedCoin}&offre=<?= $type ?>`,
+      body: `crypto=${selectedCoin}&offre=<?= $type ?>&code_promo=${encodeURIComponent((document.getElementById('code_promo')&&document.getElementById('code_promo').value)||'')}`,
     });
 
     const data = await resp.json();
