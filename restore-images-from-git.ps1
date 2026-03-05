@@ -1,8 +1,9 @@
 # Restaure les images uploads/ depuis l'historique Git (commit avant la suppression)
-# Usage: exécuter depuis la racine du repo (Site StratEdge)
-# Les fichiers sont remis sur le disque mais pas committés (uploads/ reste dans .gitignore).
+# Usage : depuis PowerShell, aller dans le dossier du repo puis : .\restore-images-from-git.ps1
+# Ou double-cliquer sur restore-images-from-git.cmd
 
 $ErrorActionPreference = "Stop"
+Set-Location $PSScriptRoot
 $commit = "7bdd4de"  # commit qui contenait encore public_html/uploads/
 
 Write-Host "Restauration de public_html/uploads/ depuis le commit $commit..."
