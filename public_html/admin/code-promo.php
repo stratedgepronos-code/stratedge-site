@@ -183,10 +183,10 @@ $showMigrationBlock = ($error && strpos($error, 'Table codes_promo absente') !==
       display: flex; align-items: center; justify-content: center;
       border-radius: 10px; border: 1px solid transparent;
       font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; font-weight: 600;
-      color: var(--text-secondary); cursor: pointer;
+      color: var(--text-muted); cursor: pointer;
       position: relative; transition: all 0.2s;
     }
-    .cal-day.other-month { color: rgba(138,155,176,0.3); pointer-events: none; }
+    .cal-day.other-month { color: rgba(138,155,176,0.25); pointer-events: none; }
     .cal-day:hover:not(.other-month):not(.selected) {
       background: rgba(255,45,120,0.06); border-color: rgba(255,45,120,0.15); color: var(--text-primary);
     }
