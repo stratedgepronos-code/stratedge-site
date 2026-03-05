@@ -254,16 +254,20 @@ function clean(string $str): string {
     return htmlspecialchars(trim($str), ENT_QUOTES, 'UTF-8');
 }
 
-// ── Normaliser image_path : garantir le préfixe uploads/... ──
+// ── URL image bet : toujours passer par restore-image.php pour servir depuis disque ou BDD ──
 function betImageUrl(string $path, string $subdir = 'bets'): string {
     $path = str_replace('\\', '/', trim($path));
     if ($path === '') return '';
     if (strpos($path, 'http') === 0) return $path;
-    if (strpos(ltrim($path, '/'), 'uploads/') !== 0) {
-        $path = 'uploads/' . $subdir . '/' . ltrim($path, '/');
+    $path = ltrim($path, '/');
+    if (strpos($path, 'uploads/') !== 0) {
+        $path = 'uploads/' . $subdir . '/' . $path;
     }
+    $file = basename($path);
+    if (!in_array($subdir, ['bets', 'locked'], true)) $subdir = 'bets';
     $base = defined('SITE_URL') ? rtrim(SITE_URL, '/') : '';
-    return $base ? ($base . '/' . ltrim($path, '/')) : ('/' . ltrim($path, '/'));
+    $script = $base ? ($base . '/restore-image.php') : '/restore-image.php';
+    return $script . '?dir=' . rawurlencode($subdir) . '&file=' . rawurlencode($file);
 }
 
 // ── Générer un token CSRF ─────────────────────────────────

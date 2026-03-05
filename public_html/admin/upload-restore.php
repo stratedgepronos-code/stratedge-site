@@ -89,17 +89,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['backup_to_db'])) {
     $msgType = 'success';
 }
 
+// ── ACTION : Restaurer tous les fichiers depuis la BDD vers le disque ──
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['restore_disk'])) {
+    $restored = 0;
+    try {
+        $bets = $db->query("SELECT id, image_path, locked_image_path, image_data, locked_image_data FROM bets")->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {
+        $bets = [];
+        error_log('[upload-restore] restore_disk SELECT: ' . $e->getMessage());
+    }
+    foreach ($bets as $b) {
+        if (!empty($b['image_path']) && !empty($b['image_data'])) {
+            $fp = __DIR__ . '/../' . ltrim($b['image_path'], '/');
+            $dir = dirname($fp);
+            if (!is_dir($dir)) @mkdir($dir, 0755, true);
+            if (@file_put_contents($fp, $b['image_data']) !== false) $restored++;
+        }
+        if (!empty($b['locked_image_path']) && !empty($b['locked_image_data'])) {
+            $fp = __DIR__ . '/../' . ltrim($b['locked_image_path'], '/');
+            $dir = dirname($fp);
+            if (!is_dir($dir)) @mkdir($dir, 0755, true);
+            if (@file_put_contents($fp, $b['locked_image_data']) !== false) $restored++;
+        }
+    }
+    $msg = "$restored fichier(s) restauré(s) sur le disque depuis la BDD.";
+    $msgType = 'success';
+}
+
 // ── ÉTAT : images en BDD vs sur disque ──
-$betsAll = $db->query("SELECT id, titre, image_path, locked_image_path, 
-    (image_data IS NOT NULL AND LENGTH(image_data)>0) as has_blob, 
-    (locked_image_data IS NOT NULL AND LENGTH(locked_image_data)>0) as has_locked_blob 
-    FROM bets ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
+try {
+    $betsAll = $db->query("SELECT id, titre, image_path, locked_image_path, 
+        (image_data IS NOT NULL AND LENGTH(image_data)>0) as has_blob, 
+        (locked_image_data IS NOT NULL AND LENGTH(locked_image_data)>0) as has_locked_blob 
+        FROM bets ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    $betsAll = $db->query("SELECT id, titre, image_path, locked_image_path FROM bets ORDER BY id DESC")->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($betsAll as &$b) { $b['has_blob'] = 0; $b['has_locked_blob'] = 0; }
+    unset($b);
+}
 
 $stats = ['total' => 0, 'disk_ok' => 0, 'disk_miss' => 0, 'db_ok' => 0, 'db_miss' => 0];
 foreach ($betsAll as $b) {
     if (!empty($b['image_path'])) {
         $stats['total']++;
-        $fp = __DIR__ . '/../' . ltrim($b['image_path'], '/');
+        $fp = $betsDir . basename(str_replace('\\', '/', $b['image_path']));
         file_exists($fp) ? $stats['disk_ok']++ : $stats['disk_miss']++;
         $b['has_blob'] ? $stats['db_ok']++ : $stats['db_miss']++;
     }
@@ -147,6 +180,10 @@ th{color:#8b949e;font-weight:600}
 <a href="poster-bet.php" class="btn-back">&larr; Retour</a>
 <h1>Restauration des images</h1>
 
+<div class="card" style="border-color:#d29922;background:rgba(210,153,34,0.08);margin-bottom:20px;">
+<strong>⚠️ Si les images disparaissent après un déploiement</strong> : 1) Exécuter <code>migrate.sql</code> dans phpMyAdmin (colonnes <code>image_data</code>, <code>locked_image_data</code>). 2) Ici : soit ré-uploader les images puis « Sauvegarder tout en BDD », soit cliquer « Restaurer tout BDD → disque » si la BDD contient déjà les images. Les URLs du site passent par <code>restore-image.php</code> pour servir depuis la BDD si le fichier manque.
+</div>
+
 <?php if ($msg): ?><div class="msg <?= $msgType ?>"><?= htmlspecialchars($msg) ?></div><?php endif; ?>
 
 <div class="card">
@@ -189,14 +226,31 @@ th{color:#8b949e;font-weight:600}
 </div>
 
 <div class="card">
+<h2>3. Restaurer le disque depuis la BDD (après un déploiement)</h2>
+<p style="color:#8b949e;margin-bottom:12px;font-size:.85rem">
+    Si les images ont disparu du serveur après un git pull, cliquez ici : les fichiers seront recréés à partir des sauvegardes en base.
+</p>
+<form method="post">
+    <input type="hidden" name="restore_disk" value="1">
+    <button type="submit" class="btn btn-blue">Restaurer tout BDD → disque</button>
+</form>
+</div>
+
+<div class="card">
 <h2>Détail par bet</h2>
 <table>
 <tr><th>ID</th><th>Titre</th><th>Disque</th><th>BDD</th><th>Locked disque</th><th>Locked BDD</th></tr>
 <?php foreach ($betsAll as $b):
-    $imgPath    = !empty($b['image_path']) ? (__DIR__ . '/../' . ltrim($b['image_path'], '/')) : '';
-    $lockPath   = !empty($b['locked_image_path']) ? (__DIR__ . '/../' . ltrim($b['locked_image_path'], '/')) : '';
-    $diskOk     = $imgPath && file_exists($imgPath);
-    $diskLockOk = $lockPath && file_exists($lockPath);
+    $imgPath    = '';
+    $lockPath   = '';
+    if (!empty($b['image_path'])) {
+        $imgPath = $betsDir . basename(str_replace('\\', '/', $b['image_path']));
+    }
+    if (!empty($b['locked_image_path'])) {
+        $lockPath = $lockedDir . basename(str_replace('\\', '/', $b['locked_image_path']));
+    }
+    $diskOk     = $imgPath !== '' && file_exists($imgPath);
+    $diskLockOk = $lockPath !== '' && file_exists($lockPath);
 ?>
 <tr>
     <td><?= $b['id'] ?></td>

@@ -144,7 +144,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if ($twitterActif) {
                             $texte    = twitterPhrase($lastType, $lastTitre);
                             $imageChoisie = $lastLockedPath ?: $lastImagePath;
-                            $imageUrl = 'https://stratedgepronos.fr/' . $imageChoisie;
+                            $imageDir = (strpos($imageChoisie, 'locked') !== false) ? 'locked' : 'bets';
+                            $imageUrl = 'https://stratedgepronos.fr/restore-image.php?dir=' . $imageDir . '&file=' . rawurlencode(basename($imageChoisie));
 
                             // LOG DEBUG
                             $logLine = date('Y-m-d H:i:s')
@@ -363,7 +364,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $imgPath = 'uploads/bets/' . ltrim($imgPath, '/');
                             }
                             $imageUrl = $imgPath !== ''
-                                ? 'https://stratedgepronos.fr/' . ltrim($imgPath, '/')
+                                ? 'https://stratedgepronos.fr/restore-image.php?dir=bets&file=' . rawurlencode(basename($imgPath))
                                 : 'https://stratedgepronos.fr/assets/images/logo_site_transparent.png';
                             $webhookUrl = ($imgPath !== '' && !empty($twitterConfig['webhook_url_image']))
                                 ? $twitterConfig['webhook_url_image']
@@ -519,8 +520,12 @@ $resultatConfig = [
     .bet-thumb{width:55px;height:38px;object-fit:cover;border-radius:6px;display:block;}
     .bet-thumb-wrap{position:relative;width:55px;height:38px;flex-shrink:0;}
     .bet-thumb-placeholder{align-items:center;justify-content:center;width:55px;height:38px;background:rgba(255,255,255,0.06);border-radius:6px;font-size:1.1rem;}
-    .week-header{background:rgba(255,45,120,0.08);border-left:3px solid var(--neon-green);font-family:'Orbitron',sans-serif;font-size:0.75rem;font-weight:700;color:var(--text-primary);padding:0.5rem 0.7rem;}
+    .week-block.collapsed .week-body-row{display:none;}
+    .week-header{background:rgba(255,45,120,0.08);border-left:3px solid var(--neon-green);font-family:'Orbitron',sans-serif;font-size:0.75rem;font-weight:700;color:var(--text-primary);padding:0.5rem 0.7rem;cursor:pointer;user-select:none;}
+    .week-header:hover{background:rgba(255,45,120,0.12);}
     .week-header td{padding:0.5rem 0.7rem!important;border-bottom:1px solid rgba(255,45,120,0.15);}
+    .week-header .week-toggle{display:inline-block;transition:transform .2s;margin-right:6px;}
+    .week-block:not(.collapsed) .week-toggle{transform:rotate(90deg);}
     .btn-sm{padding:0.3rem 0.7rem;border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:0.82rem;font-weight:700;cursor:pointer;border:none;transition:all 0.2s;}
     .btn-danger{background:rgba(255,45,120,0.1);color:#ff6b9d;border:1px solid rgba(255,45,120,0.2);}
     .btn-toggle{background:rgba(255,255,255,0.06);color:var(--text-secondary);border:1px solid rgba(255,255,255,0.1);}
@@ -583,13 +588,15 @@ $resultatConfig = [
       <?php else: ?>
         <table>
           <thead><tr><th>Image</th><th>Titre</th><th>Type</th><th>Catégorie</th><th>Date</th><th>Résultat</th><th>Visible</th><th></th></tr></thead>
-          <tbody>
           <?php foreach ($betsByWeek as $weekKey => $weekBets):
             $lundiTs = strtotime($weekKey);
             $dimancheTs = strtotime('+6 days', $lundiTs);
             $weekLabel = 'Semaine du ' . date('d/m', $lundiTs) . ' → ' . date('d/m/Y', $dimancheTs);
           ?>
-            <tr class="week-header"><td colspan="8">📁 <?= $weekLabel ?> (<?= count($weekBets) ?> bet<?= count($weekBets) > 1 ? 's' : '' ?>)</td></tr>
+          <tbody class="week-block collapsed" data-week="<?= htmlspecialchars($weekKey) ?>">
+            <tr class="week-header" role="button" tabindex="0" aria-expanded="false" title="Cliquer pour déplier/replier">
+              <td colspan="8"><span class="week-toggle">▶</span> <?= $weekLabel ?> (<?= count($weekBets) ?> bet<?= count($weekBets) > 1 ? 's' : '' ?>)</td>
+            </tr>
           <?php foreach ($weekBets as $b):
             $resKey = isset($b['resultat']) ? (is_string($b['resultat']) ? strtolower(trim($b['resultat'])) : 'en_cours') : 'en_cours';
             if (!isset($resultatConfig[$resKey])) $resKey = 'en_cours';
@@ -599,7 +606,7 @@ $resultatConfig = [
             if (!empty($b['image_path'])) $imgSrc = betImageUrl(trim($b['image_path']), 'bets');
             if ($imgSrc === '' && !empty($b['locked_image_path'])) $imgSrc = betImageUrl(trim($b['locked_image_path']), 'locked');
           ?>
-            <tr>
+            <tr class="week-body-row">
               <td><?php if ($imgSrc !== ''): ?><img src="<?= htmlspecialchars($imgSrc) ?>" class="bet-thumb" alt="" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="bet-thumb-placeholder" style="display:none;">📊</span><?php else: ?><span class="bet-thumb-placeholder" style="display:inline-flex;">📊</span><?php endif; ?></td>
               <td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?= clean($b['titre'] ?: '—') ?></td>
               <td style="font-size:0.8rem;"><?= clean($b['type']) ?></td>
@@ -662,8 +669,8 @@ $resultatConfig = [
               </td>
             </tr>
           <?php endforeach; ?>
-          <?php endforeach; ?>
           </tbody>
+          <?php endforeach; ?>
         </table>
       <?php endif; ?>
     </div>
@@ -790,6 +797,23 @@ document.getElementById('betForm').addEventListener('submit', function() {
     if (type) type.name = 'type[' + seq + ']';
     const cat = item.querySelector('select[name^="categorie"]');
     if (cat) cat.name = 'categorie[' + seq + ']';
+  });
+});
+
+// Replier / déplier les dossiers par semaine
+document.querySelectorAll('.week-header').forEach(function(h) {
+  h.addEventListener('click', function() {
+    var tbody = this.closest('tbody.week-block');
+    if (tbody) {
+      tbody.classList.toggle('collapsed');
+      this.setAttribute('aria-expanded', tbody.classList.contains('collapsed') ? 'false' : 'true');
+    }
+  });
+  h.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      this.click();
+    }
   });
 });
 </script>

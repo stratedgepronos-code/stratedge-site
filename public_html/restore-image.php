@@ -31,33 +31,23 @@ if (file_exists($fullPath)) {
     exit;
 }
 
-$db = getDB();
 $imageData = null;
-
-if ($dir === 'bets') {
-    $stmt = $db->prepare("SELECT image_data FROM bets WHERE image_path = ? AND image_data IS NOT NULL LIMIT 1");
-    $stmt->execute([$relativePath]);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    if ($row && $row['image_data']) $imageData = $row['image_data'];
-
-    if (!$imageData) {
-        $stmt = $db->prepare("SELECT image_data FROM bets WHERE image_path LIKE ? AND image_data IS NOT NULL LIMIT 1");
-        $stmt->execute(['%' . $file]);
+try {
+    $db = getDB();
+    $fileLike = '%' . $file;
+    if ($dir === 'bets') {
+        $stmt = $db->prepare("SELECT image_data FROM bets WHERE (image_path = ? OR image_path LIKE ? OR image_path LIKE ?) AND image_data IS NOT NULL AND LENGTH(image_data) > 0 LIMIT 1");
+        $stmt->execute([$relativePath, '%/' . $file, $fileLike]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($row && $row['image_data']) $imageData = $row['image_data'];
-    }
-} elseif ($dir === 'locked') {
-    $stmt = $db->prepare("SELECT locked_image_data FROM bets WHERE locked_image_path = ? AND locked_image_data IS NOT NULL LIMIT 1");
-    $stmt->execute([$relativePath]);
-    $row = $stmt->fetch(PDO::FETCH_ASSOC);
-    if ($row && $row['locked_image_data']) $imageData = $row['locked_image_data'];
-
-    if (!$imageData) {
-        $stmt = $db->prepare("SELECT locked_image_data FROM bets WHERE locked_image_path LIKE ? AND locked_image_data IS NOT NULL LIMIT 1");
-        $stmt->execute(['%' . $file]);
+        if ($row && !empty($row['image_data'])) $imageData = $row['image_data'];
+    } elseif ($dir === 'locked') {
+        $stmt = $db->prepare("SELECT locked_image_data FROM bets WHERE (locked_image_path = ? OR locked_image_path LIKE ? OR locked_image_path LIKE ?) AND locked_image_data IS NOT NULL AND LENGTH(locked_image_data) > 0 LIMIT 1");
+        $stmt->execute([$relativePath, '%/' . $file, $fileLike]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if ($row && $row['locked_image_data']) $imageData = $row['locked_image_data'];
+        if ($row && !empty($row['locked_image_data'])) $imageData = $row['locked_image_data'];
     }
+} catch (Throwable $e) {
+    error_log('[restore-image] ' . $e->getMessage());
 }
 
 if ($imageData) {
