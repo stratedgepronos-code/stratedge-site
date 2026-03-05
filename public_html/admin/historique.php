@@ -55,9 +55,11 @@ function calcStats(array $bets): array {
 $statsMulti  = calcStats(array_values($betsMulti));
 $statsTennis = calcStats(array_values($betsTennis));
 
-// Onglet actif
+// Onglet actif — par défaut ouvrir le mois le plus récent
 $onglet = $_GET['onglet'] ?? 'multi';
-$moisOuvert = $_GET['mois'] ?? '';
+$moisActifsRaw = $onglet === 'tennis' ? $moisTennis : $moisMulti;
+$premierMois = !empty($moisActifsRaw) ? array_key_first($moisActifsRaw) : '';
+$moisOuvert = $_GET['mois'] ?? $premierMois;
 ?>
 <!DOCTYPE html>
 <html lang="fr">

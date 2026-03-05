@@ -32,6 +32,22 @@ $resultatConfig = [
 $tauxReussite = ($stats['total'] > 0 && ($stats['gagnes'] + $stats['perdus']) > 0)
     ? round($stats['gagnes'] / ($stats['gagnes'] + $stats['perdus']) * 100)
     : null;
+
+// Grouper par mois (année-mois) pour dossiers repliables
+$moisNoms = [
+    '01'=>'Janvier','02'=>'Février','03'=>'Mars','04'=>'Avril',
+    '05'=>'Mai','06'=>'Juin','07'=>'Juillet','08'=>'Août',
+    '09'=>'Septembre','10'=>'Octobre','11'=>'Novembre','12'=>'Décembre'
+];
+function groupParMois(array $bets): array {
+    $mois = [];
+    foreach ($bets as $b) {
+        $date = $b['date_resultat'] ?? $b['date_post'];
+        $cle  = date('Y-m', strtotime($date));
+        $mois[$cle][] = $b;
+    }
+    return $mois;
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -155,8 +171,17 @@ $tauxReussite = ($stats['total'] > 0 && ($stats['gagnes'] + $stats['perdus']) > 
       .result-icon{font-size:2.8rem;}
       .result-label{font-size:0.95rem;}
       .empty-state{padding:3rem 1.5rem;}
-      .empty-state .big{font-size:2.2rem;}
-      .empty-state h3{font-size:1rem;}
+    .empty-state .big{font-size:2.2rem;}
+    .empty-state h3{font-size:1rem;}
+    /* Dossiers par mois */
+    .mois-dossier{margin-bottom:1rem;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden;}
+    .mois-dossier-header{display:flex;align-items:center;gap:1rem;padding:1rem 1.25rem;cursor:pointer;transition:background 0.2s;user-select:none;}
+    .mois-dossier-header:hover{background:rgba(255,255,255,0.03);}
+    .mois-dossier-header.open{background:rgba(255,45,120,0.06);border-bottom:1px solid var(--border-subtle);}
+    .mois-dossier-arrow{color:var(--text-muted);font-size:1.1rem;transition:transform 0.2s;margin-left:auto;}
+    .mois-dossier-header.open .mois-dossier-arrow{transform:rotate(90deg);}
+    .mois-dossier-body{display:none;padding:1rem 1.25rem 1.25rem;}
+    .mois-dossier-body.open{display:block;}
       .lightbox-img{max-height:80dvh;border-radius:8px;}
     }
     @media(max-width:380px){
@@ -253,9 +278,11 @@ $tauxReussite = ($stats['total'] > 0 && ($stats['gagnes'] + $stats['perdus']) > 
     <a href="?filtre=annule" class="filter-btn f-annule <?= $filtre==='annule'?'active':'' ?>">↺ Annulés (<?= $stats['annules'] ?? 0 ?>)</a>
   </div>
 
-  <!-- GRILLE -->
+  <!-- GRILLE PAR MOIS -->
   <?php
   $betsFiltres = $filtre === 'tous' ? $bets : array_filter($bets, fn($b) => $b['resultat'] === $filtre);
+  $moisGroupes = groupParMois(array_values($betsFiltres));
+  $firstMois = !empty($moisGroupes) ? array_key_first($moisGroupes) : '';
   ?>
   <?php if (empty($betsFiltres)): ?>
     <div class="empty-state">
@@ -264,58 +291,75 @@ $tauxReussite = ($stats['total'] > 0 && ($stats['gagnes'] + $stats['perdus']) > 
       <p>Les bets terminés apparaîtront ici automatiquement.</p>
     </div>
   <?php else: ?>
-    <div class="bets-grid">
-      <?php foreach ($betsFiltres as $bet):
-        $rc  = $resultatConfig[$bet['resultat']];
-        $types = explode(',', $bet['type']);
-        $rawPath = !empty($bet['image_path']) ? $bet['image_path'] : ($bet['locked_image_path'] ?? '');
-        $imgSrc = !empty($rawPath) ? betImageUrl($rawPath) : '';
-      ?>
-      <div class="bet-card" style="border:1px solid <?= $rc['border'] ?>;">
-        <div class="bet-card-header">
-          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-            <?php foreach ($types as $t): $t = trim($t); ?>
-              <span class="bet-type-badge" style="background:<?= $typeColors[$t] ?? '#ff2d78' ?>22;color:<?= $typeColors[$t] ?? '#ff2d78' ?>;border:1px solid <?= $typeColors[$t] ?? '#ff2d78' ?>44;">
-                <?= $typeLabels[$t] ?? $t ?>
-              </span>
-            <?php endforeach; ?>
-          </div>
-          <span class="bet-date"><?= date('d/m/Y', strtotime($bet['date_post'])) ?></span>
+    <?php foreach ($moisGroupes as $cleMois => $betsDuMois):
+      [$annee, $numMois] = explode('-', $cleMois);
+      $nomMois = $moisNoms[$numMois] . ' ' . $annee;
+      $isOpen = ($cleMois === $firstMois);
+    ?>
+    <div class="mois-dossier">
+      <div class="mois-dossier-header <?= $isOpen ? 'open' : '' ?>" data-mois="<?= htmlspecialchars($cleMois) ?>" onclick="toggleMois(this)">
+        <span style="font-size:1.3rem;"><?= $isOpen ? '📂' : '📁' ?></span>
+        <div style="flex:1;">
+          <span style="font-family:'Orbitron',sans-serif;font-size:0.95rem;font-weight:700;"><?= $nomMois ?></span>
+          <span style="font-size:0.8rem;color:var(--text-muted);margin-left:0.5rem;"><?= count($betsDuMois) ?> bet<?= count($betsDuMois)>1 ? 's' : '' ?></span>
         </div>
-
-        <?php if ($bet['titre']): ?>
-          <div class="bet-titre"><?= clean($bet['titre']) ?></div>
-        <?php endif; ?>
-
-        <?php if ($imgSrc): ?>
-          <div class="bet-image-wrap"
-               data-src="<?= htmlspecialchars($imgSrc, ENT_QUOTES, 'UTF-8') ?>"
-               data-caption="<?= htmlspecialchars($bet['titre'] ?: 'Bet StratEdge', ENT_QUOTES) ?>">
-            <img src="<?= htmlspecialchars($imgSrc, ENT_QUOTES, 'UTF-8') ?>" class="bet-image" alt="Bet">
-            <!-- Overlay résultat semi-transparent sur l'image -->
-            <div class="result-overlay" style="background:<?= $rc['overlay'] ?>;backdrop-filter:blur(1px);">
-              <div class="result-icon" style="color:<?= $rc['color'] ?>;"><?= $rc['icon'] ?></div>
-              <div class="result-label" style="color:<?= $rc['color'] ?>;"><?= strtoupper(str_replace(['✅ ','❌ ','↺ '], '', $rc['label'])) ?></div>
+        <span class="mois-dossier-arrow">›</span>
+      </div>
+      <div class="mois-dossier-body <?= $isOpen ? 'open' : '' ?>">
+        <div class="bets-grid">
+          <?php foreach ($betsDuMois as $bet):
+            $rc  = $resultatConfig[$bet['resultat']];
+            $types = explode(',', $bet['type']);
+            $rawPath = !empty($bet['image_path']) ? $bet['image_path'] : ($bet['locked_image_path'] ?? '');
+            $imgSrc = !empty($rawPath) ? betImageUrl($rawPath) : '';
+          ?>
+          <div class="bet-card" style="border:1px solid <?= $rc['border'] ?>;">
+            <div class="bet-card-header">
+              <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+                <?php foreach ($types as $t): $t = trim($t); ?>
+                  <span class="bet-type-badge" style="background:<?= $typeColors[$t] ?? '#ff2d78' ?>22;color:<?= $typeColors[$t] ?? '#ff2d78' ?>;border:1px solid <?= $typeColors[$t] ?? '#ff2d78' ?>44;">
+                    <?= $typeLabels[$t] ?? $t ?>
+                  </span>
+                <?php endforeach; ?>
+              </div>
+              <span class="bet-date"><?= date('d/m/Y', strtotime($bet['date_post'])) ?></span>
             </div>
-            <div class="zoom-hint">🔍 Agrandir</div>
-          </div>
-        <?php else: ?>
-          <div style="width:100%;aspect-ratio:16/9;background:<?= $rc['bg'] ?>;display:flex;align-items:center;justify-content:center;font-size:4rem;">
-            <?= $rc['icon'] ?>
-          </div>
-        <?php endif; ?>
 
-        <div class="bet-footer">
-          <span class="result-badge" style="background:<?= $rc['bg'] ?>;color:<?= $rc['color'] ?>;border:1px solid <?= $rc['border'] ?>;">
-            <?= $rc['label'] ?>
-          </span>
-          <?php if ($bet['date_resultat']): ?>
-            <span class="result-date">le <?= date('d/m/Y', strtotime($bet['date_resultat'])) ?></span>
-          <?php endif; ?>
+            <?php if ($bet['titre']): ?>
+              <div class="bet-titre"><?= clean($bet['titre']) ?></div>
+            <?php endif; ?>
+
+            <?php if ($imgSrc): ?>
+              <div class="bet-image-wrap"
+                   data-src="<?= htmlspecialchars($imgSrc, ENT_QUOTES, 'UTF-8') ?>"
+                   data-caption="<?= htmlspecialchars($bet['titre'] ?: 'Bet StratEdge', ENT_QUOTES) ?>">
+                <img src="<?= htmlspecialchars($imgSrc, ENT_QUOTES, 'UTF-8') ?>" class="bet-image" alt="Bet">
+                <div class="result-overlay" style="background:<?= $rc['overlay'] ?>;backdrop-filter:blur(1px);">
+                  <div class="result-icon" style="color:<?= $rc['color'] ?>;"><?= $rc['icon'] ?></div>
+                  <div class="result-label" style="color:<?= $rc['color'] ?>;"><?= strtoupper(str_replace(['✅ ','❌ ','↺ '], '', $rc['label'])) ?></div>
+                </div>
+                <div class="zoom-hint">🔍 Agrandir</div>
+              </div>
+            <?php else: ?>
+              <div style="width:100%;aspect-ratio:16/9;background:<?= $rc['bg'] ?>;display:flex;align-items:center;justify-content:center;font-size:4rem;">
+                <?= $rc['icon'] ?>
+              </div>
+            <?php endif; ?>
+
+            <div class="bet-footer">
+              <span class="result-badge" style="background:<?= $rc['bg'] ?>;color:<?= $rc['color'] ?>;border:1px solid <?= $rc['border'] ?>;">
+                <?= $rc['label'] ?>
+              </span>
+              <?php if ($bet['date_resultat']): ?>
+                <span class="result-date">le <?= date('d/m/Y', strtotime($bet['date_resultat'])) ?></span>
+              <?php endif; ?>
+            </div>
+          </div>
+          <?php endforeach; ?>
         </div>
       </div>
-      <?php endforeach; ?>
     </div>
+    <?php endforeach; ?>
   <?php endif; ?>
 </div>
 
@@ -327,6 +371,18 @@ $tauxReussite = ($stats['total'] > 0 && ($stats['gagnes'] + $stats['perdus']) > 
 </div>
 
 <script>
+function toggleMois(header) {
+  var dossier = header.closest('.mois-dossier');
+  var body = dossier.querySelector('.mois-dossier-body');
+  var wasOpen = header.classList.contains('open');
+  document.querySelectorAll('.mois-dossier-header').forEach(function(h){ h.classList.remove('open'); h.querySelector('span:first-child').textContent = '📁'; });
+  document.querySelectorAll('.mois-dossier-body').forEach(function(b){ b.classList.remove('open'); });
+  if (!wasOpen) {
+    header.classList.add('open');
+    body.classList.add('open');
+    header.querySelector('span:first-child').textContent = '📂';
+  }
+}
 document.querySelectorAll('.bet-image-wrap[data-src]').forEach(el => {
   el.addEventListener('click', () => {
     document.getElementById('lightboxImg').src     = el.dataset.src;
