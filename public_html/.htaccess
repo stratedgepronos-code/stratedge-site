@@ -16,6 +16,10 @@ RewriteRule ^includes/ - [F,L]
 # Bloquer accès direct aux uploads PHP
 RewriteRule ^uploads/.*\.php$ - [F,L]
 
+# Auto-restauration images manquantes depuis la BDD
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^uploads/(bets|locked)/(.+\.(jpg|jpeg|png|webp|gif))$ /restore-image.php?dir=$1&file=$2 [L,QSA]
+
 # Page admin sécurisée (URL secrète)
 RewriteRule ^panel-x9k3m/?$ admin/index.php [L]
 RewriteRule ^panel-x9k3m/(.*)$ admin/$1 [L]

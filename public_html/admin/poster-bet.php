@@ -120,14 +120,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             }
                         }
 
+                        // Lire les binaires des images pour backup BDD
+                        $imageBlob  = @file_get_contents($uploadDir . $filename);
+                        $lockedBlob = ($lastLockedPath !== '' && isset($lname)) ? @file_get_contents($lockedDir . $lname) : null;
+
                         try {
-                            $stmt = $db->prepare("INSERT INTO bets (titre, image_path, locked_image_path, type, categorie, description) VALUES (?, ?, ?, ?, ?, ?)");
-                            $stmt->execute([$lastTitre, $lastImagePath, $lastLockedPath ?: null, $lastType, $lastCategorie, trim($descs[$i] ?? '')]);
+                            $stmt = $db->prepare("INSERT INTO bets (titre, image_path, image_data, locked_image_path, locked_image_data, type, categorie, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                            $stmt->execute([$lastTitre, $lastImagePath, $imageBlob ?: null, $lastLockedPath ?: null, $lockedBlob ?: null, $lastType, $lastCategorie, trim($descs[$i] ?? '')]);
                         } catch (Throwable $insErr) {
-                            // Fallback : colonnes categorie / locked_image_path / description absentes
-                            error_log('[poster-bet] INSERT fallback (colonne manquante?) : ' . $insErr->getMessage());
-                            $stmt = $db->prepare("INSERT INTO bets (titre, image_path, type) VALUES (?, ?, ?)");
-                            $stmt->execute([$lastTitre, $lastImagePath, $lastType]);
+                            error_log('[poster-bet] INSERT avec blob échoué, fallback sans blob : ' . $insErr->getMessage());
+                            try {
+                                $stmt = $db->prepare("INSERT INTO bets (titre, image_path, locked_image_path, type, categorie, description) VALUES (?, ?, ?, ?, ?, ?)");
+                                $stmt->execute([$lastTitre, $lastImagePath, $lastLockedPath ?: null, $lastType, $lastCategorie, trim($descs[$i] ?? '')]);
+                            } catch (Throwable $insErr2) {
+                                error_log('[poster-bet] INSERT fallback minimal : ' . $insErr2->getMessage());
+                                $stmt = $db->prepare("INSERT INTO bets (titre, image_path, type) VALUES (?, ?, ?)");
+                                $stmt->execute([$lastTitre, $lastImagePath, $lastType]);
+                            }
                         }
                         $nbPostes++;
 
