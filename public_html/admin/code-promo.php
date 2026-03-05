@@ -93,6 +93,8 @@ $showMigrationBlock = ($error && strpos($error, 'Table codes_promo absente') !==
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Codes promo — Admin StratEdge</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
   <style>
     :root { --bg-dark:#050810; --bg-card:#0d1220; --neon-green:#ff2d78; --neon-green-dim:#d6245f; --neon-blue:#00d4ff; --text-primary:#f0f4f8; --text-secondary:#b0bec9; --text-muted:#8a9bb0; --border-subtle:rgba(255,45,120,0.12); }
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
@@ -102,10 +104,13 @@ $showMigrationBlock = ($error && strpos($error, 'Table codes_promo absente') !==
     .card h1 { font-family:'Orbitron',sans-serif; font-size:1.4rem; font-weight:700; color:var(--text-primary); }
     .card h2 { font-family:'Orbitron',sans-serif; font-size:1rem; font-weight:600; color:var(--text-secondary); }
     .card input[type="text"], .card input[type="number"], .card input[type="date"], .card select {
-      background:rgba(255,255,255,0.06); border:1px solid var(--border-subtle); border-radius:8px;
+      background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:8px;
       padding:0.6rem 0.75rem; color:var(--text-primary); font-family:inherit; font-size:0.95rem;
     }
     .card input:focus, .card select:focus { outline:none; border-color:rgba(255,45,120,0.4); }
+    /* Menu déroulant : fond sombre + options lisibles (évite blanc sur blanc) */
+    .card select { color-scheme: dark; }
+    .card select option { background:#0d1220; color:#f0f4f8; }
     .card label { color:var(--text-secondary); }
     .card .btn-sm { background:var(--neon-green); color:#fff; border:none; padding:0.5rem 1.2rem; border-radius:8px; font-weight:700; cursor:pointer; font-family:inherit; font-size:0.9rem; }
     .card .btn-sm:hover { background:var(--neon-green-dim); }
@@ -113,6 +118,20 @@ $showMigrationBlock = ($error && strpos($error, 'Table codes_promo absente') !==
     .card table th { font-family:'Space Mono',monospace; font-size:0.7rem; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); }
     .card table td { color:var(--text-secondary); }
     .table-scroll { overflow-x:auto; }
+    /* Champ date : wrapper avec icône calendrier visible */
+    .date-picker-wrap { position:relative; width:100%; }
+    .date-picker-wrap input { width:100%; padding-right:2.5rem; }
+    .date-picker-wrap .cal-icon { position:absolute; right:0.75rem; top:50%; transform:translateY(-50%); pointer-events:none; font-size:1.15rem; opacity:0.9; color:var(--neon-green); }
+    .date-picker-wrap .cal-icon svg { width:20px; height:20px; fill:currentColor; }
+    /* Flatpickr thème StratEdge (accent rose) */
+    .flatpickr-calendar.flatpickr-dark { background:var(--bg-card); border:1px solid var(--border-subtle); box-shadow:0 10px 40px rgba(0,0,0,0.4); }
+    .flatpickr-dark .flatpickr-day.selected, .flatpickr-dark .flatpickr-day.selected:hover { background:var(--neon-green); border-color:var(--neon-green); }
+    .flatpickr-dark .flatpickr-day:hover { background:rgba(255,45,120,0.2); border-color:rgba(255,45,120,0.3); }
+    .flatpickr-dark .flatpickr-months .flatpickr-month { background:var(--bg-card); color:var(--text-primary); }
+    .flatpickr-dark .flatpickr-current-month { color:var(--text-primary); }
+    .flatpickr-dark .flatpickr-weekdays { color:var(--text-muted); }
+    .flatpickr-dark .flatpickr-day { color:var(--text-secondary); }
+    .flatpickr-dark .flatpickr-day.flatpickr-disabled { color:var(--text-muted); opacity:0.4; }
   </style>
 </head>
 <body>
@@ -200,7 +219,10 @@ CREATE TABLE IF NOT EXISTS `promo_anniversaire_use` (
           </div>
           <div>
             <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.3rem;">Date d’expiration (optionnel)</label>
-            <input type="date" name="date_expir" style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid var(--border-subtle);background:rgba(255,255,255,0.04);color:var(--text-primary);">
+            <div class="date-picker-wrap">
+              <input type="text" id="date_expir" name="date_expir" placeholder="jj/mm/aaaa" readonly style="width:100%;padding:0.6rem 2.5rem 0.6rem 0.75rem;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-card);color:var(--text-primary);cursor:pointer;">
+              <span class="cal-icon" aria-hidden="true"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg></span>
+            </div>
           </div>
         </div>
         <div style="margin-bottom:1rem;">
@@ -268,5 +290,22 @@ CREATE TABLE IF NOT EXISTS `promo_anniversaire_use` (
     <?php endif; ?>
   </div>
 </div>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var el = document.getElementById('date_expir');
+  if (el) {
+    flatpickr(el, {
+      locale: 'fr',
+      dateFormat: 'Y-m-d',
+      altInput: true,
+      altFormat: 'd/m/Y',
+      allowInput: false,
+      theme: 'dark'
+    });
+  }
+});
+</script>
 </body>
 </html>
