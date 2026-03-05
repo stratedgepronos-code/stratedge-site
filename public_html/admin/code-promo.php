@@ -121,51 +121,103 @@ $showMigrationBlock = ($error && strpos($error, 'Table codes_promo absente') !==
     .date-picker-wrap input { width:100%; padding-right:2.5rem; }
     .date-picker-wrap .cal-icon { position:absolute; right:0.75rem; top:50%; transform:translateY(-50%); pointer-events:none; font-size:1.15rem; opacity:0.9; color:var(--neon-green); }
     .date-picker-wrap .cal-icon svg { width:20px; height:20px; fill:currentColor; }
-    /* Calendrier custom — style sobre */
+    /* ═══ Calendrier StratEdge ═══ */
     .cal-popover {
-      position: absolute; z-index: 300; left: 0; top: 100%; margin-top: 6px;
-      width: 300px; padding: 0;
+      position: absolute; z-index: 300; left: 0; top: 100%; margin-top: 8px;
+      width: 320px;
       background: var(--bg-card);
       border: 1px solid var(--border-subtle);
-      border-radius: 10px;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-      font-family: 'Rajdhani', sans-serif;
+      border-radius: 14px;
+      box-shadow: 0 12px 36px rgba(0,0,0,0.45);
+      overflow: hidden;
       opacity: 0; visibility: hidden; transition: opacity 0.2s ease, visibility 0.2s;
     }
     .cal-popover.is-open { opacity: 1; visibility: visible; }
+
+    /* barre accent en haut comme les stat-cards */
+    .cal-popover::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--neon-green), var(--neon-green-dim), #a855f7);
+      opacity: 0.8;
+    }
+
     .cal-header {
-      display: flex; align-items: center; justify-content: space-between; padding: 12px 14px;
-      border-bottom: 1px solid var(--border-subtle);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 18px 12px; position: relative;
     }
-    .cal-title { font-family: 'Orbitron', sans-serif; font-size: 0.95rem; font-weight: 700; color: var(--text-primary); }
-    .cal-nav { display: flex; gap: 2px; }
+    .cal-title {
+      font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 700;
+      color: var(--text-primary); letter-spacing: 0.5px;
+    }
+    .cal-nav { display: flex; gap: 4px; }
     .cal-nav-btn {
-      width: 32px; height: 32px; border-radius: 6px; border: none;
-      background: transparent; color: var(--text-muted); cursor: pointer;
-      display: flex; align-items: center; justify-content: center; transition: color 0.2s, background 0.2s;
+      width: 30px; height: 30px; border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.03);
+      color: var(--text-muted); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
     }
-    .cal-nav-btn:hover { background: rgba(255,255,255,0.06); color: var(--text-primary); }
-    .cal-nav-btn svg { width: 16px; height: 16px; }
+    .cal-nav-btn:hover {
+      border-color: rgba(255,45,120,0.25); background: rgba(255,45,120,0.08); color: var(--neon-green);
+    }
+    .cal-nav-btn svg { width: 14px; height: 14px; }
+
     .cal-weekdays {
-      display: grid; grid-template-columns: repeat(7, 1fr); padding: 8px 12px 4px;
-      font-family: 'Space Mono', monospace; font-size: 0.65rem; letter-spacing: 1px; text-transform: uppercase; color: var(--text-muted);
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      padding: 0 14px; margin-bottom: 4px;
+      font-family: 'Space Mono', monospace; font-size: 0.6rem;
+      letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted);
     }
-    .cal-weekdays span { text-align: center; }
+    .cal-weekdays span { text-align: center; padding: 6px 0; }
+    .cal-weekdays-sep {
+      margin: 0 14px; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--border-subtle), transparent);
+    }
+
     .cal-grid {
-      display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; padding: 6px 12px 14px;
+      display: grid; grid-template-columns: repeat(7, 1fr);
+      gap: 4px; padding: 10px 14px 18px;
     }
     .cal-day {
-      aspect-ratio: 1; max-width: 36px; max-height: 36px; margin: 0 auto;
-      display: flex; align-items: center; justify-content: center; border-radius: 6px;
-      font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); cursor: pointer;
-      transition: background 0.15s, color 0.15s;
+      width: 38px; height: 38px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 10px; border: 1px solid transparent;
+      font-family: 'Rajdhani', sans-serif; font-size: 0.95rem; font-weight: 600;
+      color: var(--text-secondary); cursor: pointer;
+      position: relative; transition: all 0.2s;
     }
-    .cal-day.other-month { color: var(--text-muted); opacity: 0.4; }
-    .cal-day:hover:not(.other-month) { background: rgba(255,255,255,0.06); color: var(--text-primary); }
-    .cal-day.today { color: var(--neon-blue); border: 1px solid rgba(0,212,255,0.4); }
-    .cal-day.today:hover { background: rgba(0,212,255,0.08); }
-    .cal-day.selected { background: var(--neon-green); color: #fff; border: none; }
-    .cal-day.selected:hover { background: var(--neon-green-dim); }
+    .cal-day.other-month { color: rgba(138,155,176,0.3); pointer-events: none; }
+    .cal-day:hover:not(.other-month):not(.selected) {
+      background: rgba(255,45,120,0.06); border-color: rgba(255,45,120,0.15); color: var(--text-primary);
+    }
+    .cal-day.today {
+      color: var(--neon-blue); font-weight: 700;
+      border-color: rgba(0,212,255,0.3);
+      background: rgba(0,212,255,0.06);
+    }
+    .cal-day.today::after {
+      content: ''; position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+      width: 4px; height: 4px; border-radius: 50%; background: var(--neon-blue);
+    }
+    .cal-day.selected {
+      background: var(--neon-green); color: #fff; font-weight: 700;
+      border-color: var(--neon-green);
+      box-shadow: 0 0 12px rgba(255,45,120,0.3);
+    }
+    .cal-day.selected::after { display: none; }
+    .cal-day.selected:hover { background: var(--neon-green-dim); border-color: var(--neon-green-dim); }
+
+    /* Bouton effacer */
+    .cal-footer {
+      display: flex; justify-content: flex-end;
+      padding: 0 14px 14px;
+    }
+    .cal-clear-btn {
+      font-family: 'Rajdhani', sans-serif; font-size: 0.8rem; font-weight: 600;
+      color: var(--text-muted); background: none; border: none; cursor: pointer;
+      padding: 4px 10px; border-radius: 6px; transition: all 0.2s;
+    }
+    .cal-clear-btn:hover { color: var(--neon-green); background: rgba(255,45,120,0.06); }
   </style>
 </head>
 <body>
@@ -368,10 +420,11 @@ CREATE TABLE IF NOT EXISTS `promo_anniversaire_use` (
       html += '<button type="button" class="cal-nav-btn" data-dir="1" aria-label="Mois suivant"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button></div></div>';
       html += '<div class="cal-weekdays">';
       JOURS.forEach(function(j){ html += '<span>' + j + '</span>'; });
-      html += '</div><div class="cal-grid">';
+      html += '</div><div class="cal-weekdays-sep"></div><div class="cal-grid">';
 
       var d = new Date(start);
-      for (var i = 0; i < 42; i++) {
+      var rows = last.getDate() + offset > 35 ? 42 : 35;
+      for (var i = 0; i < rows; i++) {
         var ymdStr = d.getFullYear() + '-' + (d.getMonth()+1<10?'0':'') + (d.getMonth()+1) + '-' + (d.getDate()<10?'0':'') + d.getDate();
         var other = d.getMonth() !== view.month;
         var isToday = d.getTime() === today.getTime();
@@ -381,6 +434,7 @@ CREATE TABLE IF NOT EXISTS `promo_anniversaire_use` (
         d.setDate(d.getDate() + 1);
       }
       html += '</div>';
+      html += '<div class="cal-footer"><button type="button" class="cal-clear-btn" data-action="clear">Effacer</button></div>';
       pop.innerHTML = html;
 
       pop.querySelectorAll('.cal-nav-btn').forEach(function(btn) {
@@ -402,6 +456,11 @@ CREATE TABLE IF NOT EXISTS `promo_anniversaire_use` (
           inputDisplay.placeholder = '';
           pop.classList.remove('is-open');
         });
+      });
+      var clearBtn = pop.querySelector('.cal-clear-btn');
+      if (clearBtn) clearBtn.addEventListener('click', function() {
+        selected = null; inputVal.value = ''; inputDisplay.value = ''; inputDisplay.placeholder = 'jj/mm/aaaa';
+        pop.classList.remove('is-open');
       });
     }
 
