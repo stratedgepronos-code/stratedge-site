@@ -83,6 +83,8 @@ if (isset($_GET['ok'])) $success = 'Code promo créé.';
 if (isset($_GET['deleted'])) $success = 'Code supprimé.';
 if (isset($_GET['toggled'])) $success = 'Statut modifié.';
 
+$showMigrationBlock = ($error && strpos($error, 'Table codes_promo absente') !== false);
+
 require_once __DIR__ . '/sidebar.php';
 ?>
 <div class="main">
@@ -90,7 +92,8 @@ require_once __DIR__ . '/sidebar.php';
     <h1 style="margin-bottom:0.5rem;">🎟️ Codes promo</h1>
     <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:1.5rem;">Configurez les codes promo (pourcentage ou montant en €). Les membres peuvent les saisir sur les pages de paiement. L’anniversaire d’un membre lui donne automatiquement -50% sur Tennis/Daily/Weekly/Week-end et -25% sur VIP Max, une fois par an.</p>
 
-    <details style="margin-bottom:1.5rem;background:rgba(255,255,255,0.03);border:1px solid var(--border-subtle);border-radius:10px;">
+    <?php if ($showMigrationBlock): ?>
+    <details open style="margin-bottom:1.5rem;background:rgba(255,255,255,0.03);border:1px solid var(--border-subtle);border-radius:10px;">
       <summary style="padding:0.75rem 1rem;cursor:pointer;font-weight:600;color:var(--text-secondary);">📋 Migration SQL — à exécuter dans phpMyAdmin si les tables n’existent pas</summary>
       <p style="padding:0.75rem 1rem;margin:0;font-size:0.85rem;color:var(--text-muted);border-bottom:1px solid var(--border-subtle);">→ Utilisez le fichier <strong>code-promo-migration.sql</strong> dans le dossier admin/ : ouvrez-le, copiez <em>tout</em> son contenu (uniquement du SQL, pas de PHP), puis collez dans l’onglet SQL de phpMyAdmin et exécutez.</p>
       <pre style="margin:0;padding:1rem;overflow:auto;font-size:0.78rem;line-height:1.4;color:var(--text-primary);white-space:pre-wrap;word-break:break-all;">-- Tables codes promo + anniversaire (copier à partir d’ici)
@@ -134,6 +137,7 @@ CREATE TABLE IF NOT EXISTS `promo_anniversaire_use` (
   KEY `idx_membre` (`membre_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;</pre>
     </details>
+    <?php endif; ?>
 
     <?php if ($error): ?><div style="background:rgba(255,68,68,0.1);border:1px solid rgba(255,68,68,0.3);color:#ff6b6b;padding:0.75rem 1rem;border-radius:8px;margin-bottom:1rem;"><?= htmlspecialchars($error) ?></div><?php endif; ?>
     <?php if ($success): ?><div style="background:rgba(0,200,100,0.1);border:1px solid rgba(0,200,100,0.3);color:#00c864;padding:0.75rem 1rem;border-radius:8px;margin-bottom:1rem;"><?= htmlspecialchars($success) ?></div><?php endif; ?>
