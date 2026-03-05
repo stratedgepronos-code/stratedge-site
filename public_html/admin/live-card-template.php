@@ -702,13 +702,13 @@ body { background:#0a0a0a; margin:0; padding:0; width:1080px; min-width:1080px; 
 .total-pill-shine { position:absolute; top:0; left:0; right:0; height:50%; background:rgba(255,255,255,0.13); border-radius:14px 14px 0 0; }
 .total-cote { font-family:'Orbitron',sans-serif; font-size:34px; font-weight:900; color:#fff; letter-spacing:2px; position:relative; z-index:1; }
 
-/* PROMO — Option Sport Daily, Week-end, Weekly (fonts forcées pour lisibilité) */
+/* PROMO — Option Sport Daily, Week-end, Weekly (Orbitron comme le reste de la card) */
 .promo-banner { background:rgba(14,22,14,0.95); border:1px solid rgba(57,255,20,0.18); border-radius:14px; padding:14px 18px; position:relative; display:flex; align-items:center; justify-content:space-between; gap:14px; }
 .promo-left-bar { position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(to bottom,#39ff14,#00e5ff); border-radius:4px 0 0 4px; }
 .promo-text-block { flex:1; padding-left:10px; display:flex; flex-direction:column; gap:5px; }
 .promo-eyebrow { font-family:'Orbitron',sans-serif !important; font-size:13px !important; color:#39ff14; text-transform:uppercase; letter-spacing:2px; font-weight:700; }
-.promo-main { font-family:'Bebas Neue','Orbitron',sans-serif !important; font-size:22px !important; letter-spacing:0.8px; color:#fff; line-height:1.25; min-height:1.25em; }
-.promo-main-hl { color:#ff2d7a; font-family:inherit !important; }
+.promo-main { font-family:'Orbitron',sans-serif !important; font-size:20px !important; font-weight:700; letter-spacing:0.8px; color:#fff; line-height:1.25; min-height:1.25em; }
+.promo-main-hl { color:#ff2d7a; font-family:'Orbitron',sans-serif !important; font-weight:700; }
 .promo-packs { display:flex; gap:6px; flex-wrap:wrap; }
 .pack-tag { font-family:'Orbitron',sans-serif !important; font-size:13px !important; font-weight:700; padding:5px 11px; border-radius:5px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.6); text-transform:uppercase; }
 .pack-tag-max { color:#39ff14; border-color:rgba(57,255,20,0.3); background:rgba(57,255,20,0.07); }
