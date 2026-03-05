@@ -574,35 +574,35 @@ $resultatConfig = [
               </td>
               <td style="font-size:0.78rem;white-space:nowrap;"><?= date('d/m H:i', strtotime($b['date_post'])) ?></td>
 
-              <!-- RÉSULTAT -->
+              <!-- RÉSULTAT (modifiable même après validation) -->
               <td>
-                <?php if (($b['resultat'] ?? 'en_cours') === 'en_cours'): ?>
-                  <div style="display:flex;gap:0.3rem;flex-wrap:wrap;">
-                    <form method="POST" style="display:inline;" onsubmit="return confirm('Marquer comme GAGNÉ ?')">
-                      <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
-                      <input type="hidden" name="action" value="set_resultat">
-                      <input type="hidden" name="bet_id" value="<?= $b['id'] ?>">
-                      <input type="hidden" name="resultat" value="gagne">
-                      <button type="submit" class="btn-sm" style="background:rgba(0,200,100,0.15);color:#00c864;border:1px solid rgba(0,200,100,0.3);">✅</button>
-                    </form>
-                    <form method="POST" style="display:inline;" onsubmit="return confirm('Marquer comme PERDU ?')">
-                      <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
-                      <input type="hidden" name="action" value="set_resultat">
-                      <input type="hidden" name="bet_id" value="<?= $b['id'] ?>">
-                      <input type="hidden" name="resultat" value="perdu">
-                      <button type="submit" class="btn-sm" style="background:rgba(255,68,68,0.15);color:#ff4444;border:1px solid rgba(255,68,68,0.3);">❌</button>
-                    </form>
-                    <form method="POST" style="display:inline;" onsubmit="return confirm('Marquer comme ANNULÉ ?')">
-                      <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
-                      <input type="hidden" name="action" value="set_resultat">
-                      <input type="hidden" name="bet_id" value="<?= $b['id'] ?>">
-                      <input type="hidden" name="resultat" value="annule">
-                      <button type="submit" class="btn-sm" style="background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3);">↺</button>
-                    </form>
-                  </div>
-                <?php else: ?>
-                  <span style="background:<?= $rc['bg'] ?>;color:<?= $rc['color'] ?>;padding:0.25rem 0.6rem;border-radius:6px;font-size:0.78rem;font-weight:700;"><?= $rc['label'] ?></span>
+                <?php $currentResult = $b['resultat'] ?? 'en_cours'; ?>
+                <?php if ($currentResult !== 'en_cours'): ?>
+                  <span style="background:<?= $rc['bg'] ?>;color:<?= $rc['color'] ?>;padding:0.25rem 0.5rem;border-radius:6px;font-size:0.78rem;font-weight:700;margin-right:0.35rem;"><?= $rc['label'] ?></span>
                 <?php endif; ?>
+                <div style="display:inline-flex;gap:0.25rem;flex-wrap:wrap;align-items:center;">
+                  <form method="POST" style="display:inline;" onsubmit="return confirm('<?= $currentResult === 'gagne' ? 'Déjà gagné. Changer quand même ?' : 'Marquer comme GAGNÉ ?' ?>')">
+                    <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
+                    <input type="hidden" name="action" value="set_resultat">
+                    <input type="hidden" name="bet_id" value="<?= $b['id'] ?>">
+                    <input type="hidden" name="resultat" value="gagne">
+                    <button type="submit" class="btn-sm" style="background:rgba(0,200,100,0.15);color:#00c864;border:1px solid rgba(0,200,100,0.3);" title="Gagné">✅</button>
+                  </form>
+                  <form method="POST" style="display:inline;" onsubmit="return confirm('<?= $currentResult === 'perdu' ? 'Déjà perdu. Changer quand même ?' : 'Marquer comme PERDU ?' ?>')">
+                    <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
+                    <input type="hidden" name="action" value="set_resultat">
+                    <input type="hidden" name="bet_id" value="<?= $b['id'] ?>">
+                    <input type="hidden" name="resultat" value="perdu">
+                    <button type="submit" class="btn-sm" style="background:rgba(255,68,68,0.15);color:#ff4444;border:1px solid rgba(255,68,68,0.3);" title="Perdu">❌</button>
+                  </form>
+                  <form method="POST" style="display:inline;" onsubmit="return confirm('<?= $currentResult === 'annule' ? 'Déjà annulé. Changer quand même ?' : 'Marquer comme ANNULÉ ?' ?>')">
+                    <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
+                    <input type="hidden" name="action" value="set_resultat">
+                    <input type="hidden" name="bet_id" value="<?= $b['id'] ?>">
+                    <input type="hidden" name="resultat" value="annule">
+                    <button type="submit" class="btn-sm" style="background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3);" title="Annulé">↺</button>
+                  </form>
+                </div>
               </td>
 
               <td>
