@@ -1,0 +1,5 @@
+RewriteEngine On
+
+# Si le fichier image n'existe pas sur disque → restaurer depuis la BDD
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^(bets|locked)/(.+\.(jpg|jpeg|png|webp|gif))$ /restore-image.php?dir=$1&file=$2 [L,QSA]
