@@ -84,9 +84,39 @@ if (isset($_GET['deleted'])) $success = 'Code supprimé.';
 if (isset($_GET['toggled'])) $success = 'Statut modifié.';
 
 $showMigrationBlock = ($error && strpos($error, 'Table codes_promo absente') !== false);
-
-require_once __DIR__ . '/sidebar.php';
 ?>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="../assets/images/mascotte.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Codes promo — Admin StratEdge</title>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg-dark:#050810; --bg-card:#0d1220; --neon-green:#ff2d78; --neon-green-dim:#d6245f; --neon-blue:#00d4ff; --text-primary:#f0f4f8; --text-secondary:#b0bec9; --text-muted:#8a9bb0; --border-subtle:rgba(255,45,120,0.12); }
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Rajdhani',sans-serif; background:var(--bg-dark); color:var(--text-primary); min-height:100vh; display:flex; }
+    .main { padding:2rem; }
+    .card { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:14px; padding:1.5rem; }
+    .card h1 { font-family:'Orbitron',sans-serif; font-size:1.4rem; font-weight:700; color:var(--text-primary); }
+    .card h2 { font-family:'Orbitron',sans-serif; font-size:1rem; font-weight:600; color:var(--text-secondary); }
+    .card input[type="text"], .card input[type="number"], .card input[type="date"], .card select {
+      background:rgba(255,255,255,0.06); border:1px solid var(--border-subtle); border-radius:8px;
+      padding:0.6rem 0.75rem; color:var(--text-primary); font-family:inherit; font-size:0.95rem;
+    }
+    .card input:focus, .card select:focus { outline:none; border-color:rgba(255,45,120,0.4); }
+    .card label { color:var(--text-secondary); }
+    .card .btn-sm { background:var(--neon-green); color:#fff; border:none; padding:0.5rem 1.2rem; border-radius:8px; font-weight:700; cursor:pointer; font-family:inherit; font-size:0.9rem; }
+    .card .btn-sm:hover { background:var(--neon-green-dim); }
+    .card .btn-danger { background:rgba(255,45,120,0.2); color:#ff6b9d; border:1px solid rgba(255,45,120,0.3); }
+    .card table th { font-family:'Space Mono',monospace; font-size:0.7rem; letter-spacing:1px; text-transform:uppercase; color:var(--text-muted); }
+    .card table td { color:var(--text-secondary); }
+    .table-scroll { overflow-x:auto; }
+  </style>
+</head>
+<body>
+<?php require_once __DIR__ . '/sidebar.php'; ?>
 <div class="main">
   <div class="card" style="max-width:1200px;">
     <h1 style="margin-bottom:0.5rem;">🎟️ Codes promo</h1>
@@ -238,3 +268,5 @@ CREATE TABLE IF NOT EXISTS `promo_anniversaire_use` (
     <?php endif; ?>
   </div>
 </div>
+</body>
+</html>
