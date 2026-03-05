@@ -93,8 +93,6 @@ $showMigrationBlock = ($error && strpos($error, 'Table codes_promo absente') !==
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Codes promo — Admin StratEdge</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/dark.css">
   <style>
     :root { --bg-dark:#050810; --bg-card:#0d1220; --neon-green:#ff2d78; --neon-green-dim:#d6245f; --neon-blue:#00d4ff; --text-primary:#f0f4f8; --text-secondary:#b0bec9; --text-muted:#8a9bb0; --border-subtle:rgba(255,45,120,0.12); }
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
@@ -119,19 +117,55 @@ $showMigrationBlock = ($error && strpos($error, 'Table codes_promo absente') !==
     .card table td { color:var(--text-secondary); }
     .table-scroll { overflow-x:auto; }
     /* Champ date : wrapper avec icône calendrier visible */
-    .date-picker-wrap { position:relative; width:100%; }
+    .date-picker-wrap { position:relative; width:100%; min-height:42px; }
     .date-picker-wrap input { width:100%; padding-right:2.5rem; }
     .date-picker-wrap .cal-icon { position:absolute; right:0.75rem; top:50%; transform:translateY(-50%); pointer-events:none; font-size:1.15rem; opacity:0.9; color:var(--neon-green); }
     .date-picker-wrap .cal-icon svg { width:20px; height:20px; fill:currentColor; }
-    /* Flatpickr thème StratEdge (accent rose) */
-    .flatpickr-calendar.flatpickr-dark { background:var(--bg-card); border:1px solid var(--border-subtle); box-shadow:0 10px 40px rgba(0,0,0,0.4); }
-    .flatpickr-dark .flatpickr-day.selected, .flatpickr-dark .flatpickr-day.selected:hover { background:var(--neon-green); border-color:var(--neon-green); }
-    .flatpickr-dark .flatpickr-day:hover { background:rgba(255,45,120,0.2); border-color:rgba(255,45,120,0.3); }
-    .flatpickr-dark .flatpickr-months .flatpickr-month { background:var(--bg-card); color:var(--text-primary); }
-    .flatpickr-dark .flatpickr-current-month { color:var(--text-primary); }
-    .flatpickr-dark .flatpickr-weekdays { color:var(--text-muted); }
-    .flatpickr-dark .flatpickr-day { color:var(--text-secondary); }
-    .flatpickr-dark .flatpickr-day.flatpickr-disabled { color:var(--text-muted); opacity:0.4; }
+    /* Calendrier custom — design premium */
+    .cal-popover {
+      position: absolute; z-index: 300; left: 0; top: 100%; margin-top: 6px;
+      width: 320px; padding: 0;
+      background: linear-gradient(165deg, rgba(13,18,32,0.98) 0%, rgba(8,12,22,0.99) 100%);
+      backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255,45,120,0.2); border-radius: 20px;
+      box-shadow: 0 25px 60px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.03), 0 0 40px rgba(255,45,120,0.08);
+      font-family: 'Rajdhani', sans-serif;
+      opacity: 0; transform: scale(0.95) translateY(-8px); visibility: hidden; transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+    }
+    .cal-popover.is-open { opacity: 1; transform: scale(1) translateY(0); visibility: visible; }
+    .cal-header {
+      display: flex; align-items: center; justify-content: space-between; padding: 18px 16px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .cal-title { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 700; color: var(--text-primary); letter-spacing: 0.5px; }
+    .cal-nav { display: flex; gap: 4px; }
+    .cal-nav-btn {
+      width: 36px; height: 36px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.04); color: var(--text-secondary); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+    }
+    .cal-nav-btn:hover { background: rgba(255,45,120,0.15); color: var(--neon-green); border-color: rgba(255,45,120,0.25); }
+    .cal-nav-btn svg { width: 18px; height: 18px; }
+    .cal-weekdays {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; padding: 10px 14px 6px;
+      font-family: 'Space Mono', monospace; font-size: 0.65rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-muted);
+    }
+    .cal-weekdays span { text-align: center; }
+    .cal-grid {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; padding: 8px 14px 20px;
+    }
+    .cal-day {
+      aspect-ratio: 1; max-width: 40px; max-height: 40px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: center; border-radius: 12px;
+      font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .cal-day.other-month { color: var(--text-muted); opacity: 0.45; }
+    .cal-day:hover:not(.other-month) { background: rgba(255,45,120,0.12); color: var(--text-primary); }
+    .cal-day.today { background: rgba(0,212,255,0.12); color: var(--neon-blue); border: 1px solid rgba(0,212,255,0.3); }
+    .cal-day.today:hover { background: rgba(0,212,255,0.2); }
+    .cal-day.selected { background: linear-gradient(135deg, var(--neon-green), var(--neon-green-dim)); color: #fff; box-shadow: 0 4px 14px rgba(255,45,120,0.4); }
+    .cal-day.selected:hover { filter: brightness(1.08); }
   </style>
 </head>
 <body>
@@ -219,9 +253,11 @@ CREATE TABLE IF NOT EXISTS `promo_anniversaire_use` (
           </div>
           <div>
             <label style="display:block;font-size:0.8rem;color:var(--text-muted);margin-bottom:0.3rem;">Date d’expiration (optionnel)</label>
-            <div class="date-picker-wrap">
-              <input type="text" id="date_expir" name="date_expir" placeholder="jj/mm/aaaa" readonly style="width:100%;padding:0.6rem 2.5rem 0.6rem 0.75rem;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-card);color:var(--text-primary);cursor:pointer;">
+            <div class="date-picker-wrap" id="date_expir_wrap">
+              <input type="text" id="date_expir_display" placeholder="jj/mm/aaaa" readonly style="width:100%;padding:0.6rem 2.5rem 0.6rem 0.75rem;border-radius:8px;border:1px solid var(--border-subtle);background:var(--bg-card);color:var(--text-primary);cursor:pointer;">
+              <input type="hidden" id="date_expir" name="date_expir" value="">
               <span class="cal-icon" aria-hidden="true"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg></span>
+              <div class="cal-popover" id="cal_popover" role="dialog" aria-label="Choisir une date"></div>
             </div>
           </div>
         </div>
@@ -290,22 +326,103 @@ CREATE TABLE IF NOT EXISTS `promo_anniversaire_use` (
     <?php endif; ?>
   </div>
 </div>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/fr.js"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-  var el = document.getElementById('date_expir');
-  if (el) {
-    flatpickr(el, {
-      locale: 'fr',
-      dateFormat: 'Y-m-d',
-      altInput: true,
-      altFormat: 'd/m/Y',
-      allowInput: false,
-      theme: 'dark'
+(function() {
+  var MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+  var JOURS = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+
+  function buildPopover() {
+    var wrap = document.getElementById('date_expir_wrap');
+    var pop = document.getElementById('cal_popover');
+    var inputVal = document.getElementById('date_expir');
+    var inputDisplay = document.getElementById('date_expir_display');
+    if (!wrap || !pop || !inputVal || !inputDisplay) return;
+
+    var view = { year: new Date().getFullYear(), month: new Date().getMonth() };
+    var selected = null;
+
+    function parseYmd(str) {
+      if (!str || !/^\d{4}-\d{2}-\d{2}$/.test(str)) return null;
+      var p = str.split('-');
+      return new Date(parseInt(p[0],10), parseInt(p[1],10)-1, parseInt(p[2],10));
+    }
+    function ymd(d) {
+      var y = d.getFullYear(), m = d.getMonth()+1, day = d.getDate();
+      return y + '-' + (m<10?'0':'') + m + '-' + (day<10?'0':'') + day;
+    }
+    function formatDisplay(d) {
+      var day = d.getDate(), m = d.getMonth()+1, y = d.getFullYear();
+      return (day<10?'0':'') + day + '/' + (m<10?'0':'') + m + '/' + y;
+    }
+
+    function render() {
+      var first = new Date(view.year, view.month, 1);
+      var last = new Date(view.year, view.month + 1, 0);
+      var offset = (first.getDay() + 6) % 7;
+      var start = new Date(first); start.setDate(start.getDate() - offset);
+      var today = new Date(); today.setHours(0,0,0,0);
+
+      var html = '<div class="cal-header">';
+      html += '<span class="cal-title">' + MOIS[view.month] + ' ' + view.year + '</span>';
+      html += '<div class="cal-nav"><button type="button" class="cal-nav-btn" data-dir="-1" aria-label="Mois précédent"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></button>';
+      html += '<button type="button" class="cal-nav-btn" data-dir="1" aria-label="Mois suivant"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg></button></div></div>';
+      html += '<div class="cal-weekdays">';
+      JOURS.forEach(function(j){ html += '<span>' + j + '</span>'; });
+      html += '</div><div class="cal-grid">';
+
+      var d = new Date(start);
+      for (var i = 0; i < 42; i++) {
+        var ymdStr = d.getFullYear() + '-' + (d.getMonth()+1<10?'0':'') + (d.getMonth()+1) + '-' + (d.getDate()<10?'0':'') + d.getDate();
+        var other = d.getMonth() !== view.month;
+        var isToday = d.getTime() === today.getTime();
+        var isSelected = selected && ymd(selected) === ymdStr;
+        var cls = 'cal-day' + (other ? ' other-month' : '') + (isToday ? ' today' : '') + (isSelected ? ' selected' : '');
+        html += '<button type="button" class="' + cls + '" data-ymd="' + ymdStr + '">' + d.getDate() + '</button>';
+        d.setDate(d.getDate() + 1);
+      }
+      html += '</div>';
+      pop.innerHTML = html;
+
+      pop.querySelectorAll('.cal-nav-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var dir = parseInt(btn.getAttribute('data-dir'), 10);
+          view.month += dir;
+          if (view.month > 11) { view.month = 0; view.year++; }
+          if (view.month < 0) { view.month = 11; view.year--; }
+          render();
+        });
+      });
+      pop.querySelectorAll('.cal-day').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var y = btn.getAttribute('data-ymd');
+          if (!y) return;
+          selected = parseYmd(y) || new Date(y);
+          inputVal.value = y;
+          inputDisplay.value = formatDisplay(selected);
+          inputDisplay.placeholder = '';
+          pop.classList.remove('is-open');
+        });
+      });
+    }
+
+    wrap.addEventListener('click', function(e) {
+      if (e.target.closest('.cal-popover')) return;
+      pop.classList.toggle('is-open');
+      if (pop.classList.contains('is-open')) {
+        var v = parseYmd(inputVal.value);
+        if (v) { view.year = v.getFullYear(); view.month = v.getMonth(); selected = v; } else { selected = null; }
+        render();
+      }
     });
+    document.addEventListener('click', function(e) {
+      if (!wrap.contains(e.target)) pop.classList.remove('is-open');
+    });
+    var cur = parseYmd(inputVal.value);
+    if (cur) inputDisplay.value = formatDisplay(cur);
   }
-});
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', buildPopover);
+  else buildPopover();
+})();
 </script>
 </body>
 </html>
