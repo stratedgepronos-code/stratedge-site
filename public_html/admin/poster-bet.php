@@ -518,7 +518,7 @@ $resultatConfig = [
     tr:last-child td{border-bottom:none;}
     .bet-thumb{width:55px;height:38px;object-fit:cover;border-radius:6px;display:block;}
     .bet-thumb-wrap{position:relative;width:55px;height:38px;flex-shrink:0;}
-    .bet-thumb-placeholder{display:inline-flex!important;align-items:center;justify-content:center;width:55px;height:38px;background:rgba(255,255,255,0.06);border-radius:6px;font-size:1.1rem;}
+    .bet-thumb-placeholder{align-items:center;justify-content:center;width:55px;height:38px;background:rgba(255,255,255,0.06);border-radius:6px;font-size:1.1rem;}
     .week-header{background:rgba(255,45,120,0.08);border-left:3px solid var(--neon-green);font-family:'Orbitron',sans-serif;font-size:0.75rem;font-weight:700;color:var(--text-primary);padding:0.5rem 0.7rem;}
     .week-header td{padding:0.5rem 0.7rem!important;border-bottom:1px solid rgba(255,45,120,0.15);}
     .btn-sm{padding:0.3rem 0.7rem;border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:0.82rem;font-weight:700;cursor:pointer;border:none;transition:all 0.2s;}
@@ -600,7 +600,7 @@ $resultatConfig = [
             if ($imgSrc === '' && !empty($b['locked_image_path'])) $imgSrc = betImageUrl(trim($b['locked_image_path']), 'locked');
           ?>
             <tr>
-              <td><?php if ($imgSrc !== ''): ?><img src="<?= htmlspecialchars($imgSrc) ?>" class="bet-thumb" alt="" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.style.display='flex';" onload="this.nextElementSibling.style.display='none';"><span class="bet-thumb-placeholder" style="display:flex;">📊</span><?php else: ?><span class="bet-thumb-placeholder">📊</span><?php endif; ?></td>
+              <td><?php if ($imgSrc !== ''): ?><img src="<?= htmlspecialchars($imgSrc) ?>" class="bet-thumb" alt="" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="bet-thumb-placeholder" style="display:none;">📊</span><?php else: ?><span class="bet-thumb-placeholder" style="display:inline-flex;">📊</span><?php endif; ?></td>
               <td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?= clean($b['titre'] ?: '—') ?></td>
               <td style="font-size:0.8rem;"><?= clean($b['type']) ?></td>
               <td>
