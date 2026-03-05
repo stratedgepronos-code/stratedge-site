@@ -478,3 +478,32 @@ function emailChangementEmail(string $ancienEmail, string $nom, string $nouvelEm
 
     return envoyerEmail($ancienEmail, '📧 Ton adresse email a été modifiée — StratEdge Pronos', emailTemplate('Changement email', $contenu, $ancienEmail));
 }
+
+// ── Email 10 : Anniversaire + code promo (1×/an, envoyé par cron) ─────────────
+function emailAnniversaireCodePromo(string $email, string $nom, string $codePromo): bool {
+    $lienOffres = (defined('SITE_URL') ? rtrim(SITE_URL, '/') : 'https://stratedgepronos.fr') . '/offres.php';
+    $contenu = '
+        <h2 style="color:#f0f4f8;font-size:1.4rem;margin:0 0 10px;">🎂 Joyeux anniversaire !</h2>
+        <p style="color:#b0bec9;font-size:0.95rem;line-height:1.7;margin:0 0 20px;">
+            Bonjour <strong style="color:#f0f4f8;">' . htmlspecialchars($nom) . '</strong>,<br>
+            Toute l\'équipe StratEdge te souhaite un très bon anniversaire. 🎉
+        </p>
+        <div style="background:rgba(255,45,120,0.08);border:1px solid rgba(255,45,120,0.25);border-radius:12px;padding:22px 25px;margin-bottom:25px;">
+            <p style="color:#8a9bb0;font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;margin:0 0 12px;">🎁 Ton code promo anniversaire</p>
+            <p style="color:#f0f4f8;font-size:1.1rem;font-weight:700;margin:0 0 8px;letter-spacing:1px;">' . htmlspecialchars($codePromo) . '</p>
+            <p style="color:#8a9bb0;font-size:0.85rem;margin:0 0 12px;">
+                • <strong style="color:#f0f4f8;">-50%</strong> sur les formules Tennis, Daily, Weekly et Week-end<br>
+                • <strong style="color:#f0f4f8;">-25%</strong> sur l\'offre VIP Max
+            </p>
+            <p style="color:#8a9bb0;font-size:0.8rem;margin:0;">Valable <strong>une seule fois</strong> cette année. Saisis ce code sur la page de paiement de l\'offre choisie.</p>
+        </div>
+        <div style="text-align:center;margin:25px 0;">
+            <a href="' . htmlspecialchars($lienOffres) . '"
+               style="display:inline-block;background:linear-gradient(135deg,#ff2d78,#d6245f);color:white;padding:14px 35px;border-radius:10px;text-decoration:none;font-weight:700;font-size:1rem;letter-spacing:1px;text-transform:uppercase;">
+                Voir les offres →
+            </a>
+        </div>
+        <p style="color:#8a9bb0;font-size:0.8rem;margin:20px 0 0;">À très vite sur StratEdge Pronos ! ⚡</p>';
+
+    return envoyerEmail($email, '🎂 Joyeux anniversaire — Ton code promo StratEdge', emailTemplate('Anniversaire', $contenu, $email));
+}

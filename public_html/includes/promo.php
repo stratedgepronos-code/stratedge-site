@@ -28,6 +28,10 @@ function isAnniversaireEligible(int $membre_id): bool {
     try {
         $stmt = $db->prepare("SELECT 1 FROM promo_anniversaire_use WHERE membre_id = ? AND annee = ? LIMIT 1");
         $stmt->execute([$membre_id, $annee]);
+        if ($stmt->fetch()) return false;
+        // Pas éligible non plus si le membre a déjà utilisé son code ANNIV cette année
+        $stmt = $db->prepare("SELECT 1 FROM code_promo_utilisations u JOIN codes_promo c ON c.id = u.code_promo_id WHERE u.membre_id = ? AND c.code LIKE 'ANNIV-%' AND YEAR(u.date_utilisation) = ? LIMIT 1");
+        $stmt->execute([$membre_id, $annee]);
         return !$stmt->fetch();
     } catch (Throwable $e) {
         return false;
@@ -41,6 +45,29 @@ function getAnniversairePercent(string $offre): int {
     if (in_array($offre, PROMO_ANNIV_50, true)) return 50;
     if (in_array($offre, PROMO_ANNIV_25, true)) return 25;
     return 0;
+}
+
+/**
+ * Crée le code promo anniversaire pour un membre (1× par an).
+ * Code = ANNIV-{membre_id}-{année}, 50% tennis/daily/weekly/weekend, 25% vip_max (géré dans appliquerCodePromo).
+ * @return string|null Le code créé ou null si déjà existant / erreur
+ */
+function creerCodeAnniversaireMembre(int $membre_id): ?string {
+    $annee = (int) date('Y');
+    $code = 'ANNIV-' . $membre_id . '-' . $annee;
+    try {
+        $db = getDB();
+        $stmt = $db->prepare("SELECT id FROM codes_promo WHERE code = ? LIMIT 1");
+        $stmt->execute([$code]);
+        if ($stmt->fetch()) return null; // déjà créé cette année
+        $offres = 'tennis,daily,weekly,weekend,vip_max';
+        $db->prepare("INSERT INTO codes_promo (code, type, value, offres, max_utilisations, date_expir, actif) VALUES (?, 'percent', 50, ?, 1, NULL, 1)")
+           ->execute([$code, $offres]);
+        return $code;
+    } catch (Throwable $e) {
+        error_log('[promo] creerCodeAnniversaireMembre: ' . $e->getMessage());
+        return null;
+    }
 }
 
 /**
@@ -69,7 +96,7 @@ function appliquerCodePromo(string $code, string $offre, float $prix_initial, in
     if ($code === '') return ['success' => false, 'error' => 'Code vide'];
     try {
         $db = getDB();
-        $stmt = $db->prepare("SELECT id, type, value, offres, max_utilisations, utilisations, date_expir, actif FROM codes_promo WHERE code = ? LIMIT 1");
+        $stmt = $db->prepare("SELECT id, code, type, value, offres, max_utilisations, utilisations, date_expir, actif FROM codes_promo WHERE code = ? LIMIT 1");
         $stmt->execute([$code]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$row) return ['success' => false, 'error' => 'Code invalide'];
@@ -83,8 +110,13 @@ function appliquerCodePromo(string $code, string $offre, float $prix_initial, in
         if (!in_array($offre, $offres, true)) return ['success' => false, 'error' => 'Code non valable pour cette formule'];
         // Vérifier si ce membre a déjà utilisé ce code (pour usage unique par membre : on peut ajouter une table ou considérer max_utilisations=1 = 1 fois global)
         $reduction = 0.0;
+        $pct = (float) $row['value'];
+        // Code anniversaire : 50% partout sauf VIP Max = 25%
+        if ($row['type'] === 'percent' && preg_match('/^ANNIV-\d+-\d{4}$/', $row['code'])) {
+            $pct = ($offre === 'vip_max') ? 25.0 : 50.0;
+        }
         if ($row['type'] === 'percent') {
-            $reduction = $prix_initial * ((float)$row['value'] / 100);
+            $reduction = $prix_initial * ($pct / 100);
         } else {
             $reduction = (float) $row['value'];
         }
