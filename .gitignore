@@ -29,5 +29,5 @@ __pycache__/
 node_modules/
 vendor/
 
-# Uploads (optionnel — décommenter si tu ne veux pas versionner les uploads)
-# public_html/uploads/
+# Uploads : NE PAS versionner (images uploadées en prod, supprimées à chaque deploy sinon)
+public_html/uploads/
