@@ -438,7 +438,8 @@ CREATE TABLE IF NOT EXISTS `promo_anniversaire_use` (
       pop.innerHTML = html;
 
       pop.querySelectorAll('.cal-nav-btn').forEach(function(btn) {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', function(e) {
+          e.stopPropagation();
           var dir = parseInt(btn.getAttribute('data-dir'), 10);
           view.month += dir;
           if (view.month > 11) { view.month = 0; view.year++; }
