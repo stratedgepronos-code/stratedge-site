@@ -591,7 +591,7 @@ $resultatConfig = [
             if ($imgSrc === '' && !empty($b['locked_image_path'])) $imgSrc = betImageUrl(trim($b['locked_image_path']), 'locked');
           ?>
             <tr>
-              <td><span class="bet-thumb-wrap"><?php if ($imgSrc !== ''): ?><img src="<?= htmlspecialchars($imgSrc) ?>" class="bet-thumb" alt="" onerror="this.onerror=null;this.style.display='none';var s=this.nextElementSibling;if(s)s.style.display='flex';"><span class="bet-thumb-placeholder" style="display:none;">📊</span><?php else: ?><span class="bet-thumb-placeholder">📊</span><?php endif; ?></span></td>
+              <td><?php if ($imgSrc !== ''): ?><img src="<?= htmlspecialchars($imgSrc) ?>" class="bet-thumb" alt="" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.style.display='flex';" onload="this.nextElementSibling.style.display='none';"><span class="bet-thumb-placeholder" style="display:flex;">📊</span><?php else: ?><span class="bet-thumb-placeholder">📊</span><?php endif; ?></td>
               <td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?= clean($b['titre'] ?: '—') ?></td>
               <td style="font-size:0.8rem;"><?= clean($b['type']) ?></td>
               <td>
