@@ -588,13 +588,17 @@ $resultatConfig = [
       <?php else: ?>
         <table>
           <thead><tr><th>Image</th><th>Titre</th><th>Type</th><th>Catégorie</th><th>Date</th><th>Résultat</th><th>Visible</th><th></th></tr></thead>
+          <?php
+            $currentWeekKey = date('Y-m-d', strtotime('monday this week'));
+          ?>
           <?php foreach ($betsByWeek as $weekKey => $weekBets):
             $lundiTs = strtotime($weekKey);
             $dimancheTs = strtotime('+6 days', $lundiTs);
             $weekLabel = 'Semaine du ' . date('d/m', $lundiTs) . ' → ' . date('d/m/Y', $dimancheTs);
+            $isCurrentWeek = ($weekKey === $currentWeekKey);
           ?>
-          <tbody class="week-block collapsed" data-week="<?= htmlspecialchars($weekKey) ?>">
-            <tr class="week-header" role="button" tabindex="0" aria-expanded="false" title="Cliquer pour déplier/replier">
+          <tbody class="week-block<?= $isCurrentWeek ? '' : ' collapsed' ?>" data-week="<?= htmlspecialchars($weekKey) ?>">
+            <tr class="week-header" role="button" tabindex="0" aria-expanded="<?= $isCurrentWeek ? 'true' : 'false' ?>" title="Cliquer pour déplier/replier">
               <td colspan="8"><span class="week-toggle">▶</span> <?= $weekLabel ?> (<?= count($weekBets) ?> bet<?= count($weekBets) > 1 ? 's' : '' ?>)</td>
             </tr>
           <?php foreach ($weekBets as $b):
