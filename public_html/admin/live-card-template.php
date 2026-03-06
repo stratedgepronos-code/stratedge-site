@@ -886,8 +886,9 @@ HTML;
       <div class='promo-eyebrow'>🎾 FUN BET TENNIS — COMBINÉ ATP / WTA</div>
       <div class='promo-main'>Inclus dans le <span class='promo-main-hl'>Pack Tennis Pro</span></div>
       <div class='promo-packs'>
-        <span class='pack-tag pack-tag-max'>🎾 Tennis Weekly</span>
+        <span class='pack-tag pack-tag-max'>🎾 Tennis Weekly — 15€/sem</span>
       </div>
+      <div class='promo-price'>Abonne-toi au <span>Pack Tennis</span></div>
     </div>
     <div class='promo-right'>
       <div class='promo-cta'>🎾 Je m'abonne</div>
