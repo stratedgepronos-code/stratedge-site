@@ -1,6 +1,7 @@
 <?php
 // ============================================================
-// STRATEDGE — claude-config.php V16
+// STRATEDGE — claude-config.php V17
+// V17 : Safe non-tennis — pas de fond dégradé ; VS en dégradé texte rose néon → bleu néon
 // V16 : Safe multisport — mascotte noir néon rose (mascotte-rose.png) obligatoire en fond
 // V15 : Safe card tennis — bandeau pub Pack Tennis en bas (normale + locked)
 // V14 : Pas de logo tournoi (texte uniquement), cote pill fond rose néon uni (#FF2D78)
@@ -174,6 +175,13 @@ HTML EXACT :
 
 ---
 
+🛡️ SAFE CARD — Autres sports (football, basket, hockey, multisport) — PAS tennis
+
+- ⚠️ PAS de fond en dégradé : la match card (zone entre les deux équipes/joueurs) et la zone du VS ne doivent PAS avoir de background en gradient. Utiliser un fond uni (transparent ou léger rgba uni, ex: background:rgba(255,255,255,0.02) ou border seulement). Le dégradé doit être UNIQUEMENT sur le texte "VS".
+- ⚠️ Les deux lettres "VS" : afficher en DÉGRADÉ sur le TEXTE uniquement — rose néon (#FF2D78) vers bleu néon (#00D4FF). Méthode : un <span> contenant "VS" avec style inline : background:linear-gradient(90deg,#FF2D78,#00D4FF); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; font-family:Orbitron; font-size:28px; font-weight:900; display:inline-block. Pas de fond coloré derrière le VS, pas de bloc en dégradé : uniquement le texte "VS" en dégradé rose → bleu.
+
+---
+
 🎾 TENNIS SAFE CARD — Règles spécifiques (appliquer quand sport = tennis)
 
 - Barre de confiance : afficher une barre horizontale de confiance (0–100%) sur les DEUX cards (normale et locked). Style : conteneur (height:12px; background:rgba(255,255,255,0.1); border-radius:6px; overflow:hidden), remplissage (height:100%; width:XX%; background:linear-gradient(90deg,#00FF88,#00D4FF); border-radius:6px). XX = ton pourcentage de confiance (ex: 72 → width:72%). ⚠️ Placer la barre SOUS LA COTE : directement sous le bouton pill de la cote, dans le bloc prono, avec un label "Confiance XX%" (Rajdhani 12px #8A9BB0). Ordre dans le bloc prono : badge Safe → nom du bet → COTE (bouton pill) → barre de confiance → probabilité → value.
@@ -204,7 +212,7 @@ HTML EXACT :
    - Noms joueurs/équipes (Orbitron 24px 700) avec <img> logo du club (height:30px) OU pour tennis : <img src='https://flagcdn.com/w40/{code}.png' style='height:20px;border-radius:2px;vertical-align:middle;margin-right:6px'> à côté du nom.
    - Format football : <img src='https://media.api-sports.io/football/teams/{id}.png' style='height:30px;vertical-align:middle;margin-right:8px'><span>NOM EQUIPE</span>
    - Format tennis : <img src='https://flagcdn.com/w40/{code}.png' style='height:20px;border-radius:2px;vertical-align:middle;margin-right:6px'><span>NOM JOUEUR</span>
-   - VS en rose — pour TENNIS : font-size:32px; font-weight:900; color:#FF2D78 (bien visible)
+   - VS : pour TENNIS : font-size:32px; font-weight:900; color:#FF2D78 (bien visible). Pour FOOTBALL/BASKET/HOCKEY/MULTISPORT : pas de fond dégradé ; les deux lettres "VS" en dégradé TEXTE uniquement (background:linear-gradient(90deg,#FF2D78,#00D4FF); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; font-size:28px; font-weight:900; Orbitron).
    - Stade/surface (14px #8A9BB0)
    - Dots forme CERCLES 30x30px (V=vert glow, D=rouge glow, N=gris)
 5. ⚠️ SECTION STATS OBLIGATOIRE (margin:16px 28px; display:flex; gap:16px) — 2 colonnes côte à côte, RICHES EN DONNÉES :
@@ -277,5 +285,6 @@ La card locked DOIT CACHER le contenu premium. Structure identique à la card no
 6. Le glow extérieur est TOUJOURS en z-index:-1 avec isolation:isolate sur la card.
 7. ⚠️ NE JAMAIS modifier les polices : utiliser uniquement Orbitron et Rajdhani comme indiqué. Pas de changement de font-family.
 8. ⚠️ Mascotte OBLIGATOIRE : sur chaque card (normale + locked), football / basket / hockey / multisport = mascotte-rose.png (noir néon rose) en fond ; tennis = mascotte-tennis.png. Ne jamais oublier.
+9. ⚠️ Safe non-tennis : pas de fond en dégradé sur la match card ; uniquement les lettres "VS" en dégradé texte (rose #FF2D78 → bleu #00D4FF).
 PROMPT
 );
