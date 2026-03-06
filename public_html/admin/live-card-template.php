@@ -181,8 +181,8 @@ function sportConfig($sport) {
         'emoji'        => $s[0],
         'label'        => $s[1],
         'pack'         => $s[2],
-        'mascotte_url'   => 'https://stratedgepronos.fr/assets/images/mascotte.png',
-        // Autres sports : fond non-noir → opacity simple sans blend mode (évite le bave violet)
+        'mascotte_url'   => 'https://stratedgepronos.fr/assets/images/mascotte-rose.png',
+        // Autres sports (foot, basket, hockey…) : mascotte noir néon rose
         'mascotte_style' => "opacity:0.12;",
         'mascotte_locked'=> "opacity:0.06;",
         'badge_bg'     => 'rgba(255,45,122,0.12)',
@@ -588,7 +588,7 @@ function generateFunCards($d) {
     $isTennis    = (strtolower($d['sport'] ?? '') === 'tennis');
     $mascotteUrl = $isTennis
         ? 'https://stratedgepronos.fr/assets/images/mascotte-tennis.png'
-        : 'https://stratedgepronos.fr/assets/images/mascotte.png';
+        : 'https://stratedgepronos.fr/assets/images/mascotte-rose.png';
     $logo        = 'https://stratedgepronos.fr/assets/images/logo_site_transparent.png';
 
     $date    = htmlspecialchars($d['date_fr']    ?? '', ENT_QUOTES, 'UTF-8');
