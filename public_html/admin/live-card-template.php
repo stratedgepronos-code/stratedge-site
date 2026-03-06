@@ -886,9 +886,8 @@ HTML;
       <div class='promo-eyebrow'>🎾 FUN BET TENNIS — COMBINÉ ATP / WTA</div>
       <div class='promo-main'>Inclus dans le <span class='promo-main-hl'>Pack Tennis Pro</span></div>
       <div class='promo-packs'>
-        <span class='pack-tag pack-tag-max'>🎾 Tennis Weekly — 15€/sem</span>
+        <span class='pack-tag pack-tag-max'>🎾 Tennis Weekly</span>
       </div>
-      <div class='promo-price'>Abonne-toi au <span>Pack Tennis</span></div>
     </div>
     <div class='promo-right'>
       <div class='promo-cta'>🎾 Je m'abonne</div>
@@ -900,15 +899,12 @@ HTML;
   <div class='promo-banner'>
     <div class='promo-left-bar'></div>
     <div class='promo-text-block'>
-      <div class='promo-eyebrow'>🚀 Option Fun Bet — En supplément de vos packs</div>
-      <div class='promo-main'>Option dans <span class='promo-main-hl'>Sport Daily, Week-end &amp; Weekly</span> · Inclus MAX</div>
+      <div class='promo-eyebrow'>🚀 Option Fun Bet</div>
+      <div class='promo-main'>Option uniquement dans l'offre <span class='promo-main-hl'>Week-end</span> · Inclus dans l'offre <span class='promo-main-hl'>MAX</span></div>
       <div class='promo-packs'>
-        <span class='pack-tag'>🌅 Sport Daily</span>
         <span class='pack-tag'>📅 Week-end</span>
-        <span class='pack-tag'>📆 Weekly</span>
         <span class='pack-tag pack-tag-max'>✅ Inclus MAX</span>
       </div>
-      <div class='promo-price'>En option dès <span>1.50€/jour</span></div>
     </div>
     <div class='promo-right'>
       <div class='promo-cta'>⚡ Je m'abonne</div>
