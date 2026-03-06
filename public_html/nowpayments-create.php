@@ -41,6 +41,10 @@ if (!in_array($coin, $validCoins) || !in_array($type, $validTypes)) {
 }
 
 $prix_base    = $montants[$type];
+$optionFun    = ($type === 'weekend' && !empty($_POST['option_fun']) && $_POST['option_fun'] === '1');
+if ($optionFun) {
+    $prix_base += 10.00;
+}
 $code_saisi   = trim($_POST['code_promo'] ?? '');
 $promo        = calculerPrixAvecPromo($prix_base, $type, (int)$membre['id'], $code_saisi);
 $montant_eur  = $promo['montant'];

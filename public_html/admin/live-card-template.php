@@ -900,11 +900,12 @@ HTML;
   <div class='promo-banner'>
     <div class='promo-left-bar'></div>
     <div class='promo-text-block'>
-      <div class='promo-eyebrow'>🚀 Option Fun Bet</div>
-      <div class='promo-main'>Option uniquement dans l'offre <span class='promo-main-hl'>Week-end</span> · Inclus dans l'offre <span class='promo-main-hl'>MAX</span></div>
+      <div class='promo-eyebrow'>🎯 Option Fun Bet</div>
+      <div class='promo-main'>En option dans l'offre <span class='promo-main-hl'>Week-end (+10€)</span></div>
+      <div class='promo-main' style='font-size:17px;margin-top:2px;'>Inclus dans l'offre <span class='promo-main-hl'>VIP MAX</span></div>
       <div class='promo-packs'>
-        <span class='pack-tag'>📅 Week-end</span>
-        <span class='pack-tag pack-tag-max'>✅ Inclus MAX</span>
+        <span class='pack-tag'>📅 Week-end +10€</span>
+        <span class='pack-tag pack-tag-max'>👑 Inclus MAX</span>
       </div>
     </div>
     <div class='promo-right'>

@@ -33,7 +33,7 @@ $offres = [
         'idd'        => '446904',
         'idp'        => '263723',
         'duree'      => 'Du vendredi 00h00 au dimanche 23h59',
-        'avantages'  => ['Accès bets Safe & Fun', 'Bets LIVE par mail &amp; Push', 'Tous les matchs du week-end', 'Sans engagement'],
+        'avantages'  => ['Accès bets Safe & Fun <small style="opacity:0.6">(avec supplément)</small>', 'Bets LIVE par mail &amp; Push', 'Tous les matchs du week-end', 'Sans engagement'],
         'color'      => '#00d4ff',
         'glow'       => 'rgba(0,212,255,0.18)',
         'gradient'   => 'linear-gradient(135deg,#00d4ff,#0099cc)',
@@ -429,6 +429,75 @@ $membre = getMembre();
     }
     .btn-crypto:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(247,147,26,0.4); }
 
+    /* Option Fun Bet */
+    .fun-option-block {
+      position:relative;
+      background:linear-gradient(135deg,rgba(168,85,247,0.06),rgba(255,45,120,0.04));
+      border:1.5px solid rgba(168,85,247,0.25);
+      border-radius:16px;
+      padding:1.2rem 1.5rem 1.2rem 1.2rem;
+      margin-bottom:1.5rem;
+      display:none;
+      overflow:visible;
+    }
+    .fun-option-block.visible { display:block; animation:fadeUp 0.4s ease both; }
+    .fun-option-inner {
+      display:flex;
+      align-items:center;
+      gap:1rem;
+    }
+    .fun-check-wrap {
+      flex-shrink:0;
+    }
+    .fun-check-wrap input[type="checkbox"] {
+      width:22px; height:22px;
+      accent-color:#a855f7;
+      cursor:pointer;
+    }
+    .fun-option-text {
+      flex:1;
+    }
+    .fun-option-tag {
+      font-family:'Orbitron',sans-serif;
+      font-size:0.6rem; font-weight:700;
+      letter-spacing:2px; text-transform:uppercase;
+      color:#a855f7;
+      margin-bottom:0.3rem;
+    }
+    .fun-option-title {
+      font-family:'Orbitron',sans-serif;
+      font-size:0.95rem; font-weight:900;
+      color:var(--txt);
+      margin-bottom:0.2rem;
+    }
+    .fun-option-title .fun-price {
+      color:#a855f7;
+    }
+    .fun-option-desc {
+      font-size:0.82rem;
+      color:var(--txt3);
+      line-height:1.4;
+    }
+    .fun-mascotte {
+      position:absolute;
+      right:-20px;
+      bottom:-15px;
+      width:120px;
+      height:auto;
+      pointer-events:none;
+      z-index:2;
+      transform:scaleX(-1);
+      filter:drop-shadow(0 0 15px rgba(168,85,247,0.3));
+    }
+    @media(max-width:860px){
+      .fun-mascotte { width:80px; right:-10px; bottom:-10px; }
+    }
+    @media(max-width:480px){
+      .fun-mascotte { width:65px; right:-5px; bottom:-8px; }
+      .fun-option-title { font-size:0.82rem; }
+      .fun-option-desc { font-size:0.75rem; }
+    }
+
     /* Badges sécurité */
     .sec-badges {
       display:flex; gap:0.5rem; flex-wrap:wrap;
@@ -722,6 +791,22 @@ $membre = getMembre();
         </div>
       </div>
 
+      <?php if ($type === 'weekend'): ?>
+      <div class="fun-option-block" id="funOptionBlock">
+        <div class="fun-option-inner">
+          <div class="fun-check-wrap">
+            <input type="checkbox" id="funOptionCheck" onchange="toggleFunOption()">
+          </div>
+          <div class="fun-option-text">
+            <div class="fun-option-tag">🎯 Option disponible</div>
+            <div class="fun-option-title">Ajouter les <span class="fun-price">Fun Bets</span> <span class="fun-price">+10€</span></div>
+            <div class="fun-option-desc">Combine tes bets Safe avec nos paris Fun pour un week-end explosif !</div>
+          </div>
+        </div>
+        <img src="/assets/images/mascotte-fun.png" alt="" class="fun-mascotte">
+      </div>
+      <?php endif; ?>
+
       <div class="payment-block" id="crypto">
         <div class="block-title">₿ Crypto-monnaie</div>
         <div class="block-desc">Choisissez votre crypto, générez une adresse unique et payez — activation automatique en quelques minutes</div>
@@ -855,6 +940,18 @@ let selectedCoin   = 'btc';
 let currentPayId   = null;
 let pollInterval   = null;
 let countdownTimer = null;
+let funOptionActive = false;
+
+// Show fun option block when on weekend page
+(function(){
+  var fb = document.getElementById('funOptionBlock');
+  if(fb) fb.classList.add('visible');
+})();
+
+function toggleFunOption() {
+  var cb = document.getElementById('funOptionCheck');
+  funOptionActive = cb && cb.checked;
+}
 
 // ── Sélection de la crypto ─────────────────────────────────
 function selectCoin(coin, btn) {
@@ -877,7 +974,7 @@ async function genererAdresse() {
     const resp = await fetch('nowpayments-create.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `crypto=${selectedCoin}&offre=<?= $type ?>&code_promo=${encodeURIComponent((document.getElementById('code_promo')&&document.getElementById('code_promo').value)||'')}`,
+      body: `crypto=${selectedCoin}&offre=<?= $type ?>&code_promo=${encodeURIComponent((document.getElementById('code_promo')&&document.getElementById('code_promo').value)||'')}&option_fun=${funOptionActive?'1':'0'}`,
     });
 
     const data = await resp.json();

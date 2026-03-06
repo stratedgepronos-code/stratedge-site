@@ -4,19 +4,18 @@ requireAdmin();
 $pageActive = 'index';
 $db = getDB();
 
-// Stats visiteurs UNIQUES (un visiteur = un même visitor_id, pas les pages vues)
+// Stats visiteurs (table visites en BDD — ne se remet plus à zéro au déploiement)
 $visiteursAujourdhui = $visiteursSemaine = $visiteursMois = $visiteursAll = 0;
 try {
     $todayStart = strtotime('today');
     $weekStart = strtotime('-7 days');
     $monthStart = strtotime('-30 days');
-    // COUNT(DISTINCT ...) : anciennes lignes sans visitor_id comptées via COALESCE(visitor_id, id)
-    $visiteursAll = (int)$db->query("SELECT COUNT(DISTINCT COALESCE(visitor_id, id)) FROM visites")->fetchColumn();
-    $visiteursMois = (int)$db->query("SELECT COUNT(DISTINCT COALESCE(visitor_id, id)) FROM visites WHERE t >= $monthStart")->fetchColumn();
-    $visiteursSemaine = (int)$db->query("SELECT COUNT(DISTINCT COALESCE(visitor_id, id)) FROM visites WHERE t >= $weekStart")->fetchColumn();
-    $visiteursAujourdhui = (int)$db->query("SELECT COUNT(DISTINCT COALESCE(visitor_id, id)) FROM visites WHERE t >= $todayStart")->fetchColumn();
+    $visiteursAll = (int)$db->query("SELECT COUNT(*) FROM visites")->fetchColumn();
+    $visiteursMois = (int)$db->query("SELECT COUNT(*) FROM visites WHERE t >= $monthStart")->fetchColumn();
+    $visiteursSemaine = (int)$db->query("SELECT COUNT(*) FROM visites WHERE t >= $weekStart")->fetchColumn();
+    $visiteursAujourdhui = (int)$db->query("SELECT COUNT(*) FROM visites WHERE t >= $todayStart")->fetchColumn();
 } catch (Throwable $e) {
-    // Table visites peut ne pas exister ou colonne visitor_id absente
+    // Table visites peut ne pas exister
 }
 
 $nbMembres    = $db->query("SELECT COUNT(*) FROM membres WHERE email != 'stratedgepronos@gmail.com'")->fetchColumn();
@@ -31,8 +30,12 @@ $revenuMulti  = $revenuTotal - $revenuTennis;
 $nbAboMulti   = (int)$db->query("SELECT COUNT(*) FROM abonnements WHERE type!='tennis'")->fetchColumn();
 $revenuVipMax = (float)$db->query("SELECT SUM(montant) FROM abonnements WHERE type='vip_max'")->fetchColumn();
 $nbAboVipMax  = (int)$db->query("SELECT COUNT(*) FROM abonnements WHERE type='vip_max'")->fetchColumn();
-$shaymPart    = $revenuVipMax * 0.60;
-$shuriikPart  = $revenuVipMax * 0.40;
+$shaymPart    = $revenuVipMax * 0.50;
+$shuriikPart  = $revenuVipMax * 0.30;
+$yaffaPart    = $revenuVipMax * 0.20;
+
+$revenuFun    = (float)$db->query("SELECT SUM(montant) FROM abonnements WHERE type='weekend_fun'")->fetchColumn();
+$nbAboFun     = (int)$db->query("SELECT COUNT(*) FROM abonnements WHERE type='weekend_fun'")->fetchColumn();
 
 $derniersMembres = $db->query("SELECT * FROM membres WHERE email != 'stratedgepronos@gmail.com' ORDER BY date_inscription DESC LIMIT 5")->fetchAll();
 $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m ON t.membre_id=m.id WHERE t.statut!='resolu' ORDER BY t.date_creation DESC LIMIT 5")->fetchAll();
@@ -115,7 +118,7 @@ $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m O
       <p>Bienvenue — <?= date('d/m/Y à H:i') ?></p>
     </div>
     <div class="stats-bar-visiteurs" style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;padding:0.75rem 1.25rem;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:14px;">
-      <span style="font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);">Visiteurs uniques</span>
+      <span style="font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);">Visiteurs</span>
       <span style="color:var(--text-primary);"><strong><?= number_format($visiteursAujourdhui, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">aujourd'hui</span></span>
       <span style="color:var(--text-primary);"><strong><?= number_format($visiteursSemaine, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">7 jours</span></span>
       <span style="color:var(--text-primary);"><strong><?= number_format($visiteursMois, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">30 jours</span></span>
@@ -156,7 +159,7 @@ $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m O
     </div>
   </div>
 
-  <div class="revenus-row" style="grid-template-columns:1fr 1fr 1fr;">
+  <div class="revenus-row" style="grid-template-columns:1fr 1fr;">
     <div class="revenu-card tennis">
       <div class="revenu-left">
         <div class="revenu-emoji">🎾</div>
@@ -202,17 +205,41 @@ $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m O
           <div class="revenu-pct-value" style="background:linear-gradient(135deg,#f5c842,#fffbe6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;"><?= $revenuTotal>0 ? number_format(($revenuVipMax/$revenuTotal)*100,1) : '0.0' ?>%</div>
         </div>
       </div>
-      <!-- Split Shaym / Shuriik -->
+      <!-- Split Shaym / Shurik / Yaffa -->
       <div class="vip-split">
         <div class="vip-split-item">
           <div class="vip-split-pseudo">Shaym</div>
-          <div class="vip-split-pct">60%</div>
+          <div class="vip-split-pct">50%</div>
           <div class="vip-split-montant"><?= number_format($shaymPart, 2) ?>€</div>
         </div>
         <div class="vip-split-item">
-          <div class="vip-split-pseudo">Shuriik</div>
-          <div class="vip-split-pct">40%</div>
+          <div class="vip-split-pseudo">Shurik</div>
+          <div class="vip-split-pct">30%</div>
           <div class="vip-split-montant"><?= number_format($shuriikPart, 2) ?>€</div>
+        </div>
+        <div class="vip-split-item">
+          <div class="vip-split-pseudo">Yaffa</div>
+          <div class="vip-split-pct">20%</div>
+          <div class="vip-split-montant"><?= number_format($yaffaPart, 2) ?>€</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FUN BETS -->
+    <div class="revenu-card" style="background:var(--bg-card);border:1px solid rgba(168,85,247,0.25);flex-direction:column;align-items:stretch;gap:0.5rem;">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:linear-gradient(90deg,#a855f7,#7c3aed);"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+        <div class="revenu-left">
+          <div class="revenu-emoji">🎯</div>
+          <div>
+            <div class="revenu-label" style="color:rgba(168,85,247,0.7);">Revenus Fun Bets</div>
+            <div class="revenu-value" style="color:#a855f7;"><?= number_format($revenuFun, 2) ?>€</div>
+            <div class="revenu-sub"><?= $nbAboFun ?> option<?= $nbAboFun>1?'s':'' ?> Fun souscrite<?= $nbAboFun>1?'s':'' ?> · +10€/W-E</div>
+          </div>
+        </div>
+        <div>
+          <div class="revenu-pct-label" style="color:rgba(168,85,247,0.7);">Part du total</div>
+          <div class="revenu-pct-value" style="color:#a855f7;"><?= $revenuTotal>0 ? number_format(($revenuFun/$revenuTotal)*100,1) : '0.0' ?>%</div>
         </div>
       </div>
     </div>
