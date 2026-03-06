@@ -1,6 +1,8 @@
 <?php
 // ============================================================
-// STRATEDGE — claude-config.php V14
+// STRATEDGE — claude-config.php V16
+// V16 : Safe multisport — mascotte noir néon rose (mascotte-rose.png) obligatoire en fond
+// V15 : Safe card tennis — bandeau pub Pack Tennis en bas (normale + locked)
 // V14 : Pas de logo tournoi (texte uniquement), cote pill fond rose néon uni (#FF2D78)
 // V13 : Fix CORS logos, drapeaux flagcdn obligatoires, cote pill simple
 // V12 : Stats enrichies (6-8 lignes par joueur/équipe), logos tournois/compétitions, barre confiance + value universels
@@ -156,12 +158,14 @@ Logos clubs/joueurs — ⚠️ IMPORTANT : ajouter les logos à côté des noms 
 - BASKET NBA : https://cdn.nba.com/logos/nba/{nba_team_id}/primary/L/logo.svg
 - HOCKEY NHL : drapeau emoji ou texte abrégé
 
-Mascotte WATERMARK — ⚠️ OBLIGATOIRE, doit occuper toute la hauteur de la card en arrière-plan :
-HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div principale de la card) :
-- TENNIS : <img src='https://stratedgepronos.fr/assets/images/mascotte-tennis.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
-- Autres sports : <img src='https://stratedgepronos.fr/assets/images/mascotte-rose.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
-- Card locked : même chose mais opacity:0.25
-⚠️ La mascotte doit faire 100% de la hauteur de la card, centrée horizontalement, DERRIÈRE le contenu (z-index:1, contenu en z-index:2).
+Mascotte WATERMARK — ⚠️ OBLIGATOIRE sur TOUTES les cards (normale ET locked), sans exception :
+À placer juste après l'ouverture de la div principale de la card (premier élément dans le conteneur de la card), en arrière-plan sur toute la hauteur.
+HTML EXACT :
+- TENNIS uniquement : <img src='https://stratedgepronos.fr/assets/images/mascotte-tennis.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
+- FOOTBALL, BASKET, HOCKEY, MULTISPORT et tout autre sport (pas tennis) : <img src='https://stratedgepronos.fr/assets/images/mascotte-rose.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
+  → mascotte-rose.png = mascotte noir néon rose, obligatoire en fond sur les cards Safe football, basket, hockey et multisport.
+- Card locked : même URL selon le sport, mais opacity:0.25 (au lieu de 0.45).
+⚠️ La mascotte doit faire 100% de la hauteur de la card, centrée horizontalement, DERRIÈRE le contenu (z-index:1, contenu en z-index:2). Ne jamais oublier la mascotte, y compris sur card multisport.
 
 ---
 
@@ -179,11 +183,16 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
 - Drapeaux : la card est exportée en JPG via html2canvas. Utiliser OBLIGATOIREMENT <img src='https://flagcdn.com/w40/{code}.png'> — JAMAIS d'emoji (rendu cassé dans html2canvas), JAMAIS de code texte "CH"/"FR".
 - ⚠️ NE PAS afficher de logo tournoi/compétition. Uniquement le NOM de la compétition en texte (ex: "ATP 250 — Buenos Aires — Terre battue", "Ligue 1", "Champions League").
 - ⚠️ NE PAS modifier les polices : garder Orbitron et Rajdhani telles quelles dans tout le HTML. Aucun changement de font-family.
+- ⚠️ PUB PACK TENNIS EN BAS : Pour les cards TENNIS uniquement (normale ET locked), tu DOIS ajouter en bas de la card, juste avant la ligne gradient bas 4px, un bandeau promo pour le Pack Tennis. Structure :
+  • Conteneur : margin 16px 28px 20px; padding 20px 24px; display:flex; align-items:center; justify-content:space-between; gap:20px; background:#1A361A; border:1px solid rgba(0,255,136,0.35); border-radius:12px.
+  • Partie gauche (texte) : "OFFRE EXCLUSIVE" (Orbitron 10px uppercase #00FF88), "PACK TENNIS PRO - 15€/semaine" (Orbitron 18px bold #fff), "Pronostics experts - Analyses live - Accès illimité" (Rajdhani 13px #8A9BB0).
+  • Partie droite : bouton CTA "JE M'ABONNE →" (display:inline-block; padding:14px 28px; background:linear-gradient(135deg,#00FF88,#00c896); color:#080A12; font-family:Orbitron; font-size:14px; font-weight:700; border-radius:10px; text-decoration:none). Ce bandeau doit apparaître sur les DEUX cards (html_normal et html_locked) quand le sport est tennis.
 
 ---
 
 📐 STRUCTURE CARD NORMALE (de haut en bas)
 
+0. ⚠️ Mascotte watermark (OBLIGATOIRE) : juste après l'ouverture de la div principale de la card, insérer l'<img> mascotte — tennis : mascotte-tennis.png ; football / basket / hockey / multisport : mascotte-rose.png (noir néon rose). opacity:0.45. Card locked : idem avec opacity:0.25.
 1. Ligne gradient haut 4px
 2. Header (padding:20px 28px 16px; display:flex; justify-content:space-between; align-items:center) :
    - <img> logo_site_transparent.png height:70px
@@ -226,7 +235,8 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
 9. Analyse (margin:16px 28px 20px; padding:20px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:10px) :
    - Titre "ANALYSE" Orbitron 11px cyan
    - Texte Rajdhani 15px #8A9BB0 (3-4 lignes max, concis)
-10. Ligne gradient bas 4px
+10. [TENNIS UNIQUEMENT] Bandeau pub Pack Tennis (voir règles "PUB PACK TENNIS EN BAS" dans la section 🎾 TENNIS SAFE CARD) — juste avant la ligne du bas.
+11. Ligne gradient bas 4px
 
 ---
 
@@ -242,6 +252,7 @@ La card locked DOIT CACHER le contenu premium. Structure identique à la card no
 - Bankroll (§8) : contenu flouté
 
 ⚠️ CE QUI RESTE VISIBLE :
+- Mascotte en arrière-plan (toujours visible sur normale ET locked — mascotte-rose.png pour multisport/foot/basket/hockey, mascotte-tennis.png pour tennis).
 - Header, logo, badge sport
 - Barre compétition (date, heure, compétition en texte) — TOUS SPORTS
 - Barre de confiance (Confiance XX%) et value (VALUE +X% ou Valeur neutre) restent visibles sur la locked — TOUS SPORTS
@@ -265,5 +276,6 @@ La card locked DOIT CACHER le contenu premium. Structure identique à la card no
 5. Chaque HTML est COMPLET et AUTONOME (<!DOCTYPE html>, <style> avec @import fonts, etc.).
 6. Le glow extérieur est TOUJOURS en z-index:-1 avec isolation:isolate sur la card.
 7. ⚠️ NE JAMAIS modifier les polices : utiliser uniquement Orbitron et Rajdhani comme indiqué. Pas de changement de font-family.
+8. ⚠️ Mascotte OBLIGATOIRE : sur chaque card (normale + locked), football / basket / hockey / multisport = mascotte-rose.png (noir néon rose) en fond ; tennis = mascotte-tennis.png. Ne jamais oublier.
 PROMPT
 );
