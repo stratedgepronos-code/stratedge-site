@@ -35,10 +35,21 @@ $tauxReussite = ($stats['total'] > 0 && ($stats['gagnes'] + $stats['perdus']) > 
     : null;
 
 $filtre = $_GET['filtre'] ?? 'tous';
-$betsFiltres = $filtre === 'tous' ? $bets : array_filter($bets, fn($b) => $b['resultat'] === $filtre);
-$betsPerPage = 12;
+$filtreType = $_GET['type'] ?? 'tous';
+$betsFiltres = $bets;
+if ($filtre !== 'tous') {
+    $betsFiltres = array_filter($betsFiltres, fn($b) => $b['resultat'] === $filtre);
+}
+if ($filtreType !== 'tous') {
+    $betsFiltres = array_filter($betsFiltres, fn($b) => strpos($b['type'], $filtreType) !== false);
+}
+$betsFiltres = array_values($betsFiltres);
+$betsPerPage = 18;
 $totalBets = count($betsFiltres);
-$betsToShow = array_slice($betsFiltres, 0, $betsPerPage);
+
+$nbSafe = count(array_filter($bets, fn($b) => strpos($b['type'], 'safe') !== false && strpos($b['type'], 'live') === false && strpos($b['type'], 'fun') === false));
+$nbLive = count(array_filter($bets, fn($b) => strpos($b['type'], 'live') !== false));
+$nbFun  = count(array_filter($bets, fn($b) => strpos($b['type'], 'fun') !== false));
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -107,7 +118,10 @@ body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
 .winrate-fill{height:100%;border-radius:4px;transition:width .8s ease-out;}
 
 /* ═══ Filtres pills ═══ */
-.filters{display:flex;gap:0.5rem;margin-bottom:2rem;flex-wrap:wrap;}
+.filters-section{margin-bottom:1.5rem;}
+.filters-label{font-family:'Orbitron',sans-serif;font-size:0.68rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--txt3,#8a9bb0);margin-bottom:0.5rem;}
+.filters{display:flex;gap:0.5rem;flex-wrap:wrap;}
+.filters+.filters-label{margin-top:1rem;}
 .filter-pill{padding:0.5rem 1.1rem;border-radius:50px;font-family:'Rajdhani',sans-serif;font-size:0.88rem;font-weight:600;border:1px solid rgba(255,255,255,0.1);color:var(--txt3,#8a9bb0);cursor:pointer;transition:all .25s;text-decoration:none;background:transparent;display:inline-flex;align-items:center;gap:0.4rem;}
 .filter-pill:hover{border-color:rgba(255,255,255,0.25);color:var(--txt,#f0f4f8);}
 .filter-pill.active{color:#fff;border-color:transparent;box-shadow:0 0 20px rgba(255,45,120,0.15);}
@@ -115,12 +129,15 @@ body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
 .filter-pill.active.f-gagne{background:rgba(0,200,100,0.15);border-color:rgba(0,200,100,0.4);color:#00c864;}
 .filter-pill.active.f-perdu{background:rgba(255,68,68,0.15);border-color:rgba(255,68,68,0.4);color:#ff4444;}
 .filter-pill.active.f-annule{background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.4);color:#f59e0b;}
+.filter-pill.active.f-safe{background:rgba(0,212,255,0.15);border-color:rgba(0,212,255,0.4);color:#00d4ff;}
+.filter-pill.active.f-live{background:rgba(255,45,120,0.15);border-color:rgba(255,45,120,0.4);color:#ff2d78;}
+.filter-pill.active.f-fun{background:rgba(168,85,247,0.15);border-color:rgba(168,85,247,0.4);color:#a855f7;}
 .filter-count{font-family:'Space Mono',monospace;font-size:0.68rem;padding:0.1rem 0.4rem;border-radius:50px;background:rgba(255,255,255,0.08);}
 .filter-pill.active .filter-count{background:rgba(255,255,255,0.15);}
 
-/* ═══ Cards historique ═══ */
-.hist-grid{display:flex;flex-direction:column;gap:1rem;}
-.hist-card{display:flex;background:var(--card,#111827);border-radius:14px;overflow:hidden;transition:all .35s;border:1px solid var(--border,rgba(255,45,120,0.15));opacity:0;animation:cardSlide .4s ease-out forwards;}
+/* ═══ Cards historique — grille 3 colonnes ═══ */
+.hist-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr));gap:1.2rem;}
+.hist-card{display:flex;flex-direction:column;background:var(--card,#111827);border-radius:14px;overflow:hidden;transition:all .35s;border:1px solid var(--border,rgba(255,45,120,0.15));opacity:0;animation:cardSlide .4s ease-out forwards;position:relative;}
 .hist-card:nth-child(1){animation-delay:0s;}
 .hist-card:nth-child(2){animation-delay:.04s;}
 .hist-card:nth-child(3){animation-delay:.08s;}
@@ -128,25 +145,25 @@ body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
 .hist-card:nth-child(5){animation-delay:.16s;}
 .hist-card:nth-child(6){animation-delay:.2s;}
 @keyframes cardSlide{to{opacity:1;}}
-.hist-card:hover{transform:translateX(4px);box-shadow:0 10px 40px rgba(0,0,0,0.4);border-color:rgba(255,255,255,0.1);}
+.hist-card:hover{transform:translateY(-5px);box-shadow:0 15px 50px rgba(0,0,0,0.45);border-color:rgba(255,255,255,0.12);}
 
-/* Bandeau lateral resultat */
-.hist-band{width:5px;flex-shrink:0;border-radius:14px 0 0 14px;}
+/* Bandeau haut resultat */
+.hist-band{width:100%;height:4px;flex-shrink:0;}
 
-/* Image a gauche */
-.hist-img-wrap{width:220px;min-width:220px;position:relative;overflow:hidden;cursor:zoom-in;flex-shrink:0;}
+/* Image */
+.hist-img-wrap{width:100%;position:relative;overflow:hidden;cursor:zoom-in;aspect-ratio:16/9;}
 .hist-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s;}
 .hist-img-wrap:hover .hist-img{transform:scale(1.05);}
-.hist-no-img{width:100%;height:100%;min-height:120px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:linear-gradient(135deg,rgba(255,45,120,0.04),rgba(0,212,255,0.02));}
+.hist-no-img{width:100%;aspect-ratio:16/9;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:linear-gradient(135deg,rgba(255,45,120,0.04),rgba(0,212,255,0.02));}
 
-/* Infos a droite */
-.hist-info{flex:1;padding:1rem 1.3rem;display:flex;flex-direction:column;justify-content:center;gap:0.4rem;min-width:0;}
+/* Infos */
+.hist-info{flex:1;padding:0.9rem 1.1rem;display:flex;flex-direction:column;gap:0.4rem;min-width:0;}
 .hist-info-top{display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;}
 .hist-badges{display:flex;gap:0.35rem;flex-wrap:wrap;}
 .hist-badge{padding:0.2rem 0.6rem;border-radius:5px;font-family:'Orbitron',sans-serif;font-size:0.6rem;font-weight:700;letter-spacing:0.5px;}
 .hist-date{font-family:'Space Mono',monospace;font-size:0.68rem;color:var(--txt3,#8a9bb0);}
 .hist-titre{font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:600;color:var(--txt2,#b0bec9);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.hist-info-bottom{display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-top:auto;}
+.hist-info-bottom{display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-top:auto;padding-top:0.3rem;}
 .result-badge{padding:0.3rem 0.85rem;border-radius:6px;font-size:0.78rem;font-weight:700;font-family:'Orbitron',sans-serif;letter-spacing:0.5px;display:inline-flex;align-items:center;gap:0.3rem;}
 .result-date{font-size:0.72rem;color:var(--txt3,#8a9bb0);}
 
@@ -186,12 +203,10 @@ body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
   .mini-stat{min-width:0;padding:0.7rem 0.8rem;}
   .mini-stat-val{font-size:1rem;}
   .mini-stat-icon{font-size:1.2rem;}
-  .hist-card{flex-direction:column;}
-  .hist-band{width:100%;height:4px;border-radius:14px 14px 0 0;}
-  .hist-img-wrap{width:100%;min-width:0;max-height:200px;}
+  .hist-grid{grid-template-columns:1fr;gap:0.8rem;}
+  .hist-card:hover{transform:none;box-shadow:none;}
   .hist-info{padding:0.8rem 1rem;}
   .hist-titre{white-space:normal;}
-  .hist-card:hover{transform:none;box-shadow:none;}
   .filters{gap:0.4rem;}
   .filter-pill{padding:0.4rem 0.8rem;font-size:0.78rem;}
   .lightbox-img{border-radius:8px;max-height:80dvh;}
@@ -311,12 +326,23 @@ body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
   </div>
   <?php endif; ?>
 
-  <!-- Filtres -->
-  <div class="filters">
-    <a href="?filtre=tous" class="filter-pill f-tous <?= $filtre==='tous'?'active':'' ?>">Tous <span class="filter-count"><?= $stats['total'] ?? 0 ?></span></a>
-    <a href="?filtre=gagne" class="filter-pill f-gagne <?= $filtre==='gagne'?'active':'' ?>">✅ Gagnes <span class="filter-count"><?= $stats['gagnes'] ?? 0 ?></span></a>
-    <a href="?filtre=perdu" class="filter-pill f-perdu <?= $filtre==='perdu'?'active':'' ?>">❌ Perdus <span class="filter-count"><?= $stats['perdus'] ?? 0 ?></span></a>
-    <a href="?filtre=annule" class="filter-pill f-annule <?= $filtre==='annule'?'active':'' ?>">↺ Annules <span class="filter-count"><?= $stats['annules'] ?? 0 ?></span></a>
+  <!-- Filtres resultats -->
+  <div class="filters-section">
+    <div class="filters-label">Resultat</div>
+    <div class="filters">
+      <a href="?filtre=tous<?= $filtreType !== 'tous' ? '&type='.$filtreType : '' ?>" class="filter-pill f-tous <?= $filtre==='tous'?'active':'' ?>">Tous <span class="filter-count"><?= $stats['total'] ?? 0 ?></span></a>
+      <a href="?filtre=gagne<?= $filtreType !== 'tous' ? '&type='.$filtreType : '' ?>" class="filter-pill f-gagne <?= $filtre==='gagne'?'active':'' ?>">✅ Gagnes <span class="filter-count"><?= $stats['gagnes'] ?? 0 ?></span></a>
+      <a href="?filtre=perdu<?= $filtreType !== 'tous' ? '&type='.$filtreType : '' ?>" class="filter-pill f-perdu <?= $filtre==='perdu'?'active':'' ?>">❌ Perdus <span class="filter-count"><?= $stats['perdus'] ?? 0 ?></span></a>
+      <a href="?filtre=annule<?= $filtreType !== 'tous' ? '&type='.$filtreType : '' ?>" class="filter-pill f-annule <?= $filtre==='annule'?'active':'' ?>">↺ Annules <span class="filter-count"><?= $stats['annules'] ?? 0 ?></span></a>
+    </div>
+    <!-- Filtres type -->
+    <div class="filters-label" style="margin-top:0.8rem;">Type de bet</div>
+    <div class="filters">
+      <a href="?type=tous<?= $filtre !== 'tous' ? '&filtre='.$filtre : '' ?>" class="filter-pill f-tous <?= $filtreType==='tous'?'active':'' ?>">Tous <span class="filter-count"><?= $stats['total'] ?? 0 ?></span></a>
+      <a href="?type=safe<?= $filtre !== 'tous' ? '&filtre='.$filtre : '' ?>" class="filter-pill f-safe <?= $filtreType==='safe'?'active':'' ?>">🛡️ Safe <span class="filter-count"><?= $nbSafe ?></span></a>
+      <a href="?type=live<?= $filtre !== 'tous' ? '&filtre='.$filtre : '' ?>" class="filter-pill f-live <?= $filtreType==='live'?'active':'' ?>">⚡ Live <span class="filter-count"><?= $nbLive ?></span></a>
+      <a href="?type=fun<?= $filtre !== 'tous' ? '&filtre='.$filtre : '' ?>" class="filter-pill f-fun <?= $filtreType==='fun'?'active':'' ?>">🎯 Fun <span class="filter-count"><?= $nbFun ?></span></a>
+    </div>
   </div>
 
   <!-- Cards historique -->
