@@ -330,7 +330,7 @@ if (!$cards || !isset($cards['html_normal']) || !isset($cards['html_locked'])) {
     exit;
 }
 
-// Injection mascotte Safe si absente (hors tennis = mascotte-rose, tennis = mascotte-tennis)
+// Injection mascotte Safe (hors tennis = mascotte-rose, tennis = mascotte-tennis)
 $sportLower = strtolower(trim($sport));
 $isTennisSafe = ($sportLower === 'tennis');
 $mascotteNormal = $isTennisSafe
@@ -339,13 +339,21 @@ $mascotteNormal = $isTennisSafe
 $mascotteLocked = $isTennisSafe
     ? "<img src='https://stratedgepronos.fr/assets/images/mascotte-tennis.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.25;z-index:1'>"
     : "<img src='https://stratedgepronos.fr/assets/images/mascotte-rose.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.25;z-index:1'>";
+
+// Hors tennis : remplacer l'ancienne mascotte.png par mascotte-rose.png si Claude l'a mise
+if (!$isTennisSafe) {
+    $cards['html_normal'] = str_replace('mascotte.png', 'mascotte-rose.png', $cards['html_normal']);
+    $cards['html_locked'] = str_replace('mascotte.png', 'mascotte-rose.png', $cards['html_locked']);
+}
+
+// Si aucune mascotte (rose ou tennis) : injection après la première <div> du body (regex souple)
 $hasMascotteNormal = (strpos($cards['html_normal'], 'mascotte-rose.png') !== false || strpos($cards['html_normal'], 'mascotte-tennis.png') !== false);
 $hasMascotteLocked = (strpos($cards['html_locked'], 'mascotte-rose.png') !== false || strpos($cards['html_locked'], 'mascotte-tennis.png') !== false);
 if (!$hasMascotteNormal) {
-    $cards['html_normal'] = preg_replace('/(<body[^>]*>\s*<div[^>]*>)/s', '$1' . $mascotteNormal, $cards['html_normal'], 1);
+    $cards['html_normal'] = preg_replace('/(<body[^>]*>)(.*?)(<div)([^>]*>)/s', '$1$2$3$4' . $mascotteNormal, $cards['html_normal'], 1);
 }
 if (!$hasMascotteLocked) {
-    $cards['html_locked'] = preg_replace('/(<body[^>]*>\s*<div[^>]*>)/s', '$1' . $mascotteLocked, $cards['html_locked'], 1);
+    $cards['html_locked'] = preg_replace('/(<body[^>]*>)(.*?)(<div)([^>]*>)/s', '$1$2$3$4' . $mascotteLocked, $cards['html_locked'], 1);
 }
 
 debugLog("SAFE OK! 1440px");
