@@ -3,8 +3,9 @@ require_once __DIR__ . '/includes/auth.php';
 
 $db = getDB();
 $membre = isLoggedIn() ? getMembre() : null;
+$currentPage = 'historique';
+$avatarUrl = $membre ? getAvatarUrl($membre) : null;
 
-// Bets avec résultat (hors en_cours), triés par date résultat
 $bets = $db->query("
     SELECT * FROM bets 
     WHERE resultat != 'en_cours' 
@@ -24,382 +25,417 @@ $typeLabels = ['safe'=>'🛡️ Safe','fun'=>'🎯 Fun','live'=>'⚡ Live','safe
 $typeColors = ['safe'=>'#00d4ff','fun'=>'#a855f7','live'=>'#ff2d78'];
 
 $resultatConfig = [
-    'gagne'  => ['label'=>'✅ Gagné',   'color'=>'#ff2d78', 'bg'=>'rgba(0,200,100,0.12)',  'border'=>'rgba(0,200,100,0.35)',  'icon'=>'✅', 'overlay'=>'rgba(0,200,100,0.15)'],
-    'perdu'  => ['label'=>'❌ Perdu',   'color'=>'#ff4444', 'bg'=>'rgba(255,68,68,0.12)',   'border'=>'rgba(255,68,68,0.35)',   'icon'=>'❌', 'overlay'=>'rgba(255,68,68,0.15)'],
-    'annule' => ['label'=>'↺ Annulé', 'color'=>'#f59e0b', 'bg'=>'rgba(245,158,11,0.12)', 'border'=>'rgba(245,158,11,0.35)', 'icon'=>'↺', 'overlay'=>'rgba(245,158,11,0.1)'],
+    'gagne'  => ['label'=>'Gagne',  'color'=>'#00c864', 'bg'=>'rgba(0,200,100,0.12)',  'border'=>'rgba(0,200,100,0.35)',  'icon'=>'✅', 'overlay'=>'rgba(0,200,100,0.15)', 'band'=>'linear-gradient(to bottom,#00c864,#00a050)'],
+    'perdu'  => ['label'=>'Perdu',   'color'=>'#ff4444', 'bg'=>'rgba(255,68,68,0.12)',   'border'=>'rgba(255,68,68,0.35)',   'icon'=>'❌', 'overlay'=>'rgba(255,68,68,0.15)', 'band'=>'linear-gradient(to bottom,#ff4444,#cc2222)'],
+    'annule' => ['label'=>'Annule', 'color'=>'#f59e0b', 'bg'=>'rgba(245,158,11,0.12)', 'border'=>'rgba(245,158,11,0.35)', 'icon'=>'↺',  'overlay'=>'rgba(245,158,11,0.1)', 'band'=>'linear-gradient(to bottom,#f59e0b,#d97706)'],
 ];
 
 $tauxReussite = ($stats['total'] > 0 && ($stats['gagnes'] + $stats['perdus']) > 0)
     ? round($stats['gagnes'] / ($stats['gagnes'] + $stats['perdus']) * 100)
     : null;
 
-// Grouper par mois (année-mois) pour dossiers repliables
-$moisNoms = [
-    '01'=>'Janvier','02'=>'Février','03'=>'Mars','04'=>'Avril',
-    '05'=>'Mai','06'=>'Juin','07'=>'Juillet','08'=>'Août',
-    '09'=>'Septembre','10'=>'Octobre','11'=>'Novembre','12'=>'Décembre'
-];
-function groupParMois(array $bets): array {
-    $mois = [];
-    foreach ($bets as $b) {
-        $date = $b['date_resultat'] ?? $b['date_post'];
-        $cle  = date('Y-m', strtotime($date));
-        $mois[$cle][] = $b;
-    }
-    return $mois;
-}
+$filtre = $_GET['filtre'] ?? 'tous';
+$betsFiltres = $filtre === 'tous' ? $bets : array_filter($bets, fn($b) => $b['resultat'] === $filtre);
+$betsPerPage = 12;
+$totalBets = count($betsFiltres);
+$betsToShow = array_slice($betsFiltres, 0, $betsPerPage);
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Historique des Bets – StratEdge Pronos</title>
-  <link rel="icon" type="image/png" href="assets/images/mascotte.png">
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-  <style>
-    :root{--bg-dark:#0a0e17;--bg-card:#111827;--neon-green:#ff2d78;--neon-green-dim:#d6245f;--neon-blue:#00d4ff;--text-primary:#f0f4f8;--text-secondary:#b0bec9;--text-muted:#8a9bb0;--border-subtle:rgba(255,45,120,0.15);--glow-green:0 0 30px rgba(255,45,120,0.35);}
-    *{margin:0;padding:0;box-sizing:border-box;}
-    body{font-family:'Rajdhani',sans-serif;background:var(--bg-dark);color:var(--text-primary);min-height:100vh;}
-    body::before{content:'';position:fixed;inset:0;background:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");pointer-events:none;z-index:0;}
-    
-    nav{background:rgba(10,14,23,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border-subtle);padding:0 2rem;position:sticky;top:0;z-index:100;}
-    .nav-inner{max-width:1600px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:70px;}
-    .logo img{height:45px;}
-    .nav-links{display:flex;align-items:center;gap:2rem;}
-    .nav-links a{color:var(--text-secondary);text-decoration:none;font-size:0.9rem;font-weight:500;text-transform:uppercase;letter-spacing:1px;transition:color 0.3s;}
-    .nav-links a:hover,.nav-links a.active{color:var(--neon-green);}
-    .hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:5px;background:none;border:none;}
-    .hamburger span{display:block;width:24px;height:2px;background:var(--text-primary);border-radius:2px;}
-    .mobile-menu{display:none;position:fixed;inset:0;top:70px;background:rgba(5,8,16,0.98);backdrop-filter:blur(20px);z-index:99;padding:2rem;flex-direction:column;overflow-y:auto;}
-    .mobile-menu.open{display:flex;}
-    .mobile-menu a{color:var(--text-secondary);text-decoration:none;font-size:1.1rem;font-weight:600;text-transform:uppercase;letter-spacing:2px;padding:1.2rem 0;border-bottom:1px solid rgba(255,255,255,0.05);transition:color 0.2s;}
-    .mobile-menu a:hover{color:var(--neon-green);}
-    @media(max-width:768px){
-      .nav-links{display:none;}
-      .hamburger{display:flex;}
-    }
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Historique des Bets – StratEdge Pronos</title>
+<link rel="icon" type="image/png" href="assets/images/mascotte.png">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#050810">
+<meta name="apple-mobile-web-app-capable" content="yes"><link rel="apple-touch-icon" href="/assets/images/mascotte.png">
+<?php if ($membre): ?>
+  <?php require_once __DIR__ . '/includes/sidebar-css.php'; ?>
+<?php else: ?>
+<style>
+:root{--bg:#050810;--card:#111827;--pink:#ff2d78;--pink-dim:#d6245f;--blue:#00d4ff;--purple:#a855f7;--txt:#f0f4f8;--txt2:#b0bec9;--txt3:#8a9bb0;--border:rgba(255,45,120,0.15);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;}
+nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 2rem;position:sticky;top:0;z-index:100;}
+.nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:65px;}
+.logo img{height:35px;}
+.nav-right{display:flex;align-items:center;gap:1.5rem;}
+.nav-right a{color:var(--txt2);text-decoration:none;font-size:0.95rem;font-weight:600;transition:color .3s;}
+.nav-right a:hover{color:var(--pink);}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:5px;background:none;border:none;}
+.hamburger span{display:block;width:24px;height:2px;background:var(--txt);border-radius:2px;}
+.mobile-menu{display:none;position:fixed;inset:0;top:65px;background:rgba(5,8,16,0.98);backdrop-filter:blur(20px);z-index:99;padding:2rem;flex-direction:column;}
+.mobile-menu.open{display:flex;}
+.mobile-menu a{color:var(--txt2);text-decoration:none;font-size:1.05rem;font-weight:600;padding:1rem 0;border-bottom:1px solid rgba(255,255,255,0.05);}
+@media(max-width:700px){.nav-right{display:none;}.hamburger{display:flex;}}
+</style>
+<?php endif; ?>
+<style>
+/* ═══ HISTORIQUE V2 ═══ */
 
-    .page-header{background:linear-gradient(180deg,#0d1220 0%,var(--bg-dark) 100%);padding:3.5rem 2rem;text-align:center;position:relative;overflow:hidden;}
-    .page-header::before{content:'';position:absolute;width:700px;height:400px;background:radial-gradient(circle,rgba(255,45,120,0.07) 0%,transparent 70%);top:-150px;left:50%;transform:translateX(-50%);pointer-events:none;}
-    .page-tag{font-family:'Space Mono',monospace;font-size:0.7rem;letter-spacing:3px;text-transform:uppercase;color:var(--neon-green);margin-bottom:0.75rem;}
-    .page-title{font-family:'Orbitron',sans-serif;font-size:2.2rem;font-weight:900;margin-bottom:0.75rem;}
-    .page-sub{color:var(--text-secondary);font-size:1rem;}
+/* Hero */
+.hist-hero{position:relative;text-align:center;overflow:hidden;background:linear-gradient(180deg,rgba(0,212,255,0.05) 0%,transparent 100%);border-bottom:1px solid var(--border,rgba(255,45,120,0.15));margin-left:calc(-3rem - var(--sidebar-w,270px));margin-right:-3rem;margin-top:-2.5rem;padding:3rem 2rem 2.5rem calc(3rem + var(--sidebar-w,270px));}
+.hist-hero::before{content:'';position:absolute;width:600px;height:400px;background:radial-gradient(circle,rgba(0,212,255,0.08) 0%,transparent 70%);top:-200px;left:50%;transform:translateX(-50%);pointer-events:none;}
+body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem 2rem 2.5rem;}
+.hist-tag{font-family:'Space Mono',monospace;font-size:0.75rem;letter-spacing:4px;text-transform:uppercase;color:var(--blue,#00d4ff);margin-bottom:0.7rem;}
+.hist-title{font-family:'Orbitron',sans-serif;font-size:2.2rem;font-weight:900;margin-bottom:0.5rem;}
+.hist-title span{background:linear-gradient(135deg,#00d4ff,#0099cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hist-sub{color:var(--txt2,#b0bec9);font-size:1rem;max-width:500px;margin:0 auto;}
 
-    /* STATS GLOBALES */
-    .main{max-width:1600px;margin:0 auto;padding:2.5rem 3rem;position:relative;z-index:1;}
-    .stats-bar{display:grid;grid-template-columns:repeat(5,1fr);gap:1.2rem;margin-bottom:2.5rem;}
-    .stat-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:14px;padding:1.4rem;text-align:center;}
-    .stat-value{font-family:'Orbitron',sans-serif;font-size:2rem;font-weight:900;margin-bottom:0.25rem;}
-    .stat-label{font-size:0.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;}
-    .stat-card.gagne{border-color:rgba(0,200,100,0.25);background:rgba(0,200,100,0.04);}
-    .stat-card.perdu{border-color:rgba(255,68,68,0.25);background:rgba(255,68,68,0.04);}
-    .stat-card.taux{border-color:rgba(255,45,120,0.25);background:rgba(255,45,120,0.04);}
+.hist-wrap{max-width:1400px;margin:0 auto;padding:1.5rem 0.5rem 2rem;}
 
-    /* FILTRE */
-    .filters{display:flex;gap:0.6rem;margin-bottom:2rem;flex-wrap:wrap;}
-    .filter-btn{padding:0.5rem 1.2rem;border-radius:8px;font-family:'Rajdhani',sans-serif;font-size:0.9rem;font-weight:600;border:1px solid rgba(255,255,255,0.1);color:var(--text-muted);cursor:pointer;transition:all 0.2s;text-decoration:none;background:transparent;}
-    .filter-btn:hover,.filter-btn.active{background:rgba(255,45,120,0.1);border-color:var(--neon-green);color:var(--text-primary);}
-    .filter-btn.f-gagne.active{background:rgba(255,45,120,0.08);border-color:#ff2d78;color:#ff2d78;}
-    .filter-btn.f-perdu.active{background:rgba(255,68,68,0.1);border-color:#ff4444;color:#ff4444;}
-    .filter-btn.f-annule.active{background:rgba(245,158,11,0.1);border-color:#f59e0b;color:#f59e0b;}
+/* ═══ Dashboard Stats ═══ */
+.stats-dashboard{display:flex;align-items:center;justify-content:center;gap:2.5rem;margin-bottom:2rem;flex-wrap:wrap;}
 
-    /* GRILLE BETS */
-    .bets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(320px,100%),1fr));gap:1.5rem;}
-    .bet-card{background:var(--bg-card);border-radius:16px;overflow:hidden;transition:all 0.3s;position:relative;}
-    .bet-card:hover{transform:translateY(-4px);box-shadow:0 20px 50px rgba(0,0,0,0.4);}
+/* Cercle radial */
+.radial-wrap{position:relative;width:160px;height:160px;flex-shrink:0;}
+.radial-circle{width:100%;height:100%;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;}
+.radial-value{font-family:'Orbitron',sans-serif;font-size:2.2rem;font-weight:900;color:var(--txt,#f0f4f8);line-height:1;}
+.radial-label{font-size:0.7rem;color:var(--txt3,#8a9bb0);text-transform:uppercase;letter-spacing:1px;margin-top:0.3rem;}
 
-    .bet-card-header{padding:0.9rem 1.2rem;display:flex;align-items:center;justify-content:space-between;}
-    .bet-type-badge{padding:0.25rem 0.7rem;border-radius:6px;font-family:'Orbitron',sans-serif;font-size:0.62rem;font-weight:700;letter-spacing:1px;}
-    .bet-date{font-size:0.78rem;color:var(--text-muted);}
-    .bet-titre{font-family:'Orbitron',sans-serif;font-size:0.85rem;padding:0 1.2rem 0.7rem;color:var(--text-secondary);}
+/* Mini stats */
+.mini-stats{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;}
+.mini-stat{background:var(--card,#111827);border-radius:12px;padding:1rem 1.4rem;display:flex;align-items:center;gap:0.8rem;border:1px solid var(--border,rgba(255,45,120,0.15));min-width:150px;}
+.mini-stat-icon{font-size:1.6rem;flex-shrink:0;}
+.mini-stat-val{font-family:'Orbitron',sans-serif;font-size:1.3rem;font-weight:900;line-height:1.1;}
+.mini-stat-lbl{font-size:0.72rem;color:var(--txt3,#8a9bb0);text-transform:uppercase;letter-spacing:0.5px;}
 
-    /* IMAGE + OVERLAY RÉSULTAT */
-    .bet-image-wrap{position:relative;cursor:zoom-in;}
-    .bet-image{width:100%;display:block;}
-    .result-overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0.5rem;}
-    .result-icon{font-size:4rem;filter:drop-shadow(0 0 20px currentColor);}
-    .result-label{font-family:'Orbitron',sans-serif;font-size:1.2rem;font-weight:900;letter-spacing:2px;text-shadow:0 0 20px currentColor;}
-    .zoom-hint{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.65);color:white;font-size:0.7rem;padding:0.25rem 0.55rem;border-radius:5px;pointer-events:none;opacity:0;transition:opacity 0.2s;}
-    .bet-image-wrap:hover .zoom-hint{opacity:1;}
+/* Winrate bar */
+.winrate-bar-wrap{margin-bottom:2rem;}
+.winrate-bar-header{display:flex;justify-content:space-between;margin-bottom:0.5rem;font-size:0.8rem;color:var(--txt3,#8a9bb0);}
+.winrate-bar{height:6px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden;}
+.winrate-fill{height:100%;border-radius:4px;transition:width .8s ease-out;}
 
-    /* BADGE RÉSULTAT bas de carte */
-    .bet-footer{padding:0.75rem 1.2rem;border-top:1px solid rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:space-between;}
-    .result-badge{padding:0.3rem 0.9rem;border-radius:6px;font-size:0.78rem;font-weight:700;}
-    .result-date{font-size:0.75rem;color:var(--text-muted);}
+/* ═══ Filtres pills ═══ */
+.filters{display:flex;gap:0.5rem;margin-bottom:2rem;flex-wrap:wrap;}
+.filter-pill{padding:0.5rem 1.1rem;border-radius:50px;font-family:'Rajdhani',sans-serif;font-size:0.88rem;font-weight:600;border:1px solid rgba(255,255,255,0.1);color:var(--txt3,#8a9bb0);cursor:pointer;transition:all .25s;text-decoration:none;background:transparent;display:inline-flex;align-items:center;gap:0.4rem;}
+.filter-pill:hover{border-color:rgba(255,255,255,0.25);color:var(--txt,#f0f4f8);}
+.filter-pill.active{color:#fff;border-color:transparent;box-shadow:0 0 20px rgba(255,45,120,0.15);}
+.filter-pill.active.f-tous{background:linear-gradient(135deg,rgba(255,45,120,0.2),rgba(168,85,247,0.15));border-color:rgba(255,45,120,0.3);}
+.filter-pill.active.f-gagne{background:rgba(0,200,100,0.15);border-color:rgba(0,200,100,0.4);color:#00c864;}
+.filter-pill.active.f-perdu{background:rgba(255,68,68,0.15);border-color:rgba(255,68,68,0.4);color:#ff4444;}
+.filter-pill.active.f-annule{background:rgba(245,158,11,0.15);border-color:rgba(245,158,11,0.4);color:#f59e0b;}
+.filter-count{font-family:'Space Mono',monospace;font-size:0.68rem;padding:0.1rem 0.4rem;border-radius:50px;background:rgba(255,255,255,0.08);}
+.filter-pill.active .filter-count{background:rgba(255,255,255,0.15);}
 
-    /* VIDE */
-    .empty-state{text-align:center;padding:4rem 2rem;color:var(--text-muted);}
-    .empty-state .big{font-size:3rem;margin-bottom:1rem;}
-    .empty-state h3{font-family:'Orbitron',sans-serif;font-size:1.2rem;color:var(--text-secondary);margin-bottom:0.5rem;}
+/* ═══ Cards historique ═══ */
+.hist-grid{display:flex;flex-direction:column;gap:1rem;}
+.hist-card{display:flex;background:var(--card,#111827);border-radius:14px;overflow:hidden;transition:all .35s;border:1px solid var(--border,rgba(255,45,120,0.15));opacity:0;animation:cardSlide .4s ease-out forwards;}
+.hist-card:nth-child(1){animation-delay:0s;}
+.hist-card:nth-child(2){animation-delay:.04s;}
+.hist-card:nth-child(3){animation-delay:.08s;}
+.hist-card:nth-child(4){animation-delay:.12s;}
+.hist-card:nth-child(5){animation-delay:.16s;}
+.hist-card:nth-child(6){animation-delay:.2s;}
+@keyframes cardSlide{to{opacity:1;}}
+.hist-card:hover{transform:translateX(4px);box-shadow:0 10px 40px rgba(0,0,0,0.4);border-color:rgba(255,255,255,0.1);}
 
-    /* LIGHTBOX */
-    .lightbox{display:none;position:fixed;inset:0;z-index:9999;background:rgba(5,8,16,0.96);backdrop-filter:blur(10px);align-items:center;justify-content:center;padding:2rem;}
-    .lightbox.open{display:flex;}
-    .lightbox-img{max-width:95vw;max-height:90vh;border-radius:12px;box-shadow:0 0 60px rgba(255,45,120,0.2);display:block;}
-    .lightbox-close{position:fixed;top:1.2rem;right:1.5rem;background:rgba(255,45,120,0.15);border:1px solid rgba(255,45,120,0.3);color:white;width:42px;height:42px;border-radius:50%;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;}
-    .lightbox-close:hover{background:var(--neon-green);}
-    .lightbox-caption{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);color:var(--text-muted);font-size:0.85rem;text-align:center;}
+/* Bandeau lateral resultat */
+.hist-band{width:5px;flex-shrink:0;border-radius:14px 0 0 14px;}
 
-    @media(max-width:900px){
-      .stats-bar{grid-template-columns:repeat(3,1fr);}
-      .main{padding:2rem 1.5rem;}
-    }
-    @media(max-width:768px){
-      html{overflow-x:hidden;}
-      body{overflow-x:hidden;}
-      nav{padding:0 0.8rem;}
-      .nav-inner{height:50px;}
-      .logo img{height:28px;}
-      .mobile-menu{top:50px;}
-      .page-header{padding:1.8rem 0.8rem;overflow:hidden;}
-      .page-header::before{width:400px;height:250px;top:-100px;}
-      .page-title{font-size:1.5rem;}
-      .page-tag{font-size:0.62rem;letter-spacing:2px;}
-      .page-sub{font-size:0.85rem;}
-      .main{padding:1.2rem 0.8rem;}
-      .stats-bar{grid-template-columns:repeat(2,1fr);gap:0.7rem;}
-      .stat-value{font-size:1.4rem;}
-      .stat-label{font-size:0.65rem;letter-spacing:0.5px;}
-      .stat-card{padding:0.9rem 0.7rem;border-radius:10px;}
-      .bets-grid{grid-template-columns:1fr;gap:1rem;}
-      .bet-card{border-radius:12px;}
-      .bet-card:hover{transform:none;box-shadow:none;}
-      .filters{gap:0.4rem;}
-      .filter-btn{padding:0.4rem 0.85rem;font-size:0.8rem;min-height:36px;}
-      .bet-footer{flex-direction:column;gap:0.3rem;align-items:flex-start;padding:0.6rem 1rem;}
-      .result-icon{font-size:2.8rem;}
-      .result-label{font-size:0.95rem;}
-      .empty-state{padding:3rem 1.5rem;}
-    .empty-state .big{font-size:2.2rem;}
-    .empty-state h3{font-size:1rem;}
-    /* Dossiers par mois */
-    .mois-dossier{margin-bottom:1rem;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden;}
-    .mois-dossier-header{display:flex;align-items:center;gap:1rem;padding:1rem 1.25rem;cursor:pointer;transition:background 0.2s;user-select:none;}
-    .mois-dossier-header:hover{background:rgba(255,255,255,0.03);}
-    .mois-dossier-header.open{background:rgba(255,45,120,0.06);border-bottom:1px solid var(--border-subtle);}
-    .mois-dossier-arrow{color:var(--text-muted);font-size:1.1rem;transition:transform 0.2s;margin-left:auto;}
-    .mois-dossier-header.open .mois-dossier-arrow{transform:rotate(90deg);}
-    .mois-dossier-body{display:none;padding:1rem 1.25rem 1.25rem;}
-    .mois-dossier-body.open{display:block;}
-      .lightbox-img{max-height:80dvh;border-radius:8px;}
-    }
-    @media(max-width:380px){
-      .stats-bar{grid-template-columns:1fr 1fr;gap:0.5rem;}
-      .stat-value{font-size:1.1rem;}
-      .stat-card{padding:0.7rem 0.5rem;}
-      .page-title{font-size:1.2rem;}
-      .main{padding:1rem 0.5rem;}
-      .filter-btn{padding:0.3rem 0.55rem;font-size:0.72rem;}
-      .bet-card-header{padding:0.6rem 0.8rem;}
-      .bet-type-badge{font-size:0.52rem;}
-      .bet-titre{font-size:0.75rem;padding:0 0.8rem 0.5rem;}
-      .result-badge{font-size:0.7rem;padding:0.2rem 0.6rem;}
-      .result-date{font-size:0.68rem;}
-    }
-  </style>
-  <!-- PWA -->
-  <link rel="manifest" href="/manifest.json">
-  <meta name="theme-color" content="#0a0e17">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="StratEdge">
-  <link rel="apple-touch-icon" href="/assets/images/mascotte.png">
+/* Image a gauche */
+.hist-img-wrap{width:220px;min-width:220px;position:relative;overflow:hidden;cursor:zoom-in;flex-shrink:0;}
+.hist-img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .4s;}
+.hist-img-wrap:hover .hist-img{transform:scale(1.05);}
+.hist-no-img{width:100%;height:100%;min-height:120px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:linear-gradient(135deg,rgba(255,45,120,0.04),rgba(0,212,255,0.02));}
+
+/* Infos a droite */
+.hist-info{flex:1;padding:1rem 1.3rem;display:flex;flex-direction:column;justify-content:center;gap:0.4rem;min-width:0;}
+.hist-info-top{display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;}
+.hist-badges{display:flex;gap:0.35rem;flex-wrap:wrap;}
+.hist-badge{padding:0.2rem 0.6rem;border-radius:5px;font-family:'Orbitron',sans-serif;font-size:0.6rem;font-weight:700;letter-spacing:0.5px;}
+.hist-date{font-family:'Space Mono',monospace;font-size:0.68rem;color:var(--txt3,#8a9bb0);}
+.hist-titre{font-family:'Rajdhani',sans-serif;font-size:1rem;font-weight:600;color:var(--txt2,#b0bec9);line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.hist-info-bottom{display:flex;align-items:center;justify-content:space-between;gap:0.5rem;flex-wrap:wrap;margin-top:auto;}
+.result-badge{padding:0.3rem 0.85rem;border-radius:6px;font-size:0.78rem;font-weight:700;font-family:'Orbitron',sans-serif;letter-spacing:0.5px;display:inline-flex;align-items:center;gap:0.3rem;}
+.result-date{font-size:0.72rem;color:var(--txt3,#8a9bb0);}
+
+/* Voir plus */
+.load-more-wrap{text-align:center;margin-top:2rem;}
+.btn-load-more{background:var(--card,#111827);border:1px solid var(--border,rgba(255,45,120,0.15));color:var(--txt2,#b0bec9);padding:0.8rem 2rem;border-radius:50px;font-family:'Orbitron',sans-serif;font-size:0.82rem;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .3s;}
+.btn-load-more:hover{border-color:var(--pink,#ff2d78);color:var(--txt,#f0f4f8);box-shadow:0 0 25px rgba(255,45,120,0.15);}
+
+.empty-state{text-align:center;padding:4rem 2rem;color:var(--txt3,#8a9bb0);}
+.empty-state .big{font-size:3.5rem;margin-bottom:1rem;}
+.empty-state h3{font-family:'Orbitron',sans-serif;font-size:1.15rem;color:var(--txt2,#b0bec9);margin-bottom:0.5rem;}
+
+/* Lightbox */
+.lightbox{display:none;position:fixed;inset:0;z-index:9999;background:rgba(5,8,16,0.96);backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:2rem;}
+.lightbox.open{display:flex;}
+.lightbox-inner{position:relative;max-width:95vw;max-height:92vh;}
+.lightbox-img{max-width:100%;max-height:88vh;border-radius:14px;box-shadow:0 0 80px rgba(255,45,120,0.15);display:block;}
+.lightbox-close{position:fixed;top:1.2rem;right:1.5rem;background:rgba(255,45,120,0.15);border:1px solid rgba(255,45,120,0.3);color:#fff;width:44px;height:44px;border-radius:50%;font-size:1.3rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+.lightbox-close:hover{background:#ff2d78;}
+.lightbox-caption{text-align:center;margin-top:0.8rem;color:var(--txt3,#8a9bb0);font-size:0.88rem;}
+
+/* ═══ Responsive ═══ */
+@media(max-width:900px){
+  .stats-dashboard{gap:1.5rem;}
+  .mini-stat{min-width:130px;padding:0.8rem 1rem;}
+}
+@media(max-width:768px){
+  .hist-hero{margin-left:-0.8rem !important;margin-right:-0.8rem !important;margin-top:-1rem;padding:1.5rem 0.8rem 1.5rem !important;}
+  .hist-hero::before{display:none;}
+  .hist-title{font-size:1.5rem;}
+  .hist-sub{font-size:0.88rem;max-width:none;}
+  .hist-wrap{padding:1rem 0;}
+  .stats-dashboard{flex-direction:column;gap:1.2rem;}
+  .radial-wrap{width:130px;height:130px;}
+  .radial-value{font-size:1.7rem;}
+  .mini-stats{grid-template-columns:1fr 1fr;gap:0.6rem;width:100%;}
+  .mini-stat{min-width:0;padding:0.7rem 0.8rem;}
+  .mini-stat-val{font-size:1rem;}
+  .mini-stat-icon{font-size:1.2rem;}
+  .hist-card{flex-direction:column;}
+  .hist-band{width:100%;height:4px;border-radius:14px 14px 0 0;}
+  .hist-img-wrap{width:100%;min-width:0;max-height:200px;}
+  .hist-info{padding:0.8rem 1rem;}
+  .hist-titre{white-space:normal;}
+  .hist-card:hover{transform:none;box-shadow:none;}
+  .filters{gap:0.4rem;}
+  .filter-pill{padding:0.4rem 0.8rem;font-size:0.78rem;}
+  .lightbox-img{border-radius:8px;max-height:80dvh;}
+}
+@media(max-width:480px){
+  .hist-title{font-size:1.25rem;}
+  .hist-tag{font-size:0.6rem;letter-spacing:2px;}
+  .radial-wrap{width:110px;height:110px;}
+  .radial-value{font-size:1.4rem;}
+  .mini-stat-val{font-size:0.9rem;}
+  .filter-pill{font-size:0.72rem;padding:0.35rem 0.65rem;}
+  .hist-badge{font-size:0.52rem;}
+  .result-badge{font-size:0.68rem;padding:0.2rem 0.6rem;}
+}
+</style>
 </head>
 <body>
-<nav>
-  <div class="nav-inner">
-    <a href="/" class="logo"><img src="assets/images/logo site.png" alt="StratEdge Pronos"></a>
-    <div class="nav-links">
+<?php if ($membre): ?>
+  <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
+<?php else: ?>
+  <nav><div class="nav-inner">
+    <a href="/" class="logo"><img src="assets/images/logo site.png" alt="StratEdge"></a>
+    <div class="nav-right">
       <a href="/#pricing">Tarifs</a>
       <a href="bets.php">Les Bets</a>
-      <a href="historique.php" class="active">Historique</a>
+      <a href="historique.php" style="color:var(--blue,#00d4ff);">Historique</a>
       <?php if (isLoggedIn()): ?>
-        <a href="dashboard.php">👤 <?= clean($membre['nom']) ?></a>
+        <a href="dashboard.php">Mon Espace</a>
       <?php else: ?>
         <a href="login.php">Connexion</a>
+        <a href="register.php" style="background:linear-gradient(135deg,#ff2d78,#d6245f);color:#fff;padding:0.45rem 1.1rem;border-radius:8px;font-weight:700;">S'inscrire</a>
       <?php endif; ?>
     </div>
     <button class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></button>
+  </div></nav>
+  <div class="mobile-menu" id="mobileMenu">
+    <a href="/#pricing">Tarifs</a>
+    <a href="bets.php">Les Bets</a>
+    <a href="historique.php">Historique</a>
+    <?php if (isLoggedIn()): ?>
+      <a href="dashboard.php">Mon Espace</a>
+      <a href="logout.php">Deconnexion</a>
+    <?php else: ?>
+      <a href="login.php">Connexion</a>
+      <a href="register.php">S'inscrire</a>
+    <?php endif; ?>
   </div>
-</nav>
-<div class="mobile-menu" id="mobileMenu">
-  <a href="/#pricing" onclick="toggleMenu()">Tarifs</a>
-  <a href="bets.php" onclick="toggleMenu()">Les Bets</a>
-  <a href="historique.php" onclick="toggleMenu()">Historique</a>
-  <?php if (isLoggedIn()): ?>
-    <a href="dashboard.php" onclick="toggleMenu()">👤 Mon Espace</a>
-    <a href="logout.php">Déconnexion</a>
-  <?php else: ?>
-    <a href="login.php" onclick="toggleMenu()">Connexion</a>
-    <a href="register.php" onclick="toggleMenu()">S'inscrire</a>
+<?php endif; ?>
+
+<div class="hist-hero">
+  <div class="hist-tag">Transparence totale</div>
+  <h1 class="hist-title">Historique des <span>Bets</span></h1>
+  <p class="hist-sub">Tous nos resultats passes, en toute transparence. Aucun filtre, aucune triche.</p>
+</div>
+
+<div class="hist-wrap">
+
+  <!-- Dashboard Stats -->
+  <div class="stats-dashboard">
+    <!-- Cercle radial winrate -->
+    <div class="radial-wrap">
+      <?php
+        $pct = $tauxReussite ?? 0;
+        $greenDeg = round($pct * 3.6);
+      ?>
+      <div class="radial-circle" style="background:conic-gradient(#00c864 0deg, #00c864 <?= $greenDeg ?>deg, rgba(255,68,68,0.3) <?= $greenDeg ?>deg, rgba(255,68,68,0.3) 360deg);padding:5px;border-radius:50%;">
+        <div style="width:100%;height:100%;border-radius:50%;background:var(--card,#111827);display:flex;align-items:center;justify-content:center;flex-direction:column;">
+          <div class="radial-value"><?= $tauxReussite !== null ? $tauxReussite . '%' : '—' ?></div>
+          <div class="radial-label">Winrate</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mini stats -->
+    <div class="mini-stats">
+      <div class="mini-stat">
+        <span class="mini-stat-icon">📊</span>
+        <div>
+          <div class="mini-stat-val" style="color:var(--txt,#f0f4f8)"><?= $stats['total'] ?? 0 ?></div>
+          <div class="mini-stat-lbl">Total</div>
+        </div>
+      </div>
+      <div class="mini-stat" style="border-color:rgba(0,200,100,0.2);">
+        <span class="mini-stat-icon">✅</span>
+        <div>
+          <div class="mini-stat-val" style="color:#00c864"><?= $stats['gagnes'] ?? 0 ?></div>
+          <div class="mini-stat-lbl">Gagnes</div>
+        </div>
+      </div>
+      <div class="mini-stat" style="border-color:rgba(255,68,68,0.2);">
+        <span class="mini-stat-icon">❌</span>
+        <div>
+          <div class="mini-stat-val" style="color:#ff4444"><?= $stats['perdus'] ?? 0 ?></div>
+          <div class="mini-stat-lbl">Perdus</div>
+        </div>
+      </div>
+      <div class="mini-stat" style="border-color:rgba(245,158,11,0.2);">
+        <span class="mini-stat-icon">↺</span>
+        <div>
+          <div class="mini-stat-val" style="color:#f59e0b"><?= $stats['annules'] ?? 0 ?></div>
+          <div class="mini-stat-lbl">Annules</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Winrate bar -->
+  <?php if ($tauxReussite !== null): ?>
+  <div class="winrate-bar-wrap">
+    <div class="winrate-bar-header">
+      <span>Taux de reussite</span>
+      <span style="font-weight:700;color:<?= $tauxReussite >= 50 ? '#00c864' : '#ff4444' ?>"><?= $tauxReussite ?>%</span>
+    </div>
+    <div class="winrate-bar">
+      <div class="winrate-fill" style="width:<?= $tauxReussite ?>%;background:linear-gradient(90deg,#00c864,<?= $tauxReussite >= 70 ? '#00d4ff' : ($tauxReussite >= 50 ? '#f59e0b' : '#ff4444') ?>);"></div>
+    </div>
+  </div>
   <?php endif; ?>
-</div>
 
-<div class="page-header">
-  <div class="page-tag">Transparence totale</div>
-  <h1 class="page-title">📊 Historique des <span style="color:var(--neon-green)">Bets</span></h1>
-  <p class="page-sub">Tous nos résultats passés, en toute transparence. Aucun filtre, aucune triche.</p>
-</div>
-
-<div class="main">
-
-  <!-- STATS -->
-  <div class="stats-bar">
-    <div class="stat-card">
-      <div class="stat-value" style="color:var(--text-primary)"><?= $stats['total'] ?? 0 ?></div>
-      <div class="stat-label">Total bets</div>
-    </div>
-    <div class="stat-card gagne">
-      <div class="stat-value" style="color:#ff2d78"><?= $stats['gagnes'] ?? 0 ?></div>
-      <div class="stat-label">✅ Gagnés</div>
-    </div>
-    <div class="stat-card perdu">
-      <div class="stat-value" style="color:#ff4444"><?= $stats['perdus'] ?? 0 ?></div>
-      <div class="stat-label">❌ Perdus</div>
-    </div>
-    <div class="stat-card" style="border-color:rgba(245,158,11,0.25);background:rgba(245,158,11,0.04);">
-      <div class="stat-value" style="color:#f59e0b"><?= $stats['annules'] ?? 0 ?></div>
-      <div class="stat-label">↺ Annulés</div>
-    </div>
-    <div class="stat-card taux">
-      <div class="stat-value" style="color:var(--neon-green)"><?= $tauxReussite !== null ? $tauxReussite . '%' : '—' ?></div>
-      <div class="stat-label">Taux de réussite</div>
-    </div>
-  </div>
-
-  <!-- FILTRES -->
-  <?php $filtre = $_GET['filtre'] ?? 'tous'; ?>
+  <!-- Filtres -->
   <div class="filters">
-    <a href="?filtre=tous"   class="filter-btn <?= $filtre==='tous'?'active':'' ?>">Tous (<?= $stats['total'] ?? 0 ?>)</a>
-    <a href="?filtre=gagne"  class="filter-btn f-gagne <?= $filtre==='gagne'?'active':'' ?>">✅ Gagnés (<?= $stats['gagnes'] ?? 0 ?>)</a>
-    <a href="?filtre=perdu"  class="filter-btn f-perdu <?= $filtre==='perdu'?'active':'' ?>">❌ Perdus (<?= $stats['perdus'] ?? 0 ?>)</a>
-    <a href="?filtre=annule" class="filter-btn f-annule <?= $filtre==='annule'?'active':'' ?>">↺ Annulés (<?= $stats['annules'] ?? 0 ?>)</a>
+    <a href="?filtre=tous" class="filter-pill f-tous <?= $filtre==='tous'?'active':'' ?>">Tous <span class="filter-count"><?= $stats['total'] ?? 0 ?></span></a>
+    <a href="?filtre=gagne" class="filter-pill f-gagne <?= $filtre==='gagne'?'active':'' ?>">✅ Gagnes <span class="filter-count"><?= $stats['gagnes'] ?? 0 ?></span></a>
+    <a href="?filtre=perdu" class="filter-pill f-perdu <?= $filtre==='perdu'?'active':'' ?>">❌ Perdus <span class="filter-count"><?= $stats['perdus'] ?? 0 ?></span></a>
+    <a href="?filtre=annule" class="filter-pill f-annule <?= $filtre==='annule'?'active':'' ?>">↺ Annules <span class="filter-count"><?= $stats['annules'] ?? 0 ?></span></a>
   </div>
 
-  <!-- GRILLE PAR MOIS -->
-  <?php
-  $betsFiltres = $filtre === 'tous' ? $bets : array_filter($bets, fn($b) => $b['resultat'] === $filtre);
-  $moisGroupes = groupParMois(array_values($betsFiltres));
-  $firstMois = !empty($moisGroupes) ? array_key_first($moisGroupes) : '';
-  ?>
+  <!-- Cards historique -->
   <?php if (empty($betsFiltres)): ?>
     <div class="empty-state">
       <div class="big">📭</div>
-      <h3>Aucun résultat pour ce filtre</h3>
-      <p>Les bets terminés apparaîtront ici automatiquement.</p>
+      <h3>Aucun resultat pour ce filtre</h3>
+      <p>Les bets termines apparaitront ici automatiquement.</p>
     </div>
   <?php else: ?>
-    <?php foreach ($moisGroupes as $cleMois => $betsDuMois):
-      [$annee, $numMois] = explode('-', $cleMois);
-      $nomMois = $moisNoms[$numMois] . ' ' . $annee;
-      $isOpen = ($cleMois === $firstMois);
-    ?>
-    <div class="mois-dossier">
-      <div class="mois-dossier-header <?= $isOpen ? 'open' : '' ?>" data-mois="<?= htmlspecialchars($cleMois) ?>" onclick="toggleMois(this)">
-        <span style="font-size:1.3rem;"><?= $isOpen ? '📂' : '📁' ?></span>
-        <div style="flex:1;">
-          <span style="font-family:'Orbitron',sans-serif;font-size:0.95rem;font-weight:700;"><?= $nomMois ?></span>
-          <span style="font-size:0.8rem;color:var(--text-muted);margin-left:0.5rem;"><?= count($betsDuMois) ?> bet<?= count($betsDuMois)>1 ? 's' : '' ?></span>
+    <div class="hist-grid" id="histGrid">
+      <?php foreach ($betsFiltres as $idx => $bet):
+        $rc  = $resultatConfig[$bet['resultat']] ?? $resultatConfig['annule'];
+        $types = explode(',', $bet['type']);
+        $rawPath = !empty($bet['image_path']) ? $bet['image_path'] : ($bet['locked_image_path'] ?? '');
+        if (!empty($rawPath)) {
+          $imgSrc = (strpos($rawPath, 'http') === 0) ? $rawPath : (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($rawPath,'/') : $rawPath);
+        } else {
+          $imgSrc = '';
+        }
+        $hidden = $idx >= $betsPerPage ? 'style="display:none" data-hidden="1"' : '';
+      ?>
+      <div class="hist-card" <?= $hidden ?>>
+        <!-- Bandeau lateral -->
+        <div class="hist-band" style="background:<?= $rc['band'] ?>;"></div>
+
+        <!-- Image -->
+        <div class="hist-img-wrap" <?= $imgSrc ? 'data-src="'.$imgSrc.'" data-caption="'.htmlspecialchars($bet['titre']?:'Bet StratEdge',ENT_QUOTES).'"' : '' ?>>
+          <?php if ($imgSrc): ?>
+            <img src="<?= clean($imgSrc) ?>" alt="Bet" class="hist-img" loading="lazy">
+          <?php else: ?>
+            <div class="hist-no-img"><?= $rc['icon'] ?></div>
+          <?php endif; ?>
         </div>
-        <span class="mois-dossier-arrow">›</span>
-      </div>
-      <div class="mois-dossier-body <?= $isOpen ? 'open' : '' ?>">
-        <div class="bets-grid">
-          <?php foreach ($betsDuMois as $bet):
-            $rc  = $resultatConfig[$bet['resultat']];
-            $types = explode(',', $bet['type']);
-            $rawPath = !empty($bet['image_path']) ? $bet['image_path'] : ($bet['locked_image_path'] ?? '');
-            $imgSrc = !empty($rawPath) ? betImageUrl($rawPath) : '';
-          ?>
-          <div class="bet-card" style="border:1px solid <?= $rc['border'] ?>;">
-            <div class="bet-card-header">
-              <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-                <?php foreach ($types as $t): $t = trim($t); ?>
-                  <span class="bet-type-badge" style="background:<?= $typeColors[$t] ?? '#ff2d78' ?>22;color:<?= $typeColors[$t] ?? '#ff2d78' ?>;border:1px solid <?= $typeColors[$t] ?? '#ff2d78' ?>44;">
-                    <?= $typeLabels[$t] ?? $t ?>
-                  </span>
-                <?php endforeach; ?>
-              </div>
-              <span class="bet-date"><?= date('d/m/Y', strtotime($bet['date_post'])) ?></span>
+
+        <!-- Infos -->
+        <div class="hist-info">
+          <div class="hist-info-top">
+            <div class="hist-badges">
+              <?php foreach ($types as $t): $t=trim($t); $c=$typeColors[$t]??'#ff2d78'; ?>
+              <span class="hist-badge" style="background:<?=$c?>18;color:<?=$c?>;border:1px solid <?=$c?>40;"><?= $typeLabels[$t]??$t ?></span>
+              <?php endforeach; ?>
             </div>
-
-            <?php if ($bet['titre']): ?>
-              <div class="bet-titre"><?= clean($bet['titre']) ?></div>
-            <?php endif; ?>
-
-            <?php if ($imgSrc): ?>
-              <div class="bet-image-wrap"
-                   data-src="<?= htmlspecialchars($imgSrc, ENT_QUOTES, 'UTF-8') ?>"
-                   data-caption="<?= htmlspecialchars($bet['titre'] ?: 'Bet StratEdge', ENT_QUOTES) ?>">
-                <img src="<?= htmlspecialchars($imgSrc, ENT_QUOTES, 'UTF-8') ?>" class="bet-image" alt="Bet">
-                <div class="result-overlay" style="background:<?= $rc['overlay'] ?>;backdrop-filter:blur(1px);">
-                  <div class="result-icon" style="color:<?= $rc['color'] ?>;"><?= $rc['icon'] ?></div>
-                  <div class="result-label" style="color:<?= $rc['color'] ?>;"><?= strtoupper(str_replace(['✅ ','❌ ','↺ '], '', $rc['label'])) ?></div>
-                </div>
-                <div class="zoom-hint">🔍 Agrandir</div>
-              </div>
-            <?php else: ?>
-              <div style="width:100%;aspect-ratio:16/9;background:<?= $rc['bg'] ?>;display:flex;align-items:center;justify-content:center;font-size:4rem;">
-                <?= $rc['icon'] ?>
-              </div>
-            <?php endif; ?>
-
-            <div class="bet-footer">
-              <span class="result-badge" style="background:<?= $rc['bg'] ?>;color:<?= $rc['color'] ?>;border:1px solid <?= $rc['border'] ?>;">
-                <?= $rc['label'] ?>
-              </span>
-              <?php if ($bet['date_resultat']): ?>
-                <span class="result-date">le <?= date('d/m/Y', strtotime($bet['date_resultat'])) ?></span>
-              <?php endif; ?>
-            </div>
+            <span class="hist-date"><?= date('d/m/Y',strtotime($bet['date_post'])) ?></span>
           </div>
-          <?php endforeach; ?>
+          <?php if ($bet['titre']): ?>
+            <div class="hist-titre"><?= clean($bet['titre']) ?></div>
+          <?php endif; ?>
+          <div class="hist-info-bottom">
+            <span class="result-badge" style="background:<?= $rc['bg'] ?>;color:<?= $rc['color'] ?>;border:1px solid <?= $rc['border'] ?>;">
+              <?= $rc['icon'] ?> <?= $rc['label'] ?>
+            </span>
+            <?php if ($bet['date_resultat']): ?>
+              <span class="result-date">Resultat le <?= date('d/m/Y',strtotime($bet['date_resultat'])) ?></span>
+            <?php endif; ?>
+          </div>
         </div>
       </div>
+      <?php endforeach; ?>
     </div>
-    <?php endforeach; ?>
+
+    <?php if ($totalBets > $betsPerPage): ?>
+    <div class="load-more-wrap">
+      <button class="btn-load-more" id="loadMoreBtn" onclick="loadMore()">
+        Voir plus <span id="remainCount">(<?= $totalBets - $betsPerPage ?>)</span>
+      </button>
+    </div>
+    <?php endif; ?>
   <?php endif; ?>
 </div>
 
-<!-- LIGHTBOX -->
+<?php if ($membre): ?></main></div><?php endif; ?>
+
+<!-- Lightbox -->
 <div class="lightbox" id="lightbox">
-  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
-  <img src="" alt="" class="lightbox-img" id="lightboxImg">
-  <div class="lightbox-caption" id="lightboxCaption"></div>
+  <button class="lightbox-close" onclick="closeLB()">✕</button>
+  <div class="lightbox-inner" onclick="event.stopPropagation()">
+    <img src="" alt="" class="lightbox-img" id="lbImg">
+    <div class="lightbox-caption" id="lbCap"></div>
+  </div>
 </div>
 
 <script>
-function toggleMois(header) {
-  var dossier = header.closest('.mois-dossier');
-  var body = dossier.querySelector('.mois-dossier-body');
-  var wasOpen = header.classList.contains('open');
-  document.querySelectorAll('.mois-dossier-header').forEach(function(h){ h.classList.remove('open'); h.querySelector('span:first-child').textContent = '📁'; });
-  document.querySelectorAll('.mois-dossier-body').forEach(function(b){ b.classList.remove('open'); });
-  if (!wasOpen) {
-    header.classList.add('open');
-    body.classList.add('open');
-    header.querySelector('span:first-child').textContent = '📂';
-  }
-}
-document.querySelectorAll('.bet-image-wrap[data-src]').forEach(el => {
-  el.addEventListener('click', () => {
-    document.getElementById('lightboxImg').src     = el.dataset.src;
-    document.getElementById('lightboxCaption').textContent = el.dataset.caption || '';
+document.querySelectorAll('.hist-img-wrap[data-src]').forEach(function(el){
+  el.addEventListener('click',function(){
+    var s=el.dataset.src;if(!s)return;
+    document.getElementById('lbImg').src=s;
+    document.getElementById('lbCap').textContent=el.dataset.caption||'';
     document.getElementById('lightbox').classList.add('open');
-    document.body.style.overflow = 'hidden';
+    document.body.style.overflow='hidden';
   });
 });
-function closeLightbox() {
-  document.getElementById('lightbox').classList.remove('open');
-  document.getElementById('lightboxImg').src = '';
-  document.body.style.overflow = '';
+function closeLB(){document.getElementById('lightbox').classList.remove('open');document.getElementById('lbImg').src='';document.body.style.overflow='';}
+document.getElementById('lightbox').addEventListener('click',function(e){if(e.target===this)closeLB();});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeLB();});
+
+function loadMore(){
+  var hidden=document.querySelectorAll('.hist-card[data-hidden="1"]');
+  var batch=12;
+  var shown=0;
+  hidden.forEach(function(card){
+    if(shown>=batch)return;
+    card.style.display='';
+    card.removeAttribute('data-hidden');
+    card.style.opacity='0';
+    card.style.animation='cardSlide .4s ease-out forwards';
+    card.style.animationDelay=(shown*0.04)+'s';
+    shown++;
+  });
+  var remaining=document.querySelectorAll('.hist-card[data-hidden="1"]').length;
+  if(remaining<=0){
+    var btn=document.getElementById('loadMoreBtn');
+    if(btn)btn.style.display='none';
+  } else {
+    var cnt=document.getElementById('remainCount');
+    if(cnt)cnt.textContent='('+remaining+')';
+  }
 }
-document.getElementById('lightbox').addEventListener('click', function(e){ if(e.target===this) closeLightbox(); });
-document.addEventListener('keydown', e => { if(e.key==='Escape') closeLightbox(); });
-</script>
-<script>
+
 function toggleMenu(){document.getElementById('mobileMenu').classList.toggle('open');}
 </script>
 <?php require_once __DIR__ . '/includes/footer-main.php'; ?>
