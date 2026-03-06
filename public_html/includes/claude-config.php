@@ -1,9 +1,7 @@
 <?php
 // ============================================================
 // STRATEDGE — claude-config.php V17
-// V17 : Safe non-tennis — pas de fond dégradé ; VS en dégradé texte rose néon → bleu néon
-// V16 : Safe multisport — mascotte noir néon rose (mascotte-rose.png) obligatoire en fond
-// V15 : Safe card tennis — bandeau pub Pack Tennis en bas (normale + locked)
+// V17 : Safe hors tennis = mascotte.png pleine hauteur transparente (comme tennis)
 // V14 : Pas de logo tournoi (texte uniquement), cote pill fond rose néon uni (#FF2D78)
 // V13 : Fix CORS logos, drapeaux flagcdn obligatoires, cote pill simple
 // V12 : Stats enrichies (6-8 lignes par joueur/équipe), logos tournois/compétitions, barre confiance + value universels
@@ -87,7 +85,9 @@ Règles :
   - match : nom des équipes (ex: "Équipe A vs Équipe B")
   - heure : heure de DÉBUT du match, fuseau Europe/Paris (format HH:MM ou H:MM). Tu dois la déduire ou l'estimer si elle n'est pas fournie (ex: soirée Ligue Europa souvent 18:45 ou 21:00).
   - flag1, flag2 : emoji drapeau pays équipe 1 et 2
-  - team1_logo, team2_logo : pour le FOOTBALL (et autres sports d'équipes si tu connais des logos), fournis une URL directe vers une image du logo de chaque équipe (PNG/JPG, CDN type ligues, Wikipedia, etc.). Si tu ne trouves pas d'URL fiable, mets "".
+  - team1_logo, team2_logo : pour le FOOTBALL et le HOCKEY NHL, fournis une URL directe vers le logo de chaque équipe.
+    FOOTBALL : API-Football https://media.api-sports.io/football/teams/{id}.png ou FotMob, ou "".
+    HOCKEY NHL : ESPN CDN https://a.espncdn.com/combiner/i?img=/i/teamlogos/nhl/500/scoreboard/{abbrev}.png avec abbrev en minuscules (ana, bos, buf, car, cbj, cgy, chi, col, dal, det, edm, fla, la, min, mtl, nj, nsh, nyi, nyr, ott, phi, pit, sea, sjs, stl, tb, tor, utah, vgk, wsh, wpg). Si tu ne trouves pas, mets "".
   - prono, cote : texte du pari et cote exacte fournie
 - cote_totale = produit de toutes les cotes individuelles, arrondi à 2 décimales
 - confidence = indice de confiance global estimé entre 40 et 85
@@ -159,66 +159,55 @@ Logos clubs/joueurs — ⚠️ IMPORTANT : ajouter les logos à côté des noms 
 - BASKET NBA : https://cdn.nba.com/logos/nba/{nba_team_id}/primary/L/logo.svg
 - HOCKEY NHL : drapeau emoji ou texte abrégé
 
-Mascotte WATERMARK — ⚠️ OBLIGATOIRE sur TOUTES les cards (normale ET locked), sans exception :
-À placer juste après l'ouverture de la div principale de la card (premier élément dans le conteneur de la card), en arrière-plan sur toute la hauteur.
-HTML EXACT :
-- TENNIS uniquement : <img src='https://stratedgepronos.fr/assets/images/mascotte-tennis.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
-- FOOTBALL, BASKET, HOCKEY, MULTISPORT et tout autre sport (pas tennis) : <img src='https://stratedgepronos.fr/assets/images/mascotte-rose.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
-  → mascotte-rose.png = mascotte noir néon rose, obligatoire en fond sur les cards Safe football, basket, hockey et multisport.
-- Card locked : même URL selon le sport, mais opacity:0.25 (au lieu de 0.45).
-⚠️ La mascotte doit faire 100% de la hauteur de la card, centrée horizontalement, DERRIÈRE le contenu (z-index:1, contenu en z-index:2). Ne jamais oublier la mascotte, y compris sur card multisport.
+Mascotte WATERMARK — ⚠️ OBLIGATOIRE, doit occuper toute la hauteur de la card en arrière-plan :
+HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div principale de la card) :
+- TENNIS : <img src='https://stratedgepronos.fr/assets/images/mascotte-tennis.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
+- Autres sports : <img src='https://stratedgepronos.fr/assets/images/mascotte.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
+- Card locked : même chose mais opacity:0.25
+⚠️ mascotte.png = pleine hauteur, transparente derrière le texte (même rendu que tennis). z-index:1, contenu en z-index:2.
 
 ---
 
-🏷️ BADGE SPORT (coin haut droit, Orbitron 13px bold, padding:8px 18px, border-radius:20px)
+🏷️ BADGE SPORT (coin haut droit, Orbitron 16px bold, padding:10px 20px, border-radius:20px)
 🎾 TENNIS → #00FF88 | ⚽ FOOTBALL → #FF2D78 | 🏀 BASKET → #FFA500 | 🏒 HOCKEY → #00D4FF
-
----
-
-🛡️ SAFE CARD — Autres sports (football, basket, hockey, multisport) — PAS tennis
-
-- ⚠️ PAS de fond en dégradé : la match card (zone entre les deux équipes/joueurs) et la zone du VS ne doivent PAS avoir de background en gradient. Utiliser un fond uni (transparent ou léger rgba uni, ex: background:rgba(255,255,255,0.02) ou border seulement). Le dégradé doit être UNIQUEMENT sur le texte "VS".
-- ⚠️ Les deux lettres "VS" : afficher en DÉGRADÉ sur le TEXTE uniquement — rose néon (#FF2D78) vers bleu néon (#00D4FF). Méthode : un <span> contenant "VS" avec style inline : background:linear-gradient(90deg,#FF2D78,#00D4FF); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; font-family:Orbitron; font-size:28px; font-weight:900; display:inline-block. Pas de fond coloré derrière le VS, pas de bloc en dégradé : uniquement le texte "VS" en dégradé rose → bleu.
 
 ---
 
 🎾 TENNIS SAFE CARD — Règles spécifiques (appliquer quand sport = tennis)
 
-- Barre de confiance : afficher une barre horizontale de confiance (0–100%) sur les DEUX cards (normale et locked). Style : conteneur (height:12px; background:rgba(255,255,255,0.1); border-radius:6px; overflow:hidden), remplissage (height:100%; width:XX%; background:linear-gradient(90deg,#00FF88,#00D4FF); border-radius:6px). XX = ton pourcentage de confiance (ex: 72 → width:72%). ⚠️ Placer la barre SOUS LA COTE : directement sous le bouton pill de la cote, dans le bloc prono, avec un label "Confiance XX%" (Rajdhani 12px #8A9BB0). Ordre dans le bloc prono : badge Safe → nom du bet → COTE (bouton pill) → barre de confiance → probabilité → value.
+- Tournoi obligatoire : tu DOIS rechercher et identifier le tournoi (compétition) dans lequel le match se joue (ATP, WTA, Challenger, etc.) en te basant sur la date du match, les joueurs et le calendrier. Affiche le nom exact du tournoi dans la barre compétition (ex: "ATP 250 — Buenos Aires — Terre battue", "WTA 1000 — Indian Wells — Dur", "Challenger — Pau — Dur int."). Dans la section ANALYSE, mentionne brièvement le tournoi si pertinent (ex: "En quart à Buenos Aires sur terre battue…"). Ne laisse jamais la compétition vide ou générique pour le tennis.
+- Barre de confiance : afficher une barre horizontale de confiance (0–100%) sur les DEUX cards (normale et locked). Style : conteneur (height:14px; background:rgba(255,255,255,0.1); border-radius:6px; overflow:hidden), remplissage (height:100%; width:XX%; background:linear-gradient(90deg,#00FF88,#00D4FF); border-radius:6px). XX = ton pourcentage de confiance (ex: 72 → width:72%). ⚠️ Placer la barre SOUS LA COTE : directement sous le bouton pill de la cote, dans le bloc prono, avec un label "Confiance XX%" (Rajdhani 14px #8A9BB0). Ordre dans le bloc prono : badge Safe → nom du bet → COTE (bouton pill) → barre de confiance → probabilité → value.
 - Value : calculer et afficher obligatoirement. Formule : Value = (Probabilité réelle × Cote) - 1, affichée en % (ex: VALUE +5,2% en vert #00FF88, ou "Valeur neutre" en gris si ≤0). Sur card normale ET locked (locked : la value peut rester visible à côté de la cote).
 - 5 derniers résultats : dans la section Stats (forme récente), afficher explicitement les 5 derniers matchs (ex: V V D V N). Les défaites (D) doivent être en rouge : color:#e53935; font-weight:700. Les victoires (V) en vert #00FF88, N en gris.
 - VS : pour le tennis, le "VS" entre les deux joueurs doit être plus grand : font-size:32px; font-weight:900; color:#FF2D78 (ou dégradé rose). Bien visible.
 - Drapeaux : la card est exportée en JPG via html2canvas. Utiliser OBLIGATOIREMENT <img src='https://flagcdn.com/w40/{code}.png'> — JAMAIS d'emoji (rendu cassé dans html2canvas), JAMAIS de code texte "CH"/"FR".
 - ⚠️ NE PAS afficher de logo tournoi/compétition. Uniquement le NOM de la compétition en texte (ex: "ATP 250 — Buenos Aires — Terre battue", "Ligue 1", "Champions League").
+- Bande promo : pour la card Safe TENNIS uniquement, ajouter la petite pub comme sur Fun/Live tennis, AVANT la ligne gradient (la barre rose→bleu reste le dernier élément) : rectangle vert néon avec "🎾 SAFE TENNIS — PACK ATP / WTA", "Inclus dans le Pack Tennis Pro", tag "🎾 Tennis Weekly — 15€/sem", "Abonne-toi au Pack Tennis" et bouton rose "🎾 Je m'abonne". Sur la card normale ET sur la card locked (même bloc visible). Voir §11 pour le HTML et CSS exacts.
+- Bande promo (foot, basket, hockey) : pour la card Safe FOOTBALL, BASKET ou HOCKEY, ajouter la bande promo en rose néon AVANT la ligne gradient (la barre rose→bleu reste le dernier élément) : offres Daily 4,50€, Week-End 10€, Weekly 20€, VIP MAX 50€/mois, bouton "Je m'abonne" rose. Sur la card normale ET locked. Voir §12 pour le HTML et CSS exacts (classe promo-banner-multi, couleur #FF2D78).
 - ⚠️ NE PAS modifier les polices : garder Orbitron et Rajdhani telles quelles dans tout le HTML. Aucun changement de font-family.
-- ⚠️ PUB PACK TENNIS EN BAS : Pour les cards TENNIS uniquement (normale ET locked), tu DOIS ajouter en bas de la card, juste avant la ligne gradient bas 4px, un bandeau promo pour le Pack Tennis. Structure :
-  • Conteneur : margin 16px 28px 20px; padding 20px 24px; display:flex; align-items:center; justify-content:space-between; gap:20px; background:#1A361A; border:1px solid rgba(0,255,136,0.35); border-radius:12px.
-  • Partie gauche (texte) : "OFFRE EXCLUSIVE" (Orbitron 10px uppercase #00FF88), "PACK TENNIS PRO - 15€/semaine" (Orbitron 18px bold #fff), "Pronostics experts - Analyses live - Accès illimité" (Rajdhani 13px #8A9BB0).
-  • Partie droite : bouton CTA "JE M'ABONNE →" (display:inline-block; padding:14px 28px; background:linear-gradient(135deg,#00FF88,#00c896); color:#080A12; font-family:Orbitron; font-size:14px; font-weight:700; border-radius:10px; text-decoration:none). Ce bandeau doit apparaître sur les DEUX cards (html_normal et html_locked) quand le sport est tennis.
 
 ---
 
 📐 STRUCTURE CARD NORMALE (de haut en bas)
 
-0. ⚠️ Mascotte watermark (OBLIGATOIRE) : juste après l'ouverture de la div principale de la card, insérer l'<img> mascotte — tennis : mascotte-tennis.png ; football / basket / hockey / multisport : mascotte-rose.png (noir néon rose). opacity:0.45. Card locked : idem avec opacity:0.25.
 1. Ligne gradient haut 4px
 2. Header (padding:20px 28px 16px; display:flex; justify-content:space-between; align-items:center) :
    - <img> logo_site_transparent.png height:70px
    - Badge sport
 3. Barre compétition (margin:0 28px; padding:12px 20px; background:rgba(0,212,255,0.04); border:1px solid rgba(0,212,255,0.08); border-radius:10px; display:flex; justify-content:space-between; align-items:center) :
-   - Gauche : Compétition + surface/round si pertinent (Orbitron 11px cyan uppercase) — TEXTE UNIQUEMENT, pas d'image
-   - Droite : Date + heure FRANÇAISE
+   - Gauche : Compétition + surface/round si pertinent (Orbitron 14px cyan uppercase) — TEXTE UNIQUEMENT, pas d'image
+   - Droite : Date + heure FRANÇAISE (Orbitron 14px)
 4. Match card (margin:20px 28px; padding:28px; border:1px solid rgba(255,45,120,0.12); border-radius:14px) :
-   - Noms joueurs/équipes (Orbitron 24px 700) avec <img> logo du club (height:30px) OU pour tennis : <img src='https://flagcdn.com/w40/{code}.png' style='height:20px;border-radius:2px;vertical-align:middle;margin-right:6px'> à côté du nom.
-   - Format football : <img src='https://media.api-sports.io/football/teams/{id}.png' style='height:30px;vertical-align:middle;margin-right:8px'><span>NOM EQUIPE</span>
-   - Format tennis : <img src='https://flagcdn.com/w40/{code}.png' style='height:20px;border-radius:2px;vertical-align:middle;margin-right:6px'><span>NOM JOUEUR</span>
-   - VS : pour TENNIS : font-size:32px; font-weight:900; color:#FF2D78 (bien visible). Pour FOOTBALL/BASKET/HOCKEY/MULTISPORT : pas de fond dégradé ; les deux lettres "VS" en dégradé TEXTE uniquement (background:linear-gradient(90deg,#FF2D78,#00D4FF); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; font-size:28px; font-weight:900; Orbitron).
-   - Stade/surface (14px #8A9BB0)
-   - Dots forme CERCLES 30x30px (V=vert glow, D=rouge glow, N=gris)
+   - Noms joueurs/équipes (Orbitron 28px 700) avec <img> logo du club (height:34px) OU pour tennis : <img src='https://flagcdn.com/w40/{code}.png' style='height:24px;border-radius:2px;vertical-align:middle;margin-right:6px'> à côté du nom.
+   - Format football : <img src='https://media.api-sports.io/football/teams/{id}.png' style='height:34px;vertical-align:middle;margin-right:8px'><span>NOM EQUIPE</span>
+   - Format tennis : <img src='https://flagcdn.com/w40/{code}.png' style='height:24px;border-radius:2px;vertical-align:middle;margin-right:6px'><span>NOM JOUEUR</span>
+   - VS en rose — pour TENNIS : font-size:38px; font-weight:900; color:#FF2D78 (bien visible)
+   - Stade/surface (Rajdhani 17px #8A9BB0)
+   - Dots forme CERCLES 32x32px (V=vert glow, D=rouge glow, N=gris)
 5. ⚠️ SECTION STATS OBLIGATOIRE (margin:16px 28px; display:flex; gap:16px) — 2 colonnes côte à côte, RICHES EN DONNÉES :
    - Colonne gauche "JOUEUR 1 / ÉQUIPE 1" (flex:1; padding:16px; background:rgba(0,212,255,0.04); border:1px solid rgba(0,212,255,0.08); border-radius:10px) :
-     • Titre : nom du joueur/équipe (Orbitron 13px cyan uppercase) + pour tennis : <img> drapeau flagcdn.com (height:16px)
-     • Stats clés (Rajdhani 14px #8A9BB0), afficher AU MINIMUM 6 à 8 lignes de stats :
+     • Titre : nom du joueur/équipe (Orbitron 16px cyan uppercase) + pour tennis : <img> drapeau flagcdn.com (height:20px)
+     • Stats clés (Rajdhani 17px #8A9BB0), afficher AU MINIMUM 6 à 8 lignes de stats :
        TENNIS : Classement ATP/WTA · Bilan saison (V-D) · Bilan sur surface (terre/dur/gazon) · % 1er service · Aces/match · % break points sauvés · Forme récente (5 derniers : V V D V N avec D en rouge color:#e53935) · Titres saison
        FOOTBALL : Position classement · Points · Bilan domicile/extérieur (V-N-D) · Buts marqués/encaissés · Série en cours · xG moyen · Derniers résultats (5 derniers avec D en rouge)
        BASKET : Classement conférence · Bilan V-D · Points/match · Rebonds/match · Différentiel points · Série en cours · Forme récente (5 derniers)
@@ -226,25 +215,59 @@ HTML EXACT :
    - Colonne droite "JOUEUR 2 / ÉQUIPE 2" : même structure, mêmes stats
    - ⚠️ Utilise tes connaissances pour fournir des stats RÉELLES et à jour. Si tu ne connais pas les stats exactes, donne une estimation crédible basée sur ce que tu sais du joueur/équipe. Plus il y a de stats pertinentes, mieux c'est.
 6. Contexte H2H (margin:0 28px 16px; padding:16px 20px; background:rgba(255,45,120,0.04); border:1px solid rgba(255,45,120,0.08); border-radius:10px) :
-   - Titre "FACE À FACE" (Orbitron 11px rose uppercase)
-   - Historique confrontations directes (Rajdhani 14px #8A9BB0) : bilan H2H, dernier résultat, bilan par surface (tennis), résultats détaillés des 2-3 derniers affrontements si connus
+   - Titre "FACE À FACE" (Orbitron 14px rose uppercase)
+   - Historique confrontations directes (Rajdhani 17px #8A9BB0) : bilan H2H, dernier résultat, bilan par surface (tennis), résultats détaillés des 2-3 derniers affrontements si connus
 7. Bloc prono (margin:20px 28px; padding:28px; text-align:center; border-radius:14px; background:linear-gradient(135deg,rgba(255,45,120,0.06),rgba(168,85,247,0.06),rgba(0,212,255,0.06)); border:1px solid rgba(255,45,120,0.15)) :
-   - Badge type (Safe) : Orbitron 12px, background:linear-gradient(90deg,#00FF88,#00D4FF), color:#080A12, padding:6px 20px, border-radius:20px
-   - Nom du bet (Orbitron 18px #FF2D78, margin:14px 0)
+   - Badge type (Safe) : Orbitron 14px, background:linear-gradient(90deg,#00FF88,#00D4FF), color:#080A12, padding:8px 24px, border-radius:20px
+   - Nom du bet (Orbitron 22px #FF2D78, margin:14px 0)
    - ⚠️ COTE OBLIGATOIRE — Afficher le CHIFFRE de la cote (ex: 1.89) bien lisible en BLANC dans un bouton pill.
      Le bouton pill : background:#FF2D78; border-radius:18px; padding:18px 48px; display:inline-block; box-shadow:0 4px 22px rgba(255,45,122,0.5); overflow:hidden; — UNIQUEMENT rose néon uni (#FF2D78), PAS de dégradé.
-     Le chiffre de la cote DANS le bouton : font-family:Orbitron; font-size:52px; font-weight:900; color:#ffffff; ⚠️ color DOIT être #ffffff (blanc pur).
+     Le chiffre de la cote DANS le bouton : font-family:Orbitron; font-size:58px; font-weight:900; color:#ffffff; ⚠️ color DOIT être #ffffff (blanc pur).
      ⚠️ NE PAS mettre de gradient sur le pill — background:#FF2D78 uniquement. Pas de ::before/::after, pas de shine, pas de div intérieure.
-   - Juste SOUS la cote : barre de confiance horizontale (conteneur height:12px; background:rgba(255,255,255,0.1); border-radius:6px; overflow:hidden; remplissage height:100%; width:XX%; background:linear-gradient(90deg,#00FF88,#00D4FF); border-radius:6px) + label "Confiance XX%" (Rajdhani 12px #8A9BB0). Appliquer à TOUS les sports.
-   - Probabilité réelle estimée (Rajdhani 16px #8A9BB0)
-   - Value (si positive : Vert #00FF88 "VALUE +X%" | si nulle/négative : gris "Valeur neutre"). Appliquer à TOUS les sports.
+   - Juste SOUS la cote : barre de confiance horizontale (conteneur height:14px; background:rgba(255,255,255,0.1); border-radius:6px; overflow:hidden; remplissage height:100%; width:XX%; background:linear-gradient(90deg,#00FF88,#00D4FF); border-radius:6px) + label "Confiance XX%" (Rajdhani 14px #8A9BB0). Appliquer à TOUS les sports.
+   - Probabilité réelle estimée (Rajdhani 18px #8A9BB0)
+   - Value (si positive : Vert #00FF88 "VALUE +X%" | si nulle/négative : gris "Valeur neutre") (Rajdhani 18px). Appliquer à TOUS les sports.
 8. Bankroll (margin:0 28px; padding:16px 20px; background:rgba(0,255,136,0.04); border:1px solid rgba(0,255,136,0.1); border-radius:10px) :
-   - Mise conseillée + % bankroll + gain potentiel (Rajdhani 15px)
+   - Mise conseillée + % bankroll + gain potentiel (Rajdhani 17px)
 9. Analyse (margin:16px 28px 20px; padding:20px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:10px) :
-   - Titre "ANALYSE" Orbitron 11px cyan
-   - Texte Rajdhani 15px #8A9BB0 (3-4 lignes max, concis)
-10. [TENNIS UNIQUEMENT] Bandeau pub Pack Tennis (voir règles "PUB PACK TENNIS EN BAS" dans la section 🎾 TENNIS SAFE CARD) — juste avant la ligne du bas.
-11. Ligne gradient bas 4px
+   - Titre "ANALYSE" Orbitron 14px cyan
+   - Texte Rajdhani 17px #8A9BB0 (3-4 lignes max, concis). Pour le TENNIS : inclure le tournoi (nom + surface) dans la description dès que pertinent (ex: "En quart à Buenos Aires sur terre battue, X a le H2H et la forme pour s'imposer.").
+10. (TENNIS Safe ou FOOT/BASKET/HOCKEY) Bande promo (voir §11 ou §12) — margin:16px 28px 20px ; sur la card NORMALE et sur la card LOCKED.
+11. (TENNIS Safe UNIQUEMENT) Bande promo tennis — à placer AVANT la ligne gradient (donc la barre rose→bleu sera tout en bas). Structure HTML à inclure dans le <style> + dans le body :
+
+CSS à ajouter pour la promo (tennis Safe) :
+.promo-banner { background:rgba(14,22,14,0.95); border:1px solid rgba(57,255,20,0.35); border-radius:14px; padding:14px 18px; position:relative; display:flex; align-items:center; justify-content:space-between; gap:14px; }
+.promo-left-bar { position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(to bottom,#39ff14,#00e5ff); border-radius:4px 0 0 4px; }
+.promo-text-block { flex:1; padding-left:10px; display:flex; flex-direction:column; gap:5px; }
+.promo-eyebrow { font-family:Orbitron,sans-serif; font-size:13px; color:#39ff14; text-transform:uppercase; letter-spacing:2px; font-weight:700; }
+.promo-main { font-family:Orbitron,sans-serif; font-size:21px; font-weight:700; color:#fff; }
+.promo-main-hl { color:#39ff14; }
+.promo-packs { display:flex; gap:6px; flex-wrap:wrap; }
+.pack-tag { font-family:Orbitron,sans-serif; font-size:13px; font-weight:700; padding:6px 12px; border-radius:5px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.6); }
+.pack-tag-max { color:#39ff14; border-color:rgba(57,255,20,0.35); background:rgba(57,255,20,0.08); }
+.promo-price { font-family:Orbitron,sans-serif; font-size:14px; color:rgba(255,255,255,0.55); }
+.promo-price span { color:#39ff14; font-weight:700; font-size:19px; }
+.promo-right { flex-shrink:0; }
+.promo-cta { display:inline-flex; align-items:center; background:linear-gradient(135deg,#ff2d78,#d6245f); color:#fff; font-family:Orbitron,sans-serif; font-size:14px; font-weight:900; letter-spacing:0.8px; text-transform:uppercase; padding:10px 18px; border-radius:10px; box-shadow:0 0 14px rgba(255,45,120,0.5); }
+
+HTML de la bande (à insérer AVANT la ligne gradient bas, pour sport = tennis uniquement) :
+<div class='promo-banner'><div class='promo-left-bar'></div><div class='promo-text-block'><div class='promo-eyebrow'>🎾 SAFE TENNIS — PACK ATP / WTA</div><div class='promo-main'>Inclus dans le <span class='promo-main-hl'>Pack Tennis Pro</span></div><div class='promo-packs'><span class='pack-tag pack-tag-max'>🎾 Tennis Weekly — 15€/sem</span></div><div class='promo-price'>Abonne-toi au <span>Pack Tennis</span></div></div><div class='promo-right'><div class='promo-cta'>🎾 Je m'abonne</div></div></div>
+
+12. (Safe FOOTBALL, BASKET, HOCKEY uniquement — pas tennis) Bande promo (rose néon) — à placer AVANT la ligne gradient. Voir HTML §12. Sur card NORMALE et LOCKED.
+
+CSS à ajouter pour la promo multi (foot/basket/hockey) :
+.promo-banner-multi { background:rgba(20,8,14,0.95); border:1px solid rgba(255,45,120,0.35); border-radius:14px; padding:14px 18px; position:relative; display:flex; align-items:center; justify-content:space-between; gap:14px; }
+.promo-banner-multi .promo-left-bar { background:linear-gradient(to bottom,#ff2d78,#d6245f); }
+.promo-banner-multi .promo-eyebrow { color:#ff2d78; }
+.promo-banner-multi .promo-main-hl { color:#ff2d78; }
+.promo-banner-multi .promo-price span { color:#ff2d78; }
+.promo-banner-multi .pack-tag-max { color:#ff2d78; border-color:rgba(255,45,120,0.35); background:rgba(255,45,120,0.08); }
+.promo-banner-multi .promo-cta { background:linear-gradient(135deg,#ff2d78,#d6245f); color:#fff; box-shadow:0 0 14px rgba(255,45,120,0.5); }
+
+HTML de la bande multi (sport = football, basket ou hockey uniquement) — à insérer AVANT la ligne gradient :
+<div class='promo-banner promo-banner-multi'><div class='promo-left-bar'></div><div class='promo-text-block'><div class='promo-eyebrow'>🛡️ SAFE — FOOT, NBA, HOCKEY</div><div class='promo-main'>Accès bets Safe &amp; Live · <span class='promo-main-hl'>Daily 4,50€</span> · Week-End 10€ · Weekly 20€</div><div class='promo-packs'><span class='pack-tag'>Daily 4,50€</span><span class='pack-tag'>Week-End 10€</span><span class='pack-tag'>Weekly 20€</span><span class='pack-tag pack-tag-max'>VIP MAX 50€/mois</span></div><div class='promo-price'>Abonne-toi dès <span>4,50€</span> — SMS, CB, Crypto</div></div><div class='promo-right'><div class='promo-cta'>Je m'abonne</div></div></div>
+
+13. Ligne gradient bas (rose néon → bleu néon) 4px — TOUJOURS en DERNIER, après la bande promo si présente. Style : height:4px; background:linear-gradient(90deg,#FF2D78,#00D4FF); width:100%. C'est le tout dernier élément visuel de la card (normale et locked).
 
 ---
 
@@ -260,18 +283,19 @@ La card locked DOIT CACHER le contenu premium. Structure identique à la card no
 - Bankroll (§8) : contenu flouté
 
 ⚠️ CE QUI RESTE VISIBLE :
-- Mascotte en arrière-plan (toujours visible sur normale ET locked — mascotte-rose.png pour multisport/foot/basket/hockey, mascotte-tennis.png pour tennis).
 - Header, logo, badge sport
 - Barre compétition (date, heure, compétition en texte) — TOUS SPORTS
 - Barre de confiance (Confiance XX%) et value (VALUE +X% ou Valeur neutre) restent visibles sur la locked — TOUS SPORTS
 - Match card (noms joueurs, drapeaux, VS, surface) — TOUT VISIBLE
 - La COTE dans le bloc prono (bien visible, pas floutée)
 - Les titres des sections (STATS, FACE À FACE, ANALYSE, etc.)
+- Pour le TENNIS : la bande promo en bas (§11) reste visible sur la card locked (identique à la card normale).
+- Pour FOOTBALL, BASKET, HOCKEY : la bande promo en bas (§12) reste visible sur la card locked (identique à la card normale).
 
 ⚠️ OVERLAY CTA — Après le bloc prono flouté, ajouter un bloc centré :
 - Cadenas 🔒 (font-size:50px; text-align:center)
-- Texte "CONTENU RÉSERVÉ AUX ABONNÉS" (Orbitron 14px, color:rgba(255,255,255,0.5), letter-spacing:2px)
-- Bouton CTA "🔓 Accède au pronostic complet" (display:inline-block; padding:14px 32px; background:linear-gradient(90deg,#FF2D78,#00D4FF); color:#fff; font-family:Orbitron; font-size:14px; font-weight:700; border-radius:12px; text-decoration:none; letter-spacing:1px)
+- Texte "CONTENU RÉSERVÉ AUX ABONNÉS" (Orbitron 16px, color:rgba(255,255,255,0.5), letter-spacing:2px)
+- Bouton CTA "🔓 Accède au pronostic complet" (display:inline-block; padding:16px 36px; background:linear-gradient(90deg,#FF2D78,#00D4FF); color:#fff; font-family:Orbitron; font-size:17px; font-weight:700; border-radius:12px; text-decoration:none; letter-spacing:1px)
 
 ---
 
@@ -284,7 +308,5 @@ La card locked DOIT CACHER le contenu premium. Structure identique à la card no
 5. Chaque HTML est COMPLET et AUTONOME (<!DOCTYPE html>, <style> avec @import fonts, etc.).
 6. Le glow extérieur est TOUJOURS en z-index:-1 avec isolation:isolate sur la card.
 7. ⚠️ NE JAMAIS modifier les polices : utiliser uniquement Orbitron et Rajdhani comme indiqué. Pas de changement de font-family.
-8. ⚠️ Mascotte OBLIGATOIRE : sur chaque card (normale + locked), football / basket / hockey / multisport = mascotte-rose.png (noir néon rose) en fond ; tennis = mascotte-tennis.png. Ne jamais oublier.
-9. ⚠️ Safe non-tennis : pas de fond en dégradé sur la match card ; uniquement les lettres "VS" en dégradé texte (rose #FF2D78 → bleu #00D4FF).
 PROMPT
 );
