@@ -438,13 +438,25 @@ $membre = getMembre();
       padding:1.2rem 1.5rem 1.2rem 1.2rem;
       margin-bottom:1.5rem;
       display:none;
-      overflow:visible;
+      overflow:hidden;
+    }
+    .fun-option-block::after {
+      content:'';
+      position:absolute;
+      right:-30px; top:50%; transform:translateY(-50%) scaleX(-1);
+      width:200px; height:200px;
+      background:url('/assets/images/mascotte-fun.png') center/contain no-repeat;
+      opacity:0.08;
+      pointer-events:none;
+      z-index:0;
     }
     .fun-option-block.visible { display:block; animation:fadeUp 0.4s ease both; }
     .fun-option-inner {
       display:flex;
       align-items:center;
       gap:1rem;
+      position:relative;
+      z-index:1;
     }
     .fun-check-wrap {
       flex-shrink:0;
@@ -480,20 +492,24 @@ $membre = getMembre();
     }
     .fun-mascotte {
       position:absolute;
-      right:-20px;
-      bottom:-15px;
-      width:120px;
+      right:-10px;
+      bottom:-10px;
+      width:110px;
       height:auto;
       pointer-events:none;
       z-index:2;
       transform:scaleX(-1);
-      filter:drop-shadow(0 0 15px rgba(168,85,247,0.3));
+      object-fit:contain;
+      mix-blend-mode:screen;
+      filter:drop-shadow(0 0 12px rgba(168,85,247,0.4));
     }
     @media(max-width:860px){
-      .fun-mascotte { width:80px; right:-10px; bottom:-10px; }
+      .fun-mascotte { width:80px; right:-5px; bottom:-8px; }
+      .fun-option-block::after { width:150px; height:150px; right:-20px; }
     }
     @media(max-width:480px){
-      .fun-mascotte { width:65px; right:-5px; bottom:-8px; }
+      .fun-mascotte { width:60px; right:-3px; bottom:-5px; }
+      .fun-option-block::after { width:110px; height:110px; right:-15px; }
       .fun-option-title { font-size:0.82rem; }
       .fun-option-desc { font-size:0.75rem; }
     }
