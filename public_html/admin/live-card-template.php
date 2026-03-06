@@ -632,7 +632,7 @@ function generateFunCards($d) {
     $isTennis    = (strtolower($d['sport'] ?? '') === 'tennis');
     $mascotteUrl = $isTennis
         ? 'https://stratedgepronos.fr/assets/images/mascotte-tennis.png'
-        : 'https://stratedgepronos.fr/assets/images/mascotte.png';
+        : 'https://stratedgepronos.fr/assets/images/mascotte-fun.png';
     $logo        = 'https://stratedgepronos.fr/assets/images/logo_site_transparent.png';
 
     $date    = htmlspecialchars($d['date_fr']    ?? '', ENT_QUOTES, 'UTF-8');
