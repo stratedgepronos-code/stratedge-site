@@ -432,21 +432,22 @@ $membre = getMembre();
     /* Option Fun Bet */
     .fun-option-block {
       position:relative;
-      background:linear-gradient(135deg,rgba(168,85,247,0.06),rgba(255,45,120,0.04));
+      background:
+        linear-gradient(135deg,rgba(168,85,247,0.08),rgba(255,45,120,0.05)),
+        url('/assets/images/mascotte-fun.png') right center / 45% auto no-repeat;
       border:1.5px solid rgba(168,85,247,0.25);
       border-radius:16px;
       padding:1.2rem 1.5rem 1.2rem 1.2rem;
       margin-bottom:1.5rem;
       display:none;
-      overflow:hidden;
+      overflow:visible;
     }
-    .fun-option-block::after {
+    .fun-option-block::before {
       content:'';
       position:absolute;
-      right:-30px; top:50%; transform:translateY(-50%) scaleX(-1);
-      width:200px; height:200px;
-      background:url('/assets/images/mascotte-fun.png') center/contain no-repeat;
-      opacity:0.08;
+      inset:0;
+      border-radius:16px;
+      background:rgba(6,8,16,0.75);
       pointer-events:none;
       z-index:0;
     }
@@ -492,24 +493,21 @@ $membre = getMembre();
     }
     .fun-mascotte {
       position:absolute;
-      right:-10px;
-      bottom:-10px;
-      width:110px;
+      right:-15px;
+      bottom:-20px;
+      width:130px;
       height:auto;
       pointer-events:none;
       z-index:2;
       transform:scaleX(-1);
       object-fit:contain;
-      mix-blend-mode:screen;
-      filter:drop-shadow(0 0 12px rgba(168,85,247,0.4));
+      filter:drop-shadow(0 0 15px rgba(168,85,247,0.4));
     }
     @media(max-width:860px){
-      .fun-mascotte { width:80px; right:-5px; bottom:-8px; }
-      .fun-option-block::after { width:150px; height:150px; right:-20px; }
+      .fun-mascotte { width:95px; right:-10px; bottom:-15px; }
     }
     @media(max-width:480px){
-      .fun-mascotte { width:60px; right:-3px; bottom:-5px; }
-      .fun-option-block::after { width:110px; height:110px; right:-15px; }
+      .fun-mascotte { width:70px; right:-5px; bottom:-10px; }
       .fun-option-title { font-size:0.82rem; }
       .fun-option-desc { font-size:0.75rem; }
     }
@@ -819,7 +817,7 @@ $membre = getMembre();
             <div class="fun-option-desc">Combine tes bets Safe avec nos paris Fun pour un week-end explosif !</div>
           </div>
         </div>
-        <img src="/assets/images/mascotte-fun.png" alt="" class="fun-mascotte">
+        <img src="/assets/images/mascotte-fun-nobg.png" alt="" class="fun-mascotte">
       </div>
       <?php endif; ?>
 
