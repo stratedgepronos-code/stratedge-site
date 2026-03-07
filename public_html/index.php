@@ -848,7 +848,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       <div class="price-amount"><span class="currency">€</span>10</div>
       <div class="price-period">/ souscription (ven → dim)</div>
       <ul class="price-features">
-        <li>Accès bets "Safe" &amp; "Fun"<br><span style="font-size:0.85em;opacity:0.75;">Fun bets avec supplément</span></li>
+        <li><div style="display:block;"><span style="white-space:nowrap;">Accès bets "Safe" &amp; "Fun"</span><br><span style="font-size:0.85em;opacity:0.75;">Fun bets avec supplément</span></div></li>
         <li>Du vendredi au dimanche</li>
         <li>Bets LIVE par mail &amp; notification Push</li>
         <li>Idéal pour les matchs du week-end</li>

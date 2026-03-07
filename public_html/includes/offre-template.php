@@ -33,7 +33,7 @@ $offres = [
         'idd'        => '446904',
         'idp'        => '263723',
         'duree'      => 'Du vendredi 00h00 au dimanche 23h59',
-        'avantages'  => ['Accès bets Safe & Fun<br><span style="font-size:0.9em;opacity:0.8">Fun bets avec supplément</span>', 'Bets LIVE par mail &amp; Push', 'Tous les matchs du week-end', 'Sans engagement'],
+        'avantages'  => ['<div style="display:block"><span style="white-space:nowrap">Accès bets Safe & Fun</span><br><span style="font-size:0.9em;opacity:0.8">Fun bets avec supplément</span></div>', 'Bets LIVE par mail &amp; Push', 'Tous les matchs du week-end', 'Sans engagement'],
         'color'      => '#00d4ff',
         'glow'       => 'rgba(0,212,255,0.18)',
         'gradient'   => 'linear-gradient(135deg,#00d4ff,#0099cc)',
