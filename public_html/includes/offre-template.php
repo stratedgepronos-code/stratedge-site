@@ -432,24 +432,13 @@ $membre = getMembre();
     /* Option Fun Bet */
     .fun-option-block {
       position:relative;
-      background:
-        linear-gradient(135deg,rgba(168,85,247,0.08),rgba(255,45,120,0.05)),
-        url('/assets/images/mascotte-fun.png') right center / 45% auto no-repeat;
+      background:linear-gradient(135deg,rgba(168,85,247,0.08),rgba(255,45,120,0.05));
       border:1.5px solid rgba(168,85,247,0.25);
       border-radius:16px;
       padding:1.2rem 1.5rem 1.2rem 1.2rem;
       margin-bottom:1.5rem;
       display:none;
       overflow:visible;
-    }
-    .fun-option-block::before {
-      content:'';
-      position:absolute;
-      inset:0;
-      border-radius:16px;
-      background:rgba(6,8,16,0.75);
-      pointer-events:none;
-      z-index:0;
     }
     .fun-option-block.visible { display:block; animation:fadeUp 0.4s ease both; }
     .fun-option-inner {
