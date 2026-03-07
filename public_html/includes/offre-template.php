@@ -114,6 +114,7 @@ $membre = getMembre();
       color:var(--txt);
       min-height:100vh;
       overflow-x:hidden;
+      min-width:0;
     }
 
     /* ── Fond animé ── */
@@ -179,9 +180,11 @@ $membre = getMembre();
 
     /* ── PAGE ── */
     .page {
-      max-width:1100px; margin:0 auto;
+      max-width:1100px; width:100%;
+      margin:0 auto;
       padding:4rem 2rem 6rem;
       position:relative; z-index:1;
+      box-sizing:border-box;
     }
 
     /* ── HERO ── */
@@ -214,7 +217,9 @@ $membre = getMembre();
       grid-template-columns:340px 1fr;
       gap:2rem;
       align-items:start;
+      min-width:0;
     }
+    .payment-col { min-width:0; }
 
     /* ── CARTE OFFRE ── */
     .offre-card {
@@ -329,8 +334,13 @@ $membre = getMembre();
       border:1px solid var(--border);
       border-radius:14px; padding:1.5rem;
       text-align:center;
+      max-width:100%;
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
     }
-    .sp-wrap p { color:var(--txt3); font-size:0.83rem; margin-bottom:1rem; }
+    .sp-wrap > div,
+    .sp-wrap iframe { max-width:100%; }
+    .sp-wrap p { color:var(--txt3); font-size:0.83rem; margin-bottom:1rem; word-wrap:break-word; }
     .sp-wrap strong { color:var(--color); }
 
     /* Séparateur */
@@ -637,43 +647,45 @@ $membre = getMembre();
 
     @media (max-width:860px) {
       html,body{overflow-x:hidden;}
-      .layout { grid-template-columns:1fr; }
+      .layout { grid-template-columns:1fr; gap:1.5rem; }
       .hero-title { font-size:1.6rem; }
       .hero-subtitle{font-size:0.9rem;}
-      .page { padding:1.5rem 0.8rem 5rem; }
+      .page { padding:1.5rem 0.8rem 5rem; max-width:100%; }
       nav{padding:0 0.8rem;}
       .nav-inner { flex-wrap:wrap; gap:0.4rem; height:auto; min-height:50px; padding:0.5rem 0; }
-      .nav-logo img { height:28px; }
+      .nav-logo img { height:28px; max-width:100%; }
       .nav-back { font-size:0.75rem; order:3; width:100%; justify-content:center; padding-bottom:0.3rem; }
       .nav-badge { font-size:0.55rem; padding:0.2rem 0.6rem; }
-      .offre-card{border-radius:16px;}
-      .payment-block{border-radius:16px;padding:1.5rem;}
-      .np-info-box{flex-direction:column;align-items:flex-start;gap:0.4rem;}
-      .np-amount-value{font-size:1.5rem;}
-      .np-success-title{font-size:1.1rem;}
-      .btn-generate{font-size:0.85rem;padding:0.85rem;}
-      .btn-crypto{font-size:0.72rem;padding:0.8rem;}
-      .other-offers{padding:1.2rem 1rem;border-radius:16px;}
+      .offre-card{ border-radius:16px; max-width:100%; }
+      .payment-block{ border-radius:16px; padding:1.5rem; max-width:100%; }
+      .block-desc{ word-wrap:break-word; overflow-wrap:break-word; }
+      .np-info-box{ flex-direction:column; align-items:flex-start; gap:0.4rem; }
+      .np-amount-value{ font-size:1.5rem; }
+      .np-success-title{ font-size:1.1rem; }
+      .btn-generate{ font-size:0.85rem; padding:0.85rem; }
+      .btn-crypto{ font-size:0.72rem; padding:0.8rem; }
+      .other-offers{ padding:1.2rem 1rem; border-radius:16px; }
+      .fun-option-block{ padding:1rem 1.2rem; }
     }
     @media (max-width:480px) {
       .hero { margin-bottom:2rem; }
       .hero-title { font-size:1.3rem; }
       .hero-subtitle { font-size:0.85rem; }
-      .hero-tag{font-size:0.6rem;letter-spacing:2px;padding:0.3rem 0.9rem;}
+      .hero-tag{ font-size:0.6rem; letter-spacing:2px; padding:0.3rem 0.9rem; }
       .page { padding:1.2rem 0.6rem 4rem; }
       .offre-card-top { padding:1.2rem; }
-      .offre-avantages { padding:1rem 1.2rem; }
+      .offre-avantages { padding:1rem 1.2rem; overflow-wrap:break-word; }
       .offre-prix .num { font-size:3rem; }
-      .offre-prix .cur{font-size:1.3rem;}
+      .offre-prix .cur{ font-size:1.3rem; }
       .offre-video-wrap { width:80px; height:80px; }
-      .offre-badge{font-size:0.55rem;}
-      .offre-duree{font-size:0.78rem;}
-      .avantage{font-size:0.85rem;padding:0.5rem 0;}
-      .payment-block { padding:1.2rem; border-radius:14px; }
-      .block-title{font-size:0.72rem;}
-      .block-desc{font-size:0.78rem;}
-      .sp-wrap { padding:0.9rem; }
-      .sp-wrap p{font-size:0.78rem;}
+      .offre-badge{ font-size:0.55rem; }
+      .offre-duree{ font-size:0.78rem; }
+      .avantage{ font-size:0.85rem; padding:0.5rem 0; flex-wrap:wrap; word-break:break-word; }
+      .payment-block { padding:1.2rem; border-radius:14px; max-width:100%; }
+      .block-title{ font-size:0.72rem; }
+      .block-desc{ font-size:0.78rem; word-break:break-word; }
+      .sp-wrap { padding:0.9rem; max-width:100%; overflow-x:auto; }
+      .sp-wrap p{ font-size:0.78rem; }
       .crypto-tabs { gap:0.35rem; }
       .crypto-tab { padding:0.3rem 0.6rem; font-size:0.58rem; }
       .wallet-box{padding:0.6rem 0.8rem;border-radius:8px;}
@@ -699,12 +711,15 @@ $membre = getMembre();
       .np-success-desc{font-size:0.82rem;}
     }
     @media (max-width:360px){
-      .page{padding:1rem 0.4rem 4rem;}
-      .offre-card-top{padding:1rem;}
-      .offre-avantages{padding:0.8rem 1rem;}
-      .offre-prix .num{font-size:2.5rem;}
-      .payment-block{padding:1rem;border-radius:12px;}
-      .hero-title{font-size:1.15rem;}
+      .page{ padding:1rem 0.4rem 4rem; }
+      .offre-card-top{ padding:1rem; }
+      .offre-avantages{ padding:0.8rem 1rem; }
+      .offre-prix .num{ font-size:2.5rem; }
+      .payment-block{ padding:1rem; border-radius:12px; }
+      .hero-title{ font-size:1.15rem; }
+      .fun-option-block{ padding:0.8rem 1rem; }
+      .fun-option-title{ font-size:0.8rem; }
+      .note-box p{ font-size:0.72rem; }
     }
   </style>
 </head>
