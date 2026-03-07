@@ -33,7 +33,7 @@ $offres = [
         'idd'        => '446904',
         'idp'        => '263723',
         'duree'      => 'Du vendredi 00h00 au dimanche 23h59',
-        'avantages'  => ['Accès bets Safe & Fun <small style="opacity:0.6">(avec supplément)</small>', 'Bets LIVE par mail &amp; Push', 'Tous les matchs du week-end', 'Sans engagement'],
+        'avantages'  => ['Accès bets Safe & Fun<br><span style="font-size:0.9em;opacity:0.8">Fun bets avec supplément</span>', 'Bets LIVE par mail &amp; Push', 'Tous les matchs du week-end', 'Sans engagement'],
         'color'      => '#00d4ff',
         'glow'       => 'rgba(0,212,255,0.18)',
         'gradient'   => 'linear-gradient(135deg,#00d4ff,#0099cc)',
@@ -340,6 +340,29 @@ $membre = getMembre();
     }
     .sp-wrap > div,
     .sp-wrap iframe { max-width:100%; }
+    /* Wrapper StarPass pour scale mobile */
+    .sp-outer { width:100%; }
+    /* Mobile: scale StarPass pour éviter scroll horizontal */
+    @media (max-width:480px) {
+      .sp-outer { overflow:hidden; width:100%; text-align:center; }
+      .sp-wrap {
+        overflow-x:visible;
+        overflow-y:visible;
+        transform:scale(calc((100vw - 2rem) / 420));
+        transform-origin:top center;
+        width:420px;
+        max-width:420px;
+        margin-left:auto;
+        margin-right:auto;
+        padding-bottom:0.5rem;
+        display:inline-block;
+      }
+      .sp-wrap > div { width:100% !important; max-width:100% !important; }
+      .sp-wrap iframe { max-width:100% !important; }
+    }
+    @media (max-width:360px) {
+      .sp-wrap { transform:scale(calc((100vw - 1.5rem) / 380)); width:380px; max-width:380px; }
+    }
     .sp-wrap p { color:var(--txt3); font-size:0.83rem; margin-bottom:1rem; word-wrap:break-word; }
     .sp-wrap strong { color:var(--color); }
 
@@ -503,12 +526,15 @@ $membre = getMembre();
       filter:drop-shadow(0 0 15px rgba(168,85,247,0.4));
     }
     @media(max-width:860px){
-      .fun-mascotte { width:95px; right:-10px; bottom:-15px; }
+      .fun-mascotte { width:115px; right:-8px; bottom:-12px; }
     }
     @media(max-width:480px){
-      .fun-mascotte { width:70px; right:-5px; bottom:-10px; }
+      .fun-mascotte { width:130px; right:-5px; bottom:-15px; }
       .fun-option-title { font-size:0.82rem; }
       .fun-option-desc { font-size:0.75rem; }
+    }
+    @media(max-width:360px){
+      .fun-mascotte { width:110px; }
     }
 
     /* Badges sécurité */
@@ -797,12 +823,14 @@ $membre = getMembre();
           <div class="block-title">💳 CB · PayPal · Paysafecard · Internet+</div>
           <div class="block-desc">Paiement sécurisé via <strong style="color:var(--color)">StarPass</strong> — carte bancaire, PayPal, Paysafecard ou Internet+</div>
         <?php endif; ?>
+        <div class="sp-outer">
         <div class="sp-wrap">
           <p>Cliquez sur le bouton ci-dessous pour payer <strong><?= $o['prix'] ?>€</strong> via StarPass</p>
           <div id="starpass_<?= $o['idd'] ?>"></div>
           <script type="text/javascript"
             src="https://script.starpass.fr/script.php?idd=<?= $o['idd'] ?>&datas=<?= urlencode($membre['id'] . ':' . $type) ?>">
           </script>
+        </div>
         </div>
         <div class="note-box" style="margin-top:1rem;">
           <p><strong>⚠️ Important :</strong> Après paiement StarPass, vous serez automatiquement redirigé vers votre espace membre. Si ce n'est pas le cas, contactez le support depuis votre dashboard.</p>

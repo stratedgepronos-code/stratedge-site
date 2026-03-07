@@ -54,7 +54,7 @@ $firstTab = array_key_first($availableSections) ?? 'safe';
 <style>
 :root{--bg:#050810;--card:#111827;--pink:#ff2d78;--pink-dim:#d6245f;--blue:#00d4ff;--purple:#a855f7;--txt:#f0f4f8;--txt2:#b0bec9;--txt3:#8a9bb0;--border:rgba(255,45,120,0.15);}
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;}
+body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden;}
 nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:0 2rem;position:sticky;top:0;z-index:100;}
 .nav-inner{max-width:1200px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:65px;}
 .logo img{height:35px;}
@@ -84,7 +84,7 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
 .bets-counter .pulse{width:8px;height:8px;border-radius:50%;background:#ff2d78;animation:pulse-dot 1.5s ease-in-out infinite;}
 @keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.4);}}
 
-.bets-wrap{max-width:1400px;margin:0 auto;padding:1.5rem 0.5rem 2rem;}
+.bets-wrap{max-width:1400px;width:100%;margin:0 auto;padding:1.5rem 0.5rem 2rem;box-sizing:border-box;}
 
 /* Banner abo */
 .abo-b{border-radius:14px;padding:1.2rem 1.6rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
