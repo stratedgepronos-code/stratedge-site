@@ -156,7 +156,10 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 
 <!-- TOPBAR MOBILE -->
 <div class="mobile-topbar">
-  <span class="mob-logo">STRATEDGE</span>
+  <a href="index.php" class="mob-logo" style="text-decoration:none;display:flex;align-items:center;gap:0.5rem;">
+    <img src="../assets/images/logo site.png" alt="StratEdge" style="height:28px;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
+    <span style="display:none;font-family:'Orbitron',sans-serif;font-size:1rem;color:#ff2d78;font-weight:900;">STRATEDGE</span>
+  </a>
   <div class="hamburger" id="hamburger" onclick="toggleSidebar()">
     <span></span><span></span><span></span>
   </div>

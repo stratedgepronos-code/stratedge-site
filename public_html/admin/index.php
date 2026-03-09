@@ -104,7 +104,46 @@ $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m O
     .badge { padding:0.2rem 0.7rem; border-radius:6px; font-size:0.75rem; font-weight:700; }
     .two-cols { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
     @media (max-width:1100px) { .stats-grid { grid-template-columns:repeat(2,1fr); } .revenus-row { grid-template-columns:1fr; } }
-    @media (max-width:768px) { .main { margin-left:0; padding-top:68px; } .two-cols { grid-template-columns:1fr; } .stats-grid { grid-template-columns:1fr 1fr; } }
+    @media (max-width:768px) {
+      .main { margin-left:0; padding:62px 0.75rem calc(1.5rem + 70px + env(safe-area-inset-bottom,0px)) 0.75rem; }
+      .two-cols { grid-template-columns:1fr; }
+      .stats-grid { grid-template-columns:1fr 1fr; gap:0.6rem; }
+      .stat-card { padding:1rem 0.8rem; border-radius:10px; }
+      .stat-value { font-size:1.3rem !important; }
+      .stat-label { font-size:0.58rem; letter-spacing:1px; }
+      .stat-sub { font-size:0.72rem; }
+      .page-header { flex-direction:column !important; align-items:flex-start !important; gap:0.6rem !important; margin-bottom:1rem !important; }
+      .page-header h1 { font-size:1.15rem !important; }
+      .page-header p { font-size:0.82rem; }
+      .stats-bar-visiteurs { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; white-space:nowrap; padding:0.6rem 0.8rem !important; border-radius:10px !important; gap:0.6rem !important; flex-wrap:nowrap !important; scrollbar-width:thin; }
+      .stats-bar-visiteurs span { flex-shrink:0; font-size:0.8rem; }
+      .revenus-row { grid-template-columns:1fr !important; gap:0.8rem; }
+      .revenu-card { padding:1rem 0.8rem; border-radius:10px; flex-direction:column !important; align-items:flex-start !important; }
+      .revenu-value { font-size:1.4rem !important; }
+      .revenu-emoji { font-size:1.5rem; }
+      .revenu-pct-value { font-size:1.1rem; }
+      .revenu-label { font-size:0.52rem; }
+      .revenu-sub { font-size:0.72rem; }
+      .vip-split { gap:0.6rem; }
+      .vip-split-item { min-width:0; flex:1; padding:0.7rem 0.6rem; }
+      .vip-split-montant { font-size:1.1rem; }
+      .vip-split-pct { font-size:0.72rem; }
+      .vip-split-pseudo { font-size:0.55rem; }
+      .card { padding:1rem 0.8rem; border-radius:10px; margin-bottom:1rem; }
+      .card h3 { font-size:0.82rem; margin-bottom:1rem; }
+      .card h3 a { font-size:0.7rem; }
+      table { display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; white-space:nowrap; }
+      th { font-size:0.55rem; padding:0.5rem 0.4rem; }
+      td { font-size:0.8rem; padding:0.6rem 0.4rem; }
+    }
+    @media (max-width:380px) {
+      .main { padding:62px 0.5rem calc(1rem + 64px + env(safe-area-inset-bottom,0px)) 0.5rem; }
+      .stats-grid { grid-template-columns:1fr; }
+      .stat-value { font-size:1.15rem !important; }
+      .revenu-value { font-size:1.2rem !important; }
+      .vip-split { flex-direction:column; }
+      .vip-split-item { min-width:100%; }
+    }
   </style>
 </head>
 <body>
@@ -117,7 +156,7 @@ $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m O
       <h1>📊 Tableau de bord</h1>
       <p>Bienvenue — <?= date('d/m/Y à H:i') ?></p>
     </div>
-    <div class="stats-bar-visiteurs" style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;padding:0.75rem 1.25rem;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:14px;">
+    <div class="stats-bar-visiteurs" style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;padding:0.75rem 1.25rem;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:14px;max-width:100%;">
       <span style="font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);">Visiteurs</span>
       <span style="color:var(--text-primary);"><strong><?= number_format($visiteursAujourdhui, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">aujourd'hui</span></span>
       <span style="color:var(--text-primary);"><strong><?= number_format($visiteursSemaine, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">7 jours</span></span>
