@@ -48,10 +48,12 @@ jobs:
             "mkdir -p ${{ env.WEBROOT }}/uploads/bets ${{ env.WEBROOT }}/uploads/locked ${{ env.WEBROOT }}/uploads/avatars ${{ env.WEBROOT }}/uploads/tickets"
 
       - name: Auto-restaurer images depuis BDD
-        if: ${{ secrets.RESTORE_TOKEN != '' }}
+        env:
+          RESTORE_TOKEN: ${{ secrets.RESTORE_TOKEN }}
+        if: env.RESTORE_TOKEN != ''
         run: |
           echo "Restauration des images manquantes depuis la BDD..."
-          RESPONSE=$(curl -s --max-time 120 "https://stratedgepronos.fr/auto-restore-images.php?token=${{ secrets.RESTORE_TOKEN }}" || echo '{"error":"curl failed"}')
+          RESPONSE=$(curl -s --max-time 120 "https://stratedgepronos.fr/auto-restore-images.php?token=${RESTORE_TOKEN}" || echo '{"error":"curl failed"}')
           echo "Réponse: $RESPONSE"
 
       - name: Vérification
