@@ -456,9 +456,9 @@ $resultatConfig = [
   <style>
     :root{--bg-dark:#050810;--bg-card:#0d1220;--bg-card2:#111827;--neon-green:#ff2d78;--neon-green-dim:#d6245f;--neon-blue:#00d4ff;--text-primary:#f0f4f8;--text-secondary:#b0bec9;--text-muted:#8a9bb0;--border-subtle:rgba(255,45,120,0.12);--glow-green:0 0 20px rgba(255,45,120,0.3);}
     *{margin:0;padding:0;box-sizing:border-box;}
-    html{overflow-x:hidden;}
-    body{font-family:'Rajdhani',sans-serif;background:var(--bg-dark);color:var(--text-primary);min-height:100vh;display:flex;overflow-x:hidden;}
-    .main{margin-left:240px;flex:1;padding:2rem;}
+    html,body{overflow-x:hidden!important;}
+    body{font-family:'Rajdhani',sans-serif;background:var(--bg-dark);color:var(--text-primary);min-height:100vh;}
+    .main{padding:2rem;}
     .page-header{margin-bottom:2rem;}
     .page-header h1{font-family:'Orbitron',sans-serif;font-size:1.6rem;font-weight:700;}
     .page-header p{color:var(--text-muted);margin-top:0.3rem;}
@@ -530,25 +530,24 @@ $resultatConfig = [
 
     @media(max-width:768px){
       html,body{overflow-x:hidden!important;width:100%!important;}
-      body{display:block!important;}
-      .main{margin-left:0!important;width:100%!important;max-width:100vw!important;min-width:0!important;overflow-x:hidden;padding:0.8rem!important;padding-top:62px!important;padding-bottom:calc(78px + env(safe-area-inset-bottom,0px))!important;}
+      .main{margin-left:0!important;width:100%!important;max-width:100vw!important;min-width:0!important;overflow-x:hidden;padding:0.8rem!important;padding-top:62px!important;padding-bottom:calc(78px + env(safe-area-inset-bottom,0px))!important;box-sizing:border-box!important;}
       .two-cols{grid-template-columns:1fr!important;gap:1rem;}
       .page-header h1{font-size:1.15rem;}
-      .page-header p{font-size:0.82rem;}
+      .page-header p{font-size:0.82rem;word-wrap:break-word;}
       .previews-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:0.7rem;}
       .preview-img{height:90px;}
       .preview-body{padding:0.5rem;}
       .preview-body input,.preview-body select{font-size:0.8rem;padding:0.4rem 0.5rem;margin-bottom:0.3rem;}
-      .card{padding:0.9rem;border-radius:10px;margin-bottom:1rem;}
+      .card{padding:0.9rem;border-radius:10px;margin-bottom:1rem;max-width:100%!important;overflow:hidden;}
       .card h3{font-size:0.82rem;margin-bottom:1rem;}
-      .btn-submit{font-size:0.95rem;padding:0.85rem;min-height:48px;}
+      .btn-submit{font-size:0.92rem;padding:0.85rem;min-height:48px;white-space:normal;word-wrap:break-word;text-align:center;}
       .table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;}
       .table-wrap table{min-width:700px;}
-      .drop-zone{padding:1.2rem;}
+      .drop-zone{padding:1.2rem;word-wrap:break-word;}
       .drop-zone .icon{font-size:2rem;}
-      .drop-zone p{font-size:0.82rem;}
+      .drop-zone p{font-size:0.82rem;word-wrap:break-word;}
       .expire-box{padding:0.7rem 0.8rem;flex-wrap:wrap;gap:0.5rem;}
-      .expire-box .elabel{font-size:0.82rem;}
+      .expire-box .elabel{font-size:0.82rem;word-wrap:break-word;}
       .expire-count{font-size:0.62rem;}
       .locked-upload-zone{padding:0.5rem 0.6rem;}
       .locked-label{font-size:0.75rem;}
@@ -568,6 +567,8 @@ $resultatConfig = [
       .preview-body input,.preview-body select{font-size:0.75rem;padding:0.35rem 0.45rem;}
       .page-header h1{font-size:1rem;}
       .card{padding:0.7rem;}
+      .btn-submit{font-size:0.88rem;padding:0.75rem;}
+      .drop-zone p{font-size:0.78rem;}
     }
   </style>
 </head>
@@ -650,7 +651,7 @@ $resultatConfig = [
             if ($imgSrc === '' && !empty($b['locked_image_path'])) $imgSrc = betImageUrl(trim($b['locked_image_path']), 'locked');
           ?>
             <tr class="week-body-row">
-              <td><?php if ($imgSrc !== ''): ?><img src="<?= htmlspecialchars($imgSrc) ?>" class="bet-thumb" alt="" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="bet-thumb-placeholder" style="display:none;">📊</span><?php else: ?><span class="bet-thumb-placeholder" style="display:inline-flex;">📊</span><?php endif; ?></td>
+              <td><?php if ($imgSrc !== ''): ?><img <?= $isCurrentWeek ? 'src' : 'data-src' ?>="<?= htmlspecialchars($imgSrc) ?>" class="bet-thumb" alt="" loading="lazy" onerror="this.onerror=null;this.style.display='none';this.nextElementSibling.style.display='inline-flex';"><span class="bet-thumb-placeholder" style="display:none;">📊</span><?php else: ?><span class="bet-thumb-placeholder" style="display:inline-flex;">📊</span><?php endif; ?></td>
               <td style="max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?= clean($b['titre'] ?: '—') ?></td>
               <td style="font-size:0.8rem;"><?= clean($b['type']) ?></td>
               <td>
@@ -851,13 +852,21 @@ document.getElementById('betForm').addEventListener('submit', function() {
   });
 });
 
-// Replier / déplier les dossiers par semaine
+// Replier / déplier les dossiers par semaine + lazy-load images
+function lazyLoadWeekImages(tbody) {
+  tbody.querySelectorAll('img[data-src]').forEach(function(img) {
+    img.src = img.getAttribute('data-src');
+    img.removeAttribute('data-src');
+  });
+}
 document.querySelectorAll('.week-header').forEach(function(h) {
   h.addEventListener('click', function() {
     var tbody = this.closest('tbody.week-block');
     if (tbody) {
+      var wasCollapsed = tbody.classList.contains('collapsed');
       tbody.classList.toggle('collapsed');
-      this.setAttribute('aria-expanded', tbody.classList.contains('collapsed') ? 'false' : 'true');
+      this.setAttribute('aria-expanded', wasCollapsed ? 'true' : 'false');
+      if (wasCollapsed) lazyLoadWeekImages(tbody);
     }
   });
   h.addEventListener('keydown', function(e) {

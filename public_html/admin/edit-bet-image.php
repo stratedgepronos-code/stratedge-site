@@ -153,7 +153,7 @@ $resultatLabels = ['en_cours'=>'⏳ En cours','gagne'=>'✅ Gagné','perdu'=>'�
     <div class="bet-card" data-search="<?= strtolower(htmlspecialchars($b['titre'] . ' ' . $b['date_post'])) ?>">
       <div class="bet-thumb" onclick="openLightbox('<?= htmlspecialchars($imgSrc ?: '', ENT_QUOTES, 'UTF-8') ?>')">
         <?php if ($imgSrc): ?>
-          <img src="<?= htmlspecialchars($imgSrc, ENT_QUOTES, 'UTF-8') ?>" alt="Bet">
+          <img src="<?= htmlspecialchars($imgSrc, ENT_QUOTES, 'UTF-8') ?>" alt="Bet" loading="lazy" onerror="this.onerror=null;this.parentNode.innerHTML='<div class=\'no-img\'>📊</div>';">
         <?php else: ?>
           <div class="no-img">📊</div>
         <?php endif; ?>

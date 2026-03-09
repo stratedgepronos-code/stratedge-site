@@ -222,7 +222,7 @@ $accentBorder = $onglet === 'tennis' ? 'rgba(0,212,106,0.25)' : 'rgba(0,212,255,
         <div class="bet-card" style="border:1px solid <?= $rc['border'] ?>;">
           <?php if ($imgSrc): ?>
             <div style="position:relative;cursor:zoom-in;" onclick="openLightbox('<?= htmlspecialchars($imgSrc, ENT_QUOTES, 'UTF-8') ?>')">
-              <img src="<?= htmlspecialchars($imgSrc, ENT_QUOTES, 'UTF-8') ?>" style="width:100%;height:140px;object-fit:cover;display:block;" alt="">
+              <img src="<?= htmlspecialchars($imgSrc, ENT_QUOTES, 'UTF-8') ?>" style="width:100%;height:140px;object-fit:cover;display:block;" alt="" loading="lazy" onerror="this.onerror=null;this.style.display='none';">
               <div style="position:absolute;inset:0;background:<?= $rc['bg'] ?>;display:flex;align-items:center;justify-content:center;">
                 <span style="font-size:2.5rem;filter:drop-shadow(0 0 8px <?= $rc['color'] ?>);">
                   <?= ['gagne'=>'✅','perdu'=>'❌','annule'=>'↺'][$b['resultat']] ?>
