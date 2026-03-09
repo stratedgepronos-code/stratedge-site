@@ -456,18 +456,8 @@ $resultatConfig = [
   <style>
     :root{--bg-dark:#050810;--bg-card:#0d1220;--bg-card2:#111827;--neon-green:#ff2d78;--neon-green-dim:#d6245f;--neon-blue:#00d4ff;--text-primary:#f0f4f8;--text-secondary:#b0bec9;--text-muted:#8a9bb0;--border-subtle:rgba(255,45,120,0.12);--glow-green:0 0 20px rgba(255,45,120,0.3);}
     *{margin:0;padding:0;box-sizing:border-box;}
-    body{font-family:'Rajdhani',sans-serif;background:var(--bg-dark);color:var(--text-primary);min-height:100vh;display:flex;}
-    .sidebar{width:240px;background:var(--bg-card);border-right:1px solid var(--border-subtle);height:100vh;position:fixed;top:0;left:0;display:flex;flex-direction:column;z-index:100;}
-    .sidebar-logo{padding:1.5rem;border-bottom:1px solid var(--border-subtle);}
-    .sidebar-logo img{height:35px;}
-    .sidebar-label{font-family:'Space Mono',monospace;font-size:0.6rem;letter-spacing:3px;text-transform:uppercase;color:var(--text-muted);padding:1.5rem 1.5rem 0.5rem;}
-    .sidebar nav a{display:flex;align-items:center;gap:0.8rem;padding:0.8rem 1.5rem;color:var(--text-secondary);text-decoration:none;font-size:0.95rem;font-weight:500;transition:all 0.2s;border-left:3px solid transparent;}
-    .sidebar nav a:hover,.sidebar nav a.active{color:var(--text-primary);background:rgba(255,45,120,0.06);border-left-color:var(--neon-green);}
-    .sidebar-footer{margin-top:auto;padding:1.5rem;border-top:1px solid var(--border-subtle);display:flex;flex-direction:column;gap:0.75rem;}
-    .sidebar-footer a.site-link{color:var(--text-muted);text-decoration:none;font-size:0.85rem;transition:color 0.2s;}
-    .sidebar-footer a.site-link:hover{color:var(--text-primary);}
-    .btn-logout{display:flex;align-items:center;justify-content:center;gap:0.5rem;background:rgba(255,45,120,0.08);border:1px solid rgba(255,45,120,0.25);color:var(--neon-green);padding:0.65rem 1rem;border-radius:8px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:0.9rem;text-decoration:none;transition:all 0.2s;}
-    .btn-logout:hover{background:rgba(255,45,120,0.18);color:#fff;}
+    html{overflow-x:hidden;}
+    body{font-family:'Rajdhani',sans-serif;background:var(--bg-dark);color:var(--text-primary);min-height:100vh;display:flex;overflow-x:hidden;}
     .main{margin-left:240px;flex:1;padding:2rem;}
     .page-header{margin-bottom:2rem;}
     .page-header h1{font-family:'Orbitron',sans-serif;font-size:1.6rem;font-weight:700;}
@@ -537,6 +527,48 @@ $resultatConfig = [
     .btn-danger{background:rgba(255,45,120,0.1);color:#ff6b9d;border:1px solid rgba(255,45,120,0.2);}
     .btn-toggle{background:rgba(255,255,255,0.06);color:var(--text-secondary);border:1px solid rgba(255,255,255,0.1);}
     .no-bets{text-align:center;color:var(--text-muted);padding:2rem;}
+
+    @media(max-width:768px){
+      html,body{overflow-x:hidden!important;width:100%!important;}
+      body{display:block!important;}
+      .main{margin-left:0!important;width:100%!important;max-width:100vw!important;min-width:0!important;overflow-x:hidden;padding:0.8rem!important;padding-top:62px!important;padding-bottom:calc(78px + env(safe-area-inset-bottom,0px))!important;}
+      .two-cols{grid-template-columns:1fr!important;gap:1rem;}
+      .page-header h1{font-size:1.15rem;}
+      .page-header p{font-size:0.82rem;}
+      .previews-grid{grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:0.7rem;}
+      .preview-img{height:90px;}
+      .preview-body{padding:0.5rem;}
+      .preview-body input,.preview-body select{font-size:0.8rem;padding:0.4rem 0.5rem;margin-bottom:0.3rem;}
+      .card{padding:0.9rem;border-radius:10px;margin-bottom:1rem;}
+      .card h3{font-size:0.82rem;margin-bottom:1rem;}
+      .btn-submit{font-size:0.95rem;padding:0.85rem;min-height:48px;}
+      .table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;}
+      .table-wrap table{min-width:700px;}
+      .drop-zone{padding:1.2rem;}
+      .drop-zone .icon{font-size:2rem;}
+      .drop-zone p{font-size:0.82rem;}
+      .expire-box{padding:0.7rem 0.8rem;flex-wrap:wrap;gap:0.5rem;}
+      .expire-box .elabel{font-size:0.82rem;}
+      .expire-count{font-size:0.62rem;}
+      .locked-upload-zone{padding:0.5rem 0.6rem;}
+      .locked-label{font-size:0.75rem;}
+      .locked-hint{font-size:0.7rem;}
+      .week-header td{font-size:0.72rem!important;padding:0.4rem 0.5rem!important;}
+      td{font-size:0.78rem;padding:0.5rem 0.4rem;}
+      th{font-size:0.55rem;padding:0.4rem 0.3rem;}
+      .bet-thumb{width:42px;height:30px;}
+      .bet-thumb-wrap{width:42px;height:30px;}
+      .btn-sm{padding:0.25rem 0.5rem;font-size:0.75rem;min-height:34px;min-width:34px;}
+      .alert-success,.alert-error{font-size:0.88rem;padding:0.8rem;border-radius:8px;}
+    }
+    @media(max-width:400px){
+      .main{padding:0.5rem!important;padding-top:58px!important;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))!important;}
+      .previews-grid{grid-template-columns:1fr 1fr;gap:0.5rem;}
+      .preview-img{height:70px;}
+      .preview-body input,.preview-body select{font-size:0.75rem;padding:0.35rem 0.45rem;}
+      .page-header h1{font-size:1rem;}
+      .card{padding:0.7rem;}
+    }
   </style>
 </head>
 <body>
@@ -593,7 +625,7 @@ $resultatConfig = [
       <?php if (empty($betsByWeek)): ?>
         <div class="no-bets">Aucun bet pour le moment.</div>
       <?php else: ?>
-        <table>
+        <div class="table-wrap"><table>
           <thead><tr><th>Image</th><th>Titre</th><th>Type</th><th>Catégorie</th><th>Date</th><th>Résultat</th><th>Visible</th><th></th></tr></thead>
           <?php
             $currentWeekKey = date('Y-m-d', strtotime('monday this week'));
@@ -682,7 +714,7 @@ $resultatConfig = [
           <?php endforeach; ?>
           </tbody>
           <?php endforeach; ?>
-        </table>
+        </table></div>
       <?php endif; ?>
     </div>
 
