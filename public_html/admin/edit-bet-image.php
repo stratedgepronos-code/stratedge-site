@@ -75,10 +75,12 @@ $resultatLabels = ['en_cours'=>'⏳ En cours','gagne'=>'✅ Gagné','perdu'=>'�
   <style>
     :root{--bg:#050810;--bg-card:#0d1220;--bg-card2:#111827;--neon-green:#ff2d78;--neon-green-dim:#d6245f;--text-primary:#f0f4f8;--text-secondary:#b0bec9;--text-muted:#8a9bb0;--border-subtle:rgba(255,255,255,0.07);--border-pink:rgba(255,45,120,0.2);}
     *{box-sizing:border-box;margin:0;padding:0;}
-    body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--text-primary);min-height:100vh;display:flex;}
+    html,body{overflow-x:hidden!important;}
+    body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--text-primary);min-height:100vh;}
     <?php require_once __DIR__ . '/sidebar.php'; ?>
   </style>
   <style>
+    .main{padding:2rem;}
     .page-header{margin-bottom:2rem;}
     .page-header h1{font-family:'Orbitron',sans-serif;font-size:1.4rem;font-weight:900;color:#fff;}
     .page-header p{color:var(--text-muted);font-size:0.9rem;margin-top:0.4rem;}
@@ -100,7 +102,6 @@ $resultatLabels = ['en_cours'=>'⏳ En cours','gagne'=>'✅ Gagné','perdu'=>'�
     .bet-titre{font-size:0.88rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .btn-edit{display:flex;align-items:center;gap:0.4rem;background:rgba(255,45,120,0.08);border:1px solid var(--border-pink);color:#ff2d78;padding:0.5rem 0.8rem;border-radius:8px;font-size:0.82rem;font-weight:700;cursor:pointer;transition:all .2s;width:100%;justify-content:center;font-family:'Rajdhani',sans-serif;}
     .btn-edit:hover{background:rgba(255,45,120,0.18);transform:translateY(-1px);}
-    /* MODAL */
     .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
     .modal-overlay.open{display:flex;}
     .modal{background:var(--bg-card);border:1px solid var(--border-pink);border-radius:16px;padding:1.8rem;width:90%;max-width:480px;position:relative;}
@@ -123,13 +124,45 @@ $resultatLabels = ['en_cours'=>'⏳ En cours','gagne'=>'✅ Gagné','perdu'=>'�
     .search-bar{margin-bottom:1.5rem;}
     .search-bar input{width:100%;background:var(--bg-card);border:1px solid var(--border-subtle);color:var(--text-primary);padding:0.8rem 1rem;border-radius:10px;font-family:'Rajdhani',sans-serif;font-size:0.95rem;}
     .search-bar input:focus{outline:none;border-color:var(--border-pink);}
+
+    @media(max-width:768px){
+      .main{margin-left:0!important;width:100%!important;max-width:100vw!important;padding:0.8rem!important;padding-top:62px!important;padding-bottom:calc(78px + env(safe-area-inset-bottom,0px))!important;box-sizing:border-box!important;}
+      .page-header h1{font-size:1.1rem;}
+      .page-header p{font-size:0.82rem;word-wrap:break-word;}
+      .bets-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:0.8rem;}
+      .bet-thumb{height:110px;}
+      .bet-body{padding:0.6rem;}
+      .bet-meta{flex-direction:column;align-items:flex-start;gap:0.2rem;}
+      .bet-titre{font-size:0.8rem;margin-bottom:0.5rem;}
+      .btn-edit{font-size:0.75rem;padding:0.45rem 0.5rem;min-height:40px;}
+      .alert{font-size:0.85rem;padding:0.7rem 0.9rem;}
+      .search-bar input{font-size:0.9rem;padding:0.7rem 0.8rem;}
+      .modal{padding:1.2rem;width:95%;border-radius:12px;}
+      .modal-title{font-size:0.85rem;margin-bottom:0.8rem;}
+      .drop-zone{padding:1.2rem;}
+      .drop-zone .icon{font-size:1.6rem;}
+      .drop-zone .label{font-size:0.82rem;}
+      .drop-zone .sub{font-size:0.7rem;}
+      .modal-actions{flex-direction:column;gap:0.6rem;}
+      .btn-submit,.btn-cancel{width:100%;min-height:46px;text-align:center;display:flex;align-items:center;justify-content:center;}
+      .preview-img{max-height:150px;}
+    }
+    @media(max-width:400px){
+      .main{padding:0.5rem!important;padding-top:58px!important;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))!important;}
+      .bets-grid{grid-template-columns:1fr 1fr;gap:0.5rem;}
+      .bet-thumb{height:90px;}
+      .bet-body{padding:0.5rem;}
+      .bet-titre{font-size:0.75rem;}
+      .btn-edit{font-size:0.7rem;padding:0.4rem;}
+      .page-header h1{font-size:1rem;}
+    }
   </style>
 </head>
 <body>
 
 <?php /* sidebar.php déjà affiché plus haut via require */ ?>
 
-<div class="main" style="padding:2rem;">
+<div class="main">
 
   <div class="page-header">
     <h1>🖼️ Modifier l'image d'un bet</h1>

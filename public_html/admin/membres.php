@@ -161,27 +161,41 @@ if (isset($_GET['id'])) {
     .form-group select option { background:#111827; }
     .btn-add { background:linear-gradient(135deg, var(--neon-green), var(--neon-green-dim)); color:white; padding:0.7rem 1.5rem; border:none; border-radius:8px; font-family:'Rajdhani',sans-serif; font-weight:700; cursor:pointer; }
 
+    .table-wrap{width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:8px;}
+    .abo-form{display:flex;gap:1rem;align-items:flex-end;}
+
     @media(max-width:768px){
+      .main{margin-left:0!important;width:100%!important;max-width:100vw!important;padding:0.8rem!important;padding-top:62px!important;padding-bottom:calc(78px + env(safe-area-inset-bottom,0px))!important;box-sizing:border-box!important;}
       .page-header{flex-direction:column;align-items:flex-start;gap:0.6rem;}
       .page-header h1{font-size:1.15rem;}
-      .search-bar{width:100%;font-size:0.92rem;}
-      .card{padding:1rem 0.6rem;border-radius:10px;margin-bottom:1rem;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+      .search-bar{width:100%;font-size:0.92rem;padding:0.65rem 0.9rem;}
+      .card{padding:1rem 0.6rem;border-radius:10px;margin-bottom:1rem;max-width:100%!important;overflow:hidden;}
       .card h3{font-size:0.82rem;margin-bottom:1rem;}
-      table{min-width:520px;}
+      .table-wrap{margin:0 -0.3rem;}
+      table{min-width:480px;}
       th{font-size:0.58rem;padding:0.5rem 0.4rem;}
       td{font-size:0.8rem;padding:0.6rem 0.4rem;}
       .btn-sm{padding:0.3rem 0.55rem;font-size:0.78rem;min-height:36px;display:inline-flex;align-items:center;}
       .detail-header{flex-direction:column;align-items:flex-start;gap:0.8rem;padding:1rem;border-radius:10px;}
+      .detail-header>div:last-child{width:100%;}
+      .detail-header>div:last-child .btn-sm{min-height:42px;flex:1;justify-content:center;text-align:center;}
       .avatar-circle{width:42px;height:42px;font-size:1.1rem;}
       .back-btn{font-size:0.85rem;margin-bottom:1rem;}
+      .abo-form{flex-direction:column;gap:0.6rem;align-items:stretch;}
+      .form-group{margin-bottom:0;}
       .form-group select{width:100%;padding:0.65rem 0.8rem;font-size:0.9rem;}
       .btn-add{width:100%;min-height:44px;font-size:0.92rem;}
       .alert-success,.alert-error{font-size:0.85rem;padding:0.7rem 0.8rem;border-radius:8px;}
+      .rank{font-size:0.65rem;padding:0.15rem 0.45rem;}
+      .badge{font-size:0.68rem;padding:0.15rem 0.5rem;}
     }
     @media(max-width:480px){
+      .main{padding:0.5rem!important;padding-top:58px!important;padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))!important;}
       .card{padding:0.7rem 0.4rem;}
-      table{min-width:450px;}
+      table{min-width:420px;}
       td{font-size:0.75rem;padding:0.5rem 0.35rem;}
+      .page-header h1{font-size:1rem;}
+      .btn-sm{font-size:0.72rem;padding:0.25rem 0.4rem;min-height:34px;}
     }
   </style>
 </head>
@@ -205,7 +219,7 @@ if (isset($_GET['id'])) {
           <div style="color:var(--text-muted); font-size:0.8rem;">Inscrit le <?= date('d/m/Y', strtotime($membreDetail['date_inscription'])) ?></div>
         </div>
       </div>
-      <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+      <div class="detail-actions" style="display:flex;gap:0.5rem;flex-wrap:wrap;">
         <form method="POST">
           <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
           <input type="hidden" name="action" value="toggle_ban">
@@ -230,7 +244,7 @@ if (isset($_GET['id'])) {
     <!-- Ajouter abonnement manuellement -->
     <div class="card">
       <h3>Ajouter un abonnement manuellement</h3>
-      <form method="POST" style="display:flex; gap:1rem; align-items:flex-end;">
+      <form method="POST" class="abo-form">
         <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
         <input type="hidden" name="action" value="add_abo">
         <input type="hidden" name="membre_id" value="<?= $membreDetail['id'] ?>">
@@ -252,7 +266,7 @@ if (isset($_GET['id'])) {
     <!-- Historique abonnements -->
     <div class="card">
       <h3>Historique abonnements (<?= count($membreAbos) ?>)</h3>
-      <table>
+      <div class="table-wrap"><table>
         <thead><tr><th>Type</th><th>Acheté le</th><th>Expire le</th><th>Montant</th><th>Statut</th><th>Action</th></tr></thead>
         <tbody>
           <?php foreach ($membreAbos as $a): 
@@ -278,7 +292,7 @@ if (isset($_GET['id'])) {
           </tr>
           <?php endforeach; ?>
         </tbody>
-      </table>
+      </table></div>
     </div>
 
   <?php else: ?>
@@ -292,7 +306,7 @@ if (isset($_GET['id'])) {
     </div>
 
     <div class="card">
-      <table>
+      <div class="table-wrap"><table>
         <thead><tr><th>Nom</th><th>Email</th><th>Inscrit</th><th>Statut</th><th>Actions</th></tr></thead>
         <tbody>
           <?php foreach ($membres as $m): 
@@ -313,17 +327,17 @@ if (isset($_GET['id'])) {
                 <span class="rank <?= $rank['class'] ?>"><?= $rank['label'] ?></span>
               <?php endif; ?>
             </td>
-            <td style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <td><div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
               <a href="?id=<?= $m['id'] ?>" class="btn-sm btn-primary">👁 Voir</a>
               <a href="messages.php?membre=<?= $m['id'] ?>" class="btn-sm btn-secondary">💬</a>
-            </td>
+            </div></td>
           </tr>
           <?php endforeach; ?>
           <?php if (empty($membres)): ?>
             <tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:2rem;">Aucun membre trouvé.</td></tr>
           <?php endif; ?>
         </tbody>
-      </table>
+      </table></div>
     </div>
   <?php endif; ?>
 </div>
