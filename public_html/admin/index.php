@@ -51,8 +51,13 @@ $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m O
   <style>
     :root { --bg-dark:#050810; --bg-card:#0d1220; --neon-green:#ff2d78; --neon-green-dim:#d6245f; --neon-blue:#00d4ff; --neon-purple:#a855f7; --text-primary:#f0f4f8; --text-secondary:#b0bec9; --text-muted:#8a9bb0; --border-subtle:rgba(255,45,120,0.12); }
     *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-    body { font-family:'Rajdhani',sans-serif; background:var(--bg-dark); color:var(--text-primary); min-height:100vh; display:flex; }
-    .main { margin-left:240px; flex:1; padding:2rem; min-height:100vh; }
+    html { overflow-x:hidden; }
+    body { font-family:'Rajdhani',sans-serif; background:var(--bg-dark); color:var(--text-primary); min-height:100vh; display:flex; overflow-x:hidden; }
+    .main { padding:2rem; }
+    .dash-header { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.5rem; }
+    .stats-bar-visiteurs { display:flex; flex-wrap:wrap; gap:1rem; align-items:center; padding:0.75rem 1.25rem; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:14px; max-width:100%; }
+    .vis-label { font-family:'Space Mono',monospace; font-size:0.65rem; letter-spacing:2px; text-transform:uppercase; color:var(--text-muted); }
+    .vis-sub { color:var(--text-muted); font-size:0.9rem; }
     .page-header { margin-bottom:2rem; }
     .page-header h1 { font-family:'Orbitron',sans-serif; font-size:1.6rem; font-weight:700; }
     .page-header p { color:var(--text-muted); margin-top:0.3rem; }
@@ -105,44 +110,45 @@ $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m O
     .two-cols { display:grid; grid-template-columns:1fr 1fr; gap:1.5rem; }
     @media (max-width:1100px) { .stats-grid { grid-template-columns:repeat(2,1fr); } .revenus-row { grid-template-columns:1fr; } }
     @media (max-width:768px) {
-      .main { margin-left:0; padding:62px 0.75rem calc(1.5rem + 70px + env(safe-area-inset-bottom,0px)) 0.75rem; }
-      .two-cols { grid-template-columns:1fr; }
+      .main { margin-left:0 !important; padding:62px 0.7rem calc(1.5rem + 74px + env(safe-area-inset-bottom,0px)) 0.7rem !important; width:100% !important; max-width:100vw !important; min-width:0 !important; }
+      .two-cols { grid-template-columns:1fr !important; gap:0.8rem; }
       .stats-grid { grid-template-columns:1fr 1fr; gap:0.6rem; }
       .stat-card { padding:1rem 0.8rem; border-radius:10px; }
       .stat-value { font-size:1.3rem !important; }
       .stat-label { font-size:0.58rem; letter-spacing:1px; }
       .stat-sub { font-size:0.72rem; }
-      .page-header { flex-direction:column !important; align-items:flex-start !important; gap:0.6rem !important; margin-bottom:1rem !important; }
+      .dash-header { flex-direction:column; align-items:stretch; gap:0.6rem; margin-bottom:1rem; }
       .page-header h1 { font-size:1.15rem !important; }
       .page-header p { font-size:0.82rem; }
-      .stats-bar-visiteurs { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; white-space:nowrap; padding:0.6rem 0.8rem !important; border-radius:10px !important; gap:0.6rem !important; flex-wrap:nowrap !important; scrollbar-width:thin; }
+      .stats-bar-visiteurs { width:100%; overflow-x:auto; -webkit-overflow-scrolling:touch; white-space:nowrap; padding:0.6rem 0.8rem; border-radius:10px; gap:0.6rem; flex-wrap:nowrap; scrollbar-width:thin; }
       .stats-bar-visiteurs span { flex-shrink:0; font-size:0.8rem; }
       .revenus-row { grid-template-columns:1fr !important; gap:0.8rem; }
       .revenu-card { padding:1rem 0.8rem; border-radius:10px; flex-direction:column !important; align-items:flex-start !important; }
-      .revenu-value { font-size:1.4rem !important; }
+      .revenu-left { min-width:0; overflow:hidden; }
+      .revenu-value { font-size:1.4rem !important; word-break:break-all; }
       .revenu-emoji { font-size:1.5rem; }
       .revenu-pct-value { font-size:1.1rem; }
       .revenu-label { font-size:0.52rem; }
       .revenu-sub { font-size:0.72rem; }
       .vip-split { gap:0.6rem; }
-      .vip-split-item { min-width:0; flex:1; padding:0.7rem 0.6rem; }
+      .vip-split-item { min-width:0 !important; flex:1; padding:0.7rem 0.6rem; }
       .vip-split-montant { font-size:1.1rem; }
       .vip-split-pct { font-size:0.72rem; }
       .vip-split-pseudo { font-size:0.55rem; }
       .card { padding:1rem 0.8rem; border-radius:10px; margin-bottom:1rem; }
       .card h3 { font-size:0.82rem; margin-bottom:1rem; }
       .card h3 a { font-size:0.7rem; }
-      table { display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; white-space:nowrap; }
+      table { display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; white-space:nowrap; width:100% !important; max-width:100% !important; }
       th { font-size:0.55rem; padding:0.5rem 0.4rem; }
       td { font-size:0.8rem; padding:0.6rem 0.4rem; }
     }
     @media (max-width:380px) {
-      .main { padding:62px 0.5rem calc(1rem + 64px + env(safe-area-inset-bottom,0px)) 0.5rem; }
+      .main { padding:58px 0.5rem calc(1rem + 68px + env(safe-area-inset-bottom,0px)) 0.5rem !important; }
       .stats-grid { grid-template-columns:1fr; }
       .stat-value { font-size:1.15rem !important; }
       .revenu-value { font-size:1.2rem !important; }
       .vip-split { flex-direction:column; }
-      .vip-split-item { min-width:100%; }
+      .vip-split-item { min-width:100% !important; }
     }
   </style>
 </head>
@@ -151,17 +157,17 @@ $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m O
 <?php require_once __DIR__ . '/sidebar.php'; ?>
 
 <div class="main">
-  <div class="page-header" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:1rem;margin-bottom:1.5rem;">
+  <div class="page-header dash-header">
     <div>
       <h1>📊 Tableau de bord</h1>
       <p>Bienvenue — <?= date('d/m/Y à H:i') ?></p>
     </div>
-    <div class="stats-bar-visiteurs" style="display:flex;flex-wrap:wrap;gap:1rem;align-items:center;padding:0.75rem 1.25rem;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:14px;max-width:100%;">
-      <span style="font-family:'Space Mono',monospace;font-size:0.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);">Visiteurs</span>
-      <span style="color:var(--text-primary);"><strong><?= number_format($visiteursAujourdhui, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">aujourd'hui</span></span>
-      <span style="color:var(--text-primary);"><strong><?= number_format($visiteursSemaine, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">7 jours</span></span>
-      <span style="color:var(--text-primary);"><strong><?= number_format($visiteursMois, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">30 jours</span></span>
-      <span style="color:var(--text-primary);"><strong><?= number_format($visiteursAll, 0, ',', ' ') ?></strong> <span style="color:var(--text-muted);font-size:0.9rem;">all time</span></span>
+    <div class="stats-bar-visiteurs">
+      <span class="vis-label">Visiteurs</span>
+      <span><strong><?= number_format($visiteursAujourdhui, 0, ',', ' ') ?></strong> <span class="vis-sub">aujourd'hui</span></span>
+      <span><strong><?= number_format($visiteursSemaine, 0, ',', ' ') ?></strong> <span class="vis-sub">7 jours</span></span>
+      <span><strong><?= number_format($visiteursMois, 0, ',', ' ') ?></strong> <span class="vis-sub">30 jours</span></span>
+      <span><strong><?= number_format($visiteursAll, 0, ',', ' ') ?></strong> <span class="vis-sub">all time</span></span>
     </div>
   </div>
 

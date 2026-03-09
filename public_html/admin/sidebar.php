@@ -107,11 +107,12 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
     .mobile-topbar { display:flex; }
     .sidebar { transform:translateX(-100%); top:0; }
     .sidebar.open { transform:translateX(0); }
-    .main { margin-left:0; padding-top:58px; padding-bottom:calc(70px + env(safe-area-inset-bottom, 0px)); }
+    html, body { overflow-x:hidden !important; width:100% !important; }
+    .main { margin-left:0 !important; padding-top:58px; padding-bottom:calc(74px + env(safe-area-inset-bottom, 0px)); width:100% !important; max-width:100vw !important; min-width:0 !important; overflow-x:hidden; }
 
     /* Tables scrollables */
     .table-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    table { min-width:500px; }
+    table { min-width:400px; }
 
     /* Grilles */
     .two-cols, .stats-grid { grid-template-columns:1fr !important; }
