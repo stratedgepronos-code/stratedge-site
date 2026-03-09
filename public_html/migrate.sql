@@ -50,6 +50,15 @@ SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_S
 SET @sql = IF(@col_exists = 0, 'ALTER TABLE bets ADD COLUMN categorie VARCHAR(30) NOT NULL DEFAULT ''multi'' AFTER type', 'SELECT 1');
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
+-- sport (tennis, football, basket, hockey) pour historique par section
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'bets' AND COLUMN_NAME = 'sport');
+SET @sql = IF(@col_exists = 0, 'ALTER TABLE bets ADD COLUMN sport VARCHAR(30) DEFAULT NULL AFTER categorie', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Backfill sport pour bets existants (optionnel)
+UPDATE bets SET sport = 'tennis' WHERE categorie = 'tennis' AND (sport IS NULL OR sport = '');
+UPDATE bets SET sport = 'football' WHERE (sport IS NULL OR sport = '');
+
 
 -- ── 3. Table ABONNEMENTS : convertir ENUM → VARCHAR ─────────
 -- Pour supporter tennis, rasstoss et futures formules

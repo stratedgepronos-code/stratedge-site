@@ -33,6 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $types       = $_POST['type']       ?? [];
             $descs       = $_POST['description'] ?? [];
             $categories  = $_POST['categorie']  ?? [];
+            $sports      = $_POST['sport']     ?? [];
             $images      = $_FILES['images'] ?? [];
             $expireDaily = isset($_POST['expire_daily']);
 
@@ -106,6 +107,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $lastCategorie = in_array($categories[$i] ?? '', ['multi','tennis']) ? $categories[$i] : 'multi';
                         // Admin promu (non super-admin) → uniquement tennis
                         if (!$isSuperAdmin) $lastCategorie = 'tennis';
+                        $lastSport = ($lastCategorie === 'tennis') ? 'tennis' : (in_array($sports[$i] ?? '', ['football','tennis','basket','hockey']) ? $sports[$i] : 'football');
                         $lastImagePath = 'uploads/bets/' . $filename;
 
                         // ── Locked image : uploadée manuellement si fournie ──
@@ -125,17 +127,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $lockedBlob = ($lastLockedPath !== '' && isset($lname)) ? @file_get_contents($lockedDir . $lname) : null;
 
                         try {
-                            $stmt = $db->prepare("INSERT INTO bets (titre, image_path, image_data, locked_image_path, locked_image_data, type, categorie, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-                            $stmt->execute([$lastTitre, $lastImagePath, $imageBlob ?: null, $lastLockedPath ?: null, $lockedBlob ?: null, $lastType, $lastCategorie, trim($descs[$i] ?? '')]);
+                            $stmt = $db->prepare("INSERT INTO bets (titre, image_path, image_data, locked_image_path, locked_image_data, type, categorie, sport, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                            $stmt->execute([$lastTitre, $lastImagePath, $imageBlob ?: null, $lastLockedPath ?: null, $lockedBlob ?: null, $lastType, $lastCategorie, $lastSport, trim($descs[$i] ?? '')]);
                         } catch (Throwable $insErr) {
-                            error_log('[poster-bet] INSERT avec blob échoué, fallback sans blob : ' . $insErr->getMessage());
+                            error_log('[poster-bet] INSERT avec blob+sport échoué, fallback sans blob : ' . $insErr->getMessage());
                             try {
-                                $stmt = $db->prepare("INSERT INTO bets (titre, image_path, locked_image_path, type, categorie, description) VALUES (?, ?, ?, ?, ?, ?)");
-                                $stmt->execute([$lastTitre, $lastImagePath, $lastLockedPath ?: null, $lastType, $lastCategorie, trim($descs[$i] ?? '')]);
+                                $stmt = $db->prepare("INSERT INTO bets (titre, image_path, locked_image_path, type, categorie, sport, description) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                                $stmt->execute([$lastTitre, $lastImagePath, $lastLockedPath ?: null, $lastType, $lastCategorie, $lastSport, trim($descs[$i] ?? '')]);
                             } catch (Throwable $insErr2) {
-                                error_log('[poster-bet] INSERT fallback minimal : ' . $insErr2->getMessage());
-                                $stmt = $db->prepare("INSERT INTO bets (titre, image_path, type) VALUES (?, ?, ?)");
-                                $stmt->execute([$lastTitre, $lastImagePath, $lastType]);
+                                error_log('[poster-bet] INSERT fallback sans sport : ' . $insErr2->getMessage());
+                                try {
+                                    $stmt = $db->prepare("INSERT INTO bets (titre, image_path, locked_image_path, type, categorie, description) VALUES (?, ?, ?, ?, ?, ?)");
+                                    $stmt->execute([$lastTitre, $lastImagePath, $lastLockedPath ?: null, $lastType, $lastCategorie, trim($descs[$i] ?? '')]);
+                                } catch (Throwable $insErr3) {
+                                    $stmt = $db->prepare("INSERT INTO bets (titre, image_path, type) VALUES (?, ?, ?)");
+                                    $stmt->execute([$lastTitre, $lastImagePath, $lastType]);
+                                }
                             }
                         }
                         $nbPostes++;
@@ -729,6 +736,12 @@ function addFiles(files) {
             <option value="tennis" selected>🎾 Tennis Weekly</option>
             <?php endif; ?>
           </select>
+          <select name="sport[${idx}]" class="sport-select" style="margin-top:0.4rem;width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.5rem 0.75rem;color:#f0f4f8;font-family:'Rajdhani',sans-serif;font-size:0.9rem;">
+            <option value="football">⚽ Foot</option>
+            <option value="tennis">🎾 Tennis</option>
+            <option value="basket">🏀 Basket</option>
+            <option value="hockey">🏒 Hockey</option>
+          </select>
           <div class="locked-upload-zone" onclick="this.querySelector('input').click()" title="Card Locked pour Twitter (optionnel)">
             <input type="file" name="locked_images[${idx}]" accept="image/*" style="display:none" onchange="previewLocked(this)">
             <div class="locked-label">🔒 Card Locked Twitter <span style="opacity:0.5;font-size:0.75rem;">(optionnel)</span></div>
@@ -801,6 +814,8 @@ document.getElementById('betForm').addEventListener('submit', function() {
     if (type) type.name = 'type[' + seq + ']';
     const cat = item.querySelector('select[name^="categorie"]');
     if (cat) cat.name = 'categorie[' + seq + ']';
+    const sportSel = item.querySelector('select[name^="sport"]');
+    if (sportSel) sportSel.name = 'sport[' + seq + ']';
   });
 });
 

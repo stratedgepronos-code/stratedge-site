@@ -12,6 +12,43 @@ $bets = $db->query("
     ORDER BY date_resultat DESC, date_post DESC
 ")->fetchAll();
 
+// Sections : sport + type (tennis, foot, hockey, basket × safe, fun, live)
+$sportOrder = ['tennis' => 0, 'football' => 1, 'hockey' => 2, 'basket' => 3];
+$typeOrder  = ['safe' => 0, 'fun' => 1, 'live' => 2];
+$sectionLabels = [
+    'tennis_safe'   => '🎾 Tennis Safe',   'tennis_fun'   => '🎾 Tennis Fun',   'tennis_live'   => '🎾 Tennis Live',
+    'football_safe' => '⚽ Foot Safe',     'football_fun' => '⚽ Foot Fun',     'football_live' => '⚽ Foot Live',
+    'hockey_safe'   => '🏒 Hockey Safe',   'hockey_fun'   => '🏒 Hockey Fun',   'hockey_live'   => '🏒 Hockey Live',
+    'basket_safe'   => '🏀 Basket Safe',   'basket_fun'   => '🏀 Basket Fun',   'basket_live'   => '🏀 Basket Live',
+];
+function betSectionKey($b) {
+    $sport = $b['sport'] ?? null;
+    if ($sport === null || $sport === '') $sport = (($b['categorie'] ?? 'multi') === 'tennis') ? 'tennis' : 'football';
+    $sport = strtolower(trim($sport));
+    if (!in_array($sport, ['tennis','football','basket','hockey'], true)) $sport = 'football';
+    $type = $b['type'] ?? 'safe';
+    if (strpos($type, 'live') !== false) $t = 'live'; elseif (strpos($type, 'fun') !== false) $t = 'fun'; else $t = 'safe';
+    return $sport . '_' . $t;
+}
+$sectionsBets = [];
+foreach ($bets as $b) {
+    $key = betSectionKey($b);
+    if (!isset($sectionsBets[$key])) $sectionsBets[$key] = [];
+    $sectionsBets[$key][] = $b;
+}
+function sectionStats($arr) {
+    $g = count(array_filter($arr, fn($b) => $b['resultat'] === 'gagne'));
+    $p = count(array_filter($arr, fn($b) => $b['resultat'] === 'perdu'));
+    $a = count(array_filter($arr, fn($b) => $b['resultat'] === 'annule'));
+    $total = count($arr);
+    $taux = ($g + $p) > 0 ? round($g / ($g + $p) * 100) : null;
+    return ['gagnes' => $g, 'perdus' => $p, 'annules' => $a, 'total' => $total, 'taux' => $taux];
+}
+$sectionStats = [];
+foreach ($sectionsBets as $key => $arr) {
+    $sectionStats[$key] = sectionStats($arr);
+}
+
 $stats = $db->query("
     SELECT 
         SUM(resultat='gagne')  as gagnes,
@@ -30,13 +67,21 @@ $resultatConfig = [
     'annule' => ['label'=>'Annule', 'color'=>'#f59e0b', 'bg'=>'rgba(245,158,11,0.12)', 'border'=>'rgba(245,158,11,0.35)', 'icon'=>'↺',  'overlay'=>'rgba(245,158,11,0.1)', 'band'=>'linear-gradient(to bottom,#f59e0b,#d97706)'],
 ];
 
-$tauxReussite = ($stats['total'] > 0 && ($stats['gagnes'] + $stats['perdus']) > 0)
-    ? round($stats['gagnes'] / ($stats['gagnes'] + $stats['perdus']) * 100)
-    : null;
-
+$filtreSection = $_GET['section'] ?? 'tous';
 $filtre = $_GET['filtre'] ?? 'tous';
 $filtreType = $_GET['type'] ?? 'tous';
-$betsFiltres = $bets;
+
+if ($filtreSection !== 'tous' && isset($sectionsBets[$filtreSection])) {
+    $betsFiltres = $sectionsBets[$filtreSection];
+    $statsAffichage = $sectionStats[$filtreSection];
+    $tauxReussite = $statsAffichage['taux'];
+} else {
+    $betsFiltres = $bets;
+    $statsAffichage = $stats;
+    $tauxReussite = ($stats['total'] > 0 && ($stats['gagnes'] + $stats['perdus']) > 0)
+        ? round($stats['gagnes'] / ($stats['gagnes'] + $stats['perdus']) * 100)
+        : null;
+}
 if ($filtre !== 'tous') {
     $betsFiltres = array_filter($betsFiltres, fn($b) => $b['resultat'] === $filtre);
 }
@@ -264,9 +309,8 @@ body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
 
 <div class="hist-wrap">
 
-  <!-- Dashboard Stats -->
+  <!-- Dashboard Stats (global ou section) -->
   <div class="stats-dashboard">
-    <!-- Cercle radial winrate -->
     <div class="radial-wrap">
       <?php
         $pct = $tauxReussite ?? 0;
@@ -275,38 +319,36 @@ body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
       <div class="radial-circle" style="background:conic-gradient(#00c864 0deg, #00c864 <?= $greenDeg ?>deg, rgba(255,68,68,0.3) <?= $greenDeg ?>deg, rgba(255,68,68,0.3) 360deg);padding:5px;border-radius:50%;">
         <div style="width:100%;height:100%;border-radius:50%;background:var(--card,#111827);display:flex;align-items:center;justify-content:center;flex-direction:column;">
           <div class="radial-value"><?= $tauxReussite !== null ? $tauxReussite . '%' : '—' ?></div>
-          <div class="radial-label">Winrate</div>
+          <div class="radial-label">Winrate<?= $filtreSection !== 'tous' ? ' section' : '' ?></div>
         </div>
       </div>
     </div>
-
-    <!-- Mini stats -->
     <div class="mini-stats">
       <div class="mini-stat">
         <span class="mini-stat-icon">📊</span>
         <div>
-          <div class="mini-stat-val" style="color:var(--txt,#f0f4f8)"><?= $stats['total'] ?? 0 ?></div>
+          <div class="mini-stat-val" style="color:var(--txt,#f0f4f8)"><?= $statsAffichage['total'] ?? 0 ?></div>
           <div class="mini-stat-lbl">Total</div>
         </div>
       </div>
       <div class="mini-stat" style="border-color:rgba(0,200,100,0.2);">
         <span class="mini-stat-icon">✅</span>
         <div>
-          <div class="mini-stat-val" style="color:#00c864"><?= $stats['gagnes'] ?? 0 ?></div>
+          <div class="mini-stat-val" style="color:#00c864"><?= $statsAffichage['gagnes'] ?? 0 ?></div>
           <div class="mini-stat-lbl">Gagnes</div>
         </div>
       </div>
       <div class="mini-stat" style="border-color:rgba(255,68,68,0.2);">
         <span class="mini-stat-icon">❌</span>
         <div>
-          <div class="mini-stat-val" style="color:#ff4444"><?= $stats['perdus'] ?? 0 ?></div>
+          <div class="mini-stat-val" style="color:#ff4444"><?= $statsAffichage['perdus'] ?? 0 ?></div>
           <div class="mini-stat-lbl">Perdus</div>
         </div>
       </div>
       <div class="mini-stat" style="border-color:rgba(245,158,11,0.2);">
         <span class="mini-stat-icon">↺</span>
         <div>
-          <div class="mini-stat-val" style="color:#f59e0b"><?= $stats['annules'] ?? 0 ?></div>
+          <div class="mini-stat-val" style="color:#f59e0b"><?= $statsAffichage['annules'] ?? 0 ?></div>
           <div class="mini-stat-lbl">Annules</div>
         </div>
       </div>
@@ -326,22 +368,35 @@ body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
   </div>
   <?php endif; ?>
 
-  <!-- Filtres resultats -->
+  <!-- Filtre par section (taux de reussite par section) -->
   <div class="filters-section">
-    <div class="filters-label">Resultat</div>
+    <div class="filters-label">Section (taux de reussite)</div>
     <div class="filters">
-      <a href="?filtre=tous<?= $filtreType !== 'tous' ? '&type='.$filtreType : '' ?>" class="filter-pill f-tous <?= $filtre==='tous'?'active':'' ?>">Tous <span class="filter-count"><?= $stats['total'] ?? 0 ?></span></a>
-      <a href="?filtre=gagne<?= $filtreType !== 'tous' ? '&type='.$filtreType : '' ?>" class="filter-pill f-gagne <?= $filtre==='gagne'?'active':'' ?>">✅ Gagnes <span class="filter-count"><?= $stats['gagnes'] ?? 0 ?></span></a>
-      <a href="?filtre=perdu<?= $filtreType !== 'tous' ? '&type='.$filtreType : '' ?>" class="filter-pill f-perdu <?= $filtre==='perdu'?'active':'' ?>">❌ Perdus <span class="filter-count"><?= $stats['perdus'] ?? 0 ?></span></a>
-      <a href="?filtre=annule<?= $filtreType !== 'tous' ? '&type='.$filtreType : '' ?>" class="filter-pill f-annule <?= $filtre==='annule'?'active':'' ?>">↺ Annules <span class="filter-count"><?= $stats['annules'] ?? 0 ?></span></a>
+      <?php $baseQuery = ($filtre !== 'tous' ? '&filtre='.$filtre : '') . ($filtreType !== 'tous' ? '&type='.$filtreType : ''); ?>
+      <a href="?section=tous<?= $baseQuery ?>" class="filter-pill f-tous <?= $filtreSection==='tous'?'active':'' ?>">Tous <span class="filter-count"><?= $stats['total'] ?? 0 ?></span></a>
+      <?php
+        $orderSections = ['tennis_safe','tennis_fun','tennis_live','football_safe','football_fun','football_live','hockey_safe','hockey_fun','hockey_live','basket_safe','basket_fun','basket_live'];
+        foreach ($orderSections as $sk):
+          if (!isset($sectionStats[$sk])) continue;
+          $st = $sectionStats[$sk];
+          $tauxStr = $st['taux'] !== null ? $st['taux'].'%' : '—';
+      ?>
+      <a href="?section=<?= urlencode($sk) ?><?= $baseQuery ?>" class="filter-pill <?= $filtreSection===$sk?'active':'' ?>"><?= $sectionLabels[$sk] ?? $sk ?> <span class="filter-count"><?= $st['total'] ?> · <?= $tauxStr ?></span></a>
+      <?php endforeach; ?>
     </div>
-    <!-- Filtres type -->
+    <div class="filters-label" style="margin-top:0.8rem;">Resultat</div>
+    <div class="filters">
+      <a href="?section=<?= urlencode($filtreSection) ?>&filtre=tous<?= $filtreType !== 'tous' ? '&type='.$filtreType : '' ?>" class="filter-pill f-tous <?= $filtre==='tous'?'active':'' ?>">Tous</a>
+      <a href="?section=<?= urlencode($filtreSection) ?>&filtre=gagne<?= $filtreType !== 'tous' ? '&type='.$filtreType : '' ?>" class="filter-pill f-gagne <?= $filtre==='gagne'?'active':'' ?>">✅ Gagnes</a>
+      <a href="?section=<?= urlencode($filtreSection) ?>&filtre=perdu<?= $filtreType !== 'tous' ? '&type='.$filtreType : '' ?>" class="filter-pill f-perdu <?= $filtre==='perdu'?'active':'' ?>">❌ Perdus</a>
+      <a href="?section=<?= urlencode($filtreSection) ?>&filtre=annule<?= $filtreType !== 'tous' ? '&type='.$filtreType : '' ?>" class="filter-pill f-annule <?= $filtre==='annule'?'active':'' ?>">↺ Annules</a>
+    </div>
     <div class="filters-label" style="margin-top:0.8rem;">Type de bet</div>
     <div class="filters">
-      <a href="?type=tous<?= $filtre !== 'tous' ? '&filtre='.$filtre : '' ?>" class="filter-pill f-tous <?= $filtreType==='tous'?'active':'' ?>">Tous <span class="filter-count"><?= $stats['total'] ?? 0 ?></span></a>
-      <a href="?type=safe<?= $filtre !== 'tous' ? '&filtre='.$filtre : '' ?>" class="filter-pill f-safe <?= $filtreType==='safe'?'active':'' ?>">🛡️ Safe <span class="filter-count"><?= $nbSafe ?></span></a>
-      <a href="?type=live<?= $filtre !== 'tous' ? '&filtre='.$filtre : '' ?>" class="filter-pill f-live <?= $filtreType==='live'?'active':'' ?>">⚡ Live <span class="filter-count"><?= $nbLive ?></span></a>
-      <a href="?type=fun<?= $filtre !== 'tous' ? '&filtre='.$filtre : '' ?>" class="filter-pill f-fun <?= $filtreType==='fun'?'active':'' ?>">🎯 Fun <span class="filter-count"><?= $nbFun ?></span></a>
+      <a href="?section=<?= urlencode($filtreSection) ?>&type=tous<?= $filtre !== 'tous' ? '&filtre='.$filtre : '' ?>" class="filter-pill f-tous <?= $filtreType==='tous'?'active':'' ?>">Tous</a>
+      <a href="?section=<?= urlencode($filtreSection) ?>&type=safe<?= $filtre !== 'tous' ? '&filtre='.$filtre : '' ?>" class="filter-pill f-safe <?= $filtreType==='safe'?'active':'' ?>">🛡️ Safe</a>
+      <a href="?section=<?= urlencode($filtreSection) ?>&type=live<?= $filtre !== 'tous' ? '&filtre='.$filtre : '' ?>" class="filter-pill f-live <?= $filtreType==='live'?'active':'' ?>">⚡ Live</a>
+      <a href="?section=<?= urlencode($filtreSection) ?>&type=fun<?= $filtre !== 'tous' ? '&filtre='.$filtre : '' ?>" class="filter-pill f-fun <?= $filtreType==='fun'?'active':'' ?>">🎯 Fun</a>
     </div>
   </div>
 
