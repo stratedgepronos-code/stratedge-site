@@ -100,13 +100,14 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 
   /* MAIN */
   .main { margin-left:240px; flex:1; min-height:100vh; }
+  .admin-mob-tabs { display:none; }
 
   /* ════ RESPONSIVE MOBILE ════ */
   @media (max-width:768px) {
     .mobile-topbar { display:flex; }
     .sidebar { transform:translateX(-100%); top:0; }
     .sidebar.open { transform:translateX(0); }
-    .main { margin-left:0; padding-top:58px; }
+    .main { margin-left:0; padding-top:58px; padding-bottom:calc(70px + env(safe-area-inset-bottom, 0px)); }
 
     /* Tables scrollables */
     .table-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
@@ -127,6 +128,24 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 
     /* Contacts panel historique */
     .contacts-panel { max-height:220px; }
+
+    /* Bottom tabs admin (mobile) */
+    .admin-mob-tabs{
+      display:flex; position:fixed; left:0; right:0; bottom:0; z-index:210;
+      height:calc(64px + env(safe-area-inset-bottom, 0px));
+      padding-bottom:env(safe-area-inset-bottom, 0px);
+      background:rgba(5,8,16,0.98);
+      backdrop-filter:blur(16px);
+      border-top:1px solid var(--border-subtle);
+      box-shadow:0 -6px 20px rgba(0,0,0,0.45);
+    }
+    .admin-mob-tabs a{
+      flex:1; min-height:50px; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      color:var(--text-muted); text-decoration:none; font-size:0.62rem; font-weight:700; gap:0.15rem;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .admin-mob-tabs a .ico{font-size:1.05rem;line-height:1;}
+    .admin-mob-tabs a.active{color:var(--neon-green);}
   }
   @media (max-width:480px) {
     .main { padding:58px 0.75rem 1.5rem; }
@@ -253,6 +272,13 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
     <a href="../logout.php" class="btn-logout">🚪 Déconnexion</a>
   </div>
 </div>
+<nav class="admin-mob-tabs">
+  <a href="index.php" class="<?= ($pageActive==='index') ? 'active' : '' ?>"><span class="ico">📊</span><span>Dashboard</span></a>
+  <a href="poster-bet.php" class="<?= ($pageActive==='poster-bet') ? 'active' : '' ?>"><span class="ico">📸</span><span>Poster</span></a>
+  <a href="historique.php" class="<?= ($pageActive==='historique') ? 'active' : '' ?>"><span class="ico">📂</span><span>Historique</span></a>
+  <a href="messages.php" class="<?= ($pageActive==='messages') ? 'active' : '' ?>"><span class="ico">💬</span><span>Messages</span></a>
+  <a href="tickets.php" class="<?= ($pageActive==='tickets') ? 'active' : '' ?>"><span class="ico">🎫</span><span>SAV</span></a>
+</nav>
 
 <script>
 function toggleSidebar() {
@@ -267,4 +293,35 @@ function toggleNavGroup(btn) {
   var g = btn.closest('.nav-group');
   if (g) g.classList.toggle('open');
 }
+document.addEventListener('click', function(e){
+  const s = document.getElementById('sidebar');
+  const h = document.getElementById('hamburger');
+  const o = document.getElementById('sidebarOverlay');
+  if (!s || window.innerWidth > 768) return;
+  if (!s.classList.contains('open')) return;
+  if ((h && h.contains(e.target)) || s.contains(e.target)) return;
+  s.classList.remove('open');
+  if (h) h.classList.remove('open');
+  if (o) o.classList.remove('open');
+});
+document.querySelectorAll('#sidebar a').forEach(function(a){
+  a.addEventListener('click', function(){
+    if (window.innerWidth > 768) return;
+    const s = document.getElementById('sidebar');
+    const h = document.getElementById('hamburger');
+    const o = document.getElementById('sidebarOverlay');
+    if (s) s.classList.remove('open');
+    if (h) h.classList.remove('open');
+    if (o) o.classList.remove('open');
+  });
+});
+document.addEventListener('keydown', function(e){
+  if (e.key !== 'Escape') return;
+  const s = document.getElementById('sidebar');
+  const h = document.getElementById('hamburger');
+  const o = document.getElementById('sidebarOverlay');
+  if (s) s.classList.remove('open');
+  if (h) h.classList.remove('open');
+  if (o) o.classList.remove('open');
+});
 </script>

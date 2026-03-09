@@ -244,8 +244,15 @@ body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
   .hist-card:hover{transform:none;box-shadow:none;}
   .hist-info{padding:0.8rem 1rem;}
   .hist-titre{white-space:normal;}
-  .filters{gap:0.4rem;}
-  .filter-pill{padding:0.4rem 0.8rem;font-size:0.78rem;}
+  .filters{
+    gap:0.4rem;
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    padding-bottom:0.2rem;
+    scrollbar-width:thin;
+  }
+  .filter-pill{padding:0.45rem 0.85rem;font-size:0.78rem;white-space:nowrap;flex:0 0 auto;}
   .lightbox-img{border-radius:8px;max-height:80dvh;}
 }
 @media(max-width:480px){

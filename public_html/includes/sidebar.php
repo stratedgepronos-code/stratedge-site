@@ -60,3 +60,28 @@ if (!isset($nbNonLus)) {
   <div class="side-foot"><a href="/logout.php">🚪 Déconnexion</a></div>
 </aside>
 <main class="content">
+<script>
+function toggleMenu(){
+  var m = document.getElementById('mobileMenu');
+  if (m) m.classList.toggle('open');
+}
+document.addEventListener('click', function(e){
+  var m = document.getElementById('mobileMenu');
+  var btn = document.querySelector('.hamburger');
+  if (!m || !m.classList.contains('open')) return;
+  if ((btn && btn.contains(e.target)) || m.contains(e.target)) return;
+  m.classList.remove('open');
+});
+document.querySelectorAll('#mobileMenu a').forEach(function(a){
+  a.addEventListener('click', function(){
+    var m = document.getElementById('mobileMenu');
+    if (m) m.classList.remove('open');
+  });
+});
+document.addEventListener('keydown', function(e){
+  if (e.key === 'Escape') {
+    var m = document.getElementById('mobileMenu');
+    if (m) m.classList.remove('open');
+  }
+});
+</script>

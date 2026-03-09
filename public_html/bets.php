@@ -167,8 +167,15 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
 /* Responsive */
 @media(max-width:768px){
   .bets-grid{grid-template-columns:1fr;gap:1rem;}
-  .tabs-bar{border-radius:10px;}
-  .tab-btn{padding:0.8rem 0.5rem;font-size:0.72rem;gap:0.3rem;}
+  .tabs-bar{
+    border-radius:10px;
+    overflow-x:auto;
+    overflow-y:hidden;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:thin;
+    justify-content:flex-start;
+  }
+  .tab-btn{padding:0.85rem 0.8rem;font-size:0.72rem;gap:0.3rem;min-width:120px;flex:0 0 auto;}
   .tab-btn .tab-count{font-size:0.6rem;padding:0.1rem 0.35rem;}
   .tab-indicator{border-radius:10px;}
   .abo-b{padding:1rem;flex-direction:column;align-items:flex-start;border-radius:10px;}
