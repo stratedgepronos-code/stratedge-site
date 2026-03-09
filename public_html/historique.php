@@ -69,7 +69,6 @@ $resultatConfig = [
 
 $filtreSection = $_GET['section'] ?? 'tous';
 $filtre = $_GET['filtre'] ?? 'tous';
-$filtreType = $_GET['type'] ?? 'tous';
 
 if ($filtreSection !== 'tous' && isset($sectionsBets[$filtreSection])) {
     $betsFiltres = $sectionsBets[$filtreSection];
@@ -85,16 +84,9 @@ if ($filtreSection !== 'tous' && isset($sectionsBets[$filtreSection])) {
 if ($filtre !== 'tous') {
     $betsFiltres = array_filter($betsFiltres, fn($b) => $b['resultat'] === $filtre);
 }
-if ($filtreType !== 'tous') {
-    $betsFiltres = array_filter($betsFiltres, fn($b) => strpos($b['type'], $filtreType) !== false);
-}
 $betsFiltres = array_values($betsFiltres);
 $betsPerPage = 18;
 $totalBets = count($betsFiltres);
-
-$nbSafe = count(array_filter($bets, fn($b) => strpos($b['type'], 'safe') !== false && strpos($b['type'], 'live') === false && strpos($b['type'], 'fun') === false));
-$nbLive = count(array_filter($bets, fn($b) => strpos($b['type'], 'live') !== false));
-$nbFun  = count(array_filter($bets, fn($b) => strpos($b['type'], 'fun') !== false));
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -372,7 +364,7 @@ body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
   <div class="filters-section">
     <div class="filters-label">Section (taux de reussite)</div>
     <div class="filters">
-      <?php $baseQuery = ($filtre !== 'tous' ? '&filtre='.$filtre : '') . ($filtreType !== 'tous' ? '&type='.$filtreType : ''); ?>
+      <?php $baseQuery = ($filtre !== 'tous' ? '&filtre='.$filtre : ''); ?>
       <a href="?section=tous<?= $baseQuery ?>" class="filter-pill f-tous <?= $filtreSection==='tous'?'active':'' ?>">Tous <span class="filter-count"><?= $stats['total'] ?? 0 ?></span></a>
       <?php
         $orderSections = ['tennis_safe','tennis_fun','tennis_live','football_safe','football_fun','football_live','hockey_safe','hockey_fun','hockey_live','basket_safe','basket_fun','basket_live'];
@@ -386,17 +378,10 @@ body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
     </div>
     <div class="filters-label" style="margin-top:0.8rem;">Resultat</div>
     <div class="filters">
-      <a href="?section=<?= urlencode($filtreSection) ?>&filtre=tous<?= $filtreType !== 'tous' ? '&type='.$filtreType : '' ?>" class="filter-pill f-tous <?= $filtre==='tous'?'active':'' ?>">Tous</a>
-      <a href="?section=<?= urlencode($filtreSection) ?>&filtre=gagne<?= $filtreType !== 'tous' ? '&type='.$filtreType : '' ?>" class="filter-pill f-gagne <?= $filtre==='gagne'?'active':'' ?>">✅ Gagnes</a>
-      <a href="?section=<?= urlencode($filtreSection) ?>&filtre=perdu<?= $filtreType !== 'tous' ? '&type='.$filtreType : '' ?>" class="filter-pill f-perdu <?= $filtre==='perdu'?'active':'' ?>">❌ Perdus</a>
-      <a href="?section=<?= urlencode($filtreSection) ?>&filtre=annule<?= $filtreType !== 'tous' ? '&type='.$filtreType : '' ?>" class="filter-pill f-annule <?= $filtre==='annule'?'active':'' ?>">↺ Annules</a>
-    </div>
-    <div class="filters-label" style="margin-top:0.8rem;">Type de bet</div>
-    <div class="filters">
-      <a href="?section=<?= urlencode($filtreSection) ?>&type=tous<?= $filtre !== 'tous' ? '&filtre='.$filtre : '' ?>" class="filter-pill f-tous <?= $filtreType==='tous'?'active':'' ?>">Tous</a>
-      <a href="?section=<?= urlencode($filtreSection) ?>&type=safe<?= $filtre !== 'tous' ? '&filtre='.$filtre : '' ?>" class="filter-pill f-safe <?= $filtreType==='safe'?'active':'' ?>">🛡️ Safe</a>
-      <a href="?section=<?= urlencode($filtreSection) ?>&type=live<?= $filtre !== 'tous' ? '&filtre='.$filtre : '' ?>" class="filter-pill f-live <?= $filtreType==='live'?'active':'' ?>">⚡ Live</a>
-      <a href="?section=<?= urlencode($filtreSection) ?>&type=fun<?= $filtre !== 'tous' ? '&filtre='.$filtre : '' ?>" class="filter-pill f-fun <?= $filtreType==='fun'?'active':'' ?>">🎯 Fun</a>
+      <a href="?section=<?= urlencode($filtreSection) ?>&filtre=tous" class="filter-pill f-tous <?= $filtre==='tous'?'active':'' ?>">Tous</a>
+      <a href="?section=<?= urlencode($filtreSection) ?>&filtre=gagne" class="filter-pill f-gagne <?= $filtre==='gagne'?'active':'' ?>">✅ Gagnes</a>
+      <a href="?section=<?= urlencode($filtreSection) ?>&filtre=perdu" class="filter-pill f-perdu <?= $filtre==='perdu'?'active':'' ?>">❌ Perdus</a>
+      <a href="?section=<?= urlencode($filtreSection) ?>&filtre=annule" class="filter-pill f-annule <?= $filtre==='annule'?'active':'' ?>">↺ Annules</a>
     </div>
   </div>
 
