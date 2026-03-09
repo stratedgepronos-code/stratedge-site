@@ -121,16 +121,8 @@ $statutLabels = ['ouvert'=>'🟡 Ouvert','en_cours'=>'🔵 En cours','resolu'=>'
   <style>
     :root{--bg-dark:#050810;--bg-card:#0d1220;--neon-green:#ff2d78;--neon-green-dim:#d6245f;--neon-blue:#00d4ff;--neon-purple:#a855f7;--text-primary:#f0f4f8;--text-secondary:#b0bec9;--text-muted:#8a9bb0;--border-subtle:rgba(255,45,120,0.12);--glow-green:0 0 20px rgba(255,45,120,0.3);}
     *{margin:0;padding:0;box-sizing:border-box;}
-    body{font-family:'Rajdhani',sans-serif;background:var(--bg-dark);color:var(--text-primary);min-height:100vh;display:flex;}
-    .sidebar{width:240px;background:var(--bg-card);border-right:1px solid var(--border-subtle);height:100vh;position:fixed;top:0;left:0;display:flex;flex-direction:column;z-index:100;}
-    .sidebar-logo{padding:1.5rem;border-bottom:1px solid var(--border-subtle);}
-    .sidebar-logo img{height:35px;}
-    .sidebar-label{font-family:'Space Mono',monospace;font-size:0.6rem;letter-spacing:3px;text-transform:uppercase;color:var(--text-muted);padding:1.5rem 1.5rem 0.5rem;}
-    .sidebar nav a{display:flex;align-items:center;gap:0.8rem;padding:0.8rem 1.5rem;color:var(--text-secondary);text-decoration:none;font-size:0.95rem;font-weight:500;transition:all 0.2s;border-left:3px solid transparent;}
-    .sidebar nav a:hover,.sidebar nav a.active{color:var(--text-primary);background:rgba(255,45,120,0.06);border-left-color:var(--neon-green);}
-    .sidebar-footer{margin-top:auto;padding:1.5rem;border-top:1px solid var(--border-subtle);}
-    .sidebar-footer a{color:var(--text-muted);text-decoration:none;font-size:0.85rem;}
-    .main{margin-left:240px;flex:1;padding:2rem;}
+    html,body{overflow-x:hidden !important;}
+    body{font-family:'Rajdhani',sans-serif;background:var(--bg-dark);color:var(--text-primary);min-height:100vh;}
     .page-header{margin-bottom:2rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;}
     .page-header h1{font-family:'Orbitron',sans-serif;font-size:1.6rem;font-weight:700;}
     .filters{display:flex;gap:0.5rem;}
@@ -175,6 +167,37 @@ $statutLabels = ['ouvert'=>'🟡 Ouvert','en_cours'=>'🔵 En cours','resolu'=>'
     .paste-active{border-color:rgba(0,212,106,0.6) !important;background:rgba(0,212,106,0.04) !important;}
     .alert-success{background:rgba(0,200,100,0.1);border:1px solid rgba(0,200,100,0.2);border-radius:10px;padding:0.8rem 1rem;color:#00c864;margin-bottom:1.5rem;}
     .empty-state{text-align:center;padding:3rem;color:var(--text-muted);}
+
+    @media(max-width:768px){
+      .page-header{flex-direction:column;align-items:flex-start;gap:0.6rem;}
+      .page-header h1{font-size:1.15rem;}
+      .filters{width:100%;overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch;}
+      .filter-btn{flex:0 0 auto;padding:0.45rem 1rem;font-size:0.82rem;min-height:40px;display:inline-flex;align-items:center;}
+      .card{padding:1rem 0.8rem;border-radius:10px;margin-bottom:1rem;}
+      .card h3{font-size:0.82rem;margin-bottom:1rem;}
+      .ticket-row{flex-direction:column;align-items:flex-start;gap:0.4rem;padding:0.85rem;border-radius:8px;margin-bottom:0.6rem;}
+      .ticket-row:hover{transform:none;}
+      .ticket-sujet{font-size:0.9rem;}
+      .ticket-meta{font-size:0.75rem;}
+      .statut-badge{font-size:0.72rem;padding:0.2rem 0.65rem;}
+      .back-btn{font-size:0.85rem;margin-bottom:1rem;}
+      .ticket-info-card{padding:1rem;border-radius:10px;margin-bottom:1rem;}
+      .chat-area{padding:0.8rem;border-radius:8px;max-height:340px;}
+      .msg-content{font-size:0.88rem;padding:0.65rem 0.9rem;border-radius:10px;}
+      .msg-bubble{max-width:90%;}
+      .msg-meta{font-size:0.68rem;}
+      .reply-form textarea{font-size:0.9rem;min-height:80px;padding:0.7rem 0.8rem;}
+      .reply-actions{flex-direction:column;gap:0.6rem;align-items:stretch;}
+      .select-statut{width:100%;padding:0.65rem 0.8rem;font-size:0.9rem;}
+      .btn-reply{width:100%;min-height:44px;font-size:0.92rem;}
+      .alert-success{font-size:0.85rem;padding:0.7rem 0.8rem;border-radius:8px;}
+    }
+    @media(max-width:480px){
+      .card{padding:0.8rem 0.6rem;}
+      .ticket-row{padding:0.65rem;}
+      .chat-area{padding:0.6rem;max-height:280px;}
+      .msg-content{font-size:0.82rem;padding:0.55rem 0.75rem;}
+    }
   </style>
 </head>
 <body>

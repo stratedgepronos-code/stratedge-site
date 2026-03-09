@@ -72,7 +72,8 @@ $moisOuvert = $_GET['mois'] ?? $premierMois;
   <style>
     :root{--bg-dark:#050810;--bg-card:#0d1220;--bg-card2:#111827;--neon-green:#ff2d78;--neon-blue:#00d4ff;--text-primary:#f0f4f8;--text-secondary:#b0bec9;--text-muted:#8a9bb0;--border-subtle:rgba(255,45,120,0.12);}
     *{margin:0;padding:0;box-sizing:border-box;}
-    body{font-family:'Rajdhani',sans-serif;background:var(--bg-dark);color:var(--text-primary);min-height:100vh;display:flex;}
+    html,body{overflow-x:hidden !important;}
+    body{font-family:'Rajdhani',sans-serif;background:var(--bg-dark);color:var(--text-primary);min-height:100vh;}
 
     /* Onglets */
     .tabs{display:flex;gap:0;margin-bottom:2rem;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden;}
@@ -107,14 +108,30 @@ $moisOuvert = $_GET['mois'] ?? $premierMois;
     .cat-tennis{background:rgba(0,212,106,0.12);color:#00d46a;border:1px solid rgba(0,212,106,0.3);}
     .cat-multi{background:rgba(0,212,255,0.1);color:#00d4ff;border:1px solid rgba(0,212,255,0.25);}
 
-    @media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr);}.tabs{flex-direction:column;}}
+    @media(max-width:768px){
+      .stats-row{grid-template-columns:repeat(2,1fr);gap:0.6rem;}
+      .tabs{flex-direction:column;border-radius:10px;}
+      .tab{padding:0.75rem 1rem;font-size:0.72rem;border-right:none !important;border-bottom:1px solid var(--border-subtle);}
+      .tab:last-child{border-bottom:none;}
+      .sc{padding:0.9rem;border-radius:10px;}
+      .sc-val{font-size:1.3rem;}
+      .sc-lbl{font-size:0.65rem;}
+      .dossier{border-radius:10px;margin-bottom:0.8rem;}
+      .dossier-header{padding:0.9rem 1rem;gap:0.6rem;}
+      .bet-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:0.6rem;padding:0.7rem;}
+    }
+    @media(max-width:480px){
+      .stats-row{grid-template-columns:1fr 1fr;gap:0.5rem;}
+      .sc-val{font-size:1.1rem;}
+      .bet-grid{grid-template-columns:1fr 1fr;gap:0.5rem;padding:0.5rem;}
+    }
   </style>
 </head>
 <body>
 
 <?php require_once __DIR__ . '/sidebar.php'; ?>
 
-<div class="main" style="padding:2rem;">
+<div class="main">
 
   <div class="page-header" style="margin-bottom:1.5rem;">
     <h1 style="font-family:'Orbitron',sans-serif;font-size:1.5rem;font-weight:700;">📂 Historique des Bets</h1>

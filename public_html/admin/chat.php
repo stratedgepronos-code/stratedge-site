@@ -82,13 +82,12 @@ $chats = $db->query("
   <style>
     :root{--bg-dark:#050810;--bg-card:#0d1220;--neon-green:#ff2d78;--neon-green-dim:#d6245f;--neon-blue:#00d4ff;--text-primary:#f0f4f8;--text-secondary:#b0bec9;--text-muted:#8a9bb0;--border-subtle:rgba(255,45,120,0.12);--glow-green:0 0 20px rgba(255,45,120,0.3);}
     *{margin:0;padding:0;box-sizing:border-box;}
-    body{font-family:'Rajdhani',sans-serif;background:var(--bg-dark);color:var(--text-primary);height:100vh;display:flex;overflow:hidden;}
+    html,body{overflow-x:hidden !important;}
+    body{font-family:'Rajdhani',sans-serif;background:var(--bg-dark);color:var(--text-primary);min-height:100vh;}
 
-    .main{margin-left:240px;flex:1;display:flex;flex-direction:column;height:100vh;overflow:hidden;}
     .topbar{padding:1.2rem 2rem;border-bottom:1px solid var(--border-subtle);flex-shrink:0;display:flex;align-items:center;justify-content:space-between;}
     .topbar h1{font-family:'Orbitron',sans-serif;font-size:1.3rem;font-weight:700;}
 
-    /* Layout 2 colonnes */
     .chat-layout{display:grid;grid-template-columns:270px 1fr;flex:1;overflow:hidden;margin:1.2rem;gap:1.2rem;min-height:0;}
 
     /* Colonne gauche — liste des convs */
@@ -136,8 +135,31 @@ $chats = $db->query("
     .alert-success{background:rgba(0,200,100,0.1);border:1px solid rgba(0,200,100,0.2);color:#00c864;padding:0.5rem 1rem;border-radius:8px;font-size:0.85rem;margin-bottom:0.5rem;}
 
     @media(max-width:768px){
-      .main{margin-left:0;padding-top:58px;}
-      .chat-layout{grid-template-columns:1fr;height:auto;}
+      .chat-layout{grid-template-columns:1fr;height:auto;margin:0.6rem;gap:0.8rem;overflow:visible;}
+      .topbar{padding:0.8rem 1rem;}
+      .topbar h1{font-size:1rem;}
+      .contacts-panel{border-radius:10px;max-height:220px;}
+      .contacts-header-label{padding:0.6rem 0.8rem;}
+      .contact-item{padding:0.65rem 0.8rem;}
+      .contact-avatar{width:30px;height:30px;font-size:0.72rem;}
+      .contact-name{font-size:0.82rem;}
+      .chat-panel{border-radius:10px;min-height:300px;}
+      .chat-header{padding:0.7rem 1rem;}
+      .chat-header h3{font-size:0.85rem;}
+      .chat-area{padding:0.7rem;min-height:200px;max-height:calc(100dvh - 380px);}
+      .msg-content{font-size:0.88rem;padding:0.6rem 0.85rem;border-radius:10px;}
+      .msg-bubble{max-width:88%;}
+      .msg-meta{font-size:0.65rem;}
+      .chat-compose{padding:0.6rem 0.8rem;flex-direction:column;gap:0.5rem;}
+      .chat-compose form{display:flex;gap:0.5rem;flex-direction:column;}
+      .chat-compose textarea{height:55px;font-size:0.9rem;padding:0.6rem 0.8rem;border-radius:8px;}
+      .btn-send{width:100%;height:44px;border-radius:8px;font-size:0.9rem;}
+    }
+    @media(max-width:480px){
+      .chat-layout{margin:0.4rem;}
+      .contacts-panel{max-height:160px;}
+      .chat-area{max-height:calc(100dvh - 400px);}
+      .msg-content{font-size:0.82rem;}
     }
   </style>
 </head>
