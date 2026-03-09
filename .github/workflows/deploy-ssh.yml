@@ -30,6 +30,7 @@ jobs:
           for i in $(seq 1 $MAX); do
             echo "=== Tentative $i/$MAX ==="
             sshpass -p "${{ secrets.SSH_PASSWORD }}" rsync -avz --delete \
+              --exclude='uploads/' \
               --timeout=60 \
               -e "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p ${{ env.SSH_PORT }}" \
               public_html/ \
@@ -40,7 +41,20 @@ jobs:
             DELAY=$((DELAY * 2))
           done
 
+      - name: Créer dossiers uploads si absents
+        run: |
+          sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p ${{ env.SSH_PORT }} \
+            ${{ secrets.FTP_USER }}@${{ secrets.FTP_HOST }} \
+            "mkdir -p ${{ env.WEBROOT }}/uploads/bets ${{ env.WEBROOT }}/uploads/locked ${{ env.WEBROOT }}/uploads/avatars ${{ env.WEBROOT }}/uploads/tickets"
+
+      - name: Auto-restaurer images depuis BDD
+        if: ${{ secrets.RESTORE_TOKEN != '' }}
+        run: |
+          echo "Restauration des images manquantes depuis la BDD..."
+          RESPONSE=$(curl -s --max-time 120 "https://stratedgepronos.fr/auto-restore-images.php?token=${{ secrets.RESTORE_TOKEN }}" || echo '{"error":"curl failed"}')
+          echo "Réponse: $RESPONSE"
+
       - name: Vérification
         run: |
           sshpass -p "${{ secrets.SSH_PASSWORD }}" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p ${{ env.SSH_PORT }} \
-            ${{ secrets.FTP_USER }}@${{ secrets.FTP_HOST }} "ls -la ${{ env.WEBROOT }}/index.php"
+            ${{ secrets.FTP_USER }}@${{ secrets.FTP_HOST }} "ls -la ${{ env.WEBROOT }}/index.php && ls ${{ env.WEBROOT }}/uploads/bets/ 2>/dev/null | wc -l"
