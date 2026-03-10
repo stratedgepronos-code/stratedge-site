@@ -33,7 +33,7 @@ $offres = [
         'idd'        => '446904',
         'idp'        => '263723',
         'duree'      => 'Du vendredi 00h00 au dimanche 23h59',
-        'avantages'  => ['<div style="display:block"><span style="white-space:nowrap">Accès bets Safe & Fun</span><br><span style="font-size:0.9em;opacity:0.8">Fun bets avec supplément</span></div>', 'Bets LIVE par mail &amp; Push', 'Tous les matchs du week-end', 'Sans engagement'],
+        'avantages'  => ['Accès bets Safe & Fun', 'Bets LIVE par mail &amp; Push', 'Tous les matchs du week-end', 'Sans engagement'],
         'color'      => '#00d4ff',
         'glow'       => 'rgba(0,212,255,0.18)',
         'gradient'   => 'linear-gradient(135deg,#00d4ff,#0099cc)',
@@ -114,7 +114,6 @@ $membre = getMembre();
       color:var(--txt);
       min-height:100vh;
       overflow-x:hidden;
-      min-width:0;
     }
 
     /* ── Fond animé ── */
@@ -180,11 +179,9 @@ $membre = getMembre();
 
     /* ── PAGE ── */
     .page {
-      max-width:1100px; width:100%;
-      margin:0 auto;
+      max-width:1100px; margin:0 auto;
       padding:4rem 2rem 6rem;
       position:relative; z-index:1;
-      box-sizing:border-box;
     }
 
     /* ── HERO ── */
@@ -217,9 +214,7 @@ $membre = getMembre();
       grid-template-columns:340px 1fr;
       gap:2rem;
       align-items:start;
-      min-width:0;
     }
-    .payment-col { min-width:0; }
 
     /* ── CARTE OFFRE ── */
     .offre-card {
@@ -334,36 +329,8 @@ $membre = getMembre();
       border:1px solid var(--border);
       border-radius:14px; padding:1.5rem;
       text-align:center;
-      max-width:100%;
-      overflow-x:auto;
-      -webkit-overflow-scrolling:touch;
     }
-    .sp-wrap > div,
-    .sp-wrap iframe { max-width:100%; }
-    /* Wrapper StarPass pour scale mobile */
-    .sp-outer { width:100%; }
-    /* Mobile: scale StarPass pour éviter scroll horizontal */
-    @media (max-width:480px) {
-      .sp-outer { overflow:hidden; width:100%; text-align:center; }
-      .sp-wrap {
-        overflow-x:visible;
-        overflow-y:visible;
-        transform:scale(calc((100vw - 2rem) / 420));
-        transform-origin:top center;
-        width:420px;
-        max-width:420px;
-        margin-left:auto;
-        margin-right:auto;
-        padding-bottom:0.5rem;
-        display:inline-block;
-      }
-      .sp-wrap > div { width:100% !important; max-width:100% !important; }
-      .sp-wrap iframe { max-width:100% !important; }
-    }
-    @media (max-width:360px) {
-      .sp-wrap { transform:scale(calc((100vw - 1.5rem) / 380)); width:380px; max-width:380px; }
-    }
-    .sp-wrap p { color:var(--txt3); font-size:0.83rem; margin-bottom:1rem; word-wrap:break-word; }
+    .sp-wrap p { color:var(--txt3); font-size:0.83rem; margin-bottom:1rem; }
     .sp-wrap strong { color:var(--color); }
 
     /* Séparateur */
@@ -462,81 +429,6 @@ $membre = getMembre();
     }
     .btn-crypto:hover { transform:translateY(-2px); box-shadow:0 8px 30px rgba(247,147,26,0.4); }
 
-    /* Option Fun Bet */
-    .fun-option-block {
-      position:relative;
-      background:linear-gradient(135deg,rgba(168,85,247,0.08),rgba(255,45,120,0.05));
-      border:1.5px solid rgba(168,85,247,0.25);
-      border-radius:16px;
-      padding:1.2rem 1.5rem 1.2rem 1.2rem;
-      margin-bottom:1.5rem;
-      display:none;
-      overflow:visible;
-    }
-    .fun-option-block.visible { display:block; animation:fadeUp 0.4s ease both; }
-    .fun-option-inner {
-      display:flex;
-      align-items:center;
-      gap:1rem;
-      position:relative;
-      z-index:1;
-    }
-    .fun-check-wrap {
-      flex-shrink:0;
-    }
-    .fun-check-wrap input[type="checkbox"] {
-      width:22px; height:22px;
-      accent-color:#a855f7;
-      cursor:pointer;
-    }
-    .fun-option-text {
-      flex:1;
-    }
-    .fun-option-tag {
-      font-family:'Orbitron',sans-serif;
-      font-size:0.6rem; font-weight:700;
-      letter-spacing:2px; text-transform:uppercase;
-      color:#a855f7;
-      margin-bottom:0.3rem;
-    }
-    .fun-option-title {
-      font-family:'Orbitron',sans-serif;
-      font-size:0.95rem; font-weight:900;
-      color:var(--txt);
-      margin-bottom:0.2rem;
-    }
-    .fun-option-title .fun-price {
-      color:#a855f7;
-    }
-    .fun-option-desc {
-      font-size:0.82rem;
-      color:var(--txt3);
-      line-height:1.4;
-    }
-    .fun-mascotte {
-      position:absolute;
-      right:-15px;
-      bottom:-20px;
-      width:130px;
-      height:auto;
-      pointer-events:none;
-      z-index:2;
-      transform:scaleX(-1);
-      object-fit:contain;
-      filter:drop-shadow(0 0 15px rgba(168,85,247,0.4));
-    }
-    @media(max-width:860px){
-      .fun-mascotte { width:115px; right:-8px; bottom:-12px; }
-    }
-    @media(max-width:480px){
-      .fun-mascotte { width:130px; right:-5px; bottom:-15px; }
-      .fun-option-title { font-size:0.82rem; }
-      .fun-option-desc { font-size:0.75rem; }
-    }
-    @media(max-width:360px){
-      .fun-mascotte { width:110px; }
-    }
-
     /* Badges sécurité */
     .sec-badges {
       display:flex; gap:0.5rem; flex-wrap:wrap;
@@ -559,6 +451,65 @@ $membre = getMembre();
     }
     .note-box p { font-size:0.8rem; color:#a09040; line-height:1.6; }
     .note-box strong { color:#ffc107; }
+
+    .stake-tennis-block {
+      margin-top:1rem;
+      background:linear-gradient(135deg,rgba(0,212,255,0.12),rgba(0,212,106,0.08));
+      border:1px solid rgba(0,212,255,0.28);
+      border-radius:14px;
+      padding:1rem 1.1rem;
+    }
+    .stake-tennis-title {
+      font-family:'Orbitron',sans-serif;
+      font-size:0.72rem;
+      letter-spacing:1.6px;
+      text-transform:uppercase;
+      color:#00d4ff;
+      margin-bottom:0.4rem;
+    }
+    .stake-tennis-desc {
+      font-size:0.84rem;
+      color:var(--txt2);
+      margin-bottom:0.8rem;
+      line-height:1.45;
+    }
+    .btn-stake-tennis {
+      display:flex; align-items:center; justify-content:center; gap:0.45rem;
+      width:100%; padding:0.9rem;
+      background:linear-gradient(135deg,#00d4ff,#0089ff 55%,#00d46a);
+      color:#fff; border:1px solid rgba(0,212,255,0.35); border-radius:12px;
+      font-family:'Orbitron',sans-serif; font-size:0.76rem;
+      font-weight:700; letter-spacing:1.1px; text-transform:uppercase;
+      text-decoration:none; transition:all .25s;
+      box-shadow:0 6px 20px rgba(0,166,255,0.24);
+      position:relative; overflow:hidden;
+    }
+    .btn-stake-tennis::before {
+      content:'';
+      position:absolute;
+      top:-150%;
+      left:-18%;
+      width:36%;
+      height:320%;
+      background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,0.34),rgba(255,255,255,0));
+      transform:rotate(24deg);
+      transition:left .45s ease;
+      pointer-events:none;
+    }
+    .btn-stake-tennis:hover { transform:translateY(-2px); box-shadow:0 10px 30px rgba(0,166,255,0.4); }
+    .btn-stake-tennis:hover::before { left:118%; }
+    .stake-tennis-note { margin-top:0.5rem; font-size:0.72rem; color:#7fdfff; text-align:center; }
+    @keyframes stakePulseSoft {
+      0%, 100% { box-shadow:0 6px 20px rgba(0,166,255,0.24); }
+      50% { box-shadow:0 11px 32px rgba(0,166,255,0.42); }
+    }
+    @media (hover:hover) and (pointer:fine) and (min-width:901px) {
+      .btn-stake-tennis { animation: stakePulseSoft 2.4s ease-in-out infinite; }
+      .btn-stake-tennis:hover { animation-play-state: paused; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .btn-stake-tennis { animation:none !important; }
+    }
 
     /* Crypto tabs */
     .crypto-tabs { display:flex; gap:0.5rem; margin-bottom:1.2rem; flex-wrap:wrap; }
@@ -673,45 +624,43 @@ $membre = getMembre();
 
     @media (max-width:860px) {
       html,body{overflow-x:hidden;}
-      .layout { grid-template-columns:1fr; gap:1.5rem; }
+      .layout { grid-template-columns:1fr; }
       .hero-title { font-size:1.6rem; }
       .hero-subtitle{font-size:0.9rem;}
-      .page { padding:1.5rem 0.8rem 5rem; max-width:100%; }
+      .page { padding:1.5rem 0.8rem 5rem; }
       nav{padding:0 0.8rem;}
       .nav-inner { flex-wrap:wrap; gap:0.4rem; height:auto; min-height:50px; padding:0.5rem 0; }
-      .nav-logo img { height:28px; max-width:100%; }
+      .nav-logo img { height:28px; }
       .nav-back { font-size:0.75rem; order:3; width:100%; justify-content:center; padding-bottom:0.3rem; }
       .nav-badge { font-size:0.55rem; padding:0.2rem 0.6rem; }
-      .offre-card{ border-radius:16px; max-width:100%; }
-      .payment-block{ border-radius:16px; padding:1.5rem; max-width:100%; }
-      .block-desc{ word-wrap:break-word; overflow-wrap:break-word; }
-      .np-info-box{ flex-direction:column; align-items:flex-start; gap:0.4rem; }
-      .np-amount-value{ font-size:1.5rem; }
-      .np-success-title{ font-size:1.1rem; }
-      .btn-generate{ font-size:0.85rem; padding:0.85rem; }
-      .btn-crypto{ font-size:0.72rem; padding:0.8rem; }
-      .other-offers{ padding:1.2rem 1rem; border-radius:16px; }
-      .fun-option-block{ padding:1rem 1.2rem; }
+      .offre-card{border-radius:16px;}
+      .payment-block{border-radius:16px;padding:1.5rem;}
+      .np-info-box{flex-direction:column;align-items:flex-start;gap:0.4rem;}
+      .np-amount-value{font-size:1.5rem;}
+      .np-success-title{font-size:1.1rem;}
+      .btn-generate{font-size:0.85rem;padding:0.85rem;}
+      .btn-crypto{font-size:0.72rem;padding:0.8rem;}
+      .other-offers{padding:1.2rem 1rem;border-radius:16px;}
     }
     @media (max-width:480px) {
       .hero { margin-bottom:2rem; }
       .hero-title { font-size:1.3rem; }
       .hero-subtitle { font-size:0.85rem; }
-      .hero-tag{ font-size:0.6rem; letter-spacing:2px; padding:0.3rem 0.9rem; }
+      .hero-tag{font-size:0.6rem;letter-spacing:2px;padding:0.3rem 0.9rem;}
       .page { padding:1.2rem 0.6rem 4rem; }
       .offre-card-top { padding:1.2rem; }
-      .offre-avantages { padding:1rem 1.2rem; overflow-wrap:break-word; }
+      .offre-avantages { padding:1rem 1.2rem; }
       .offre-prix .num { font-size:3rem; }
-      .offre-prix .cur{ font-size:1.3rem; }
+      .offre-prix .cur{font-size:1.3rem;}
       .offre-video-wrap { width:80px; height:80px; }
-      .offre-badge{ font-size:0.55rem; }
-      .offre-duree{ font-size:0.78rem; }
-      .avantage{ font-size:0.85rem; padding:0.5rem 0; flex-wrap:wrap; word-break:break-word; }
-      .payment-block { padding:1.2rem; border-radius:14px; max-width:100%; }
-      .block-title{ font-size:0.72rem; }
-      .block-desc{ font-size:0.78rem; word-break:break-word; }
-      .sp-wrap { padding:0.9rem; max-width:100%; overflow-x:auto; }
-      .sp-wrap p{ font-size:0.78rem; }
+      .offre-badge{font-size:0.55rem;}
+      .offre-duree{font-size:0.78rem;}
+      .avantage{font-size:0.85rem;padding:0.5rem 0;}
+      .payment-block { padding:1.2rem; border-radius:14px; }
+      .block-title{font-size:0.72rem;}
+      .block-desc{font-size:0.78rem;}
+      .sp-wrap { padding:0.9rem; }
+      .sp-wrap p{font-size:0.78rem;}
       .crypto-tabs { gap:0.35rem; }
       .crypto-tab { padding:0.3rem 0.6rem; font-size:0.58rem; }
       .wallet-box{padding:0.6rem 0.8rem;border-radius:8px;}
@@ -737,15 +686,12 @@ $membre = getMembre();
       .np-success-desc{font-size:0.82rem;}
     }
     @media (max-width:360px){
-      .page{ padding:1rem 0.4rem 4rem; }
-      .offre-card-top{ padding:1rem; }
-      .offre-avantages{ padding:0.8rem 1rem; }
-      .offre-prix .num{ font-size:2.5rem; }
-      .payment-block{ padding:1rem; border-radius:12px; }
-      .hero-title{ font-size:1.15rem; }
-      .fun-option-block{ padding:0.8rem 1rem; }
-      .fun-option-title{ font-size:0.8rem; }
-      .note-box p{ font-size:0.72rem; }
+      .page{padding:1rem 0.4rem 4rem;}
+      .offre-card-top{padding:1rem;}
+      .offre-avantages{padding:0.8rem 1rem;}
+      .offre-prix .num{font-size:2.5rem;}
+      .payment-block{padding:1rem;border-radius:12px;}
+      .hero-title{font-size:1.15rem;}
     }
   </style>
 </head>
@@ -823,7 +769,6 @@ $membre = getMembre();
           <div class="block-title">💳 CB · PayPal · Paysafecard · Internet+</div>
           <div class="block-desc">Paiement sécurisé via <strong style="color:var(--color)">StarPass</strong> — carte bancaire, PayPal, Paysafecard ou Internet+</div>
         <?php endif; ?>
-        <div class="sp-outer">
         <div class="sp-wrap">
           <p>Cliquez sur le bouton ci-dessous pour payer <strong><?= $o['prix'] ?>€</strong> via StarPass</p>
           <div id="starpass_<?= $o['idd'] ?>"></div>
@@ -831,25 +776,26 @@ $membre = getMembre();
             src="https://script.starpass.fr/script.php?idd=<?= $o['idd'] ?>&datas=<?= urlencode($membre['id'] . ':' . $type) ?>">
           </script>
         </div>
-        </div>
         <div class="note-box" style="margin-top:1rem;">
           <p><strong>⚠️ Important :</strong> Après paiement StarPass, vous serez automatiquement redirigé vers votre espace membre. Si ce n'est pas le cas, contactez le support depuis votre dashboard.</p>
         </div>
       </div>
 
-      <?php if ($type === 'weekend'): ?>
-      <div class="fun-option-block" id="funOptionBlock">
-        <div class="fun-option-inner">
-          <div class="fun-check-wrap">
-            <input type="checkbox" id="funOptionCheck" onchange="toggleFunOption()">
-          </div>
-          <div class="fun-option-text">
-            <div class="fun-option-tag">🎯 Option disponible</div>
-            <div class="fun-option-title">Ajouter les <span class="fun-price">Fun Bets</span> <span class="fun-price">+10€</span></div>
-            <div class="fun-option-desc">Combine tes bets Safe avec nos paris Fun pour un week-end explosif !</div>
-          </div>
-        </div>
-        <img src="/assets/images/mascotte-fun-nobg.png" alt="" class="fun-mascotte">
+      <?php if ($type === 'tennis'): ?>
+      <div class="stake-tennis-block">
+        <div class="stake-tennis-title">Bonus Partenaire Stake</div>
+        <div class="stake-tennis-desc">Crée ton compte Stake avec notre lien partenaire et débloque un bonus exclusif StratEdge.</div>
+        <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake-tennis">🎁 S'inscrire sur Stake</a>
+        <div class="stake-tennis-note">Lien bonus officiel · 1 mois StratEdge offert</div>
+      </div>
+      <?php endif; ?>
+
+      <?php if ($type === 'tennis'): ?>
+      <div class="stake-tennis-block">
+        <div class="stake-tennis-title">Bonus Partenaire Stake</div>
+        <div class="stake-tennis-desc">Crée ton compte Stake avec notre lien partenaire et débloque un bonus exclusif StratEdge.</div>
+        <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake-tennis">🎁 S'inscrire sur Stake</a>
+        <div class="stake-tennis-note">Lien bonus officiel · 1 mois StratEdge offert</div>
       </div>
       <?php endif; ?>
 
@@ -986,18 +932,6 @@ let selectedCoin   = 'btc';
 let currentPayId   = null;
 let pollInterval   = null;
 let countdownTimer = null;
-let funOptionActive = false;
-
-// Show fun option block when on weekend page
-(function(){
-  var fb = document.getElementById('funOptionBlock');
-  if(fb) fb.classList.add('visible');
-})();
-
-function toggleFunOption() {
-  var cb = document.getElementById('funOptionCheck');
-  funOptionActive = cb && cb.checked;
-}
 
 // ── Sélection de la crypto ─────────────────────────────────
 function selectCoin(coin, btn) {
@@ -1020,7 +954,7 @@ async function genererAdresse() {
     const resp = await fetch('nowpayments-create.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `crypto=${selectedCoin}&offre=<?= $type ?>&code_promo=${encodeURIComponent((document.getElementById('code_promo')&&document.getElementById('code_promo').value)||'')}&option_fun=${funOptionActive?'1':'0'}`,
+      body: `crypto=${selectedCoin}&offre=<?= $type ?>&code_promo=${encodeURIComponent((document.getElementById('code_promo')&&document.getElementById('code_promo').value)||'')}`,
     });
 
     const data = await resp.json();

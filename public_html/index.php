@@ -343,8 +343,59 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .stake-perks { list-style: none; margin-bottom: 2rem; }
     .stake-perks li { padding: 0.4rem 0; color: var(--text-secondary); display: flex; align-items: center; gap: 0.75rem; font-size: 0.95rem; }
     .stake-perks li::before { content: '⚡'; }
-    .btn-stake { background: linear-gradient(135deg, var(--neon-blue), #0099cc); color: white; padding: 0.9rem 2rem; border-radius: 8px; font-family: 'Rajdhani', sans-serif; font-size: 1.05rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; text-decoration: none; transition: all 0.3s; display: inline-flex; align-items: center; gap: 0.5rem; }
-    .btn-stake:hover { box-shadow: var(--glow-blue); transform: translateY(-2px); }
+    .btn-stake {
+      background: linear-gradient(135deg, #00d4ff, #008fff 55%, #00d46a);
+      color: #fff;
+      padding: 0.95rem 2.2rem;
+      border-radius: 10px;
+      border: 1px solid rgba(0,212,255,0.35);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+      text-decoration: none;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 8px 24px rgba(0,166,255,0.28);
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-stake::before {
+      content: '';
+      position: absolute;
+      top: -140%;
+      left: -20%;
+      width: 40%;
+      height: 300%;
+      background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,0.34), rgba(255,255,255,0));
+      transform: rotate(24deg);
+      transition: left 0.45s ease;
+      pointer-events: none;
+    }
+    .btn-stake:hover {
+      box-shadow: 0 12px 32px rgba(0,166,255,0.45);
+      transform: translateY(-2px);
+    }
+    .btn-stake:hover::before { left: 118%; }
+    @keyframes stakePulse {
+      0%, 100% { box-shadow: 0 8px 24px rgba(0,166,255,0.28); }
+      50% { box-shadow: 0 12px 34px rgba(0,166,255,0.46); }
+    }
+    @media (hover:hover) and (pointer:fine) and (min-width:901px) {
+      .btn-stake,
+      .tennis-btn-stake {
+        animation: stakePulse 2.4s ease-in-out infinite;
+      }
+      .btn-stake:hover,
+      .tennis-btn-stake:hover { animation-play-state: paused; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .btn-stake,
+      .tennis-btn-stake { animation: none !important; }
+    }
     .stake-offer { padding: 0.5rem 0; text-align: left; margin-top: 1rem; }
     .stake-offer strong { color: var(--neon-blue); font-family: 'Orbitron', sans-serif; font-size: 0.9rem; }
     .stake-visual { text-align: center; }
@@ -494,6 +545,18 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .tennis-btn-crypto:hover { box-shadow:0 6px 25px rgba(247,147,26,0.45); transform:translateY(-2px); }
     .tennis-sep { font-size:0.75rem; color:rgba(255,255,255,0.2); margin:0.5rem 0; }
     .tennis-methods { font-size:0.7rem; color:rgba(255,255,255,0.3); margin-top:0.4rem; }
+    .tennis-stake-sep { font-size:0.72rem; color:rgba(255,255,255,0.2); margin:0.8rem 0 0.55rem; letter-spacing:1px; }
+    .tennis-btn-stake {
+      display:block; width:100%; padding:0.95rem 1.2rem;
+      background:linear-gradient(135deg,#00d4ff,#0089ff);
+      color:#fff; font-family:'Orbitron',sans-serif; font-size:0.76rem;
+      font-weight:700; letter-spacing:1.2px; text-transform:uppercase;
+      border:1px solid rgba(0,212,255,0.35); border-radius:10px; text-decoration:none;
+      transition:all 0.25s; box-shadow:0 6px 18px rgba(0,166,255,0.22);
+      text-align:center;
+    }
+    .tennis-btn-stake:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(0,166,255,0.38); }
+    .tennis-stake-note { font-size:0.68rem; color:rgba(0,212,255,0.85); margin-top:0.4rem; }
     @media(max-width:900px){
       .price-card-tennis { grid-template-columns:1fr; text-align:center; gap:1.5rem; padding:2rem 1.5rem; }
       .tennis-mascot { margin:0 auto; }
@@ -508,6 +571,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .tennis-payment{min-width:auto;}
       .tennis-btn{font-size:0.85rem;padding:0.6rem 1rem;min-height:44px;}
       .tennis-btn-crypto{font-size:0.72rem;padding:0.5rem 0.8rem;min-height:44px;}
+      .tennis-btn-stake{font-size:0.68rem;padding:0.72rem 0.8rem;min-height:44px;}
     }
     .fade-up.visible { opacity: 1; transform: translateY(0); }
 
@@ -1021,6 +1085,9 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <div class="tennis-sep">— ou —</div>
         <a href="offre-tennis.php#crypto" class="tennis-btn-crypto">₿ Payer en Crypto</a>
         <div class="tennis-methods">CB · PayPal · Paysafecard · Crypto</div>
+        <div class="tennis-stake-sep">BONUS PARTENAIRE</div>
+        <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="tennis-btn-stake">🎁 S'inscrire sur Stake · Lien bonus</a>
+        <div class="tennis-stake-note">1 mois StratEdge offert via ce lien</div>
       </div>
 
     </div>
@@ -1057,7 +1124,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <li>Retraits instantanés en crypto</li>
         <li>Inscrivez-vous via notre lien = 1 mois offert</li>
       </ul>
-      <a href="http://stake.bet/?c=n26yI0vn" target="_blank" class="btn-stake">S'inscrire sur Stake.bet →</a>
+      <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake">S'inscrire sur Stake.bet →</a>
       <div class="stake-offer"><strong>🎁 1 MOIS GRATUIT chez StratEdge Pronos pour une inscription via ce lien</strong></div>
     </div>
     <div class="stake-visual">
@@ -1072,7 +1139,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
   <p>Rejoins les parieurs qui font confiance à la data, pas au hasard. Ton premier bet gagnant est à un clic.</p>
   <div class="footer-cta-btns">
     <a href="#pricing" class="btn-primary">Voir les formules ↓</a>
-    <a href="http://stake.bet/?c=n26yI0vn" target="_blank" class="btn-outline">Ouvrir un compte Stake.bet</a>
+    <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="btn-outline">Ouvrir un compte Stake.bet</a>
   </div>
 </div>
 
