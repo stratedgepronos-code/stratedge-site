@@ -1,13 +1,14 @@
 <?php
 // ============================================================
-// STRATEDGE — live-card-template.php V10
+// STRATEDGE — live-card-template.php V12
+// V12 : ajout generateSafeCombiCards() — Safe Combiné (multi-bets Safe)
+// V11 : Fun card tennis — mascotte-tennis, thème vert néon quand sport=tennis
 // V10 : résolution cartes 1080px (Live + Fun)
 // V9 : marqueur version pour vérif FTP + mascotte tennis / VS dégradé
 // V8 : fonts embarquées en base64 (fix CORS srcdoc null origin)
 // V7 : nouveau design watermark (sans colonne mascotte)
 //      mascotte centrée transparente (mix-blend-mode:screen)
 //      + generateFunCards() ajouté (même approche template)
-// V11 : Fun card tennis — mascotte-tennis, thème vert néon quand sport=tennis
 // ============================================================
 
 // ────────────────────────────────────────────────────────────
@@ -1029,6 +1030,448 @@ HTML;
       {$promoBlock}
     </div>
     <div class='card-footer-gradient'></div>
+  </div>
+</div>
+</body></html>
+HTML;
+
+    return ['html_normal' => $html_normal, 'html_locked' => $html_locked];
+}
+
+
+// ════════════════════════════════════════════════════════════
+//  SAFE COMBINÉ — Template PHP (1440px)
+//  $d = [
+//    'sport'              => 'football',
+//    'date_fr'            => 'Mercredi 26 Février 2026',
+//    'time_fr'            => '20:45',
+//    'bets'               => [
+//      ['match'=>'...','heure'=>'20:45','flag1'=>'🇫🇷','flag2'=>'🇫🇷',
+//       'team1_logo'=>'','team2_logo'=>'',
+//       'prono'=>'Victoire PSG','cote'=>'1.65','confidence'=>78,
+//       'value_pct'=>8.2,'analyse'=>'PSG invaincu à domicile...'],
+//    ],
+//    'cote_totale'        => '3.42',
+//    'confidence_globale' => 68,
+//  ]
+// ════════════════════════════════════════════════════════════
+function generateSafeCombiCards($d) {
+    $isTennis    = (strtolower($d['sport'] ?? '') === 'tennis');
+    $mascotteUrl = $isTennis
+        ? 'https://stratedgepronos.fr/assets/images/mascotte-tennis.png'
+        : 'https://stratedgepronos.fr/assets/images/mascotte-rose.png';
+    $logo        = 'https://stratedgepronos.fr/assets/images/logo_site_transparent.png';
+
+    $date    = htmlspecialchars($d['date_fr']    ?? '', ENT_QUOTES, 'UTF-8');
+    $time    = htmlspecialchars($d['time_fr']    ?? '00:00', ENT_QUOTES, 'UTF-8');
+    $coteTot = htmlspecialchars($d['cote_totale']?? '1.00', ENT_QUOTES, 'UTF-8');
+    $confGlob = intval($d['confidence_globale'] ?? 65);
+    $bets    = $d['bets'] ?? [];
+    $nbBets  = count($bets);
+
+    $embeddedFonts = getLocalFontsCss();
+
+    if ($isTennis) {
+        $accentMain  = '#39ff14';
+        $accentSec   = '#00d46a';
+        $confBarGrad = 'linear-gradient(to right,#39ff14,#00d46a,#00c896)';
+        $pillBg      = '#FF2D78';
+        $badgeBg     = 'rgba(57,255,20,0.12)';
+        $badgeBorder = 'rgba(57,255,20,0.5)';
+        $badgeColor  = '#39ff14';
+        $footerGrad  = 'linear-gradient(to right,#39ff14,#00d46a,#00c896)';
+        $wrapperExtra = 'tennis-safe-combi';
+    } else {
+        $accentMain  = '#ff2d7a';
+        $accentSec   = '#c850c0';
+        $confBarGrad = 'linear-gradient(to right,#ff2d7a,#c850c0,#ff8c42)';
+        $pillBg      = '#FF2D78';
+        $badgeBg     = 'rgba(255,45,122,0.1)';
+        $badgeBorder = 'rgba(255,45,122,0.45)';
+        $badgeColor  = '#ff2d7a';
+        $footerGrad  = 'linear-gradient(to right,#ff2d7a,#c850c0,#4158d0)';
+        $wrapperExtra = '';
+    }
+
+    $barColors = $isTennis
+        ? ['linear-gradient(to bottom,#39ff14,#00d46a)','linear-gradient(to bottom,#00d46a,#00c896)','linear-gradient(to bottom,#00c896,#00e5ff)']
+        : ['linear-gradient(to bottom,#ff2d7a,#c850c0)','linear-gradient(to bottom,#c850c0,#4158d0)','linear-gradient(to bottom,#4158d0,#00e5ff)'];
+
+    $css = $embeddedFonts . "\n@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap');\n" . <<<CSS
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { max-width:1440px; overflow-x:hidden; }
+body { background:#0a0a0a; margin:0; padding:0; width:1440px; min-width:1440px; font-family:'Orbitron',sans-serif; }
+
+.sc-wrapper { position:relative; width:1440px; max-width:1440px; }
+.sc-border-glow {
+  position:absolute; inset:-2px; border-radius:24px;
+  background:linear-gradient(135deg,{$accentMain},{$accentSec},{$accentMain});
+  background-size:300% 300%; animation:scGradShift 4s ease infinite;
+  z-index:-1; filter:blur(12px); opacity:0.6;
+}
+@keyframes scGradShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+
+.sc-card {
+  position:relative; z-index:1; width:1440px; max-width:1440px; background:#0e0b12;
+  border-radius:20px; overflow:hidden; display:flex; flex-direction:column;
+  border:1px solid rgba(255,45,122,0.08); isolation:isolate;
+}
+
+.sc-mascotte {
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  z-index:0; pointer-events:none;
+}
+.sc-mascotte img { height:100%; width:auto; object-fit:contain; opacity:0.10; }
+
+.sc-body { position:relative; z-index:2; padding:32px 40px 28px; display:flex; flex-direction:column; gap:14px; }
+
+.sc-header { display:flex; align-items:center; justify-content:space-between; }
+.sc-logo { height:44px; object-fit:contain; }
+.sc-badge {
+  display:flex; align-items:center; gap:10px;
+  background:{$badgeBg}; border:1.5px solid {$badgeBorder};
+  border-radius:24px; padding:8px 24px;
+  font-family:'Orbitron',sans-serif; font-size:18px; font-weight:900;
+  color:{$badgeColor}; letter-spacing:2.5px; text-transform:uppercase;
+  box-shadow:0 0 12px rgba(255,45,122,0.2); text-shadow:0 0 8px rgba(255,45,122,0.4);
+}
+
+.sc-datetime { text-align:center; padding:4px 0; }
+.sc-date-day { font-family:'Orbitron',sans-serif; font-size:18px; font-weight:600; color:rgba(255,255,255,0.3); text-transform:uppercase; letter-spacing:3px; margin-bottom:3px; }
+.sc-date-time { font-family:'Orbitron',sans-serif; font-size:54px; font-weight:900; letter-spacing:3px; line-height:1; color:{$accentMain}; text-shadow:0 0 28px rgba(255,45,122,0.5); }
+.sc-date-sub { font-size:14px; color:rgba(255,255,255,0.18); font-family:'Orbitron',sans-serif; font-weight:600; letter-spacing:2px; text-transform:uppercase; margin-top:3px; }
+
+.sc-section-title { display:flex; align-items:center; gap:8px; }
+.sc-section-text { font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; color:rgba(255,45,122,0.55); text-transform:uppercase; letter-spacing:2.5px; white-space:nowrap; }
+.sc-section-line { flex:1; height:1px; background:linear-gradient(to right,rgba(255,45,122,0.25),transparent); }
+
+.sc-bets { display:flex; flex-direction:column; gap:10px; }
+.sc-bet {
+  background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05);
+  border-radius:12px; padding:14px 18px 14px 22px; position:relative;
+  display:flex; flex-direction:column; gap:6px;
+}
+.sc-bet-bar { position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:4px 0 0 4px; }
+.sc-bet-top { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.sc-bet-left { display:flex; align-items:center; gap:8px; flex:1; flex-wrap:wrap; }
+.sc-bet-num { font-family:'Orbitron',sans-serif; font-size:16px; color:rgba(255,140,200,0.55); font-weight:700; }
+.sc-bet-match { font-family:'Orbitron',sans-serif; font-size:18px; color:rgba(255,255,255,0.5); letter-spacing:0.5px; font-weight:600; }
+.sc-bet-heure { font-family:'Orbitron',sans-serif; font-size:14px; color:{$accentMain}; font-weight:700; opacity:0.85; white-space:nowrap; }
+.sc-bet .sc-team-logo { height:26px; width:auto; max-width:34px; object-fit:contain; vertical-align:middle; }
+.sc-bet-right { display:flex; align-items:center; gap:12px; flex-shrink:0; }
+.sc-cote-pill {
+  background:{$pillBg}; border:1px solid rgba(255,255,255,0.2); border-radius:8px;
+  padding:7px 15px; font-family:'Orbitron',sans-serif; font-size:21px; font-weight:700; color:#fff;
+  box-shadow:0 2px 10px rgba(255,45,122,0.25);
+}
+.sc-value-tag {
+  background:rgba(57,255,20,0.1); border:1px solid rgba(57,255,20,0.3); border-radius:6px;
+  padding:4px 10px; font-family:'Orbitron',sans-serif; font-size:12px; font-weight:700;
+  color:#39ff14; letter-spacing:0.5px; white-space:nowrap;
+}
+.sc-bet-prono { font-family:'Orbitron',sans-serif; font-size:17px; font-weight:700; color:rgba(255,255,255,0.88); }
+.sc-bet-analyse { font-family:'Rajdhani',sans-serif; font-size:15px; color:rgba(255,255,255,0.35); line-height:1.4; font-weight:400; }
+
+.sc-bet-conf { display:flex; align-items:center; gap:10px; margin-top:2px; }
+.sc-bet-conf-label { font-family:'Orbitron',sans-serif; font-size:11px; color:rgba(255,255,255,0.2); text-transform:uppercase; letter-spacing:1.5px; font-weight:700; white-space:nowrap; }
+.sc-bet-conf-bar { flex:1; height:5px; background:rgba(255,255,255,0.04); border-radius:3px; overflow:hidden; }
+.sc-bet-conf-fill { height:100%; border-radius:3px; background:{$confBarGrad}; }
+.sc-bet-conf-score { font-family:'Orbitron',sans-serif; font-size:13px; font-weight:900; color:{$accentMain}; text-shadow:0 0 6px rgba(255,45,122,0.2); min-width:40px; text-align:right; }
+
+.sc-conf-global { display:flex; flex-direction:column; gap:6px; }
+.sc-conf-header { display:flex; justify-content:space-between; align-items:center; }
+.sc-conf-label { font-family:'Orbitron',sans-serif; font-size:15px; color:rgba(255,255,255,0.25); text-transform:uppercase; letter-spacing:2px; font-weight:700; }
+.sc-conf-score { font-family:'Orbitron',sans-serif; font-size:24px; font-weight:900; color:{$accentMain}; text-shadow:0 0 10px rgba(255,45,122,0.3); }
+.sc-conf-bar-bg { height:9px; background:rgba(255,255,255,0.04); border-radius:5px; overflow:hidden; }
+.sc-conf-bar-fill { height:100%; width:{$confGlob}%; background:{$confBarGrad}; border-radius:5px; animation:scBarPulse 2s ease-in-out infinite; }
+@keyframes scBarPulse { 0%,100%{opacity:0.85} 50%{opacity:1} }
+
+.sc-cote-block {
+  display:flex; align-items:center; gap:20px;
+  background:rgba(255,45,122,0.05); border:1px solid rgba(255,45,122,0.12);
+  border-radius:16px; padding:14px 22px;
+}
+.sc-cote-info { flex:1; }
+.sc-cote-eyebrow { font-family:'Orbitron',sans-serif; font-size:13px; color:rgba(255,255,255,0.22); text-transform:uppercase; letter-spacing:2px; font-weight:700; margin-bottom:3px; }
+.sc-cote-desc { font-family:'Orbitron',sans-serif; font-size:14px; color:rgba(255,255,255,0.4); letter-spacing:1px; }
+.sc-total-pill {
+  position:relative; overflow:hidden; display:inline-flex; align-items:center; justify-content:center;
+  background:{$pillBg}; border-radius:16px; padding:16px 40px; flex-shrink:0;
+  box-shadow:0 4px 26px rgba(255,45,122,0.5),inset 0 0 0 1px rgba(255,255,255,0.12);
+}
+.sc-total-shine { position:absolute; top:0; left:0; right:0; height:50%; background:rgba(255,255,255,0.12); border-radius:16px 16px 0 0; }
+.sc-total-cote { font-family:'Orbitron',sans-serif; font-size:44px; font-weight:900; color:#fff; letter-spacing:2px; position:relative; z-index:1; }
+
+.sc-promo {
+  background:rgba(14,22,14,0.95); border:1px solid rgba(57,255,20,0.18);
+  border-radius:14px; padding:14px 18px; position:relative;
+  display:flex; align-items:center; justify-content:space-between; gap:14px;
+}
+.sc-promo-bar { position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(to bottom,#39ff14,#00e5ff); border-radius:4px 0 0 4px; }
+.sc-promo-text { flex:1; padding-left:10px; display:flex; flex-direction:column; gap:5px; }
+.sc-promo-eyebrow { font-family:'Orbitron',sans-serif !important; font-size:13px !important; color:#39ff14; text-transform:uppercase; letter-spacing:2px; font-weight:700; }
+.sc-promo-main { font-family:'Orbitron',sans-serif !important; font-size:22px !important; font-weight:700; letter-spacing:0.8px; color:#fff; line-height:1.25; }
+.sc-promo-hl { color:{$accentMain}; font-family:inherit !important; }
+.sc-promo-packs { display:flex; gap:6px; flex-wrap:wrap; }
+.sc-pack-tag { font-family:'Orbitron',sans-serif !important; font-size:13px !important; font-weight:700; padding:5px 11px; border-radius:5px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.6); text-transform:uppercase; }
+.sc-pack-max { color:#39ff14; border-color:rgba(57,255,20,0.3); background:rgba(57,255,20,0.07); }
+.sc-promo-cta {
+  display:inline-flex; align-items:center; gap:5px;
+  background:linear-gradient(135deg,#39ff14,#00c896); color:#000;
+  font-family:'Orbitron',sans-serif !important; font-size:13px !important;
+  font-weight:900; letter-spacing:0.8px; text-transform:uppercase;
+  padding:10px 18px; border-radius:10px; white-space:nowrap;
+  box-shadow:0 0 14px rgba(57,255,20,0.4);
+}
+
+.sc-locked { text-align:center; margin:8px 0; }
+.sc-locked-padlock { font-size:58px; line-height:1; }
+.sc-locked-text { font-family:'Orbitron',sans-serif; font-size:14px; color:{$accentMain}; opacity:0.7; letter-spacing:2px; margin:10px 0; }
+.sc-locked-btn { background:linear-gradient(135deg,{$accentMain},{$accentSec}); color:white; font-family:'Orbitron',sans-serif; font-size:14px; font-weight:700; padding:11px 34px; border-radius:12px; display:inline-block; letter-spacing:1px; }
+
+.sc-footer-grad { height:4px; background:{$footerGrad}; position:relative; z-index:2; }
+CSS;
+
+    // ── Bet lines HTML ──
+    $betLinesNormal = '';
+    $betLinesLocked = '';
+    foreach ($bets as $i => $bet) {
+        if (!is_array($bet)) continue;
+        $num    = str_pad($i + 1, 2, '0', STR_PAD_LEFT);
+        $match  = htmlspecialchars($bet['match'] ?? '', ENT_QUOTES, 'UTF-8');
+        $prono  = htmlspecialchars($bet['prono'] ?? '', ENT_QUOTES, 'UTF-8');
+        $bcote  = htmlspecialchars($bet['cote']  ?? '1.00', ENT_QUOTES, 'UTF-8');
+        $heure  = htmlspecialchars($bet['heure'] ?? '', ENT_QUOTES, 'UTF-8');
+        $bconf  = intval($bet['confidence'] ?? 65);
+        $valuePct = floatval($bet['value_pct'] ?? 0);
+        $analyse  = htmlspecialchars($bet['analyse'] ?? '', ENT_QUOTES, 'UTF-8');
+        $heureSpan = $heure !== '' ? "<span class='sc-bet-heure'>{$heure}</span>" : '';
+        $valueTag  = ($valuePct > 0) ? "<span class='sc-value-tag'>VALUE +{$valuePct}%</span>" : '';
+
+        $logo1Url = trim((string)($bet['team1_logo'] ?? ''));
+        $logo2Url = trim((string)($bet['team2_logo'] ?? ''));
+        $matchRaw = (string)($bet['match'] ?? '');
+        $matchParts = preg_split('/\s+vs\.?\s+/i', $matchRaw, 2);
+        $team1Name = trim($matchParts[0] ?? '');
+        $team2Name = trim($matchParts[1] ?? '');
+        if (($logo1Url === '' || !filter_var($logo1Url, FILTER_VALIDATE_URL)) && $team1Name !== '' && function_exists('stratedge_fetch_team_logo_url')) {
+            $logo1Url = stratedge_fetch_team_logo_url($team1Name);
+        }
+        if (($logo2Url === '' || !filter_var($logo2Url, FILTER_VALIDATE_URL)) && $team2Name !== '' && function_exists('stratedge_fetch_team_logo_url')) {
+            $logo2Url = stratedge_fetch_team_logo_url($team2Name);
+        }
+        $isHockey = (strtolower($d['sport'] ?? '') === 'hockey');
+        if ($isHockey) {
+            if ($logo1Url === '' || !filter_var($logo1Url, FILTER_VALIDATE_URL)) $logo1Url = nhlLogoUrl($team1Name);
+            if ($logo2Url === '' || !filter_var($logo2Url, FILTER_VALIDATE_URL)) $logo2Url = nhlLogoUrl($team2Name);
+        }
+        if ($logo1Url !== '' && filter_var($logo1Url, FILTER_VALIDATE_URL)) {
+            $ico1 = '<img src="' . htmlspecialchars(logoProxyUrl($logo1Url), ENT_QUOTES, 'UTF-8') . '" class="sc-team-logo" alt="">';
+        } else {
+            $ico1 = flagImg(is_string($bet['flag1'] ?? null) ? $bet['flag1'] : '');
+        }
+        if ($logo2Url !== '' && filter_var($logo2Url, FILTER_VALIDATE_URL)) {
+            $ico2 = '<img src="' . htmlspecialchars(logoProxyUrl($logo2Url), ENT_QUOTES, 'UTF-8') . '" class="sc-team-logo" alt="">';
+        } else {
+            $ico2 = flagImg(is_string($bet['flag2'] ?? null) ? $bet['flag2'] : '');
+        }
+
+        $barColor = $barColors[$i % 3];
+
+        $betLinesNormal .= <<<HTML
+    <div class='sc-bet'>
+      <div class='sc-bet-bar' style='background:{$barColor}'></div>
+      <div class='sc-bet-top'>
+        <div class='sc-bet-left'>
+          <span class='sc-bet-num'>{$num}</span>
+          <span>{$ico1}</span>
+          <span class='sc-bet-match'>{$match}</span>
+          {$heureSpan}
+          <span>{$ico2}</span>
+        </div>
+        <div class='sc-bet-right'>
+          {$valueTag}
+          <div class='sc-cote-pill'>{$bcote}</div>
+        </div>
+      </div>
+      <div class='sc-bet-prono'>🛡️ {$prono}</div>
+      <div class='sc-bet-analyse'>{$analyse}</div>
+      <div class='sc-bet-conf'>
+        <span class='sc-bet-conf-label'>Confiance</span>
+        <div class='sc-bet-conf-bar'><div class='sc-bet-conf-fill' style='width:{$bconf}%'></div></div>
+        <span class='sc-bet-conf-score'>{$bconf}/100</span>
+      </div>
+    </div>
+HTML;
+
+        $betLinesLocked .= <<<HTML
+    <div class='sc-bet'>
+      <div class='sc-bet-bar' style='background:{$barColor}'></div>
+      <div class='sc-bet-top'>
+        <div class='sc-bet-left'>
+          <span class='sc-bet-num'>{$num}</span>
+          <span>{$ico1}</span>
+          <span class='sc-bet-match'>{$match}</span>
+          {$heureSpan}
+          <span>{$ico2}</span>
+        </div>
+        <span style='font-size:20px'>🔒</span>
+      </div>
+      <div style='height:10px;background:rgba(255,255,255,0.08);border-radius:3px;width:85%;margin:3px 0'></div>
+      <div style='height:10px;background:rgba(255,255,255,0.05);border-radius:3px;width:60%;margin:2px 0'></div>
+      <div class='sc-bet-conf'>
+        <span class='sc-bet-conf-label'>Confiance</span>
+        <div class='sc-bet-conf-bar'><div class='sc-bet-conf-fill' style='width:{$bconf}%'></div></div>
+        <span class='sc-bet-conf-score'>{$bconf}/100</span>
+      </div>
+    </div>
+HTML;
+    }
+
+    if ($isTennis) {
+        $promoBlock = <<<HTML
+  <div class='sc-promo'>
+    <div class='sc-promo-bar'></div>
+    <div class='sc-promo-text'>
+      <div class='sc-promo-eyebrow'>🎾 SAFE COMBINÉ TENNIS — SÉLECTION PREMIUM</div>
+      <div class='sc-promo-main'>Inclus dans le <span class='sc-promo-hl'>Pack Tennis Pro</span></div>
+      <div class='sc-promo-packs'>
+        <span class='sc-pack-tag sc-pack-max'>🎾 Tennis Weekly — 15€/sem</span>
+      </div>
+    </div>
+    <div class='sc-promo-cta'>🎾 Je m'abonne</div>
+  </div>
+HTML;
+    } else {
+        $promoBlock = <<<HTML
+  <div class='sc-promo'>
+    <div class='sc-promo-bar'></div>
+    <div class='sc-promo-text'>
+      <div class='sc-promo-eyebrow'>🛡️ Safe Combiné — Sélection Premium</div>
+      <div class='sc-promo-main'>En option dans l'offre <span class='sc-promo-hl'>Week-end (+10€)</span></div>
+      <div class='sc-promo-main' style='font-size:17px;margin-top:2px;'>Inclus dans l'offre <span class='sc-promo-hl'>VIP MAX</span></div>
+      <div class='sc-promo-packs'>
+        <span class='sc-pack-tag'>📅 Week-end +10€</span>
+        <span class='sc-pack-tag sc-pack-max'>👑 Inclus MAX</span>
+      </div>
+    </div>
+    <div class='sc-promo-cta'>⚡ Je m'abonne</div>
+  </div>
+HTML;
+    }
+
+    $wrapperClass = 'sc-wrapper' . ($wrapperExtra ? " $wrapperExtra" : '');
+    $badgeText    = $isTennis ? '🎾🛡️ Safe Combiné Tennis' : '🛡️ Safe Combiné';
+    $sectionTitle = $isTennis ? '🎾 Sélection multi-bets Safe Tennis' : '🛡️ Sélection multi-bets Safe';
+
+    $html_normal = <<<HTML
+<!DOCTYPE html>
+<html lang='fr'>
+<head>
+<meta charset='UTF-8'>
+<style>{$css}</style>
+</head>
+<body>
+<div class='{$wrapperClass}'>
+  <div class='sc-border-glow'></div>
+  <div class='sc-card'>
+    <div class='sc-mascotte'>
+      <img src='{$mascotteUrl}' alt=''>
+    </div>
+    <div class='sc-body'>
+      <div class='sc-header'>
+        <img src='{$logo}' class='sc-logo' alt='StratEdge'>
+        <div class='sc-badge'>{$badgeText}</div>
+      </div>
+      <div class='sc-datetime'>
+        <div class='sc-date-day'>{$date}</div>
+        <div class='sc-date-time'>{$time}</div>
+        <div class='sc-date-sub'>heure du 1er match</div>
+      </div>
+      <div class='sc-section-title'>
+        <span class='sc-section-text'>{$sectionTitle}</span>
+        <div class='sc-section-line'></div>
+      </div>
+      <div class='sc-bets'>
+        {$betLinesNormal}
+      </div>
+      <div class='sc-conf-global'>
+        <div class='sc-conf-header'>
+          <span class='sc-conf-label'>🛡️ Confiance globale combiné</span>
+          <span class='sc-conf-score'>{$confGlob}/100</span>
+        </div>
+        <div class='sc-conf-bar-bg'><div class='sc-conf-bar-fill'></div></div>
+      </div>
+      <div class='sc-cote-block'>
+        <div class='sc-cote-info'>
+          <div class='sc-cote-eyebrow'>Cote totale combinée</div>
+          <div class='sc-cote-desc'>{$nbBets} sélections Safe · Mise à votre risque</div>
+        </div>
+        <div class='sc-total-pill'><div class='sc-total-shine'></div><div class='sc-total-cote'>{$coteTot}</div></div>
+      </div>
+      {$promoBlock}
+    </div>
+    <div class='sc-footer-grad'></div>
+  </div>
+</div>
+</body></html>
+HTML;
+
+    $html_locked = <<<HTML
+<!DOCTYPE html>
+<html lang='fr'>
+<head>
+<meta charset='UTF-8'>
+<style>{$css}</style>
+</head>
+<body>
+<div class='{$wrapperClass}'>
+  <div class='sc-border-glow'></div>
+  <div class='sc-card'>
+    <div class='sc-mascotte'>
+      <img src='{$mascotteUrl}' alt='' style='opacity:0.05'>
+    </div>
+    <div class='sc-body'>
+      <div class='sc-header'>
+        <img src='{$logo}' class='sc-logo' alt='StratEdge'>
+        <div class='sc-badge'>{$badgeText}</div>
+      </div>
+      <div class='sc-datetime'>
+        <div class='sc-date-day'>{$date}</div>
+        <div class='sc-date-time'>{$time}</div>
+        <div class='sc-date-sub'>heure du 1er match</div>
+      </div>
+      <div class='sc-section-title'>
+        <span class='sc-section-text'>{$sectionTitle}</span>
+        <div class='sc-section-line'></div>
+      </div>
+      <div class='sc-bets'>
+        {$betLinesLocked}
+      </div>
+      <div class='sc-locked'>
+        <div class='sc-locked-padlock'>🔒</div>
+        <div class='sc-locked-text'>CONTENU RÉSERVÉ</div>
+        <div class='sc-locked-btn'>🔓 Reçois le bet sur stratedgepronos.fr</div>
+      </div>
+      <div class='sc-conf-global'>
+        <div class='sc-conf-header'>
+          <span class='sc-conf-label'>🛡️ Confiance globale combiné</span>
+          <span class='sc-conf-score'>{$confGlob}/100</span>
+        </div>
+        <div class='sc-conf-bar-bg'><div class='sc-conf-bar-fill'></div></div>
+      </div>
+      <div class='sc-cote-block'>
+        <div class='sc-cote-info'>
+          <div class='sc-cote-eyebrow'>Cote totale combinée</div>
+          <div class='sc-cote-desc'>{$nbBets} sélections Safe · Mise à votre risque</div>
+        </div>
+        <div class='sc-total-pill'><div class='sc-total-shine'></div><div class='sc-total-cote'>{$coteTot}</div></div>
+      </div>
+      {$promoBlock}
+    </div>
+    <div class='sc-footer-grad'></div>
   </div>
 </div>
 </body></html>

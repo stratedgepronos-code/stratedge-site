@@ -790,15 +790,6 @@ $membre = getMembre();
       </div>
       <?php endif; ?>
 
-      <?php if ($type === 'tennis'): ?>
-      <div class="stake-tennis-block">
-        <div class="stake-tennis-title">Bonus Partenaire Stake</div>
-        <div class="stake-tennis-desc">Crée ton compte Stake avec notre lien partenaire et débloque un bonus exclusif StratEdge.</div>
-        <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake-tennis">🎁 S'inscrire sur Stake</a>
-        <div class="stake-tennis-note">Lien bonus officiel · 1 mois StratEdge offert</div>
-      </div>
-      <?php endif; ?>
-
       <div class="payment-block" id="crypto">
         <div class="block-title">₿ Crypto-monnaie</div>
         <div class="block-desc">Choisissez votre crypto, générez une adresse unique et payez — activation automatique en quelques minutes</div>

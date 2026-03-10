@@ -734,6 +734,7 @@ const typeOpts = `
   <option value="safe">🛡️ Safe</option>
   <option value="fun">🎯 Fun</option>
   <option value="live">⚡ Live</option>
+  <option value="safe_combi">🛡️⚡ Safe Combiné</option>
   <option value="safe,fun">🛡️+🎯 Safe+Fun</option>
   <option value="safe,live">🛡️+⚡ Safe+Live</option>`;
 

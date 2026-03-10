@@ -79,6 +79,11 @@ $db = getDB();
       border-color:rgba(168,85,247,0.5); color:#a855f7;
       box-shadow:0 0 15px rgba(168,85,247,0.15);
     }
+    .type-pill.active-safecombi {
+      background:linear-gradient(135deg, rgba(0,212,255,0.12), rgba(255,45,122,0.12));
+      border-color:rgba(0,229,255,0.5); color:#00e5ff;
+      box-shadow:0 0 15px rgba(0,229,255,0.2);
+    }
 
     /* ── Help box ── */
     .help-box {
@@ -221,6 +226,9 @@ $db = getDB();
         <div class="type-pill" data-type="Fun" onclick="selectType('Fun')">
           🎲 Fun
         </div>
+        <div class="type-pill" data-type="SafeCombi" onclick="selectType('SafeCombi')">
+          🛡️⚡ Combi
+        </div>
       </div>
 
       <!-- ══ FORMULAIRE SAFE (champs structurés) ══ -->
@@ -276,6 +284,25 @@ $db = getDB();
         <div class="field">
           <label>Matchs + Pronos + Cotes</label>
           <textarea id="f-raw-fun" rows="14" placeholder="Match 1 : ...&#10;Prono 1 : ...&#10;Cote 1 : ...&#10;&#10;Match 2 : ...&#10;Prono 2 : ...&#10;Cote 2 : ..."></textarea>
+        </div>
+      </div>
+
+      <!-- ══ FORMULAIRE SAFE COMBINÉ (multi-bets Safe) ══ -->
+      <div id="form-safecombi" style="display:none">
+        <div class="form-section-title">🛡️ Safe Combiné</div>
+        <div class="help-box">
+          <strong>Combinez 2 à 5 bets Safe sur une seule card :</strong><br>
+          <code>Match 1 : PSG vs Marseille</code><br>
+          <code>Prono 1 : Victoire PSG</code><br>
+          <code>Cote 1 : 1.65</code><br><br>
+          <code>Match 2 : Djokovic vs Alcaraz</code><br>
+          <code>Prono 2 : Djokovic gagne le match</code><br>
+          <code>Cote 2 : 1.85</code><br><br>
+          🛡️ Claude analysera chaque bet individuellement (confiance, value, analyse) puis calculera la confiance globale du combiné.
+        </div>
+        <div class="field">
+          <label>Matchs + Pronos + Cotes (Safe)</label>
+          <textarea id="f-raw-safecombi" rows="14" placeholder="Match 1 : ...&#10;Prono 1 : ...&#10;Cote 1 : ...&#10;&#10;Match 2 : ...&#10;Prono 2 : ...&#10;Cote 2 : ...&#10;&#10;Match 3 : ...&#10;Prono 3 : ...&#10;Cote 3 : ..."></textarea>
         </div>
       </div>
 
@@ -416,7 +443,7 @@ let currentMatchName = '';
 let currentType = 'Safe';
 
 // Largeurs par type de card
-const CARD_WIDTHS = { Safe: 1080, Live: 720, Fun: 1080 };
+const CARD_WIDTHS = { Safe: 1080, Live: 720, Fun: 1080, SafeCombi: 1440 };
 
 // ── Sélection du type de bet ────────────────────────────────
 function selectType(type) {
@@ -432,9 +459,10 @@ function selectType(type) {
   pill.classList.add('active-' + type.toLowerCase());
 
   // Afficher/masquer les formulaires
-  document.getElementById('form-safe').style.display = (type === 'Safe') ? 'block' : 'none';
-  document.getElementById('form-live').style.display = (type === 'Live') ? 'block' : 'none';
-  document.getElementById('form-fun').style.display  = (type === 'Fun')  ? 'block' : 'none';
+  document.getElementById('form-safe').style.display      = (type === 'Safe') ? 'block' : 'none';
+  document.getElementById('form-live').style.display      = (type === 'Live') ? 'block' : 'none';
+  document.getElementById('form-fun').style.display       = (type === 'Fun')  ? 'block' : 'none';
+  document.getElementById('form-safecombi').style.display  = (type === 'SafeCombi') ? 'block' : 'none';
 }
 
 // ── Génération de la card ───────────────────────────────────
@@ -471,7 +499,7 @@ async function generateCard() {
     payload.cote  = cote;
     currentMatchName = match.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '') + '_Live';
 
-  } else { // Fun
+  } else if (currentType === 'Fun') {
     const raw = document.getElementById('f-raw-fun').value.trim();
     if (!raw) {
       showError('⚠️ Collez les infos du combiné Fun Bet.');
@@ -479,6 +507,16 @@ async function generateCard() {
     }
     payload.raw_bet = raw;
     currentMatchName = 'FunBet_Combine';
+
+  } else if (currentType === 'SafeCombi') {
+    const raw = document.getElementById('f-raw-safecombi').value.trim();
+    if (!raw) {
+      showError('⚠️ Collez les infos du Safe Combiné (matchs + pronos + cotes).');
+      return;
+    }
+    payload.type_bet = 'Safe Combiné';
+    payload.raw_bet = raw;
+    currentMatchName = 'SafeCombi';
   }
 
   // Nettoyer les styles de card précédents injectés dans le head

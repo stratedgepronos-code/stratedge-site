@@ -286,6 +286,81 @@ if ($typeBet === 'Fun') {
 }
 
 // ═══════════════════════════════════════════════════════════
+// MODE SAFE COMBINÉ — Template PHP + Claude enrichit (comme Fun)
+// ═══════════════════════════════════════════════════════════
+if ($typeBet === 'Safe Combiné') {
+    try {
+        require_once __DIR__ . '/live-card-template.php';
+    } catch (Throwable $e) {
+        debugLog("SAFE_COMBI require ERROR: " . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['error' => 'Chargement template : ' . $e->getMessage()]);
+        exit;
+    }
+
+    $rawBet = $data['raw_bet'] ?? '';
+
+    if (empty($rawBet)) {
+        http_response_code(400);
+        echo json_encode(['error' => 'Aucun pari fourni pour le Safe Combiné.']);
+        exit;
+    }
+
+    $userMsg = "Sport : $sport\nDate du jour : " . date('d/m/Y') . "\nHeure = fuseau Europe/Paris\n\nListe des paris Safe à combiner :\n" . $rawBet;
+    debugLog("SAFE_COMBI — Enrichissement via Claude...");
+
+    $result = callClaude(CLAUDE_SAFE_COMBI_ENRICH_PROMPT, $userMsg, 2500);
+    if (isset($result['error'])) {
+        debugLog("SAFE_COMBI ENRICH ERROR: " . $result['error']);
+        http_response_code(500);
+        echo json_encode(['error' => $result['error']]);
+        exit;
+    }
+
+    debugLog("SAFE_COMBI enrich text: " . $result['text']);
+    $enriched = parseClaudeJson($result['text']);
+    debugLog("SAFE_COMBI Enriched: " . json_encode($enriched));
+
+    if (!$enriched || empty($enriched['bets'])) {
+        debugLog("SAFE_COMBI WARN: enrichissement échoué");
+        http_response_code(500);
+        echo json_encode(['error' => 'Claude n\'a pas pu analyser les paris. Vérifiez le format saisi.']);
+        exit;
+    }
+
+    $coteTotale = 1.0;
+    foreach ($enriched['bets'] as $bet) {
+        $coteTotale *= floatval($bet['cote'] ?? 1.0);
+    }
+    $coteTotale = number_format($coteTotale, 2, '.', '');
+    if (isset($enriched['cote_totale']) && abs(floatval($enriched['cote_totale']) - floatval($coteTotale)) < 0.15) {
+        $coteTotale = $enriched['cote_totale'];
+    }
+
+    $confGlobale = intval($enriched['confidence_globale'] ?? 65);
+
+    try {
+        $cards = generateSafeCombiCards([
+            'sport'              => $sport,
+            'date_fr'            => $enriched['date_fr']    ?? date('d/m/Y'),
+            'time_fr'            => $enriched['time_fr']    ?? date('H:i'),
+            'bets'               => $enriched['bets'],
+            'cote_totale'        => $coteTotale,
+            'confidence_globale' => $confGlobale,
+        ]);
+    } catch (Throwable $e) {
+        debugLog("SAFE_COMBI generateSafeCombiCards ERROR: " . $e->getMessage() . " @ " . $e->getFile() . ":" . $e->getLine());
+        http_response_code(500);
+        echo json_encode(['error' => 'Erreur génération card : ' . $e->getMessage()]);
+        exit;
+    }
+
+    debugLog("SAFE_COMBI OK! normal=" . strlen($cards['html_normal']) . " locked=" . strlen($cards['html_locked']));
+    echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Safe Combiné', 'card_width' => 1440]);
+    exit;
+}
+
+// ═══════════════════════════════════════════════════════════
 // MODE SAFE — Claude génère le HTML complet (inchangé)
 // ═══════════════════════════════════════════════════════════
 $systemPrompt = CLAUDE_CARD_PROMPT;
@@ -328,27 +403,6 @@ if (!$cards || !isset($cards['html_normal']) || !isset($cards['html_locked'])) {
     http_response_code(500);
     echo json_encode(['error' => 'Format JSON invalide. Réessayez.', 'raw' => substr($content, 0, 500)]);
     exit;
-}
-
-// Injection mascotte Safe — tennis = mascotte-tennis, hors tennis = mascotte.png (pleine hauteur, transparent derrière le texte, comme tennis)
-$sportLower = strtolower(trim($sport));
-$isTennisSafe = ($sportLower === 'tennis');
-$mascotteImgStyle = 'position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;z-index:1';
-$mascotteNormal = $isTennisSafe
-    ? "<img src='https://stratedgepronos.fr/assets/images/mascotte-tennis.png' style='" . $mascotteImgStyle . ";opacity:0.45'>"
-    : "<img src='https://stratedgepronos.fr/assets/images/mascotte.png' style='" . $mascotteImgStyle . ";opacity:0.45'>";
-$mascotteLocked = $isTennisSafe
-    ? "<img src='https://stratedgepronos.fr/assets/images/mascotte-tennis.png' style='" . $mascotteImgStyle . ";opacity:0.25'>"
-    : "<img src='https://stratedgepronos.fr/assets/images/mascotte.png' style='" . $mascotteImgStyle . ";opacity:0.25'>";
-
-// Si aucune mascotte : injection après la première <div> du body (regex souple)
-$hasMascotteNormal = (strpos($cards['html_normal'], 'mascotte.png') !== false || strpos($cards['html_normal'], 'mascotte-tennis.png') !== false);
-$hasMascotteLocked = (strpos($cards['html_locked'], 'mascotte.png') !== false || strpos($cards['html_locked'], 'mascotte-tennis.png') !== false);
-if (!$hasMascotteNormal) {
-    $cards['html_normal'] = preg_replace('/(<body[^>]*>)(.*?)(<div)([^>]*>)/s', '$1$2$3$4' . $mascotteNormal, $cards['html_normal'], 1);
-}
-if (!$hasMascotteLocked) {
-    $cards['html_locked'] = preg_replace('/(<body[^>]*>)(.*?)(<div)([^>]*>)/s', '$1$2$3$4' . $mascotteLocked, $cards['html_locked'], 1);
 }
 
 debugLog("SAFE OK! 1440px");

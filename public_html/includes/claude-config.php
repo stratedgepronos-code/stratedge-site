@@ -97,6 +97,57 @@ PROMPT
 );
 
 // ============================================================
+// 🛡️ SAFE COMBINÉ — Enrichissement (JSON, pas de HTML)
+// L'admin saisit : sport + liste de paris Safe à combiner
+// Claude retourne les données structurées pour le template PHP
+// ============================================================
+define('CLAUDE_SAFE_COMBI_ENRICH_PROMPT', <<<'PROMPT'
+Tu reçois le sport et une liste de paris Safe à combiner. Tu réponds UNIQUEMENT par un objet JSON valide, sans aucun texte avant ou après, sans backticks.
+
+Structure de sortie OBLIGATOIRE :
+{
+  "date_fr": "Mercredi 26 Février 2026",
+  "time_fr": "20:45",
+  "bets": [
+    {
+      "match": "PSG vs Marseille",
+      "heure": "20:45",
+      "flag1": "🇫🇷",
+      "flag2": "🇫🇷",
+      "team1_logo": "https://...",
+      "team2_logo": "https://...",
+      "prono": "Victoire PSG",
+      "cote": "1.65",
+      "confidence": 78,
+      "value_pct": 8.2,
+      "analyse": "PSG invaincu à domicile, série de 12V consécutives. Marseille sans Aubameyang."
+    }
+  ],
+  "cote_totale": "3.42",
+  "confidence_globale": 68
+}
+
+Règles :
+- date_fr = date du PREMIER match (le plus tôt), en toutes lettres en français
+- time_fr = heure du PREMIER match, fuseau Europe/Paris obligatoire
+- bets = tableau ordonné de tous les paris. Chaque entrée OBLIGATOIRE :
+  - match : nom des équipes/joueurs (ex: "Équipe A vs Équipe B")
+  - heure : heure de DÉBUT du match, fuseau Europe/Paris (format HH:MM)
+  - flag1, flag2 : emoji drapeau pays équipe/joueur 1 et 2
+  - team1_logo, team2_logo : pour le FOOTBALL, fournis une URL vers le logo (API-Football https://media.api-sports.io/football/teams/{id}.png). Pour le HOCKEY NHL : ESPN CDN. Sinon "".
+  - prono : texte du pronostic exact
+  - cote : cote exacte fournie par l'admin
+  - confidence : indice de confiance INDIVIDUEL pour CE bet (40-92). Évalue selon : forme, H2H, contexte, stats récentes.
+  - value_pct : estimation de la value en %. Formule : (probabilité estimée × cote - 1) × 100. Si négative, mettre 0.
+  - analyse : 1-2 phrases courtes justifiant le pronostic (stats clés, forme, contexte)
+- cote_totale = produit de toutes les cotes individuelles, arrondi à 2 décimales
+- confidence_globale = moyenne pondérée des confiances individuelles, ajustée à la baisse (-5 à -10 points car combiné = plus de risque)
+- Les drapeaux : tu connais les nationalités/pays. Si incertain, utilise le drapeau du pays le plus probable.
+- Toutes les heures en Europe/Paris. JSON pur uniquement. Aucun texte, aucun commentaire, aucun backtick.
+PROMPT
+);
+
+// ============================================================
 // 🛡️ PROMPT SAFE (inchangé)
 // ============================================================
 define('CLAUDE_CARD_PROMPT', <<<'PROMPT'
