@@ -97,7 +97,7 @@ if ($analyseHtml !== '') {
 <?php require_once __DIR__ . '/includes/sidebar-css.php'; ?>
 <style>
 :root{--bg:#050810;--card:#111827;--pink:#ff2d78;--txt:#f0f4f8;--txt2:#b0bec9;--txt3:#8a9bb0;--border:rgba(255,45,120,0.15);}
-.bet-page-wrap{max-width:900px;margin:0 auto;padding:1.5rem 1rem 3rem;}
+.bet-page-wrap{max-width:100%;margin:0 auto;padding:1.5rem 1rem 3rem;}
 .bet-back{margin-bottom:1.5rem;}
 .bet-back a{color:var(--txt2);text-decoration:none;font-size:0.9rem;display:inline-flex;align-items:center;gap:0.5rem;}
 .bet-back a:hover{color:var(--pink);}
@@ -149,11 +149,6 @@ if ($analyseHtml !== '') {
     </div>
     <?php if ($bet['titre']): ?>
     <h1 class="bet-titre"><?= clean($bet['titre']) ?></h1>
-    <?php endif; ?>
-    <?php if ($imgSrc): ?>
-    <div class="bet-img-wrap">
-      <img src="<?= clean($imgSrc) ?>" alt="Card bet" loading="lazy">
-    </div>
     <?php endif; ?>
   </article>
 

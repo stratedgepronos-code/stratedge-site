@@ -162,7 +162,40 @@ CREATE TABLE IF NOT EXISTS `bet_comments` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
--- ── 9. Vérification ─────────────────────────────────────────
+-- ── 9. Prono de la commu : matchs à voter + votes ───────────
+CREATE TABLE IF NOT EXISTS `commu_matches` (
+  `id`            INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `match_date`    DATE NOT NULL COMMENT 'Date du match',
+  `team_home`     VARCHAR(120) NOT NULL,
+  `team_away`     VARCHAR(120) NOT NULL,
+  `competition`   VARCHAR(120) DEFAULT NULL,
+  `heure`         VARCHAR(20) DEFAULT NULL COMMENT 'Ex: 21:00',
+  `vote_closed_at` DATETIME NOT NULL COMMENT 'Fin des votes (ex: veille 23:59)',
+  `is_winner`     TINYINT(1) NOT NULL DEFAULT 0,
+  `analysis_html` MEDIUMTEXT DEFAULT NULL COMMENT 'Analyse postée par admin',
+  `analysis_at`   DATETIME DEFAULT NULL,
+  `created_at`    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_match_date` (`match_date`),
+  KEY `idx_vote_closed` (`vote_closed_at`),
+  KEY `idx_winner` (`is_winner`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `commu_votes` (
+  `id`         INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `match_id`   INT UNSIGNED NOT NULL,
+  `membre_id`  INT UNSIGNED NOT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `one_vote_per_member_per_round` (`membre_id`,`match_id`),
+  KEY `idx_match` (`match_id`),
+  KEY `idx_membre` (`membre_id`),
+  FOREIGN KEY (`match_id`) REFERENCES `commu_matches`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`membre_id`) REFERENCES `membres`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- ── 10. Vérification ─────────────────────────────────────────
 -- Après exécution, vérifier avec :
 -- DESCRIBE bets;
 -- DESCRIBE bet_comments;
