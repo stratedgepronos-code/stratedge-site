@@ -245,12 +245,18 @@ function envoyerPush(?int $membreId, string $title, string $body, string $url = 
         $stmt = $db->prepare("SELECT * FROM push_subscriptions WHERE membre_id = ?");
         $stmt->execute([$membreId]);
     } else {
-        $stmt = $db->query("
-            SELECT ps.* FROM push_subscriptions ps
-            INNER JOIN abonnements a ON a.membre_id = ps.membre_id
-            WHERE a.actif = 1
+        // Broadcast : abonnés actifs + tous les admins (pour que les admins reçoivent même sans abo payant)
+        $adminEmail = defined('ADMIN_EMAIL') ? ADMIN_EMAIL : '';
+        $stmt = $db->prepare("
+            SELECT DISTINCT ps.* FROM push_subscriptions ps
+            INNER JOIN membres m ON m.id = ps.membre_id
+            LEFT JOIN abonnements a ON a.membre_id = ps.membre_id AND a.actif = 1
               AND (a.type IN ('daily','rasstoss') OR a.date_fin > NOW())
+            WHERE a.membre_id IS NOT NULL
+               OR m.email = ?
+               OR m.role = 'admin'
         ");
+        $stmt->execute([$adminEmail]);
     }
     $subscriptions = $stmt->fetchAll();
     if (empty($subscriptions)) {

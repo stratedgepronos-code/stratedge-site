@@ -190,7 +190,17 @@ try {
     $nbPushSubs = (int)$db->query("SELECT COUNT(*) FROM push_subscriptions")->fetchColumn();
 } catch(Exception $e) { $nbPushSubs = 0; }
 
-$tousMembers = $db->query("SELECT id, nom, email FROM membres WHERE email != '" . ADMIN_EMAIL . "' ORDER BY nom")->fetchAll();
+$membre = getMembre();
+$mesPushSubs = 0;
+if ($membre && !empty($membre['id'])) {
+    try {
+        $st = $db->prepare("SELECT COUNT(*) FROM push_subscriptions WHERE membre_id = ?");
+        $st->execute([$membre['id']]);
+        $mesPushSubs = (int)$st->fetchColumn();
+    } catch (Exception $e) {}
+}
+
+$tousMembers = $db->query("SELECT id, nom, email FROM membres ORDER BY nom")->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -380,9 +390,15 @@ $tousMembers = $db->query("SELECT id, nom, email FROM membres WHERE email != '" 
         <input type="hidden" name="test" id="pushTestName">
 
         <label style="font-size:0.8rem;color:var(--text-muted);display:block;margin-bottom:0.4rem;">Envoyer à un membre spécifique</label>
+        <?php if ($membre): ?>
+        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.5rem;">Tes appareils enregistrés : <strong style="color:var(--text-primary);"><?= $mesPushSubs ?></strong> — <?php if ($mesPushSubs === 0): ?>Ouvre le site (ex. dashboard) sur ton tel/PC, accepte les notifs pour t’enregistrer.<?php else: ?>Tu peux t’envoyer un test ci-dessous en choisissant « Moi ».<?php endif; ?></p>
+        <?php endif; ?>
         <select name="push_membre_id" class="push-select">
           <option value="">— Sélectionner un membre —</option>
-          <?php foreach ($tousMembers as $m): ?>
+          <?php if ($membre): ?>
+          <option value="<?= (int)$membre['id'] ?>">👤 Moi — <?= htmlspecialchars($membre['nom']) ?> (<?= htmlspecialchars($membre['email']) ?>)</option>
+          <?php endif; ?>
+          <?php foreach ($tousMembers as $m): if (!empty($membre['id']) && (int)$m['id'] === (int)$membre['id']) continue; ?>
             <option value="<?= $m['id'] ?>"><?= htmlspecialchars($m['nom']) ?> (<?= htmlspecialchars($m['email']) ?>)</option>
           <?php endforeach; ?>
         </select>
@@ -396,7 +412,7 @@ $tousMembers = $db->query("SELECT id, nom, email FROM membres WHERE email != '" 
 
         <button type="button" class="test-btn test-btn-push" onclick="runPush('push_broadcast')">
           <span class="icon">📢</span>
-          <div><div>Push Broadcast (tous abonnés)</div><div style="font-size:0.75rem;color:rgba(0,212,255,0.6);"><?= $nbPushSubs ?> appareil(s) enregistré(s)</div></div>
+          <div><div>Push Broadcast (abonnés + admins)</div><div style="font-size:0.75rem;color:rgba(0,212,255,0.6);"><?= $nbPushSubs ?> appareil(s) — tu reçois aussi si tu es admin</div></div>
         </button>
       </form>
 
