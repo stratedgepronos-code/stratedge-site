@@ -82,14 +82,8 @@ function apiFootballRequest(string $url, array $headers, int $timeout = 20): arr
 
 function importFromApiFootball(PDO $db, string $targetDate, string $voteClosedAt, DateTimeZone $tzParis, string $apiKeyDirect, string $apiKeyRapid = '', array $allowedLeagueIds = []): array
 {
+    // On n'utilise que RapidAPI (le direct api-sports.io renvoie trop de matchs, filtre ligues non fiable).
     $endpoints = [];
-    if ($apiKeyDirect !== '') {
-        $endpoints[] = [
-            'url'     => 'https://v3.football.api-sports.io/fixtures?date=' . $targetDate,
-            'headers' => ['x-apisports-key: ' . $apiKeyDirect],
-            'label'   => 'direct (api-sports.io)',
-        ];
-    }
     if ($apiKeyRapid !== '') {
         $endpoints[] = [
             'url'     => 'https://api-football-v1.p.rapidapi.com/v3/fixtures?date=' . $targetDate,
@@ -98,7 +92,7 @@ function importFromApiFootball(PDO $db, string $targetDate, string $voteClosedAt
         ];
     }
     if (empty($endpoints)) {
-        return ['inserted' => 0, 'total' => 0, 'source' => 'API-Football', 'error' => 'Aucune clé API-Football configurée. Renseigne api_football_key (dashboard.api-football.com) ou api_football_rapidapi_key (RapidAPI).'];
+        return ['inserted' => 0, 'total' => 0, 'source' => 'API-Football', 'error' => 'Utilise api_football_rapidapi_key (clé RapidAPI) dans football_data_config.php. L\'accès direct api-sports.io est désactivé pour l\'import.'];
     }
 
     $debugLog = [];
