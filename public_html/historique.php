@@ -121,7 +121,8 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
 <style>
 /* ═══ HISTORIQUE V2 ═══ */
 
-/* Hero */
+/* Hero — descente visible sous la nav */
+.page-historique .hist-hero{margin-top:1.5rem;}
 .hist-hero{position:relative;text-align:center;overflow:hidden;background:linear-gradient(180deg,rgba(0,212,255,0.05) 0%,transparent 100%);border-bottom:1px solid var(--border,rgba(255,45,120,0.15));margin-left:calc(-3rem - var(--sidebar-w,270px));margin-right:-3rem;margin-top:0;padding:3rem 2rem 2.5rem calc(3rem + var(--sidebar-w,270px));}
 .hist-hero::before{content:'';position:absolute;width:600px;height:400px;background:radial-gradient(circle,rgba(0,212,255,0.08) 0%,transparent 70%);top:-200px;left:50%;transform:translateX(-50%);pointer-events:none;}
 body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem 2rem 2.5rem;}
@@ -130,7 +131,7 @@ body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
 .hist-title span{background:linear-gradient(135deg,#00d4ff,#0099cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .hist-sub{color:var(--txt2,#b0bec9);font-size:1rem;max-width:500px;margin:0 auto;}
 
-.hist-wrap{max-width:1400px;width:100%;margin:0 auto;padding:1.5rem 0.5rem 2rem;box-sizing:border-box;}
+.hist-wrap{max-width:1400px;width:100%;margin:0 auto;padding:2.5rem 0.5rem 2rem;box-sizing:border-box;}
 
 /* ═══ Dashboard Stats ═══ */
 .stats-dashboard{display:flex;align-items:center;justify-content:center;gap:2.5rem;margin-bottom:2rem;flex-wrap:wrap;}
@@ -267,7 +268,7 @@ body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
 }
 </style>
 </head>
-<body>
+<body class="page-historique">
 <?php if ($membre): ?>
   <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
 <?php else: ?>
@@ -315,10 +316,10 @@ body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
         $pct = $tauxReussite ?? 0;
         $greenDeg = round($pct * 3.6);
       ?>
-      <div class="radial-circle" style="background:conic-gradient(#00c864 0deg, #00c864 <?= $greenDeg ?>deg, rgba(255,68,68,0.3) <?= $greenDeg ?>deg, rgba(255,68,68,0.3) 360deg);padding:5px;border-radius:50%;">
+      <div class="radial-circle" style="background:conic-gradient(#00c864 0deg, #00c864 <?= $greenDeg ?>deg, #ff4444 <?= $greenDeg ?>deg, #ff4444 360deg);padding:5px;border-radius:50%;">
         <div style="width:100%;height:100%;border-radius:50%;background:var(--card,#111827);display:flex;align-items:center;justify-content:center;flex-direction:column;">
-          <div class="radial-value"><?= $tauxReussite !== null ? $tauxReussite . '%' : '—' ?></div>
-          <div class="radial-label">Winrate<?= $filtreSection !== 'tous' ? ' section' : '' ?></div>
+          <div class="radial-value" style="color:var(--txt,#f0f4f8)"><?= $tauxReussite !== null ? $tauxReussite . '%' : '—' ?></div>
+          <div class="radial-label" style="color:var(--txt3,#8a9bb0)">Winrate<?= $filtreSection !== 'tous' ? ' section' : '' ?></div>
         </div>
       </div>
     </div>
