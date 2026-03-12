@@ -29,34 +29,66 @@ function importFootballMatches(PDO $db, string $targetDate, string $voteClosedAt
 }
 
 // ─────────────────────────────────────────────────────────────
-// API-Football (api-sports.io) — toutes compétitions
+// API-Football — toutes compétitions
+// Supporte 2 modes d'accès :
+//   1) Direct (api-sports.io) — header x-apisports-key
+//   2) RapidAPI — header x-rapidapi-key + x-rapidapi-host
+// Essaie le direct d'abord, puis RapidAPI automatiquement.
 // ─────────────────────────────────────────────────────────────
 function importFromApiFootball(PDO $db, string $targetDate, string $voteClosedAt, DateTimeZone $tzParis, string $apiKey): array
 {
-    $url = 'https://v3.football.api-sports.io/fixtures?date=' . $targetDate;
-    $ctx = stream_context_create([
-        'http' => [
-            'method'  => 'GET',
-            'header'  => "x-apisports-key: " . $apiKey . "\r\n",
-            'timeout' => 20,
-            'ignore_errors' => true,
-        ]
-    ]);
+    $endpoints = [
+        [
+            'url'    => 'https://v3.football.api-sports.io/fixtures?date=' . $targetDate,
+            'header' => "x-apisports-key: " . $apiKey . "\r\n",
+            'label'  => 'API-Football (direct)',
+        ],
+        [
+            'url'    => 'https://api-football-v1.p.rapidapi.com/v3/fixtures?date=' . $targetDate,
+            'header' => "x-rapidapi-key: " . $apiKey . "\r\nx-rapidapi-host: api-football-v1.p.rapidapi.com\r\n",
+            'label'  => 'API-Football (RapidAPI)',
+        ],
+    ];
 
-    $json = @file_get_contents($url, false, $ctx);
-    if ($json === false) {
-        return ['inserted' => 0, 'total' => 0, 'source' => 'API-Football', 'error' => 'Impossible de contacter API-Football (timeout / réseau).'];
+    $data = null;
+    $usedLabel = '';
+
+    foreach ($endpoints as $ep) {
+        $ctx = stream_context_create([
+            'http' => [
+                'method'  => 'GET',
+                'header'  => $ep['header'],
+                'timeout' => 20,
+                'ignore_errors' => true,
+            ]
+        ]);
+
+        $json = @file_get_contents($ep['url'], false, $ctx);
+        if ($json === false) continue;
+
+        $parsed = @json_decode($json, true);
+        if (!is_array($parsed)) continue;
+
+        $hasError = isset($parsed['errors']) && !empty($parsed['errors']);
+        $hasResponse = isset($parsed['response']) && is_array($parsed['response']);
+
+        if ($hasResponse && !$hasError) {
+            $data = $parsed;
+            $usedLabel = $ep['label'];
+            break;
+        }
+
+        if ($hasError) {
+            $errMsg = is_array($parsed['errors']) ? implode(', ', $parsed['errors']) : (string)$parsed['errors'];
+            if (stripos($errMsg, 'key') !== false || stripos($errMsg, 'Missing') !== false) {
+                continue;
+            }
+            return ['inserted' => 0, 'total' => 0, 'source' => $ep['label'], 'error' => $ep['label'] . ' erreur : ' . $errMsg];
+        }
     }
 
-    $data = @json_decode($json, true);
-
-    if (isset($data['errors']) && !empty($data['errors'])) {
-        $errMsg = is_array($data['errors']) ? implode(', ', $data['errors']) : (string)$data['errors'];
-        return ['inserted' => 0, 'total' => 0, 'source' => 'API-Football', 'error' => 'API-Football erreur : ' . $errMsg];
-    }
-
-    if (!isset($data['response']) || !is_array($data['response'])) {
-        return ['inserted' => 0, 'total' => 0, 'source' => 'API-Football', 'error' => 'Réponse API-Football invalide (pas de "response").'];
+    if ($data === null) {
+        return ['inserted' => 0, 'total' => 0, 'source' => 'API-Football', 'error' => 'Impossible de se connecter à API-Football. Vérifie ta clé (directe api-sports.io ou RapidAPI).'];
     }
 
     $fixtures = $data['response'];
