@@ -434,6 +434,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+if (isset($_GET['posted_from_card']) && $_GET['posted_from_card'] === '1') {
+    $success = 'Bet posté depuis Créer une Card ✅';
+}
+
 $betsRaw  = $db->query("SELECT * FROM bets ORDER BY date_post DESC")->fetchAll();
 $nbDaily  = $db->query("SELECT COUNT(*) FROM abonnements WHERE type='daily' AND actif=1")->fetchColumn();
 

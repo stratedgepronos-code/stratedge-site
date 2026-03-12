@@ -21,10 +21,10 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--txt);min
 .mobile-menu a{color:var(--txt2);text-decoration:none;font-size:1.02rem;font-weight:600;padding:0.9rem 0.2rem;min-height:46px;display:flex;align-items:center;border-bottom:1px solid rgba(255,255,255,0.05);}
 
 /* ── Layout ── */
-.app{display:flex;min-height:calc(100vh - 58px);background:linear-gradient(to right, var(--card2) var(--sidebar-w), var(--bg) var(--sidebar-w));}
+.app{display:flex;min-height:calc(100vh - 58px);max-height:calc(100vh - 58px);background:linear-gradient(to right, var(--card2) var(--sidebar-w), var(--bg) var(--sidebar-w));overflow:hidden;}
 
 /* ── Sidebar ── */
-.side{width:var(--sidebar-w);min-width:var(--sidebar-w);background:var(--card2);border-right:1px solid var(--border);padding:1.5rem 0;display:flex;flex-direction:column;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto;z-index:10;align-self:flex-start;}
+.side{width:var(--sidebar-w);min-width:var(--sidebar-w);flex-shrink:0;background:var(--card2);border-right:1px solid var(--border);padding:1.5rem 0;display:flex;flex-direction:column;position:sticky;top:58px;height:calc(100vh - 58px);overflow-y:auto;z-index:10;align-self:flex-start;}
 .side-user{padding:0 1.3rem 1.3rem;border-bottom:1px solid var(--border-soft);margin-bottom:1rem;display:flex;align-items:center;gap:0.9rem;}
 .side-av{width:48px;height:48px;border-radius:50%;overflow:hidden;flex-shrink:0;background:linear-gradient(135deg,var(--pink),var(--blue));display:flex;align-items:center;justify-content:center;font-family:'Orbitron',sans-serif;font-size:1.2rem;font-weight:900;color:#fff;border:2px solid rgba(255,45,120,0.4);}
 .side-av img{width:100%;height:100%;object-fit:cover;}
@@ -44,8 +44,8 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--txt);min
 /* ── Mobile bottom tab bar ── */
 .mob-tabs{display:none;}
 
-/* ── Content area ── */
-.content{flex:1;min-width:0;padding:2.5rem 3rem;position:relative;display:flex;flex-direction:column;min-height:calc(100vh - 58px);}
+/* ── Content area (scroll interne pour voir tout le contenu) ── */
+.content{flex:1;min-width:0;min-height:0;padding:2.5rem 3rem;position:relative;display:flex;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .content-body{flex:1;}
 
 /* Footer légal compact dans sidebar layout */
@@ -73,8 +73,8 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--txt);min
   .nav-logo img{height:24px;}
   .mobile-menu{top:50px;}
 
-  .app{background:var(--bg);flex-direction:column;}
-  .content{padding:1rem 0.8rem calc(5.8rem + var(--safe-b));min-height:calc(100dvh - 50px);}
+  .app{background:var(--bg);flex-direction:column;max-height:calc(100dvh - 50px);}
+  .content{padding:1rem 0.8rem calc(5.8rem + var(--safe-b));min-height:0;}
   .content .legal-footer{padding:1.5rem 0 0.5rem;margin-top:2rem;}
 
   .mascotte-bg{display:none;}

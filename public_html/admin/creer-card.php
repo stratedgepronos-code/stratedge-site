@@ -194,6 +194,7 @@ $db = getDB();
 <?php require_once __DIR__ . '/sidebar.php'; ?>
 
 <div class="main">
+  <input type="hidden" id="csrf_token" value="<?= htmlspecialchars(csrfToken()) ?>">
   <div class="page-header">
     <h1>🎨 Créer une Card</h1>
     <p>Choisissez le type de bet — Claude génère la card normale + locked en JPEG.</p>
@@ -306,6 +307,24 @@ $db = getDB();
         </div>
       </div>
 
+      <!-- ══ Infos pour la page bet & enregistrement (optionnel) ══ -->
+      <div class="form-section-title">📄 Infos pour le bet (optionnel)</div>
+      <div class="help-box">
+        Remplis ces champs pour pouvoir <strong>Poster le bet</strong> en un clic après génération (sans copier-coller le HTML).
+      </div>
+      <div class="field">
+        <label>Titre du bet</label>
+        <input type="text" id="f-titre-bet" placeholder="Ex: Djokovic vs Alcaraz — Victoire Djokovic">
+      </div>
+      <div class="field">
+        <label>Analyse HTML (page bet)</label>
+        <textarea id="f-analyse-html" rows="4" placeholder="Contenu HTML affiché sur la page du bet (analyse, stats…). Optionnel."></textarea>
+      </div>
+      <div class="field">
+        <label>Cote affichée</label>
+        <input type="number" id="f-cote-bet" step="0.01" min="1" placeholder="Ex: 1.85 (optionnel)">
+      </div>
+
       <button class="btn-generate" id="btn-generate" onclick="generateCard()">
         <span id="btn-icon">✨</span>
         <span id="btn-text">Générer les Cards</span>
@@ -357,7 +376,9 @@ $db = getDB();
           <a class="btn-dl btn-dl-locked" id="dl-locked" download>⬇️ Locked (.jpg)</a>
           <button class="btn-dl btn-dl-both" onclick="downloadBoth()">⬇️ Les Deux</button>
           <button class="btn-dl btn-dl-both" type="button" id="btn-copy-html" onclick="copyHtmlToClipboard()" title="Copie le HTML pour le coller dans Poster bet (analyse page bet)">📋 Copier le HTML</button>
+          <button class="btn-dl btn-dl-normal" type="button" id="btn-poster-bet" onclick="posterBetFromCard()" title="Enregistre le bet avec cette card + analyse HTML (tout automatique)">🚀 Poster le bet</button>
         </div>
+        <p id="poster-bet-status" style="display:none; margin-top:0.8rem; font-size:0.9rem; color:var(--text-muted);"></p>
       </div>
       <div class="error-box" id="state-error"></div>
     </div>
@@ -586,6 +607,17 @@ async function generateCard() {
     dlL.href = jpegLockedUrl;
     dlL.download = currentMatchName + '_locked.jpg';
 
+    // Préremplir titre et cote pour "Poster le bet" si vides
+    const titreBet = document.getElementById('f-titre-bet');
+    const coteBet = document.getElementById('f-cote-bet');
+    if (titreBet && !titreBet.value.trim()) {
+      titreBet.value = currentMatchName || '';
+    }
+    if (coteBet && !coteBet.value.trim()) {
+      if (currentType === 'Safe') coteBet.value = document.getElementById('f-cote')?.value || '';
+      else if (currentType === 'Live') coteBet.value = document.getElementById('f-live-cote')?.value || '';
+    }
+
     setState('result');
 
   } catch(e) {
@@ -758,6 +790,62 @@ function copyHtmlToClipboard() {
     var btn = document.getElementById('btn-copy-html');
     if (btn) { btn.textContent = '✓ Copié !'; setTimeout(function() { btn.textContent = '📋 Copier le HTML'; }, 2000); }
   }).catch(function() { alert('Copie échouée.'); });
+}
+
+// ── Poster le bet automatiquement (image + HTML + infos) ──
+async function posterBetFromCard() {
+  if (!jpegNormalUrl || !jpegLockedUrl) {
+    alert('Génère d\'abord une card avant de poster le bet.');
+    return;
+  }
+  const btn = document.getElementById('btn-poster-bet');
+  const statusEl = document.getElementById('poster-bet-status');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ Envoi…'; }
+  if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = 'Envoi du bet en cours…'; statusEl.style.color = 'var(--text-muted)'; }
+
+  const titre = (document.getElementById('f-titre-bet') && document.getElementById('f-titre-bet').value.trim()) || currentMatchName || 'Bet StratEdge';
+  const typeMap = { Safe: 'safe', Live: 'live', Fun: 'fun', SafeCombi: 'safe' };
+  const type = typeMap[currentType] || 'safe';
+  const sport = document.getElementById('f-sport') ? document.getElementById('f-sport').value : 'tennis';
+  const categorie = sport === 'tennis' ? 'tennis' : 'multi';
+  const analyseHtml = (document.getElementById('f-analyse-html') && document.getElementById('f-analyse-html').value.trim()) || '';
+  let cote = (document.getElementById('f-cote-bet') && document.getElementById('f-cote-bet').value.trim()) || '';
+  if (cote !== '' && !isNaN(parseFloat(cote))) cote = parseFloat(cote).toFixed(2);
+  else cote = '';
+  const csrf = document.getElementById('csrf_token') ? document.getElementById('csrf_token').value : '';
+
+  try {
+    const blobNormal = await (await fetch(jpegNormalUrl)).blob();
+    const blobLocked = await (await fetch(jpegLockedUrl)).blob();
+    const form = new FormData();
+    form.append('csrf_token', csrf);
+    form.append('action', 'post_from_card');
+    form.append('image', blobNormal, 'normal.jpg');
+    form.append('locked_image', blobLocked, 'locked.jpg');
+    form.append('titre', titre);
+    form.append('type', type);
+    form.append('description', '');
+    form.append('categorie', categorie);
+    form.append('sport', sport);
+    form.append('analyse_html', analyseHtml);
+    form.append('cote', cote);
+
+    const resp = await fetch('poster-bet-from-card.php', { method: 'POST', body: form });
+    const text = await resp.text();
+    let data = {};
+    try { data = JSON.parse(text); } catch (_) {}
+
+    if (resp.ok && data.success) {
+      if (statusEl) { statusEl.textContent = 'Bet posté avec succès ! Redirection…'; statusEl.style.color = '#00c864'; }
+      setTimeout(function() { window.location.href = 'poster-bet.php?posted_from_card=1'; }, 1200);
+    } else {
+      if (btn) { btn.disabled = false; btn.textContent = '🚀 Poster le bet'; }
+      if (statusEl) { statusEl.textContent = data.error || 'Erreur lors de l\'envoi.'; statusEl.style.color = '#ff6b9d'; }
+    }
+  } catch (e) {
+    if (btn) { btn.disabled = false; btn.textContent = '🚀 Poster le bet'; }
+    if (statusEl) { statusEl.textContent = 'Erreur : ' + e.message; statusEl.style.color = '#ff6b9d'; }
+  }
 }
 
 // ── Gestion des états d'affichage ───────────────────────────
