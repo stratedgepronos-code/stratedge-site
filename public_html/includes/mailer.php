@@ -88,6 +88,28 @@ function envoyerEmailViaSmtp(string $to, string $subject, string $rawMessage): b
     return strpos($code, '250') === 0;
 }
 
+/** Envoi email en texte brut (utilise SMTP si configuré, sinon mail()) — pour crypto, IPN, etc. */
+function envoyerEmailTexte(string $to, string $sujet, string $corpsTexte): bool {
+    $from    = 'noreply@stratedgepronos.fr';
+    $fromNom = 'StratEdge Pronos';
+    $messageId = '<' . time() . '.' . bin2hex(random_bytes(8)) . '@stratedgepronos.fr>';
+    $date      = date('r');
+    $subjectEnc = '=?UTF-8?B?' . base64_encode($sujet) . '?=';
+    $headers  = "MIME-Version: 1.0\r\n";
+    $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
+    $headers .= "From: =?UTF-8?B?" . base64_encode($fromNom) . "?= <{$from}>\r\n";
+    $headers .= "Reply-To: support@stratedgepronos.fr\r\n";
+    $headers .= "Message-ID: {$messageId}\r\n";
+    $headers .= "Date: {$date}\r\n";
+    $headers .= "Subject: {$subjectEnc}\r\n";
+    $rawMessage = $headers . "\r\n\r\n" . $corpsTexte;
+
+    if (defined('SMTP_HOST') && SMTP_HOST) {
+        return envoyerEmailViaSmtp($to, $sujet, $rawMessage);
+    }
+    return mail($to, $subjectEnc, $corpsTexte, $headers, '-f noreply@stratedgepronos.fr');
+}
+
 /** Lien de désinscription (RGPD/LCEN) — un clic = désinscription */
 function getUnsubscribeUrl(string $email): string {
     $e = base64_encode($email);

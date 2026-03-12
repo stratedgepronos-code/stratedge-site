@@ -13,6 +13,7 @@
 
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/nowpayments-config.php';
+require_once __DIR__ . '/includes/mailer.php';
 
 define('IPN_LOG', __DIR__ . '/nowpayments_ipn.log');
 
@@ -164,9 +165,8 @@ if (activerAbonnement($membreId, $type)) {
 
     ipnLog("✅ SUCCÈS: membre #{$membreId} ({$membre['email']}) activé pour $type via crypto ($payCurrency)");
 
-    // Email de notification admin
-    $adminEmail = 'noreply@espeu9.fr';
-    $subject    = "💎 Paiement crypto confirmé — StratEdge";
+    // Email de notification admin (via Brevo si configuré)
+    $adminEmail = defined('ADMIN_EMAIL') ? ADMIN_EMAIL : 'stratedgepronos@gmail.com';
     $body       = "Paiement NOWPayments confirmé automatiquement.\n\n"
         . "Membre    : #{$membreId} — {$membre['email']}\n"
         . "Offre     : " . strtoupper($type) . "\n"
@@ -174,8 +174,7 @@ if (activerAbonnement($membreId, $type)) {
         . "Montant   : {$payAmount}\n"
         . "Payment ID: {$paymentId}\n"
         . "Order ID  : {$orderId}\n";
-
-    mail($adminEmail, $subject, $body, "From: StratEdge Pronos <noreply@stratedgepronos.fr>\r\nReply-To: support@stratedgepronos.fr\r\nContent-Type: text/plain; charset=UTF-8\r\n", '-f noreply@stratedgepronos.fr');
+    envoyerEmailTexte($adminEmail, "💎 Paiement crypto confirmé — StratEdge", $body);
 
 } else {
     ipnLog('ERREUR SQL: activerAbonnement a échoué pour membre #' . $membreId);

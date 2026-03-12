@@ -224,7 +224,7 @@ $tousMembers = $db->query("SELECT id, nom, email FROM membres WHERE email != '" 
         <div>
           <div><strong><?= htmlspecialchars($r['label']) ?></strong> → <?= htmlspecialchars($r['dest']) ?></div>
           <div class="result-info">
-            <?= $r['ok'] ? ($r['type']==='email' ? 'Email envoyé via mail()' : 'Push envoyé') : 'Échec — vérifier la config' ?>
+            <?= $r['ok'] ? ($r['type']==='email' ? (defined('SMTP_HOST') && SMTP_HOST ? 'Email envoyé via SMTP (Brevo)' : 'Email envoyé via mail()') : 'Push envoyé') : 'Échec — vérifier la config' ?>
             <?php if (!empty($r['info'])): ?> · <?= htmlspecialchars($r['info']) ?><?php endif; ?>
           </div>
         </div>

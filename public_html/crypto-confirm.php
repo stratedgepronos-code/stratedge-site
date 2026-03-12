@@ -27,23 +27,21 @@ $db->prepare("
 
 $paymentId = $db->lastInsertId();
 
-// Notifier l'admin par email
+// Notifier l'admin par email (via Brevo si configuré)
+require_once __DIR__ . '/includes/mailer.php';
 $membre = getMembre();
 $prixMap = ['daily'=>'4,50€','weekend'=>'10€','weekly'=>'20€','tennis'=>'15€'];
 $prix    = $prixMap[$offre] ?? '?';
 
-$mailH = "From: StratEdge Pronos <noreply@stratedgepronos.fr>\r\nReply-To: support@stratedgepronos.fr\r\nContent-Type: text/plain; charset=UTF-8\r\n";
-mail(
-    'stratedgepronos@gmail.com',
+envoyerEmailTexte(
+    defined('ADMIN_EMAIL') ? ADMIN_EMAIL : 'stratedgepronos@gmail.com',
     "💰 Nouvelle demande crypto — {$membre['nom']} ({$prix})",
     "Membre : {$membre['nom']} ({$membre['email']})\n"
     . "Offre : {$offre} ({$prix})\n"
     . "Crypto : " . strtoupper($crypto) . "\n"
     . "TX Hash : {$txHash}\n\n"
     . "👉 Valider sur : https://stratedgepronos.fr/panel-x9k3m/crypto-admin.php\n"
-    . "ID paiement : {$paymentId}",
-    $mailH,
-    '-f noreply@stratedgepronos.fr'
+    . "ID paiement : {$paymentId}"
 );
 
 // Rediriger vers page de confirmation
