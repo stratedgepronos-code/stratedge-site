@@ -147,14 +147,9 @@ code { background:rgba(255,255,255,0.08); padding:0.15rem 0.4rem; border-radius:
     <h2>🌐 Importer les matchs du lendemain</h2>
     <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.6rem;">Récupère automatiquement <strong>tous</strong> les matchs de foot prévus demain.</p>
     <div style="font-size:0.82rem;margin-bottom:1rem;display:flex;flex-direction:column;gap:0.35rem;">
-      <div>
-        <strong style="color:var(--neon-blue);">API-Football</strong> (800+ ligues) :
-        <?php if ($apiFootballRapidKey !== ''): ?><span style="color:#00c864;">✅ RapidAPI (utilisé pour l'import)</span><?php endif; ?>
-        <?php if ($apiFootballKey !== ''): ?><span style="color:var(--text-muted);font-size:0.75rem;"> · Direct api-sports.io désactivé</span><?php endif; ?>
-        <?php if ($apiFootballRapidKey === ''): ?>
-          <span style="color:#ff6b9d;">❌ Aucune clé</span> — Renseigne <code>api_football_rapidapi_key</code> (clé <a href="https://rapidapi.com/api-sports/api/api-football" target="_blank" rel="noopener" style="color:var(--neon-blue);">RapidAPI</a>) dans football_data_config.php
-        <?php endif; ?>
-      </div>
+      <?php if ($apiFootballRapidKey !== ''): ?>
+      <div><strong style="color:var(--neon-blue);">API-Football</strong> : <span style="color:#00c864;">✅ RapidAPI</span></div>
+      <?php endif; ?>
       <div>
         <strong style="color:var(--neon-blue);">Football-Data.org</strong> (~12 ligues — fallback) :
         <?php if ($footballDataKey !== ''): ?><span style="color:#00c864;">✅ Configurée</span><?php else: ?><span style="color:#ff6b9d;">❌ Non configurée</span><?php endif; ?>
