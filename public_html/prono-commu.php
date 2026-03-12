@@ -54,10 +54,60 @@ if (!$membre) {
 $currentPage = 'pronocommu';
 $avatarUrl = getAvatarUrl($membre);
 
-$today = date('Y-m-d');
-$tomorrow = date('Y-m-d', strtotime('+1 day'));
+// Fuseau Paris pour "aujourd'hui" et "demain" (évite décalage si serveur en UTC)
+$tzParis = new DateTimeZone('Europe/Paris');
+$nowDt = new DateTime('now', $tzParis);
+$today = $nowDt->format('Y-m-d');
+$tomorrowDt = (clone $nowDt)->modify('+1 day');
+$tomorrow = $tomorrowDt->format('Y-m-d');
 $voteCloseToday = $today . ' 23:59:00';
-$now = date('Y-m-d H:i:s');
+$now = $nowDt->format('Y-m-d H:i:s');
+
+// ── Auto-import des matchs du lendemain si la liste est vide (API Football-Data.org) ──
+$stmtCheck = $db->prepare("SELECT 1 FROM commu_matches WHERE vote_closed_at > ? AND is_winner = 0 LIMIT 1");
+$stmtCheck->execute([$now]);
+if (!$stmtCheck->fetch()) {
+    $footballConfig = @file_exists(__DIR__ . '/includes/football_data_config.php') ? (require __DIR__ . '/includes/football_data_config.php') : ['api_key' => ''];
+    $apiKey = is_array($footballConfig) ? ($footballConfig['api_key'] ?? '') : '';
+    if ($apiKey !== '') {
+        $tomorrowApi = $tomorrow;
+        $dayAfterTomorrow = (clone $tomorrowDt)->modify('+1 day')->format('Y-m-d');
+        $url = 'https://api.football-data.org/v4/matches?dateFrom=' . $tomorrowApi . '&dateTo=' . $dayAfterTomorrow;
+        $ctx = stream_context_create([
+            'http' => [
+                'method' => 'GET',
+                'header' => "X-Auth-Token: " . $apiKey . "\r\n",
+                'timeout' => 12,
+            ]
+        ]);
+        $json = @file_get_contents($url, false, $ctx);
+        if ($json !== false) {
+            $data = @json_decode($json, true);
+            if (isset($data['matches']) && is_array($data['matches'])) {
+                $voteClosedAt = $today . ' 23:59:00';
+                $stmtExists = $db->prepare("SELECT 1 FROM commu_matches WHERE match_date = ? AND team_home = ? AND team_away = ?");
+                $stmtIns = $db->prepare("INSERT INTO commu_matches (match_date, team_home, team_away, competition, heure, vote_closed_at) VALUES (?, ?, ?, ?, ?, ?)");
+                foreach ($data['matches'] as $m) {
+                    $home = isset($m['homeTeam']['name']) ? trim($m['homeTeam']['name']) : (isset($m['homeTeam']['shortName']) ? trim($m['homeTeam']['shortName']) : '');
+                    $away = isset($m['awayTeam']['name']) ? trim($m['awayTeam']['name']) : (isset($m['awayTeam']['shortName']) ? trim($m['awayTeam']['shortName']) : '');
+                    if ($home === '' || $away === '') continue;
+                    $competition = isset($m['competition']['name']) ? trim($m['competition']['name']) : '';
+                    $heure = '';
+                    if (!empty($m['utcDate'])) {
+                        try {
+                            $dt = new DateTime($m['utcDate'], new DateTimeZone('UTC'));
+                            $dt->setTimezone($tzParis);
+                            $heure = $dt->format('H:i');
+                        } catch (Exception $e) { }
+                    }
+                    $stmtExists->execute([$tomorrowApi, $home, $away]);
+                    if ($stmtExists->fetch()) continue;
+                    $stmtIns->execute([$tomorrowApi, $home, $away, $competition ?: null, $heure ?: null, $voteClosedAt]);
+                }
+            }
+        }
+    }
+}
 
 // ── Fermeture des votes (si 23h59 passée et pas encore traité) ──
 $stmtRounds = $db->prepare("SELECT DISTINCT vote_closed_at FROM commu_matches WHERE vote_closed_at < ? AND is_winner = 0");
@@ -142,19 +192,18 @@ if (!$matchDuJour) {
     $stmtJour->execute([$tomorrow]);
     $matchDuJour = $stmtJour->fetch(PDO::FETCH_ASSOC);
 }
-// Matchs du lendemain à voter
+// Matchs à voter : tous ceux dont la fin des votes n'est pas passée (match_date demain ou vote encore ouvert)
 $stmtList = $db->prepare("
   SELECT m.*, (SELECT COUNT(*) FROM commu_votes v WHERE v.match_id = m.id) AS nb_votes
   FROM commu_matches m
-  WHERE m.match_date = ? AND m.vote_closed_at > ?
-  ORDER BY m.heure ASC, m.id ASC
+  WHERE m.vote_closed_at > ? AND m.is_winner = 0
+  ORDER BY m.match_date ASC, m.heure ASC, m.id ASC
 ");
-$stmtList->execute([$tomorrow, $now]);
+$stmtList->execute([$now]);
 $matchsLendemain = $stmtList->fetchAll(PDO::FETCH_ASSOC);
-// Vote déjà fait pour ce round ? (round = vote_closed_at aujourd'hui 23h59 pour les matchs de demain)
-$voteClosesAt = $today . ' 23:59:00';
-$stmtVoteAt = $db->prepare("SELECT 1 FROM commu_votes v JOIN commu_matches m ON m.id = v.match_id WHERE v.membre_id = ? AND m.vote_closed_at = ?");
-$stmtVoteAt->execute([$membre['id'], $voteClosesAt]);
+// Vote déjà fait pour un des matchs encore ouverts ?
+$stmtVoteAt = $db->prepare("SELECT 1 FROM commu_votes v JOIN commu_matches m ON m.id = v.match_id WHERE v.membre_id = ? AND m.vote_closed_at > ? LIMIT 1");
+$stmtVoteAt->execute([$membre['id'], $now]);
 $dejaVote = (bool)$stmtVoteAt->fetch();
 // Timer : fin des votes aujourd'hui 23h59
 $timerTarget = $today . 'T23:59:00';
@@ -238,7 +287,7 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
   <aside class="panel">
     <div class="panel-title">📋 Matchs du lendemain — Vote</div>
     <?php if (empty($matchsLendemain)): ?>
-    <div class="no-matchs">Aucun match à voter pour le moment.<br><small>Les matchs sont ajoutés par l'équipe.</small></div>
+    <div class="no-matchs">Aucun match à voter pour le moment.<br><small>Les matchs sont ajoutés par l'équipe (admin → Prono de la commu) ou importés via l'API Football-Data.</small></div>
     <?php else: ?>
     <?php foreach ($matchsLendemain as $mat): ?>
     <div class="match-row" data-match-id="<?= (int)$mat['id'] ?>">
