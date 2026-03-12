@@ -11,9 +11,10 @@ $bets = $db->query("
     ORDER BY COALESCE(date_resultat, date_post) DESC
 ")->fetchAll();
 
-// Séparer tennis / multi
-$betsMulti  = array_filter($bets, fn($b) => ($b['categorie'] ?? 'multi') !== 'tennis');
+// Séparer tennis / multi / hockey
 $betsTennis = array_filter($bets, fn($b) => ($b['categorie'] ?? 'multi') === 'tennis');
+$betsHockey = array_filter($bets, fn($b) => ($b['sport'] ?? '') === 'hockey');
+$betsMulti  = array_filter($bets, fn($b) => ($b['categorie'] ?? 'multi') !== 'tennis' && ($b['sport'] ?? '') !== 'hockey');
 
 // Grouper par mois
 function groupParMois(array $bets): array {
@@ -28,6 +29,7 @@ function groupParMois(array $bets): array {
 
 $moisMulti  = groupParMois($betsMulti);
 $moisTennis = groupParMois($betsTennis);
+$moisHockey = groupParMois($betsHockey);
 
 $moisNoms = [
     '01'=>'Janvier','02'=>'Février','03'=>'Mars','04'=>'Avril',
@@ -54,10 +56,11 @@ function calcStats(array $bets): array {
 
 $statsMulti  = calcStats(array_values($betsMulti));
 $statsTennis = calcStats(array_values($betsTennis));
+$statsHockey = calcStats(array_values($betsHockey));
 
 // Onglet actif — par défaut ouvrir le mois le plus récent
 $onglet = $_GET['onglet'] ?? 'multi';
-$moisActifsRaw = $onglet === 'tennis' ? $moisTennis : $moisMulti;
+$moisActifsRaw = $onglet === 'tennis' ? $moisTennis : ($onglet === 'hockey' ? $moisHockey : $moisMulti);
 $premierMois = !empty($moisActifsRaw) ? array_key_first($moisActifsRaw) : '';
 $moisOuvert = $_GET['mois'] ?? $premierMois;
 ?>
@@ -81,9 +84,11 @@ $moisOuvert = $_GET['mois'] ?? $premierMois;
     .tab:first-child{border-right:1px solid var(--border-subtle);}
     .tab.active-multi{color:#00d4ff;border-bottom-color:#00d4ff;background:rgba(0,212,255,0.04);}
     .tab.active-tennis{color:#00d46a;border-bottom-color:#00d46a;background:rgba(0,212,106,0.04);}
+    .tab.active-hockey{color:#f59e0b;border-bottom-color:#f59e0b;background:rgba(245,158,11,0.04);}
     .tab:hover{background:rgba(255,255,255,0.03);}
     .tab-count{font-family:'Space Mono',monospace;font-size:0.65rem;padding:0.15rem 0.5rem;border-radius:10px;}
     .tab-count-multi{background:rgba(0,212,255,0.12);color:#00d4ff;}
+    .tab-count-hockey{background:rgba(245,158,11,0.12);color:#f59e0b;}
     .tab-count-tennis{background:rgba(0,212,106,0.12);color:#00d46a;}
 
     /* Stats cards */
@@ -141,8 +146,12 @@ $moisOuvert = $_GET['mois'] ?? $premierMois;
   <!-- ONGLETS -->
   <div class="tabs">
     <a href="?onglet=multi" class="tab <?= $onglet==='multi' ? 'active-multi' : '' ?>">
-      ⚽🏀🏒 Multi-sport
+      ⚽🏀 Multi-sport
       <span class="tab-count tab-count-multi"><?= $statsMulti['total'] ?></span>
+    </a>
+    <a href="?onglet=hockey" class="tab <?= $onglet==='hockey' ? 'active-hockey' : '' ?>">
+      🏒 Hockey
+      <span class="tab-count tab-count-hockey"><?= $statsHockey['total'] ?></span>
     </a>
     <a href="?onglet=tennis" class="tab <?= $onglet==='tennis' ? 'active-tennis' : '' ?>">
       🎾 Tennis Weekly
@@ -152,11 +161,11 @@ $moisOuvert = $_GET['mois'] ?? $premierMois;
 
 <?php
 // Sélectionner les données selon l'onglet
-$statsActives = $onglet === 'tennis' ? $statsTennis : $statsMulti;
-$moisActifs   = $onglet === 'tennis' ? $moisTennis  : $moisMulti;
-$accentColor  = $onglet === 'tennis' ? '#00d46a' : '#00d4ff';
-$accentBg     = $onglet === 'tennis' ? 'rgba(0,212,106,0.05)' : 'rgba(0,212,255,0.05)';
-$accentBorder = $onglet === 'tennis' ? 'rgba(0,212,106,0.25)' : 'rgba(0,212,255,0.2)';
+$statsActives = $onglet === 'tennis' ? $statsTennis : ($onglet === 'hockey' ? $statsHockey : $statsMulti);
+$moisActifs   = $onglet === 'tennis' ? $moisTennis  : ($onglet === 'hockey' ? $moisHockey : $moisMulti);
+$accentColor  = $onglet === 'tennis' ? '#00d46a' : ($onglet === 'hockey' ? '#f59e0b' : '#00d4ff');
+$accentBg     = $onglet === 'tennis' ? 'rgba(0,212,106,0.05)' : ($onglet === 'hockey' ? 'rgba(245,158,11,0.05)' : 'rgba(0,212,255,0.05)');
+$accentBorder = $onglet === 'tennis' ? 'rgba(0,212,106,0.25)' : ($onglet === 'hockey' ? 'rgba(245,158,11,0.25)' : 'rgba(0,212,255,0.2)');
 ?>
 
   <!-- STATS DE L'ONGLET -->
@@ -181,7 +190,7 @@ $accentBorder = $onglet === 'tennis' ? 'rgba(0,212,106,0.25)' : 'rgba(0,212,255,
 
   <?php if (empty($moisActifs)): ?>
     <div style="background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:14px;padding:3rem;text-align:center;color:var(--text-muted);">
-      <div style="font-size:3rem;margin-bottom:1rem;"><?= $onglet==='tennis' ? '🎾' : '⚽' ?></div>
+      <div style="font-size:3rem;margin-bottom:1rem;"><?= $onglet==='tennis' ? '🎾' : ($onglet==='hockey' ? '🏒' : '⚽') ?></div>
       <p>Aucun bet terminé dans cette catégorie.</p>
     </div>
   <?php else: ?>

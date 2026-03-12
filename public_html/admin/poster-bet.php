@@ -29,11 +29,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (isset($_POST['action'])) {
 
         if ($_POST['action'] === 'post_bets') {
-            $titres      = $_POST['titre']     ?? [];
-            $types       = $_POST['type']       ?? [];
-            $descs       = $_POST['description'] ?? [];
-            $categories  = $_POST['categorie']  ?? [];
-            $sports      = $_POST['sport']     ?? [];
+            $titres       = $_POST['titre']         ?? [];
+            $types        = $_POST['type']          ?? [];
+            $descs        = $_POST['description']   ?? [];
+            $categories   = $_POST['categorie']     ?? [];
+            $sports       = $_POST['sport']        ?? [];
+            $analyseHtmls = $_POST['analyse_html']  ?? [];
+            $cotes        = $_POST['cote']          ?? [];
             $images      = $_FILES['images'] ?? [];
             $expireDaily = isset($_POST['expire_daily']);
 
@@ -108,6 +110,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // Admin promu (non super-admin) → uniquement tennis
                         if (!$isSuperAdmin) $lastCategorie = 'tennis';
                         $lastSport = ($lastCategorie === 'tennis') ? 'tennis' : (in_array($sports[$i] ?? '', ['football','tennis','basket','hockey']) ? $sports[$i] : 'football');
+                        $lastAnalyseHtml = trim((string)($analyseHtmls[$i] ?? ''));
+                        $lastCote = trim((string)($cotes[$i] ?? ''));
+                        $lastCote = ($lastCote !== '' && is_numeric($lastCote)) ? number_format((float)$lastCote, 2, '.', '') : null;
                         $lastImagePath = 'uploads/bets/' . $filename;
 
                         // ── Locked image : uploadée manuellement si fournie ──
@@ -127,21 +132,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $lockedBlob = ($lastLockedPath !== '' && isset($lname)) ? @file_get_contents($lockedDir . $lname) : null;
 
                         try {
-                            $stmt = $db->prepare("INSERT INTO bets (titre, image_path, image_data, locked_image_path, locked_image_data, type, categorie, sport, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                            $stmt->execute([$lastTitre, $lastImagePath, $imageBlob ?: null, $lastLockedPath ?: null, $lockedBlob ?: null, $lastType, $lastCategorie, $lastSport, trim($descs[$i] ?? '')]);
+                            $stmt = $db->prepare("INSERT INTO bets (titre, image_path, image_data, locked_image_path, locked_image_data, type, categorie, sport, description, analyse_html, cote) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                            $stmt->execute([$lastTitre, $lastImagePath, $imageBlob ?: null, $lastLockedPath ?: null, $lockedBlob ?: null, $lastType, $lastCategorie, $lastSport, trim($descs[$i] ?? ''), $lastAnalyseHtml ?: null, $lastCote]);
                         } catch (Throwable $insErr) {
-                            error_log('[poster-bet] INSERT avec blob+sport échoué, fallback sans blob : ' . $insErr->getMessage());
+                            error_log('[poster-bet] INSERT full échoué, fallback avec blobs : ' . $insErr->getMessage());
                             try {
-                                $stmt = $db->prepare("INSERT INTO bets (titre, image_path, locked_image_path, type, categorie, sport, description) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                                $stmt->execute([$lastTitre, $lastImagePath, $lastLockedPath ?: null, $lastType, $lastCategorie, $lastSport, trim($descs[$i] ?? '')]);
+                                // Sauvegarde des images en BDD (backup si fichiers supprimés au push/déploiement)
+                                $stmt = $db->prepare("INSERT INTO bets (titre, image_path, image_data, locked_image_path, locked_image_data, type, categorie, sport, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                                $stmt->execute([$lastTitre, $lastImagePath, $imageBlob ?: null, $lastLockedPath ?: null, $lockedBlob ?: null, $lastType, $lastCategorie, $lastSport, trim($descs[$i] ?? '')]);
                             } catch (Throwable $insErr2) {
-                                error_log('[poster-bet] INSERT fallback sans sport : ' . $insErr2->getMessage());
+                                error_log('[poster-bet] INSERT avec blobs échoué : ' . $insErr2->getMessage());
                                 try {
-                                    $stmt = $db->prepare("INSERT INTO bets (titre, image_path, locked_image_path, type, categorie, description) VALUES (?, ?, ?, ?, ?, ?)");
-                                    $stmt->execute([$lastTitre, $lastImagePath, $lastLockedPath ?: null, $lastType, $lastCategorie, trim($descs[$i] ?? '')]);
+                                    $stmt = $db->prepare("INSERT INTO bets (titre, image_path, locked_image_path, type, categorie, sport, description) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                                    $stmt->execute([$lastTitre, $lastImagePath, $lastLockedPath ?: null, $lastType, $lastCategorie, $lastSport, trim($descs[$i] ?? '')]);
                                 } catch (Throwable $insErr3) {
-                                    $stmt = $db->prepare("INSERT INTO bets (titre, image_path, type) VALUES (?, ?, ?)");
-                                    $stmt->execute([$lastTitre, $lastImagePath, $lastType]);
+                                    try {
+                                        $stmt = $db->prepare("INSERT INTO bets (titre, image_path, locked_image_path, type, categorie, description) VALUES (?, ?, ?, ?, ?, ?)");
+                                        $stmt->execute([$lastTitre, $lastImagePath, $lastLockedPath ?: null, $lastType, $lastCategorie, trim($descs[$i] ?? '')]);
+                                    } catch (Throwable $insErr4) {
+                                        $stmt = $db->prepare("INSERT INTO bets (titre, image_path, type) VALUES (?, ?, ?)");
+                                        $stmt->execute([$lastTitre, $lastImagePath, $lastType]);
+                                    }
                                 }
                             }
                         }
@@ -776,6 +787,8 @@ function addFiles(files) {
             <option value="basket">🏀 Basket</option>
             <option value="hockey">🏒 Hockey</option>
           </select>
+          <input type="number" name="cote[${idx}]" step="0.01" min="0" placeholder="Cote (optionnel)" style="margin-top:0.4rem;width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.5rem 0.75rem;color:#f0f4f8;font-size:0.9rem;">
+          <textarea name="analyse_html[${idx}]" placeholder="Analyse HTML (optionnel — coller le HTML de la card pour la page bet)" rows="2" style="margin-top:0.4rem;width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.5rem 0.75rem;color:#f0f4f8;font-size:0.75rem;resize:vertical;"></textarea>
           <div class="locked-upload-zone" onclick="this.querySelector('input').click()" title="Card Locked pour Twitter (optionnel)">
             <input type="file" name="locked_images[${idx}]" accept="image/*" style="display:none" onchange="previewLocked(this)">
             <div class="locked-label">🔒 Card Locked Twitter <span style="opacity:0.5;font-size:0.75rem;">(optionnel)</span></div>

@@ -356,6 +356,7 @@ $db = getDB();
           <a class="btn-dl btn-dl-normal" id="dl-normal" download>⬇️ Normal (.jpg)</a>
           <a class="btn-dl btn-dl-locked" id="dl-locked" download>⬇️ Locked (.jpg)</a>
           <button class="btn-dl btn-dl-both" onclick="downloadBoth()">⬇️ Les Deux</button>
+          <button class="btn-dl btn-dl-both" type="button" id="btn-copy-html" onclick="copyHtmlToClipboard()" title="Copie le HTML pour le coller dans Poster bet (analyse page bet)">📋 Copier le HTML</button>
         </div>
       </div>
       <div class="error-box" id="state-error"></div>
@@ -441,6 +442,7 @@ let jpegNormalUrl = '';
 let jpegLockedUrl = '';
 let currentMatchName = '';
 let currentType = 'Safe';
+let lastGeneratedHtml = ''; // HTML de la card (pour page bet / poster-bet)
 
 // Largeurs par type de card
 const CARD_WIDTHS = { Safe: 1080, Live: 720, Fun: 1080, SafeCombi: 1440 };
@@ -558,6 +560,7 @@ async function generateCard() {
       return;
     }
 
+    lastGeneratedHtml = data.html_normal || '';
     // Utiliser la largeur retournée par le backend (au cas où)
     const w = data.card_width || cardW;
 
@@ -743,6 +746,18 @@ async function captureIframeToJpeg(iframeId, cardWidth) {
 function downloadBoth() {
   document.getElementById('dl-normal').click();
   setTimeout(() => document.getElementById('dl-locked').click(), 500);
+}
+
+// ── Copier le HTML (pour coller dans Poster bet → analyse page bet) ──
+function copyHtmlToClipboard() {
+  if (!lastGeneratedHtml) {
+    alert('Génère d\'abord une card pour avoir le HTML à copier.');
+    return;
+  }
+  navigator.clipboard.writeText(lastGeneratedHtml).then(function() {
+    var btn = document.getElementById('btn-copy-html');
+    if (btn) { btn.textContent = '✓ Copié !'; setTimeout(function() { btn.textContent = '📋 Copier le HTML'; }, 2000); }
+  }).catch(function() { alert('Copie échouée.'); });
 }
 
 // ── Gestion des états d'affichage ───────────────────────────

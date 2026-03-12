@@ -138,8 +138,33 @@ CREATE TABLE IF NOT EXISTS `promo_anniversaire_use` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
--- ── 7. Vérification ─────────────────────────────────────────
+-- ── 7. BETS : analyse HTML + cote (page bet membre + cote moyenne) ──
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'bets' AND COLUMN_NAME = 'analyse_html');
+SET @sql = IF(@col_exists = 0, 'ALTER TABLE bets ADD COLUMN analyse_html MEDIUMTEXT NULL DEFAULT NULL AFTER description', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SET @col_exists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'bets' AND COLUMN_NAME = 'cote');
+SET @sql = IF(@col_exists = 0, 'ALTER TABLE bets ADD COLUMN cote DECIMAL(10,2) NULL DEFAULT NULL COMMENT ''Cote du pari (pour cote moyenne)'' AFTER analyse_html', 'SELECT 1');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- ── 8. Table BET_COMMENTS (commentaires sous chaque bet) ─────
+CREATE TABLE IF NOT EXISTS `bet_comments` (
+  `id`         INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `bet_id`     INT(11) UNSIGNED NOT NULL,
+  `membre_id`  INT(11) UNSIGNED NOT NULL,
+  `contenu`    TEXT NOT NULL,
+  `date_post`  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_bet` (`bet_id`),
+  KEY `idx_membre` (`membre_id`),
+  FOREIGN KEY (`bet_id`) REFERENCES `bets`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`membre_id`) REFERENCES `membres`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- ── 9. Vérification ─────────────────────────────────────────
 -- Après exécution, vérifier avec :
 -- DESCRIBE bets;
+-- DESCRIBE bet_comments;
 -- DESCRIBE membres;
 -- DESCRIBE codes_promo;

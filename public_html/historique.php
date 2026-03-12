@@ -58,6 +58,10 @@ $stats = $db->query("
     FROM bets WHERE resultat != 'en_cours'
 ")->fetch();
 
+// Cote moyenne (tous les bets avec une cote renseignée)
+$coteMoyenneRow = $db->query("SELECT AVG(cote) as cote_moy, COUNT(*) as nb FROM bets WHERE cote IS NOT NULL AND cote > 0")->fetch();
+$coteMoyenne = ($coteMoyenneRow && $coteMoyenneRow['nb'] > 0) ? round((float)$coteMoyenneRow['cote_moy'], 2) : null;
+
 $typeLabels = ['safe'=>'🛡️ Safe','fun'=>'🎯 Fun','live'=>'⚡ Live','safe,fun'=>'Safe+Fun','safe,live'=>'Safe+Live'];
 $typeColors = ['safe'=>'#00d4ff','fun'=>'#a855f7','live'=>'#ff2d78'];
 
@@ -351,6 +355,15 @@ body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
           <div class="mini-stat-lbl">Annules</div>
         </div>
       </div>
+      <?php if ($coteMoyenne !== null): ?>
+      <div class="mini-stat" style="border-color:rgba(0,212,255,0.2);">
+        <span class="mini-stat-icon">📊</span>
+        <div>
+          <div class="mini-stat-val" style="color:#00d4ff"><?= number_format($coteMoyenne, 2, ',', ' ') ?></div>
+          <div class="mini-stat-lbl">Cote moyenne</div>
+        </div>
+      </div>
+      <?php endif; ?>
     </div>
   </div>
 
@@ -406,7 +419,8 @@ body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
         $types = explode(',', $bet['type']);
         $rawPath = !empty($bet['image_path']) ? $bet['image_path'] : ($bet['locked_image_path'] ?? '');
         if (!empty($rawPath)) {
-          $imgSrc = (strpos($rawPath, 'http') === 0) ? $rawPath : (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($rawPath,'/') : $rawPath);
+          $subdir = (strpos($rawPath, 'locked') !== false) ? 'locked' : 'bets';
+          $imgSrc = function_exists('betImageUrl') ? betImageUrl(trim($rawPath), $subdir) : (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($rawPath,'/') : $rawPath);
         } else {
           $imgSrc = '';
         }

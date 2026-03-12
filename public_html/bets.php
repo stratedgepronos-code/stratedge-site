@@ -271,7 +271,8 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
       $mainType = trim($types[0]);
       $rawPath = !empty($bet['image_path']) ? $bet['image_path'] : ($bet['locked_image_path'] ?? '');
       if (!empty($rawPath)) {
-        $imgSrc = (strpos($rawPath, 'http') === 0) ? $rawPath : (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($rawPath,'/') : $rawPath);
+        $subdir = (strpos($rawPath, 'locked') !== false) ? 'locked' : 'bets';
+        $imgSrc = function_exists('betImageUrl') ? betImageUrl(trim($rawPath), $subdir) : (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($rawPath,'/') : $rawPath);
       } else {
         $imgSrc = '';
       }
@@ -286,6 +287,7 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
         <span class="bet-date"><?= date('d/m/Y',strtotime($bet['date_post'])) ?></span>
       </div>
       <?php if ($bet['titre']): ?><div class="bet-titre"><?= clean($bet['titre']) ?></div><?php endif; ?>
+      <?php $hasAnalyse = $hasAcces && !empty($bet['analyse_html']); ?>
       <div class="bet-img-wrap <?= ($hasAcces && $imgSrc)?'zoomable':'' ?>"
            <?= ($hasAcces && $imgSrc)?'data-src="'.clean($imgSrc).'" data-caption="'.htmlspecialchars($bet['titre']?:'Bet StratEdge',ENT_QUOTES).'"':'' ?>>
         <?php if ($imgSrc): ?>
@@ -299,6 +301,9 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
         </div>
         <?php endif; ?>
       </div>
+      <?php if ($hasAnalyse): ?>
+      <a href="/bet.php?id=<?= (int)$bet['id'] ?>" class="bet-link-analyse" style="display:block;padding:0.75rem 1.2rem;font-size:0.85rem;font-weight:700;color:var(--pink,#ff2d78);text-decoration:none;text-align:center;border-top:1px solid var(--border,rgba(255,45,120,0.15));">Voir l'analyse et commenter →</a>
+      <?php endif; ?>
     </div>
     <?php endforeach; ?>
     </div>
