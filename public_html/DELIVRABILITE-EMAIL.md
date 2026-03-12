@@ -4,6 +4,25 @@ Les mails partent depuis **noreply@stratedgepronos.fr**. Pour que Gmail, Orange,
 
 ---
 
+## Tu ne reçois pas les mails (bet posté, notifications, etc.) — Solution recommandée : Brevo SMTP
+
+Avec un DMARC **p=quarantine**, les mails envoyés via `mail()` PHP (hébergeur) échouent souvent au SPF/DKIM et sont mis en **spam** ou **rejetés**. La solution fiable est d’utiliser un **relais SMTP** (Brevo) : le site envoie alors via leurs serveurs, qui ont SPF/DKIM corrects pour ton domaine.
+
+### Étapes (Brevo — gratuit jusqu’à 300 mails/jour)
+
+1. **Créer un compte** sur [brevo.com](https://www.brevo.com) (ex-Sendinblue).
+2. **Vérifier le domaine** : Paramètres → Domaines → Ajouter **stratedgepronos.fr**. Suivre les instructions (ajout d’un enregistrement DNS si demandé).
+3. **Créer une clé SMTP** : SMTP & API → Clés SMTP → Créer une clé. Note le **mot de passe SMTP** (ce n’est pas le mot de passe de ton compte).
+4. **Sur le serveur** : dans `public_html/includes/`, copier `smtp-config.php.example` en **smtp-config.php** et remplir :
+   - `SMTP_USER` = l’email de ton compte Brevo
+   - `SMTP_PASS` = la **clé SMTP** (pas le mot de passe du compte)
+   - Ne pas commiter `smtp-config.php` (il est dans `.gitignore`).
+5. **Tester** : poster un bet ou utiliser la page admin « Test des notifications » pour envoyer un mail de test à ton adresse (ex. stratedgepronos@gmail.com).
+
+Une fois Brevo configuré, tous les mails du site (nouveau bet, résultats, SAV, etc.) passent par Brevo et arrivent en boîte de réception. Brevo indique dans la vérification de domaine s’il faut ajouter un enregistrement SPF (souvent `include:spf.brevo.com`) : fais-le si demandé.
+
+---
+
 ## 1. SPF (Sender Policy Framework)
 
 **Où :** DNS du domaine stratedgepronos.fr (chez ton hébergeur de domaine ou Hostinger/OVH).
@@ -55,6 +74,19 @@ Une fois DKIM actif et vérifié, les mails envoyés depuis ce domaine sont sign
   - Plus tard tu pourras passer à `p=quarantine` ou `p=reject` quand SPF + DKIM sont stables.
 
 Cela permet de recevoir des rapports sur l’usage de ton domaine et d’améliorer la délivrabilité.
+
+---
+
+### Ne plus recevoir les rapports DMARC (ex. Microsoft)
+
+Si tu reçois des e-mails « DMARC Aggregate Report » de Microsoft (ou d'autres) et que tu ne veux plus les recevoir :
+
+- **Option A :** Supprimer la balise `rua` de ton enregistrement DMARC dans le DNS. Exemple : passer de `v=DMARC1; p=none; rua=mailto:stratedgepronos@gmail.com` à `v=DMARC1; p=none` (tu ne recevras plus les rapports agrégés).
+- **Option B :** Garder DMARC mais utiliser une adresse dédiée aux rapports (ex. dmarc-reports@stratedgepronos.fr).
+
+### Corriger les échecs DMARC (SPF/DKIM)
+
+Si les rapports indiquent des échecs : (1) SPF doit inclure l’IP de ton hébergeur — section 1. (2) DKIM activé et vérifié — section 2. (3) Le code utilise partout `-f noreply@stratedgepronos.fr` pour l’enveloppe ; ne pas l’enlever. (4) Sinon passer par un relais SMTP (Brevo, SendGrid) — section 5.
 
 ---
 

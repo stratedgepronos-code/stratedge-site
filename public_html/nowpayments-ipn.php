@@ -175,7 +175,7 @@ if (activerAbonnement($membreId, $type)) {
         . "Payment ID: {$paymentId}\n"
         . "Order ID  : {$orderId}\n";
 
-    mail($adminEmail, $subject, $body, "From: noreply@stratedgepronos.fr\r\nContent-Type: text/plain; charset=utf-8\r\n");
+    mail($adminEmail, $subject, $body, "From: StratEdge Pronos <noreply@stratedgepronos.fr>\r\nReply-To: support@stratedgepronos.fr\r\nContent-Type: text/plain; charset=UTF-8\r\n", '-f noreply@stratedgepronos.fr');
 
 } else {
     ipnLog('ERREUR SQL: activerAbonnement a échoué pour membre #' . $membreId);

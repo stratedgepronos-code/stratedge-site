@@ -15,6 +15,79 @@ if (!defined('SECRET_KEY')) {
     require_once __DIR__ . '/db.php';
 }
 
+if (file_exists(__DIR__ . '/smtp-config.php')) {
+    require_once __DIR__ . '/smtp-config.php';
+}
+
+/** Envoi via SMTP (Brevo, etc.) — meilleure délivrabilité avec p=quarantine / DMARC */
+function envoyerEmailViaSmtp(string $to, string $subject, string $rawMessage): bool {
+    if (!defined('SMTP_HOST') || !SMTP_HOST || !defined('SMTP_USER') || !defined('SMTP_PASS')) {
+        return false;
+    }
+    $host = SMTP_HOST;
+    $port = (int)(defined('SMTP_PORT') ? SMTP_PORT : 587);
+    $user = SMTP_USER;
+    $pass = SMTP_PASS;
+    $secure = (defined('SMTP_SECURE') && SMTP_SECURE === 'ssl') ? 'ssl' : 'tls';
+
+    $errno = 0;
+    $errstr = '';
+    $ctx = stream_context_create(['ssl' => ['verify_peer' => true, 'verify_peer_name' => true]]);
+    $sock = @stream_socket_client(
+        ($secure === 'ssl' ? 'ssl://' : 'tcp://') . $host . ':' . $port,
+        $errno, $errstr, 15, STREAM_CLIENT_CONNECT, $ctx
+    );
+    if (!$sock) {
+        if ($secure === 'tls') {
+            $sock = @stream_socket_client('tcp://' . $host . ':' . $port, $errno, $errstr, 15, STREAM_CLIENT_CONNECT, $ctx);
+            if (!$sock) return false;
+        } else {
+            return false;
+        }
+    }
+
+    $read = function () use ($sock) {
+        $line = @fgets($sock, 8192);
+        return $line !== false ? trim($line) : '';
+    };
+    $send = function ($cmd) use ($sock) { @fwrite($sock, $cmd . "\r\n"); };
+
+    $read();
+    $send('EHLO ' . (isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : 'localhost'));
+    while ($line = $read()) { if (strpos($line, ' ') !== false) break; }
+
+    if ($secure === 'tls' && $port === 587) {
+        $send('STARTTLS');
+        $r = $read();
+        if (strpos($r, '220') === 0 && @stream_socket_enable_crypto($sock, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
+            $send('EHLO ' . (isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : 'localhost'));
+            while ($line = $read()) { if (strpos($line, ' ') !== false) break; }
+        }
+    }
+
+    $send('AUTH LOGIN');
+    $read();
+    $send(base64_encode($user));
+    $read();
+    $send(base64_encode($pass));
+    $code = $read();
+    if (strpos($code, '235') !== 0) { fclose($sock); return false; }
+
+    $send('MAIL FROM:<noreply@stratedgepronos.fr>');
+    $read();
+    $toAddr = preg_match('/<([^>]+)>/', $to, $m) ? trim($m[1]) : trim($to);
+    $send('RCPT TO:<' . $toAddr . '>');
+    $read();
+    $send('DATA');
+    $read();
+    $send(str_replace(["\r\n.", "\n."], ["\r\n..", "\n.."], $rawMessage));
+    $send('.');
+    $code = $read();
+    $send('QUIT');
+    fclose($sock);
+    return strpos($code, '250') === 0;
+}
+
 /** Lien de désinscription (RGPD/LCEN) — un clic = désinscription */
 function getUnsubscribeUrl(string $email): string {
     $e = base64_encode($email);
@@ -31,6 +104,7 @@ function envoyerEmail(string $to, string $sujet, string $htmlBody): bool {
 
     $unsubUrl  = getUnsubscribeUrl($to);
 
+    $subjectEnc = '=?UTF-8?B?' . base64_encode($sujet) . '?=';
     $headers  = "MIME-Version: 1.0\r\n";
     $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
     $headers .= "Content-Transfer-Encoding: quoted-printable\r\n";
@@ -39,16 +113,20 @@ function envoyerEmail(string $to, string $sujet, string $htmlBody): bool {
     $headers .= "Return-Path: <noreply@stratedgepronos.fr>\r\n";
     $headers .= "Message-ID: {$messageId}\r\n";
     $headers .= "Date: {$date}\r\n";
+    $headers .= "Subject: {$subjectEnc}\r\n";
     // Lien désabonnement (obligatoire RGPD/LCEN — Gmail one-click)
     $headers .= "List-Unsubscribe: <{$unsubUrl}>\r\n";
     $headers .= "List-Unsubscribe-Post: List-Unsubscribe=One-Click\r\n";
     $headers .= "X-Priority: 3\r\n";
-    // Ne pas mettre Precedence: bulk (favorise le classement en spam). Transactionnel = pas de Precedence ou "auto".
     $headers .= "Auto-Submitted: auto-generated\r\n";
 
     $body = quoted_printable_encode($htmlBody);
+    $rawMessage = $headers . "\r\n\r\n" . $body;
 
-    return mail($to, '=?UTF-8?B?' . base64_encode($sujet) . '?=', $body, $headers, '-f noreply@stratedgepronos.fr');
+    if (defined('SMTP_HOST') && SMTP_HOST) {
+        return envoyerEmailViaSmtp($to, $sujet, $rawMessage);
+    }
+    return mail($to, $subjectEnc, $body, $headers, '-f noreply@stratedgepronos.fr');
 }
 
 // ── Template HTML de base ─────────────────────────────────

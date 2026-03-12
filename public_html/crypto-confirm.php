@@ -32,6 +32,7 @@ $membre = getMembre();
 $prixMap = ['daily'=>'4,50€','weekend'=>'10€','weekly'=>'20€','tennis'=>'15€'];
 $prix    = $prixMap[$offre] ?? '?';
 
+$mailH = "From: StratEdge Pronos <noreply@stratedgepronos.fr>\r\nReply-To: support@stratedgepronos.fr\r\nContent-Type: text/plain; charset=UTF-8\r\n";
 mail(
     'stratedgepronos@gmail.com',
     "💰 Nouvelle demande crypto — {$membre['nom']} ({$prix})",
@@ -41,7 +42,8 @@ mail(
     . "TX Hash : {$txHash}\n\n"
     . "👉 Valider sur : https://stratedgepronos.fr/panel-x9k3m/crypto-admin.php\n"
     . "ID paiement : {$paymentId}",
-    "From: noreply@stratedgepronos.fr"
+    $mailH,
+    '-f noreply@stratedgepronos.fr'
 );
 
 // Rediriger vers page de confirmation

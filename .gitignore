@@ -20,6 +20,7 @@ error_log
 .env
 .env.*
 *.env
+public_html/includes/smtp-config.php
 
 # Cache
 __pycache__/

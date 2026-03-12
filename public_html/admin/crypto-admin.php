@@ -24,6 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? 
             $db->prepare("UPDATE crypto_payments SET statut=?, date_validation=NOW(), note_admin=? WHERE id=?")
                ->execute([$statut, $note, $payId]);
 
+            $mailHeaders = "From: StratEdge Pronos <noreply@stratedgepronos.fr>\r\nReply-To: support@stratedgepronos.fr\r\nContent-Type: text/plain; charset=UTF-8\r\n";
             if ($action === 'valider') {
                 // Activer l'abonnement
                 $durees = ['daily' => 'P1D', 'weekend' => 'P3D', 'weekly' => 'P7D'];
@@ -31,23 +32,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? 
                 $db->prepare("INSERT INTO abonnements (membre_id, type, actif, date_debut, date_fin) VALUES (?,?,1,NOW(),?)")
                    ->execute([$pay['membre_id'], $pay['offre'], $expire]);
 
-                // Email confirmation membre
                 mail($pay['email'], "✅ Accès activé — StratEdge Pronos",
                     "Bonjour {$pay['nom']},\n\nVotre paiement crypto a été validé !\n"
                     . "Votre accès {$pay['offre']} est maintenant actif.\n\n"
                     . "👉 Connectez-vous sur https://stratedgepronos.fr/dashboard.php\n\n"
                     . "StratEdge Pronos",
-                    "From: noreply@stratedgepronos.fr"
+                    $mailHeaders, '-f noreply@stratedgepronos.fr'
                 );
                 $success = "✅ Abonnement activé pour {$pay['nom']} — email envoyé.";
-            } else {
+                } else {
                 mail($pay['email'], "❌ Transaction rejetée — StratEdge Pronos",
                     "Bonjour {$pay['nom']},\n\nVotre transaction n'a pas pu être validée.\n"
                     . "Raison : " . ($note ?: 'Transaction introuvable sur la blockchain') . "\n\n"
                     . "Contactez le support : stratedgepronos@gmail.com\n\nStratEdge Pronos",
-                    "From: noreply@stratedgepronos.fr"
+                    $mailHeaders, '-f noreply@stratedgepronos.fr'
                 );
                 $success = "Transaction rejetée — {$pay['nom']} notifié.";
+                }
             }
         }
     }
