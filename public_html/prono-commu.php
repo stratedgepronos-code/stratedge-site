@@ -121,6 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         if (!$match) {
             $voteMessage = 'Ce match n\'est plus ouvert au vote.';
         } else {
+            // Règle : un membre ne peut voter que pour un match par session (même vote_closed_at = même session).
             $stmtAlready = $db->prepare("
               SELECT 1 FROM commu_votes v
               JOIN commu_matches m ON m.id = v.match_id
@@ -128,7 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             ");
             $stmtAlready->execute([$membre['id'], $match['vote_closed_at']]);
             if ($stmtAlready->fetch()) {
-                $voteMessage = 'Tu as déjà voté pour un match de ce round.';
+                $voteMessage = 'Tu as déjà voté pour un match cette session. Un seul vote par session autorisé.';
             } else {
                 $db->prepare("INSERT INTO commu_votes (match_id, membre_id) VALUES (?, ?)")->execute([$matchId, $membre['id']]);
                 $voteMessage = 'ok';
@@ -234,6 +235,7 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
   <?php else: ?>
   <h1 class="prono-hero-title">Votez pour le match de demain</h1>
   <p class="prono-hero-sub">Choisis le match que tu veux voir analysé. Fin des votes à 23h59.</p>
+  <p class="prono-hero-sub" style="font-size:0.8rem;color:var(--txt3);margin-top:0.25rem;">Un seul vote par membre et par session.</p>
   <?php endif; ?>
   <div class="countdown" id="countdown">
     <div class="cd-block"><span class="cd-num" id="cd-hours">--</span><span class="cd-label">Heures</span></div>
@@ -248,7 +250,7 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
 
 <div class="prono-commu-wrap">
   <aside class="panel">
-    <div class="panel-title">📋 Matchs du lendemain — Vote</div>
+    <div class="panel-title">📋 Matchs du lendemain — Vote <span style="font-size:0.7rem;font-weight:400;color:var(--txt3);">(1 vote par session)</span></div>
     <?php if (empty($matchsLendemain)): ?>
     <div class="no-matchs">Aucun match à voter pour le moment.<br><small>Les matchs sont ajoutés par l'équipe (admin → Prono de la commu) ou importés via l'API Football-Data.</small></div>
     <?php else: ?>
