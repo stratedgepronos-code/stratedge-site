@@ -19,9 +19,24 @@ if (file_exists(__DIR__ . '/smtp-config.php')) {
     require_once __DIR__ . '/smtp-config.php';
 }
 
-/** Envoi via SMTP (Brevo, etc.) — meilleure délivrabilité avec p=quarantine / DMARC */
-function envoyerEmailViaSmtp(string $to, string $subject, string $rawMessage): bool {
+/** Lit toutes les lignes d'une réponse SMTP multi-lignes (250-xxx jusqu'au 250 final) */
+function smtpReadResponse($sock): string {
+    $last = '';
+    while (($line = @fgets($sock, 8192)) !== false) {
+        $line = trim($line);
+        if ($line === '') continue;
+        $last = $line;
+        if (strlen($line) >= 4 && $line[3] === ' ') break;
+    }
+    return $last;
+}
+
+/** Envoi via SMTP (Brevo, etc.) — meilleure délivrabilité avec p=quarantine / DMARC. Si $lastError est fourni, il est rempli en cas d'échec. */
+function envoyerEmailViaSmtp(string $to, string $subject, string $rawMessage, ?string &$lastError = null): bool {
+    $setErr = function ($msg) use (&$lastError) { if ($lastError !== null) $lastError = $msg; };
+
     if (!defined('SMTP_HOST') || !SMTP_HOST || !defined('SMTP_USER') || !defined('SMTP_PASS')) {
+        $setErr('SMTP non configuré (smtp-config.php manquant ou incomplet)');
         return false;
     }
     $host = SMTP_HOST;
@@ -33,17 +48,11 @@ function envoyerEmailViaSmtp(string $to, string $subject, string $rawMessage): b
     $errno = 0;
     $errstr = '';
     $ctx = stream_context_create(['ssl' => ['verify_peer' => true, 'verify_peer_name' => true]]);
-    $sock = @stream_socket_client(
-        ($secure === 'ssl' ? 'ssl://' : 'tcp://') . $host . ':' . $port,
-        $errno, $errstr, 15, STREAM_CLIENT_CONNECT, $ctx
-    );
+    $sock = @stream_socket_client('tcp://' . $host . ':' . $port, $errno, $errstr, 20, STREAM_CLIENT_CONNECT, $ctx);
     if (!$sock) {
-        if ($secure === 'tls') {
-            $sock = @stream_socket_client('tcp://' . $host . ':' . $port, $errno, $errstr, 15, STREAM_CLIENT_CONNECT, $ctx);
-            if (!$sock) return false;
-        } else {
-            return false;
-        }
+        $setErr('Connexion impossible ' . $host . ':' . $port . ' — ' . $errstr);
+        error_log('[StratEdge SMTP] ' . $errstr);
+        return false;
     }
 
     $read = function () use ($sock) {
@@ -52,17 +61,27 @@ function envoyerEmailViaSmtp(string $to, string $subject, string $rawMessage): b
     };
     $send = function ($cmd) use ($sock) { @fwrite($sock, $cmd . "\r\n"); };
 
-    $read();
+    $greet = $read();
+    if (strpos($greet, '220') !== 0) { $setErr('Banner: ' . $greet); fclose($sock); return false; }
+
     $send('EHLO ' . (isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : 'localhost'));
-    while ($line = $read()) { if (strpos($line, ' ') !== false) break; }
+    smtpReadResponse($sock);
 
     if ($secure === 'tls' && $port === 587) {
         $send('STARTTLS');
         $r = $read();
-        if (strpos($r, '220') === 0 && @stream_socket_enable_crypto($sock, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
-            $send('EHLO ' . (isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : 'localhost'));
-            while ($line = $read()) { if (strpos($line, ' ') !== false) break; }
+        if (strpos($r, '220') !== 0) {
+            $setErr('STARTTLS refusé: ' . $r);
+            fclose($sock);
+            return false;
         }
+        if (!@stream_socket_enable_crypto($sock, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
+            $setErr('Échec chiffrement TLS');
+            fclose($sock);
+            return false;
+        }
+        $send('EHLO ' . (isset($_SERVER['SERVER_NAME']) ? $_SERVER['SERVER_NAME'] : 'localhost'));
+        smtpReadResponse($sock);
     }
 
     $send('AUTH LOGIN');
@@ -71,33 +90,60 @@ function envoyerEmailViaSmtp(string $to, string $subject, string $rawMessage): b
     $read();
     $send(base64_encode($pass));
     $code = $read();
-    if (strpos($code, '235') !== 0) { fclose($sock); return false; }
+    if (strpos($code, '235') !== 0) {
+        $setErr('Auth échouée: ' . $code . ' — Vérifier SMTP_USER (email Brevo) et SMTP_PASS (clé SMTP, pas le mot de passe du compte)');
+        fclose($sock);
+        return false;
+    }
 
     $send('MAIL FROM:<noreply@stratedgepronos.fr>');
-    $read();
+    $r = $read();
+    if (strpos($r, '250') !== 0) {
+        $setErr('MAIL FROM refusé: ' . $r);
+        fclose($sock);
+        return false;
+    }
     $toAddr = preg_match('/<([^>]+)>/', $to, $m) ? trim($m[1]) : trim($to);
     $send('RCPT TO:<' . $toAddr . '>');
-    $read();
+    $r = $read();
+    if (strpos($r, '250') !== 0) {
+        $setErr('RCPT TO refusé: ' . $r);
+        fclose($sock);
+        return false;
+    }
     $send('DATA');
-    $read();
-    $send(str_replace(["\r\n.", "\n."], ["\r\n..", "\n.."], $rawMessage));
-    $send('.');
+    $r = $read();
+    if (strpos($r, '354') !== 0) {
+        $setErr('DATA refusé: ' . $r);
+        fclose($sock);
+        return false;
+    }
+    $payload = str_replace(["\r\n", "\r"], ["\n", "\n"], $rawMessage);
+    $payload = preg_replace('/\n\.(?!\.)/', "\n..", $payload);
+    $payload = str_replace("\n", "\r\n", $payload);
+    if (substr($payload, -2) !== "\r\n") {
+        $payload .= "\r\n";
+    }
+    @fwrite($sock, $payload . "\r\n.\r\n");
     $code = $read();
     $send('QUIT');
     fclose($sock);
-    return strpos($code, '250') === 0;
+    if (strpos($code, '250') !== 0) {
+        $setErr('Message refusé après envoi: ' . $code);
+        return false;
+    }
+    return true;
 }
 
 /** Envoi email en texte brut (utilise SMTP si configuré, sinon mail()) — pour crypto, IPN, etc. */
-function envoyerEmailTexte(string $to, string $sujet, string $corpsTexte): bool {
+function envoyerEmailTexte(string $to, string $sujet, string $corpsTexte, ?string &$lastError = null): bool {
     $from    = 'noreply@stratedgepronos.fr';
-    $fromNom = 'StratEdge Pronos';
-    $messageId = '<' . time() . '.' . bin2hex(random_bytes(8)) . '@stratedgepronos.fr>';
+    $messageId = '<' . date('YmdHis') . '.' . bin2hex(random_bytes(6)) . '@stratedgepronos.fr>';
     $date      = date('r');
     $subjectEnc = '=?UTF-8?B?' . base64_encode($sujet) . '?=';
     $headers  = "MIME-Version: 1.0\r\n";
     $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
-    $headers .= "From: =?UTF-8?B?" . base64_encode($fromNom) . "?= <{$from}>\r\n";
+    $headers .= "From: StratEdge Pronos <{$from}>\r\n";
     $headers .= "Reply-To: support@stratedgepronos.fr\r\n";
     $headers .= "Message-ID: {$messageId}\r\n";
     $headers .= "Date: {$date}\r\n";
@@ -105,9 +151,14 @@ function envoyerEmailTexte(string $to, string $sujet, string $corpsTexte): bool 
     $rawMessage = $headers . "\r\n\r\n" . $corpsTexte;
 
     if (defined('SMTP_HOST') && SMTP_HOST) {
-        return envoyerEmailViaSmtp($to, $sujet, $rawMessage);
+        if (envoyerEmailViaSmtp($to, $sujet, $rawMessage, $lastError)) return true;
+        error_log('[StratEdge] SMTP échec, repli sur mail() pour ' . $to);
     }
-    return mail($to, $subjectEnc, $corpsTexte, $headers, '-f noreply@stratedgepronos.fr');
+    $sent = @mail($to, $subjectEnc, $corpsTexte, $headers, '-f noreply@stratedgepronos.fr');
+    if (!$sent && $lastError === null) {
+        $lastError = 'mail() a échoué (repli après SMTP) — hébergeur refuse ou bloque l\'envoi.';
+    }
+    return $sent;
 }
 
 /** Lien de désinscription (RGPD/LCEN) — un clic = désinscription */
@@ -117,38 +168,50 @@ function getUnsubscribeUrl(string $email): string {
     return SITE_URL . '/desabonnement-emails.php?e=' . urlencode($e) . '&h=' . urlencode($h);
 }
 
-function envoyerEmail(string $to, string $sujet, string $htmlBody): bool {
+function envoyerEmail(string $to, string $sujet, string $htmlBody, ?string &$lastError = null): bool {
     $from    = 'noreply@stratedgepronos.fr';
     $fromNom = 'StratEdge Pronos';
 
-    $messageId = '<' . time() . '.' . bin2hex(random_bytes(8)) . '@stratedgepronos.fr>';
+    $messageId = '<' . date('YmdHis') . '.' . bin2hex(random_bytes(6)) . '@stratedgepronos.fr>';
     $date      = date('r');
 
     $unsubUrl  = getUnsubscribeUrl($to);
 
     $subjectEnc = '=?UTF-8?B?' . base64_encode($sujet) . '?=';
+    $plainBody  = trim(preg_replace('/<[^>]+>/', ' ', strip_tags(str_replace(['<br>','<br/>','<br />'], "\n", $htmlBody))));
+    $boundary   = '----=_Part_' . bin2hex(random_bytes(8));
+
     $headers  = "MIME-Version: 1.0\r\n";
-    $headers .= "Content-Type: text/html; charset=UTF-8\r\n";
-    $headers .= "Content-Transfer-Encoding: quoted-printable\r\n";
-    $headers .= "From: =?UTF-8?B?" . base64_encode($fromNom) . "?= <{$from}>\r\n";
+    $headers .= "Content-Type: multipart/alternative; boundary=\"{$boundary}\"\r\n";
+    $headers .= "From: StratEdge Pronos <{$from}>\r\n";
     $headers .= "Reply-To: support@stratedgepronos.fr\r\n";
     $headers .= "Return-Path: <noreply@stratedgepronos.fr>\r\n";
     $headers .= "Message-ID: {$messageId}\r\n";
     $headers .= "Date: {$date}\r\n";
     $headers .= "Subject: {$subjectEnc}\r\n";
-    // Lien désabonnement (obligatoire RGPD/LCEN — Gmail one-click)
     $headers .= "List-Unsubscribe: <{$unsubUrl}>\r\n";
     $headers .= "List-Unsubscribe-Post: List-Unsubscribe=One-Click\r\n";
     $headers .= "X-Priority: 3\r\n";
     $headers .= "Auto-Submitted: auto-generated\r\n";
 
-    $body = quoted_printable_encode($htmlBody);
+    $body = "--{$boundary}\r\n";
+    $body .= "Content-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n";
+    $body .= quoted_printable_encode($plainBody ?: '(Contenu HTML uniquement)') . "\r\n";
+    $body .= "--{$boundary}\r\n";
+    $body .= "Content-Type: text/html; charset=UTF-8\r\nContent-Transfer-Encoding: quoted-printable\r\n\r\n";
+    $body .= quoted_printable_encode($htmlBody) . "\r\n";
+    $body .= "--{$boundary}--";
     $rawMessage = $headers . "\r\n\r\n" . $body;
 
     if (defined('SMTP_HOST') && SMTP_HOST) {
-        return envoyerEmailViaSmtp($to, $sujet, $rawMessage);
+        if (envoyerEmailViaSmtp($to, $sujet, $rawMessage, $lastError)) return true;
+        error_log('[StratEdge] SMTP échec, repli sur mail() pour ' . $to);
     }
-    return mail($to, $subjectEnc, $body, $headers, '-f noreply@stratedgepronos.fr');
+    $sent = @mail($to, $subjectEnc, $body, $headers, '-f noreply@stratedgepronos.fr');
+    if (!$sent && $lastError === null) {
+        $lastError = 'mail() a échoué (repli après SMTP) — hébergeur refuse ou bloque l\'envoi.';
+    }
+    return $sent;
 }
 
 // ── Template HTML de base ─────────────────────────────────

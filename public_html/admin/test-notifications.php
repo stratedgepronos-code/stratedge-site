@@ -4,9 +4,74 @@
 // public_html/admin/test-notifications.php
 // ============================================================
 require_once __DIR__ . '/../includes/auth.php';
+requireAdmin();
+
+// Diagnostic SMTP intégré (même page, pas de fichier séparé → pas de 404)
+if (isset($_GET['diagnostic']) && $_GET['diagnostic'] === 'smtp') {
+    require_once __DIR__ . '/../includes/mailer.php';
+    header('Content-Type: text/html; charset=utf-8');
+    echo '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Diagnostic SMTP</title>';
+    echo '<style>body{font-family:monospace;background:#111;color:#eee;padding:2rem;} .ok{color:#0c6;} .err{color:#c66;} pre{margin:0.5em 0;} h1{font-size:1.2rem;} a{color:#8af;}</style></head><body>';
+    echo '<h1>Diagnostic SMTP (Brevo)</h1>';
+    if (!file_exists(__DIR__ . '/../includes/smtp-config.php')) {
+        echo '<p class="err">smtp-config.php absent sur le serveur.</p>';
+    } else {
+        require_once __DIR__ . '/../includes/smtp-config.php';
+        if (!defined('SMTP_HOST') || !SMTP_HOST || !defined('SMTP_USER') || !defined('SMTP_PASS')) {
+            echo '<p class="err">SMTP_HOST, SMTP_USER ou SMTP_PASS manquant.</p>';
+        } else {
+            $host = SMTP_HOST;
+            $port = (int)(defined('SMTP_PORT') ? SMTP_PORT : 587);
+            $user = SMTP_USER;
+            $pass = SMTP_PASS;
+            $steps = [];
+            $sock = @stream_socket_client('tcp://' . $host . ':' . $port, $errno, $errstr, 15);
+            if (!$sock) {
+                echo '<p class="err">Connexion impossible ' . htmlspecialchars($host) . ':' . $port . '</p><pre>' . htmlspecialchars($errstr) . ' (errno ' . $errno . ')</pre>';
+            } else {
+                $read = function () use ($sock) { $l = @fgets($sock, 8192); return $l !== false ? trim($l) : ''; };
+                $send = function ($cmd) use ($sock) { @fwrite($sock, $cmd . "\r\n"); };
+                $steps[] = ['Connexion TCP', true, $host . ':' . $port];
+                $g = $read();
+                $steps[] = ['Banner', strpos($g, '220') === 0, $g];
+                $send('EHLO localhost');
+                $ehlo = []; while (($l = $read()) !== '') { $ehlo[] = $l; if (strlen($l) >= 4 && $l[3] === ' ') break; }
+                $steps[] = ['EHLO', !empty($ehlo) && strpos($ehlo[0], '250') === 0, implode("\n", $ehlo)];
+                $send('STARTTLS');
+                $r = $read();
+                $steps[] = ['STARTTLS', strpos($r, '220') === 0, $r];
+                if (strpos($r, '220') === 0 && @stream_socket_enable_crypto($sock, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
+                    $steps[] = ['TLS activé', true, 'OK'];
+                    $send('EHLO localhost');
+                    while (($l = $read()) !== '') { if (strlen($l) >= 4 && $l[3] === ' ') break; }
+                    $send('AUTH LOGIN'); $read();
+                    $send(base64_encode($user)); $read();
+                    $send(base64_encode($pass));
+                    $code = $read();
+                    $authOk = strpos($code, '235') === 0;
+                    $steps[] = ['AUTH LOGIN', $authOk, $code];
+                }
+                $send('QUIT');
+                fclose($sock);
+            }
+            if (!empty($steps)) {
+                echo '<h2>Résultat</h2>';
+                foreach ($steps as $s) {
+                    echo '<p class="' . ($s[1] ? 'ok' : 'err') . '">' . htmlspecialchars($s[0]) . ': ' . ($s[1] ? 'OK' : 'ÉCHEC') . '</p>';
+                    if (!empty($s[2])) echo '<pre>' . htmlspecialchars($s[2]) . '</pre>';
+                }
+                $lastOk = end($steps)[1];
+                if ($lastOk) echo '<p class="ok"><strong>Connexion SMTP OK.</strong> Si mail-tester ne reçoit rien, vérifier error_log pour [StratEdge SMTP] après envoi.</p>';
+                else echo '<p class="err">Vérifier SMTP_USER (email Brevo) et SMTP_PASS (clé SMTP Brevo, pas le mot de passe du compte).</p>';
+            }
+        }
+    }
+    echo '<p><a href="test-notifications.php">← Retour Test des notifications</a></p></body></html>';
+    exit;
+}
+
 require_once __DIR__ . '/../includes/mailer.php';
 require_once __DIR__ . '/../includes/push.php';
-requireAdmin();
 $pageActive = 'test-notif';
 $db = getDB();
 
@@ -19,15 +84,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? 
     switch ($test) {
 
         case 'email_bienvenue':
+            $mailErr = null;
             $ok = envoyerEmail($dest,
                 '⚡ TEST — Bienvenue sur StratEdge',
                 emailTemplate('Test : Email de bienvenue',
                     '<p>Bonjour <strong>Testeur</strong>,</p>
                      <p>Ceci est un test de l\'email de bienvenue envoyé lors de l\'inscription.</p>
                      <p style="color:#00d46a;font-weight:700;">✅ Si tu reçois cet email, l\'envoi fonctionne correctement.</p>'
-                )
+                ),
+                $mailErr
             );
-            $results[] = ['type' => 'email', 'label' => 'Email Bienvenue', 'ok' => $ok, 'dest' => $dest];
+            $results[] = ['type' => 'email', 'label' => 'Email Bienvenue', 'ok' => $ok, 'dest' => $dest, 'info' => $mailErr];
             break;
 
         case 'email_nouveau_bet':
@@ -224,8 +291,11 @@ $tousMembers = $db->query("SELECT id, nom, email FROM membres WHERE email != '" 
         <div>
           <div><strong><?= htmlspecialchars($r['label']) ?></strong> → <?= htmlspecialchars($r['dest']) ?></div>
           <div class="result-info">
-            <?= $r['ok'] ? ($r['type']==='email' ? (defined('SMTP_HOST') && SMTP_HOST ? 'Email envoyé via SMTP (Brevo)' : 'Email envoyé via mail()') : 'Push envoyé') : 'Échec — vérifier la config' ?>
-            <?php if (!empty($r['info'])): ?> · <?= htmlspecialchars($r['info']) ?><?php endif; ?>
+            <?php if ($r['ok']): ?>
+              <?= $r['type']==='email' ? (defined('SMTP_HOST') && SMTP_HOST ? 'Email envoyé via SMTP (Brevo)' : 'Email envoyé via mail()') : 'Push envoyé' ?>
+            <?php else: ?>
+              <?= !empty($r['info']) ? htmlspecialchars($r['info']) : 'Échec — vérifier error_log sur le serveur (rechercher [StratEdge])' ?>
+            <?php endif; ?>
           </div>
         </div>
       </div>
@@ -240,6 +310,17 @@ $tousMembers = $db->query("SELECT id, nom, email FROM membres WHERE email != '" 
       <div class="card-title">
         <span class="dot dot-email"></span> Tests Email
       </div>
+
+      <?php $smtpOk = defined('SMTP_HOST') && SMTP_HOST; ?>
+      <div class="info-box" style="margin-bottom:1rem;border-color:<?= $smtpOk ? 'rgba(0,212,106,0.3)' : 'rgba(255,193,7,0.3)' ?>;background:<?= $smtpOk ? 'rgba(0,212,106,0.05)' : 'rgba(255,193,7,0.05)' ?>;">
+        <?php if ($smtpOk): ?>
+          <strong style="color:#00d46a;">✅ SMTP (Brevo) configuré</strong> — Les mails partent via Brevo.
+        <?php else: ?>
+          <strong style="color:#ffc107;">⚠️ SMTP non configuré</strong> — Les mails partent via <code>mail()</code> PHP (hébergeur). Pour mail-tester et une meilleure délivrabilité, ajoute <code>includes/smtp-config.php</code> sur le serveur avec tes identifiants Brevo.
+        <?php endif; ?>
+        <br><span style="font-size:0.85rem;color:var(--text-muted);">Pour mail-tester : va sur mail-tester.com, copie l’adresse unique (ex. test-xxx@srv1.mail-tester.com), colle-la ci-dessous, envoie le test, puis retourne sur mail-tester et clique sur « Vérifier le score ».</span>
+      </div>
+      <p><a href="test-notifications.php?diagnostic=smtp" style="font-size:0.85rem;color:#ff2d78;">Diagnostic SMTP (voir pourquoi l'envoi échoue)</a></p>
 
       <label style="font-size:0.8rem;color:var(--text-muted);display:block;margin-bottom:0.4rem;">Adresse de destination</label>
       <input type="text" id="destEmail" value="<?= htmlspecialchars(ADMIN_EMAIL) ?>" class="dest-field" placeholder="email@exemple.com">
