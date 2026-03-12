@@ -5,6 +5,7 @@
 // ============================================================
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/mailer.php';
+require_once __DIR__ . '/includes/import_football_matches.php';
 $db = getDB();
 
 // Créer les tables si elles n'existent pas (évite HTTP 500 si migration non exécutée)
@@ -63,50 +64,12 @@ $tomorrow = $tomorrowDt->format('Y-m-d');
 $voteCloseToday = $today . ' 23:59:00';
 $now = $nowDt->format('Y-m-d H:i:s');
 
-// ── Auto-import des matchs du lendemain si la liste est vide (API Football-Data.org) ──
+// ── Auto-import des matchs du lendemain si la liste est vide ──
 $stmtCheck = $db->prepare("SELECT 1 FROM commu_matches WHERE vote_closed_at > ? AND is_winner = 0 LIMIT 1");
 $stmtCheck->execute([$now]);
 if (!$stmtCheck->fetch()) {
-    $footballConfig = @file_exists(__DIR__ . '/includes/football_data_config.php') ? (require __DIR__ . '/includes/football_data_config.php') : ['api_key' => ''];
-    $apiKey = is_array($footballConfig) ? ($footballConfig['api_key'] ?? '') : '';
-    if ($apiKey !== '') {
-        $tomorrowApi = $tomorrow;
-        $dayAfterTomorrow = (clone $tomorrowDt)->modify('+1 day')->format('Y-m-d');
-        $url = 'https://api.football-data.org/v4/matches?dateFrom=' . $tomorrowApi . '&dateTo=' . $dayAfterTomorrow;
-        $ctx = stream_context_create([
-            'http' => [
-                'method' => 'GET',
-                'header' => "X-Auth-Token: " . $apiKey . "\r\n",
-                'timeout' => 12,
-            ]
-        ]);
-        $json = @file_get_contents($url, false, $ctx);
-        if ($json !== false) {
-            $data = @json_decode($json, true);
-            if (isset($data['matches']) && is_array($data['matches'])) {
-                $voteClosedAt = $today . ' 23:59:00';
-                $stmtExists = $db->prepare("SELECT 1 FROM commu_matches WHERE match_date = ? AND team_home = ? AND team_away = ?");
-                $stmtIns = $db->prepare("INSERT INTO commu_matches (match_date, team_home, team_away, competition, heure, vote_closed_at) VALUES (?, ?, ?, ?, ?, ?)");
-                foreach ($data['matches'] as $m) {
-                    $home = isset($m['homeTeam']['name']) ? trim($m['homeTeam']['name']) : (isset($m['homeTeam']['shortName']) ? trim($m['homeTeam']['shortName']) : '');
-                    $away = isset($m['awayTeam']['name']) ? trim($m['awayTeam']['name']) : (isset($m['awayTeam']['shortName']) ? trim($m['awayTeam']['shortName']) : '');
-                    if ($home === '' || $away === '') continue;
-                    $competition = isset($m['competition']['name']) ? trim($m['competition']['name']) : '';
-                    $heure = '';
-                    if (!empty($m['utcDate'])) {
-                        try {
-                            $dt = new DateTime($m['utcDate'], new DateTimeZone('UTC'));
-                            $dt->setTimezone($tzParis);
-                            $heure = $dt->format('H:i');
-                        } catch (Exception $e) { }
-                    }
-                    $stmtExists->execute([$tomorrowApi, $home, $away]);
-                    if ($stmtExists->fetch()) continue;
-                    $stmtIns->execute([$tomorrowApi, $home, $away, $competition ?: null, $heure ?: null, $voteClosedAt]);
-                }
-            }
-        }
-    }
+    $voteClosedAt = $today . ' 23:59:00';
+    @importFootballMatches($db, $tomorrow, $voteClosedAt, $tzParis);
 }
 
 // ── Fermeture des votes (si 23h59 passée et pas encore traité) ──

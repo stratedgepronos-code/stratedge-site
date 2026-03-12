@@ -3,6 +3,7 @@
 // STRATEDGE — Admin Prono de la commu : ajouter matchs, poster l'analyse
 // ============================================================
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/import_football_matches.php';
 requireAdmin();
 $pageActive = 'prono-commu-admin';
 $db = getDB();
@@ -11,8 +12,11 @@ $success = '';
 $error = '';
 
 $footballConfigPath = __DIR__ . '/../includes/football_data_config.php';
-$footballConfig = file_exists($footballConfigPath) ? (include $footballConfigPath) : ['api_key' => ''];
-$apiKey = is_array($footballConfig) ? trim($footballConfig['api_key'] ?? '') : '';
+$footballConfig = file_exists($footballConfigPath) ? (include $footballConfigPath) : [];
+if (!is_array($footballConfig)) $footballConfig = [];
+$apiFootballKey = trim($footballConfig['api_football_key'] ?? '');
+$footballDataKey = trim($footballConfig['api_key'] ?? '');
+$hasAnyKey = ($apiFootballKey !== '' || $footballDataKey !== '');
 
 // Fuseau Paris
 $tzParis = new DateTimeZone('Europe/Paris');
@@ -24,55 +28,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $error = 'Erreur de sécurité.';
 
     } elseif ($_POST['action'] === 'import_api') {
-        if ($apiKey === '') {
-            $error = 'Configure ta clé API dans includes/football_data_config.php (clé gratuite sur football-data.org). Valeur actuelle : vide.';
+        if (!$hasAnyKey) {
+            $error = 'Configure au moins une clé API dans includes/football_data_config.php (API-Football recommandée).';
         } else {
-            $dayAfter = (clone $nowParis)->modify('+2 days')->format('Y-m-d');
-            $url = 'https://api.football-data.org/v4/matches?dateFrom=' . $tomorrowParis . '&dateTo=' . $dayAfter;
-            $ctx = stream_context_create([
-                'http' => [
-                    'method' => 'GET',
-                    'header' => "X-Auth-Token: " . $apiKey . "\r\n",
-                    'timeout' => 15,
-                    'ignore_errors' => true,
-                ]
-            ]);
-            $json = @file_get_contents($url, false, $ctx);
-            if ($json === false) {
-                $error = 'Impossible de contacter l\'API Football-Data (timeout ou réseau). Vérifie que le serveur peut faire des requêtes HTTPS sortantes.';
+            $voteClosedAt = $nowParis->format('Y-m-d') . ' 23:59:00';
+            $result = importFootballMatches($db, $tomorrowParis, $voteClosedAt, $tzParis);
+            if ($result['error'] !== '') {
+                $error = $result['error'];
             } else {
-                $data = @json_decode($json, true);
-                if (!isset($data['matches']) || !is_array($data['matches'])) {
-                    $msg = isset($data['message']) ? $data['message'] : (isset($data['error']) ? ((string)$data['error']) : 'Réponse API invalide.');
-                    $error = 'API Football-Data : ' . $msg . ' (clé = ' . substr($apiKey, 0, 6) . '…)';
-                } else {
-                    $voteClosedAt = $nowParis->format('Y-m-d') . ' 23:59:00';
-                    $inserted = 0;
-                    $stmtExists = $db->prepare("SELECT 1 FROM commu_matches WHERE match_date = ? AND team_home = ? AND team_away = ?");
-                    $stmtIns = $db->prepare("INSERT INTO commu_matches (match_date, team_home, team_away, competition, heure, vote_closed_at) VALUES (?, ?, ?, ?, ?, ?)");
-                    foreach ($data['matches'] as $m) {
-                        $home = isset($m['homeTeam']['name']) ? trim($m['homeTeam']['name']) : (isset($m['homeTeam']['shortName']) ? trim($m['homeTeam']['shortName']) : '');
-                        $away = isset($m['awayTeam']['name']) ? trim($m['awayTeam']['name']) : (isset($m['awayTeam']['shortName']) ? trim($m['awayTeam']['shortName']) : '');
-                        if ($home === '' || $away === '') continue;
-                        $competition = isset($m['competition']['name']) ? trim($m['competition']['name']) : '';
-                        $heure = '';
-                        if (!empty($m['utcDate'])) {
-                            try {
-                                $dt = new DateTime($m['utcDate'], new DateTimeZone('UTC'));
-                                $dt->setTimezone($tzParis);
-                                $heure = $dt->format('H:i');
-                            } catch (Exception $e) { }
-                        }
-                        $stmtExists->execute([$tomorrowParis, $home, $away]);
-                        if ($stmtExists->fetch()) continue;
-                        $stmtIns->execute([$tomorrowParis, $home, $away, $competition ?: null, $heure ?: null, $voteClosedAt]);
-                        $inserted++;
-                    }
-                    $nbTotal = count($data['matches']);
-                    $success = $inserted > 0
-                        ? $inserted . ' match(s) importé(s) pour le ' . $tomorrowParis . ' (' . $nbTotal . ' total retournés par l\'API).'
-                        : 'Aucun nouveau match importé (' . $nbTotal . ' retournés par l\'API, déjà en base ou pas de match).';
-                }
+                $success = $result['inserted'] > 0
+                    ? $result['inserted'] . ' match(s) importé(s) pour le ' . $tomorrowParis . ' (' . $result['total'] . ' total via ' . $result['source'] . ').'
+                    : 'Aucun nouveau match importé (' . $result['total'] . ' retournés par ' . $result['source'] . ', déjà en base ou pas de match).';
             }
         }
 
@@ -164,15 +130,22 @@ code { background:rgba(255,255,255,0.08); padding:0.15rem 0.4rem; border-radius:
   <?php if ($error): ?><div class="alert-error">⚠️ <?= htmlspecialchars($error) ?></div><?php endif; ?>
 
   <div class="card">
-    <h2>🌐 Importer les matchs du lendemain (API Football-Data.org)</h2>
-    <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.6rem;">Récupère automatiquement les matchs de foot prévus demain. Clé gratuite : <a href="https://www.football-data.org/client/register" target="_blank" rel="noopener" style="color:var(--neon-blue);">s'inscrire sur football-data.org</a>, puis définir <code>api_key</code> dans <code>includes/football_data_config.php</code>.</p>
-    <p style="font-size:0.82rem;margin-bottom:1rem;">
-      Clé API : <?php if ($apiKey !== ''): ?><span style="color:#00c864;">✅ Configurée (<?= htmlspecialchars(substr($apiKey, 0, 8)) ?>…)</span><?php else: ?><span style="color:#ff6b9d;">❌ Non configurée</span><?php endif; ?>
-    </p>
+    <h2>🌐 Importer les matchs du lendemain</h2>
+    <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.6rem;">Récupère automatiquement <strong>tous</strong> les matchs de foot prévus demain.</p>
+    <div style="font-size:0.82rem;margin-bottom:1rem;display:flex;flex-direction:column;gap:0.35rem;">
+      <div>
+        <strong style="color:var(--neon-blue);">API-Football</strong> (800+ ligues — recommandée) :
+        <?php if ($apiFootballKey !== ''): ?><span style="color:#00c864;">✅ Configurée</span><?php else: ?><span style="color:#ff6b9d;">❌ Non configurée</span> — <a href="https://dashboard.api-football.com/register" target="_blank" rel="noopener" style="color:var(--neon-blue);">s'inscrire (gratuit)</a>, puis définir <code>api_football_key</code><?php endif; ?>
+      </div>
+      <div>
+        <strong style="color:var(--neon-blue);">Football-Data.org</strong> (~12 ligues — fallback) :
+        <?php if ($footballDataKey !== ''): ?><span style="color:#00c864;">✅ Configurée</span><?php else: ?><span style="color:#ff6b9d;">❌ Non configurée</span><?php endif; ?>
+      </div>
+    </div>
     <form method="post">
       <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
       <input type="hidden" name="action" value="import_api">
-      <button type="submit" class="btn btn-pink" <?= $apiKey === '' ? 'disabled title="Configure la clé API d\'abord"' : '' ?>>Importer les matchs du lendemain (<?= $tomorrowParis ?>)</button>
+      <button type="submit" class="btn btn-pink" <?= !$hasAnyKey ? 'disabled title="Configure au moins une clé API"' : '' ?>>Importer les matchs du lendemain (<?= $tomorrowParis ?>)</button>
     </form>
   </div>
 
