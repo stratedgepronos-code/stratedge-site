@@ -19,7 +19,10 @@ function importFootballMatches(PDO $db, string $targetDate, string $voteClosedAt
     $footballDataKey     = trim($config['api_key'] ?? '');
 
     if ($apiFootballKey !== '' || $apiFootballRapidKey !== '') {
-        return importFromApiFootball($db, $targetDate, $voteClosedAt, $tzParis, $apiFootballKey, $apiFootballRapidKey);
+        $allowedLeagues = isset($config['allowed_leagues']) && is_array($config['allowed_leagues'])
+            ? array_map('trim', $config['allowed_leagues'])
+            : [];
+        return importFromApiFootball($db, $targetDate, $voteClosedAt, $tzParis, $apiFootballKey, $apiFootballRapidKey, $allowedLeagues);
     }
 
     if ($footballDataKey !== '') {
@@ -73,7 +76,7 @@ function apiFootballRequest(string $url, array $headers, int $timeout = 20): arr
     return ['ok' => true, 'body' => $body, 'http_code' => 200];
 }
 
-function importFromApiFootball(PDO $db, string $targetDate, string $voteClosedAt, DateTimeZone $tzParis, string $apiKeyDirect, string $apiKeyRapid = ''): array
+function importFromApiFootball(PDO $db, string $targetDate, string $voteClosedAt, DateTimeZone $tzParis, string $apiKeyDirect, string $apiKeyRapid = '', array $allowedLeagues = []): array
 {
     $endpoints = [];
     if ($apiKeyDirect !== '') {
@@ -146,11 +149,21 @@ function importFromApiFootball(PDO $db, string $targetDate, string $voteClosedAt
     }
 
     $fixtures = $data['response'];
+    $allowedNormalized = [];
+    if (!empty($allowedLeagues)) {
+        $allowedNormalized = array_map(function ($s) { return strtolower($s); }, array_filter($allowedLeagues));
+    }
+
     $stmtExists = $db->prepare("SELECT 1 FROM commu_matches WHERE match_date = ? AND team_home = ? AND team_away = ?");
     $stmtIns = $db->prepare("INSERT INTO commu_matches (match_date, team_home, team_away, competition, heure, vote_closed_at) VALUES (?, ?, ?, ?, ?, ?)");
     $inserted = 0;
 
     foreach ($fixtures as $fx) {
+        $leagueName = trim($fx['league']['name'] ?? '');
+        if (!empty($allowedNormalized) && !in_array(strtolower($leagueName), $allowedNormalized, true)) {
+            continue;
+        }
+
         $home = trim($fx['teams']['home']['name'] ?? '');
         $away = trim($fx['teams']['away']['name'] ?? '');
         if ($home === '' || $away === '') continue;
@@ -158,7 +171,7 @@ function importFromApiFootball(PDO $db, string $targetDate, string $voteClosedAt
         $status = $fx['fixture']['status']['short'] ?? '';
         if (in_array($status, ['FT', 'AET', 'PEN', 'CANC', 'ABD', 'AWD', 'WO', 'PST'], true)) continue;
 
-        $competition = trim($fx['league']['name'] ?? '');
+        $competition = $leagueName;
         $country = trim($fx['league']['country'] ?? '');
         if ($country !== '' && $competition !== '') {
             $competition = $country . ' — ' . $competition;
