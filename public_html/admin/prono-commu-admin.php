@@ -14,9 +14,10 @@ $error = '';
 $footballConfigPath = __DIR__ . '/../includes/football_data_config.php';
 $footballConfig = file_exists($footballConfigPath) ? (include $footballConfigPath) : [];
 if (!is_array($footballConfig)) $footballConfig = [];
-$apiFootballKey = trim($footballConfig['api_football_key'] ?? '');
-$footballDataKey = trim($footballConfig['api_key'] ?? '');
-$hasAnyKey = ($apiFootballKey !== '' || $footballDataKey !== '');
+$apiFootballKey      = trim($footballConfig['api_football_key'] ?? '');
+$apiFootballRapidKey = trim($footballConfig['api_football_rapidapi_key'] ?? '');
+$footballDataKey     = trim($footballConfig['api_key'] ?? '');
+$hasAnyKey = ($apiFootballKey !== '' || $apiFootballRapidKey !== '' || $footballDataKey !== '');
 
 // Fuseau Paris
 $tzParis = new DateTimeZone('Europe/Paris');
@@ -134,8 +135,12 @@ code { background:rgba(255,255,255,0.08); padding:0.15rem 0.4rem; border-radius:
     <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.6rem;">Récupère automatiquement <strong>tous</strong> les matchs de foot prévus demain.</p>
     <div style="font-size:0.82rem;margin-bottom:1rem;display:flex;flex-direction:column;gap:0.35rem;">
       <div>
-        <strong style="color:var(--neon-blue);">API-Football</strong> (800+ ligues — recommandée) :
-        <?php if ($apiFootballKey !== ''): ?><span style="color:#00c864;">✅ Configurée</span><?php else: ?><span style="color:#ff6b9d;">❌ Non configurée</span> — <a href="https://dashboard.api-football.com/register" target="_blank" rel="noopener" style="color:var(--neon-blue);">s'inscrire (gratuit)</a>, puis définir <code>api_football_key</code><?php endif; ?>
+        <strong style="color:var(--neon-blue);">API-Football</strong> (800+ ligues) :
+        <?php if ($apiFootballKey !== ''): ?><span style="color:#00c864;">✅ Direct (api-sports.io)</span><?php endif; ?>
+        <?php if ($apiFootballRapidKey !== ''): ?><?= $apiFootballKey !== '' ? ' · ' : '' ?><span style="color:#00c864;">✅ RapidAPI</span><?php endif; ?>
+        <?php if ($apiFootballKey === '' && $apiFootballRapidKey === ''): ?>
+          <span style="color:#ff6b9d;">❌ Aucune clé</span> — Clé directe : <a href="https://dashboard.api-football.com/register" target="_blank" rel="noopener" style="color:var(--neon-blue);">api-football.com</a> → <code>api_football_key</code> · Ou RapidAPI → <code>api_football_rapidapi_key</code>
+        <?php endif; ?>
       </div>
       <div>
         <strong style="color:var(--neon-blue);">Football-Data.org</strong> (~12 ligues — fallback) :

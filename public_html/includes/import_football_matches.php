@@ -14,11 +14,12 @@ function importFootballMatches(PDO $db, string $targetDate, string $voteClosedAt
     $config = file_exists($configPath) ? (include $configPath) : [];
     if (!is_array($config)) $config = [];
 
-    $apiFootballKey = trim($config['api_football_key'] ?? '');
-    $footballDataKey = trim($config['api_key'] ?? '');
+    $apiFootballKey      = trim($config['api_football_key'] ?? '');
+    $apiFootballRapidKey = trim($config['api_football_rapidapi_key'] ?? '');
+    $footballDataKey     = trim($config['api_key'] ?? '');
 
-    if ($apiFootballKey !== '') {
-        return importFromApiFootball($db, $targetDate, $voteClosedAt, $tzParis, $apiFootballKey);
+    if ($apiFootballKey !== '' || $apiFootballRapidKey !== '') {
+        return importFromApiFootball($db, $targetDate, $voteClosedAt, $tzParis, $apiFootballKey, $apiFootballRapidKey);
     }
 
     if ($footballDataKey !== '') {
@@ -72,20 +73,26 @@ function apiFootballRequest(string $url, array $headers, int $timeout = 20): arr
     return ['ok' => true, 'body' => $body, 'http_code' => 200];
 }
 
-function importFromApiFootball(PDO $db, string $targetDate, string $voteClosedAt, DateTimeZone $tzParis, string $apiKey): array
+function importFromApiFootball(PDO $db, string $targetDate, string $voteClosedAt, DateTimeZone $tzParis, string $apiKeyDirect, string $apiKeyRapid = ''): array
 {
-    $endpoints = [
-        [
+    $endpoints = [];
+    if ($apiKeyDirect !== '') {
+        $endpoints[] = [
             'url'     => 'https://v3.football.api-sports.io/fixtures?date=' . $targetDate,
-            'headers' => ['x-apisports-key: ' . $apiKey],
+            'headers' => ['x-apisports-key: ' . $apiKeyDirect],
             'label'   => 'direct (api-sports.io)',
-        ],
-        [
+        ];
+    }
+    if ($apiKeyRapid !== '') {
+        $endpoints[] = [
             'url'     => 'https://api-football-v1.p.rapidapi.com/v3/fixtures?date=' . $targetDate,
-            'headers' => ['x-rapidapi-key: ' . $apiKey, 'x-rapidapi-host: api-football-v1.p.rapidapi.com'],
+            'headers' => ['x-rapidapi-key: ' . $apiKeyRapid, 'x-rapidapi-host: api-football-v1.p.rapidapi.com'],
             'label'   => 'RapidAPI',
-        ],
-    ];
+        ];
+    }
+    if (empty($endpoints)) {
+        return ['inserted' => 0, 'total' => 0, 'source' => 'API-Football', 'error' => 'Aucune clé API-Football configurée. Renseigne api_football_key (dashboard.api-football.com) ou api_football_rapidapi_key (RapidAPI).'];
+    }
 
     $debugLog = [];
     $data = null;
@@ -107,7 +114,14 @@ function importFromApiFootball(PDO $db, string $targetDate, string $voteClosedAt
         }
 
         if (isset($parsed['message']) && !isset($parsed['response'])) {
-            $debugLog[] = $ep['label'] . ' → ' . $parsed['message'];
+            $msg = $parsed['message'];
+            if (stripos($msg, 'too many requests') !== false || stripos($msg, 'rate limit') !== false) {
+                $msg .= ' — Attends quelques minutes ou utilise la clé directe (dashboard.api-football.com).';
+            }
+            if (stripos($msg, 'application key') !== false || stripos($msg, 'missing') !== false) {
+                $msg .= ' — Utilise la clé du dashboard api-football.com pour "direct", ou la clé RapidAPI pour "RapidAPI" (voir football_data_config.php).';
+            }
+            $debugLog[] = $ep['label'] . ' → ' . $msg;
             continue;
         }
 
