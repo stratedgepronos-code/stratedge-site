@@ -71,6 +71,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $success = 'Match ajouté. Fin des votes : ' . date('d/m/Y H:i', strtotime($voteClosedAt));
         }
 
+    } elseif ($_POST['action'] === 'set_winner') {
+        $matchId = (int)($_POST['match_id'] ?? 0);
+        if ($matchId <= 0) {
+            $error = 'Match invalide.';
+        } else {
+            $stmt = $db->prepare("SELECT id, vote_closed_at, team_home, team_away FROM commu_matches WHERE id = ?");
+            $stmt->execute([$matchId]);
+            $match = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$match) {
+                $error = 'Match introuvable.';
+            } else {
+                $db->prepare("UPDATE commu_matches SET is_winner = 0 WHERE vote_closed_at = ?")->execute([$match['vote_closed_at']]);
+                $db->prepare("UPDATE commu_matches SET is_winner = 1 WHERE id = ?")->execute([$matchId]);
+                $success = 'Match gagnant défini : ' . $match['team_home'] . ' – ' . $match['team_away'] . '.';
+            }
+        }
     } elseif ($_POST['action'] === 'save_analysis') {
         $matchId = (int)($_POST['match_id'] ?? 0);
         $analysis = trim($_POST['analysis_html'] ?? '');
@@ -228,7 +244,7 @@ code { background:rgba(255,255,255,0.08); padding:0.15rem 0.4rem; border-radius:
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Date match</th><th>Match</th><th>Compétition</th><th>Fin votes</th><th>Votes</th><th>Gagnant</th></tr>
+          <tr><th>Date match</th><th>Match</th><th>Compétition</th><th>Fin votes</th><th>Votes</th><th>Gagnant</th><th>Action</th></tr>
         </thead>
         <tbody>
           <?php foreach ($allMatches as $m): ?>
@@ -238,7 +254,15 @@ code { background:rgba(255,255,255,0.08); padding:0.15rem 0.4rem; border-radius:
             <td><?= htmlspecialchars($m['competition'] ?? '') ?></td>
             <td><?= date('d/m H:i', strtotime($m['vote_closed_at'])) ?></td>
             <td><?= (int)$m['nb_votes'] ?></td>
-            <td><?= !empty($m['is_winner']) ? '✅' : '—' ?></td>
+            <td><?= !empty($m['is_winner']) ? '✅ Gagnant' : '—' ?></td>
+            <td>
+              <form method="post" style="display:inline;">
+                <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
+                <input type="hidden" name="action" value="set_winner">
+                <input type="hidden" name="match_id" value="<?= (int)$m['id'] ?>">
+                <button type="submit" class="btn-sm" style="background:rgba(0,212,106,0.12);color:#00d46a;border:1px solid rgba(0,212,106,0.3);" onclick="return confirm('Définir ce match comme gagnant pour cette session ?');">Choisir comme gagnant</button>
+              </form>
+            </td>
           </tr>
           <?php endforeach; ?>
         </tbody>
