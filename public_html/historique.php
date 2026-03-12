@@ -58,10 +58,6 @@ $stats = $db->query("
     FROM bets WHERE resultat != 'en_cours'
 ")->fetch();
 
-// Cote moyenne (tous les bets avec une cote renseignée)
-$coteMoyenneRow = $db->query("SELECT AVG(cote) as cote_moy, COUNT(*) as nb FROM bets WHERE cote IS NOT NULL AND cote > 0")->fetch();
-$coteMoyenne = ($coteMoyenneRow && $coteMoyenneRow['nb'] > 0) ? round((float)$coteMoyenneRow['cote_moy'], 2) : null;
-
 $typeLabels = ['safe'=>'🛡️ Safe','fun'=>'🎯 Fun','live'=>'⚡ Live','safe,fun'=>'Safe+Fun','safe,live'=>'Safe+Live'];
 $typeColors = ['safe'=>'#00d4ff','fun'=>'#a855f7','live'=>'#ff2d78'];
 
@@ -126,7 +122,7 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
 /* ═══ HISTORIQUE V2 ═══ */
 
 /* Hero */
-.hist-hero{position:relative;text-align:center;overflow:hidden;background:linear-gradient(180deg,rgba(0,212,255,0.05) 0%,transparent 100%);border-bottom:1px solid var(--border,rgba(255,45,120,0.15));margin-left:calc(-3rem - var(--sidebar-w,270px));margin-right:-3rem;margin-top:-2.5rem;padding:3rem 2rem 2.5rem calc(3rem + var(--sidebar-w,270px));}
+.hist-hero{position:relative;text-align:center;overflow:hidden;background:linear-gradient(180deg,rgba(0,212,255,0.05) 0%,transparent 100%);border-bottom:1px solid var(--border,rgba(255,45,120,0.15));margin-left:calc(-3rem - var(--sidebar-w,270px));margin-right:-3rem;margin-top:0;padding:3rem 2rem 2.5rem calc(3rem + var(--sidebar-w,270px));}
 .hist-hero::before{content:'';position:absolute;width:600px;height:400px;background:radial-gradient(circle,rgba(0,212,255,0.08) 0%,transparent 70%);top:-200px;left:50%;transform:translateX(-50%);pointer-events:none;}
 body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem 2rem 2.5rem;}
 .hist-tag{font-family:'Space Mono',monospace;font-size:0.75rem;letter-spacing:4px;text-transform:uppercase;color:var(--blue,#00d4ff);margin-bottom:0.7rem;}
@@ -232,7 +228,7 @@ body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
   .mini-stat{min-width:130px;padding:0.8rem 1rem;}
 }
 @media(max-width:768px){
-  .hist-hero{margin-left:-0.8rem !important;margin-right:-0.8rem !important;margin-top:-1rem;padding:1.5rem 0.8rem 1.5rem !important;}
+  .hist-hero{margin-left:-0.8rem !important;margin-right:-0.8rem !important;margin-top:0;padding:1.5rem 0.8rem 1.5rem !important;}
   .hist-hero::before{display:none;}
   .hist-title{font-size:1.5rem;}
   .hist-sub{font-size:0.88rem;max-width:none;}
@@ -355,15 +351,6 @@ body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
           <div class="mini-stat-lbl">Annules</div>
         </div>
       </div>
-      <?php if ($coteMoyenne !== null): ?>
-      <div class="mini-stat" style="border-color:rgba(0,212,255,0.2);">
-        <span class="mini-stat-icon">📊</span>
-        <div>
-          <div class="mini-stat-val" style="color:#00d4ff"><?= number_format($coteMoyenne, 2, ',', ' ') ?></div>
-          <div class="mini-stat-lbl">Cote moyenne</div>
-        </div>
-      </div>
-      <?php endif; ?>
     </div>
   </div>
 
@@ -419,8 +406,7 @@ body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
         $types = explode(',', $bet['type']);
         $rawPath = !empty($bet['image_path']) ? $bet['image_path'] : ($bet['locked_image_path'] ?? '');
         if (!empty($rawPath)) {
-          $subdir = (strpos($rawPath, 'locked') !== false) ? 'locked' : 'bets';
-          $imgSrc = function_exists('betImageUrl') ? betImageUrl(trim($rawPath), $subdir) : (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($rawPath,'/') : $rawPath);
+          $imgSrc = (strpos($rawPath, 'http') === 0) ? $rawPath : (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($rawPath,'/') : $rawPath);
         } else {
           $imgSrc = '';
         }
