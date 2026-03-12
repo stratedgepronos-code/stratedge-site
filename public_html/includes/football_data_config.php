@@ -15,9 +15,9 @@
 //    Laisser vide = importer toutes les ligues.
 // ============================================================
 return [
-    'api_football_key'         => '', // Clé directe api-sports.io (dashboard.api-football.com)
+    'api_football_key'         => '0cab57e7a417aab4ab7e884de48c665c', // Clé directe api-sports.io (dashboard.api-football.com)
     'api_football_rapidapi_key'=> '', // Clé RapidAPI (si tu as souscrit via RapidAPI)
-    'api_key'                  => '', // Clé Football-Data.org
+    'api_key'                  => 'ba643bfab1274ef894eabf4aca0e8bc2', // Clé Football-Data.org
 
     // Ligues à importer pour le prono commu (noms exacts API, d'après tes screens). Vide = toutes.
     'allowed_leagues' => [

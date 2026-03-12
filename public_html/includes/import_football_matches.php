@@ -151,18 +151,32 @@ function importFromApiFootball(PDO $db, string $targetDate, string $voteClosedAt
     $fixtures = $data['response'];
     $allowedNormalized = [];
     if (!empty($allowedLeagues)) {
-        $allowedNormalized = array_map(function ($s) { return strtolower($s); }, array_filter($allowedLeagues));
+        $allowedNormalized = array_map(function ($s) { return strtolower(trim($s)); }, array_filter($allowedLeagues));
     }
 
     $stmtExists = $db->prepare("SELECT 1 FROM commu_matches WHERE match_date = ? AND team_home = ? AND team_away = ?");
     $stmtIns = $db->prepare("INSERT INTO commu_matches (match_date, team_home, team_away, competition, heure, vote_closed_at) VALUES (?, ?, ?, ?, ?, ?)");
     $inserted = 0;
+    $afterFilter = 0;
 
     foreach ($fixtures as $fx) {
         $leagueName = trim($fx['league']['name'] ?? '');
-        if (!empty($allowedNormalized) && !in_array(strtolower($leagueName), $allowedNormalized, true)) {
-            continue;
+        $leagueNameLower = strtolower($leagueName);
+
+        if (!empty($allowedNormalized)) {
+            $match = false;
+            foreach ($allowedNormalized as $allowed) {
+                if ($allowed === '' || strlen($allowed) < 3) continue;
+                if ($leagueNameLower === $allowed || str_contains($leagueNameLower, $allowed)) {
+                    $match = true;
+                    break;
+                }
+            }
+            if (!$match) {
+                continue;
+            }
         }
+        $afterFilter++;
 
         $home = trim($fx['teams']['home']['name'] ?? '');
         $away = trim($fx['teams']['away']['name'] ?? '');
@@ -194,7 +208,14 @@ function importFromApiFootball(PDO $db, string $targetDate, string $voteClosedAt
         $inserted++;
     }
 
-    return ['inserted' => $inserted, 'total' => count($fixtures), 'source' => 'API-Football (' . $usedLabel . ')', 'error' => ''];
+    $totalApi = count($fixtures);
+    return [
+        'inserted' => $inserted,
+        'total' => $afterFilter,
+        'total_api' => $totalApi,
+        'source' => 'API-Football (' . $usedLabel . ')',
+        'error' => '',
+    ];
 }
 
 // ─────────────────────────────────────────────────────────────

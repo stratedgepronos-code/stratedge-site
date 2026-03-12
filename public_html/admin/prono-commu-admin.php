@@ -37,9 +37,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             if ($result['error'] !== '') {
                 $error = $result['error'];
             } else {
-                $success = $result['inserted'] > 0
-                    ? $result['inserted'] . ' match(s) importé(s) pour le ' . $tomorrowParis . ' (' . $result['total'] . ' total via ' . $result['source'] . ').'
-                    : 'Aucun nouveau match importé (' . $result['total'] . ' retournés par ' . $result['source'] . ', déjà en base ou pas de match).';
+                $totalApi = $result['total_api'] ?? $result['total'];
+                $totalFiltered = $result['total'] ?? $totalApi;
+                $via = $result['source'] ?? '';
+                if ($result['inserted'] > 0) {
+                    $success = $result['inserted'] . ' match(s) importé(s) pour le ' . $tomorrowParis;
+                    if (isset($result['total_api']) && $result['total_api'] !== $totalFiltered) {
+                        $success .= ' (' . $totalFiltered . ' après filtre sur ' . $result['total_api'] . ' reçus de l\'API).';
+                    } else {
+                        $success .= ' (' . $totalFiltered . ' via ' . $via . ').';
+                    }
+                } else {
+                    $success = 'Aucun nouveau match importé (' . $totalFiltered . ' après filtre sur ' . $totalApi . ' reçus de l\'API, déjà en base ou pas de match).';
+                }
             }
         }
 
