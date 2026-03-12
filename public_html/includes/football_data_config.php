@@ -20,41 +20,16 @@ return [
     'api_football_rapidapi_key'=> '', // Clé RapidAPI (si tu as souscrit via RapidAPI)
     'api_key'                  => '', // Clé Football-Data.org
 
-    // IDs des ligues à importer (voir dashboard.api-football.com/soccer/ids). Vide = toutes.
+    // IDs des ligues (tes 2 screens). Référence : https://dashboard.api-football.com/soccer/ids
+    // 1=FIFA CWC 2=Champions 3=Europa 4=Euro 5=Nations League 39=Premier 40=Championship
+    // 61=Ligue1 62=Ligue2 71=Serie A 72=Serie B 78=Bundesliga 79=2.Bundesliga 81=DFB Pokal
+    // 88=Eredivisie 94=Liga Portugal 135=LaLiga 136=LaLiga2 137=Coppa 143=Copa Rey
+    // 169=Super League CH 197=Scotland 203=Super Lig 207=Serie A BR 218=Austria 235=A-League/Scotland
+    // 239=Pro League BE 242=Ecuador 253=MLS 262=Liga MX 268=Copa Lib 269=Copa Sud 271=Uruguay
+    // 278=Paraguay 283=Argentina 292=K League 307=Saudi 384=CONCACAF 565=Leagues Cup 635=Women EURO 848=Conf League
     'allowed_league_ids' => [
-        2,    // UEFA Champions League
-        3,    // UEFA Europa League
-        848,  // UEFA Europa Conference League
-        39,   // Premier League (England)
-        40,   // Championship (England)
-        135,  // La Liga (Spain)
-        136,  // La Liga 2 (Spain)
-        140,  // Copa Del Rey (Spain)
-        71,   // Serie A (Italy)
-        72,   // Serie B (Italy)
-        78,   // Bundesliga (Germany)
-        79,   // 2. Bundesliga (Germany)
-        81,   // DFB Pokal (Germany)
-        61,   // Ligue 1 (France)
-        62,   // Ligue 2 (France)
-        88,   // Eredivisie (Netherlands)
-        94,   // Liga Portugal
-        203,  // Super Lig (Turkey)
-        207,  // Serie A (Brazil)
-        253,  // MLS (USA)
-        262,  // Liga MX (Mexico)
-        283,  // Liga Profesional (Argentina)
-        271,  // Primera Division (Uruguay)
-        235,  // Premier League (Scotland)
-        169,  // Super League (Switzerland)
-        113,  // Allsvenskan (Sweden)
-        103,  // Eliteserien (Norway)
-        239,  // Pro League (Belgium)
-        299,  // J1 League (Japan)
-        268,  // Copa Libertadores
-        269,  // Copa Sudamericana
-        5,    // UEFA Nations League
-        1,    // World Cup
-        4,    // European Championship
+        1, 2, 3, 4, 5, 39, 40, 48, 61, 62, 71, 72, 78, 79, 81, 88, 94, 98, 103, 106, 113, 119,
+        135, 136, 137, 143, 169, 197, 203, 207, 218, 235, 239, 242, 253, 262, 268, 269, 271,
+        278, 283, 292, 307, 384, 565, 635, 848,
     ],
 ];
