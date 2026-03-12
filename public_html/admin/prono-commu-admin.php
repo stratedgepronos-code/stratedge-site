@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $matchId = (int)($_POST['match_id'] ?? 0);
         $analysis = trim($_POST['analysis_html'] ?? '');
         if ($matchId && $analysis !== '') {
-            $analysis = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $analysis);
+            // On conserve les scripts pour que les graphiques (Chart.js, ApexCharts, etc.) s'affichent. Contenu admin uniquement.
             $analysis = preg_replace('/<iframe\b[^>]*>.*?<\/iframe>/is', '', $analysis);
             $stmt = $db->prepare("UPDATE commu_matches SET analysis_html = ?, analysis_at = NOW() WHERE id = ? AND is_winner = 1");
             $stmt->execute([$analysis, $matchId]);

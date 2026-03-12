@@ -178,9 +178,8 @@ $timerTargetTs = $dt->getTimestamp() * 1000;
 // Pour affichage : on n'affiche pas les nombres de votes aux membres
 foreach ($matchsLendemain as &$m) { unset($m['nb_votes']); }
 
-// Sécurité HTML analyse
+// Analyse : on conserve les scripts pour l'affichage des graphiques (Chart.js, ApexCharts, etc.). Contenu défini par l'admin uniquement.
 if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
-    $matchDuJour['analysis_html'] = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $matchDuJour['analysis_html']);
     $matchDuJour['analysis_html'] = preg_replace('/<iframe\b[^>]*>.*?<\/iframe>/is', '', $matchDuJour['analysis_html']);
 }
 ?>
