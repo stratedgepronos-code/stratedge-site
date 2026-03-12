@@ -97,7 +97,8 @@ if ($analyseHtml !== '') {
 <?php require_once __DIR__ . '/includes/sidebar-css.php'; ?>
 <style>
 :root{--bg:#050810;--card:#111827;--pink:#ff2d78;--txt:#f0f4f8;--txt2:#b0bec9;--txt3:#8a9bb0;--border:rgba(255,45,120,0.15);}
-.bet-page-wrap{max-width:100%;margin:0 auto;padding:1.5rem 1rem 3rem;}
+/* Full width : annuler le padding du .content pour utiliser toute la largeur */
+.bet-page-wrap{max-width:none;width:100%;margin:0 -3rem;padding:1.5rem 3rem 3rem;box-sizing:border-box;}
 .bet-back{margin-bottom:1.5rem;}
 .bet-back a{color:var(--txt2);text-decoration:none;font-size:0.9rem;display:inline-flex;align-items:center;gap:0.5rem;}
 .bet-back a:hover{color:var(--pink);}
@@ -111,9 +112,15 @@ if ($analyseHtml !== '') {
 .bet-img-wrap img{width:100%;height:auto;display:block;object-fit:contain;}
 .bet-analyse{margin-top:1.5rem;}
 .bet-analyse-title{font-family:'Orbitron',sans-serif;font-size:0.85rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--pink);margin-bottom:1rem;}
-.bet-analyse-inner{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:1rem;overflow:auto;}
+.bet-analyse-inner{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:1rem;overflow:auto;width:100%;max-width:none;}
 .bet-analyse-inner iframe{max-width:100%;border:none;}
 .bet-analyse-inner img{max-width:100%;height:auto;}
+/* Forcer le contenu HTML injecté (card) à utiliser toute la largeur */
+.bet-analyse-inner>*{max-width:100%!important;box-sizing:border-box;}
+.bet-analyse-inner .card-wrapper,
+.bet-analyse-inner .card,
+.bet-analyse-inner [class*="wrapper"],
+.bet-analyse-inner [class*="card"]{max-width:none!important;width:100%!important;}
 .bet-comments{margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);}
 .bet-comments h2{font-family:'Orbitron',sans-serif;font-size:1.1rem;margin-bottom:1rem;color:var(--txt);}
 .comment-form{background:var(--card);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;border:1px solid var(--border);}
@@ -128,9 +135,14 @@ if ($analyseHtml !== '') {
 .comment-meta{font-size:0.8rem;color:var(--txt3);}
 .comment-body{color:var(--txt2);font-size:0.95rem;line-height:1.5;white-space:pre-wrap;}
 .no-comments{color:var(--txt3);font-size:0.9rem;padding:1rem 0;}
+/* Page bet : masquer la mascotte pour utiliser toute la largeur */
+body.page-bet .mascotte-bg{display:none;}
+@media(max-width:768px){
+.bet-page-wrap{margin-left:-0.8rem;margin-right:-0.8rem;padding-left:0.8rem;padding-right:0.8rem;}
+}
 </style>
 </head>
-<body>
+<body class="page-bet">
 <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
 
 <div class="bet-page-wrap">

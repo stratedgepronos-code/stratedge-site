@@ -6,6 +6,46 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/mailer.php';
 $db = getDB();
+
+// Créer les tables si elles n'existent pas (évite HTTP 500 si migration non exécutée)
+try {
+    $db->query("SELECT 1 FROM commu_matches LIMIT 1");
+} catch (Throwable $e) {
+    if (strpos($e->getMessage(), 'commu_matches') !== false || strpos($e->getMessage(), "doesn't exist") !== false) {
+        $db->exec("CREATE TABLE IF NOT EXISTS `commu_matches` (
+          `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+          `match_date` DATE NOT NULL,
+          `team_home` VARCHAR(120) NOT NULL,
+          `team_away` VARCHAR(120) NOT NULL,
+          `competition` VARCHAR(120) DEFAULT NULL,
+          `heure` VARCHAR(20) DEFAULT NULL,
+          `vote_closed_at` DATETIME NOT NULL,
+          `is_winner` TINYINT(1) NOT NULL DEFAULT 0,
+          `analysis_html` MEDIUMTEXT DEFAULT NULL,
+          `analysis_at` DATETIME DEFAULT NULL,
+          `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (`id`),
+          KEY `idx_match_date` (`match_date`),
+          KEY `idx_vote_closed` (`vote_closed_at`),
+          KEY `idx_winner` (`is_winner`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        $db->exec("CREATE TABLE IF NOT EXISTS `commu_votes` (
+          `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+          `match_id` INT UNSIGNED NOT NULL,
+          `membre_id` INT UNSIGNED NOT NULL,
+          `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (`id`),
+          UNIQUE KEY `one_vote_per_member_per_round` (`membre_id`,`match_id`),
+          KEY `idx_match` (`match_id`),
+          KEY `idx_membre` (`membre_id`),
+          FOREIGN KEY (`match_id`) REFERENCES `commu_matches`(`id`) ON DELETE CASCADE,
+          FOREIGN KEY (`membre_id`) REFERENCES `membres`(`id`) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    } else {
+        throw $e;
+    }
+}
+
 $membre = isLoggedIn() ? getMembre() : null;
 if (!$membre) {
     header('Location: /login.php?redirect=' . urlencode('/prono-commu.php'));
