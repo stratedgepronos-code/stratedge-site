@@ -28,6 +28,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
         $error = 'Erreur de sécurité.';
 
+    } elseif ($_POST['action'] === 'clear_matches') {
+        $db->exec("DELETE FROM commu_matches");
+        $success = 'Liste des matchs vidée. Tu peux réimporter avec le filtre ligues.';
     } elseif ($_POST['action'] === 'import_api') {
         if (!$hasAnyKey) {
             $error = 'Configure au moins une clé API dans includes/football_data_config.php (API-Football recommandée).';
@@ -157,10 +160,15 @@ code { background:rgba(255,255,255,0.08); padding:0.15rem 0.4rem; border-radius:
         <?php if ($footballDataKey !== ''): ?><span style="color:#00c864;">✅ Configurée</span><?php else: ?><span style="color:#ff6b9d;">❌ Non configurée</span><?php endif; ?>
       </div>
     </div>
-    <form method="post">
+    <form method="post" style="display:inline-block;margin-right:0.5rem;">
       <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
       <input type="hidden" name="action" value="import_api">
       <button type="submit" class="btn btn-pink" <?= !$hasAnyKey ? 'disabled title="Configure au moins une clé API"' : '' ?>>Importer les matchs du lendemain (<?= $tomorrowParis ?>)</button>
+    </form>
+    <form method="post" style="display:inline-block;" onsubmit="return confirm('Vider toute la liste des matchs et des votes ? Tu pourras réimporter ensuite avec le filtre ligues.');">
+      <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
+      <input type="hidden" name="action" value="clear_matches">
+      <button type="submit" class="btn" style="background:rgba(255,100,100,0.15);color:#ff6b6b;border:1px solid rgba(255,100,100,0.3);">🗑️ Vider la liste (une fois)</button>
     </form>
   </div>
 
