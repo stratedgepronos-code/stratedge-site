@@ -10,71 +10,51 @@
 // 2) Football-Data.org — fallback
 //    • api_key = clé sur https://www.football-data.org/client/register (~12 compétitions)
 //
-// 3) Filtre ligues (optionnel) — si la liste n'est pas vide, seuls ces championnats sont importés.
-//    Noms exacts tels que retournés par l'API (ex: "Premier League", "Ligue 1", "Champions League").
+// 3) Filtre ligues (optionnel) — par ID de ligue API-Football (fiable).
+//    Liste des IDs : https://dashboard.api-football.com/soccer/ids (onglet Leagues).
+//    Si allowed_league_ids n'est pas vide, seuls ces championnats sont importés.
 //    Laisser vide = importer toutes les ligues.
 // ============================================================
 return [
-    'api_football_key'         => '0cab57e7a417aab4ab7e884de48c665c', // Clé directe api-sports.io (dashboard.api-football.com)
+    'api_football_key'         => '', // Clé directe api-sports.io (dashboard.api-football.com)
     'api_football_rapidapi_key'=> '', // Clé RapidAPI (si tu as souscrit via RapidAPI)
-    'api_key'                  => 'ba643bfab1274ef894eabf4aca0e8bc2', // Clé Football-Data.org
+    'api_key'                  => '', // Clé Football-Data.org
 
-    // Ligues à importer pour le prono commu (noms exacts API, d'après tes screens). Vide = toutes.
-    'allowed_leagues' => [
-        // Screen 1 — International / Europe / Monde
-        'FIFA Club World Cup',
-        'European Championship',
-        'Euro Qualification',
-        'WC Qualification Europe',
-        'WC Qualification South America',
-        'WC Qualification Concacaf',
-        'CAF World Cup Qualifiers',
-        'WC Qualification Asia',
-        'UEFA Nations League',
-        'Champions League',
-        'Premier League',
-        'La Liga',
-        'Serie A',
-        'Bundesliga',
-        'Copa Libertadores',
-        'Europa League',
-        'Ligue 1',
-        'Eredivisie',
-        'Liga Portugal',
-        'Copa Sudamericana',
-        'Europa Conference League',
-        'UEFA Women\'s EURO',
-        'Pro League',
-        'Liga Profesional de Fútbol',
-        'A-League Men',
-        'Admiral Bundesliga',
-        'Superliga',
-        'Liga Pro',
-        // Screen 2 — D2, coupes, autres pays
-        'Championship',
-        'La Liga 2',
-        'Copa Del Rey',
-        'Ligue 2',
-        '2. Bundesliga',
-        'DFB Pokal',
-        'Serie B',
-        'Coppa Italia',
-        'J1 League',
-        'K League 1',
-        'Liga MX',
-        'Eliteserien',
-        'Division 1',
-        'Ekstraklasa',
-        'Premiership',
-        'Super League',
-        'Allsvenskan',
-        'Super Lig',
-        'Primera Division',
-        'Major League Soccer',
-        'CONCACAF Champions Cup',
-        'Premier Division',
-        'Leagues Cup',
-        'Liga BetPlay',
-        'Veikkausliiga',
+    // IDs des ligues à importer (voir dashboard.api-football.com/soccer/ids). Vide = toutes.
+    'allowed_league_ids' => [
+        2,    // UEFA Champions League
+        3,    // UEFA Europa League
+        848,  // UEFA Europa Conference League
+        39,   // Premier League (England)
+        40,   // Championship (England)
+        135,  // La Liga (Spain)
+        136,  // La Liga 2 (Spain)
+        140,  // Copa Del Rey (Spain)
+        71,   // Serie A (Italy)
+        72,   // Serie B (Italy)
+        78,   // Bundesliga (Germany)
+        79,   // 2. Bundesliga (Germany)
+        81,   // DFB Pokal (Germany)
+        61,   // Ligue 1 (France)
+        62,   // Ligue 2 (France)
+        88,   // Eredivisie (Netherlands)
+        94,   // Liga Portugal
+        203,  // Super Lig (Turkey)
+        207,  // Serie A (Brazil)
+        253,  // MLS (USA)
+        262,  // Liga MX (Mexico)
+        283,  // Liga Profesional (Argentina)
+        271,  // Primera Division (Uruguay)
+        235,  // Premier League (Scotland)
+        169,  // Super League (Switzerland)
+        113,  // Allsvenskan (Sweden)
+        103,  // Eliteserien (Norway)
+        239,  // Pro League (Belgium)
+        299,  // J1 League (Japan)
+        268,  // Copa Libertadores
+        269,  // Copa Sudamericana
+        5,    // UEFA Nations League
+        1,    // World Cup
+        4,    // European Championship
     ],
 ];
