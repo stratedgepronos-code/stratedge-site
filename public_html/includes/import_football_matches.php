@@ -33,62 +33,102 @@ function importFootballMatches(PDO $db, string $targetDate, string $voteClosedAt
 // Supporte 2 modes d'accès :
 //   1) Direct (api-sports.io) — header x-apisports-key
 //   2) RapidAPI — header x-rapidapi-key + x-rapidapi-host
-// Essaie le direct d'abord, puis RapidAPI automatiquement.
 // ─────────────────────────────────────────────────────────────
+function apiFootballRequest(string $url, array $headers, int $timeout = 20): array
+{
+    if (function_exists('curl_init')) {
+        $ch = curl_init();
+        curl_setopt_array($ch, [
+            CURLOPT_URL            => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => $headers,
+            CURLOPT_TIMEOUT        => $timeout,
+            CURLOPT_SSL_VERIFYPEER => true,
+            CURLOPT_FOLLOWLOCATION => true,
+        ]);
+        $body = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr = curl_error($ch);
+        curl_close($ch);
+        if ($body === false || $body === '') {
+            return ['ok' => false, 'error' => 'curl error: ' . ($curlErr ?: 'empty response') . ' (HTTP ' . $httpCode . ')'];
+        }
+        return ['ok' => true, 'body' => $body, 'http_code' => $httpCode];
+    }
+
+    $headerStr = implode("\r\n", $headers) . "\r\n";
+    $ctx = stream_context_create([
+        'http' => [
+            'method'        => 'GET',
+            'header'        => $headerStr,
+            'timeout'       => $timeout,
+            'ignore_errors' => true,
+        ]
+    ]);
+    $body = @file_get_contents($url, false, $ctx);
+    if ($body === false) {
+        return ['ok' => false, 'error' => 'file_get_contents failed (SSL/réseau)'];
+    }
+    return ['ok' => true, 'body' => $body, 'http_code' => 200];
+}
+
 function importFromApiFootball(PDO $db, string $targetDate, string $voteClosedAt, DateTimeZone $tzParis, string $apiKey): array
 {
     $endpoints = [
         [
-            'url'    => 'https://v3.football.api-sports.io/fixtures?date=' . $targetDate,
-            'header' => "x-apisports-key: " . $apiKey . "\r\n",
-            'label'  => 'API-Football (direct)',
+            'url'     => 'https://v3.football.api-sports.io/fixtures?date=' . $targetDate,
+            'headers' => ['x-apisports-key: ' . $apiKey],
+            'label'   => 'direct (api-sports.io)',
         ],
         [
-            'url'    => 'https://api-football-v1.p.rapidapi.com/v3/fixtures?date=' . $targetDate,
-            'header' => "x-rapidapi-key: " . $apiKey . "\r\nx-rapidapi-host: api-football-v1.p.rapidapi.com\r\n",
-            'label'  => 'API-Football (RapidAPI)',
+            'url'     => 'https://api-football-v1.p.rapidapi.com/v3/fixtures?date=' . $targetDate,
+            'headers' => ['x-rapidapi-key: ' . $apiKey, 'x-rapidapi-host: api-football-v1.p.rapidapi.com'],
+            'label'   => 'RapidAPI',
         ],
     ];
 
+    $debugLog = [];
     $data = null;
     $usedLabel = '';
 
     foreach ($endpoints as $ep) {
-        $ctx = stream_context_create([
-            'http' => [
-                'method'  => 'GET',
-                'header'  => $ep['header'],
-                'timeout' => 20,
-                'ignore_errors' => true,
-            ]
-        ]);
+        $result = apiFootballRequest($ep['url'], $ep['headers']);
 
-        $json = @file_get_contents($ep['url'], false, $ctx);
-        if ($json === false) continue;
+        if (!$result['ok']) {
+            $debugLog[] = $ep['label'] . ' → ' . $result['error'];
+            continue;
+        }
 
-        $parsed = @json_decode($json, true);
-        if (!is_array($parsed)) continue;
+        $parsed = @json_decode($result['body'], true);
 
-        $hasError = isset($parsed['errors']) && !empty($parsed['errors']);
-        $hasResponse = isset($parsed['response']) && is_array($parsed['response']);
+        if (!is_array($parsed)) {
+            $debugLog[] = $ep['label'] . ' → JSON invalide (HTTP ' . ($result['http_code'] ?? '?') . ') : ' . substr($result['body'], 0, 120);
+            continue;
+        }
 
-        if ($hasResponse && !$hasError) {
+        if (isset($parsed['message']) && !isset($parsed['response'])) {
+            $debugLog[] = $ep['label'] . ' → ' . $parsed['message'];
+            continue;
+        }
+
+        if (isset($parsed['errors']) && !empty($parsed['errors'])) {
+            $errMsg = is_array($parsed['errors']) ? implode(', ', $parsed['errors']) : (string)$parsed['errors'];
+            $debugLog[] = $ep['label'] . ' → ' . $errMsg;
+            continue;
+        }
+
+        if (isset($parsed['response']) && is_array($parsed['response'])) {
             $data = $parsed;
             $usedLabel = $ep['label'];
             break;
         }
 
-        if ($hasError) {
-            $errMsg = is_array($parsed['errors']) ? implode(', ', $parsed['errors']) : (string)$parsed['errors'];
-            if (stripos($errMsg, 'key') !== false || stripos($errMsg, 'Missing') !== false) {
-                continue;
-            }
-            return ['inserted' => 0, 'total' => 0, 'source' => $ep['label'], 'error' => $ep['label'] . ' erreur : ' . $errMsg];
-        }
+        $debugLog[] = $ep['label'] . ' → Réponse inattendue : ' . substr($result['body'], 0, 200);
     }
 
     if ($data === null) {
-        return ['inserted' => 0, 'total' => 0, 'source' => 'API-Football', 'error' => 'Impossible de se connecter à API-Football. Vérifie ta clé (directe api-sports.io ou RapidAPI).'];
+        $detail = implode(' | ', $debugLog);
+        return ['inserted' => 0, 'total' => 0, 'source' => 'API-Football', 'error' => 'API-Football : aucun endpoint n\'a répondu. Détails : ' . $detail];
     }
 
     $fixtures = $data['response'];
@@ -127,7 +167,7 @@ function importFromApiFootball(PDO $db, string $targetDate, string $voteClosedAt
         $inserted++;
     }
 
-    return ['inserted' => $inserted, 'total' => count($fixtures), 'source' => 'API-Football', 'error' => ''];
+    return ['inserted' => $inserted, 'total' => count($fixtures), 'source' => 'API-Football (' . $usedLabel . ')', 'error' => ''];
 }
 
 // ─────────────────────────────────────────────────────────────
