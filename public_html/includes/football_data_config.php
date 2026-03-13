@@ -18,7 +18,7 @@
 return [
     'api_football_key'         => '', // Clé directe api-sports.io (dashboard.api-football.com)
     'api_football_rapidapi_key'=> '', // Clé RapidAPI (si tu as souscrit via RapidAPI)
-    'api_key'                  => '', // Clé Football-Data.org
+    'api_key'                  => 'ba643bfab1274ef894eabf4aca0e8bc2', // Clé Football-Data.org
 
     // IDs des ligues (tes 2 screens). Référence : https://dashboard.api-football.com/soccer/ids
     // 1=FIFA CWC 2=Champions 3=Europa 4=Euro 5=Nations League 39=Premier 40=Championship
