@@ -111,11 +111,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if ($adminRole === 'admin_tennis') {
                             $lastCategorie = 'tennis';
                             $lastType = $types[$i] ?? 'safe';
-                        } elseif ($adminRole === 'admin_fun') {
+                        } elseif ($adminRole === 'admin_fun' || $adminRole === 'admin_fun_sport') {
                             $lastCategorie = 'multi';
                             $lastType = 'fun';
                         }
-                        $lastSport = ($lastCategorie === 'tennis') ? 'tennis' : (in_array($sports[$i] ?? '', ['football','tennis','basket','hockey']) ? $sports[$i] : 'football');
+                        if ($adminRole === 'admin_fun_sport') {
+                            $lastSport = in_array($sports[$i] ?? '', ['football','basket','hockey']) ? $sports[$i] : 'football';
+                        } else {
+                            $lastSport = ($lastCategorie === 'tennis') ? 'tennis' : (in_array($sports[$i] ?? '', ['football','tennis','basket','hockey']) ? $sports[$i] : 'football');
+                        }
                         $lastAnalyseHtml = trim((string)($analyseHtmls[$i] ?? ''));
                         $lastCote = trim((string)($cotes[$i] ?? ''));
                         $lastCote = ($lastCote !== '' && is_numeric($lastCote)) ? number_format((float)$lastCote, 2, '.', '') : null;
@@ -752,8 +756,13 @@ let dt = new DataTransfer();
 let fileIndex = 0; // compteur unique par fichier
 
 const typeOpts = `
-<?php if ($adminRole === 'admin_fun'): ?>
+<?php if ($adminRole === 'admin_fun' || $adminRole === 'admin_fun_sport'): ?>
   <option value="fun" selected>🎯 Fun</option>
+<?php elseif ($adminRole === 'admin_tennis'): ?>
+  <option value="safe">🛡️ Safe</option>
+  <option value="fun">🎯 Fun</option>
+  <option value="live">⚡ Live</option>
+  <option value="safe_combi">🛡️⚡ Combi</option>
 <?php else: ?>
   <option value="safe">🛡️ Safe</option>
   <option value="fun">🎯 Fun</option>
@@ -790,14 +799,20 @@ function addFiles(files) {
           <select name="categorie[${idx}]" style="margin-top:0.4rem;width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.5rem 0.75rem;color:#f0f4f8;font-family:'Rajdhani',sans-serif;font-size:0.9rem;">
             <?php if ($adminRole === 'admin_tennis'): ?>
             <option value="tennis" selected>🎾 Tennis</option>
-            <?php elseif ($adminRole === 'admin_fun'): ?>
-            <option value="multi" selected>🎯 Fun (Multi-sport)</option>
+            <?php elseif ($adminRole === 'admin_fun' || $adminRole === 'admin_fun_sport'): ?>
+            <option value="multi" selected>🎯 Fun</option>
             <?php else: ?>
             <option value="multi">⚽🏀🏒 Multi-sport</option>
             <option value="tennis">🎾 Tennis</option>
             <?php endif; ?>
           </select>
-          <?php if ($adminRole !== 'admin_fun'): ?>
+          <?php if ($adminRole === 'admin_fun_sport'): ?>
+          <select name="sport[${idx}]" class="sport-select" style="margin-top:0.4rem;width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.5rem 0.75rem;color:#f0f4f8;font-family:'Rajdhani',sans-serif;font-size:0.9rem;">
+            <option value="football">⚽ Foot</option>
+            <option value="basket">🏀 NBA</option>
+            <option value="hockey">🏒 NHL</option>
+          </select>
+          <?php elseif ($adminRole !== 'admin_fun'): ?>
           <select name="sport[${idx}]" class="sport-select" style="margin-top:0.4rem;width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.5rem 0.75rem;color:#f0f4f8;font-family:'Rajdhani',sans-serif;font-size:0.9rem;">
             <option value="football">⚽ Foot</option>
             <option value="tennis">🎾 Tennis</option>

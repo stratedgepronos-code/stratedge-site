@@ -12,29 +12,64 @@ $bets = $db->query("
     ORDER BY date_resultat DESC, date_post DESC
 ")->fetchAll();
 
-// Sections : sport + type (tennis, foot, hockey, basket × safe, fun, live)
-$sportOrder = ['tennis' => 0, 'football' => 1, 'hockey' => 2, 'basket' => 3];
-$typeOrder  = ['safe' => 0, 'fun' => 1, 'live' => 2];
-$sectionLabels = [
-    'tennis_safe'   => '🎾 Tennis Safe',   'tennis_fun'   => '🎾 Tennis Fun',   'tennis_live'   => '🎾 Tennis Live',
-    'football_safe' => '⚽ Foot Safe',     'football_fun' => '⚽ Foot Fun',     'football_live' => '⚽ Foot Live',
-    'hockey_safe'   => '🏒 Hockey Safe',   'hockey_fun'   => '🏒 Hockey Fun',   'hockey_live'   => '🏒 Hockey Live',
-    'basket_safe'   => '🏀 Basket Safe',   'basket_fun'   => '🏀 Basket Fun',   'basket_live'   => '🏀 Basket Live',
+// 3 grosses catégories : Multisports | Tennis | Fun — mêmes clés que bets.php
+$sportNorm = function($b) {
+    $s = strtolower(trim($b['sport'] ?? ''));
+    if ($s === '' && (($b['categorie'] ?? '') === 'tennis')) return 'tennis';
+    if (in_array($s, ['football','foot'], true)) return 'football';
+    if (in_array($s, ['basket','nba'], true)) return 'basket';
+    if (in_array($s, ['hockey','nhl'], true)) return 'hockey';
+    return in_array($s, ['football','basket','hockey'], true) ? $s : 'football';
+};
+$typeNorm = function($b) {
+    $t = strtolower($b['type'] ?? '');
+    if (strpos($t, 'fun') !== false) return 'fun';
+    if (strpos($t, 'live') !== false) return 'live';
+    if (strpos($t, 'combi') !== false) return 'combi';
+    return 'safe';
+};
+$mainCategoriesHisto = [
+    'multisports' => ['title' => 'Multisports', 'icon' => '⚽🏀🏒', 'bets' => [], 'subs' => []],
+    'tennis'      => ['title' => 'Tennis',      'icon' => '🎾', 'bets' => [], 'subs' => []],
+    'fun'         => ['title' => 'Fun',         'icon' => '🎯', 'bets' => [], 'subs' => []],
 ];
-function betSectionKey($b) {
-    $sport = $b['sport'] ?? null;
-    if ($sport === null || $sport === '') $sport = (($b['categorie'] ?? 'multi') === 'tennis') ? 'tennis' : 'football';
-    $sport = strtolower(trim($sport));
-    if (!in_array($sport, ['tennis','football','basket','hockey'], true)) $sport = 'football';
-    $type = $b['type'] ?? 'safe';
-    if (strpos($type, 'live') !== false) $t = 'live'; elseif (strpos($type, 'fun') !== false) $t = 'fun'; else $t = 'safe';
-    return $sport . '_' . $t;
-}
-$sectionsBets = [];
+$sportLabels = ['football' => 'Foot', 'basket' => 'NBA', 'hockey' => 'NHL'];
+$sectionLabels = [
+    'tennis_safe' => '🎾 Tennis Safe', 'tennis_combi' => '🎾 Tennis Combi', 'tennis_fun' => '🎾 Tennis Fun', 'tennis_live' => '🎾 Tennis Live',
+    'football_safe' => '⚽ Foot Safe', 'football_combi' => '⚽ Foot Combi', 'football_live' => '⚽ Foot Live', 'football_fun' => '⚽ Foot Fun',
+    'basket_safe' => '🏀 NBA Safe', 'basket_combi' => '🏀 NBA Combi', 'basket_live' => '🏀 NBA Live', 'basket_fun' => '🏀 NBA Fun',
+    'hockey_safe' => '🏒 NHL Safe', 'hockey_combi' => '🏒 NHL Combi', 'hockey_live' => '🏒 NHL Live', 'hockey_fun' => '🏒 NHL Fun',
+    'football' => '⚽ Fun Foot', 'basket' => '🏀 Fun NBA', 'hockey' => '🏒 Fun NHL',
+];
 foreach ($bets as $b) {
-    $key = betSectionKey($b);
-    if (!isset($sectionsBets[$key])) $sectionsBets[$key] = [];
-    $sectionsBets[$key][] = $b;
+    $cat = $b['categorie'] ?? 'multi';
+    $isFun = (strpos(strtolower($b['type'] ?? ''), 'fun') !== false);
+    $sport = $sportNorm($b);
+    $type = $typeNorm($b);
+    if ($cat === 'tennis') {
+        $mainCategoriesHisto['tennis']['bets'][] = $b;
+        $subKey = 'tennis_' . $type;
+        if (!isset($mainCategoriesHisto['tennis']['subs'][$subKey])) $mainCategoriesHisto['tennis']['subs'][$subKey] = [];
+        $mainCategoriesHisto['tennis']['subs'][$subKey][] = $b;
+    } elseif ($isFun && $cat === 'multi') {
+        $mainCategoriesHisto['fun']['bets'][] = $b;
+        $subKey = $sport;
+        if (!in_array($subKey, ['football','basket','hockey'])) $subKey = 'football';
+        if (!isset($mainCategoriesHisto['fun']['subs'][$subKey])) $mainCategoriesHisto['fun']['subs'][$subKey] = [];
+        $mainCategoriesHisto['fun']['subs'][$subKey][] = $b;
+    } else {
+        $mainCategoriesHisto['multisports']['bets'][] = $b;
+        $subKey = $sport . '_' . $type;
+        if (!isset($mainCategoriesHisto['multisports']['subs'][$subKey])) $mainCategoriesHisto['multisports']['subs'][$subKey] = [];
+        $mainCategoriesHisto['multisports']['subs'][$subKey][] = $b;
+    }
+}
+// Flatten for filter pills: section key => bets (compat ancien filtre)
+$sectionsBets = [];
+foreach ($mainCategoriesHisto as $mCat) {
+    foreach ($mCat['subs'] as $subKey => $arr) {
+        $sectionsBets[$subKey] = $arr;
+    }
 }
 function sectionStats($arr) {
     $g = count(array_filter($arr, fn($b) => $b['resultat'] === 'gagne'));
@@ -57,6 +92,10 @@ $stats = $db->query("
         COUNT(*) as total
     FROM bets WHERE resultat != 'en_cours'
 ")->fetch();
+
+// Cote moyenne (tous les bets avec une cote renseignée)
+$coteMoyenneRow = $db->query("SELECT AVG(cote) as cote_moy, COUNT(*) as nb FROM bets WHERE cote IS NOT NULL AND cote > 0")->fetch();
+$coteMoyenne = ($coteMoyenneRow && $coteMoyenneRow['nb'] > 0) ? round((float)$coteMoyenneRow['cote_moy'], 2) : null;
 
 $typeLabels = ['safe'=>'🛡️ Safe','fun'=>'🎯 Fun','live'=>'⚡ Live','safe,fun'=>'Safe+Fun','safe,live'=>'Safe+Live'];
 $typeColors = ['safe'=>'#00d4ff','fun'=>'#a855f7','live'=>'#ff2d78'];
@@ -121,21 +160,16 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
 <style>
 /* ═══ HISTORIQUE V2 ═══ */
 
-/* Une seule barre de scroll (navigateur), pas de scroll interne à .content */
-.page-historique .app{max-height:none!important;overflow:visible!important;}
-.page-historique .content{overflow-y:visible!important;min-height:0!important;}
-
-/* Hero — sans sidebar (visiteur) */
-.hist-hero{position:relative;text-align:center;overflow:hidden;background:linear-gradient(180deg,rgba(0,212,255,0.05) 0%,transparent 100%);border-bottom:1px solid var(--border,rgba(255,45,120,0.15));margin-left:-2rem;margin-right:-2rem;margin-top:0;padding:3rem 2rem 2.5rem;}
-/* Hero — avec sidebar (membre) : mêmes marges/padding que .bets-hero, full-bleed */
-.app .content > .hist-hero{margin-left:calc(-3rem - var(--sidebar-w,270px));margin-right:-3rem;margin-top:-2.5rem;padding:3.5rem 2rem 2.5rem 3rem;}
+/* Hero */
+.hist-hero{position:relative;text-align:center;overflow:hidden;background:linear-gradient(180deg,rgba(0,212,255,0.05) 0%,transparent 100%);border-bottom:1px solid var(--border,rgba(255,45,120,0.15));margin-left:calc(-3rem - var(--sidebar-w,270px));margin-right:-3rem;margin-top:-2.5rem;padding:3rem 2rem 2.5rem calc(3rem + var(--sidebar-w,270px));}
 .hist-hero::before{content:'';position:absolute;width:600px;height:400px;background:radial-gradient(circle,rgba(0,212,255,0.08) 0%,transparent 70%);top:-200px;left:50%;transform:translateX(-50%);pointer-events:none;}
-.hist-tag{font-family:'Space Mono',monospace;font-size:0.75rem;letter-spacing:4px;text-transform:uppercase;color:#00e5ff;margin-bottom:0.7rem;text-shadow:0 0 20px rgba(0,229,255,0.4);}
-.hist-title{font-family:'Orbitron',sans-serif;font-size:2.2rem;font-weight:900;margin-bottom:0.5rem;color:#fff;}
-.hist-title span{background:linear-gradient(135deg,#00d4ff,#00a8cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 12px rgba(0,212,255,0.5));}
-.hist-sub{color:#c8d4e0;font-size:1rem;max-width:500px;margin:0 auto;}
+body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem 2rem 2.5rem;}
+.hist-tag{font-family:'Space Mono',monospace;font-size:0.75rem;letter-spacing:4px;text-transform:uppercase;color:var(--blue,#00d4ff);margin-bottom:0.7rem;}
+.hist-title{font-family:'Orbitron',sans-serif;font-size:2.2rem;font-weight:900;margin-bottom:0.5rem;}
+.hist-title span{background:linear-gradient(135deg,#00d4ff,#0099cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.hist-sub{color:var(--txt2,#b0bec9);font-size:1rem;max-width:500px;margin:0 auto;}
 
-.hist-wrap{max-width:1400px;width:100%;margin:0 auto;padding:2rem 1rem 2rem;box-sizing:border-box;}
+.hist-wrap{max-width:1400px;width:100%;margin:0 auto;padding:1.5rem 0.5rem 2rem;box-sizing:border-box;}
 
 /* ═══ Dashboard Stats ═══ */
 .stats-dashboard{display:flex;align-items:center;justify-content:center;gap:2.5rem;margin-bottom:2rem;flex-wrap:wrap;}
@@ -272,7 +306,7 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
 }
 </style>
 </head>
-<body class="page-historique">
+<body>
 <?php if ($membre): ?>
   <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
 <?php else: ?>
@@ -320,10 +354,10 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
         $pct = $tauxReussite ?? 0;
         $greenDeg = round($pct * 3.6);
       ?>
-      <div class="radial-circle" style="background:conic-gradient(#00c864 0deg, #00c864 <?= $greenDeg ?>deg, #ff4444 <?= $greenDeg ?>deg, #ff4444 360deg);padding:5px;border-radius:50%;">
+      <div class="radial-circle" style="background:conic-gradient(#00c864 0deg, #00c864 <?= $greenDeg ?>deg, rgba(255,68,68,0.3) <?= $greenDeg ?>deg, rgba(255,68,68,0.3) 360deg);padding:5px;border-radius:50%;">
         <div style="width:100%;height:100%;border-radius:50%;background:var(--card,#111827);display:flex;align-items:center;justify-content:center;flex-direction:column;">
-          <div class="radial-value" style="color:var(--txt,#f0f4f8)"><?= $tauxReussite !== null ? $tauxReussite . '%' : '—' ?></div>
-          <div class="radial-label" style="color:var(--txt3,#8a9bb0)">Winrate<?= $filtreSection !== 'tous' ? ' section' : '' ?></div>
+          <div class="radial-value"><?= $tauxReussite !== null ? $tauxReussite . '%' : '—' ?></div>
+          <div class="radial-label">Winrate<?= $filtreSection !== 'tous' ? ' section' : '' ?></div>
         </div>
       </div>
     </div>
@@ -356,6 +390,15 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
           <div class="mini-stat-lbl">Annules</div>
         </div>
       </div>
+      <?php if ($coteMoyenne !== null): ?>
+      <div class="mini-stat" style="border-color:rgba(0,212,255,0.2);">
+        <span class="mini-stat-icon">📊</span>
+        <div>
+          <div class="mini-stat-val" style="color:#00d4ff"><?= number_format($coteMoyenne, 2, ',', ' ') ?></div>
+          <div class="mini-stat-lbl">Cote moyenne</div>
+        </div>
+      </div>
+      <?php endif; ?>
     </div>
   </div>
 
@@ -379,7 +422,7 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
       <?php $baseQuery = ($filtre !== 'tous' ? '&filtre='.$filtre : ''); ?>
       <a href="?section=tous<?= $baseQuery ?>" class="filter-pill f-tous <?= $filtreSection==='tous'?'active':'' ?>">Tous <span class="filter-count"><?= $stats['total'] ?? 0 ?></span></a>
       <?php
-        $orderSections = ['tennis_safe','tennis_fun','tennis_live','football_safe','football_fun','football_live','hockey_safe','hockey_fun','hockey_live','basket_safe','basket_fun','basket_live'];
+        $orderSections = ['football_safe','football_combi','football_live','football_fun','basket_safe','basket_combi','basket_live','basket_fun','hockey_safe','hockey_combi','hockey_live','hockey_fun','tennis_safe','tennis_combi','tennis_fun','tennis_live','football','basket','hockey'];
         foreach ($orderSections as $sk):
           if (!isset($sectionStats[$sk])) continue;
           $st = $sectionStats[$sk];
@@ -411,7 +454,8 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
         $types = explode(',', $bet['type']);
         $rawPath = !empty($bet['image_path']) ? $bet['image_path'] : ($bet['locked_image_path'] ?? '');
         if (!empty($rawPath)) {
-          $imgSrc = (strpos($rawPath, 'http') === 0) ? $rawPath : (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($rawPath,'/') : $rawPath);
+          $subdir = (strpos($rawPath, 'locked') !== false) ? 'locked' : 'bets';
+          $imgSrc = function_exists('betImageUrl') ? betImageUrl(trim($rawPath), $subdir) : (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($rawPath,'/') : $rawPath);
         } else {
           $imgSrc = '';
         }

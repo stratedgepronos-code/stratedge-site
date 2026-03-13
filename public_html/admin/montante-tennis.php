@@ -9,7 +9,7 @@ $pageActive = 'montante-tennis';
 $db = getDB();
 
 $adminRole = getAdminRole();
-if ($adminRole === 'admin_fun') {
+if (in_array($adminRole, ['admin_fun', 'admin_fun_sport'])) {
     header('Location: /panel-x9k3m/index.php');
     exit;
 }

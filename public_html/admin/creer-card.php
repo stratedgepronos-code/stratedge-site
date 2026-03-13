@@ -7,6 +7,9 @@ require_once __DIR__ . '/../includes/auth.php';
 requireAdmin();
 $pageActive = 'creer-card';
 $db = getDB();
+$adminRole = getAdminRole();
+$isAdminFunSport = isAdminFunSport();
+$isAdminTennis = isAdminTennis();
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -208,29 +211,35 @@ $db = getDB();
       <div class="field">
         <label>Sport</label>
         <select id="f-sport">
+          <?php if ($isAdminFunSport): ?>
+          <option value="football">⚽ Foot</option>
+          <option value="basket">🏀 NBA</option>
+          <option value="hockey">🏒 NHL</option>
+          <?php elseif ($isAdminTennis): ?>
+          <option value="tennis" selected>🎾 Tennis</option>
+          <?php else: ?>
           <option value="tennis">🎾 Tennis</option>
           <option value="football">⚽ Football</option>
           <option value="basket">🏀 Basket</option>
           <option value="hockey">🏒 Hockey</option>
+          <?php endif; ?>
         </select>
       </div>
 
       <!-- ══ TYPE DE BET (pills) ══ -->
+      <?php if (!$isAdminFunSport): ?>
       <div class="form-section-title">⚡ Type de Bet</div>
       <div class="type-selector">
-        <div class="type-pill active-safe" data-type="Safe" onclick="selectType('Safe')">
-          🛡️ Safe
-        </div>
-        <div class="type-pill" data-type="Live" onclick="selectType('Live')">
-          🔴 Live
-        </div>
-        <div class="type-pill" data-type="Fun" onclick="selectType('Fun')">
-          🎲 Fun
-        </div>
-        <div class="type-pill" data-type="SafeCombi" onclick="selectType('SafeCombi')">
-          🛡️⚡ Combi
-        </div>
+        <div class="type-pill <?= $isAdminTennis ? '' : 'active-safe' ?>" data-type="Safe" onclick="selectType('Safe')">🛡️ Safe</div>
+        <div class="type-pill" data-type="Live" onclick="selectType('Live')">🔴 Live</div>
+        <div class="type-pill <?= $isAdminTennis ? '' : '' ?>" data-type="Fun" onclick="selectType('Fun')">🎲 Fun</div>
+        <div class="type-pill" data-type="SafeCombi" onclick="selectType('SafeCombi')">🛡️⚡ Combi</div>
       </div>
+      <?php else: ?>
+      <input type="hidden" id="force-fun-type" value="1">
+      <div class="form-section-title">⚡ Type</div>
+      <p style="color:var(--text-muted);font-size:0.9rem;">🎯 Fun — Foot / NBA / NHL uniquement</p>
+      <?php endif; ?>
 
       <!-- ══ FORMULAIRE SAFE (champs structurés) ══ -->
       <div id="form-safe">
@@ -471,22 +480,26 @@ const CARD_WIDTHS = { Safe: 1080, Live: 720, Fun: 1080, SafeCombi: 1440 };
 // ── Sélection du type de bet ────────────────────────────────
 function selectType(type) {
   currentType = type;
-
-  // Retirer tous les styles actifs des pills
-  document.querySelectorAll('.type-pill').forEach(p => {
-    p.className = 'type-pill';
-  });
-
-  // Activer la pill sélectionnée
+  document.querySelectorAll('.type-pill').forEach(p => { p.className = 'type-pill'; });
   const pill = document.querySelector(`.type-pill[data-type="${type}"]`);
-  pill.classList.add('active-' + type.toLowerCase());
-
-  // Afficher/masquer les formulaires
+  if (pill) pill.classList.add('active-' + type.toLowerCase());
   document.getElementById('form-safe').style.display      = (type === 'Safe') ? 'block' : 'none';
   document.getElementById('form-live').style.display      = (type === 'Live') ? 'block' : 'none';
   document.getElementById('form-fun').style.display       = (type === 'Fun')  ? 'block' : 'none';
-  document.getElementById('form-safecombi').style.display  = (type === 'SafeCombi') ? 'block' : 'none';
+  const fsb = document.getElementById('form-safecombi');
+  if (fsb) fsb.style.display = (type === 'SafeCombi') ? 'block' : 'none';
 }
+
+// Admin Fun Sport : forcer type Fun au chargement
+document.addEventListener('DOMContentLoaded', function() {
+  if (document.getElementById('force-fun-type')) {
+    currentType = 'Fun';
+    document.getElementById('form-fun').style.display = 'block';
+    document.getElementById('form-safe').style.display = 'none';
+    document.getElementById('form-live').style.display = 'none';
+    if (document.getElementById('form-safecombi')) document.getElementById('form-safecombi').style.display = 'none';
+  }
+});
 
 // ── Génération de la card ───────────────────────────────────
 async function generateCard() {
@@ -805,9 +818,10 @@ async function posterBetFromCard() {
 
   const titre = (document.getElementById('f-titre-bet') && document.getElementById('f-titre-bet').value.trim()) || currentMatchName || 'Bet StratEdge';
   const typeMap = { Safe: 'safe', Live: 'live', Fun: 'fun', SafeCombi: 'safe' };
-  const type = typeMap[currentType] || 'safe';
-  const sport = document.getElementById('f-sport') ? document.getElementById('f-sport').value : 'tennis';
-  const categorie = sport === 'tennis' ? 'tennis' : 'multi';
+  let type = typeMap[currentType] || 'safe';
+  let sport = document.getElementById('f-sport') ? document.getElementById('f-sport').value : 'tennis';
+  let categorie = sport === 'tennis' ? 'tennis' : 'multi';
+  if (document.getElementById('force-fun-type')) { type = 'fun'; categorie = 'multi'; sport = document.getElementById('f-sport') ? document.getElementById('f-sport').value : 'football'; }
   const analyseHtml = (document.getElementById('f-analyse-html') && document.getElementById('f-analyse-html').value.trim()) || '';
   let cote = (document.getElementById('f-cote-bet') && document.getElementById('f-cote-bet').value.trim()) || '';
   if (cote !== '' && !isNaN(parseFloat(cote))) cote = parseFloat(cote).toFixed(2);

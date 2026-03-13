@@ -43,6 +43,11 @@ function isAdminFun(): bool {
     return getAdminRole() === 'admin_fun';
 }
 
+/** Admin Fun Sport : uniquement Fun Foot / NBA / NHL (cards) */
+function isAdminFunSport(): bool {
+    return getAdminRole() === 'admin_fun_sport';
+}
+
 // ── Obliger le super admin ─────────────────────────────────
 function requireSuperAdmin(): void {
     if (!isSuperAdmin()) {
@@ -113,7 +118,7 @@ function loginMembre(string $email, string $password): array {
     session_regenerate_id(true);
 
     $role = $membre['role'] ?? '';
-    $isAdm = ($membre['email'] === ADMIN_EMAIL || in_array($role, ['admin', 'admin_tennis', 'admin_fun'], true));
+    $isAdm = ($membre['email'] === ADMIN_EMAIL || in_array($role, ['admin', 'admin_tennis', 'admin_fun', 'admin_fun_sport'], true));
 
     $_SESSION['membre_id']    = $membre['id'];
     $_SESSION['membre_nom']   = $membre['nom'];

@@ -31,13 +31,22 @@ $sport      = in_array($_POST['sport'] ?? '', ['tennis','football','basket','hoc
 $analyseHtml = trim((string)($_POST['analyse_html'] ?? ''));
 $coteRaw    = trim((string)($_POST['cote'] ?? ''));
 
-$isSuperAdmin = (isset($_SESSION['membre_email']) && $_SESSION['membre_email'] === ADMIN_EMAIL);
-if (!$isSuperAdmin) {
+$adminRole = getAdminRole();
+$isSuperAdmin = isSuperAdmin();
+if ($adminRole === 'admin_fun_sport') {
+    $type = 'fun';
+    $categorie = 'multi';
+    $sport = in_array($sport, ['football','basket','hockey']) ? $sport : 'football';
+} elseif ($adminRole === 'admin_tennis') {
+    $categorie = 'tennis';
+    $sport = 'tennis';
+} elseif (!$isSuperAdmin) {
     $categorie = 'tennis';
 }
 
-// On conserve les scripts pour les graphiques (Chart.js, ApexCharts). Contenu admin uniquement.
+// Sécurité : retirer script/iframe de l'analyse HTML
 if ($analyseHtml !== '') {
+    $analyseHtml = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $analyseHtml);
     $analyseHtml = preg_replace('/<iframe\b[^>]*>.*?<\/iframe>/is', '', $analyseHtml);
 }
 $cote = ($coteRaw !== '' && is_numeric($coteRaw)) ? number_format((float)$coteRaw, 2, '.', '') : null;

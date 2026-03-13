@@ -232,6 +232,13 @@ CREATE TABLE IF NOT EXISTS `montante_steps` (
 ALTER TABLE abonnements MODIFY COLUMN `type` VARCHAR(30) NOT NULL DEFAULT 'daily';
 
 
+-- ── 11b. Rôles admin (optionnel) ─────────────────────────────────────
+-- Morrayaffa (poze51@hotmail.fr) : uniquement Fun Foot/NBA/NHL
+-- UPDATE membres SET role = 'admin_fun_sport' WHERE email = 'poze51@hotmail.fr';
+-- Shuriik (Dilancarreira94@gmail.com) : Tennis + Montante Tennis
+-- UPDATE membres SET role = 'admin_tennis' WHERE email = 'Dilancarreira94@gmail.com';
+
+
 -- ── 12. Vérification ─────────────────────────────────────────
 -- Après exécution, vérifier avec :
 -- DESCRIBE bets;

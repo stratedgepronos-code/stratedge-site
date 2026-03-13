@@ -12,26 +12,65 @@ $acces = $membre ? getMembreAcces($membre['id']) : ['all' => false, 'multi' => f
 $betsWhere = buildBetsWhereClause($acces);
 $stmt = $db->query("SELECT * FROM bets WHERE actif = 1 AND {$betsWhere} ORDER BY date_post DESC");
 $bets = $stmt->fetchAll();
-$betsSafe = array_filter($bets, function($b) {
-    $t = $b['type'];
-    return (strpos($t, 'safe') !== false) && (strpos($t, 'live') === false) && (strpos($t, 'fun') === false);
-});
-$betsLive = array_filter($bets, function($b) { return strpos($b['type'], 'live') !== false; });
-$betsFun  = array_filter($bets, function($b) { return strpos($b['type'], 'fun') !== false; });
-$typeLabels = ['safe'=>'🛡️ Safe','fun'=>'🎯 Fun','live'=>'⚡ Live'];
-$typeColors = ['safe'=>'#00d4ff','fun'=>'#a855f7','live'=>'#ff2d78'];
-$nbSafe = count($betsSafe);
-$nbLive = count($betsLive);
-$nbFun  = count($betsFun);
-$nbTotal = count($bets);
 
-$sections = [
-  'safe' => ['bets' => $betsSafe, 'title' => 'Safe', 'icon' => '🛡️', 'color' => '#00d4ff', 'count' => $nbSafe],
-  'live' => ['bets' => $betsLive, 'title' => 'Live', 'icon' => '⚡', 'color' => '#ff2d78', 'count' => $nbLive],
-  'fun'  => ['bets' => $betsFun,  'title' => 'Fun',  'icon' => '🎯', 'color' => '#a855f7', 'count' => $nbFun],
+// Normaliser sport
+$sportNorm = function($b) {
+    $s = strtolower(trim($b['sport'] ?? ''));
+    if ($s === '' && (($b['categorie'] ?? '') === 'tennis')) return 'tennis';
+    if (in_array($s, ['football','foot'], true)) return 'football';
+    if (in_array($s, ['basket','nba'], true)) return 'basket';
+    if (in_array($s, ['hockey','nhl'], true)) return 'hockey';
+    return in_array($s, ['football','basket','hockey'], true) ? $s : 'football';
+};
+// Type principal: safe, combi, live, fun
+$typeNorm = function($b) {
+    $t = strtolower($b['type'] ?? '');
+    if (strpos($t, 'fun') !== false) return 'fun';
+    if (strpos($t, 'live') !== false) return 'live';
+    if (strpos($t, 'combi') !== false) return 'combi';
+    return 'safe';
+};
+
+// 3 grosses catégories : Multisports | Tennis | Fun
+$mainCategories = [
+    'multisports' => ['title' => 'Multisports', 'icon' => '⚽🏀🏒', 'color' => '#00d4ff', 'bets' => [], 'subs' => []],
+    'tennis'      => ['title' => 'Tennis',      'icon' => '🎾', 'color' => '#00d46a', 'bets' => [], 'subs' => []],
+    'fun'         => ['title' => 'Fun',         'icon' => '🎯', 'color' => '#a855f7', 'bets' => [], 'subs' => []],
 ];
-$availableSections = array_filter($sections, fn($s) => !empty($s['bets']));
-$firstTab = array_key_first($availableSections) ?? 'safe';
+$sportLabels = ['football' => 'Foot', 'basket' => 'NBA', 'hockey' => 'NHL'];
+$typeLabels = ['safe' => '🛡️ Safe', 'combi' => '⚡ Combi', 'safe_combi' => '⚡ Combi', 'live' => '🔥 Live', 'fun' => '🎯 Fun', 'safe,fun' => '🎯 Fun', 'safe,live' => '🔥 Live'];
+$typeColors = ['safe' => '#00d4ff', 'combi' => '#ff6b2b', 'safe_combi' => '#ff6b2b', 'live' => '#ff2d78', 'fun' => '#a855f7', 'safe,fun' => '#a855f7', 'safe,live' => '#ff2d78'];
+
+foreach ($bets as $b) {
+    $cat = $b['categorie'] ?? 'multi';
+    $isFun = (strpos(strtolower($b['type'] ?? ''), 'fun') !== false);
+    $sport = $sportNorm($b);
+    $type = $typeNorm($b);
+
+    if ($cat === 'tennis') {
+        $mainCategories['tennis']['bets'][] = $b;
+        $subKey = $type;
+        if (!isset($mainCategories['tennis']['subs'][$subKey])) $mainCategories['tennis']['subs'][$subKey] = [];
+        $mainCategories['tennis']['subs'][$subKey][] = $b;
+    } elseif ($isFun && $cat === 'multi') {
+        $mainCategories['fun']['bets'][] = $b;
+        $subKey = $sport;
+        if (!in_array($subKey, ['football','basket','hockey'])) $subKey = 'football';
+        if (!isset($mainCategories['fun']['subs'][$subKey])) $mainCategories['fun']['subs'][$subKey] = [];
+        $mainCategories['fun']['subs'][$subKey][] = $b;
+    } else {
+        $mainCategories['multisports']['bets'][] = $b;
+        $subKey = $sport . '_' . $type;
+        if (!isset($mainCategories['multisports']['subs'][$subKey])) $mainCategories['multisports']['subs'][$subKey] = [];
+        $mainCategories['multisports']['subs'][$subKey][] = $b;
+    }
+}
+
+$nbTotal = count($bets);
+$firstTab = 'multisports';
+if (!empty($mainCategories['multisports']['bets'])) $firstTab = 'multisports';
+elseif (!empty($mainCategories['tennis']['bets'])) $firstTab = 'tennis';
+elseif (!empty($mainCategories['fun']['bets'])) $firstTab = 'fun';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -245,22 +284,44 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
   <div class="no-bets"><div class="big">🎯</div><h3>Aucun bet disponible</h3><p>Les nouvelles analyses arrivent bientot, reste connecte !</p></div>
   <?php else: ?>
 
-  <!-- Onglets Safe | Live | Fun -->
+  <!-- Onglets Multisports | Tennis | Fun -->
   <div class="tabs-bar" id="tabsBar">
-    <?php $tabIdx = 0; foreach ($availableSections as $key => $sec): ?>
-    <button class="tab-btn <?= $key === $firstTab ? 'active' : '' ?>" data-tab="<?= $key ?>" data-color="<?= $sec['color'] ?>" onclick="switchTab('<?= $key ?>')">
-      <?= $sec['icon'] ?> <?= $sec['title'] ?>
-      <span class="tab-count"><?= $sec['count'] ?></span>
+    <?php foreach ($mainCategories as $mKey => $mCat): ?>
+    <button class="tab-btn <?= $mKey === $firstTab ? 'active' : '' ?>" data-tab="<?= $mKey ?>" data-color="<?= $mCat['color'] ?>" onclick="switchTab('<?= $mKey ?>')">
+      <?= $mCat['icon'] ?> <?= $mCat['title'] ?>
+      <span class="tab-count"><?= count($mCat['bets']) ?></span>
     </button>
-    <?php $tabIdx++; endforeach; ?>
+    <?php endforeach; ?>
     <div class="tab-indicator" id="tabIndicator"></div>
   </div>
 
-  <!-- Panels -->
-  <?php foreach ($availableSections as $key => $sec): ?>
-  <div class="tab-panel <?= $key === $firstTab ? 'active' : '' ?>" id="panel-<?= $key ?>">
+  <!-- Panels par grosse catégorie -->
+  <?php foreach ($mainCategories as $mKey => $mCat):
+    $subs = $mCat['subs'] ?? [];
+    $orderSubs = $mKey === 'tennis' ? ['safe','combi','fun','live'] : ($mKey === 'fun' ? ['football','basket','hockey'] : null);
+  ?>
+  <div class="tab-panel <?= $mKey === $firstTab ? 'active' : '' ?>" id="panel-<?= $mKey ?>">
+    <?php if (empty($mCat['bets'])): ?>
+    <div class="no-bets"><div class="big">🎯</div><h3>Aucun bet dans cette catégorie</h3></div>
+    <?php else:
+      if ($orderSubs) {
+        $ordered = [];
+        foreach ($orderSubs as $sk) { if (isset($subs[$sk])) $ordered[$sk] = $subs[$sk]; }
+        foreach ($subs as $sk => $arr) { if (!isset($ordered[$sk])) $ordered[$sk] = $arr; }
+        $subs = $ordered;
+      } else {
+        ksort($subs);
+      }
+      foreach ($subs as $subKey => $subBets):
+        if (empty($subBets)) continue;
+        $subLabel = $mKey === 'tennis' ? ($typeLabels[$subKey] ?? $subKey) : ($mKey === 'fun' ? ($sportLabels[$subKey] ?? $subKey) : (isset($sportLabels[explode('_',$subKey)[0]]) ? $sportLabels[explode('_',$subKey)[0]] . ' · ' . ($typeLabels[explode('_',$subKey)[1]] ?? explode('_',$subKey)[1]) : $subKey));
+    ?>
+    <div class="sub-section" style="margin-bottom:2rem;">
+      <h3 class="sub-section-title" style="font-family:'Orbitron',sans-serif;font-size:0.85rem;margin-bottom:1rem;color:var(--txt2);display:flex;align-items:center;gap:0.5rem;">
+        <span style="color:<?= $mCat['color'] ?>;"><?= $mCat['icon'] ?></span> <?= $subLabel ?> <span class="tab-count"><?= count($subBets) ?></span>
+      </h3>
     <div class="bets-grid">
-    <?php foreach ($sec['bets'] as $bet):
+    <?php foreach ($subBets as $bet):
       $types = explode(',', $bet['type']);
       $mainType = trim($types[0]);
       $rawPath = !empty($bet['image_path']) ? $bet['image_path'] : ($bet['locked_image_path'] ?? '');
@@ -301,6 +362,9 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
     </div>
     <?php endforeach; ?>
     </div>
+    </div>
+    <?php endforeach; ?>
+    <?php endif; ?>
   </div>
   <?php endforeach; ?>
 
