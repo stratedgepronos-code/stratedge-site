@@ -178,8 +178,9 @@ table.mt-table{width:100%;border-collapse:collapse;}
 .mt-empty .big{font-size:3.5rem;margin-bottom:1rem;}
 .mt-empty h3{font-family:'Orbitron',sans-serif;font-size:1.1rem;margin-bottom:0.5rem;color:var(--txt2);}
 
-/* Stake banner */
-.stake-banner{background:linear-gradient(135deg,rgba(0,212,255,0.08),rgba(0,212,106,0.05));border:1px solid rgba(0,212,255,0.2);border-radius:14px;padding:1.2rem 1.5rem;margin-bottom:2rem;display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;}
+/* Stake + Packs promo row */
+.stake-promo-row{display:flex;align-items:stretch;gap:1rem;margin-bottom:2rem;flex-wrap:wrap;}
+.stake-banner{background:linear-gradient(135deg,rgba(0,212,255,0.08),rgba(0,212,106,0.05));border:1px solid rgba(0,212,255,0.2);border-radius:14px;padding:1.2rem 1.5rem;display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;flex:1;min-width:280px;}
 .stake-banner-icon{font-size:2rem;flex-shrink:0;}
 .stake-banner-text{flex:1;min-width:200px;}
 .stake-banner-text h3{font-family:'Orbitron',sans-serif;font-size:0.85rem;font-weight:700;color:#00d4ff;margin-bottom:0.3rem;}
@@ -188,6 +189,19 @@ table.mt-table{width:100%;border-collapse:collapse;}
 .stake-banner-text .stake-accroche{margin-top:0.6rem;font-size:0.85rem;color:var(--txt2);}
 .btn-stake-mt{display:inline-flex;align-items:center;gap:0.5rem;background:linear-gradient(135deg,#00d4ff,#0089ff 55%,#00d46a);color:#fff;padding:0.7rem 1.5rem;border-radius:10px;text-decoration:none;font-weight:700;font-size:0.9rem;text-transform:uppercase;letter-spacing:1px;transition:all .3s;white-space:nowrap;flex-shrink:0;}
 .btn-stake-mt:hover{box-shadow:0 0 25px rgba(0,166,255,0.4);transform:translateY(-2px);}
+.pack-banners{display:flex;gap:1rem;flex-wrap:wrap;}
+.pack-banner{border-radius:14px;padding:1rem 1.2rem;min-width:160px;display:flex;flex-direction:column;justify-content:space-between;gap:0.75rem;}
+.pack-banner.vip-max{background:linear-gradient(135deg,rgba(245,158,11,0.12),rgba(217,119,6,0.06));border:1px solid rgba(245,158,11,0.35);}
+.pack-banner.vip-max h4{color:#f59e0b;font-family:'Orbitron',sans-serif;font-size:0.9rem;font-weight:700;}
+.pack-banner.vip-max p{font-size:0.82rem;color:var(--txt2);margin:0;}
+.pack-banner.tennis-weekly{background:linear-gradient(135deg,rgba(0,212,106,0.1),rgba(0,212,255,0.06));border:1px solid rgba(0,212,106,0.35);}
+.pack-banner.tennis-weekly h4{color:#00d46a;font-family:'Orbitron',sans-serif;font-size:0.9rem;font-weight:700;}
+.pack-banner.tennis-weekly p{font-size:0.82rem;color:var(--txt2);margin:0;}
+.btn-pack{display:inline-flex;align-items:center;justify-content:center;gap:0.4rem;padding:0.55rem 1rem;border-radius:8px;text-decoration:none;font-weight:700;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.5px;transition:all .25s;white-space:nowrap;}
+.pack-banner.vip-max .btn-pack{background:linear-gradient(135deg,#f59e0b,#d97706);color:#050810;}
+.pack-banner.vip-max .btn-pack:hover{box-shadow:0 0 20px rgba(245,158,11,0.5);transform:translateY(-1px);}
+.pack-banner.tennis-weekly .btn-pack{background:linear-gradient(135deg,#00d46a,#00a050);color:#fff;}
+.pack-banner.tennis-weekly .btn-pack:hover{box-shadow:0 0 20px rgba(0,212,106,0.5);transform:translateY(-1px);}
 
 /* Archives */
 .mt-archives{margin-top:2.5rem;}
@@ -213,8 +227,11 @@ table.mt-table{width:100%;border-collapse:collapse;}
   .mt-current{padding:1rem;}
   .mt-table-wrap{overflow-x:auto;}
   .mt-table{min-width:600px;}
+  .stake-promo-row{flex-direction:column;}
   .stake-banner{flex-direction:column;text-align:center;padding:1rem;}
   .btn-stake-mt{width:100%;justify-content:center;}
+  .pack-banners{width:100%;flex-direction:column;}
+  .pack-banner{min-width:0;}
 }
 </style>
 </head>
@@ -234,15 +251,33 @@ table.mt-table{width:100%;border-collapse:collapse;}
   <?php endif; ?>
 </div>
 
-<!-- Bannière Stake -->
-<div class="stake-banner">
-  <div class="stake-banner-icon">🎾</div>
-  <div class="stake-banner-text">
-    <h3>Tous les matchs se jouent sur Stake</h3>
-    <p>La montante est jouée exclusivement sur <strong>Stake.bet</strong> pour profiter des meilleures cotes tennis et des retraits instantanés en crypto. Crée ton compte avec notre lien partenaire pour un <strong>bonus exclusif StratEdge</strong>.</p>
-    <p class="stake-accroche">🔥 <strong>Pack gagnant</strong> : abo <strong>VIP Max</strong> (1 mois) + inscription <strong>Stake.bet</strong> (1 mois offert) + abo <strong>Tennis Weekly</strong> (1 semaine pour 15€) — la combo pour suivre la montante et tous les pronos tennis.</p>
+<!-- Ligne promo : Stake + Packs VIP Max & Tennis Weekly -->
+<div class="stake-promo-row">
+  <div class="stake-banner">
+    <div class="stake-banner-icon">🎾</div>
+    <div class="stake-banner-text">
+      <h3>Tous les matchs se jouent sur Stake</h3>
+      <p>La montante est jouée exclusivement sur <strong>Stake.bet</strong> pour profiter des meilleures cotes tennis et des retraits instantanés en crypto. Crée ton compte avec notre lien partenaire pour un <strong>bonus exclusif StratEdge</strong>.</p>
+      <p class="stake-accroche">🔥 Souscrivez à l'un des packs pour recevoir tous nos pronostiques analysés avec minutie : abo <strong>VIP Max</strong> (1 mois) 50€ | inscription <strong>Stake.bet</strong> (1 mois offert) | abo <strong>Tennis Weekly</strong> (1 semaine) 15€.</p>
+    </div>
+    <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake-mt">🎁 S'inscrire sur Stake</a>
   </div>
-  <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake-mt">🎁 S'inscrire sur Stake</a>
+  <div class="pack-banners">
+    <div class="pack-banner vip-max">
+      <div>
+        <h4>👑 VIP Max</h4>
+        <p>1 mois — 50€<br>Tous les pronos + accès complet</p>
+      </div>
+      <a href="/#pricing" class="btn-pack">Voir l'offre</a>
+    </div>
+    <div class="pack-banner tennis-weekly">
+      <div>
+        <h4>🎾 Tennis Weekly</h4>
+        <p>1 semaine — 15€<br>Pronos tennis uniquement</p>
+      </div>
+      <a href="/#pricing" class="btn-pack">Voir l'offre</a>
+    </div>
+  </div>
 </div>
 
 <?php if ($config['id'] === 0 || empty($steps)): ?>
