@@ -206,7 +206,7 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
 .cd-label{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);margin-top:4px;}
 .cd-sep{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;color:var(--pink);margin-bottom:12px;}
 .panel{background:var(--card);border-radius:14px;border:1px solid var(--border);overflow:visible;}
-.panel.votes-panel{overflow:hidden;}
+.panel.votes-panel{overflow:hidden;margin-right:2.5rem;}
 .panel-title{font-family:'Orbitron',sans-serif;font-size:0.85rem;font-weight:700;padding:1rem 1.2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:0.5rem;}
 .match-row{display:flex;align-items:center;justify-content:space-between;gap:0.75rem;padding:1rem 1.2rem;border-bottom:1px solid rgba(255,255,255,0.06);}
 .match-row:last-child{border-bottom:none;}
