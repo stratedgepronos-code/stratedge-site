@@ -185,6 +185,7 @@ table.mt-table{width:100%;border-collapse:collapse;}
 .stake-banner-text h3{font-family:'Orbitron',sans-serif;font-size:0.85rem;font-weight:700;color:#00d4ff;margin-bottom:0.3rem;}
 .stake-banner-text p{font-size:0.88rem;color:var(--txt2);line-height:1.5;}
 .stake-banner-text p strong{color:#00d4ff;}
+.stake-banner-text .stake-accroche{margin-top:0.6rem;font-size:0.85rem;color:var(--txt2);}
 .btn-stake-mt{display:inline-flex;align-items:center;gap:0.5rem;background:linear-gradient(135deg,#00d4ff,#0089ff 55%,#00d46a);color:#fff;padding:0.7rem 1.5rem;border-radius:10px;text-decoration:none;font-weight:700;font-size:0.9rem;text-transform:uppercase;letter-spacing:1px;transition:all .3s;white-space:nowrap;flex-shrink:0;}
 .btn-stake-mt:hover{box-shadow:0 0 25px rgba(0,166,255,0.4);transform:translateY(-2px);}
 
@@ -239,6 +240,7 @@ table.mt-table{width:100%;border-collapse:collapse;}
   <div class="stake-banner-text">
     <h3>Tous les matchs se jouent sur Stake</h3>
     <p>La montante est jouée exclusivement sur <strong>Stake.bet</strong> pour profiter des meilleures cotes tennis et des retraits instantanés en crypto. Crée ton compte avec notre lien partenaire pour un <strong>bonus exclusif StratEdge</strong>.</p>
+    <p class="stake-accroche">🔥 <strong>Pack gagnant</strong> : abo <strong>VIP Max</strong> (1 mois) + inscription <strong>Stake.bet</strong> (1 mois offert) + abo <strong>Tennis Weekly</strong> (1 semaine pour 15€) — la combo pour suivre la montante et tous les pronos tennis.</p>
   </div>
   <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake-mt">🎁 S'inscrire sur Stake</a>
 </div>
