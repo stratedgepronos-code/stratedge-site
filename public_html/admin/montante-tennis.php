@@ -4,6 +4,7 @@
 // Créer/gérer une montante, ajouter des étapes, définir les résultats
 // ============================================================
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/montante-notifications.php';
 requireAdmin();
 $pageActive = 'montante-tennis';
 $db = getDB();
@@ -65,7 +66,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $db->exec("UPDATE montante_config SET statut = 'terminee' WHERE statut IN ('active','pause')");
         $stmt = $db->prepare("INSERT INTO montante_config (nom, bankroll_initial, mise_depart, statut, date_debut) VALUES (?, ?, ?, 'active', ?)");
         $stmt->execute([$nom, $bankroll, $miseDepart, $dateDebut]);
+        $newId = (int)$db->lastInsertId();
         $success = 'Nouvelle montante créée : ' . clean($nom);
+        if ($newId) {
+            $newConfig = $db->prepare("SELECT * FROM montante_config WHERE id = ?");
+            $newConfig->execute([$newId]);
+            $newConfigRow = $newConfig->fetch(PDO::FETCH_ASSOC);
+            if ($newConfigRow) {
+                notifyMontanteDemarrage($newConfigRow);
+            }
+        }
 
     } elseif ($_POST['action'] === 'toggle_statut') {
         $montanteId = (int)($_POST['montante_id'] ?? 0);
@@ -93,7 +103,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
             $stmt = $db->prepare("INSERT INTO montante_steps (montante_id, step_number, match_desc, competition, cote, mise, date_match, heure, analyse) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([$montanteId, $nextStep, $matchDesc, $competition ?: null, $cote, $mise, $dateMatch ?: null, $heure ?: null, $analyse ?: null]);
+            $stepId = (int)$db->lastInsertId();
             $success = 'Étape ' . $nextStep . ' ajoutée : ' . clean($matchDesc);
+            if ($stepId && $config = $db->query("SELECT * FROM montante_config WHERE id = " . (int)$montanteId)->fetch(PDO::FETCH_ASSOC)) {
+                $newStep = $db->prepare("SELECT * FROM montante_steps WHERE id = ?");
+                $newStep->execute([$stepId]);
+                $newStepRow = $newStep->fetch(PDO::FETCH_ASSOC);
+                if ($newStepRow) {
+                    notifyMontanteNouvelleEtape($newStepRow, $config);
+                }
+            }
         } else {
             $error = 'Match requis.';
         }
@@ -128,13 +147,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $db->prepare("UPDATE montante_steps SET resultat = ?, gain_perte = ?, bankroll_apres = ? WHERE id = ?")
                    ->execute([$resultat, $gainPerte, $bankrollApres, $stepId]);
                 $success = 'Résultat enregistré. ' . ($gainPerte >= 0 ? '+' : '') . number_format($gainPerte, 2) . '€';
+                $s['resultat'] = $resultat;
+                $s['gain_perte'] = $gainPerte;
+                $s['bankroll_apres'] = $bankrollApres;
+                notifyMontanteResultat($s, $mc, $resultat);
             }
         } else {
             $error = 'Résultat invalide.';
         }
+    } elseif ($_POST['action'] === 'edit_step') {
+        $stepId = (int)($_POST['step_id'] ?? 0);
+        if ($stepId) {
+            $matchDesc = trim($_POST['match_desc'] ?? '');
+            $competition = trim($_POST['competition'] ?? '');
+            $cote = max(1.01, (float)($_POST['cote'] ?? 1.5));
+            $mise = max(0.5, (float)($_POST['mise'] ?? 10));
+            $dateMatch = !empty($_POST['date_match']) ? $_POST['date_match'] : null;
+            $heure = trim($_POST['heure'] ?? '');
+            $analyse = trim($_POST['analyse'] ?? '');
+
+            if ($matchDesc !== '') {
+                $db->prepare("UPDATE montante_steps SET match_desc = ?, competition = ?, cote = ?, mise = ?, date_match = ?, heure = ?, analyse = ? WHERE id = ?")
+                   ->execute([$matchDesc, $competition ?: null, $cote, $mise, $dateMatch ?: null, $heure ?: null, $analyse ?: null, $stepId]);
+                header('Location: ' . parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) . '?success_edit=1');
+                exit;
+            } else {
+                $error = 'Match requis.';
+            }
+        }
     }
 }
 
+if (isset($_GET['success_edit'])) {
+    $success = 'Étape mise à jour.';
+}
 $config = $db->query("SELECT * FROM montante_config ORDER BY id DESC LIMIT 1")->fetch();
 $steps = [];
 if ($config) {
@@ -203,7 +249,7 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
     <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
       <strong style="font-size:1.1rem;"><?= clean($config['nom']) ?></strong>
       <span class="status-badge status-<?= $config['statut'] ?>"><?= $config['statut'] === 'active' ? '🟢 Active' : ($config['statut'] === 'pause' ? '⏸ Pause' : '⬛ Terminée') ?></span>
-      <span style="color:var(--text-muted);font-size:0.85rem;">Bankroll initiale : <?= number_format((float)$config['bankroll_initial'], 2) ?>€ · Mise départ : <?= number_format((float)$config['mise_depart'], 2) ?>€</span>
+      <span style="color:var(--text-muted);font-size:0.85rem;">Montant visé : <?= number_format((float)$config['bankroll_initial'], 2) ?>€ · Mise départ : <?= number_format((float)$config['mise_depart'], 2) ?>€</span>
     </div>
     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
       <?php foreach (['active' => '▶ Activer', 'pause' => '⏸ Pause', 'terminee' => '⏹ Terminer'] as $st => $label): ?>
@@ -226,7 +272,7 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
         <input type="hidden" name="action" value="create_montante">
         <div class="form-grid">
           <div class="form-group"><label>Nom</label><input type="text" name="nom" value="Montante Tennis" required></div>
-          <div class="form-group"><label>Bankroll initiale (€)</label><input type="number" name="bankroll_initial" value="100" step="0.01" min="1" required></div>
+          <div class="form-group"><label>Montant visé (€)</label><input type="number" name="bankroll_initial" value="100" step="0.01" min="1" required></div>
           <div class="form-group"><label>Mise de départ (€)</label><input type="number" name="mise_depart" value="10" step="0.01" min="0.5" required></div>
           <div class="form-group"><label>Date début</label><input type="date" name="date_debut" value="<?= date('Y-m-d') ?>"></div>
           <div class="form-group"><button type="submit" class="btn btn-green">Créer</button></div>
@@ -262,8 +308,43 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
 
   <!-- Liste des étapes -->
   <?php if (!empty($steps)): ?>
+  <?php
+  $editStepId = isset($_GET['edit_step']) ? (int)$_GET['edit_step'] : 0;
+  $editStepRow = null;
+  if ($editStepId) {
+      $stEdit = $db->prepare("SELECT * FROM montante_steps WHERE id = ?");
+      $stEdit->execute([$editStepId]);
+      $editStepRow = $stEdit->fetch(PDO::FETCH_ASSOC);
+  }
+  ?>
   <div class="card">
     <h2>📋 Étapes (<?= count($steps) ?>)</h2>
+    <?php if ($editStepRow): ?>
+    <div style="background:rgba(0,212,106,0.06);border:1px solid rgba(0,212,106,0.25);border-radius:10px;padding:1rem;margin-bottom:1rem;">
+      <strong style="color:#00d46a;">✏️ Modifier l'étape <?= (int)$editStepRow['step_number'] ?></strong>
+      <form method="post" style="margin-top:1rem;">
+        <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
+        <input type="hidden" name="action" value="edit_step">
+        <input type="hidden" name="step_id" value="<?= (int)$editStepRow['id'] ?>">
+        <div class="form-grid">
+          <div class="form-group"><label>Match</label><input type="text" name="match_desc" value="<?= htmlspecialchars($editStepRow['match_desc'] ?? '') ?>" required></div>
+          <div class="form-group"><label>Compétition</label><input type="text" name="competition" value="<?= htmlspecialchars($editStepRow['competition'] ?? '') ?>"></div>
+          <div class="form-group"><label>Cote</label><input type="number" name="cote" step="0.01" min="1.01" value="<?= number_format((float)$editStepRow['cote'], 2, '.', '') ?>" required></div>
+          <div class="form-group"><label>Mise (€)</label><input type="number" name="mise" step="0.01" min="0.5" value="<?= number_format((float)$editStepRow['mise'], 2, '.', '') ?>" required></div>
+          <div class="form-group"><label>Date du match</label><input type="date" name="date_match" value="<?= $editStepRow['date_match'] ? htmlspecialchars($editStepRow['date_match']) : '' ?>"></div>
+          <div class="form-group"><label>Heure</label><input type="text" name="heure" placeholder="15:00" value="<?= htmlspecialchars($editStepRow['heure'] ?? '') ?>"></div>
+        </div>
+        <div class="form-group" style="margin-top:0.8rem;">
+          <label>Analyse / Commentaire</label>
+          <textarea name="analyse" rows="3" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.6rem;color:var(--text-primary);font-family:inherit;resize:vertical;"><?= htmlspecialchars($editStepRow['analyse'] ?? '') ?></textarea>
+        </div>
+        <div style="margin-top:0.8rem;display:flex;gap:0.5rem;">
+          <button type="submit" class="btn btn-green">Enregistrer</button>
+          <a href="?">Annuler</a>
+        </div>
+      </form>
+    </div>
+    <?php endif; ?>
     <div class="table-wrap">
       <table>
         <thead>
@@ -291,6 +372,7 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
             </td>
             <td style="font-weight:600;"><?= $s['bankroll_apres'] !== null ? number_format((float)$s['bankroll_apres'], 2) . '€' : '—' ?></td>
             <td>
+              <a href="?edit_step=<?= (int)$s['id'] ?>" class="btn-sm" style="display:inline-block;margin-bottom:0.25rem;background:rgba(0,212,255,0.12);color:#00d4ff;border:1px solid rgba(0,212,255,0.3);text-decoration:none;">✏️ Modifier</a>
               <?php if ($s['resultat'] === 'en_cours'): ?>
               <div style="display:flex;gap:0.25rem;flex-wrap:wrap;">
                 <?php foreach (['gagne' => '✅', 'perdu' => '❌', 'annule' => '↺'] as $res => $icon): ?>

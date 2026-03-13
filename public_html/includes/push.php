@@ -229,9 +229,10 @@ function _sendSinglePush(string $endpoint, string $p256dh, string $auth, string 
 // ═════════════════════════════════════════════════════════════
 
 /**
- * Envoie une notification push à un membre (ou broadcast si null)
+ * Envoie une notification push à un membre (ou broadcast si null).
+ * Si $membreId === null et $tousInscrits === true : envoi à tous les membres ayant activé les push (ex: Montante Tennis).
  */
-function envoyerPush(?int $membreId, string $title, string $body, string $url = '/dashboard.php', string $tag = 'general'): void {
+function envoyerPush(?int $membreId, string $title, string $body, string $url = '/dashboard.php', string $tag = 'general', bool $tousInscrits = false): void {
     global $_pushReady;
     if (!$_pushReady) {
         error_log('[Push] Prérequis manquants (openssl/curl/hkdf/vapid)');
@@ -244,6 +245,9 @@ function envoyerPush(?int $membreId, string $title, string $body, string $url = 
     if ($membreId !== null) {
         $stmt = $db->prepare("SELECT * FROM push_subscriptions WHERE membre_id = ?");
         $stmt->execute([$membreId]);
+    } elseif ($membreId === null && $tousInscrits) {
+        // Broadcast à tous les inscrits ayant activé les notifications push (ex: Montante Tennis)
+        $stmt = $db->query("SELECT ps.* FROM push_subscriptions ps INNER JOIN membres m ON m.id = ps.membre_id WHERE m.actif = 1");
     } else {
         // Broadcast : abonnés actifs + tous les admins (pour que les admins reçoivent même sans abo payant)
         $adminEmail = defined('ADMIN_EMAIL') ? ADMIN_EMAIL : '';

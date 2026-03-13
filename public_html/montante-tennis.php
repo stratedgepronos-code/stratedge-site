@@ -150,7 +150,7 @@ foreach ($steps as $s) {
 .mt-current{background:var(--card);border:1px solid rgba(0,212,106,0.25);border-radius:14px;padding:1.5rem;margin-bottom:2rem;position:relative;overflow:hidden;}
 .mt-current::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#00d46a,#00d4ff);}
 .mt-current-tag{font-family:'Space Mono',monospace;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:#00d46a;margin-bottom:0.8rem;}
-.mt-current-match{font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:0.4rem;}
+.mt-current-match{font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:0.6rem;min-height:1.4em;color:var(--text-primary, #fff);}
 .mt-current-meta{display:flex;flex-wrap:wrap;gap:1rem;color:var(--txt2);font-size:0.9rem;}
 .mt-current-meta span{display:flex;align-items:center;gap:0.3rem;}
 .mt-current-analyse{margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);color:var(--txt2);font-size:0.9rem;line-height:1.6;}
@@ -285,15 +285,15 @@ table.mt-table{width:100%;border-collapse:collapse;}
 <?php if ($currentStep): ?>
 <div class="mt-current">
   <div class="mt-current-tag">⚡ Étape en cours — Step <?= (int)$currentStep['step_number'] ?></div>
-  <div class="mt-current-match"><?= clean($currentStep['match_desc']) ?></div>
+  <div class="mt-current-match"><?= trim(clean($currentStep['match_desc'] ?? '')) !== '' ? clean($currentStep['match_desc']) : 'Prono Step ' . (int)$currentStep['step_number'] . ' — Détails à compléter' ?></div>
   <div class="mt-current-meta">
-    <?php if ($currentStep['competition']): ?><span>🏆 <?= clean($currentStep['competition']) ?></span><?php endif; ?>
-    <?php if ($currentStep['date_match']): ?><span>📅 <?= date('d/m/Y', strtotime($currentStep['date_match'])) ?></span><?php endif; ?>
-    <?php if ($currentStep['heure']): ?><span>🕐 <?= clean($currentStep['heure']) ?></span><?php endif; ?>
-    <span>📊 Cote : <strong style="color:#00d4ff;"><?= number_format((float)$currentStep['cote'], 2) ?></strong></span>
-    <span>💰 Mise : <strong style="color:#ffc107;"><?= number_format((float)$currentStep['mise'], 2) ?>€</strong></span>
+    <?php if (!empty(trim($currentStep['competition'] ?? ''))): ?><span>🏆 <?= clean($currentStep['competition']) ?></span><?php endif; ?>
+    <?php if (!empty($currentStep['date_match'])): ?><span>📅 <?= date('d/m/Y', strtotime($currentStep['date_match'])) ?></span><?php endif; ?>
+    <?php if (!empty(trim($currentStep['heure'] ?? ''))): ?><span>🕐 <?= clean($currentStep['heure']) ?></span><?php endif; ?>
+    <span>📊 Cote : <strong style="color:#00d4ff;"><?= (float)($currentStep['cote'] ?? 0) > 0 ? number_format((float)$currentStep['cote'], 2) : '—' ?></strong></span>
+    <span>💰 Mise : <strong style="color:#ffc107;"><?= (float)($currentStep['mise'] ?? 0) > 0 ? number_format((float)$currentStep['mise'], 2) . '€' : '—' ?></strong></span>
   </div>
-  <?php if (!empty($currentStep['analyse'])): ?>
+  <?php if (!empty(trim($currentStep['analyse'] ?? ''))): ?>
   <div class="mt-current-analyse"><?= nl2br(clean($currentStep['analyse'])) ?></div>
   <?php endif; ?>
 </div>

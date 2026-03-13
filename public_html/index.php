@@ -84,14 +84,13 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .stat-value { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; font-weight: 900; color: var(--neon-green); }
     .stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
     .hero-btns { display: flex; gap: 1rem; }
-    /* Mascotte responsive : visible sur 27" comme 32" (max 38vw pour ne pas déborder) */
-    .hero-visual { position: absolute; bottom: 0; top: auto; right: 2%; left: auto; transform-origin: bottom right; z-index: 2; pointer-events: none; width: min(900px, min(38vw, 75vh)); max-width: 100%; }
-    .mascot-container { position: relative; width: 100%; height: auto; aspect-ratio: 900/1050; max-height: 85vh; }
+    /* Mascotte responsive : visible sur 27" comme 32", fixée en bas du block (pas de respiration) */
+    .hero-visual { position: absolute; bottom: 0; top: auto; right: 2%; left: auto; transform-origin: bottom right; z-index: 2; pointer-events: none; width: min(900px, min(38vw, 75vh)); max-width: 100%; max-height: 100%; display: flex; align-items: flex-end; }
+    .mascot-container { position: relative; width: 100%; height: auto; aspect-ratio: 900/1050; max-height: min(85vh, 100%); }
     .mascot-ring { position: absolute; top: -6%; left: -6%; right: -6%; bottom: -6%; border-radius: 50%; border: 2px solid rgba(255,45,120,0.2); animation: ring-rotate 20s linear infinite; }
     .mascot-ring::before { content: ''; position: absolute; top: -7px; left: 50%; width: 14px; height: 14px; background: var(--neon-green); border-radius: 50%; box-shadow: var(--glow-green); }
     @keyframes ring-rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .mascot-img { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; height: auto; max-width: 100%; filter: drop-shadow(0 0 80px rgba(255,45,120,0.35)); animation: hero-mascot-breathe 4.5s ease-in-out infinite, hero-mascot-eyes 3.2s ease-in-out infinite; }
-    @keyframes hero-mascot-breathe { 0%, 100% { transform: translateX(-50%) translateY(0) scale(1); } 50% { transform: translateX(-50%) translateY(-8px) scale(1.008); } }
+    .mascot-img { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; height: auto; max-width: 100%; filter: drop-shadow(0 0 80px rgba(255,45,120,0.35)); animation: hero-mascot-eyes 3.2s ease-in-out infinite; }
     @keyframes hero-mascot-eyes {
       0%, 100% { filter: drop-shadow(0 0 45px rgba(255,45,120,0.5)) drop-shadow(0 0 90px rgba(255,45,120,0.2)); }
       30% { filter: drop-shadow(0 0 55px rgba(255,45,120,0.7)) drop-shadow(0 0 110px rgba(255,45,120,0.35)) drop-shadow(0 0 8px rgba(255,160,200,0.9)); }
