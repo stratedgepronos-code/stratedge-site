@@ -195,6 +195,7 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
 :root{--bg:#050810;--card:#111827;--pink:#ff2d78;--blue:#00d4ff;--txt:#f0f4f8;--txt2:#b0bec9;--txt3:#8a9bb0;--border:rgba(255,45,120,0.15);}
 .prono-commu-wrap{display:grid;grid-template-columns:minmax(0,340px) 1fr;gap:1.5rem;align-items:start;padding:0 0 2rem;}
 @media(max-width:900px){.prono-commu-wrap{grid-template-columns:1fr;}}
+@media(max-width:640px){.analysis-inner .chart-box,.analysis-inner .player .chart-box{width:100%!important;height:240px;min-width:0;}}
 .prono-hero{text-align:center;padding:1.5rem 1rem;margin:-2.5rem -3rem 2rem -3rem;background:linear-gradient(180deg,rgba(255,45,120,0.06) 0%,transparent 100%);border-bottom:1px solid var(--border);}
 .prono-hero-tag{font-family:'Space Mono',monospace;font-size:0.7rem;letter-spacing:3px;text-transform:uppercase;color:var(--pink);margin-bottom:0.5rem;}
 .prono-hero-title{font-family:'Orbitron',sans-serif;font-size:1.4rem;font-weight:700;margin-bottom:0.5rem;}
@@ -204,7 +205,8 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
 .cd-num{font-family:'Orbitron',sans-serif;font-size:22px;font-weight:700;color:#fff;line-height:1;text-shadow:0 0 16px rgba(255,45,120,0.5);}
 .cd-label{font-size:9px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);margin-top:4px;}
 .cd-sep{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;color:var(--pink);margin-bottom:12px;}
-.panel{background:var(--card);border-radius:14px;border:1px solid var(--border);overflow:hidden;}
+.panel{background:var(--card);border-radius:14px;border:1px solid var(--border);overflow:visible;}
+.panel.votes-panel{overflow:hidden;}
 .panel-title{font-family:'Orbitron',sans-serif;font-size:0.85rem;font-weight:700;padding:1rem 1.2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:0.5rem;}
 .match-row{display:flex;align-items:center;justify-content:space-between;gap:0.75rem;padding:1rem 1.2rem;border-bottom:1px solid rgba(255,255,255,0.06);}
 .match-row:last-child{border-bottom:none;}
@@ -215,8 +217,12 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
 .btn-vote:hover{box-shadow:0 0 20px rgba(255,45,120,0.4);}
 .btn-vote:disabled{opacity:0.6;cursor:not-allowed;}
 .analysis-panel .panel-title{background:rgba(0,212,255,0.05);}
-.analysis-inner{padding:1.2rem;color:var(--txt2);font-size:0.95rem;line-height:1.6;}
+.analysis-inner{padding:1.2rem;color:var(--txt2);font-size:0.95rem;line-height:1.6;overflow:visible;}
 .analysis-inner img{max-width:100%;height:auto;}
+.analysis-inner .chart-box{height:220px;position:relative;min-height:180px;}
+.analysis-inner .sec{overflow:visible!important;}
+.analysis-inner canvas{display:block;}
+.analysis-inner .player .chart-box{width:280px;min-width:240px;height:220px;position:relative;}
 .analysis-placeholder{color:var(--txt3);font-style:italic;}
 .vote-toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid rgba(0,212,106,0.4);color:#00c864;padding:1rem 1.5rem;border-radius:12px;font-weight:600;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.5);animation:fadeInUp .3s ease;}
 @keyframes fadeInUp{from{opacity:0;transform:translateX(-50%) translateY(12px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
@@ -248,7 +254,7 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
 </div>
 
 <div class="prono-commu-wrap">
-  <aside class="panel">
+  <aside class="panel votes-panel">
     <div class="panel-title">📋 Matchs du lendemain — Vote <span style="font-size:0.7rem;font-weight:400;color:var(--txt3);">(1 vote par session)</span></div>
     <?php if (empty($matchsLendemain)): ?>
     <div class="no-matchs">Aucun match à voter pour le moment.<br><small>Les matchs sont ajoutés par l'équipe (admin → Prono de la commu) ou importés via l'API Football-Data.</small></div>
@@ -267,9 +273,56 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
 
   <aside class="panel analysis-panel">
     <div class="panel-title">📊 Analyse — Prono gratuit</div>
+    <?php if ($matchDuJour && !empty($matchDuJour['analysis_html'])): ?>
+    <script>
+    (function(){
+      var _real = null;
+      Object.defineProperty(window, 'Chart', {
+        configurable: true,
+        get: function(){ return _real; },
+        set: function(C){
+          if (typeof C !== 'function') { _real = C; return; }
+          _real = new Proxy(C, {
+            construct: function(target, args){
+              if (args[1] && args[1].options) {
+                args[1].options.responsive = true;
+                args[1].options.maintainAspectRatio = false;
+              } else if (args[1]) {
+                args[1].options = { responsive: true, maintainAspectRatio: false };
+              }
+              return new target(...args);
+            }
+          });
+          Object.assign(_real, C);
+          _real.prototype = C.prototype;
+          if (C.defaults) _real.defaults = C.defaults;
+          if (C.register) _real.register = C.register.bind(C);
+          if (C.instances) _real.instances = C.instances;
+        }
+      });
+    })();
+    </script>
+    <?php endif; ?>
     <div class="analysis-inner">
       <?php if ($matchDuJour && !empty($matchDuJour['analysis_html'])): ?>
       <?= $matchDuJour['analysis_html'] ?>
+      <script>
+      (function(){
+        document.querySelectorAll('.analysis-inner canvas').forEach(function(c){
+          if (!c.getAttribute('height')) c.setAttribute('height','200');
+          var box = c.closest('.chart-box');
+          if (box) { box.style.height = box.style.height || '220px'; box.style.position = 'relative'; }
+          var sec = c.closest('.sec');
+          if (sec) sec.style.overflow = 'visible';
+        });
+        window.addEventListener('load', function(){
+          if (!window.Chart || !window.Chart.instances) return;
+          Object.values(window.Chart.instances).forEach(function(ch){
+            if (ch && ch.options) { ch.options.maintainAspectRatio = false; ch.resize(); }
+          });
+        });
+      })();
+      </script>
       <?php else: ?>
       <p class="analysis-placeholder">RDV 40 min avant le match pour le prono gratuit.</p>
       <?php endif; ?>

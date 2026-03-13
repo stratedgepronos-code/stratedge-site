@@ -36,9 +36,8 @@ if (!$isSuperAdmin) {
     $categorie = 'tennis';
 }
 
-// Sécurité : retirer script/iframe de l'analyse HTML
+// On conserve les scripts pour les graphiques (Chart.js, ApexCharts). Contenu admin uniquement.
 if ($analyseHtml !== '') {
-    $analyseHtml = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $analyseHtml);
     $analyseHtml = preg_replace('/<iframe\b[^>]*>.*?<\/iframe>/is', '', $analyseHtml);
 }
 $cote = ($coteRaw !== '' && is_numeric($coteRaw)) ? number_format((float)$coteRaw, 2, '.', '') : null;
