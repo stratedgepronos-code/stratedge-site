@@ -178,25 +178,35 @@ table.mt-table{width:100%;border-collapse:collapse;}
 .mt-empty .big{font-size:3.5rem;margin-bottom:1rem;}
 .mt-empty h3{font-family:'Orbitron',sans-serif;font-size:1.1rem;margin-bottom:0.5rem;color:var(--txt2);}
 
-/* Stake + Packs promo row */
-.stake-promo-row{display:flex;align-items:stretch;gap:1rem;margin-bottom:2rem;flex-wrap:wrap;}
-.stake-banner{background:linear-gradient(135deg,rgba(0,212,255,0.08),rgba(0,212,106,0.05));border:1px solid rgba(0,212,255,0.2);border-radius:14px;padding:1.2rem 1.5rem;display:flex;align-items:center;gap:1.2rem;flex-wrap:wrap;flex:1;min-width:280px;}
+/* Visuel pleine largeur au-dessus des bannières (échappe au padding du content) */
+.mt-promo-visual{margin-left:-3rem;margin-right:-3rem;width:calc(100% + 6rem);margin-bottom:1.5rem;padding:1.75rem 2rem;background:linear-gradient(135deg,rgba(0,212,255,0.07) 0%,rgba(255,45,120,0.05) 50%,rgba(0,212,106,0.07) 100%);border-top:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.06);position:relative;overflow:hidden;}
+.mt-promo-visual::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.04),transparent);animation:mt-shine 6s ease-in-out infinite;}
+@keyframes mt-shine{0%,100%{opacity:0}50%{opacity:1}}
+.mt-promo-visual-inner{position:relative;z-index:1;text-align:center;}
+.mt-promo-visual .mt-promo-tag{font-family:'Orbitron',sans-serif;font-size:0.7rem;font-weight:700;letter-spacing:3px;color:var(--txt3);margin-bottom:0.4rem;}
+.mt-promo-visual .mt-promo-title{font-family:'Orbitron',sans-serif;font-size:1.15rem;font-weight:800;background:linear-gradient(90deg,#00d4ff,#ff2d78,#00d46a);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+/* Stake + Packs : 3 colonnes égales */
+.stake-promo-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:2rem;}
+.stake-banner,.pack-banner{border-radius:14px;padding:1.2rem 1.2rem;display:flex;flex-direction:column;justify-content:space-between;gap:1rem;min-height:220px;}
+.stake-banner{background:linear-gradient(135deg,rgba(0,212,255,0.08),rgba(0,212,106,0.05));border:1px solid rgba(0,212,255,0.2);}
 .stake-banner-icon{font-size:2rem;flex-shrink:0;}
-.stake-banner-text{flex:1;min-width:200px;}
+.stake-banner-text{flex:1;min-width:0;}
 .stake-banner-text h3{font-family:'Orbitron',sans-serif;font-size:0.85rem;font-weight:700;color:#00d4ff;margin-bottom:0.3rem;}
-.stake-banner-text p{font-size:0.88rem;color:var(--txt2);line-height:1.5;}
+.stake-banner-text p{font-size:0.82rem;color:var(--txt2);line-height:1.45;}
 .stake-banner-text p strong{color:#00d4ff;}
-.stake-banner-text .stake-accroche{margin-top:0.6rem;font-size:0.85rem;color:var(--txt2);}
-.btn-stake-mt{display:inline-flex;align-items:center;gap:0.5rem;background:linear-gradient(135deg,#00d4ff,#0089ff 55%,#00d46a);color:#fff;padding:0.7rem 1.5rem;border-radius:10px;text-decoration:none;font-weight:700;font-size:0.9rem;text-transform:uppercase;letter-spacing:1px;transition:all .3s;white-space:nowrap;flex-shrink:0;}
+.btn-stake-mt{display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;background:linear-gradient(135deg,#00d4ff,#0089ff 55%,#00d46a);color:#fff;padding:0.7rem 1rem;border-radius:10px;text-decoration:none;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:1px;transition:all .3s;white-space:nowrap;}
 .btn-stake-mt:hover{box-shadow:0 0 25px rgba(0,166,255,0.4);transform:translateY(-2px);}
-.pack-banners{display:flex;gap:1rem;flex-wrap:wrap;}
-.pack-banner{border-radius:14px;padding:1rem 1.2rem;min-width:160px;display:flex;flex-direction:column;justify-content:space-between;gap:0.75rem;}
-.pack-banner.vip-max{background:linear-gradient(135deg,rgba(245,158,11,0.12),rgba(217,119,6,0.06));border:1px solid rgba(245,158,11,0.35);}
+.pack-banner{border-radius:14px;}
+.pack-banner.vip-max{background:linear-gradient(135deg,rgba(245,158,11,0.14),rgba(217,119,6,0.08));border:1px solid rgba(245,158,11,0.4);}
 .pack-banner.vip-max h4{color:#f59e0b;font-family:'Orbitron',sans-serif;font-size:0.9rem;font-weight:700;}
 .pack-banner.vip-max p{font-size:0.82rem;color:var(--txt2);margin:0;}
-.pack-banner.tennis-weekly{background:linear-gradient(135deg,rgba(0,212,106,0.1),rgba(0,212,255,0.06));border:1px solid rgba(0,212,106,0.35);}
+.pack-banner.tennis-weekly{background:linear-gradient(135deg,rgba(0,212,106,0.12),rgba(0,212,255,0.08));border:1px solid rgba(0,212,106,0.4);}
 .pack-banner.tennis-weekly h4{color:#00d46a;font-family:'Orbitron',sans-serif;font-size:0.9rem;font-weight:700;}
 .pack-banner.tennis-weekly p{font-size:0.82rem;color:var(--txt2);margin:0;}
+.mt-pack-mascot{width:80px;height:80px;margin:0 auto 0.75rem;border-radius:50%;overflow:hidden;flex-shrink:0;}
+.mt-pack-mascot video{width:100%;height:100%;object-fit:cover;}
+.pack-banner.vip-max .mt-pack-mascot{border:2px solid rgba(245,158,11,0.5);box-shadow:0 0 20px rgba(245,158,11,0.25);}
+.pack-banner.tennis-weekly .mt-pack-mascot{border:2px solid rgba(0,212,106,0.5);box-shadow:0 0 20px rgba(0,212,106,0.25);}
 .btn-pack{display:inline-flex;align-items:center;justify-content:center;gap:0.4rem;padding:0.55rem 1rem;border-radius:8px;text-decoration:none;font-weight:700;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.5px;transition:all .25s;white-space:nowrap;}
 .pack-banner.vip-max .btn-pack{background:linear-gradient(135deg,#f59e0b,#d97706);color:#050810;}
 .pack-banner.vip-max .btn-pack:hover{box-shadow:0 0 20px rgba(245,158,11,0.5);transform:translateY(-1px);}
@@ -222,16 +232,18 @@ table.mt-table{width:100%;border-collapse:collapse;}
 @media(max-width:768px){
   .mt-hero{margin:-1rem -0.8rem 1.5rem;padding:1.5rem 0.8rem 1.2rem;}
   .mt-title{font-size:1.2rem;}
+  .mt-promo-visual{margin-left:-0.8rem;margin-right:-0.8rem;width:calc(100% + 1.6rem);padding:1.25rem 1rem;}
+  .mt-promo-visual .mt-promo-title{font-size:0.95rem;}
   .mt-stats{grid-template-columns:1fr 1fr;gap:0.7rem;}
   .stat-val{font-size:1.2rem;}
   .mt-current{padding:1rem;}
   .mt-table-wrap{overflow-x:auto;}
   .mt-table{min-width:600px;}
-  .stake-promo-row{flex-direction:column;}
-  .stake-banner{flex-direction:column;text-align:center;padding:1rem;}
+  .stake-promo-row{grid-template-columns:1fr;}
+  .stake-banner,.pack-banner{min-height:auto;}
+  .stake-banner{text-align:center;}
   .btn-stake-mt{width:100%;justify-content:center;}
-  .pack-banners{width:100%;flex-direction:column;}
-  .pack-banner{min-width:0;}
+  .mt-pack-mascot{width:64px;height:64px;}
 }
 </style>
 </head>
@@ -251,32 +263,47 @@ table.mt-table{width:100%;border-collapse:collapse;}
   <?php endif; ?>
 </div>
 
-<!-- Ligne promo : Stake + Packs VIP Max & Tennis Weekly -->
+<!-- Visuel pleine largeur -->
+<div class="mt-promo-visual">
+  <div class="mt-promo-visual-inner">
+    <div class="mt-promo-tag">PRONOS ANALYSÉS AVEC MINUTIE</div>
+    <div class="mt-promo-title">Stake · VIP Max · Tennis Weekly — Rejoins l'Edge</div>
+  </div>
+</div>
+
+<!-- 3 bannières : Stake, VIP Max, Tennis Weekly (même taille) -->
 <div class="stake-promo-row">
   <div class="stake-banner">
     <div class="stake-banner-icon">🎾</div>
     <div class="stake-banner-text">
       <h3>Tous les matchs se jouent sur Stake</h3>
       <p>La montante est jouée exclusivement sur <strong>Stake.bet</strong> pour profiter des meilleures cotes tennis et des retraits instantanés en crypto. Crée ton compte avec notre lien partenaire pour un <strong>bonus exclusif StratEdge</strong>.</p>
-      <p class="stake-accroche">🔥 Souscrivez à l'un des packs pour recevoir tous nos pronostiques analysés avec minutie : abo <strong>VIP Max</strong> (1 mois) 50€ | inscription <strong>Stake.bet</strong> (1 mois offert) | abo <strong>Tennis Weekly</strong> (1 semaine) 15€.</p>
     </div>
     <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake-mt">🎁 S'inscrire sur Stake</a>
   </div>
-  <div class="pack-banners">
-    <div class="pack-banner vip-max">
-      <div>
-        <h4>👑 VIP Max</h4>
-        <p>1 mois — 50€<br>Tous les pronos + accès complet</p>
-      </div>
-      <a href="/#pricing" class="btn-pack">Voir l'offre</a>
+  <div class="pack-banner vip-max">
+    <div class="mt-pack-mascot">
+      <video autoplay loop muted playsinline>
+        <source src="assets/images/vip_max.mp4" type="video/mp4">
+      </video>
     </div>
-    <div class="pack-banner tennis-weekly">
-      <div>
-        <h4>🎾 Tennis Weekly</h4>
-        <p>1 semaine — 15€<br>Pronos tennis uniquement</p>
-      </div>
-      <a href="/#pricing" class="btn-pack">Voir l'offre</a>
+    <div>
+      <h4>👑 VIP Max</h4>
+      <p>1 mois — 50€<br>Tous les pronos + accès complet</p>
     </div>
+    <a href="/#pricing" class="btn-pack">Voir l'offre</a>
+  </div>
+  <div class="pack-banner tennis-weekly">
+    <div class="mt-pack-mascot">
+      <video autoplay loop muted playsinline>
+        <source src="assets/images/mascotte_tennis.mp4" type="video/mp4">
+      </video>
+    </div>
+    <div>
+      <h4>🎾 Tennis Weekly</h4>
+      <p>1 semaine — 15€<br>Pronos tennis uniquement</p>
+    </div>
+    <a href="/#pricing" class="btn-pack">Voir l'offre</a>
   </div>
 </div>
 
