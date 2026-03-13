@@ -70,7 +70,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .hero-glow { position: absolute; width: 900px; height: 900px; background: radial-gradient(circle, rgba(255,45,120,0.1) 0%, transparent 70%); top: -200px; left: -200px; pointer-events: none; }
     .hero-glow-2 { position: absolute; width: 700px; height: 700px; background: radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%); bottom: -300px; right: -150px; pointer-events: none; }
     .hero-glow-mascot { position: absolute; width: 800px; height: 800px; background: radial-gradient(circle, rgba(255,45,120,0.12) 0%, transparent 60%); bottom: -450px; left: 50%; transform: translateX(-50%); pointer-events: none; }
-    .hero-inner { max-width: 1440px; width: 100%; margin: 0; margin-right: auto; position: relative; z-index: 5; padding: 90px 3rem 3rem 2.5rem; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
+    .hero-inner { max-width: 1440px; width: 100%; margin: 0; margin-right: auto; position: relative; z-index: 5; padding: 90px 3rem 3rem 5.5rem; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
     .hero-text { max-width: 700px; position: relative; z-index: 10; text-align: left; margin-right: auto; }
     .hero-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255,45,120,0.08); border: 1px solid rgba(255,45,120,0.25); color: var(--neon-green); padding: 0.4rem 1rem; border-radius: 50px; font-size: 0.85rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; animation: pulse-badge 2s ease-in-out infinite; }
     @keyframes pulse-badge { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,45,120,0.25); } 50% { box-shadow: 0 0 0 8px rgba(255,45,120,0); } }
