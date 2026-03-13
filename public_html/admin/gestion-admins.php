@@ -21,8 +21,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? 
         if ($membreId === (int)$_SESSION['membre_id']) {
             $error = 'Vous ne pouvez pas modifier votre propre rôle.';
         } elseif ($action === 'promote' && $membreId > 0) {
-            $db->prepare("UPDATE membres SET role = 'admin' WHERE id = ?")->execute([$membreId]);
-            $success = 'Membre promu administrateur avec succès.';
+            $newRole = $_POST['new_role'] ?? 'admin';
+            $allowed = ['admin', 'admin_tennis', 'admin_fun', 'admin_fun_sport'];
+            if (!in_array($newRole, $allowed)) $newRole = 'admin';
+            $db->prepare("UPDATE membres SET role = ? WHERE id = ?")->execute([$newRole, $membreId]);
+            $success = 'Membre promu avec le rôle : ' . $newRole;
         } elseif ($action === 'demote' && $membreId > 0) {
             $db->prepare("UPDATE membres SET role = 'user' WHERE id = ?")->execute([$membreId]);
             $success = 'Droits administrateur retirés.';
@@ -31,8 +34,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? 
 }
 
 // Récupérer les admins et les membres normaux
-$admins  = $db->query("SELECT id, nom, email, date_inscription, role FROM membres WHERE role = 'admin' ORDER BY nom")->fetchAll();
-$membres = $db->query("SELECT id, nom, email, date_inscription FROM membres WHERE role = 'user' AND actif = 1 ORDER BY nom")->fetchAll();
+$adminRoles = ['admin', 'admin_tennis', 'admin_fun', 'admin_fun_sport'];
+$admins  = $db->query("SELECT id, nom, email, date_inscription, role FROM membres WHERE role IN ('admin','admin_tennis','admin_fun','admin_fun_sport') ORDER BY nom")->fetchAll();
+$membres = $db->query("SELECT id, nom, email, date_inscription FROM membres WHERE role NOT IN ('admin','admin_tennis','admin_fun','admin_fun_sport') AND actif = 1 AND email != '" . ADMIN_EMAIL . "' ORDER BY nom")->fetchAll();
+$roleLabels = ['admin' => 'Admin', 'admin_tennis' => 'Admin Tennis', 'admin_fun' => 'Admin Fun', 'admin_fun_sport' => 'Admin Fun Sport'];
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -141,7 +146,7 @@ $membres = $db->query("SELECT id, nom, email, date_inscription FROM membres WHER
           <p style="font-size:0.75rem;color:var(--text-muted);">Depuis le <?= date('d/m/Y', strtotime($a['date_inscription'])) ?></p>
         </div>
       </div>
-      <div class="badge-admin">👑 Admin</div>
+      <div class="badge-admin">👑 <?= htmlspecialchars($roleLabels[$a['role']] ?? 'Admin') ?></div>
       <?php if ($isSuperAdmin): ?>
       <form method="POST" onsubmit="return confirm('Retirer les droits admin à <?= htmlspecialchars($a['nom']) ?> ?')">
         <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
@@ -185,11 +190,17 @@ $membres = $db->query("SELECT id, nom, email, date_inscription FROM membres WHER
           <td><?= date('d/m/Y', strtotime($m['date_inscription'])) ?></td>
           <td>
             <?php if ($isSuperAdmin): ?>
-            <form method="POST" style="display:inline" onsubmit="return confirm('Promouvoir <?= htmlspecialchars($m['nom']) ?> comme admin ?')">
+            <form method="POST" style="display:inline-flex;align-items:center;gap:0.5rem;" onsubmit="return confirm('Promouvoir <?= htmlspecialchars($m['nom']) ?> ?')">
               <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
               <input type="hidden" name="action" value="promote">
               <input type="hidden" name="membre_id" value="<?= $m['id'] ?>">
-              <button type="submit" class="btn-promote">👑 Promouvoir admin</button>
+              <select name="new_role" style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);color:var(--text-primary);padding:0.35rem 0.5rem;border-radius:6px;font-family:'Rajdhani',sans-serif;font-size:0.82rem;">
+                <option value="admin">Admin</option>
+                <option value="admin_tennis">Admin Tennis</option>
+                <option value="admin_fun">Admin Fun</option>
+                <option value="admin_fun_sport">Admin Fun Sport</option>
+              </select>
+              <button type="submit" class="btn-promote">👑 Promouvoir</button>
             </form>
             <?php else: ?>
             <span class="no-access">Non autorisé</span>
