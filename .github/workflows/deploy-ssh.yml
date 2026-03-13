@@ -32,6 +32,7 @@ jobs:
             sshpass -p "${{ secrets.SSH_PASSWORD }}" rsync -avz --delete \
               --exclude='uploads/' \
               --filter 'P includes/smtp-config.php' \
+              --filter 'P includes/football_data_config.php' \
               --timeout=60 \
               -e "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p ${{ env.SSH_PORT }}" \
               public_html/ \

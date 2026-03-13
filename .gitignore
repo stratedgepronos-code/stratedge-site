@@ -21,6 +21,7 @@ error_log
 .env.*
 *.env
 public_html/includes/smtp-config.php
+public_html/includes/football_data_config.php
 
 # Cache
 __pycache__/
