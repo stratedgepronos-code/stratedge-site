@@ -4,7 +4,8 @@ require_once __DIR__ . '/../includes/mailer.php';
 require_once __DIR__ . '/../includes/push.php';
 requireAdmin();
 $pageActive    = 'poster-bet';
-$isSuperAdmin  = ($_SESSION['membre_email'] === ADMIN_EMAIL);
+$isSuperAdmin  = isSuperAdmin();
+$adminRole     = getAdminRole();
 
 // Charger config Make/Twitter si configuré
 $twitterActif  = false;
@@ -29,11 +30,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } elseif (isset($_POST['action'])) {
 
         if ($_POST['action'] === 'post_bets') {
-            $titres      = $_POST['titre']     ?? [];
-            $types       = $_POST['type']       ?? [];
-            $descs       = $_POST['description'] ?? [];
-            $categories  = $_POST['categorie']  ?? [];
-            $sports      = $_POST['sport']     ?? [];
+            $titres       = $_POST['titre']         ?? [];
+            $types        = $_POST['type']          ?? [];
+            $descs        = $_POST['description']   ?? [];
+            $categories   = $_POST['categorie']     ?? [];
+            $sports       = $_POST['sport']        ?? [];
+            $analyseHtmls = $_POST['analyse_html']  ?? [];
+            $cotes        = $_POST['cote']          ?? [];
             $images      = $_FILES['images'] ?? [];
             $expireDaily = isset($_POST['expire_daily']);
 
@@ -105,9 +108,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $lastTitre     = trim($titres[$i] ?? '');
                         $lastType      = $types[$i] ?? 'safe';
                         $lastCategorie = in_array($categories[$i] ?? '', ['multi','tennis']) ? $categories[$i] : 'multi';
-                        // Admin promu (non super-admin) → uniquement tennis
-                        if (!$isSuperAdmin) $lastCategorie = 'tennis';
+                        if ($adminRole === 'admin_tennis') {
+                            $lastCategorie = 'tennis';
+                            $lastType = $types[$i] ?? 'safe';
+                        } elseif ($adminRole === 'admin_fun') {
+                            $lastCategorie = 'multi';
+                            $lastType = 'fun';
+                        }
                         $lastSport = ($lastCategorie === 'tennis') ? 'tennis' : (in_array($sports[$i] ?? '', ['football','tennis','basket','hockey']) ? $sports[$i] : 'football');
+                        $lastAnalyseHtml = trim((string)($analyseHtmls[$i] ?? ''));
+                        $lastCote = trim((string)($cotes[$i] ?? ''));
+                        $lastCote = ($lastCote !== '' && is_numeric($lastCote)) ? number_format((float)$lastCote, 2, '.', '') : null;
                         $lastImagePath = 'uploads/bets/' . $filename;
 
                         // ── Locked image : uploadée manuellement si fournie ──
@@ -127,21 +138,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $lockedBlob = ($lastLockedPath !== '' && isset($lname)) ? @file_get_contents($lockedDir . $lname) : null;
 
                         try {
-                            $stmt = $db->prepare("INSERT INTO bets (titre, image_path, image_data, locked_image_path, locked_image_data, type, categorie, sport, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                            $stmt->execute([$lastTitre, $lastImagePath, $imageBlob ?: null, $lastLockedPath ?: null, $lockedBlob ?: null, $lastType, $lastCategorie, $lastSport, trim($descs[$i] ?? '')]);
+                            $stmt = $db->prepare("INSERT INTO bets (titre, image_path, image_data, locked_image_path, locked_image_data, type, categorie, sport, description, analyse_html, cote) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                            $stmt->execute([$lastTitre, $lastImagePath, $imageBlob ?: null, $lastLockedPath ?: null, $lockedBlob ?: null, $lastType, $lastCategorie, $lastSport, trim($descs[$i] ?? ''), $lastAnalyseHtml ?: null, $lastCote]);
                         } catch (Throwable $insErr) {
-                            error_log('[poster-bet] INSERT avec blob+sport échoué, fallback sans blob : ' . $insErr->getMessage());
+                            error_log('[poster-bet] INSERT full échoué, fallback avec blobs : ' . $insErr->getMessage());
                             try {
-                                $stmt = $db->prepare("INSERT INTO bets (titre, image_path, locked_image_path, type, categorie, sport, description) VALUES (?, ?, ?, ?, ?, ?, ?)");
-                                $stmt->execute([$lastTitre, $lastImagePath, $lastLockedPath ?: null, $lastType, $lastCategorie, $lastSport, trim($descs[$i] ?? '')]);
+                                // Sauvegarde des images en BDD (backup si fichiers supprimés au push/déploiement)
+                                $stmt = $db->prepare("INSERT INTO bets (titre, image_path, image_data, locked_image_path, locked_image_data, type, categorie, sport, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                                $stmt->execute([$lastTitre, $lastImagePath, $imageBlob ?: null, $lastLockedPath ?: null, $lockedBlob ?: null, $lastType, $lastCategorie, $lastSport, trim($descs[$i] ?? '')]);
                             } catch (Throwable $insErr2) {
-                                error_log('[poster-bet] INSERT fallback sans sport : ' . $insErr2->getMessage());
+                                error_log('[poster-bet] INSERT avec blobs échoué : ' . $insErr2->getMessage());
                                 try {
-                                    $stmt = $db->prepare("INSERT INTO bets (titre, image_path, locked_image_path, type, categorie, description) VALUES (?, ?, ?, ?, ?, ?)");
-                                    $stmt->execute([$lastTitre, $lastImagePath, $lastLockedPath ?: null, $lastType, $lastCategorie, trim($descs[$i] ?? '')]);
+                                    $stmt = $db->prepare("INSERT INTO bets (titre, image_path, locked_image_path, type, categorie, sport, description) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                                    $stmt->execute([$lastTitre, $lastImagePath, $lastLockedPath ?: null, $lastType, $lastCategorie, $lastSport, trim($descs[$i] ?? '')]);
                                 } catch (Throwable $insErr3) {
-                                    $stmt = $db->prepare("INSERT INTO bets (titre, image_path, type) VALUES (?, ?, ?)");
-                                    $stmt->execute([$lastTitre, $lastImagePath, $lastType]);
+                                    try {
+                                        $stmt = $db->prepare("INSERT INTO bets (titre, image_path, locked_image_path, type, categorie, description) VALUES (?, ?, ?, ?, ?, ?)");
+                                        $stmt->execute([$lastTitre, $lastImagePath, $lastLockedPath ?: null, $lastType, $lastCategorie, trim($descs[$i] ?? '')]);
+                                    } catch (Throwable $insErr4) {
+                                        $stmt = $db->prepare("INSERT INTO bets (titre, image_path, type) VALUES (?, ?, ?)");
+                                        $stmt->execute([$lastTitre, $lastImagePath, $lastType]);
+                                    }
                                 }
                             }
                         }
@@ -420,16 +437,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $db->prepare("UPDATE bets SET actif = NOT actif WHERE id = ?")->execute([$betId]);
             $success = 'Visibilité modifiée.';
         }
-
-        elseif ($_POST['action'] === 'update_analyse_html') {
-            $betId = (int)($_POST['bet_id'] ?? 0);
-            $html = (string)($_POST['analyse_html'] ?? '');
-            if ($betId) {
-                $db->prepare("UPDATE bets SET analyse_html = ? WHERE id = ?")->execute([$html, $betId]);
-                $success = 'HTML d\'analyse mis à jour pour ce bet.';
-            }
-        }
     }
+}
+
+if (isset($_GET['posted_from_card']) && $_GET['posted_from_card'] === '1') {
+    $success = 'Bet posté depuis Créer une Card ✅';
 }
 
 $betsRaw  = $db->query("SELECT * FROM bets ORDER BY date_post DESC")->fetchAll();
@@ -636,7 +648,7 @@ $resultatConfig = [
         <div class="no-bets">Aucun bet pour le moment.</div>
       <?php else: ?>
         <div class="table-wrap"><table>
-          <thead><tr><th>Image</th><th>Titre</th><th>Type</th><th>Catégorie</th><th>Date</th><th>Résultat</th><th>Visible</th><th>HTML</th><th></th></tr></thead>
+          <thead><tr><th>Image</th><th>Titre</th><th>Type</th><th>Catégorie</th><th>Date</th><th>Résultat</th><th>Visible</th><th></th></tr></thead>
           <?php
             $currentWeekKey = date('Y-m-d', strtotime('monday this week'));
           ?>
@@ -648,7 +660,7 @@ $resultatConfig = [
           ?>
           <tbody class="week-block<?= $isCurrentWeek ? '' : ' collapsed' ?>" data-week="<?= htmlspecialchars($weekKey) ?>">
             <tr class="week-header" role="button" tabindex="0" aria-expanded="<?= $isCurrentWeek ? 'true' : 'false' ?>" title="Cliquer pour déplier/replier">
-              <td colspan="9"><span class="week-toggle">▶</span> <?= $weekLabel ?> (<?= count($weekBets) ?> bet<?= count($weekBets) > 1 ? 's' : '' ?>)</td>
+              <td colspan="8"><span class="week-toggle">▶</span> <?= $weekLabel ?> (<?= count($weekBets) ?> bet<?= count($weekBets) > 1 ? 's' : '' ?>)</td>
             </tr>
           <?php foreach ($weekBets as $b):
             $resKey = isset($b['resultat']) ? (is_string($b['resultat']) ? strtolower(trim($b['resultat'])) : 'en_cours') : 'en_cours';
@@ -713,10 +725,6 @@ $resultatConfig = [
                 </form>
               </td>
               <td>
-                <textarea id="raw-html-<?= (int)$b['id'] ?>" style="display:none" rows="1"><?= htmlspecialchars($b['analyse_html'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
-                <button type="button" class="btn-sm" style="background:rgba(0,212,255,0.12);color:#00d4ff;border:1px solid rgba(0,212,255,0.3);" title="Modifier l’HTML d’analyse" onclick="openEditHtml(<?= (int)$b['id'] ?>)">HTML</button>
-              </td>
-              <td>
                 <form method="POST" onsubmit="return confirm('Supprimer ce bet ?')">
                   <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
                   <input type="hidden" name="action" value="delete_bet">
@@ -732,51 +740,9 @@ $resultatConfig = [
       <?php endif; ?>
     </div>
 
-    <!-- Modal Modifier HTML d'analyse -->
-    <div id="modalEditHtml" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(5,8,16,0.95);backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:2rem;box-sizing:border-box;">
-      <div style="background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:16px;max-width:900px;width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;">
-        <div style="padding:1rem 1.5rem;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;justify-content:space-between;align-items:center;">
-          <h3 style="font-family:'Orbitron',sans-serif;font-size:1rem;">Modifier l’HTML d’analyse du bet</h3>
-          <button type="button" onclick="closeEditHtml()" style="background:none;border:none;color:var(--text-muted);font-size:1.5rem;cursor:pointer;padding:0.2rem;">×</button>
-        </div>
-        <form method="POST" style="flex:1;display:flex;flex-direction:column;min-height:0;">
-          <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
-          <input type="hidden" name="action" value="update_analyse_html">
-          <input type="hidden" name="bet_id" id="editHtmlBetId" value="">
-          <div style="flex:1;min-height:300px;padding:1rem 1.5rem;overflow:auto;">
-            <textarea name="analyse_html" id="editHtmlTextarea" rows="18" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.75rem;color:#f0f4f8;font-family:'Space Mono',monospace;font-size:0.8rem;resize:vertical;min-height:280px;" placeholder="Colle ou modifie le HTML affiché sur la page bet…"></textarea>
-          </div>
-          <div style="padding:1rem 1.5rem;border-top:1px solid rgba(255,255,255,0.06);display:flex;gap:0.75rem;justify-content:flex-end;">
-            <button type="button" onclick="closeEditHtml()" class="btn-sm" style="background:rgba(255,255,255,0.06);color:var(--text-secondary);">Annuler</button>
-            <button type="submit" class="btn-sm" style="background:linear-gradient(135deg,#00d4ff,#0099cc);color:#050810;">Enregistrer l’HTML</button>
-          </div>
-        </form>
-      </div>
-    </div>
-
   </div>
 </div>
 
-<script>
-function openEditHtml(betId) {
-  var raw = document.getElementById('raw-html-' + betId);
-  var modal = document.getElementById('modalEditHtml');
-  var ta = document.getElementById('editHtmlTextarea');
-  var hid = document.getElementById('editHtmlBetId');
-  if (raw && modal && ta && hid) {
-    hid.value = betId;
-    ta.value = raw.value || '';
-    modal.style.display = 'flex';
-    ta.focus();
-  }
-}
-function closeEditHtml() {
-  document.getElementById('modalEditHtml').style.display = 'none';
-}
-document.getElementById('modalEditHtml').addEventListener('click', function(e) {
-  if (e.target === this) closeEditHtml();
-});
-</script>
 <script>
 const fileInput = document.getElementById('fileInput');
 const grid      = document.getElementById('previewsGrid');
@@ -786,11 +752,16 @@ let dt = new DataTransfer();
 let fileIndex = 0; // compteur unique par fichier
 
 const typeOpts = `
+<?php if ($adminRole === 'admin_fun'): ?>
+  <option value="fun" selected>🎯 Fun</option>
+<?php else: ?>
   <option value="safe">🛡️ Safe</option>
   <option value="fun">🎯 Fun</option>
   <option value="live">⚡ Live</option>
+  <option value="safe_combi">🛡️⚡ Safe Combiné</option>
   <option value="safe,fun">🛡️+🎯 Safe+Fun</option>
-  <option value="safe,live">🛡️+⚡ Safe+Live</option>`;
+  <option value="safe,live">🛡️+⚡ Safe+Live</option>
+<?php endif; ?>`;
 
 function fmtSize(b) {
   return b > 1048576 ? (b/1048576).toFixed(1)+' Mo' : Math.round(b/1024)+' Ko';
@@ -817,19 +788,25 @@ function addFiles(files) {
           <input type="text" name="titre[${idx}]" placeholder="Titre (optionnel)">
           <select name="type[${idx}]">${typeOpts}</select>
           <select name="categorie[${idx}]" style="margin-top:0.4rem;width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.5rem 0.75rem;color:#f0f4f8;font-family:'Rajdhani',sans-serif;font-size:0.9rem;">
-            <?php if ($isSuperAdmin): ?>
-            <option value="multi">⚽🏀🏒 Multi-sport (Daily/Weekend/Weekly)</option>
-            <option value="tennis">🎾 Tennis Weekly uniquement</option>
+            <?php if ($adminRole === 'admin_tennis'): ?>
+            <option value="tennis" selected>🎾 Tennis</option>
+            <?php elseif ($adminRole === 'admin_fun'): ?>
+            <option value="multi" selected>🎯 Fun (Multi-sport)</option>
             <?php else: ?>
-            <option value="tennis" selected>🎾 Tennis Weekly</option>
+            <option value="multi">⚽🏀🏒 Multi-sport</option>
+            <option value="tennis">🎾 Tennis</option>
             <?php endif; ?>
           </select>
+          <?php if ($adminRole !== 'admin_fun'): ?>
           <select name="sport[${idx}]" class="sport-select" style="margin-top:0.4rem;width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.5rem 0.75rem;color:#f0f4f8;font-family:'Rajdhani',sans-serif;font-size:0.9rem;">
             <option value="football">⚽ Foot</option>
             <option value="tennis">🎾 Tennis</option>
             <option value="basket">🏀 Basket</option>
             <option value="hockey">🏒 Hockey</option>
           </select>
+          <?php endif; ?>
+          <input type="number" name="cote[${idx}]" step="0.01" min="0" placeholder="Cote (optionnel)" style="margin-top:0.4rem;width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.5rem 0.75rem;color:#f0f4f8;font-size:0.9rem;">
+          <textarea name="analyse_html[${idx}]" placeholder="Analyse HTML (optionnel — coller le HTML de la card pour la page bet)" rows="2" style="margin-top:0.4rem;width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.5rem 0.75rem;color:#f0f4f8;font-size:0.75rem;resize:vertical;"></textarea>
           <div class="locked-upload-zone" onclick="this.querySelector('input').click()" title="Card Locked pour Twitter (optionnel)">
             <input type="file" name="locked_images[${idx}]" accept="image/*" style="display:none" onchange="previewLocked(this)">
             <div class="locked-label">🔒 Card Locked Twitter <span style="opacity:0.5;font-size:0.75rem;">(optionnel)</span></div>

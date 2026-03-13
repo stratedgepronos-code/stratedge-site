@@ -195,9 +195,48 @@ CREATE TABLE IF NOT EXISTS `commu_votes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 
--- ── 10. Vérification ─────────────────────────────────────────
+-- ── 10. Montante Tennis ──────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS `montante_config` (
+  `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `nom` VARCHAR(120) NOT NULL DEFAULT 'Montante Tennis',
+  `bankroll_initial` DECIMAL(10,2) NOT NULL DEFAULT 100.00,
+  `mise_depart` DECIMAL(10,2) NOT NULL DEFAULT 10.00,
+  `statut` ENUM('active','pause','terminee') DEFAULT 'active',
+  `date_debut` DATE DEFAULT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `montante_steps` (
+  `id` INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `montante_id` INT UNSIGNED NOT NULL DEFAULT 1,
+  `step_number` INT UNSIGNED NOT NULL,
+  `match_desc` VARCHAR(255) NOT NULL,
+  `competition` VARCHAR(120) DEFAULT NULL,
+  `cote` DECIMAL(10,2) NOT NULL,
+  `mise` DECIMAL(10,2) NOT NULL,
+  `resultat` ENUM('en_cours','gagne','perdu','annule') DEFAULT 'en_cours',
+  `gain_perte` DECIMAL(10,2) DEFAULT NULL,
+  `bankroll_apres` DECIMAL(10,2) DEFAULT NULL,
+  `date_match` DATE DEFAULT NULL,
+  `heure` VARCHAR(20) DEFAULT NULL,
+  `analyse` TEXT DEFAULT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  KEY `idx_montante` (`montante_id`),
+  KEY `idx_step` (`step_number`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+-- ── 11. Abonnement type 'fun' (élargir VARCHAR si pas déjà fait) ──
+-- Le type 'fun' est un abonnement optionnel qui donne accès aux bets Fun
+ALTER TABLE abonnements MODIFY COLUMN `type` VARCHAR(30) NOT NULL DEFAULT 'daily';
+
+
+-- ── 12. Vérification ─────────────────────────────────────────
 -- Après exécution, vérifier avec :
 -- DESCRIBE bets;
 -- DESCRIBE bet_comments;
 -- DESCRIBE membres;
 -- DESCRIBE codes_promo;
+-- DESCRIBE montante_config;
+-- DESCRIBE montante_steps;

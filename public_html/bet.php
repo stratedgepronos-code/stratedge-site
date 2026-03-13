@@ -21,17 +21,20 @@ if (!$bet) {
     exit;
 }
 
-// Vérifier accès (même logique que bets.php)
-$typeAbo = $abonnement['type'] ?? '';
+// Vérifier accès via le nouveau système de droits
+$acces = getMembreAcces($membre['id']);
 $autorisé = false;
-if (isAdmin() && $membre) {
+if ($acces['all']) {
     $autorisé = true;
-} elseif ($typeAbo === 'rasstoss') {
-    $autorisé = true;
-} elseif ($typeAbo === 'tennis') {
-    $autorisé = (($bet['categorie'] ?? 'multi') === 'tennis');
 } else {
-    $autorisé = (($bet['categorie'] ?? 'multi') === 'multi');
+    $betCat = $bet['categorie'] ?? 'multi';
+    $betType = $bet['type'] ?? 'safe';
+    $isFun = (strpos($betType, 'fun') !== false);
+
+    if ($betCat === 'tennis' && $acces['tennis']) $autorisé = true;
+    if ($betCat === 'multi' && !$isFun && $acces['multi']) $autorisé = true;
+    if ($isFun && $acces['fun']) $autorisé = true;
+    if ($betCat === 'multi' && $acces['multi'] && $acces['fun']) $autorisé = true;
 }
 if (!$autorisé && $membre) {
     header('Location: /bets.php');
@@ -80,9 +83,10 @@ $types = array_map('trim', explode(',', $bet['type']));
 $typeLabels = ['safe' => '🛡️ Safe', 'fun' => '🎯 Fun', 'live' => '⚡ Live', 'safe,fun' => 'Safe+Fun', 'safe,live' => 'Safe+Live'];
 $typeColors = ['safe' => '#00d4ff', 'fun' => '#a855f7', 'live' => '#ff2d78'];
 
-// On conserve les scripts pour l'affichage des graphiques (Chart.js, ApexCharts, etc.). Contenu défini par l'admin uniquement.
+// Sécurité : retirer script et iframe de l'analyse HTML
 $analyseHtml = $bet['analyse_html'] ?? '';
 if ($analyseHtml !== '') {
+    $analyseHtml = preg_replace('/<script\b[^>]*>.*?<\/script>/is', '', $analyseHtml);
     $analyseHtml = preg_replace('/<iframe\b[^>]*>.*?<\/iframe>/is', '', $analyseHtml);
 }
 ?>
@@ -111,7 +115,7 @@ if ($analyseHtml !== '') {
 .bet-img-wrap img{width:100%;height:auto;display:block;object-fit:contain;}
 .bet-analyse{margin-top:1.5rem;}
 .bet-analyse-title{font-family:'Orbitron',sans-serif;font-size:0.85rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--pink);margin-bottom:1rem;}
-.bet-analyse-inner{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:1rem;overflow:visible;width:100%;max-width:none;}
+.bet-analyse-inner{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:1rem;overflow:auto;width:100%;max-width:none;}
 .bet-analyse-inner iframe{max-width:100%;border:none;}
 .bet-analyse-inner img{max-width:100%;height:auto;}
 /* Forcer le contenu HTML injecté (card) à utiliser toute la largeur */
@@ -120,11 +124,6 @@ if ($analyseHtml !== '') {
 .bet-analyse-inner .card,
 .bet-analyse-inner [class*="wrapper"],
 .bet-analyse-inner [class*="card"]{max-width:none!important;width:100%!important;}
-/* Chart.js : conteneurs avec hauteur explicite, pas de overflow hidden sur les ancêtres */
-.bet-analyse-inner .chart-box{height:220px;position:relative;min-height:180px;}
-.bet-analyse-inner .sec{overflow:visible!important;}
-.bet-analyse-inner canvas{display:block;}
-.bet-analyse-inner .player .chart-box{width:280px;min-width:240px;height:220px;position:relative;}
 .bet-comments{margin-top:2.5rem;padding-top:1.5rem;border-top:1px solid var(--border);}
 .bet-comments h2{font-family:'Orbitron',sans-serif;font-size:1.1rem;margin-bottom:1rem;color:var(--txt);}
 .comment-form{background:var(--card);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;border:1px solid var(--border);}
@@ -143,8 +142,6 @@ if ($analyseHtml !== '') {
 body.page-bet .mascotte-bg{display:none;}
 @media(max-width:768px){
 .bet-page-wrap{margin-left:-0.8rem;margin-right:-0.8rem;padding-left:0.8rem;padding-right:0.8rem;}
-.bet-analyse-inner .chart-box,
-.bet-analyse-inner .player .chart-box{width:100%!important;height:240px;min-width:0;}
 }
 </style>
 </head>
@@ -173,54 +170,9 @@ body.page-bet .mascotte-bg{display:none;}
   <?php if ($analyseHtml !== ''): ?>
   <section class="bet-analyse" id="analyse">
     <h2 class="bet-analyse-title">📋 Analyse</h2>
-    <script>
-    (function(){
-      var _real = null;
-      Object.defineProperty(window, 'Chart', {
-        configurable: true,
-        get: function(){ return _real; },
-        set: function(C){
-          if (typeof C !== 'function') { _real = C; return; }
-          _real = new Proxy(C, {
-            construct: function(target, args){
-              if (args[1] && args[1].options) {
-                args[1].options.responsive = true;
-                args[1].options.maintainAspectRatio = false;
-              } else if (args[1]) {
-                args[1].options = { responsive: true, maintainAspectRatio: false };
-              }
-              return new target(...args);
-            }
-          });
-          Object.assign(_real, C);
-          _real.prototype = C.prototype;
-          if (C.defaults) _real.defaults = C.defaults;
-          if (C.register) _real.register = C.register.bind(C);
-          if (C.instances) _real.instances = C.instances;
-        }
-      });
-    })();
-    </script>
     <div class="bet-analyse-inner">
       <?= $analyseHtml ?>
     </div>
-    <script>
-    (function(){
-      document.querySelectorAll('.bet-analyse-inner canvas').forEach(function(c){
-        if (!c.getAttribute('height')) c.setAttribute('height','200');
-        var box = c.closest('.chart-box');
-        if (box) { box.style.height = box.style.height || '220px'; box.style.position = 'relative'; }
-        var sec = c.closest('.sec');
-        if (sec) sec.style.overflow = 'visible';
-      });
-      window.addEventListener('load', function(){
-        if (!window.Chart || !window.Chart.instances) return;
-        Object.values(window.Chart.instances).forEach(function(ch){
-          if (ch && ch.options) { ch.options.maintainAspectRatio = false; ch.resize(); }
-        });
-      });
-    })();
-    </script>
   </section>
   <?php endif; ?>
 

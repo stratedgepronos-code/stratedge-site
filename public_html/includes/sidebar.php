@@ -15,6 +15,7 @@ if (!isset($nbNonLus)) {
   <div class="nav-acts">
     <a href="/historique.php">Historique</a>
     <a href="/bets.php">📊 Les Bets</a>
+    <a href="/prono-commu.php">⚽ Prono commu</a>
     <a href="/#pricing" class="nav-btn">Souscrire</a>
     <?php if (isAdmin()): ?><a href="/panel-x9k3m/index.php" class="nav-admin">⚙️ Panel</a><?php endif; ?>
     <a href="/logout.php" style="color:var(--txt3);">Déconnexion</a>
@@ -26,6 +27,8 @@ if (!isset($nbNonLus)) {
   <a href="/dashboard.php?tab=notifs">🔔 Notifications</a>
   <a href="/historique.php">📋 Historique</a>
   <a href="/bets.php">🔥 Les Bets</a>
+    <a href="/prono-commu.php">⚽ Prono commu</a>
+  <a href="/montante-tennis.php">🎾 Montante Tennis</a>
   <a href="/#pricing">💳 Souscrire</a>
   <a href="/sav.php">🎫 SAV</a>
   <?php if (isAdmin()): ?><a href="/panel-x9k3m/index.php">⚙️ Panel</a><?php endif; ?>
@@ -54,6 +57,7 @@ if (!isset($nbNonLus)) {
     <div class="side-sep"></div>
     <a class="s-link <?= $currentPage==='bets'?'active':'' ?>" href="/bets.php"><span class="ico">🔥</span> Les Bets</a>
     <a class="s-link <?= $currentPage==='pronocommu'?'active':'' ?>" href="/prono-commu.php"><span class="ico">⚽</span> Prono de la commu</a>
+    <a class="s-link <?= $currentPage==='montante'?'active':'' ?>" href="/montante-tennis.php"><span class="ico">🎾</span> Montante Tennis</a>
     <a class="s-link <?= $currentPage==='chat'?'active':'' ?>" href="/chat.php"><span class="ico">💬</span> Chat<?php if($nbNonLus>0):?><span class="badge-n"><?=$nbNonLus?></span><?php endif;?></a>
     <a class="s-link <?= $currentPage==='sav'?'active':'' ?>" href="/sav.php"><span class="ico">🎫</span> SAV</a>
     <div class="side-sep"></div>

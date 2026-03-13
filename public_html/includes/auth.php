@@ -28,6 +28,21 @@ function isSuperAdmin(): bool {
     return isAdmin() && isset($_SESSION['membre_email']) && $_SESSION['membre_email'] === ADMIN_EMAIL;
 }
 
+// ── Rôle admin spécialisé ─────────────────────────────────
+function getAdminRole(): string {
+    if (!isAdmin()) return '';
+    if (isSuperAdmin()) return 'super';
+    return $_SESSION['admin_role'] ?? 'admin';
+}
+
+function isAdminTennis(): bool {
+    return getAdminRole() === 'admin_tennis';
+}
+
+function isAdminFun(): bool {
+    return getAdminRole() === 'admin_fun';
+}
+
 // ── Obliger le super admin ─────────────────────────────────
 function requireSuperAdmin(): void {
     if (!isSuperAdmin()) {
@@ -97,10 +112,14 @@ function loginMembre(string $email, string $password): array {
     // Régénérer l'ID de session après login (protection contre session fixation)
     session_regenerate_id(true);
 
+    $role = $membre['role'] ?? '';
+    $isAdm = ($membre['email'] === ADMIN_EMAIL || in_array($role, ['admin', 'admin_tennis', 'admin_fun'], true));
+
     $_SESSION['membre_id']    = $membre['id'];
     $_SESSION['membre_nom']   = $membre['nom'];
     $_SESSION['membre_email'] = $membre['email'];
-    $_SESSION['is_admin']     = ($membre['email'] === ADMIN_EMAIL || ($membre['role'] ?? '') === 'admin');
+    $_SESSION['is_admin']     = $isAdm;
+    $_SESSION['admin_role']   = $isAdm ? $role : '';
     $_SESSION['login_time']   = time();
     $_SESSION['user_agent']   = substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 200);
 
@@ -207,13 +226,87 @@ function getAbonnementActif(int $membreId): ?array {
           AND (
             type = 'daily'
             OR type = 'rasstoss'
-            OR (type IN ('weekend','weekly','tennis') AND date_fin > NOW())
+            OR (type IN ('weekend','weekly','tennis','fun') AND date_fin > NOW())
           )
         ORDER BY date_achat DESC
         LIMIT 1
     ");
     $stmt->execute([$membreId]);
     return $stmt->fetch() ?: null;
+}
+
+// ── Tous les abonnements actifs (un membre peut avoir tennis + fun) ──
+function getAllAbonnementsActifs(int $membreId): array {
+    $db = getDB();
+    $stmt = $db->prepare("
+        SELECT type FROM abonnements
+        WHERE membre_id = ?
+          AND actif = 1
+          AND (
+            type IN ('daily','rasstoss')
+            OR (type IN ('weekend','weekly','tennis','fun') AND date_fin > NOW())
+          )
+    ");
+    $stmt->execute([$membreId]);
+    return array_column($stmt->fetchAll(), 'type');
+}
+
+/**
+ * Retourne les droits d'accès d'un membre aux bets.
+ * @return array ['all' => bool, 'multi' => bool, 'tennis' => bool, 'fun' => bool]
+ */
+function getMembreAcces(int $membreId): array {
+    $acces = ['all' => false, 'multi' => false, 'tennis' => false, 'fun' => false];
+
+    if (isAdmin()) {
+        $acces['all'] = true;
+        return $acces;
+    }
+
+    $types = getAllAbonnementsActifs($membreId);
+    if (empty($types)) return $acces;
+
+    foreach ($types as $t) {
+        switch ($t) {
+            case 'rasstoss':
+                $acces['all'] = true;
+                return $acces;
+            case 'tennis':
+                $acces['tennis'] = true;
+                break;
+            case 'fun':
+                $acces['fun'] = true;
+                break;
+            case 'daily':
+            case 'weekend':
+            case 'weekly':
+                $acces['multi'] = true;
+                break;
+        }
+    }
+    return $acces;
+}
+
+/**
+ * Construit la clause WHERE SQL pour filtrer les bets selon les droits d'accès.
+ */
+function buildBetsWhereClause(array $acces): string {
+    if ($acces['all']) return '1=1';
+
+    $clauses = [];
+    if ($acces['multi'] && $acces['fun']) {
+        $clauses[] = "categorie = 'multi'";
+    } elseif ($acces['multi']) {
+        $clauses[] = "(categorie = 'multi' AND type NOT LIKE '%fun%')";
+    }
+    if ($acces['fun'] && !$acces['multi']) {
+        $clauses[] = "type LIKE '%fun%'";
+    }
+    if ($acces['tennis']) {
+        $clauses[] = "categorie = 'tennis'";
+    }
+
+    return empty($clauses) ? '0=1' : '(' . implode(' OR ', $clauses) . ')';
 }
 
 // ── Vérifier type d'accès ──────────────────────────────────
@@ -237,12 +330,12 @@ function activerAbonnement(int $membreId, string $type): bool {
         $dateFin = $sunday->format('Y-m-d H:i:s');
     } elseif ($type === 'weekly') {
         $dateFin = date('Y-m-d H:i:s', strtotime('+7 days'));
+    } elseif ($type === 'fun') {
+        $dateFin = date('Y-m-d H:i:s', strtotime('+7 days'));
     }
-    // daily = date_fin NULL
-    // rasstoss = date_fin 2090 (à vie)
     if ($type === 'rasstoss') { $dateFin = '2090-01-01 00:00:00'; }
 
-    $montants = ['daily' => 4.50, 'weekend' => 10.00, 'weekly' => 20.00, 'tennis' => 15.00, 'rasstoss' => 0.00];
+    $montants = ['daily' => 4.50, 'weekend' => 10.00, 'weekly' => 20.00, 'tennis' => 15.00, 'fun' => 10.00, 'rasstoss' => 0.00];
     $montant = $montants[$type] ?? 0;
 
     $stmt = $db->prepare("
