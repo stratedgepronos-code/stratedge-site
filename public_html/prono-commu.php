@@ -211,13 +211,14 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
 .match-row{display:flex;align-items:center;justify-content:space-between;gap:0.75rem;padding:1rem 1.2rem;border-bottom:1px solid rgba(255,255,255,0.06);}
 .match-row:last-child{border-bottom:none;}
 .match-info{flex:1;min-width:0;}
-.match-teams{font-weight:600;font-size:1rem;color:var(--txt);}
+.match-teams{font-weight:600;font-size:0.95rem;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .match-meta{font-size:0.8rem;color:var(--txt3);margin-top:0.25rem;}
 .btn-vote{background:linear-gradient(135deg,var(--pink),#d6245f);color:#fff;border:none;padding:0.5rem 1rem;border-radius:8px;font-weight:700;font-size:0.8rem;cursor:pointer;white-space:nowrap;}
 .btn-vote:hover{box-shadow:0 0 20px rgba(255,45,120,0.4);}
 .btn-vote:disabled{opacity:0.6;cursor:not-allowed;}
-.analysis-panel .panel-title{background:rgba(0,212,255,0.05);}
 .analysis-inner{padding:1.2rem;color:var(--txt2);font-size:0.95rem;line-height:1.6;overflow:visible;}
+.analysis-panel .panel-title{background:rgba(0,212,255,0.05);padding:0.75rem 1rem;}
+.analysis-panel .analysis-inner{padding:0.85rem 1rem;}
 .analysis-inner img{max-width:100%;height:auto;}
 .analysis-inner .chart-box{height:220px;position:relative;min-height:180px;}
 .analysis-inner .sec{overflow:visible!important;}
