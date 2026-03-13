@@ -121,8 +121,8 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
 <style>
 /* ═══ HISTORIQUE V2 ═══ */
 
-/* Hero — strictement les mêmes marges/padding que .bets-hero */
-.hist-hero{position:relative;text-align:center;overflow:hidden;background:linear-gradient(180deg,rgba(0,212,255,0.05) 0%,transparent 100%);border-bottom:1px solid var(--border,rgba(255,45,120,0.15));margin-left:calc(-3rem - var(--sidebar-w,270px));margin-right:-3rem;margin-top:-2.5rem;padding:3.5rem 2rem 2.5rem calc(3rem + var(--sidebar-w,270px));box-sizing:border-box;}
+/* Hero — mêmes marges et padding que .bets-hero (copié à l’identique) */
+.hist-hero{position:relative;text-align:center;overflow:hidden;background:linear-gradient(180deg,rgba(0,212,255,0.05) 0%,transparent 100%);border-bottom:1px solid var(--border,rgba(255,45,120,0.15));margin-left:calc(-3rem - var(--sidebar-w,270px));margin-right:-3rem;margin-top:-2.5rem;padding:3.5rem 2rem 2.5rem 3rem;}
 body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem 2rem 2.5rem;}
 .hist-hero::before{content:'';position:absolute;width:600px;height:400px;background:radial-gradient(circle,rgba(0,212,255,0.08) 0%,transparent 70%);top:-200px;left:50%;transform:translateX(-50%);pointer-events:none;}
 .hist-tag{font-family:'Space Mono',monospace;font-size:0.75rem;letter-spacing:4px;text-transform:uppercase;color:var(--blue,#00d4ff);margin-bottom:0.7rem;}
