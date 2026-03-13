@@ -23,9 +23,6 @@ if (isset($membre) && !empty($membre['id'])) {
     <span class="nav-logo-fb" style="display:none;"><em>STRAT</em>EDGE</span>
   </a>
   <div class="nav-acts">
-    <a href="/historique.php">Historique</a>
-    <a href="/bets.php">📊 Les Bets<?php if ($nbBetsEnCours > 0): ?><span class="nav-badge badge-blink"><?= $nbBetsEnCours ?></span><?php endif; ?></a>
-    <a href="/prono-commu.php">⚽ Prono commu</a>
     <a href="/#pricing" class="nav-btn">Souscrire</a>
     <?php if (isAdmin()): ?><a href="/panel-x9k3m/index.php" class="nav-admin">⚙️ Panel</a><?php endif; ?>
     <a href="/logout.php" style="color:var(--txt3);">Déconnexion</a>
@@ -36,7 +33,7 @@ if (isset($membre) && !empty($membre['id'])) {
   <a href="/dashboard.php">📊 Dashboard</a>
   <a href="/historique.php">📋 Historique</a>
   <a href="/bets.php">🔥 Les Bets<?php if ($nbBetsEnCours > 0): ?><span class="nav-badge badge-blink"><?= $nbBetsEnCours ?></span><?php endif; ?></a>
-    <a href="/prono-commu.php">⚽ Prono commu</a>
+  <a href="/prono-commu.php">⚽ Prono commu</a>
   <a href="/montante-tennis.php">🎾 Montante Tennis <span class="montante-status <?= $montanteEnCours ? 'montante-on' : 'montante-off' ?>"><?= $montanteEnCours ? 'En cours' : 'Off' ?></span></a>
   <a href="/#pricing">💳 Souscrire</a>
   <a href="/sav.php">🎫 SAV</a>
@@ -63,6 +60,7 @@ if (isset($membre) && !empty($membre['id'])) {
     <a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')==='dashboard' || ($currentPage==='dashboard' && !in_array($_GET['tab']??'',['profil']))?'active':'' ?>" href="/dashboard.php"><span class="ico">📊</span> Dashboard</a>
     <a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')==='profil'?'active':'' ?>" href="/dashboard.php?tab=profil"><span class="ico">👤</span> Mon Profil</a>
     <div class="side-sep"></div>
+    <a class="s-link <?= $currentPage==='historique'?'active':'' ?>" href="/historique.php"><span class="ico">📋</span> Historique</a>
     <a class="s-link <?= $currentPage==='bets'?'active':'' ?>" href="/bets.php"><span class="ico">🔥</span> Les Bets<?php if ($nbBetsEnCours > 0): ?><span class="badge-n badge-blink"><?= $nbBetsEnCours ?></span><?php endif; ?></a>
     <a class="s-link <?= $currentPage==='pronocommu'?'active':'' ?>" href="/prono-commu.php"><span class="ico">⚽</span> Prono de la commu</a>
     <a class="s-link <?= $currentPage==='montante'?'active':'' ?>" href="/montante-tennis.php"><span class="ico">🎾</span> Montante Tennis <span class="montante-status <?= $montanteEnCours ? 'montante-on' : 'montante-off' ?>"><?= $montanteEnCours ? 'En cours' : 'Off' ?></span></a>

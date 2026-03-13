@@ -161,15 +161,15 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
 /* ═══ HISTORIQUE V2 ═══ */
 
 /* Hero */
-.hist-hero{position:relative;text-align:center;overflow:hidden;background:linear-gradient(180deg,rgba(0,212,255,0.05) 0%,transparent 100%);border-bottom:1px solid var(--border,rgba(255,45,120,0.15));padding:2rem 2rem 2rem;}
+.hist-hero{position:relative;text-align:center;overflow:hidden;background:linear-gradient(180deg,rgba(0,212,255,0.05) 0%,transparent 100%);border-bottom:1px solid var(--border,rgba(255,45,120,0.15));margin:-2.5rem -3rem 0 -3rem;padding:1.7rem 3rem;}
 .hist-hero::before{content:'';position:absolute;width:600px;height:400px;background:radial-gradient(circle,rgba(0,212,255,0.08) 0%,transparent 70%);top:-200px;left:50%;transform:translateX(-50%);pointer-events:none;}
-body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:2rem;}
+body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;margin-top:0;padding:2rem;}
 .hist-tag{font-family:'Space Mono',monospace;font-size:0.75rem;letter-spacing:4px;text-transform:uppercase;color:var(--blue,#00d4ff);margin-bottom:0.7rem;}
 .hist-title{font-family:'Orbitron',sans-serif;font-size:2.2rem;font-weight:900;margin-bottom:0.5rem;}
 .hist-title span{background:linear-gradient(135deg,#00d4ff,#0099cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
 .hist-sub{color:var(--txt2,#b0bec9);font-size:1rem;max-width:500px;margin:0 auto;}
 
-.hist-wrap{max-width:1400px;width:100%;margin:1.5rem auto 0;padding:0 0.5rem 2rem;box-sizing:border-box;}
+.hist-wrap{max-width:1400px;width:100%;margin:1.25rem auto 0;padding:0 0.5rem 2rem;box-sizing:border-box;}
 
 /* ═══ Dashboard Stats ═══ */
 .stats-dashboard{display:flex;align-items:center;justify-content:center;gap:2.5rem;margin-bottom:2rem;flex-wrap:wrap;}
@@ -267,7 +267,7 @@ body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:2rem
   .mini-stat{min-width:130px;padding:0.8rem 1rem;}
 }
 @media(max-width:768px){
-  .hist-hero{margin-left:-0.8rem !important;margin-right:-0.8rem !important;padding:1.5rem 0.8rem 1.5rem !important;}
+  .hist-hero{margin:-1rem -0.8rem 0 -0.8rem !important;padding:1.5rem 0.8rem !important;}
   .hist-hero::before{display:none;}
   .hist-title{font-size:1.5rem;}
   .hist-sub{font-size:0.88rem;max-width:none;}
