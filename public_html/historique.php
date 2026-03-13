@@ -121,9 +121,10 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
 <style>
 /* ═══ HISTORIQUE V2 ═══ */
 
-/* Hero — mêmes marges et padding que .bets-hero (copié à l’identique) */
-.hist-hero{position:relative;text-align:center;overflow:hidden;background:linear-gradient(180deg,rgba(0,212,255,0.05) 0%,transparent 100%);border-bottom:1px solid var(--border,rgba(255,45,120,0.15));margin-left:calc(-3rem - var(--sidebar-w,270px));margin-right:-3rem;margin-top:-2.5rem;padding:3.5rem 2rem 2.5rem 3rem;}
-body:not(.app-body) .hist-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem 2rem 2.5rem;}
+/* Hero — sans sidebar (visiteur) */
+.hist-hero{position:relative;text-align:center;overflow:hidden;background:linear-gradient(180deg,rgba(0,212,255,0.05) 0%,transparent 100%);border-bottom:1px solid var(--border,rgba(255,45,120,0.15));margin-left:-2rem;margin-right:-2rem;margin-top:0;padding:3rem 2rem 2.5rem;}
+/* Hero — avec sidebar (membre) : mêmes marges/padding que .bets-hero, full-bleed */
+.app .content > .hist-hero{margin-left:calc(-3rem - var(--sidebar-w,270px));margin-right:-3rem;margin-top:-2.5rem;padding:3.5rem 2rem 2.5rem 3rem;}
 .hist-hero::before{content:'';position:absolute;width:600px;height:400px;background:radial-gradient(circle,rgba(0,212,255,0.08) 0%,transparent 70%);top:-200px;left:50%;transform:translateX(-50%);pointer-events:none;}
 .hist-tag{font-family:'Space Mono',monospace;font-size:0.75rem;letter-spacing:4px;text-transform:uppercase;color:var(--blue,#00d4ff);margin-bottom:0.7rem;}
 .hist-title{font-family:'Orbitron',sans-serif;font-size:2.2rem;font-weight:900;margin-bottom:0.5rem;}
