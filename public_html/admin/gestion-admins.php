@@ -41,7 +41,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? 
 // Récupérer les admins et les membres normaux (inclure role NULL dans les membres)
 $adminRoles = ['admin', 'admin_tennis', 'admin_fun', 'admin_fun_sport'];
 $admins  = $db->query("SELECT id, nom, email, date_inscription, role FROM membres WHERE role IN ('admin','admin_tennis','admin_fun','admin_fun_sport') ORDER BY nom")->fetchAll();
-$membres = $db->query("SELECT id, nom, email, date_inscription FROM membres WHERE (role IS NULL OR role NOT IN ('admin','admin_tennis','admin_fun','admin_fun_sport')) AND actif = 1 AND email != '" . $db->quote(ADMIN_EMAIL) . "' ORDER BY nom")->fetchAll();
+$membres = $db->query("SELECT id, nom, email, date_inscription FROM membres WHERE (role IS NULL OR role NOT IN ('admin','admin_tennis','admin_fun','admin_fun_sport')) AND actif = 1 AND email != " . $db->quote(ADMIN_EMAIL) . " ORDER BY nom")->fetchAll();
 $roleLabels = ['admin' => 'Admin', 'admin_tennis' => 'Admin Tennis', 'admin_fun' => 'Admin Fun', 'admin_fun_sport' => 'Admin Fun Sport'];
 ?>
 <!DOCTYPE html>
