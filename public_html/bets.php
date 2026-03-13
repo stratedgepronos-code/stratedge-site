@@ -106,9 +106,9 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
 /* ═══ BETS PAGE V2 ═══ */
 
 /* Hero */
-.bets-hero{position:relative;text-align:center;overflow:hidden;background:linear-gradient(180deg,rgba(255,45,120,0.07) 0%,transparent 100%);border-bottom:1px solid var(--border,rgba(255,45,120,0.15));margin-left:calc(-3rem - var(--sidebar-w,270px));margin-right:-3rem;margin-top:-2.5rem;padding:3.5rem 2rem 2.5rem 3rem;}
+.bets-hero{position:relative;text-align:center;overflow:hidden;background:linear-gradient(180deg,rgba(255,45,120,0.07) 0%,transparent 100%);border-bottom:1px solid var(--border,rgba(255,45,120,0.15));padding:2rem 2rem 2rem;}
 .bets-hero::before{content:'';position:absolute;width:600px;height:400px;background:radial-gradient(circle,rgba(255,45,120,0.1) 0%,transparent 70%);top:-200px;left:50%;transform:translateX(-50%);pointer-events:none;}
-body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem 2rem 2.5rem;}
+body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:2rem;}
 .bets-tag{font-family:'Space Mono',monospace;font-size:0.75rem;letter-spacing:4px;text-transform:uppercase;color:var(--pink,#ff2d78);margin-bottom:0.7rem;}
 .bets-title{font-family:'Orbitron',sans-serif;font-size:2.4rem;font-weight:900;margin-bottom:0.6rem;}
 .bets-title span{background:linear-gradient(135deg,#ff2d78,#ff6b9d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
@@ -117,7 +117,7 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
 .bets-counter .pulse{width:8px;height:8px;border-radius:50%;background:#ff2d78;animation:pulse-dot 1.5s ease-in-out infinite;}
 @keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.4);}}
 
-.bets-wrap{max-width:none;width:100%;margin:0 auto;padding:1.5rem 0.5rem 2rem;box-sizing:border-box;}
+.bets-wrap{max-width:none;width:100%;margin:1.5rem auto 0;padding:0 0.5rem 2rem;box-sizing:border-box;}
 
 /* Banner abo */
 .abo-b{border-radius:14px;padding:1.2rem 1.6rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
@@ -214,7 +214,7 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;padding:3rem
   .abo-b{padding:1rem;flex-direction:column;align-items:flex-start;border-radius:10px;}
   .abo-b h3{font-size:0.85rem;}
   .btn-sub{width:100%;justify-content:center;font-size:0.88rem;}
-  .bets-hero{margin-left:-0.8rem !important;margin-right:-0.8rem !important;margin-top:-1rem;padding:1.5rem 0.8rem 1.5rem !important;}
+  .bets-hero{margin-left:-0.8rem !important;margin-right:-0.8rem !important;padding:1.5rem 0.8rem 1.5rem !important;}
   .bets-hero::before{display:none;}
   .bets-title{font-size:1.5rem;}
   .bets-sub{font-size:0.88rem;max-width:none;}

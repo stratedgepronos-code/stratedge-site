@@ -147,13 +147,13 @@ foreach ($steps as $s) {
 .profit-pos{color:#00d46a;}
 .profit-neg{color:#ff4444;}
 
-.mt-current{background:var(--card);border:1px solid rgba(0,212,106,0.25);border-radius:14px;padding:1.5rem;margin-bottom:2rem;position:relative;overflow:hidden;}
-.mt-current::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#00d46a,#00d4ff);}
-.mt-current-tag{font-family:'Space Mono',monospace;font-size:0.7rem;letter-spacing:2px;text-transform:uppercase;color:#00d46a;margin-bottom:0.8rem;}
-.mt-current-match{font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:700;margin-bottom:0.6rem;min-height:1.4em;color:var(--text-primary, #fff);}
-.mt-current-meta{display:flex;flex-wrap:wrap;gap:1rem;color:var(--txt2);font-size:0.9rem;}
-.mt-current-meta span{display:flex;align-items:center;gap:0.3rem;}
-.mt-current-analyse{margin-top:1rem;padding-top:1rem;border-top:1px solid var(--border);color:var(--txt2);font-size:0.9rem;line-height:1.6;}
+.mt-current{background:var(--card, #0d1117);border:1px solid rgba(0,212,106,0.35);border-radius:14px;padding:1.5rem 1.5rem 1.8rem;margin-bottom:2rem;position:relative;overflow:visible;z-index:2;box-shadow:0 0 20px rgba(0,212,106,0.08);}
+.mt-current::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#00d46a,#00d4ff);border-radius:14px 14px 0 0;}
+.mt-current-tag{font-family:'Space Mono',monospace;font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;color:#00d46a;margin-bottom:1rem;display:block;}
+.mt-current-match{font-family:'Orbitron',sans-serif;font-size:1.2rem;font-weight:700;margin-bottom:0.8rem;min-height:1.6em;color:#fff;word-break:break-word;}
+.mt-current-meta{display:flex;flex-wrap:wrap;gap:1.2rem;color:var(--txt2);font-size:0.95rem;padding:0.8rem 0;background:rgba(255,255,255,0.02);border-radius:8px;padding:0.8rem;}
+.mt-current-meta span{display:flex;align-items:center;gap:0.4rem;}
+.mt-current-analyse{margin-top:1rem;padding:1rem;border-top:1px solid var(--border);color:var(--txt2);font-size:0.95rem;line-height:1.7;background:rgba(0,212,106,0.03);border-radius:0 0 10px 10px;}
 
 .mt-table-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
 .mt-table-title{font-family:'Orbitron',sans-serif;font-size:0.85rem;font-weight:700;padding:1rem 1.2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:0.5rem;}
