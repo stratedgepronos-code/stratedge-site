@@ -155,6 +155,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         } else {
             $error = 'Résultat invalide.';
         }
+    } elseif ($_POST['action'] === 'delete_montante') {
+        $montanteId = (int)($_POST['montante_id'] ?? 0);
+        if ($montanteId) {
+            $db->prepare("DELETE FROM montante_steps WHERE montante_id = ?")->execute([$montanteId]);
+            $db->prepare("DELETE FROM montante_config WHERE id = ?")->execute([$montanteId]);
+            $success = 'Montante supprimée.';
+        }
     } elseif ($_POST['action'] === 'edit_step') {
         $stepId = (int)($_POST['step_id'] ?? 0);
         if ($stepId) {
@@ -188,6 +195,7 @@ if ($config) {
     $stmtSteps->execute([$config['id']]);
     $steps = $stmtSteps->fetchAll();
 }
+$toutesMontantes = $db->query("SELECT * FROM montante_config ORDER BY id DESC")->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -229,6 +237,10 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
 .status-terminee{background:rgba(255,255,255,0.06);color:var(--text-muted);border:1px solid rgba(255,255,255,0.1);}
 .profit-pos{color:#00c864;font-weight:700;}
 .profit-neg{color:#ff4444;font-weight:700;}
+.btn-delete{background:rgba(255,68,68,0.12);color:#ff4444;border:1px solid rgba(255,68,68,0.35);padding:0.35rem 0.75rem;border-radius:6px;font-size:0.8rem;font-weight:700;cursor:pointer;}
+.btn-delete:hover{background:rgba(255,68,68,0.25);}
+.montante-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.06);}
+.montante-row:last-child{border-bottom:none;}
 </style>
 </head>
 <body>
@@ -394,6 +406,29 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
         </tbody>
       </table>
     </div>
+  </div>
+  <?php endif; ?>
+
+  <!-- Montantes précédentes : supprimer les tests -->
+  <?php if (count($toutesMontantes) > 0): ?>
+  <div class="card">
+    <h2>🗑️ Montantes (supprimer les tests)</h2>
+    <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem;">Tu peux supprimer une montante et toutes ses étapes. Irréversible.</p>
+    <?php foreach ($toutesMontantes as $m): ?>
+    <div class="montante-row">
+      <div>
+        <strong><?= clean($m['nom']) ?></strong>
+        <span class="status-badge status-<?= $m['statut'] ?>" style="margin-left:0.5rem;"><?= $m['statut'] === 'active' ? '🟢' : ($m['statut'] === 'pause' ? '⏸' : '⬛') ?></span>
+        <span style="color:var(--text-muted);font-size:0.82rem;margin-left:0.5rem;">ID <?= (int)$m['id'] ?> · <?= number_format((float)$m['bankroll_initial'], 0) ?>€ visé · <?= date('d/m/Y', strtotime($m['date_debut'] ?? $m['created_at'])) ?></span>
+      </div>
+      <form method="post" style="display:inline;" onsubmit="return confirm('Supprimer définitivement cette montante et toutes ses étapes ?');">
+        <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
+        <input type="hidden" name="action" value="delete_montante">
+        <input type="hidden" name="montante_id" value="<?= (int)$m['id'] ?>">
+        <button type="submit" class="btn-delete">🗑️ Supprimer</button>
+      </form>
+    </div>
+    <?php endforeach; ?>
   </div>
   <?php endif; ?>
 </div>
