@@ -193,7 +193,7 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
 <?php require_once __DIR__ . '/includes/sidebar-css.php'; ?>
 <style>
 :root{--bg:#050810;--card:#111827;--pink:#ff2d78;--blue:#00d4ff;--txt:#f0f4f8;--txt2:#b0bec9;--txt3:#8a9bb0;--border:rgba(255,45,120,0.15);}
-.prono-commu-wrap{display:grid;grid-template-columns:minmax(0,340px) 1fr;gap:1.5rem;align-items:start;padding:0 0 2rem;}
+.prono-commu-wrap{display:grid;grid-template-columns:minmax(0,420px) minmax(0,1fr);gap:1.5rem;align-items:start;padding:0 0 2rem;}
 @media(max-width:900px){.prono-commu-wrap{grid-template-columns:1fr;}}
 @media(max-width:640px){.analysis-inner .chart-box,.analysis-inner .player .chart-box{width:100%!important;height:240px;min-width:0;}}
 .prono-hero{text-align:center;padding:1.5rem 1rem;margin:-2.5rem -3rem 2rem -3rem;background:linear-gradient(180deg,rgba(255,45,120,0.06) 0%,transparent 100%);border-bottom:1px solid var(--border);}

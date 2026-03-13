@@ -122,11 +122,12 @@ foreach ($steps as $s) {
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <?php require_once __DIR__ . '/includes/sidebar-css.php'; ?>
 <style>
-.mt-hero{text-align:center;padding:2rem 1rem 1.5rem;margin:-2.5rem -3rem 2rem;background:linear-gradient(180deg,rgba(0,212,106,0.06) 0%,transparent 100%);border-bottom:1px solid rgba(0,212,106,0.2);}
-.mt-tag{font-family:'Space Mono',monospace;font-size:0.7rem;letter-spacing:3px;text-transform:uppercase;color:#00d46a;margin-bottom:0.5rem;}
-.mt-title{font-family:'Orbitron',sans-serif;font-size:1.6rem;font-weight:900;margin-bottom:0.3rem;}
-.mt-title span{background:linear-gradient(135deg,#00d46a,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.mt-sub{color:var(--txt2);font-size:0.95rem;}
+.mt-hero{text-align:center;padding:2.5rem 1.5rem 2rem;margin:-2.5rem -3rem 2rem;background:linear-gradient(180deg,rgba(0,212,106,0.08) 0%,rgba(0,212,255,0.03) 50%,transparent 100%);border-bottom:1px solid rgba(0,212,106,0.25);position:relative;}
+.mt-hero::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:60%;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,106,0.5),transparent);pointer-events:none;}
+.mt-tag{font-family:'Space Mono',monospace;font-size:0.72rem;letter-spacing:4px;text-transform:uppercase;color:#00d46a;margin-bottom:0.6rem;opacity:0.95;}
+.mt-title{font-family:'Orbitron',sans-serif;font-size:1.85rem;font-weight:900;margin-bottom:0.4rem;letter-spacing:0.5px;}
+.mt-title span{background:linear-gradient(135deg,#00d46a,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 20px rgba(0,212,106,0.3));}
+.mt-sub{color:var(--txt2);font-size:0.98rem;max-width:480px;margin:0 auto;line-height:1.5;}
 .mt-status{display:inline-flex;align-items:center;gap:0.4rem;margin-top:0.8rem;padding:0.35rem 1rem;border-radius:50px;font-family:'Orbitron',sans-serif;font-size:0.75rem;font-weight:700;letter-spacing:1px;}
 .mt-status.active{background:rgba(0,212,106,0.1);border:1px solid rgba(0,212,106,0.3);color:#00d46a;}
 .mt-status.pause{background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;}
@@ -178,40 +179,44 @@ table.mt-table{width:100%;border-collapse:collapse;}
 .mt-empty .big{font-size:3.5rem;margin-bottom:1rem;}
 .mt-empty h3{font-family:'Orbitron',sans-serif;font-size:1.1rem;margin-bottom:0.5rem;color:var(--txt2);}
 
-/* Visuel pleine largeur au-dessus des bannières (échappe au padding du content) */
-.mt-promo-visual{margin-left:-3rem;margin-right:-3rem;width:calc(100% + 6rem);margin-bottom:1.5rem;padding:1.75rem 2rem;background:linear-gradient(135deg,rgba(0,212,255,0.07) 0%,rgba(255,45,120,0.05) 50%,rgba(0,212,106,0.07) 100%);border-top:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.06);position:relative;overflow:hidden;}
-.mt-promo-visual::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.04),transparent);animation:mt-shine 6s ease-in-out infinite;}
+/* Visuel pleine largeur au-dessus des bannières */
+.mt-promo-visual{margin-left:-3rem;margin-right:-3rem;width:calc(100% + 6rem);margin-bottom:2rem;padding:2rem 2rem;background:linear-gradient(135deg,rgba(0,212,255,0.06) 0%,rgba(255,45,120,0.04) 40%,rgba(0,212,106,0.08) 100%);border-top:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(0,212,106,0.15);position:relative;overflow:hidden;}
+.mt-promo-visual::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.03),transparent);animation:mt-shine 6s ease-in-out infinite;}
 @keyframes mt-shine{0%,100%{opacity:0}50%{opacity:1}}
 .mt-promo-visual-inner{position:relative;z-index:1;text-align:center;}
-.mt-promo-visual .mt-promo-tag{font-family:'Orbitron',sans-serif;font-size:0.7rem;font-weight:700;letter-spacing:3px;color:var(--txt3);margin-bottom:0.4rem;}
-.mt-promo-visual .mt-promo-title{font-family:'Orbitron',sans-serif;font-size:1.15rem;font-weight:800;background:linear-gradient(90deg,#00d4ff,#ff2d78,#00d46a);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-/* Stake + Packs : 3 colonnes égales */
-.stake-promo-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:2rem;}
-.stake-banner,.pack-banner{border-radius:14px;padding:1.2rem 1.2rem;display:flex;flex-direction:column;justify-content:space-between;gap:1rem;min-height:220px;}
-.stake-banner{background:linear-gradient(135deg,rgba(0,212,255,0.08),rgba(0,212,106,0.05));border:1px solid rgba(0,212,255,0.2);}
-.stake-banner-icon{font-size:2rem;flex-shrink:0;}
+.mt-promo-visual .mt-promo-tag{font-family:'Space Mono',monospace;font-size:0.68rem;font-weight:700;letter-spacing:4px;color:var(--txt3);margin-bottom:0.5rem;}
+.mt-promo-visual .mt-promo-title{font-family:'Orbitron',sans-serif;font-size:1.25rem;font-weight:800;background:linear-gradient(90deg,#00d4ff,#ff2d78,#00d46a);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:0.5px;}
+/* Stake + Packs : 3 colonnes égales, cartes soignées */
+.stake-promo-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;margin-bottom:2.5rem;}
+.stake-banner,.pack-banner{border-radius:16px;padding:1.5rem 1.35rem;display:flex;flex-direction:column;justify-content:space-between;gap:1.1rem;min-height:240px;transition:transform .25s ease,box-shadow .25s ease;}
+.stake-banner:hover,.pack-banner:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,0.35);}
+.stake-banner{background:linear-gradient(165deg,rgba(0,212,255,0.1),rgba(0,212,106,0.06));border:1px solid rgba(0,212,255,0.25);box-shadow:0 4px 24px rgba(0,212,255,0.06);}
+.stake-banner:hover{border-color:rgba(0,212,255,0.4);box-shadow:0 12px 40px rgba(0,0,0,0.35),0 0 30px rgba(0,212,255,0.12);}
+.stake-banner-icon{font-size:2.2rem;flex-shrink:0;filter:drop-shadow(0 0 12px rgba(0,212,255,0.3));}
 .stake-banner-text{flex:1;min-width:0;}
-.stake-banner-text h3{font-family:'Orbitron',sans-serif;font-size:0.85rem;font-weight:700;color:#00d4ff;margin-bottom:0.3rem;}
-.stake-banner-text p{font-size:0.82rem;color:var(--txt2);line-height:1.45;}
+.stake-banner-text h3{font-family:'Orbitron',sans-serif;font-size:0.9rem;font-weight:700;color:#00d4ff;margin-bottom:0.4rem;letter-spacing:0.5px;}
+.stake-banner-text p{font-size:0.84rem;color:var(--txt2);line-height:1.5;}
 .stake-banner-text p strong{color:#00d4ff;}
-.btn-stake-mt{display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;background:linear-gradient(135deg,#00d4ff,#0089ff 55%,#00d46a);color:#fff;padding:0.7rem 1rem;border-radius:10px;text-decoration:none;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:1px;transition:all .3s;white-space:nowrap;}
-.btn-stake-mt:hover{box-shadow:0 0 25px rgba(0,166,255,0.4);transform:translateY(-2px);}
-.pack-banner{border-radius:14px;}
-.pack-banner.vip-max{background:linear-gradient(135deg,rgba(245,158,11,0.14),rgba(217,119,6,0.08));border:1px solid rgba(245,158,11,0.4);}
-.pack-banner.vip-max h4{color:#f59e0b;font-family:'Orbitron',sans-serif;font-size:0.9rem;font-weight:700;}
-.pack-banner.vip-max p{font-size:0.82rem;color:var(--txt2);margin:0;}
-.pack-banner.tennis-weekly{background:linear-gradient(135deg,rgba(0,212,106,0.12),rgba(0,212,255,0.08));border:1px solid rgba(0,212,106,0.4);}
-.pack-banner.tennis-weekly h4{color:#00d46a;font-family:'Orbitron',sans-serif;font-size:0.9rem;font-weight:700;}
-.pack-banner.tennis-weekly p{font-size:0.82rem;color:var(--txt2);margin:0;}
-.mt-pack-mascot{width:80px;height:80px;margin:0 auto 0.75rem;border-radius:50%;overflow:hidden;flex-shrink:0;}
+.btn-stake-mt{display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;background:linear-gradient(135deg,#00d4ff,#0089ff 55%,#00d46a);color:#fff;padding:0.75rem 1.15rem;border-radius:10px;text-decoration:none;font-weight:700;font-size:0.85rem;text-transform:uppercase;letter-spacing:1px;transition:all .3s;white-space:nowrap;border:none;}
+.btn-stake-mt:hover{box-shadow:0 0 28px rgba(0,166,255,0.5);transform:translateY(-2px);}
+.pack-banner{border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.15);}
+.pack-banner.vip-max{background:linear-gradient(165deg,rgba(245,158,11,0.16),rgba(217,119,6,0.08));border:1px solid rgba(245,158,11,0.45);}
+.pack-banner.vip-max:hover{border-color:rgba(245,158,11,0.6);box-shadow:0 12px 40px rgba(0,0,0,0.35),0 0 25px rgba(245,158,11,0.15);}
+.pack-banner.vip-max h4{color:#f59e0b;font-family:'Orbitron',sans-serif;font-size:0.95rem;font-weight:700;}
+.pack-banner.vip-max p{font-size:0.84rem;color:var(--txt2);margin:0;line-height:1.45;}
+.pack-banner.tennis-weekly{background:linear-gradient(165deg,rgba(0,212,106,0.14),rgba(0,212,255,0.06));border:1px solid rgba(0,212,106,0.45);}
+.pack-banner.tennis-weekly:hover{border-color:rgba(0,212,106,0.6);box-shadow:0 12px 40px rgba(0,0,0,0.35),0 0 25px rgba(0,212,106,0.15);}
+.pack-banner.tennis-weekly h4{color:#00d46a;font-family:'Orbitron',sans-serif;font-size:0.95rem;font-weight:700;}
+.pack-banner.tennis-weekly p{font-size:0.84rem;color:var(--txt2);margin:0;line-height:1.45;}
+.mt-pack-mascot{width:72px;height:72px;margin:0 auto 0.6rem;border-radius:50%;overflow:hidden;flex-shrink:0;}
 .mt-pack-mascot video{width:100%;height:100%;object-fit:cover;}
-.pack-banner.vip-max .mt-pack-mascot{border:2px solid rgba(245,158,11,0.5);box-shadow:0 0 20px rgba(245,158,11,0.25);}
-.pack-banner.tennis-weekly .mt-pack-mascot{border:2px solid rgba(0,212,106,0.5);box-shadow:0 0 20px rgba(0,212,106,0.25);}
-.btn-pack{display:inline-flex;align-items:center;justify-content:center;gap:0.4rem;padding:0.55rem 1rem;border-radius:8px;text-decoration:none;font-weight:700;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.5px;transition:all .25s;white-space:nowrap;}
+.pack-banner.vip-max .mt-pack-mascot{border:2px solid rgba(245,158,11,0.55);box-shadow:0 0 24px rgba(245,158,11,0.3);}
+.pack-banner.tennis-weekly .mt-pack-mascot{border:2px solid rgba(0,212,106,0.55);box-shadow:0 0 24px rgba(0,212,106,0.3);}
+.btn-pack{display:inline-flex;align-items:center;justify-content:center;gap:0.4rem;padding:0.6rem 1.1rem;border-radius:10px;text-decoration:none;font-weight:700;font-size:0.82rem;text-transform:uppercase;letter-spacing:0.5px;transition:all .25s;white-space:nowrap;}
 .pack-banner.vip-max .btn-pack{background:linear-gradient(135deg,#f59e0b,#d97706);color:#050810;}
-.pack-banner.vip-max .btn-pack:hover{box-shadow:0 0 20px rgba(245,158,11,0.5);transform:translateY(-1px);}
+.pack-banner.vip-max .btn-pack:hover{box-shadow:0 0 24px rgba(245,158,11,0.55);transform:translateY(-1px);}
 .pack-banner.tennis-weekly .btn-pack{background:linear-gradient(135deg,#00d46a,#00a050);color:#fff;}
-.pack-banner.tennis-weekly .btn-pack:hover{box-shadow:0 0 20px rgba(0,212,106,0.5);transform:translateY(-1px);}
+.pack-banner.tennis-weekly .btn-pack:hover{box-shadow:0 0 24px rgba(0,212,106,0.5);transform:translateY(-1px);}
 
 /* Archives */
 .mt-archives{margin-top:2.5rem;}
@@ -239,8 +244,9 @@ table.mt-table{width:100%;border-collapse:collapse;}
   .mt-current{padding:1rem;}
   .mt-table-wrap{overflow-x:auto;}
   .mt-table{min-width:600px;}
-  .stake-promo-row{grid-template-columns:1fr;}
-  .stake-banner,.pack-banner{min-height:auto;}
+  .stake-promo-row{grid-template-columns:1fr;gap:1.25rem;margin-bottom:2rem;}
+  .stake-banner,.pack-banner{min-height:auto;padding:1.35rem 1.2rem;}
+  .stake-banner:hover,.pack-banner:hover{transform:none;}
   .stake-banner{text-align:center;}
   .btn-stake-mt{width:100%;justify-content:center;}
   .mt-pack-mascot{width:64px;height:64px;}
