@@ -31,6 +31,7 @@ jobs:
             echo "=== Tentative $i/$MAX ==="
             sshpass -p "${{ secrets.SSH_PASSWORD }}" rsync -avz --delete \
               --exclude='uploads/' \
+              --filter 'P includes/smtp-config.php' \
               --timeout=60 \
               -e "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p ${{ env.SSH_PORT }}" \
               public_html/ \
