@@ -24,8 +24,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? 
             $newRole = $_POST['new_role'] ?? 'admin';
             $allowed = ['admin', 'admin_tennis', 'admin_fun', 'admin_fun_sport'];
             if (!in_array($newRole, $allowed)) $newRole = 'admin';
-            $db->prepare("UPDATE membres SET role = ? WHERE id = ?")->execute([$newRole, $membreId]);
-            $success = 'Membre promu avec le rôle : ' . $newRole;
+            $stmt = $db->prepare("UPDATE membres SET role = ? WHERE id = ?");
+            $stmt->execute([$newRole, $membreId]);
+            if ($stmt->rowCount() > 0) {
+                $success = 'Membre promu avec le rôle : ' . $newRole;
+            } else {
+                $error = 'Aucune ligne modifiée. Vérifie que la colonne "role" existe (VARCHAR 30) et que l\'id est valide.';
+            }
         } elseif ($action === 'demote' && $membreId > 0) {
             $db->prepare("UPDATE membres SET role = 'user' WHERE id = ?")->execute([$membreId]);
             $success = 'Droits administrateur retirés.';
@@ -33,10 +38,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? 
     }
 }
 
-// Récupérer les admins et les membres normaux
+// Récupérer les admins et les membres normaux (inclure role NULL dans les membres)
 $adminRoles = ['admin', 'admin_tennis', 'admin_fun', 'admin_fun_sport'];
 $admins  = $db->query("SELECT id, nom, email, date_inscription, role FROM membres WHERE role IN ('admin','admin_tennis','admin_fun','admin_fun_sport') ORDER BY nom")->fetchAll();
-$membres = $db->query("SELECT id, nom, email, date_inscription FROM membres WHERE role NOT IN ('admin','admin_tennis','admin_fun','admin_fun_sport') AND actif = 1 AND email != '" . ADMIN_EMAIL . "' ORDER BY nom")->fetchAll();
+$membres = $db->query("SELECT id, nom, email, date_inscription FROM membres WHERE (role IS NULL OR role NOT IN ('admin','admin_tennis','admin_fun','admin_fun_sport')) AND actif = 1 AND email != '" . $db->quote(ADMIN_EMAIL) . "' ORDER BY nom")->fetchAll();
 $roleLabels = ['admin' => 'Admin', 'admin_tennis' => 'Admin Tennis', 'admin_fun' => 'Admin Fun', 'admin_fun_sport' => 'Admin Fun Sport'];
 ?>
 <!DOCTYPE html>

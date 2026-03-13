@@ -84,10 +84,13 @@ function loginMembre(string $email, string $password): array {
     // Régénérer l'ID de session après login (protection contre session fixation)
     session_regenerate_id(true);
 
+    $role = $membre['role'] ?? '';
+    $isAdm = ($membre['email'] === ADMIN_EMAIL || in_array($role, ['admin', 'admin_tennis', 'admin_fun', 'admin_fun_sport'], true));
     $_SESSION['membre_id']    = $membre['id'];
     $_SESSION['membre_nom']   = $membre['nom'];
     $_SESSION['membre_email'] = $membre['email'];
-    $_SESSION['is_admin']     = ($membre['email'] === ADMIN_EMAIL || ($membre['role'] ?? '') === 'admin');
+    $_SESSION['is_admin']     = $isAdm;
+    $_SESSION['admin_role']   = $isAdm ? $role : '';
     $_SESSION['login_time']   = time();
     $_SESSION['user_agent']   = substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 200);
 
