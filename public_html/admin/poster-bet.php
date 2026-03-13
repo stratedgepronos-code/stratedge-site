@@ -821,7 +821,9 @@ function addFiles(files) {
           </select>
           <?php endif; ?>
           <input type="number" name="cote[${idx}]" step="0.01" min="0" placeholder="Cote (optionnel)" style="margin-top:0.4rem;width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.5rem 0.75rem;color:#f0f4f8;font-size:0.9rem;">
+          <?php if ($adminRole !== 'admin_fun' && $adminRole !== 'admin_fun_sport'): ?>
           <textarea name="analyse_html[${idx}]" placeholder="Analyse HTML (optionnel — coller le HTML de la card pour la page bet)" rows="2" style="margin-top:0.4rem;width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.5rem 0.75rem;color:#f0f4f8;font-size:0.75rem;resize:vertical;"></textarea>
+          <?php endif; ?>
           <div class="locked-upload-zone" onclick="this.querySelector('input').click()" title="Card Locked pour Twitter (optionnel)">
             <input type="file" name="locked_images[${idx}]" accept="image/*" style="display:none" onchange="previewLocked(this)">
             <div class="locked-label">🔒 Card Locked Twitter <span style="opacity:0.5;font-size:0.75rem;">(optionnel)</span></div>
