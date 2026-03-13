@@ -121,15 +121,19 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
 <style>
 /* ═══ HISTORIQUE V2 ═══ */
 
+/* Une seule barre de scroll (navigateur), pas de scroll interne à .content */
+.page-historique .app{max-height:none!important;overflow:visible!important;}
+.page-historique .content{overflow-y:visible!important;min-height:0!important;}
+
 /* Hero — sans sidebar (visiteur) */
 .hist-hero{position:relative;text-align:center;overflow:hidden;background:linear-gradient(180deg,rgba(0,212,255,0.05) 0%,transparent 100%);border-bottom:1px solid var(--border,rgba(255,45,120,0.15));margin-left:-2rem;margin-right:-2rem;margin-top:0;padding:3rem 2rem 2.5rem;}
 /* Hero — avec sidebar (membre) : mêmes marges/padding que .bets-hero, full-bleed */
 .app .content > .hist-hero{margin-left:calc(-3rem - var(--sidebar-w,270px));margin-right:-3rem;margin-top:-2.5rem;padding:3.5rem 2rem 2.5rem 3rem;}
 .hist-hero::before{content:'';position:absolute;width:600px;height:400px;background:radial-gradient(circle,rgba(0,212,255,0.08) 0%,transparent 70%);top:-200px;left:50%;transform:translateX(-50%);pointer-events:none;}
-.hist-tag{font-family:'Space Mono',monospace;font-size:0.75rem;letter-spacing:4px;text-transform:uppercase;color:var(--blue,#00d4ff);margin-bottom:0.7rem;}
-.hist-title{font-family:'Orbitron',sans-serif;font-size:2.2rem;font-weight:900;margin-bottom:0.5rem;}
-.hist-title span{background:linear-gradient(135deg,#00d4ff,#0099cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-.hist-sub{color:var(--txt2,#b0bec9);font-size:1rem;max-width:500px;margin:0 auto;}
+.hist-tag{font-family:'Space Mono',monospace;font-size:0.75rem;letter-spacing:4px;text-transform:uppercase;color:#00e5ff;margin-bottom:0.7rem;text-shadow:0 0 20px rgba(0,229,255,0.4);}
+.hist-title{font-family:'Orbitron',sans-serif;font-size:2.2rem;font-weight:900;margin-bottom:0.5rem;color:#fff;}
+.hist-title span{background:linear-gradient(135deg,#00d4ff,#00a8cc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 12px rgba(0,212,255,0.5));}
+.hist-sub{color:#c8d4e0;font-size:1rem;max-width:500px;margin:0 auto;}
 
 .hist-wrap{max-width:1400px;width:100%;margin:0 auto;padding:2rem 1rem 2rem;box-sizing:border-box;}
 
