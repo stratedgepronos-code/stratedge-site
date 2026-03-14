@@ -224,8 +224,10 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
 .analysis-inner .sec{overflow:visible!important;}
 .analysis-inner canvas{display:block;}
 .analysis-inner .player .chart-box{width:280px;min-width:240px;height:220px;position:relative;}
-.analysis-match-winner{padding:0.6rem 1rem;margin:0 0 0.75rem;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.15);border-radius:8px;font-size:0.9rem;color:var(--txt2);}
+.analysis-match-winner{padding:0.6rem 1rem;margin:0 0 0;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.15);border-radius:8px;font-size:0.9rem;color:var(--txt2);}
 .analysis-match-winner strong{color:var(--txt);}
+.analysis-vote-date{font-size:0.82rem;color:var(--txt3);font-weight:400;}
+.analysis-sep{height:1px;background:linear-gradient(90deg,transparent,rgba(255,45,120,0.2),transparent);margin:1rem 0;}
 .analysis-rdv-timer{margin-bottom:0.75rem;}
 .analysis-rdv-label{font-size:0.9rem;color:var(--txt3);}
 .analysis-rdv-label span{font-family:'Orbitron',sans-serif;font-weight:700;color:var(--pink);}
@@ -296,8 +298,9 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
     }
     ?>
     <?php if ($matchDuJour): ?>
-    <div class="analysis-match-winner">🏆 Match gagnant aux votes : <strong><?= clean($matchDuJour['team_home']) ?> – <?= clean($matchDuJour['team_away']) ?></strong></div>
+    <div class="analysis-match-winner">🏆 Match gagnant aux votes : <strong><?= clean($matchDuJour['team_home']) ?> – <?= clean($matchDuJour['team_away']) ?></strong><?php if (!empty($matchDuJour['vote_closed_at'])): ?> <span class="analysis-vote-date">(vote clôturé le <?= date('d/m/Y à H:i', strtotime($matchDuJour['vote_closed_at'])) ?>)</span><?php endif; ?></div>
     <?php if (empty($matchDuJour['analysis_html']) && $analysisAvailableAt): ?>
+    <div class="analysis-sep"></div>
     <div class="analysis-rdv-timer" id="analysisRdvWrap">
       <p class="analysis-rdv-label">Rendez-vous dans <span id="analysisRdvCountdown">--</span> pour l'analyse du match complète.</p>
     </div>

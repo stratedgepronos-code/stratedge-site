@@ -115,6 +115,8 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
 .bg-a{background:rgba(255,45,120,0.1);color:#ff2d78;border:1px solid rgba(255,45,120,0.2);}
 .bg-e{background:rgba(255,45,120,0.08);color:var(--txt3);border:1px solid var(--border);}
 .bg-r{background:linear-gradient(135deg,rgba(255,200,0,0.15),rgba(255,150,0,0.1));color:#ffd700;border:1px solid rgba(255,200,0,0.4);}
+.profil-row{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+@media(max-width:700px){.profil-row{grid-template-columns:1fr;}}
 .abo-push-row{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
 @media(max-width:700px){.abo-push-row{grid-template-columns:1fr;}}
 .nf-in-profil .nf-ico{font-size:1.2rem;margin-bottom:0.25rem;}
@@ -286,18 +288,12 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
   </div>
 </div>
 <div class="set-col">
+  <div class="profil-row">
   <div class="crd"><div class="crd-h"><span class="ico">✏️</span><span class="tl">Nom d'affichage</span></div>
   <?php if(!empty($errors['nom'])):?><div class="alert alert-err">⚠️ <?=htmlspecialchars($errors['nom'])?></div><?php endif;?>
   <form method="POST"><input type="hidden" name="csrf_token" value="<?=csrfToken()?>"><input type="hidden" name="action" value="update_nom">
   <div class="fr"><div class="fg"><label>Nom</label><input type="text" name="nom" value="<?=htmlspecialchars($membre['nom'])?>" required minlength="2" maxlength="50"></div></div>
   <button type="submit" class="btn-sv">Enregistrer</button></form></div>
-
-  <div class="crd"><div class="crd-h"><span class="ico">📧</span><span class="tl">Adresse email</span></div>
-  <?php if(!empty($errors['email'])):?><div class="alert alert-err">⚠️ <?=htmlspecialchars($errors['email'])?></div><?php endif;?>
-  <form method="POST"><input type="hidden" name="csrf_token" value="<?=csrfToken()?>"><input type="hidden" name="action" value="update_email">
-  <div class="fr"><div class="fg"><label>Nouvelle adresse</label><input type="email" name="email" value="<?=htmlspecialchars($membre['email'])?>" required></div>
-  <div class="fg"><label>Mot de passe actuel</label><input type="password" name="password_confirm" placeholder="Confirme ton mot de passe" required><span class="hint">Requis pour valider</span></div></div>
-  <button type="submit" class="btn-sv">Changer l'email</button></form></div>
 
   <div class="crd"><div class="crd-h"><span class="ico">🔑</span><span class="tl">Mot de passe</span></div>
   <?php if(!empty($errors['password'])):?><div class="alert alert-err">⚠️ <?=htmlspecialchars($errors['password'])?></div><?php endif;?>
@@ -307,6 +303,15 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
   <div class="fg"><label>Confirmer</label><input type="password" name="confirm_mdp" placeholder="••••••••" required id="confirmPwd"></div></div></div>
   <div id="pwdMatch" style="font-size:0.82rem;margin-top:0.3rem;display:none;"></div>
   <button type="submit" class="btn-sv">Changer le mot de passe</button></form></div>
+  </div>
+
+  <div class="profil-row">
+  <div class="crd"><div class="crd-h"><span class="ico">📧</span><span class="tl">Adresse email</span></div>
+  <?php if(!empty($errors['email'])):?><div class="alert alert-err">⚠️ <?=htmlspecialchars($errors['email'])?></div><?php endif;?>
+  <form method="POST"><input type="hidden" name="csrf_token" value="<?=csrfToken()?>"><input type="hidden" name="action" value="update_email">
+  <div class="fr"><div class="fg"><label>Nouvelle adresse</label><input type="email" name="email" value="<?=htmlspecialchars($membre['email'])?>" required></div>
+  <div class="fg"><label>Mot de passe actuel</label><input type="password" name="password_confirm" placeholder="Confirme ton mot de passe" required><span class="hint">Requis pour valider</span></div></div>
+  <button type="submit" class="btn-sv">Changer l'email</button></form></div>
 
   <div class="crd"><div class="crd-h"><span class="ico">📧</span><span class="tl">Préférences email</span></div>
   <p style="color:var(--txt3);font-size:0.9rem;margin-bottom:1rem;">Recevoir les notifications par email (nouveaux bets, résultats, messages). Conformité RGPD — vous pouvez vous désinscrire à tout moment.</p>
@@ -317,6 +322,7 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
     <span>Recevoir les notifications par email</span>
   </label>
   <button type="submit" class="btn-sv" style="margin-top:0.75rem;">Enregistrer</button></form></div>
+  </div>
 
   <div class="abo-push-row">
   <div class="crd"><div class="crd-h"><span class="ico">⚡</span><span class="tl">Mon abonnement</span></div>
