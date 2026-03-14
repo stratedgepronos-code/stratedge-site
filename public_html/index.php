@@ -70,8 +70,8 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .hero-glow { position: absolute; width: 900px; height: 900px; background: radial-gradient(circle, rgba(255,45,120,0.1) 0%, transparent 70%); top: -200px; left: -200px; pointer-events: none; }
     .hero-glow-2 { position: absolute; width: 700px; height: 700px; background: radial-gradient(circle, rgba(0,212,255,0.06) 0%, transparent 70%); bottom: -300px; right: -150px; pointer-events: none; }
     .hero-glow-mascot { position: absolute; width: 800px; height: 800px; background: radial-gradient(circle, rgba(255,45,120,0.12) 0%, transparent 60%); bottom: -450px; left: 50%; transform: translateX(-50%); pointer-events: none; }
-    .hero-inner { max-width: 1440px; width: 100%; margin: 0; margin-right: auto; position: relative; z-index: 5; padding: 90px 3rem 3rem 20.5rem; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }
-    .hero-text { max-width: 700px; position: relative; z-index: 10; text-align: left; margin-right: auto; }
+    .hero-inner { max-width: 1440px; width: 100%; margin: 0 auto; position: relative; z-index: 5; padding: 0 5rem; padding-top: 90px; padding-bottom: 3rem; display: flex; flex-direction: column; justify-content: center; }
+    .hero-text { max-width: 700px; position: relative; z-index: 10; }
     .hero-badge { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(255,45,120,0.08); border: 1px solid rgba(255,45,120,0.25); color: var(--neon-green); padding: 0.4rem 1rem; border-radius: 50px; font-size: 0.85rem; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; animation: pulse-badge 2s ease-in-out infinite; }
     @keyframes pulse-badge { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,45,120,0.25); } 50% { box-shadow: 0 0 0 8px rgba(255,45,120,0); } }
     .hero h1 { font-family: 'Orbitron', sans-serif; font-size: clamp(2.8rem, 5vw, 4.5rem); font-weight: 900; line-height: 1.05; margin-bottom: 1.5rem; }
@@ -84,13 +84,13 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .stat-value { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; font-weight: 900; color: var(--neon-green); }
     .stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
     .hero-btns { display: flex; gap: 1rem; }
-    .hero-visual { position: absolute; bottom: 0; top: auto; right: 2%; left: auto; transform: scale(1.2); transform-origin: bottom right; z-index: 2; pointer-events: none; width: 1050px; height: 1220px; }
-    .mascot-container { position: relative; width: 1050px; height: 1220px; }
-    .mascot-ring { position: absolute; top: -60px; left: -60px; right: -60px; bottom: -60px; border-radius: 50%; border: 2px solid rgba(255,45,120,0.2); animation: ring-rotate 20s linear infinite; }
+    /* Mascotte responsive : largeur max 1100px, fixée en bas du block */
+    .hero-visual { position: absolute; bottom: 0; top: auto; right: 2%; left: auto; transform-origin: bottom right; z-index: 2; pointer-events: none; width: min(1100px, min(42vw, 80vh)); max-width: 100%; max-height: 100%; display: flex; align-items: flex-end; }
+    .mascot-container { position: relative; width: 100%; height: auto; aspect-ratio: 900/1050; max-height: min(85vh, 100%); }
+    .mascot-ring { position: absolute; top: -6%; left: -6%; right: -6%; bottom: -6%; border-radius: 50%; border: 2px solid rgba(255,45,120,0.2); animation: ring-rotate 20s linear infinite; }
     .mascot-ring::before { content: ''; position: absolute; top: -7px; left: 50%; width: 14px; height: 14px; background: var(--neon-green); border-radius: 50%; box-shadow: var(--glow-green); }
     @keyframes ring-rotate { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    .mascot-img { position: absolute; bottom: 0; top: auto; left: 50%; transform: translateX(-50%); width: 1050px; height: auto; filter: drop-shadow(0 0 80px rgba(255,45,120,0.35)); animation: hero-mascot-breathe 4.5s ease-in-out infinite, hero-mascot-eyes 3.2s ease-in-out infinite; }
-    @keyframes hero-mascot-breathe { 0%, 100% { transform: translateX(-50%) translateY(0) scale(1); } 50% { transform: translateX(-50%) translateY(-8px) scale(1.008); } }
+    .mascot-img { position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; height: auto; max-width: 100%; filter: drop-shadow(0 0 80px rgba(255,45,120,0.35)); animation: hero-mascot-eyes 3.2s ease-in-out infinite; }
     @keyframes hero-mascot-eyes {
       0%, 100% { filter: drop-shadow(0 0 45px rgba(255,45,120,0.5)) drop-shadow(0 0 90px rgba(255,45,120,0.2)); }
       30% { filter: drop-shadow(0 0 55px rgba(255,45,120,0.7)) drop-shadow(0 0 110px rgba(255,45,120,0.35)) drop-shadow(0 0 8px rgba(255,160,200,0.9)); }
@@ -177,11 +177,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .price-features { list-style: none; margin-bottom: 2rem; text-align: left; }
     .price-features li { padding: 0.5rem 0; color: var(--text-secondary); font-size: 0.95rem; display: flex; align-items: center; gap: 0.75rem; }
     .price-features li::before { content: '✓'; color: var(--neon-green); font-weight: 700; flex-shrink: 0; }
-    .fun-supplement-pulse { display: inline-block; margin-top: 0.2rem; padding: 0.35rem 0.65rem; border-radius: 8px; background: rgba(255,45,120,0.12); color: var(--neon-green); font-size: 0.9em; font-weight: 700; border: 1px solid rgba(255,45,120,0.3); animation: funSupplementPulse 2.5s ease-in-out infinite; }
-    @keyframes funSupplementPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,45,120,0.35); opacity: 1; } 50% { box-shadow: 0 0 14px 2px rgba(255,45,120,0.25); opacity: 0.92; } }
-    .stake-card-btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 0.75rem; padding: 0.6rem 1rem; background: linear-gradient(135deg, var(--neon-blue), #0099cc); color: #fff; border-radius: 8px; font-size: 0.9rem; font-weight: 700; text-align: center; text-decoration: none; transition: all 0.3s; width: 100%; }
-    .stake-card-btn:hover { box-shadow: 0 0 20px rgba(0,212,255,0.4); transform: translateY(-2px); color: #fff; }
-    .stake-card-btn .stake-btn-icon { height: 1.15em; width: auto; vertical-align: middle; }
     .price-divider { width: 100%; height: 1px; background: var(--border-subtle); margin: 1.5rem 0; margin-top: auto; }
     .starpass-zone { background: rgba(255,45,120,0.05); border: 1px dashed rgba(255,45,120,0.25); border-radius: 12px; padding: 1.5rem; margin-top: 1rem; }
     .starpass-zone p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem; }
@@ -348,8 +343,59 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .stake-perks { list-style: none; margin-bottom: 2rem; }
     .stake-perks li { padding: 0.4rem 0; color: var(--text-secondary); display: flex; align-items: center; gap: 0.75rem; font-size: 0.95rem; }
     .stake-perks li::before { content: '⚡'; }
-    .btn-stake { background: linear-gradient(135deg, var(--neon-blue), #0099cc); color: white; padding: 0.9rem 2rem; border-radius: 8px; font-family: 'Rajdhani', sans-serif; font-size: 1.05rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; text-decoration: none; transition: all 0.3s; display: inline-flex; align-items: center; gap: 0.5rem; }
-    .btn-stake:hover { box-shadow: var(--glow-blue); transform: translateY(-2px); }
+    .btn-stake {
+      background: linear-gradient(135deg, #00d4ff, #008fff 55%, #00d46a);
+      color: #fff;
+      padding: 0.95rem 2.2rem;
+      border-radius: 10px;
+      border: 1px solid rgba(0,212,255,0.35);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+      text-decoration: none;
+      transition: all 0.3s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      box-shadow: 0 8px 24px rgba(0,166,255,0.28);
+      position: relative;
+      overflow: hidden;
+    }
+    .btn-stake::before {
+      content: '';
+      position: absolute;
+      top: -140%;
+      left: -20%;
+      width: 40%;
+      height: 300%;
+      background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,0.34), rgba(255,255,255,0));
+      transform: rotate(24deg);
+      transition: left 0.45s ease;
+      pointer-events: none;
+    }
+    .btn-stake:hover {
+      box-shadow: 0 12px 32px rgba(0,166,255,0.45);
+      transform: translateY(-2px);
+    }
+    .btn-stake:hover::before { left: 118%; }
+    @keyframes stakePulse {
+      0%, 100% { box-shadow: 0 8px 24px rgba(0,166,255,0.28); }
+      50% { box-shadow: 0 12px 34px rgba(0,166,255,0.46); }
+    }
+    @media (hover:hover) and (pointer:fine) and (min-width:901px) {
+      .btn-stake,
+      .tennis-btn-stake {
+        animation: stakePulse 2.4s ease-in-out infinite;
+      }
+      .btn-stake:hover,
+      .tennis-btn-stake:hover { animation-play-state: paused; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .btn-stake,
+      .tennis-btn-stake { animation: none !important; }
+    }
     .stake-offer { padding: 0.5rem 0; text-align: left; margin-top: 1rem; }
     .stake-offer strong { color: var(--neon-blue); font-family: 'Orbitron', sans-serif; font-size: 0.9rem; }
     .stake-visual { text-align: center; }
@@ -499,6 +545,18 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .tennis-btn-crypto:hover { box-shadow:0 6px 25px rgba(247,147,26,0.45); transform:translateY(-2px); }
     .tennis-sep { font-size:0.75rem; color:rgba(255,255,255,0.2); margin:0.5rem 0; }
     .tennis-methods { font-size:0.7rem; color:rgba(255,255,255,0.3); margin-top:0.4rem; }
+    .tennis-stake-sep { font-size:0.72rem; color:rgba(255,255,255,0.2); margin:0.8rem 0 0.55rem; letter-spacing:1px; }
+    .tennis-btn-stake {
+      display:block; width:100%; padding:0.95rem 1.2rem;
+      background:linear-gradient(135deg,#00d4ff,#0089ff);
+      color:#fff; font-family:'Orbitron',sans-serif; font-size:0.76rem;
+      font-weight:700; letter-spacing:1.2px; text-transform:uppercase;
+      border:1px solid rgba(0,212,255,0.35); border-radius:10px; text-decoration:none;
+      transition:all 0.25s; box-shadow:0 6px 18px rgba(0,166,255,0.22);
+      text-align:center;
+    }
+    .tennis-btn-stake:hover { transform:translateY(-2px); box-shadow:0 10px 28px rgba(0,166,255,0.38); }
+    .tennis-stake-note { font-size:0.68rem; color:rgba(0,212,255,0.85); margin-top:0.4rem; }
     @media(max-width:900px){
       .price-card-tennis { grid-template-columns:1fr; text-align:center; gap:1.5rem; padding:2rem 1.5rem; }
       .tennis-mascot { margin:0 auto; }
@@ -513,14 +571,13 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .tennis-payment{min-width:auto;}
       .tennis-btn{font-size:0.85rem;padding:0.6rem 1rem;min-height:44px;}
       .tennis-btn-crypto{font-size:0.72rem;padding:0.5rem 0.8rem;min-height:44px;}
+      .tennis-btn-stake{font-size:0.68rem;padding:0.72rem 0.8rem;min-height:44px;}
     }
     .fade-up.visible { opacity: 1; transform: translateY(0); }
 
     /* RESPONSIVE */
     @media (max-width: 1200px) {
-      .mascot-container { width: 900px; height: 1050px; }
-      .mascot-img { width: 900px !important; }
-      .hero-visual { right: 0; bottom: 0; top: auto; transform: scale(1.05); transform-origin: bottom right; }
+      .hero-visual { width: min(700px, min(42vw, 72vh)); }
     }
     @media (max-width: 900px) {
       html,body{overflow-x:hidden;}
@@ -624,9 +681,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .footer-cta h2{font-size:1.05rem;}
     }
     @media (min-width: 1600px) {
-      .mascot-container { width: 1200px; height: 1400px; }
-      .mascot-img { width: 1200px !important; }
-      .hero-visual { right: 2%; bottom: 0; top: auto; transform: scale(1.15); transform-origin: bottom right; }
+      .hero-visual { width: min(900px, min(35vw, 70vh)); }
     }
   </style>
   <!-- PWA -->
@@ -734,7 +789,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
   <div class="hero-glow-mascot"></div>
   <div class="hero-inner">
     <div class="hero-text">
-      <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1.5rem; justify-content:flex-start; max-width:100%; overflow:hidden;">
+      <div style="display:flex; flex-wrap:wrap; gap:0.5rem; margin-bottom:1.5rem; justify-content:center; max-width:100%; overflow:hidden;">
         <div class="hero-badge">🔥 SMS · Paysafecard · Crypto</div>
         <div class="hero-badge" style="background: linear-gradient(135deg, rgba(247,147,26,0.15), rgba(247,147,26,0.05)); border-color: rgba(247,147,26,0.3); color: #f7931a;">₿ Paiement Crypto</div>
       </div>
@@ -834,7 +889,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <?php else: ?>
           <a href="login.php?redirect=offre-daily.php" class="starpass-btn">🔒 Se connecter pour payer</a>
         <?php endif; ?>
-        <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn"><img src="assets/images/stake-s-icon.png" alt="" class="stake-btn-icon"> Souscrire sur Stake.bet</a>
+        <p class="starpass-info">SMS · Appel · CB · Paysafecard via StarPass</p>
         <div class="crypto-separator">— ou —</div>
         <a href="offre-daily.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
       </div>
@@ -853,7 +908,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       <div class="price-amount"><span class="currency">€</span>10</div>
       <div class="price-period">/ souscription (ven → dim)</div>
       <ul class="price-features">
-        <li><div style="display:block;"><span style="white-space:nowrap;">Accès bets "Safe" &amp; "Fun"</span><br><span class="fun-supplement-pulse">Fun bets avec supplément</span></div></li>
+        <li><div style="display:block;"><span style="white-space:nowrap;">Accès bets "Safe" &amp; "Fun"</span><br><span style="font-size:0.85em;opacity:0.75;">Fun bets avec supplément</span></div></li>
         <li>Du vendredi au dimanche</li>
         <li>Bets LIVE par mail &amp; notification Push</li>
         <li>Idéal pour les matchs du week-end</li>
@@ -867,7 +922,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <?php else: ?>
           <a href="login.php?redirect=offre-weekend.php" class="starpass-btn">🔒 Se connecter pour payer</a>
         <?php endif; ?>
-        <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn"><img src="assets/images/stake-s-icon.png" alt="" class="stake-btn-icon"> Souscrire sur Stake.bet</a>
+        <p class="starpass-info">CB · PayPal · Paysafecard · Internet+ via StarPass</p>
         <div class="crypto-separator">— ou —</div>
         <a href="offre-weekend.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
       </div>
@@ -899,7 +954,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <?php else: ?>
           <a href="login.php?redirect=offre-weekly.php" class="starpass-btn">🔒 Se connecter pour payer</a>
         <?php endif; ?>
-        <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn"><img src="assets/images/stake-s-icon.png" alt="" class="stake-btn-icon"> Souscrire sur Stake.bet</a>
+        <p class="starpass-info">CB · PayPal · Paysafecard · Internet+ via StarPass</p>
         <div class="crypto-separator">— ou —</div>
         <a href="offre-weekly.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
       </div>
@@ -977,7 +1032,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
           <?php else: ?>
             <a href="login.php?redirect=offre.php?type=vip_max" class="vip-btn">🔒 Se connecter pour payer</a>
           <?php endif; ?>
-          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn" style="margin-top:0.75rem;"><img src="assets/images/stake-s-icon.png" alt="" class="stake-btn-icon"> Souscrire sur Stake.bet</a>
+          <p style="font-size:0.75rem;color:rgba(245,200,66,0.3);margin-top:0.5rem;">CB · PayPal · Paysafecard · Internet+ via StarPass</p>
           <div class="crypto-separator" style="color:rgba(245,200,66,0.2);">— ou —</div>
           <a href="offre.php?type=vip_max#crypto" class="crypto-btn vip-crypto-btn">₿ Payer en Crypto</a>
         </div>
@@ -1023,10 +1078,12 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <?php else: ?>
           <a href="login.php?redirect=offre-tennis.php" class="tennis-btn">🔒 Se connecter pour payer</a>
         <?php endif; ?>
-        <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn" style="margin-top:0.5rem;margin-bottom:0.5rem;"><img src="assets/images/stake-s-icon.png" alt="" class="stake-btn-icon"> Souscrire sur Stake.bet</a>
         <div class="tennis-sep">— ou —</div>
         <a href="offre-tennis.php#crypto" class="tennis-btn-crypto">₿ Payer en Crypto</a>
         <div class="tennis-methods">CB · PayPal · Paysafecard · Crypto</div>
+        <div class="tennis-stake-sep">BONUS PARTENAIRE</div>
+        <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="tennis-btn-stake">🎁 S'inscrire sur Stake · Lien bonus</a>
+        <div class="tennis-stake-note">1 mois StratEdge offert via ce lien</div>
       </div>
 
     </div>
@@ -1063,7 +1120,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <li>Retraits instantanés en crypto</li>
         <li>Inscrivez-vous via notre lien = 1 mois offert</li>
       </ul>
-      <a href="http://stake.bet/?c=n26yI0vn" target="_blank" class="btn-stake">S'inscrire sur Stake.bet →</a>
+      <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake">S'inscrire sur Stake.bet →</a>
       <div class="stake-offer"><strong>🎁 1 MOIS GRATUIT chez StratEdge Pronos pour une inscription via ce lien</strong></div>
     </div>
     <div class="stake-visual">
@@ -1078,7 +1135,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
   <p>Rejoins les parieurs qui font confiance à la data, pas au hasard. Ton premier bet gagnant est à un clic.</p>
   <div class="footer-cta-btns">
     <a href="#pricing" class="btn-primary">Voir les formules ↓</a>
-    <a href="http://stake.bet/?c=n26yI0vn" target="_blank" class="btn-outline">Ouvrir un compte Stake.bet</a>
+    <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="btn-outline">Ouvrir un compte Stake.bet</a>
   </div>
 </div>
 

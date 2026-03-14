@@ -76,9 +76,26 @@ $offres = [
         'badge'      => '🎾 TENNIS',
         'tag'        => 'Spécialité Tennis',
     ],
+    'vip_max' => [
+        'titre'      => 'VIP Max',
+        'subtitle'   => 'Accès Total',
+        'emoji'      => '👑',
+        'prix'       => '50',
+        'idd'        => '446906',
+        'idp'        => '263723',
+        'duree'      => '30 jours à partir de l\'achat',
+        'avantages'  => ['Tous les bets Multi-sport', 'Tennis ATP & WTA exclusif', 'Bets LIVE & Fun bets inclus', 'Accès illimité 30 jours'],
+        'color'      => '#f5c842',
+        'glow'       => 'rgba(245,200,66,0.18)',
+        'gradient'   => 'linear-gradient(135deg,#c8960c,#f5c842,#fffbe6,#e8a020)',
+        'video'      => 'assets/images/vip_max.mp4',
+        'activate'   => 'activate.php?type=vip_max',
+        'badge'      => 'VIP MAX',
+        'tag'        => 'Accès Total',
+    ],
 ];
 
-if (!isset($offres[$type])) { header('Location: /#pricing'); exit; }
+if (!isset($offres[$type])) { header('Location: /souscrire.php'); exit; }
 
 $o      = $offres[$type];
 $membre = getMembre();
@@ -406,6 +423,10 @@ $membre = getMembre();
       width: auto !important;
       top: auto !important;
       right: auto !important;
+    }
+    /* Langue FR par défaut via paramètre URL ; masquer le sélecteur de langue dans le header */
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-kit-header-right select {
+      display: none !important;
     }
     .sp-wrap [id^="starpass_"] #sk-kit .sk-kit-header-right select {
       background: rgba(0,0,0,0.4) !important;
@@ -1300,7 +1321,7 @@ $membre = getMembre();
   <div class="nav-inner">
     <a href="/" class="nav-logo"><img src="assets/images/logo site.png" alt="StratEdge"></a>
     <span class="nav-badge"><?= $o['badge'] ?></span>
-    <a href="/#pricing" class="nav-back">← Toutes les formules</a>
+    <a href="/souscrire.php" class="nav-back">← Toutes les formules</a>
   </div>
 </nav>
 
@@ -1366,7 +1387,7 @@ $membre = getMembre();
           <p>Cliquez sur le bouton ci-dessous pour payer <strong><?= $o['prix'] ?>€</strong> via StarPass</p>
           <div id="starpass_<?= $o['idd'] ?>"></div>
           <script type="text/javascript"
-            src="https://script.starpass.fr/script.php?idd=<?= $o['idd'] ?>&datas=<?= urlencode($membre['id'] . ':' . $type) ?>">
+            src="https://script.starpass.fr/script.php?idd=<?= $o['idd'] ?>&datas=<?= urlencode($membre['id'] . ':' . $type) ?>&lang=fr">
           </script>
         </div>
         <div class="note-box" style="margin-top:1rem;">
