@@ -76,30 +76,12 @@ $offres = [
         'badge'      => '🎾 TENNIS',
         'tag'        => 'Spécialité Tennis',
     ],
-    'vip_max' => [
-        'titre'      => 'VIP MAX',
-        'subtitle'   => 'Tous sports inclus',
-        'emoji'      => '👑',
-        'prix'       => '50',
-        'idd'        => '446910',
-        'idp'        => '263723',
-        'duree'      => '30 jours à partir de l\'achat',
-        'avantages'  => ['Tous les bets Multi-sport', 'Tennis ATP & WTA exclusif', 'Bets LIVE & Fun bets inclus', 'Accès illimité 30 jours'],
-        'color'      => '#e6b422',
-        'glow'       => 'rgba(230,180,34,0.22)',
-        'gradient'   => 'linear-gradient(135deg,#e6b422,#c9a227)',
-        'video'      => 'assets/images/vip_max.mp4',
-        'activate'   => 'activate.php?type=vip_max',
-        'badge'      => 'OFFRE FONDATEUR',
-        'tag'        => 'Accès total',
-    ],
 ];
 
 if (!isset($offres[$type])) { header('Location: /#pricing'); exit; }
 
 $o      = $offres[$type];
 $membre = getMembre();
-$currentPage = 'souscrire';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -196,9 +178,6 @@ $currentPage = 'souscrire';
     }
 
     /* ── PAGE ── */
-    .offre-breadcrumb { margin:0 0 1rem; font-size:0.9rem; }
-    .offre-breadcrumb a { color:var(--txt3); text-decoration:none; }
-    .offre-breadcrumb a:hover { color:var(--txt); }
     .page {
       max-width:1100px; margin:0 auto;
       padding:4rem 2rem 6rem;
@@ -344,146 +323,100 @@ $currentPage = 'souscrire';
     }
     .block-desc { color:var(--txt3); font-size:0.84rem; margin-bottom:1.2rem; }
 
-    /* StarPass block — style StratEdge */
-    .payment-block.starpass-block {
-      background:linear-gradient(165deg, var(--bg2) 0%, rgba(0,0,0,0.35) 100%);
-      border:1px solid rgba(255,255,255,0.08);
-      border-radius:20px;
-      padding:0;
+    /* ── StarPass Container — Redesign v3 ── */
+    .sp-wrap {
+      position:relative;
+      background:linear-gradient(165deg, rgba(255,255,255,0.025) 0%, rgba(0,0,0,0.25) 100%);
+      border:1px solid color-mix(in srgb, var(--color) 20%, transparent);
+      border-radius:18px;
+      padding:2rem 1.75rem 1.75rem;
       overflow:hidden;
-      box-shadow:0 8px 32px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.03) inset;
     }
-    .payment-block.starpass-block::before {
-      height:3px;
+    .sp-wrap::before {
+      content:'';
+      position:absolute; top:0; left:0; right:0; height:2px;
       background:var(--grad);
-      opacity:1;
     }
-    .payment-block.starpass-block .block-title {
-      padding:1.25rem 1.75rem 0.5rem;
-      font-size:0.7rem;
-      letter-spacing:2.5px;
+    .sp-wrap::after {
+      content:'';
+      position:absolute; top:-60px; right:-60px;
+      width:180px; height:180px;
+      background:radial-gradient(circle, var(--glow) 0%, transparent 70%);
+      border-radius:50%;
+      pointer-events:none;
+      opacity:0.7;
+    }
+
+    .sp-header {
+      display:flex; align-items:center; gap:0.75rem;
+      margin-bottom:1.25rem;
+      position:relative; z-index:1;
+    }
+    .sp-header-icon {
+      width:40px; height:40px; border-radius:12px;
+      background:color-mix(in srgb, var(--color) 12%, transparent);
+      border:1px solid color-mix(in srgb, var(--color) 30%, transparent);
+      display:flex; align-items:center; justify-content:center;
+      font-size:1.1rem; flex-shrink:0;
+    }
+    .sp-header-text {
+      flex:1; min-width:0;
+    }
+    .sp-header-title {
+      font-family:'Orbitron',sans-serif;
+      font-size:0.72rem; font-weight:700;
+      letter-spacing:2px; text-transform:uppercase;
+      color:var(--color);
+      margin-bottom:0.1rem;
+    }
+    .sp-header-sub {
+      font-size:0.82rem; color:var(--txt3); line-height:1.4;
+    }
+    .sp-header-sub strong { color:var(--color); font-weight:700; }
+
+    .sp-price-pill {
+      display:inline-flex; align-items:center; gap:0.4rem;
+      background:color-mix(in srgb, var(--color) 10%, transparent);
+      border:1px solid color-mix(in srgb, var(--color) 25%, transparent);
+      border-radius:30px; padding:0.35rem 1rem;
+      margin-bottom:1.25rem;
+      position:relative; z-index:1;
+    }
+    .sp-price-pill span {
+      font-family:'Orbitron',sans-serif;
+      font-size:0.85rem; font-weight:900;
       color:var(--color);
     }
-    .payment-block.starpass-block .block-desc {
-      padding:0 1.75rem 1.25rem;
-      margin-bottom:0;
-      font-size:0.88rem;
-      line-height:1.55;
-      color:var(--txt2);
-    }
-    .payment-block.starpass-block .block-desc strong { color:var(--color); }
-
-    .sp-wrap {
-      background:rgba(0,0,0,0.3);
-      border:1px solid rgba(255,255,255,0.08);
-      border-radius:16px;
-      padding:1.5rem 1.75rem 1.75rem;
-      margin:0 1.25rem 1.25rem;
-      text-align:left;
-    }
-    .sp-title {
-      font-family:'Orbitron',sans-serif;
-      font-size:1.35rem;
-      font-weight:800;
-      color:var(--txt);
-      margin:0 0 0.4rem;
+    .sp-price-pill .sp-price-label {
+      font-size:0.72rem; color:var(--txt3);
+      font-weight:400; font-family:'Rajdhani',sans-serif;
       letter-spacing:0.5px;
     }
-    .sp-wrap .sp-intro {
-      color:var(--txt2);
-      font-size:0.95rem;
-      margin:0 0 1.25rem;
-      font-family:'Rajdhani',sans-serif;
-      font-weight:500;
-      line-height:1.5;
-    }
-    .sp-wrap .sp-intro strong { color:var(--color); font-weight:700; }
-    .sp-wrap [id^="starpass_"] {
-      min-height:280px;
+
+    .sp-plugin-area {
+      position:relative; z-index:1;
+      background:rgba(0,0,0,0.2);
+      border:1px solid rgba(255,255,255,0.06);
       border-radius:14px;
-      overflow:visible !important;
-      background:rgba(255,255,255,0.03) !important;
-      display:block !important;
-      margin-top:0;
-      border:1px solid rgba(255,255,255,0.06) !important;
-    }
-    .sp-wrap iframe {
-      border:none !important;
-      border-radius:12px !important;
-      width:100% !important;
-      max-width:100% !important;
-      min-height:280px !important;
+      padding:1.25rem;
+      backdrop-filter:blur(8px);
     }
 
-    /* ═══ STARPASS OVERRIDE — Style StratEdge cyberpunk (couleur par pack via var(--color), var(--grad), var(--glow)) ═══ */
-    [id^="starpass_"] #sk-kit,
-    [id^="starpass_"] .sk-kit-header,
-    [id^="starpass_"] .sk-main-content,
-    [id^="starpass_"] .sk-step,
-    [id^="starpass_"] .sk-content-text,
-    [id^="starpass_"] .sk-payment-form,
-    [id^="starpass_"] .sk-input-code-container,
-    [id^="starpass_"] .sk-footer { background:rgba(255,255,255,0.02) !important; border-color:rgba(255,255,255,0.08) !important; color:var(--txt2) !important; }
-    [id^="starpass_"] #sk-kit { border-radius:14px !important; overflow:visible !important; border:1px solid rgba(255,255,255,0.08) !important; padding:0 !important; max-width:100% !important; box-sizing:border-box !important; }
-    [id^="starpass_"] #sk-kit * { box-sizing:border-box !important; }
-    [id^="starpass_"] .sk-kit-header { background:linear-gradient(135deg, color-mix(in srgb, var(--color) 15%, transparent), rgba(0,212,255,0.06)) !important; border-bottom:1px solid rgba(255,255,255,0.08) !important; font-family:'Orbitron',sans-serif !important; padding:1rem 1.25rem !important; }
-    [id^="starpass_"] .sk-kit-header h1.sk-logo,
-    [id^="starpass_"] .sk-kit-header .sk-kit-header-right { color:var(--txt) !important; }
-    [id^="starpass_"] .sk-main-content { padding:1rem 1.25rem 1.25rem !important; overflow:hidden !important; max-width:100% !important; }
-    [id^="starpass_"] .sk-step { background:rgba(255,255,255,0.05) !important; border-radius:12px !important; margin:0.75rem 0 !important; border:1px solid rgba(255,255,255,0.08) !important; padding:1rem 1.25rem !important; }
-    [id^="starpass_"] .sk-step h3.sk-step-image,
-    [id^="starpass_"] .sk-step-title,
-    [id^="starpass_"] .sk-step-text { font-family:'Orbitron',sans-serif !important; color:var(--color) !important; font-size:0.78rem !important; letter-spacing:1.5px !important; }
-    [id^="starpass_"] .sk-step a { color:var(--color) !important; text-decoration:none !important; }
-    [id^="starpass_"] .sk-step a:hover { text-decoration:underline !important; }
-    [id^="starpass_"] #sk-access-type-block ul { display:flex !important; flex-wrap:wrap !important; gap:0.5rem !important; list-style:none !important; margin:0.5rem 0 1rem !important; padding:0 !important; }
-    [id^="starpass_"] #sk-access-type-block ul li { background:rgba(255,255,255,0.06) !important; border-radius:10px !important; border:1px solid rgba(255,255,255,0.1) !important; color:var(--txt2) !important; font-family:'Rajdhani',sans-serif !important; padding:0.5rem 1rem !important; cursor:pointer !important; }
-    [id^="starpass_"] #sk-access-type-block ul li.current { background:var(--grad) !important; border-color:color-mix(in srgb, var(--color) 50%, transparent) !important; color:#fff !important; box-shadow:0 2px 12px var(--glow) !important; }
-    [id^="starpass_"] #sk-access-type-block ul li span { color:inherit !important; }
-    [id^="starpass_"] .sk-content-text { background:rgba(255,255,255,0.03) !important; border-radius:12px !important; border:1px solid rgba(255,255,255,0.08) !important; padding:1.25rem !important; margin-top:0.75rem !important; display:flex !important; flex-wrap:wrap !important; gap:1.25rem !important; align-items:flex-start !important; }
-    [id^="starpass_"] .sk-content-text > table { width:100% !important; table-layout:fixed !important; border-collapse:collapse !important; }
-    [id^="starpass_"] .sk-content-text > table td { padding:0.75rem !important; vertical-align:top !important; }
-    [id^="starpass_"] .sk-content-text > table td:first-child { width:auto !important; min-width:0 !important; }
-    [id^="starpass_"] .sk-content-text > table td:last-child { width:1% !important; max-width:180px !important; white-space:nowrap !important; }
-    [id^="starpass_"] .sk-content-text .sk-payment-form { min-width:0 !important; flex:1 1 280px !important; max-width:100% !important; }
-    [id^="starpass_"] .sk-content-text img { max-width:160px !important; height:auto !important; object-fit:contain !important; }
-    [id^="starpass_"] .sk-payment-form,
-    [id^="starpass_"] .sk-text-input-handler-outer,
-    [id^="starpass_"] .sk-text-input-handler-inner,
-    [id^="starpass_"] .selecthandler-outer,
-    [id^="starpass_"] .selecthandler-inner,
-    [id^="starpass_"] .buttonhandler-outer,
-    [id^="starpass_"] .buttonhandler-inner { background:transparent !important; border:none !important; }
-    [id^="starpass_"] .sk-panel-buy-code-text,
-    [id^="starpass_"] .sk-code-value-XX,
-    [id^="starpass_"] [class*="sk-code-value"] { color:var(--color) !important; font-family:'Orbitron',sans-serif !important; font-weight:700 !important; }
-    [id^="starpass_"] input[type="text"],
-    [id^="starpass_"] input[type="email"],
-    [id^="starpass_"] select { background:rgba(0,0,0,0.4) !important; border:1px solid rgba(255,255,255,0.12) !important; border-radius:10px !important; color:var(--txt) !important; font-family:'Rajdhani',sans-serif !important; padding:0.6rem 0.9rem !important; width:100% !important; max-width:100% !important; }
-    [id^="starpass_"] .sk-text-input-handler-outer,
-    [id^="starpass_"] .selecthandler-outer { width:100% !important; max-width:100% !important; min-width:0 !important; }
-    [id^="starpass_"] .sk-submit-payment-button,
-    [id^="starpass_"] input.sk-submit-payment-button { background:var(--grad) !important; color:#fff !important; border:none !important; border-radius:12px !important; box-shadow:0 4px 20px var(--glow) !important; font-family:'Orbitron',sans-serif !important; font-weight:700 !important; text-transform:uppercase !important; letter-spacing:1.5px !important; padding:0.85rem 1.5rem !important; cursor:pointer !important; width:100% !important; max-width:100% !important; font-size:0.95rem !important; margin-top:0.5rem !important; }
-    [id^="starpass_"] .sk-submit-payment-button:hover,
-    [id^="starpass_"] input.sk-submit-payment-button:hover { box-shadow:0 6px 28px var(--glow) !important; filter:brightness(1.08) !important; }
-    [id^="starpass_"] .sk-input-code-container { background:rgba(255,255,255,0.03) !important; border-radius:12px !important; }
-    [id^="starpass_"] .sk-input-code-field,
-    [id^="starpass_"] input.sk-input-code-field { background:rgba(0,0,0,0.4) !important; border:1px solid rgba(255,255,255,0.12) !important; border-radius:10px !important; color:var(--txt) !important; font-family:'Space Mono',monospace !important; }
-    [id^="starpass_"] input.sk-submit-code { background:var(--grad) !important; color:#fff !important; border:none !important; border-radius:10px !important; font-family:'Orbitron',sans-serif !important; font-weight:700 !important; padding:0.5rem 1rem !important; }
-    [id^="starpass_"] .sk-footer { padding:1rem 1.25rem !important; margin-top:0.5rem !important; display:flex !important; flex-wrap:wrap !important; justify-content:space-between !important; align-items:center !important; gap:0.5rem !important; border-top:1px solid rgba(255,255,255,0.06) !important; }
-    [id^="starpass_"] .sk-footer span.sk-footer-button,
-    [id^="starpass_"] .sk-footer a { background:rgba(255,255,255,0.05) !important; border:1px solid rgba(255,255,255,0.08) !important; color:var(--txt2) !important; font-size:0.75rem !important; padding:0.4rem 0.75rem !important; border-radius:8px !important; text-decoration:none !important; }
-    [id^="starpass_"] .sk-footer a:hover,
-    [id^="starpass_"] .sk-footer span.sk-footer-button a:hover { color:var(--color) !important; }
-    [id^="starpass_"] .sk-footer a { color:var(--txt2) !important; }
-    @media (max-width:700px){
-      [id^="starpass_"] .sk-content-text { flex-direction:column !important; }
-      [id^="starpass_"] .sk-content-text .sk-payment-form { flex:1 1 auto !important; width:100% !important; }
-      [id^="starpass_"] .sk-content-text img { max-width:120px !important; margin:0 auto !important; display:block !important; }
-      [id^="starpass_"] #sk-access-type-block ul { flex-wrap:wrap !important; gap:0.5rem !important; }
-      [id^="starpass_"] #sk-access-type-block ul li { min-width:0 !important; flex:1 1 calc(50% - 0.5rem) !important; }
+    .sp-secure-bar {
+      display:flex; align-items:center; justify-content:center; gap:0.75rem;
+      margin-top:1rem;
+      padding:0.6rem 0;
+      position:relative; z-index:1;
     }
-    /* ═══ Fin StarPass Override ═══ */
+    .sp-secure-badge {
+      display:inline-flex; align-items:center; gap:0.3rem;
+      font-size:0.68rem; color:var(--txt3);
+      letter-spacing:0.5px;
+    }
+    .sp-secure-badge .sp-dot {
+      width:5px; height:5px; border-radius:50%;
+      background:var(--color); opacity:0.6;
+    }
 
     /* Séparateur */
     .sep {
@@ -594,20 +527,7 @@ $currentPage = 'souscrire';
       display:flex; align-items:center; gap:0.35rem;
     }
 
-    /* Note (dans bloc StarPass) */
-    .payment-block.starpass-block .note-box {
-      background:rgba(255,255,255,0.03);
-      border:1px solid rgba(255,255,255,0.06);
-      border-radius:12px;
-      padding:1rem 1.35rem;
-      margin:0 1.75rem 1.5rem;
-    }
-    .payment-block.starpass-block .note-box p {
-      font-size:0.8rem;
-      color:var(--txt3);
-      line-height:1.6;
-    }
-    .payment-block.starpass-block .note-box strong { color:var(--txt2); }
+    /* Note */
     .note-box {
       background:rgba(255,193,7,0.05);
       border:1px solid rgba(255,193,7,0.18);
@@ -800,7 +720,6 @@ $currentPage = 'souscrire';
       .nav-badge { font-size:0.55rem; padding:0.2rem 0.6rem; }
       .offre-card{border-radius:16px;}
       .payment-block{border-radius:16px;padding:1.5rem;}
-      .payment-block.starpass-block{padding:0;}
       .np-info-box{flex-direction:column;align-items:flex-start;gap:0.4rem;}
       .np-amount-value{font-size:1.5rem;}
       .np-success-title{font-size:1.1rem;}
@@ -823,13 +742,18 @@ $currentPage = 'souscrire';
       .offre-duree{font-size:0.78rem;}
       .avantage{font-size:0.85rem;padding:0.5rem 0;}
       .payment-block { padding:1.2rem; border-radius:14px; }
-      .payment-block.starpass-block .block-title,
-      .payment-block.starpass-block .block-desc { padding-left:1rem; padding-right:1rem; }
-      .payment-block.starpass-block .note-box { margin-left:0.8rem; margin-right:0.8rem; margin-bottom:1rem; }
       .block-title{font-size:0.72rem;}
       .block-desc{font-size:0.78rem;}
-      .sp-wrap { padding:1.1rem 0.9rem; margin-left:0.8rem; margin-right:0.8rem; margin-bottom:1rem; }
-      .sp-wrap p{font-size:0.85rem;}
+      .sp-wrap { padding:1.2rem 1rem; border-radius:14px; }
+      .sp-header { gap:0.5rem; }
+      .sp-header-icon { width:32px; height:32px; font-size:0.9rem; border-radius:10px; }
+      .sp-header-title { font-size:0.65rem; }
+      .sp-header-sub { font-size:0.78rem; }
+      .sp-price-pill { padding:0.3rem 0.75rem; }
+      .sp-price-pill span { font-size:0.78rem; }
+      .sp-plugin-area { padding:1rem; border-radius:12px; }
+      .sp-secure-bar { flex-wrap:wrap; gap:0.5rem; }
+      .sp-secure-badge { font-size:0.62rem; }
       .crypto-tabs { gap:0.35rem; }
       .crypto-tab { padding:0.3rem 0.6rem; font-size:0.58rem; }
       .wallet-box{padding:0.6rem 0.8rem;border-radius:8px;}
@@ -863,17 +787,24 @@ $currentPage = 'souscrire';
       .hero-title{font-size:1.15rem;}
     }
   </style>
-  <?php require_once __DIR__ . '/sidebar-css.php'; ?>
 </head>
 <body>
-<?php require_once __DIR__ . '/sidebar.php'; ?>
+
 <div class="bg-orbs">
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
   <div class="orb orb-3"></div>
 </div>
-<div class="page offre-page">
-  <p class="offre-breadcrumb"><a href="/souscrire.php">← Toutes les formules</a></p>
+
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo"><img src="assets/images/logo site.png" alt="StratEdge"></a>
+    <span class="nav-badge"><?= $o['badge'] ?></span>
+    <a href="/#pricing" class="nav-back">← Toutes les formules</a>
+  </div>
+</nav>
+
+<div class="page">
 
   <!-- HERO -->
   <div class="hero">
@@ -923,24 +854,49 @@ $currentPage = 'souscrire';
     <div class="payment-col">
 
       <!-- StarPass -->
-      <div class="payment-block starpass-block">
+      <div class="payment-block">
         <?php if ($type === 'daily'): ?>
-          <div class="block-title">📱 Payer par SMS · Appel · CB · Paysafecard</div>
-          <div class="block-desc">Paiement sécurisé par <strong>StarPass</strong> — SMS, appel surtaxé, carte bancaire ou Paysafecard. Simple et rapide.</div>
+          <div class="block-title">📱 SMS · Appel · CB · Paysafecard</div>
         <?php else: ?>
-          <div class="block-title">💳 Payer par CB · PayPal · Paysafecard · Internet+</div>
-          <div class="block-desc">Paiement sécurisé par <strong>StarPass</strong> — carte bancaire, PayPal, Paysafecard ou Internet+. Activation immédiate.</div>
+          <div class="block-title">💳 CB · PayPal · Paysafecard · Internet+</div>
         <?php endif; ?>
+
         <div class="sp-wrap">
-          <h3 class="sp-title">StarPass x StratEdge</h3>
-          <p class="sp-intro">Remplis le formulaire ci-dessous pour payer <strong><?= $o['prix'] ?>€</strong> via StarPass.</p>
-          <div id="starpass_<?= $o['idd'] ?>"></div>
-          <script type="text/javascript"
-            src="https://script.starpass.fr/script.php?idd=<?= $o['idd'] ?>&datas=<?= urlencode($membre['id'] . ':' . $type) ?>&lang=fr">
-          </script>
+          <div class="sp-header">
+            <div class="sp-header-icon"><?= $type === 'daily' ? '📱' : '💳' ?></div>
+            <div class="sp-header-text">
+              <div class="sp-header-title">StarPass × StratEdge</div>
+              <div class="sp-header-sub">
+                <?php if ($type === 'daily'): ?>
+                  Paiement sécurisé — SMS, appel, CB ou <strong>Paysafecard</strong>
+                <?php else: ?>
+                  Paiement sécurisé — CB, PayPal, Paysafecard ou <strong>Internet+</strong>
+                <?php endif; ?>
+              </div>
+            </div>
+          </div>
+
+          <div class="sp-price-pill">
+            <span class="sp-price-label">Montant :</span>
+            <span><?= $o['prix'] ?>€</span>
+          </div>
+
+          <div class="sp-plugin-area">
+            <div id="starpass_<?= $o['idd'] ?>"></div>
+            <script type="text/javascript"
+              src="https://script.starpass.fr/script.php?idd=<?= $o['idd'] ?>&datas=<?= urlencode($membre['id'] . ':' . $type) ?>">
+            </script>
+          </div>
+
+          <div class="sp-secure-bar">
+            <span class="sp-secure-badge"><span class="sp-dot"></span> Paiement chiffré</span>
+            <span class="sp-secure-badge"><span class="sp-dot"></span> Activation immédiate</span>
+            <span class="sp-secure-badge"><span class="sp-dot"></span> Sans engagement</span>
+          </div>
         </div>
-        <div class="note-box">
-          <p><strong>À savoir :</strong> Après paiement, tu seras redirigé vers ton espace membre. Sinon, ouvre un ticket SAV depuis ton dashboard.</p>
+
+        <div class="note-box" style="margin-top:1rem;">
+          <p><strong>⚠️ Important :</strong> Après paiement StarPass, vous serez automatiquement redirigé vers votre espace membre. Si ce n'est pas le cas, contactez le support depuis votre dashboard.</p>
         </div>
       </div>
 
@@ -1069,7 +1025,6 @@ $currentPage = 'souscrire';
 
     </div>
   </div>
-
 </div>
 
 <?php require_once __DIR__ . '/../includes/footer-main.php'; ?>
@@ -1243,6 +1198,5 @@ function copyText(id) {
   }
 })();
 </script>
-</main></div>
 </body>
 </html>
