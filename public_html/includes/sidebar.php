@@ -53,8 +53,9 @@ if (!isset($nbNonLus)) {
   </div>
   <div class="side-nav">
     <a class="s-link <?= $currentPage==='dashboard' && !in_array($_GET['tab']??'',['profil','notifs'])?'active':'' ?>" href="/dashboard.php"><span class="ico">📊</span> Dashboard</a>
-    <?php if (!isAdmin()): ?><a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')==='profil'?'active':'' ?>" href="/dashboard.php?tab=profil"><span class="ico">👤</span> Mon Profil</a><?php endif; ?>
+    <a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')==='profil'?'active':'' ?>" href="/dashboard.php?tab=profil"><span class="ico">👤</span> Mon Profil</a>
     <a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')==='notifs'?'active':'' ?>" href="/dashboard.php?tab=notifs"><span class="ico">🔔</span> Notifications</a>
+    <a class="s-link <?= $currentPage==='historique'?'active':'' ?>" href="/historique.php"><span class="ico">📋</span> Historique</a>
     <div class="side-sep"></div>
     <a class="s-link <?= $currentPage==='bets'?'active':'' ?>" href="/bets.php"><span class="ico">🔥</span> Les Bets</a>
     <a class="s-link <?= $currentPage==='pronocommu'?'active':'' ?>" href="/prono-commu.php"><span class="ico">⚽</span> Prono de la commu</a>
