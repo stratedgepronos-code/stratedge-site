@@ -122,8 +122,7 @@ foreach ($steps as $s) {
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <?php require_once __DIR__ . '/includes/sidebar-css.php'; ?>
 <style>
-.mt-hero{text-align:center;padding:2.5rem 1.5rem 2rem;margin:-2.5rem -3rem 2rem;background:linear-gradient(180deg,rgba(0,212,106,0.08) 0%,rgba(0,212,255,0.03) 50%,transparent 100%);border-bottom:1px solid rgba(0,212,106,0.25);position:relative;}
-.app .content > .mt-hero{margin-left:calc(-3rem - var(--sidebar-w,270px));margin-right:-3rem;}
+.mt-hero{text-align:center;padding:2.5rem 2rem 2rem calc(3rem + var(--sidebar-w,270px));margin-left:calc(-3rem - var(--sidebar-w,270px));margin-right:-3rem;margin-top:-2.5rem;margin-bottom:2rem;background:linear-gradient(180deg,rgba(0,212,106,0.08) 0%,rgba(0,212,255,0.03) 50%,transparent 100%);border-bottom:1px solid rgba(0,212,106,0.25);position:relative;}
 .mt-hero::after{content:'';position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:60%;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,106,0.5),transparent);pointer-events:none;}
 .mt-tag{font-family:'Space Mono',monospace;font-size:0.72rem;letter-spacing:4px;text-transform:uppercase;color:#00d46a;margin-bottom:0.6rem;opacity:0.95;}
 .mt-title{font-family:'Orbitron',sans-serif;font-size:1.85rem;font-weight:900;margin-bottom:0.4rem;letter-spacing:0.5px;}
@@ -181,8 +180,7 @@ table.mt-table{width:100%;border-collapse:collapse;}
 .mt-empty h3{font-family:'Orbitron',sans-serif;font-size:1.1rem;margin-bottom:0.5rem;color:var(--txt2);}
 
 /* Visuel pleine largeur — full-bleed avec sidebar (même logique que bets-hero / hist-hero) */
-.mt-promo-visual{margin-left:-3rem;margin-right:-3rem;width:calc(100% + 6rem);margin-bottom:2rem;padding:2rem 2rem;background:linear-gradient(135deg,rgba(0,212,255,0.06) 0%,rgba(255,45,120,0.04) 40%,rgba(0,212,106,0.08) 100%);border-top:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(0,212,106,0.15);position:relative;overflow:hidden;}
-.app .content > .mt-promo-visual{margin-left:calc(-3rem - var(--sidebar-w,270px));margin-right:-3rem;}
+.mt-promo-visual{margin-left:calc(-3rem - var(--sidebar-w,270px));margin-right:-3rem;margin-bottom:2rem;padding:2rem 2rem 2rem calc(2rem + var(--sidebar-w,270px));background:linear-gradient(135deg,rgba(0,212,255,0.06) 0%,rgba(255,45,120,0.04) 40%,rgba(0,212,106,0.08) 100%);border-top:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(0,212,106,0.15);position:relative;overflow:hidden;}
 .mt-promo-visual::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.03),transparent);animation:mt-shine 6s ease-in-out infinite;}
 @keyframes mt-shine{0%,100%{opacity:0}50%{opacity:1}}
 .mt-promo-visual-inner{position:relative;z-index:1;text-align:center;}
@@ -237,12 +235,9 @@ table.mt-table{width:100%;border-collapse:collapse;}
 .archive-toggle{font-size:0.75rem;color:var(--txt3);margin-top:0.5rem;text-align:center;}
 
 @media(max-width:768px){
-  .mt-hero{margin:-1rem -0.8rem 1.5rem;padding:1.5rem 0.8rem 1.2rem;}
+  .mt-hero{margin:-1rem -1rem 1.5rem;margin-left:-1rem;padding:1.5rem 1rem 1.2rem;}
   .mt-title{font-size:1.2rem;}
-  .mt-hero{margin-left:-0.8rem;margin-right:-0.8rem;}
-  .app .content > .mt-hero{margin-left:-0.8rem;}
-  .mt-promo-visual{margin-left:-0.8rem;margin-right:-0.8rem;width:calc(100% + 1.6rem);padding:1.25rem 1rem;}
-  .app .content > .mt-promo-visual{margin-left:-0.8rem;}
+  .mt-promo-visual{margin-left:-1rem;margin-right:-1rem;padding:1.25rem 1rem;}
   .mt-promo-visual .mt-promo-title{font-size:0.95rem;}
   .mt-stats{grid-template-columns:1fr 1fr;gap:0.7rem;}
   .stat-val{font-size:1.2rem;}

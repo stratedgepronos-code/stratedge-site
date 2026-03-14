@@ -42,6 +42,9 @@ try { $fondateurPlaces = (int)$db->query("SELECT COUNT(*) FROM vip_max_fondateur
 .btn-crypto{display:block;width:100%;padding:.7rem;background:linear-gradient(135deg,#f7931a,#e2820a);color:#fff;border:none;border-radius:8px;font-family:'Orbitron',sans-serif;font-size:.75rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-decoration:none;text-align:center;cursor:pointer;transition:all .3s;box-shadow:0 4px 15px rgba(247,147,26,0.3)}.btn-crypto:hover{box-shadow:0 6px 25px rgba(247,147,26,0.5);transform:translateY(-2px)}
 .plan-pay-info{font-size:.7rem;color:var(--txt3);margin-top:.4rem}
 .plan-btn.disabled{background:rgba(255,255,255,0.06);box-shadow:none;color:var(--txt3);cursor:default;pointer-events:none}
+.stake-card-btn{display:inline-flex;align-items:center;justify-content:center;gap:0.5rem;margin-top:0.75rem;padding:0.6rem 1rem;width:100%;background:linear-gradient(135deg,#00d4ff,#0099cc);color:#fff;border-radius:8px;font-size:0.9rem;font-weight:700;text-decoration:none;transition:all .3s;border:none;}
+.stake-card-btn:hover{box-shadow:0 0 20px rgba(0,212,255,0.4);transform:translateY(-2px);color:#fff;}
+.stake-card-btn .stake-btn-icon{height:1.15em;width:auto;vertical-align:middle;}
 .discount-badge{position:absolute;top:.8rem;right:.8rem;background:#ff6b2b;color:#fff;font-family:'Orbitron',sans-serif;font-size:.6rem;font-weight:700;padding:.25rem .55rem;border-radius:6px;letter-spacing:1px;z-index:5}.plan-card.featured .discount-badge{top:2.5rem}
 .active-tag{position:absolute;top:1rem;right:1rem;font-family:'Orbitron',sans-serif;font-size:.55rem;letter-spacing:1.5px;font-weight:700;background:rgba(57,255,20,0.12);border:1px solid rgba(57,255,20,0.3);color:#39ff14;padding:.25rem .7rem;border-radius:20px;text-transform:uppercase;z-index:6;animation:pG 2s ease-in-out infinite}@keyframes pG{0%,100%{box-shadow:0 0 8px rgba(57,255,20,0.15)}50%{box-shadow:0 0 20px rgba(57,255,20,0.3)}}
 
@@ -75,12 +78,14 @@ try { $fondateurPlaces = (int)$db->query("SELECT COUNT(*) FROM vip_max_fondateur
 .faq-section{margin-top:2rem;position:relative;z-index:2;animation:fU .8s ease .6s both}.faq-title{font-family:'Orbitron',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);margin-bottom:1rem;text-align:center}.faq-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:1rem}.faq-item{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:12px;padding:1.1rem 1.3rem}.faq-q{font-weight:700;font-size:.92rem;color:var(--txt);margin-bottom:.4rem}.faq-a{font-size:.82rem;color:var(--txt3);line-height:1.5}
 @keyframes fU{from{opacity:0;transform:translateY(25px)}to{opacity:1;transform:translateY(0)}}
 @media(max-width:900px){.plans-grid{grid-template-columns:1fr}.vip-grid{grid-template-columns:1fr}.tennis-card{grid-template-columns:1fr;text-align:center;gap:1.5rem}.tennis-mascot{margin:0 auto}.tennis-payment{min-width:auto}.faq-grid{grid-template-columns:1fr}}
+.souscrire-wrap{max-width:1100px;margin:0 auto;width:100%;}
 </style>
 </head>
 <body>
 <div class="bg-orbs"><div class="orb o1"></div><div class="orb o2"></div><div class="orb o3"></div></div>
 <?php require_once __DIR__ . '/includes/sidebar.php'; ?>
 <div class="content-body">
+<div class="souscrire-wrap">
 <div class="sub-hero"><div class="sub-hero-tag">⚡ Formules & Tarifs</div><h1 class="sub-hero-title">Choisis ton avantage</h1><p class="sub-hero-desc">Accède aux analyses de nos experts, bets <strong>Safe</strong>, <strong>Live</strong> et <strong>Fun</strong>. Sans engagement, tu es libre à tout moment.</p></div>
 
 <!-- 3 Cards -->
@@ -105,6 +110,7 @@ foreach($cards as $i=>$c):$act=in_array($c['type'],$typesActifs);?>
 <div class="plan-pay"><div class="plan-pay-label">💳 Payer maintenant</div>
 <?php if($act):?><div class="plan-btn disabled">✓ Abonnement actif</div>
 <?php else:?><a href="<?=$c['link']?>" class="plan-btn"><?=$c['btn']?></a><div class="sep-or">— ou —</div><a href="<?=$c['link']?>#crypto" class="btn-crypto">₿ Payer en Crypto</a><?php endif;?>
+<a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn"><img src="/assets/images/stake-s-icon.png" alt="" class="stake-btn-icon"> S'inscrire sur Stake.bet</a>
 <div class="plan-pay-info"><?=$c['info']?></div></div></div></div>
 <?php endforeach;?>
 </div>
@@ -124,6 +130,7 @@ foreach($cards as $i=>$c):$act=in_array($c['type'],$typesActifs);?>
 <div class="vip-pay"><div class="vip-pay-label">💳 Payer maintenant</div>
 <?php if(in_array('vip_max',$typesActifs)):?><div class="vip-btn" style="opacity:.4;pointer-events:none">✓ Abonnement actif</div>
 <?php else:?><a href="offre.php?type=vip_max" class="vip-btn">💳 Payer — 50€</a><div class="sep-or" style="color:rgba(245,200,66,0.3)">— ou —</div><a href="offre.php?type=vip_max#crypto" class="btn-crypto vip-crypto">₿ Payer en Crypto</a><?php endif;?>
+<a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn" style="margin-top:0.75rem;"><img src="/assets/images/stake-s-icon.png" alt="" class="stake-btn-icon"> S'inscrire sur Stake.bet</a>
 <div class="plan-pay-info" style="color:rgba(245,200,66,0.3)">CB · PayPal · Paysafecard · Internet+ via StarPass</div></div></div>
 
 <!-- Tennis -->
@@ -136,15 +143,16 @@ foreach($cards as $i=>$c):$act=in_array($c['type'],$typesActifs);?>
 <div class="tennis-payment"><div class="tennis-pay-label">💳 Payer maintenant</div>
 <?php if(in_array('tennis',$typesActifs)):?><div class="tennis-btn" style="opacity:.4;pointer-events:none">✓ Abonnement actif</div>
 <?php else:?><a href="offre-tennis.php" class="tennis-btn">💳 Payer — 15€</a><div class="sep-or" style="color:rgba(0,212,106,0.3)">— ou —</div><a href="offre-tennis.php#crypto" class="btn-crypto">₿ Payer en Crypto</a><?php endif;?>
+<a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn" style="margin-top:0.5rem;margin-bottom:0.5rem;"><img src="/assets/images/stake-s-icon.png" alt="" class="stake-btn-icon"> S'inscrire sur Stake.bet</a>
 <div class="plan-pay-info">CB · PayPal · Paysafecard · Crypto</div></div></div>
 </div></div>
 
 <div class="guarantee"><div class="guarantee-icon">🛡️</div><div class="guarantee-title">Sans engagement</div><p class="guarantee-text">Toutes nos formules sont <strong>sans abonnement récurrent</strong>. Tu payes une fois, tu profites de la durée choisie. Pas de renouvellement automatique.</p></div>
 <div class="faq-section"><div class="faq-title">Questions fréquentes</div><div class="faq-grid">
-<div class="faq-item"><div class="faq-q">Comment je reçois les bets ?</div><div class="faq-a">Dès ton abonnement activé, les bets apparaissent sur ton dashboard. Tu reçois aussi les bets LIVE par email et notification push.</div></div>
+<div class="faq-item"><div class="faq-q">Comment je reçois les bets ?</div><div class="faq-a">Dès ton abonnement activé, les bets apparaissent sur ton dashboard. Tu reçois aussi l'annonce par email et notification push.</div></div>
 <div class="faq-item"><div class="faq-q">Puis-je cumuler les formules ?</div><div class="faq-a">Oui ! Par exemple, tu peux avoir un Weekly + un Tennis Weekly actifs en même temps.</div></div>
 <div class="faq-item"><div class="faq-q">Comment payer ?</div><div class="faq-a">SMS+ (Daily), carte bancaire, PayPal, Paysafecard via StarPass, ou crypto.</div></div>
-<div class="faq-item"><div class="faq-q">Qu'est-ce que le VIP MAX ?</div><div class="faq-a">Le VIP MAX inclut TOUS les bets (multi-sport + tennis) pendant 30 jours.</div></div>
+<div class="faq-item"><div class="faq-q">Qu'est-ce que le VIP MAX ?</div><div class="faq-a">Le VIP MAX inclut TOUS les bets (multi-sport + tennis + fun + live) pendant 30 jours.</div></div>
 </div></div>
 </div>
 <?php if(file_exists(__DIR__.'/includes/footer-legal.php')): ?><?php require_once __DIR__.'/includes/footer-legal.php'; ?><?php endif; ?>
