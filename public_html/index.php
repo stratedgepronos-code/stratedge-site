@@ -179,6 +179,8 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .price-features li::before { content: '✓'; color: var(--neon-green); font-weight: 700; flex-shrink: 0; }
     .fun-supplement-pulse { display: inline-block; margin-top: 0.2rem; padding: 0.35rem 0.65rem; border-radius: 8px; background: rgba(255,45,120,0.12); color: var(--neon-green); font-size: 0.9em; font-weight: 700; border: 1px solid rgba(255,45,120,0.3); animation: funSupplementPulse 2.5s ease-in-out infinite; }
     @keyframes funSupplementPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(255,45,120,0.35); opacity: 1; } 50% { box-shadow: 0 0 14px 2px rgba(255,45,120,0.25); opacity: 0.92; } }
+    .stake-card-btn { display: block; margin-top: 0.75rem; padding: 0.6rem 1rem; background: linear-gradient(135deg, var(--neon-blue), #0099cc); color: #fff; border-radius: 8px; font-size: 0.9rem; font-weight: 700; text-align: center; text-decoration: none; transition: all 0.3s; }
+    .stake-card-btn:hover { box-shadow: 0 0 20px rgba(0,212,255,0.4); transform: translateY(-2px); color: #fff; }
     .price-divider { width: 100%; height: 1px; background: var(--border-subtle); margin: 1.5rem 0; margin-top: auto; }
     .starpass-zone { background: rgba(255,45,120,0.05); border: 1px dashed rgba(255,45,120,0.25); border-radius: 12px; padding: 1.5rem; margin-top: 1rem; }
     .starpass-zone p { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem; }
@@ -831,7 +833,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <?php else: ?>
           <a href="login.php?redirect=offre-daily.php" class="starpass-btn">🔒 Se connecter pour payer</a>
         <?php endif; ?>
-        <p class="starpass-info">SMS · Appel · CB · Paysafecard via StarPass</p>
+        <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn">🎲 Ouvrir Stake.bet</a>
         <div class="crypto-separator">— ou —</div>
         <a href="offre-daily.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
       </div>
@@ -864,7 +866,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <?php else: ?>
           <a href="login.php?redirect=offre-weekend.php" class="starpass-btn">🔒 Se connecter pour payer</a>
         <?php endif; ?>
-        <p class="starpass-info">CB · PayPal · Paysafecard · Internet+ via StarPass</p>
+        <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn">🎲 Ouvrir Stake.bet</a>
         <div class="crypto-separator">— ou —</div>
         <a href="offre-weekend.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
       </div>
@@ -896,7 +898,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <?php else: ?>
           <a href="login.php?redirect=offre-weekly.php" class="starpass-btn">🔒 Se connecter pour payer</a>
         <?php endif; ?>
-        <p class="starpass-info">CB · PayPal · Paysafecard · Internet+ via StarPass</p>
+        <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn">🎲 Ouvrir Stake.bet</a>
         <div class="crypto-separator">— ou —</div>
         <a href="offre-weekly.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
       </div>
@@ -974,7 +976,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
           <?php else: ?>
             <a href="login.php?redirect=offre.php?type=vip_max" class="vip-btn">🔒 Se connecter pour payer</a>
           <?php endif; ?>
-          <p style="font-size:0.75rem;color:rgba(245,200,66,0.3);margin-top:0.5rem;">CB · PayPal · Paysafecard · Internet+ via StarPass</p>
+          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn" style="margin-top:0.75rem;">🎲 Ouvrir Stake.bet</a>
           <div class="crypto-separator" style="color:rgba(245,200,66,0.2);">— ou —</div>
           <a href="offre.php?type=vip_max#crypto" class="crypto-btn vip-crypto-btn">₿ Payer en Crypto</a>
         </div>
