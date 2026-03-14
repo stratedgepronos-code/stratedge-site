@@ -10,6 +10,7 @@ $historique = getHistoriqueAbonnements($membre['id']);
 $success = '';
 $errors  = [];
 $activeTab = $_GET['tab'] ?? 'dashboard';
+if ($activeTab === 'notifs') { $activeTab = 'profil'; }
 $currentPage = 'dashboard';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? '')) {
@@ -348,26 +349,26 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
     <div class="step"><span class="step-n">2</span><div class="step-t">Recharge la page (F5)</div></div>
   </div>
   </div>
+
+  <div class="sec" id="profil-notifs" style="margin-top:2rem;"><h3><span class="dot"></span> Ce que tu recevras</h3>
+  <div class="nf-grid">
+    <div class="nf-ev"><div class="ev-i">🔥</div><div class="ev-t">Nouveau bet</div><div class="ev-d">Push dès qu'un bet Daily, Week-End ou Weekly est posté</div></div>
+    <div class="nf-ev"><div class="ev-i">✅</div><div class="ev-t">Résultat</div><div class="ev-d">Notification quand le résultat tombe (Win, Lose, Void)</div></div>
+    <div class="nf-ev"><div class="ev-i">💬</div><div class="ev-t">Message</div><div class="ev-d">Alerte quand l'équipe t'envoie un message</div></div>
+    <div class="nf-ev"><div class="ev-i">⏰</div><div class="ev-t">Expiration</div><div class="ev-d">Prévenu quand ton abonnement arrive à expiration</div></div>
+  </div></div>
   </div>
 </div>
 </div>
-</div>
-
-<!-- ═══ NOTIFICATIONS ═══ -->
-<div class="tab-p <?= $activeTab==='notifs'?'active':'' ?>" id="tab-notifs">
-<div class="sec"><h3><span class="dot"></span> Ce que tu recevras</h3>
-<div class="nf-grid">
-  <div class="nf-ev"><div class="ev-i">🔥</div><div class="ev-t">Nouveau bet</div><div class="ev-d">Push dès qu'un bet Daily, Week-End ou Weekly est posté</div></div>
-  <div class="nf-ev"><div class="ev-i">✅</div><div class="ev-t">Résultat</div><div class="ev-d">Notification quand le résultat tombe (Win, Lose, Void)</div></div>
-  <div class="nf-ev"><div class="ev-i">💬</div><div class="ev-t">Message</div><div class="ev-d">Alerte quand l'équipe t'envoie un message</div></div>
-  <div class="nf-ev"><div class="ev-i">⏰</div><div class="ev-t">Expiration</div><div class="ev-d">Prévenu quand ton abonnement arrive à expiration</div></div>
-</div></div>
 </div>
 
 </main></div>
 <?php require_once __DIR__ . '/includes/footer-main.php'; ?>
 <script>
 function sw(t){document.querySelectorAll('.tab-p').forEach(function(p){p.classList.remove('active');});var p=document.getElementById('tab-'+t);if(p)p.classList.add('active');history.replaceState(null,'',window.location.pathname+'?tab='+t);}
+if (window.location.search.indexOf('tab=notifs') !== -1) {
+  var el = document.getElementById('profil-notifs'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 function toggleMenu(){document.getElementById('mobileMenu').classList.toggle('open');}
 var np=document.getElementById('newPwd'),cp=document.getElementById('confirmPwd'),pm=document.getElementById('pwdMatch');
 function ck(){if(!cp.value){pm.style.display='none';return;}pm.style.display='block';if(np.value===cp.value){pm.textContent='✓ Correspondent';pm.style.color='#ff2d78';}else{pm.textContent='✗ Ne correspondent pas';pm.style.color='#ff6b9d';}}

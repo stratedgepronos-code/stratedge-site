@@ -298,14 +298,14 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
     }
     ?>
     <?php if ($matchDuJour): ?>
-    <div class="analysis-match-winner">🏆 Match gagnant aux votes : <strong><?= clean($matchDuJour['team_home']) ?> – <?= clean($matchDuJour['team_away']) ?></strong><?php if (!empty($matchDuJour['vote_closed_at'])): ?> <span class="analysis-vote-date">(vote clôturé le <?= date('d/m/Y à H:i', strtotime($matchDuJour['vote_closed_at'])) ?>)</span><?php endif; ?></div>
+    <div class="analysis-match-winner">🏆 Match gagnant aux votes : <strong><?= clean($matchDuJour['team_home']) ?> – <?= clean($matchDuJour['team_away']) ?></strong><?php if (!empty($matchDuJour['vote_closed_at'])): ?> <span class="analysis-vote-date">(vote clôturé le <?= date('d/m/Y à H:i', strtotime($matchDuJour['vote_closed_at'])) ?>)</span><?php endif; ?>
     <?php if (empty($matchDuJour['analysis_html']) && $analysisAvailableAt): ?>
-    <div class="analysis-sep"></div>
-    <div class="analysis-rdv-timer" id="analysisRdvWrap">
+    <div class="analysis-rdv-timer" id="analysisRdvWrap" style="margin-top:0.75rem;">
       <p class="analysis-rdv-label">Rendez-vous dans <span id="analysisRdvCountdown">--</span> pour l'analyse du match complète.</p>
     </div>
     <input type="hidden" id="analysis_rdv_ts" value="<?= (int)$analysisAvailableAt ?>">
     <?php endif; ?>
+    </div>
     <?php endif; ?>
     <?php if ($matchDuJour && !empty($matchDuJour['analysis_html'])): ?>
     <script>
