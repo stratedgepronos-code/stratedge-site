@@ -374,30 +374,39 @@ $currentPage = 'souscrire';
     .payment-block.starpass-block .block-desc strong { color:var(--color); }
 
     .sp-wrap {
-      background:rgba(0,0,0,0.25);
-      border:1px solid rgba(255,255,255,0.06);
-      border-radius:14px;
-      padding:1.75rem 1.75rem 1.5rem;
-      text-align:center;
+      background:rgba(0,0,0,0.3);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:16px;
+      padding:1.5rem 1.75rem 1.75rem;
       margin:0 1.25rem 1.25rem;
+      text-align:left;
     }
-    .sp-wrap p {
+    .sp-title {
+      font-family:'Orbitron',sans-serif;
+      font-size:1.35rem;
+      font-weight:800;
+      color:var(--txt);
+      margin:0 0 0.4rem;
+      letter-spacing:0.5px;
+    }
+    .sp-wrap .sp-intro {
       color:var(--txt2);
-      font-size:0.9rem;
-      margin-bottom:1.25rem;
+      font-size:0.95rem;
+      margin:0 0 1.25rem;
       font-family:'Rajdhani',sans-serif;
       font-weight:500;
+      line-height:1.5;
     }
-    .sp-wrap strong { color:var(--color); font-weight:700; }
+    .sp-wrap .sp-intro strong { color:var(--color); font-weight:700; }
     .sp-wrap [id^="starpass_"] {
       min-height:280px;
       border-radius:14px;
       overflow:visible !important;
-      background:rgba(255,255,255,0.02) !important;
+      background:rgba(255,255,255,0.03) !important;
       display:block !important;
-      margin-top:0.5rem;
+      margin-top:0;
+      border:1px solid rgba(255,255,255,0.06) !important;
     }
-    .sp-wrap .sp-intro { margin-bottom:1rem; }
     .sp-wrap iframe {
       border:none !important;
       border-radius:12px !important;
@@ -421,12 +430,15 @@ $currentPage = 'souscrire';
     [id^="starpass_"] .sk-kit-header h1.sk-logo,
     [id^="starpass_"] .sk-kit-header .sk-kit-header-right { color:var(--txt) !important; }
     [id^="starpass_"] .sk-main-content { padding:1rem 1.25rem 1.25rem !important; overflow:hidden !important; max-width:100% !important; }
-    [id^="starpass_"] .sk-step { background:rgba(255,255,255,0.03) !important; border-radius:12px !important; margin:0.75rem 0 !important; border:1px solid rgba(255,255,255,0.06) !important; padding:1rem 1.25rem !important; }
+    [id^="starpass_"] .sk-step { background:rgba(255,255,255,0.05) !important; border-radius:12px !important; margin:0.75rem 0 !important; border:1px solid rgba(255,255,255,0.08) !important; padding:1rem 1.25rem !important; }
     [id^="starpass_"] .sk-step h3.sk-step-image,
     [id^="starpass_"] .sk-step-title,
-    [id^="starpass_"] .sk-step-text { font-family:'Orbitron',sans-serif !important; color:var(--color) !important; font-size:0.75rem !important; letter-spacing:1.5px !important; }
-    [id^="starpass_"] #sk-access-type-block ul li { background:rgba(255,255,255,0.04) !important; border-radius:10px !important; border:1px solid rgba(255,255,255,0.08) !important; color:var(--txt2) !important; font-family:'Rajdhani',sans-serif !important; }
-    [id^="starpass_"] #sk-access-type-block ul li.current { background:color-mix(in srgb, var(--color) 12%, transparent) !important; border-color:color-mix(in srgb, var(--color) 40%, transparent) !important; color:var(--txt) !important; box-shadow:0 0 12px var(--glow) !important; }
+    [id^="starpass_"] .sk-step-text { font-family:'Orbitron',sans-serif !important; color:var(--color) !important; font-size:0.78rem !important; letter-spacing:1.5px !important; }
+    [id^="starpass_"] .sk-step a { color:var(--color) !important; text-decoration:none !important; }
+    [id^="starpass_"] .sk-step a:hover { text-decoration:underline !important; }
+    [id^="starpass_"] #sk-access-type-block ul { display:flex !important; flex-wrap:wrap !important; gap:0.5rem !important; list-style:none !important; margin:0.5rem 0 1rem !important; padding:0 !important; }
+    [id^="starpass_"] #sk-access-type-block ul li { background:rgba(255,255,255,0.06) !important; border-radius:10px !important; border:1px solid rgba(255,255,255,0.1) !important; color:var(--txt2) !important; font-family:'Rajdhani',sans-serif !important; padding:0.5rem 1rem !important; cursor:pointer !important; }
+    [id^="starpass_"] #sk-access-type-block ul li.current { background:var(--grad) !important; border-color:color-mix(in srgb, var(--color) 50%, transparent) !important; color:#fff !important; box-shadow:0 2px 12px var(--glow) !important; }
     [id^="starpass_"] #sk-access-type-block ul li span { color:inherit !important; }
     [id^="starpass_"] .sk-content-text { background:rgba(255,255,255,0.03) !important; border-radius:12px !important; border:1px solid rgba(255,255,255,0.08) !important; padding:1.25rem !important; margin-top:0.75rem !important; display:flex !important; flex-wrap:wrap !important; gap:1.25rem !important; align-items:flex-start !important; }
     [id^="starpass_"] .sk-content-text > table { width:100% !important; table-layout:fixed !important; border-collapse:collapse !important; }
@@ -451,18 +463,19 @@ $currentPage = 'souscrire';
     [id^="starpass_"] .sk-text-input-handler-outer,
     [id^="starpass_"] .selecthandler-outer { width:100% !important; max-width:100% !important; min-width:0 !important; }
     [id^="starpass_"] .sk-submit-payment-button,
-    [id^="starpass_"] input.sk-submit-payment-button { background:var(--grad) !important; color:#fff !important; border:none !important; border-radius:12px !important; box-shadow:0 4px 20px var(--glow) !important; font-family:'Orbitron',sans-serif !important; font-weight:700 !important; text-transform:uppercase !important; letter-spacing:1.5px !important; padding:0.75rem 1.25rem !important; cursor:pointer !important; }
+    [id^="starpass_"] input.sk-submit-payment-button { background:var(--grad) !important; color:#fff !important; border:none !important; border-radius:12px !important; box-shadow:0 4px 20px var(--glow) !important; font-family:'Orbitron',sans-serif !important; font-weight:700 !important; text-transform:uppercase !important; letter-spacing:1.5px !important; padding:0.85rem 1.5rem !important; cursor:pointer !important; width:100% !important; max-width:100% !important; font-size:0.95rem !important; margin-top:0.5rem !important; }
     [id^="starpass_"] .sk-submit-payment-button:hover,
     [id^="starpass_"] input.sk-submit-payment-button:hover { box-shadow:0 6px 28px var(--glow) !important; filter:brightness(1.08) !important; }
     [id^="starpass_"] .sk-input-code-container { background:rgba(255,255,255,0.03) !important; border-radius:12px !important; }
     [id^="starpass_"] .sk-input-code-field,
     [id^="starpass_"] input.sk-input-code-field { background:rgba(0,0,0,0.4) !important; border:1px solid rgba(255,255,255,0.12) !important; border-radius:10px !important; color:var(--txt) !important; font-family:'Space Mono',monospace !important; }
     [id^="starpass_"] input.sk-submit-code { background:var(--grad) !important; color:#fff !important; border:none !important; border-radius:10px !important; font-family:'Orbitron',sans-serif !important; font-weight:700 !important; padding:0.5rem 1rem !important; }
-    [id^="starpass_"] .sk-footer,
-    [id^="starpass_"] .sk-footer span.sk-footer-button { background:transparent !important; border:none !important; color:var(--txt3) !important; font-size:0.75rem !important; }
-    [id^="starpass_"] .sk-footer a,
-    [id^="starpass_"] .sk-footer span.sk-footer-button a { color:var(--color) !important; }
-    [id^="starpass_"] .sk-footer { padding:1rem 1.25rem !important; margin-top:0.5rem !important; }
+    [id^="starpass_"] .sk-footer { padding:1rem 1.25rem !important; margin-top:0.5rem !important; display:flex !important; flex-wrap:wrap !important; justify-content:space-between !important; align-items:center !important; gap:0.5rem !important; border-top:1px solid rgba(255,255,255,0.06) !important; }
+    [id^="starpass_"] .sk-footer span.sk-footer-button,
+    [id^="starpass_"] .sk-footer a { background:rgba(255,255,255,0.05) !important; border:1px solid rgba(255,255,255,0.08) !important; color:var(--txt2) !important; font-size:0.75rem !important; padding:0.4rem 0.75rem !important; border-radius:8px !important; text-decoration:none !important; }
+    [id^="starpass_"] .sk-footer a:hover,
+    [id^="starpass_"] .sk-footer span.sk-footer-button a:hover { color:var(--color) !important; }
+    [id^="starpass_"] .sk-footer a { color:var(--txt2) !important; }
     @media (max-width:700px){
       [id^="starpass_"] .sk-content-text { flex-direction:column !important; }
       [id^="starpass_"] .sk-content-text .sk-payment-form { flex:1 1 auto !important; width:100% !important; }
@@ -919,7 +932,8 @@ $currentPage = 'souscrire';
           <div class="block-desc">Paiement sécurisé par <strong>StarPass</strong> — carte bancaire, PayPal, Paysafecard ou Internet+. Activation immédiate.</div>
         <?php endif; ?>
         <div class="sp-wrap">
-          <p class="sp-intro">Paiement sécurisé StarPass — Choisis ton mode : SMS, CB, PayPal ou Paysafecard.</p>
+          <h3 class="sp-title">StarPass x StratEdge</h3>
+          <p class="sp-intro">Remplis le formulaire ci-dessous pour payer <strong><?= $o['prix'] ?>€</strong> via StarPass.</p>
           <div id="starpass_<?= $o['idd'] ?>"></div>
           <script type="text/javascript"
             src="https://script.starpass.fr/script.php?idd=<?= $o['idd'] ?>&datas=<?= urlencode($membre['id'] . ':' . $type) ?>&lang=fr">
