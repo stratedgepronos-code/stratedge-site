@@ -1022,6 +1022,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <?php else: ?>
           <a href="login.php?redirect=offre-tennis.php" class="tennis-btn">🔒 Se connecter pour payer</a>
         <?php endif; ?>
+        <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn" style="margin-top:0.5rem;margin-bottom:0.5rem;">🎲 Ouvrir Stake.bet</a>
         <div class="tennis-sep">— ou —</div>
         <a href="offre-tennis.php#crypto" class="tennis-btn-crypto">₿ Payer en Crypto</a>
         <div class="tennis-methods">CB · PayPal · Paysafecard · Crypto</div>
