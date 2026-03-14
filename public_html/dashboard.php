@@ -184,12 +184,15 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
 .nf-ev .ev-i{font-size:1.4rem;margin-bottom:0.4rem;}
 .nf-ev .ev-t{font-weight:700;font-size:0.95rem;margin-bottom:0.2rem;}
 .nf-ev .ev-d{font-size:0.85rem;color:var(--txt3);line-height:1.4;}
+#profil-notifs{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;}
+#profil-notifs h3{grid-column:1/-1;}
 
 @media(max-width:900px){
   .grid3{grid-template-columns:1fr 1fr;}
   .p-grid{grid-template-columns:1fr;}
   .fr.two{grid-template-columns:1fr;}
   .nf-grid{grid-template-columns:1fr;}
+  #profil-notifs{grid-template-columns:1fr;}
 }
 @media(max-width:768px){
   .grid3{grid-template-columns:1fr;}

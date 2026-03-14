@@ -25,7 +25,6 @@ if (!isset($nbNonLus)) {
 <div class="mobile-menu" id="mobileMenu">
   <a href="https://x.com/strat_edge_" target="_blank" rel="noopener noreferrer">𝕏 Suivre sur X</a>
   <a href="/dashboard.php">📊 Dashboard</a>
-  <a href="/dashboard.php?tab=notifs">🔔 Notifications</a>
   <a href="/bets.php">🔥 Les Bets</a>
   <a href="/historique.php">📋 Historique</a>
   <a href="/prono-commu.php">⚽ Prono commu</a>
@@ -37,7 +36,6 @@ if (!isset($nbNonLus)) {
 </div>
 <div class="mob-tabs">
   <a class="s-link <?= $currentPage==='dashboard'?'active':'' ?>" href="/dashboard.php"><span class="ico">📊</span> Dashboard</a>
-  <a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')==='notifs'?'active':'' ?>" href="/dashboard.php?tab=notifs"><span class="ico">🔔</span> Notifs</a>
   <a class="s-link <?= $currentPage==='bets'?'active':'' ?>" href="/bets.php"><span class="ico">🔥</span> Bets</a>
   <a class="s-link <?= $currentPage==='pronocommu'?'active':'' ?>" href="/prono-commu.php"><span class="ico">⚽</span> Prono commu</a>
   <a class="s-link <?= ($currentPage??'')==='montante'?'active':'' ?>" href="/montante-tennis.php"><span class="ico">🎾</span> Montante</a>
@@ -53,9 +51,8 @@ if (!isset($nbNonLus)) {
     <div><div class="side-name"><?= htmlspecialchars($membre['nom']) ?></div><div class="side-email"><?= htmlspecialchars($membre['email']) ?></div></div>
   </div>
   <div class="side-nav">
-    <a class="s-link <?= $currentPage==='dashboard' && !in_array($_GET['tab']??'',['profil','notifs'])?'active':'' ?>" href="/dashboard.php"><span class="ico">📊</span> Dashboard</a>
+    <a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')!=='profil'?'active':'' ?>" href="/dashboard.php"><span class="ico">📊</span> Dashboard</a>
     <a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')==='profil'?'active':'' ?>" href="/dashboard.php?tab=profil"><span class="ico">👤</span> Mon Profil</a>
-    <a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')==='notifs'?'active':'' ?>" href="/dashboard.php?tab=notifs"><span class="ico">🔔</span> Notifications</a>
     <div class="side-sep"></div>
     <a class="s-link <?= $currentPage==='bets'?'active':'' ?>" href="/bets.php"><span class="ico">🔥</span> Les Bets</a>
     <a class="s-link <?= $currentPage==='historique'?'active':'' ?>" href="/historique.php"><span class="ico">📋</span> Historique</a>
