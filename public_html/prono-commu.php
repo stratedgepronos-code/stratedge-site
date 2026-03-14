@@ -224,6 +224,11 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
 .analysis-inner .sec{overflow:visible!important;}
 .analysis-inner canvas{display:block;}
 .analysis-inner .player .chart-box{width:280px;min-width:240px;height:220px;position:relative;}
+.analysis-match-winner{padding:0.6rem 1rem;margin:0 0 0.75rem;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.15);border-radius:8px;font-size:0.9rem;color:var(--txt2);}
+.analysis-match-winner strong{color:var(--txt);}
+.analysis-rdv-timer{margin-bottom:0.75rem;}
+.analysis-rdv-label{font-size:0.9rem;color:var(--txt3);}
+.analysis-rdv-label span{font-family:'Orbitron',sans-serif;font-weight:700;color:var(--pink);}
 .analysis-placeholder{color:var(--txt3);font-style:italic;}
 .vote-toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);background:var(--card);border:1px solid rgba(0,212,106,0.4);color:#00c864;padding:1rem 1.5rem;border-radius:12px;font-weight:600;z-index:9999;box-shadow:0 8px 32px rgba(0,0,0,0.5);animation:fadeInUp .3s ease;}
 @keyframes fadeInUp{from{opacity:0;transform:translateX(-50%) translateY(12px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
@@ -274,6 +279,31 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
 
   <aside class="panel analysis-panel">
     <div class="panel-title">📊 Analyse — Prono gratuit</div>
+    <?php
+    $analysisAvailableAt = null;
+    if ($matchDuJour) {
+      $matchDt = null;
+      if (!empty($matchDuJour['match_date']) && !empty($matchDuJour['heure'])) {
+        $heure = preg_replace('/\s*-\s*.*$/', '', trim($matchDuJour['heure']));
+        if (preg_match('/^\d{1,2}:\d{2}/', $heure)) {
+          try {
+            $matchDt = new DateTime($matchDuJour['match_date'] . ' ' . $heure, $tzParis);
+            $matchDt->modify('-40 minutes');
+            $analysisAvailableAt = $matchDt->getTimestamp() * 1000;
+          } catch (Exception $e) { }
+        }
+      }
+    }
+    ?>
+    <?php if ($matchDuJour): ?>
+    <div class="analysis-match-winner">🏆 Match gagnant aux votes : <strong><?= clean($matchDuJour['team_home']) ?> – <?= clean($matchDuJour['team_away']) ?></strong></div>
+    <?php if (empty($matchDuJour['analysis_html']) && $analysisAvailableAt): ?>
+    <div class="analysis-rdv-timer" id="analysisRdvWrap">
+      <p class="analysis-rdv-label">Rendez-vous dans <span id="analysisRdvCountdown">--</span> pour l'analyse du match complète.</p>
+    </div>
+    <input type="hidden" id="analysis_rdv_ts" value="<?= (int)$analysisAvailableAt ?>">
+    <?php endif; ?>
+    <?php endif; ?>
     <?php if ($matchDuJour && !empty($matchDuJour['analysis_html'])): ?>
     <script>
     (function(){
@@ -325,7 +355,9 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
       })();
       </script>
       <?php else: ?>
+      <?php if (!$matchDuJour): ?>
       <p class="analysis-placeholder">RDV 40 min avant le match pour le prono gratuit.</p>
+      <?php endif; ?>
       <?php endif; ?>
     </div>
   </aside>
@@ -361,6 +393,31 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
   }
   tick();
   setInterval(tick, 1000);
+})();
+
+(function(){
+  var el = document.getElementById('analysisRdvCountdown');
+  var tsEl = document.getElementById('analysis_rdv_ts');
+  if (!el || !tsEl) return;
+  var target = parseInt(tsEl.value, 10) || 0;
+  function tickAnalysis(){
+    var now = Date.now();
+    var diff = target - now;
+    if (diff <= 0) {
+      el.textContent = 'bientôt (recharge la page)';
+      return;
+    }
+    var h = Math.floor(diff / 3600000);
+    var m = Math.floor((diff % 3600000) / 60000);
+    var s = Math.floor((diff % 60000) / 1000);
+    var parts = [];
+    if (h > 0) parts.push(h + ' h');
+    parts.push(m + ' min');
+    parts.push(s + ' s');
+    el.textContent = parts.join(' ');
+  }
+  tickAnalysis();
+  setInterval(tickAnalysis, 1000);
 })();
 
 document.querySelectorAll('.btn-vote[data-match-id]').forEach(function(btn){

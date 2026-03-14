@@ -156,6 +156,9 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
 .no-bets .big{font-size:4rem;margin-bottom:1rem;}
 .no-bets h3{font-family:'Orbitron',sans-serif;font-size:1.2rem;margin-bottom:0.5rem;color:var(--txt2,#b0bec9);}
 
+.bet-link-analyse{display:block;padding:0.75rem 1.2rem;font-size:0.85rem;font-weight:700;color:var(--pink,#ff2d78);text-decoration:none;text-align:center;border-top:1px solid var(--border,rgba(255,45,120,0.15));transition:background .2s,color .2s;}
+.bet-link-analyse:hover{background:rgba(255,45,120,0.06);color:#ff6b9d;}
+
 /* Lightbox */
 .lightbox{display:none;position:fixed;inset:0;z-index:9999;background:rgba(5,8,16,0.96);backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:2rem;}
 .lightbox.open{display:flex;}
@@ -300,6 +303,9 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
         </div>
         <?php endif; ?>
       </div>
+      <?php if (!empty($bet['analyse_html'])): ?>
+      <a href="/bet.php?id=<?= (int)$bet['id'] ?>" class="bet-link-analyse">Voir l'analyse et commenter →</a>
+      <?php endif; ?>
     </div>
     <?php endforeach; ?>
     </div>

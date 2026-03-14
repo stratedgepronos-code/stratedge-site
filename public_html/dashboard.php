@@ -115,6 +115,12 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
 .bg-a{background:rgba(255,45,120,0.1);color:#ff2d78;border:1px solid rgba(255,45,120,0.2);}
 .bg-e{background:rgba(255,45,120,0.08);color:var(--txt3);border:1px solid var(--border);}
 .bg-r{background:linear-gradient(135deg,rgba(255,200,0,0.15),rgba(255,150,0,0.1));color:#ffd700;border:1px solid rgba(255,200,0,0.4);}
+.abo-push-row{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;}
+@media(max-width:700px){.abo-push-row{grid-template-columns:1fr;}}
+.nf-in-profil .nf-ico{font-size:1.2rem;margin-bottom:0.25rem;}
+.nf-in-profil .nf-st{font-size:0.85rem;}
+.nf-in-profil .nf-help{display:none;}
+.nf-in-profil .nf-help.show{display:block;}
 .chat-lk{display:inline-flex;align-items:center;gap:0.7rem;background:linear-gradient(135deg,rgba(255,45,120,0.1),rgba(214,36,95,0.05));border:1px solid rgba(255,45,120,0.3);color:#ff2d78;text-decoration:none;padding:0.9rem 1.5rem;border-radius:12px;font-weight:700;font-size:1rem;transition:all .2s;}
 .chat-lk:hover{transform:translateY(-2px);}
 .chat-bg{background:var(--pink);color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:900;}
@@ -134,7 +140,7 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
 .btn-up:hover{background:rgba(255,45,120,0.14);}
 .btn-del{background:none;border:none;color:var(--txt3);font-size:0.78rem;cursor:pointer;font-family:'Rajdhani',sans-serif;}
 .btn-del:hover{color:#ff6b9d;}
-.set-col{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;}
+.set-col{display:flex;flex-direction:column;gap:1.2rem;}
 .crd{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.7rem 1.8rem;overflow:hidden;position:relative;}
 .crd::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--pink),var(--blue));}
 .crd-h{display:flex;align-items:center;gap:0.7rem;margin-bottom:1.2rem;}
@@ -181,7 +187,6 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
   .p-grid{grid-template-columns:1fr;}
   .fr.two{grid-template-columns:1fr;}
   .nf-grid{grid-template-columns:1fr;}
-  .set-col{grid-template-columns:1fr;}
 }
 @media(max-width:768px){
   .grid3{grid-template-columns:1fr;}
@@ -313,6 +318,7 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
   </label>
   <button type="submit" class="btn-sv" style="margin-top:0.75rem;">Enregistrer</button></form></div>
 
+  <div class="abo-push-row">
   <div class="crd"><div class="crd-h"><span class="ico">⚡</span><span class="tl">Mon abonnement</span></div>
   <?php if($abo):?>
   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
@@ -325,25 +331,31 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
     <a href="/#pricing" class="btn-pk" style="padding:0.55rem 1.3rem;font-size:0.9rem;">Voir les offres →</a></div>
   <?php endif;?></div>
 
-  <div class="crd" style="grid-column:1/-1;"><div class="crd-h"><span class="ico">🔔</span><span class="tl">Notifications Push</span></div>
-  <div style="text-align:center;">
-    <p style="color:var(--txt2);font-size:0.92rem;line-height:1.6;margin-bottom:1rem;max-width:500px;margin-left:auto;margin-right:auto;">Reçois une alerte instantanée dès qu'un bet est posté, qu'un résultat tombe, ou qu'un message t'attend.</p>
-    <div id="nfSt" class="nf-st nf-off">⏳ Vérification...</div><br>
-    <button class="btn-nf" id="btnNf" onclick="togglePush()" disabled>Activer les notifications</button>
-    <div class="nf-help" id="nfHelp">
-      <h4>🔓 Comment débloquer ?</h4>
-      <div class="step"><span class="step-n">1</span><div class="step-t"><strong>PC :</strong> Clique sur 🔒 à gauche de l'URL</div></div>
-      <div class="step"><span class="step-n">2</span><div class="step-t">Change <strong>Notifications</strong> → <strong>Autoriser</strong></div></div>
-      <div class="step"><span class="step-n">3</span><div class="step-t"><strong>Recharge</strong> la page (F5)</div></div>
-      <div style="border-top:1px solid var(--border-soft);margin-top:0.8rem;padding-top:0.8rem;">
-      <div class="step"><span class="step-n">📱</span><div class="step-t"><strong>iPhone :</strong> Safari → Partager → Sur l'écran d'accueil</div></div>
-      <div class="step"><span class="step-n">📱</span><div class="step-t"><strong>Android :</strong> Chrome → ⋮ → Paramètres du site → Notifications → Autoriser</div></div>
-      </div>
-    </div>
-  </div></div>
+  <div class="crd nf-in-profil"><div class="crd-h"><span class="ico">🔔</span><span class="tl">Notifications Push</span></div>
+  <div class="nf-ico" id="nfIco">🔔</div>
+  <p style="color:var(--txt3);font-size:0.9rem;margin:0.5rem 0 0.75rem;">Alerte sur téléphone, tablette ou PC pour nouveaux bets, résultats et messages.</p>
+  <div id="nfSt" class="nf-st nf-off">⏳ Vérification...</div>
+  <button class="btn-nf" id="btnNf" onclick="togglePush()" disabled style="margin-top:0.5rem;">Activer les notifications</button>
+  <div class="nf-help" id="nfHelp" style="margin-top:0.8rem;">
+    <h4 style="font-size:0.9rem;margin-bottom:0.5rem;">🔓 Débloquer les notifications</h4>
+    <div class="step"><span class="step-n">1</span><div class="step-t">Clique sur 🔒 à gauche de l'URL → Notifications → Autoriser</div></div>
+    <div class="step"><span class="step-n">2</span><div class="step-t">Recharge la page (F5)</div></div>
+  </div>
+  </div>
+  </div>
+</div>
+</div>
+</div>
 
-</div>
-</div>
+<!-- ═══ NOTIFICATIONS ═══ -->
+<div class="tab-p <?= $activeTab==='notifs'?'active':'' ?>" id="tab-notifs">
+<div class="sec"><h3><span class="dot"></span> Ce que tu recevras</h3>
+<div class="nf-grid">
+  <div class="nf-ev"><div class="ev-i">🔥</div><div class="ev-t">Nouveau bet</div><div class="ev-d">Push dès qu'un bet Daily, Week-End ou Weekly est posté</div></div>
+  <div class="nf-ev"><div class="ev-i">✅</div><div class="ev-t">Résultat</div><div class="ev-d">Notification quand le résultat tombe (Win, Lose, Void)</div></div>
+  <div class="nf-ev"><div class="ev-i">💬</div><div class="ev-t">Message</div><div class="ev-d">Alerte quand l'équipe t'envoie un message</div></div>
+  <div class="nf-ev"><div class="ev-i">⏰</div><div class="ev-t">Expiration</div><div class="ev-d">Prévenu quand ton abonnement arrive à expiration</div></div>
+</div></div>
 </div>
 
 </main></div>
@@ -357,13 +369,12 @@ if(np&&cp){np.addEventListener('input',ck);cp.addEventListener('input',ck);}
 
 var VK='<?= defined("VAPID_PUBLIC_KEY")?VAPID_PUBLIC_KEY:"" ?>',pSub=null;
 function u2a(b){var p='='.repeat((4-b.length%4)%4);var r=atob((b+p).replace(/-/g,'+').replace(/_/g,'/'));return new Uint8Array([...r].map(function(c){return c.charCodeAt(0);}));}
-function upUI(s){var st=document.getElementById('nfSt'),b=document.getElementById('btnNf'),h=document.getElementById('nfHelp');
-if(!st||!b||!h)return;
+function upUI(s){var i=document.getElementById('nfIco'),st=document.getElementById('nfSt'),b=document.getElementById('btnNf'),h=document.getElementById('nfHelp');
 h.classList.remove('show');
-if(s==='active'){st.className='nf-st nf-on';st.innerHTML='✅ Activées';b.textContent='Désactiver';b.disabled=false;}
-else if(s==='denied'){st.className='nf-st nf-blk';st.innerHTML='🚫 Bloquées';b.textContent='Bloqué';b.disabled=true;h.classList.add('show');}
-else if(s==='unsupported'){st.className='nf-st nf-blk';st.innerHTML='❌ Non disponible';b.textContent='Non disponible';b.disabled=true;}
-else{st.className='nf-st nf-off';st.innerHTML='Pas encore activées';b.textContent='🔔 Activer';b.disabled=false;}}
+if(s==='active'){i.textContent='🟢';st.className='nf-st nf-on';st.innerHTML='✅ Notifications activées — tu recevras les alertes sur cet appareil';b.textContent='Désactiver';b.disabled=false;}
+else if(s==='denied'){i.textContent='🔇';st.className='nf-st nf-blk';st.innerHTML='🚫 Notifications bloquées par ton navigateur';b.textContent='Bloqué par le navigateur';b.disabled=true;h.classList.add('show');}
+else if(s==='unsupported'){i.textContent='⚠️';st.className='nf-st nf-blk';st.innerHTML='❌ Ton navigateur ne supporte pas les notifications push';b.textContent='Non disponible';b.disabled=true;}
+else{i.textContent='🔔';st.className='nf-st nf-off';st.innerHTML='Les notifications ne sont pas encore activées sur cet appareil';b.textContent='🔔 Activer les notifications';b.disabled=false;}}
 async function chkPush(){if(!('serviceWorker' in navigator)||!('PushManager' in window)||!VK||VK==='VOTRE_CLE_PUBLIQUE_VAPID_ICI'){upUI('unsupported');return;}
 try{var r=await navigator.serviceWorker.register('/sw.js');var s=await r.pushManager.getSubscription();pSub=s;
 if(Notification.permission==='denied')upUI('denied');else if(s)upUI('active');else upUI('inactive');}catch(e){upUI('unsupported');}}

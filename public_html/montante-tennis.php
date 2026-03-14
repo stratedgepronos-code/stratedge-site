@@ -179,16 +179,17 @@ table.mt-table{width:100%;border-collapse:collapse;}
 .mt-empty .big{font-size:3.5rem;margin-bottom:1rem;}
 .mt-empty h3{font-family:'Orbitron',sans-serif;font-size:1.1rem;margin-bottom:0.5rem;color:var(--txt2);}
 
-/* Visuel pleine largeur au-dessus des bannières */
+/* Visuel pleine largeur au-dessus des bannières — full-bleed avec sidebar comme bets-hero */
 .mt-promo-visual{margin-left:-3rem;margin-right:-3rem;width:calc(100% + 6rem);margin-bottom:2rem;padding:2rem 2rem;background:linear-gradient(135deg,rgba(0,212,255,0.06) 0%,rgba(255,45,120,0.04) 40%,rgba(0,212,106,0.08) 100%);border-top:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(0,212,106,0.15);position:relative;overflow:hidden;}
+.app .content > .mt-promo-visual{margin-left:calc(-3rem - var(--sidebar-w,270px));margin-right:-3rem;}
 .mt-promo-visual::before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.03),transparent);animation:mt-shine 6s ease-in-out infinite;}
 @keyframes mt-shine{0%,100%{opacity:0}50%{opacity:1}}
 .mt-promo-visual-inner{position:relative;z-index:1;text-align:center;}
 .mt-promo-visual .mt-promo-tag{font-family:'Space Mono',monospace;font-size:0.68rem;font-weight:700;letter-spacing:4px;color:var(--txt3);margin-bottom:0.5rem;}
 .mt-promo-visual .mt-promo-title{font-family:'Orbitron',sans-serif;font-size:1.25rem;font-weight:800;background:linear-gradient(90deg,#00d4ff,#ff2d78,#00d46a);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:0.5px;}
-/* Stake + Packs : 3 colonnes égales, cartes soignées */
+/* Stake + Packs : 3 colonnes égales, textes centrés */
 .stake-promo-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;margin-bottom:2.5rem;}
-.stake-banner,.pack-banner{border-radius:16px;padding:1.5rem 1.35rem;display:flex;flex-direction:column;justify-content:space-between;gap:1.1rem;min-height:240px;transition:transform .25s ease,box-shadow .25s ease;}
+.stake-banner,.pack-banner{border-radius:16px;padding:1.5rem 1.35rem;display:flex;flex-direction:column;justify-content:space-between;align-items:center;text-align:center;gap:1.1rem;min-height:240px;transition:transform .25s ease,box-shadow .25s ease;}
 .stake-banner:hover,.pack-banner:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,0.35);}
 .stake-banner{background:linear-gradient(165deg,rgba(0,212,255,0.1),rgba(0,212,106,0.06));border:1px solid rgba(0,212,255,0.25);box-shadow:0 4px 24px rgba(0,212,255,0.06);}
 .stake-banner:hover{border-color:rgba(0,212,255,0.4);box-shadow:0 12px 40px rgba(0,0,0,0.35),0 0 30px rgba(0,212,255,0.12);}
@@ -238,6 +239,7 @@ table.mt-table{width:100%;border-collapse:collapse;}
   .mt-hero{margin:-1rem -0.8rem 1.5rem;padding:1.5rem 0.8rem 1.2rem;}
   .mt-title{font-size:1.2rem;}
   .mt-promo-visual{margin-left:-0.8rem;margin-right:-0.8rem;width:calc(100% + 1.6rem);padding:1.25rem 1rem;}
+  .app .content > .mt-promo-visual{margin-left:-0.8rem;}
   .mt-promo-visual .mt-promo-title{font-size:0.95rem;}
   .mt-stats{grid-template-columns:1fr 1fr;gap:0.7rem;}
   .stat-val{font-size:1.2rem;}
