@@ -250,7 +250,7 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
 <div class="abo-box"><div><div class="abo-type"><?= $typeLabels[$abonnement['type']] ?? $abonnement['type'] ?></div>
 <div class="abo-exp"><?php if ($abonnement['type']==='daily'): ?>⚡ Actif jusqu'au prochain bet<?php elseif($abonnement['type']==='rasstoss'): ?>👑 Accès à vie<?php else: ?>📅 Expire le <?= date('d/m/Y à H:i', strtotime($abonnement['date_fin'])) ?><?php endif; ?></div>
 </div><a href="/bets.php" class="btn-pk">📊 Voir mes bets →</a></div>
-<?php else: ?><div class="no-abo"><p style="font-size:1.2rem;margin-bottom:0.5rem;">Aucun abonnement actif</p><p style="margin-bottom:1rem;">Souscris pour accéder aux bets.</p><a href="/#pricing" class="btn-pk">Voir les formules →</a></div><?php endif; ?>
+<?php else: ?><div class="no-abo"><p style="font-size:1.2rem;margin-bottom:0.5rem;">Aucun abonnement actif</p><p style="margin-bottom:1rem;">Souscris pour accéder aux bets.</p><a href="/souscrire.php" class="btn-pk">Voir les formules →</a></div><?php endif; ?>
 </div>
 <div class="sec"><h3><span class="dot"></span> Historique des achats</h3>
 <?php if (empty($historique)): ?><p style="color:var(--txt3);text-align:center;padding:1rem;">Aucun achat.</p>
@@ -335,7 +335,7 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
   <?php else:?>
   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
     <div style="color:var(--txt3);font-size:0.95rem;">Pas d'abonnement actif.</div>
-    <a href="/#pricing" class="btn-pk" style="padding:0.55rem 1.3rem;font-size:0.9rem;">Voir les offres →</a></div>
+    <a href="/souscrire.php" class="btn-pk" style="padding:0.55rem 1.3rem;font-size:0.9rem;">Voir les offres →</a></div>
   <?php endif;?></div>
 
   <div class="crd nf-in-profil"><div class="crd-h"><span class="ico">🔔</span><span class="tl">Notifications Push</span></div>
