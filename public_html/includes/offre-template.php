@@ -76,12 +76,30 @@ $offres = [
         'badge'      => '🎾 TENNIS',
         'tag'        => 'Spécialité Tennis',
     ],
+    'vip_max' => [
+        'titre'      => 'VIP MAX',
+        'subtitle'   => 'Tous sports inclus',
+        'emoji'      => '👑',
+        'prix'       => '50',
+        'idd'        => '446910',
+        'idp'        => '263723',
+        'duree'      => '30 jours à partir de l\'achat',
+        'avantages'  => ['Tous les bets Multi-sport', 'Tennis ATP & WTA exclusif', 'Bets LIVE & Fun bets inclus', 'Accès illimité 30 jours'],
+        'color'      => '#e6b422',
+        'glow'       => 'rgba(230,180,34,0.22)',
+        'gradient'   => 'linear-gradient(135deg,#e6b422,#c9a227)',
+        'video'      => 'assets/images/vip_max.mp4',
+        'activate'   => 'activate.php?type=vip_max',
+        'badge'      => 'OFFRE FONDATEUR',
+        'tag'        => 'Accès total',
+    ],
 ];
 
 if (!isset($offres[$type])) { header('Location: /#pricing'); exit; }
 
 $o      = $offres[$type];
 $membre = getMembre();
+$currentPage = 'souscrire';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -178,6 +196,9 @@ $membre = getMembre();
     }
 
     /* ── PAGE ── */
+    .offre-breadcrumb { margin:0 0 1rem; font-size:0.9rem; }
+    .offre-breadcrumb a { color:var(--txt3); text-decoration:none; }
+    .offre-breadcrumb a:hover { color:var(--txt); }
     .page {
       max-width:1100px; margin:0 auto;
       padding:4rem 2rem 6rem;
@@ -399,11 +420,11 @@ $membre = getMembre();
     .starpass-modal-card {
       position:relative;
       width:100%;
-      max-width:520px;
+      max-width:720px;
       background:linear-gradient(165deg, var(--bg2) 0%, #0a0e16 100%);
       border:1px solid rgba(255,255,255,0.08);
       border-radius:20px;
-      overflow:hidden;
+      overflow:visible;
       box-shadow:0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset;
     }
     .starpass-modal-card::before {
@@ -444,18 +465,19 @@ $membre = getMembre();
     }
     .starpass-modal-body {
       padding:1.25rem 1.5rem 1.5rem;
+      overflow:visible;
     }
     .starpass-modal-body [id^="starpass_"] {
-      min-height:280px;
+      min-height:420px;
       border-radius:12px;
-      overflow:hidden;
+      overflow:visible;
       background:#fff;
     }
     .starpass-modal-body iframe {
       border:none !important;
       border-radius:12px !important;
       width:100% !important;
-      min-height:320px !important;
+      min-height:480px !important;
     }
     .sp-btn-open {
       display:inline-flex;
@@ -860,24 +882,17 @@ $membre = getMembre();
       .hero-title{font-size:1.15rem;}
     }
   </style>
+  <?php require_once __DIR__ . '/sidebar-css.php'; ?>
 </head>
 <body>
-
+<?php require_once __DIR__ . '/sidebar.php'; ?>
 <div class="bg-orbs">
   <div class="orb orb-1"></div>
   <div class="orb orb-2"></div>
   <div class="orb orb-3"></div>
 </div>
-
-<nav>
-  <div class="nav-inner">
-    <a href="/" class="nav-logo"><img src="assets/images/logo site.png" alt="StratEdge"></a>
-    <span class="nav-badge"><?= $o['badge'] ?></span>
-    <a href="/#pricing" class="nav-back">← Toutes les formules</a>
-  </div>
-</nav>
-
-<div class="page">
+<div class="page offre-page">
+  <p class="offre-breadcrumb"><a href="/#pricing">← Toutes les formules</a></p>
 
   <!-- HERO -->
   <div class="hero">
@@ -1266,5 +1281,6 @@ function copyText(id) {
   }
 })();
 </script>
+</main></div>
 </body>
 </html>
