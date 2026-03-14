@@ -323,15 +323,65 @@ $membre = getMembre();
     }
     .block-desc { color:var(--txt3); font-size:0.84rem; margin-bottom:1.2rem; }
 
-    /* StarPass container */
-    .sp-wrap {
-      background:rgba(255,255,255,0.02);
-      border:1px solid var(--border);
-      border-radius:14px; padding:1.5rem;
-      text-align:center;
+    /* StarPass block — style StratEdge */
+    .payment-block.starpass-block {
+      background:linear-gradient(165deg, var(--bg2) 0%, rgba(0,0,0,0.35) 100%);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:20px;
+      padding:0;
+      overflow:hidden;
+      box-shadow:0 8px 32px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.03) inset;
     }
-    .sp-wrap p { color:var(--txt3); font-size:0.83rem; margin-bottom:1rem; }
-    .sp-wrap strong { color:var(--color); }
+    .payment-block.starpass-block::before {
+      height:3px;
+      background:var(--grad);
+      opacity:1;
+    }
+    .payment-block.starpass-block .block-title {
+      padding:1.25rem 1.75rem 0.5rem;
+      font-size:0.7rem;
+      letter-spacing:2.5px;
+      color:var(--color);
+    }
+    .payment-block.starpass-block .block-desc {
+      padding:0 1.75rem 1.25rem;
+      margin-bottom:0;
+      font-size:0.88rem;
+      line-height:1.55;
+      color:var(--txt2);
+    }
+    .payment-block.starpass-block .block-desc strong { color:var(--color); }
+
+    .sp-wrap {
+      background:rgba(0,0,0,0.25);
+      border:1px solid rgba(255,255,255,0.06);
+      border-radius:14px;
+      padding:1.75rem 1.75rem 1.5rem;
+      text-align:center;
+      margin:0 1.25rem 1.25rem;
+    }
+    .sp-wrap p {
+      color:var(--txt2);
+      font-size:0.9rem;
+      margin-bottom:1.25rem;
+      font-family:'Rajdhani',sans-serif;
+      font-weight:500;
+    }
+    .sp-wrap strong { color:var(--color); font-weight:700; }
+    .sp-wrap [id^="starpass_"] {
+      min-height:100px;
+      border-radius:12px;
+      overflow:hidden;
+      background:rgba(0,0,0,0.2);
+      display:block;
+    }
+    .sp-wrap iframe {
+      border:none !important;
+      border-radius:12px !important;
+      width:100% !important;
+      max-width:100% !important;
+      min-height:100px !important;
+    }
 
     /* Séparateur */
     .sep {
@@ -442,7 +492,20 @@ $membre = getMembre();
       display:flex; align-items:center; gap:0.35rem;
     }
 
-    /* Note */
+    /* Note (dans bloc StarPass) */
+    .payment-block.starpass-block .note-box {
+      background:rgba(255,255,255,0.03);
+      border:1px solid rgba(255,255,255,0.06);
+      border-radius:12px;
+      padding:1rem 1.35rem;
+      margin:0 1.75rem 1.5rem;
+    }
+    .payment-block.starpass-block .note-box p {
+      font-size:0.8rem;
+      color:var(--txt3);
+      line-height:1.6;
+    }
+    .payment-block.starpass-block .note-box strong { color:var(--txt2); }
     .note-box {
       background:rgba(255,193,7,0.05);
       border:1px solid rgba(255,193,7,0.18);
@@ -635,6 +698,7 @@ $membre = getMembre();
       .nav-badge { font-size:0.55rem; padding:0.2rem 0.6rem; }
       .offre-card{border-radius:16px;}
       .payment-block{border-radius:16px;padding:1.5rem;}
+      .payment-block.starpass-block{padding:0;}
       .np-info-box{flex-direction:column;align-items:flex-start;gap:0.4rem;}
       .np-amount-value{font-size:1.5rem;}
       .np-success-title{font-size:1.1rem;}
@@ -657,10 +721,13 @@ $membre = getMembre();
       .offre-duree{font-size:0.78rem;}
       .avantage{font-size:0.85rem;padding:0.5rem 0;}
       .payment-block { padding:1.2rem; border-radius:14px; }
+      .payment-block.starpass-block .block-title,
+      .payment-block.starpass-block .block-desc { padding-left:1rem; padding-right:1rem; }
+      .payment-block.starpass-block .note-box { margin-left:0.8rem; margin-right:0.8rem; margin-bottom:1rem; }
       .block-title{font-size:0.72rem;}
       .block-desc{font-size:0.78rem;}
-      .sp-wrap { padding:0.9rem; }
-      .sp-wrap p{font-size:0.78rem;}
+      .sp-wrap { padding:1.1rem 0.9rem; margin-left:0.8rem; margin-right:0.8rem; margin-bottom:1rem; }
+      .sp-wrap p{font-size:0.85rem;}
       .crypto-tabs { gap:0.35rem; }
       .crypto-tab { padding:0.3rem 0.6rem; font-size:0.58rem; }
       .wallet-box{padding:0.6rem 0.8rem;border-radius:8px;}
@@ -761,23 +828,23 @@ $membre = getMembre();
     <div class="payment-col">
 
       <!-- StarPass -->
-      <div class="payment-block">
+      <div class="payment-block starpass-block">
         <?php if ($type === 'daily'): ?>
-          <div class="block-title">📱 SMS · Appel · CB · Paysafecard</div>
-          <div class="block-desc">Paiement sécurisé via <strong style="color:var(--color)">StarPass</strong> — SMS, appel, carte bancaire ou <strong>Paysafecard</strong></div>
+          <div class="block-title">📱 Payer par SMS · Appel · CB · Paysafecard</div>
+          <div class="block-desc">Paiement sécurisé par <strong>StarPass</strong> — SMS, appel surtaxé, carte bancaire ou Paysafecard. Simple et rapide.</div>
         <?php else: ?>
-          <div class="block-title">💳 CB · PayPal · Paysafecard · Internet+</div>
-          <div class="block-desc">Paiement sécurisé via <strong style="color:var(--color)">StarPass</strong> — carte bancaire, PayPal, Paysafecard ou Internet+</div>
+          <div class="block-title">💳 Payer par CB · PayPal · Paysafecard · Internet+</div>
+          <div class="block-desc">Paiement sécurisé par <strong>StarPass</strong> — carte bancaire, PayPal, Paysafecard ou Internet+. Activation immédiate.</div>
         <?php endif; ?>
         <div class="sp-wrap">
-          <p>Cliquez sur le bouton ci-dessous pour payer <strong><?= $o['prix'] ?>€</strong> via StarPass</p>
+          <p>Clique sur le bouton ci-dessous pour payer <strong><?= $o['prix'] ?>€</strong></p>
           <div id="starpass_<?= $o['idd'] ?>"></div>
           <script type="text/javascript"
             src="https://script.starpass.fr/script.php?idd=<?= $o['idd'] ?>&datas=<?= urlencode($membre['id'] . ':' . $type) ?>">
           </script>
         </div>
-        <div class="note-box" style="margin-top:1rem;">
-          <p><strong>⚠️ Important :</strong> Après paiement StarPass, vous serez automatiquement redirigé vers votre espace membre. Si ce n'est pas le cas, contactez le support depuis votre dashboard.</p>
+        <div class="note-box">
+          <p><strong>À savoir :</strong> Après paiement, tu seras redirigé vers ton espace membre. Sinon, ouvre un ticket SAV depuis ton dashboard.</p>
         </div>
       </div>
 
