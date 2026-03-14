@@ -383,6 +383,105 @@ $membre = getMembre();
       min-height:100px !important;
     }
 
+    /* Modale StarPass — encadrer le widget dans notre design */
+    .starpass-modal {
+      display:none;
+      position:fixed; inset:0;
+      z-index:9999;
+      background:rgba(5,8,16,0.92);
+      backdrop-filter:blur(12px);
+      align-items:center;
+      justify-content:center;
+      padding:1.5rem;
+      overflow-y:auto;
+    }
+    .starpass-modal.open { display:flex; }
+    .starpass-modal-card {
+      position:relative;
+      width:100%;
+      max-width:520px;
+      background:linear-gradient(165deg, var(--bg2) 0%, #0a0e16 100%);
+      border:1px solid rgba(255,255,255,0.08);
+      border-radius:20px;
+      overflow:hidden;
+      box-shadow:0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04) inset;
+    }
+    .starpass-modal-card::before {
+      content:'';
+      position:absolute; top:0; left:0; right:0; height:3px;
+      background:var(--grad);
+      z-index:1;
+    }
+    .starpass-modal-header {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:1.25rem 1.5rem 1rem;
+      border-bottom:1px solid rgba(255,255,255,0.06);
+    }
+    .starpass-modal-title {
+      font-family:'Orbitron',sans-serif;
+      font-size:0.8rem;
+      font-weight:700;
+      letter-spacing:2px;
+      text-transform:uppercase;
+      color:var(--color);
+    }
+    .starpass-modal-close {
+      width:40px; height:40px;
+      border:none;
+      border-radius:10px;
+      background:rgba(255,255,255,0.06);
+      color:var(--txt2);
+      font-size:1.4rem;
+      line-height:1;
+      cursor:pointer;
+      transition:background .2s, color .2s;
+    }
+    .starpass-modal-close:hover {
+      background:rgba(255,255,255,0.1);
+      color:var(--txt);
+    }
+    .starpass-modal-body {
+      padding:1.25rem 1.5rem 1.5rem;
+    }
+    .starpass-modal-body [id^="starpass_"] {
+      min-height:280px;
+      border-radius:12px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .starpass-modal-body iframe {
+      border:none !important;
+      border-radius:12px !important;
+      width:100% !important;
+      min-height:320px !important;
+    }
+    .sp-btn-open {
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:0.6rem;
+      width:100%;
+      padding:1rem 1.5rem;
+      background:var(--grad);
+      color:#fff;
+      border:none;
+      border-radius:12px;
+      font-family:'Orbitron',sans-serif;
+      font-size:0.9rem;
+      font-weight:700;
+      letter-spacing:1.5px;
+      text-transform:uppercase;
+      cursor:pointer;
+      transition:transform .2s, box-shadow .2s;
+      box-shadow:0 6px 24px var(--glow);
+    }
+    .sp-btn-open:hover {
+      transform:translateY(-2px);
+      box-shadow:0 10px 32px var(--glow);
+    }
+
     /* Séparateur */
     .sep {
       display:flex; align-items:center; gap:1rem;
@@ -837,12 +936,33 @@ $membre = getMembre();
           <div class="block-desc">Paiement sécurisé par <strong>StarPass</strong> — carte bancaire, PayPal, Paysafecard ou Internet+. Activation immédiate.</div>
         <?php endif; ?>
         <div class="sp-wrap">
-          <p>Clique sur le bouton ci-dessous pour payer <strong><?= $o['prix'] ?>€</strong></p>
-          <div id="starpass_<?= $o['idd'] ?>"></div>
-          <script type="text/javascript"
-            src="https://script.starpass.fr/script.php?idd=<?= $o['idd'] ?>&datas=<?= urlencode($membre['id'] . ':' . $type) ?>">
-          </script>
+          <p>Clique pour ouvrir le formulaire de paiement sécurisé et choisir SMS, CB, PayPal ou Paysafecard.</p>
+          <button type="button" class="sp-btn-open" onclick="document.getElementById('starpassModal').classList.add('open')">
+            💳 Payer <?= $o['prix'] ?>€ — CB / SMS / PayPal / Paysafecard
+          </button>
         </div>
+        <div class="starpass-modal" id="starpassModal" onclick="if(event.target===this) this.classList.remove('open')" role="dialog" aria-modal="true" aria-label="Formulaire de paiement StarPass">
+          <div class="starpass-modal-card" onclick="event.stopPropagation()">
+            <div class="starpass-modal-header">
+              <span class="starpass-modal-title">Paiement sécurisé — <?= $o['prix'] ?>€</span>
+              <button type="button" class="starpass-modal-close" onclick="document.getElementById('starpassModal').classList.remove('open')" aria-label="Fermer">×</button>
+            </div>
+            <div class="starpass-modal-body">
+              <p style="font-size:0.8rem;color:var(--txt3);margin-bottom:0.75rem;">Le formulaire ci-dessous est fourni par StarPass (paiement sécurisé). Choisis ton mode : SMS, CB, PayPal ou Paysafecard.</p>
+              <div id="starpass_<?= $o['idd'] ?>"></div>
+              <script type="text/javascript"
+                src="https://script.starpass.fr/script.php?idd=<?= $o['idd'] ?>&datas=<?= urlencode($membre['id'] . ':' . $type) ?>">
+              </script>
+            </div>
+          </div>
+        </div>
+        <script>
+        (function(){
+          var m = document.getElementById('starpassModal');
+          if (!m) return;
+          document.addEventListener('keydown', function(e) { if (e.key === 'Escape') m.classList.remove('open'); });
+        })();
+        </script>
         <div class="note-box">
           <p><strong>À savoir :</strong> Après paiement, tu seras redirigé vers ton espace membre. Sinon, ouvre un ticket SAV depuis ton dashboard.</p>
         </div>
