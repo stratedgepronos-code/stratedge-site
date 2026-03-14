@@ -833,7 +833,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <?php else: ?>
           <a href="login.php?redirect=offre-daily.php" class="starpass-btn">🔒 Se connecter pour payer</a>
         <?php endif; ?>
-        <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn">🎲 Ouvrir Stake.bet</a>
+        <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn">🎲 Souscrire sur Stake.bet</a>
         <div class="crypto-separator">— ou —</div>
         <a href="offre-daily.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
       </div>
@@ -866,7 +866,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <?php else: ?>
           <a href="login.php?redirect=offre-weekend.php" class="starpass-btn">🔒 Se connecter pour payer</a>
         <?php endif; ?>
-        <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn">🎲 Ouvrir Stake.bet</a>
+        <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn">🎲 Souscrire sur Stake.bet</a>
         <div class="crypto-separator">— ou —</div>
         <a href="offre-weekend.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
       </div>
@@ -898,7 +898,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <?php else: ?>
           <a href="login.php?redirect=offre-weekly.php" class="starpass-btn">🔒 Se connecter pour payer</a>
         <?php endif; ?>
-        <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn">🎲 Ouvrir Stake.bet</a>
+        <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn">🎲 Souscrire sur Stake.bet</a>
         <div class="crypto-separator">— ou —</div>
         <a href="offre-weekly.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
       </div>
@@ -976,7 +976,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
           <?php else: ?>
             <a href="login.php?redirect=offre.php?type=vip_max" class="vip-btn">🔒 Se connecter pour payer</a>
           <?php endif; ?>
-          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn" style="margin-top:0.75rem;">🎲 Ouvrir Stake.bet</a>
+          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn" style="margin-top:0.75rem;">🎲 Souscrire sur Stake.bet</a>
           <div class="crypto-separator" style="color:rgba(245,200,66,0.2);">— ou —</div>
           <a href="offre.php?type=vip_max#crypto" class="crypto-btn vip-crypto-btn">₿ Payer en Crypto</a>
         </div>
@@ -1022,7 +1022,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <?php else: ?>
           <a href="login.php?redirect=offre-tennis.php" class="tennis-btn">🔒 Se connecter pour payer</a>
         <?php endif; ?>
-        <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn" style="margin-top:0.5rem;margin-bottom:0.5rem;">🎲 Ouvrir Stake.bet</a>
+        <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="stake-card-btn" style="margin-top:0.5rem;margin-bottom:0.5rem;">🎲 Souscrire sur Stake.bet</a>
         <div class="tennis-sep">— ou —</div>
         <a href="offre-tennis.php#crypto" class="tennis-btn-crypto">₿ Payer en Crypto</a>
         <div class="tennis-methods">CB · PayPal · Paysafecard · Crypto</div>
