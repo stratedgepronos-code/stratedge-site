@@ -244,12 +244,15 @@ table.mt-table{width:100%;border-collapse:collapse;}
   .mt-current{padding:1rem;}
   .mt-table-wrap{overflow-x:auto;}
   .mt-table{min-width:600px;}
-  .stake-promo-row{grid-template-columns:1fr;gap:1.25rem;margin-bottom:2rem;}
   .stake-banner,.pack-banner{min-height:auto;padding:1.35rem 1.2rem;}
   .stake-banner:hover,.pack-banner:hover{transform:none;}
   .stake-banner{text-align:center;}
   .btn-stake-mt{width:100%;justify-content:center;}
   .mt-pack-mascot{width:64px;height:64px;}
+}
+/* 3 cards sur une seule ligne jusqu'à 640px, puis empilées */
+@media(max-width:640px){
+  .stake-promo-row{grid-template-columns:1fr;gap:1.25rem;margin-bottom:2rem;}
 }
 </style>
 </head>

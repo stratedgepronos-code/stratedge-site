@@ -4,73 +4,40 @@ $db = getDB();
 $membre = isLoggedIn() ? getMembre() : null;
 $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
 $hasAcces = ($abonnement !== null) || (isLoggedIn() && isAdmin());
-$typeAbo = $abonnement['type'] ?? '';
 $currentPage = 'bets';
 $avatarUrl = $membre ? getAvatarUrl($membre) : null;
 
-$acces = $membre ? getMembreAcces($membre['id']) : ['all' => false, 'multi' => false, 'tennis' => false, 'fun' => false];
-$betsWhere = buildBetsWhereClause($acces);
-$stmt = $db->query("SELECT * FROM bets WHERE actif = 1 AND {$betsWhere} ORDER BY date_post DESC");
-$bets = $stmt->fetchAll();
-
-// Normaliser sport
-$sportNorm = function($b) {
-    $s = strtolower(trim($b['sport'] ?? ''));
-    if ($s === '' && (($b['categorie'] ?? '') === 'tennis')) return 'tennis';
-    if (in_array($s, ['football','foot'], true)) return 'football';
-    if (in_array($s, ['basket','nba'], true)) return 'basket';
-    if (in_array($s, ['hockey','nhl'], true)) return 'hockey';
-    return in_array($s, ['football','basket','hockey'], true) ? $s : 'football';
-};
-// Type principal: safe, combi, live, fun
-$typeNorm = function($b) {
-    $t = strtolower($b['type'] ?? '');
-    if (strpos($t, 'fun') !== false) return 'fun';
-    if (strpos($t, 'live') !== false) return 'live';
-    if (strpos($t, 'combi') !== false) return 'combi';
-    return 'safe';
-};
-
-// 3 grosses catégories : Multisports | Tennis | Fun
-$mainCategories = [
-    'multisports' => ['title' => 'Multisports', 'icon' => '⚽🏀🏒', 'color' => '#00d4ff', 'bets' => [], 'subs' => []],
-    'tennis'      => ['title' => 'Tennis',      'icon' => '🎾', 'color' => '#00d46a', 'bets' => [], 'subs' => []],
-    'fun'         => ['title' => 'Fun',         'icon' => '🎯', 'color' => '#a855f7', 'bets' => [], 'subs' => []],
-];
-$sportLabels = ['football' => 'Foot', 'basket' => 'NBA', 'hockey' => 'NHL'];
-$typeLabels = ['safe' => '🛡️ Safe', 'combi' => '⚡ Combi', 'safe_combi' => '⚡ Combi', 'live' => '🔥 Live', 'fun' => '🎯 Fun', 'safe,fun' => '🎯 Fun', 'safe,live' => '🔥 Live'];
-$typeColors = ['safe' => '#00d4ff', 'combi' => '#ff6b2b', 'safe_combi' => '#ff6b2b', 'live' => '#ff2d78', 'fun' => '#a855f7', 'safe,fun' => '#a855f7', 'safe,live' => '#ff2d78'];
-
-foreach ($bets as $b) {
-    $cat = $b['categorie'] ?? 'multi';
-    $isFun = (strpos(strtolower($b['type'] ?? ''), 'fun') !== false);
-    $sport = $sportNorm($b);
-    $type = $typeNorm($b);
-
-    if ($cat === 'tennis') {
-        $mainCategories['tennis']['bets'][] = $b;
-        $subKey = $type;
-        if (!isset($mainCategories['tennis']['subs'][$subKey])) $mainCategories['tennis']['subs'][$subKey] = [];
-        $mainCategories['tennis']['subs'][$subKey][] = $b;
-    } elseif ($isFun && $cat === 'multi') {
-        $mainCategories['fun']['bets'][] = $b;
-        $subKey = $sport;
-        if (!in_array($subKey, ['football','basket','hockey'])) $subKey = 'football';
-        if (!isset($mainCategories['fun']['subs'][$subKey])) $mainCategories['fun']['subs'][$subKey] = [];
-        $mainCategories['fun']['subs'][$subKey][] = $b;
-    } else {
-        $mainCategories['multisports']['bets'][] = $b;
-        $subKey = $sport . '_' . $type;
-        if (!isset($mainCategories['multisports']['subs'][$subKey])) $mainCategories['multisports']['subs'][$subKey] = [];
-        $mainCategories['multisports']['subs'][$subKey][] = $b;
-    }
+$typeAbo = $abonnement['type'] ?? '';
+if (isAdmin() && $membre) {
+    $stmt = $db->query("SELECT * FROM bets WHERE actif = 1 ORDER BY date_post DESC");
+} elseif ($typeAbo === 'rasstoss') {
+    $stmt = $db->query("SELECT * FROM bets WHERE actif = 1 ORDER BY date_post DESC");
+} elseif ($typeAbo === 'tennis') {
+    $stmt = $db->query("SELECT * FROM bets WHERE actif = 1 AND categorie = 'tennis' ORDER BY date_post DESC");
+} else {
+    $stmt = $db->query("SELECT * FROM bets WHERE actif = 1 AND categorie = 'multi' ORDER BY date_post DESC");
 }
-
+$bets = $stmt->fetchAll();
+$betsSafe = array_filter($bets, function($b) {
+    $t = $b['type'];
+    return (strpos($t, 'safe') !== false) && (strpos($t, 'live') === false) && (strpos($t, 'fun') === false);
+});
+$betsLive = array_filter($bets, function($b) { return strpos($b['type'], 'live') !== false; });
+$betsFun  = array_filter($bets, function($b) { return strpos($b['type'], 'fun') !== false; });
+$typeLabels = ['safe'=>'🛡️ Safe','fun'=>'🎯 Fun','live'=>'⚡ Live'];
+$typeColors = ['safe'=>'#00d4ff','fun'=>'#a855f7','live'=>'#ff2d78'];
+$nbSafe = count($betsSafe);
+$nbLive = count($betsLive);
+$nbFun  = count($betsFun);
 $nbTotal = count($bets);
-$firstTab = 'multisports';
-if (!empty($mainCategories['multisports']['bets'])) $firstTab = 'multisports';
-elseif (!empty($mainCategories['tennis']['bets'])) $firstTab = 'tennis';
-elseif (!empty($mainCategories['fun']['bets'])) $firstTab = 'fun';
+
+$sections = [
+  'safe' => ['bets' => $betsSafe, 'title' => 'Safe', 'icon' => '🛡️', 'color' => '#00d4ff', 'count' => $nbSafe],
+  'live' => ['bets' => $betsLive, 'title' => 'Live', 'icon' => '⚡', 'color' => '#ff2d78', 'count' => $nbLive],
+  'fun'  => ['bets' => $betsFun,  'title' => 'Fun',  'icon' => '🎯', 'color' => '#a855f7', 'count' => $nbFun],
+];
+$availableSections = array_filter($sections, fn($s) => !empty($s['bets']));
+$firstTab = array_key_first($availableSections) ?? 'safe';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -105,10 +72,11 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
 <style>
 /* ═══ BETS PAGE V2 ═══ */
 
-/* Hero */
-.bets-hero{position:relative;text-align:center;overflow:hidden;background:linear-gradient(180deg,rgba(255,45,120,0.07) 0%,transparent 100%);border-bottom:1px solid var(--border,rgba(255,45,120,0.15));margin:-2.5rem -3rem 0 -3rem;padding:1.7rem 3rem;}
-.bets-hero::before{content:'';position:absolute;width:600px;height:400px;background:radial-gradient(circle,rgba(255,45,120,0.1) 0%,transparent 70%);top:-200px;left:50%;transform:translateX(-50%);pointer-events:none;}
-body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;margin-top:0;padding:2rem;}
+/* Hero — sans sidebar (visiteur) */
+.bets-hero{position:relative;text-align:center;overflow:hidden;background:linear-gradient(180deg,rgba(255,45,120,0.07) 0%,transparent 100%);border-bottom:1px solid var(--border,rgba(255,45,120,0.15));margin-left:-2rem;margin-right:-2rem;margin-top:0;padding:3rem 2rem 2.5rem;}
+/* Hero — avec sidebar (membre) : full-bleed */
+.app .content > .bets-hero{margin-left:calc(-3rem - var(--sidebar-w,270px));margin-right:-3rem;margin-top:-2.5rem;padding:3.5rem 2rem 2.5rem 3rem;}
+.bets-hero::before{content:'';position:absolute;width:700px;height:550px;background:radial-gradient(circle,rgba(255,45,120,0.12) 0%,transparent 65%);top:-380px;left:50%;transform:translateX(-50%);pointer-events:none;}
 .bets-tag{font-family:'Space Mono',monospace;font-size:0.75rem;letter-spacing:4px;text-transform:uppercase;color:var(--pink,#ff2d78);margin-bottom:0.7rem;}
 .bets-title{font-family:'Orbitron',sans-serif;font-size:2.4rem;font-weight:900;margin-bottom:0.6rem;}
 .bets-title span{background:linear-gradient(135deg,#ff2d78,#ff6b9d);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
@@ -117,7 +85,7 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;margin-top:0
 .bets-counter .pulse{width:8px;height:8px;border-radius:50%;background:#ff2d78;animation:pulse-dot 1.5s ease-in-out infinite;}
 @keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.5;transform:scale(1.4);}}
 
-.bets-wrap{max-width:none;width:100%;margin:1.25rem auto 0;padding:0 0.5rem 2rem;box-sizing:border-box;}
+.bets-wrap{max-width:1400px;width:100%;margin:0 auto;padding:1.5rem 0.5rem 2rem;box-sizing:border-box;}
 
 /* Banner abo */
 .abo-b{border-radius:14px;padding:1.2rem 1.6rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;}
@@ -214,7 +182,7 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;margin-top:0
   .abo-b{padding:1rem;flex-direction:column;align-items:flex-start;border-radius:10px;}
   .abo-b h3{font-size:0.85rem;}
   .btn-sub{width:100%;justify-content:center;font-size:0.88rem;}
-  .bets-hero{margin:-1rem -0.8rem 0 -0.8rem !important;padding:1.5rem 0.8rem !important;}
+  .bets-hero{margin-left:-0.8rem !important;margin-right:-0.8rem !important;margin-top:-1rem;padding:1.5rem 0.8rem 1.5rem !important;}
   .bets-hero::before{display:none;}
   .bets-title{font-size:1.5rem;}
   .bets-sub{font-size:0.88rem;max-width:none;}
@@ -284,50 +252,27 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;margin-top:0
   <div class="no-bets"><div class="big">🎯</div><h3>Aucun bet disponible</h3><p>Les nouvelles analyses arrivent bientot, reste connecte !</p></div>
   <?php else: ?>
 
-  <!-- Onglets Multisports | Tennis | Fun -->
+  <!-- Onglets Safe | Live | Fun -->
   <div class="tabs-bar" id="tabsBar">
-    <?php foreach ($mainCategories as $mKey => $mCat): ?>
-    <button class="tab-btn <?= $mKey === $firstTab ? 'active' : '' ?>" data-tab="<?= $mKey ?>" data-color="<?= $mCat['color'] ?>" onclick="switchTab('<?= $mKey ?>')">
-      <?= $mCat['icon'] ?> <?= $mCat['title'] ?>
-      <span class="tab-count"><?= count($mCat['bets']) ?></span>
+    <?php $tabIdx = 0; foreach ($availableSections as $key => $sec): ?>
+    <button class="tab-btn <?= $key === $firstTab ? 'active' : '' ?>" data-tab="<?= $key ?>" data-color="<?= $sec['color'] ?>" onclick="switchTab('<?= $key ?>')">
+      <?= $sec['icon'] ?> <?= $sec['title'] ?>
+      <span class="tab-count"><?= $sec['count'] ?></span>
     </button>
-    <?php endforeach; ?>
+    <?php $tabIdx++; endforeach; ?>
     <div class="tab-indicator" id="tabIndicator"></div>
   </div>
 
-  <!-- Panels par grosse catégorie -->
-  <?php foreach ($mainCategories as $mKey => $mCat):
-    $subs = $mCat['subs'] ?? [];
-    $orderSubs = $mKey === 'tennis' ? ['safe','combi','fun','live'] : ($mKey === 'fun' ? ['football','basket','hockey'] : null);
-  ?>
-  <div class="tab-panel <?= $mKey === $firstTab ? 'active' : '' ?>" id="panel-<?= $mKey ?>">
-    <?php if (empty($mCat['bets'])): ?>
-    <div class="no-bets"><div class="big">🎯</div><h3>Aucun bet dans cette catégorie</h3></div>
-    <?php else:
-      if ($orderSubs) {
-        $ordered = [];
-        foreach ($orderSubs as $sk) { if (isset($subs[$sk])) $ordered[$sk] = $subs[$sk]; }
-        foreach ($subs as $sk => $arr) { if (!isset($ordered[$sk])) $ordered[$sk] = $arr; }
-        $subs = $ordered;
-      } else {
-        ksort($subs);
-      }
-      foreach ($subs as $subKey => $subBets):
-        if (empty($subBets)) continue;
-        $subLabel = $mKey === 'tennis' ? ($typeLabels[$subKey] ?? $subKey) : ($mKey === 'fun' ? ($sportLabels[$subKey] ?? $subKey) : (isset($sportLabels[explode('_',$subKey)[0]]) ? $sportLabels[explode('_',$subKey)[0]] . ' · ' . ($typeLabels[explode('_',$subKey)[1]] ?? explode('_',$subKey)[1]) : $subKey));
-    ?>
-    <div class="sub-section" style="margin-bottom:2rem;">
-      <h3 class="sub-section-title" style="font-family:'Orbitron',sans-serif;font-size:0.85rem;margin-bottom:1rem;color:var(--txt2);display:flex;align-items:center;gap:0.5rem;">
-        <span style="color:<?= $mCat['color'] ?>;"><?= $mCat['icon'] ?></span> <?= $subLabel ?> <span class="tab-count"><?= count($subBets) ?></span>
-      </h3>
+  <!-- Panels -->
+  <?php foreach ($availableSections as $key => $sec): ?>
+  <div class="tab-panel <?= $key === $firstTab ? 'active' : '' ?>" id="panel-<?= $key ?>">
     <div class="bets-grid">
-    <?php foreach ($subBets as $bet):
+    <?php foreach ($sec['bets'] as $bet):
       $types = explode(',', $bet['type']);
       $mainType = trim($types[0]);
       $rawPath = !empty($bet['image_path']) ? $bet['image_path'] : ($bet['locked_image_path'] ?? '');
       if (!empty($rawPath)) {
-        $subdir = (strpos($rawPath, 'locked') !== false) ? 'locked' : 'bets';
-        $imgSrc = function_exists('betImageUrl') ? betImageUrl(trim($rawPath), $subdir) : (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($rawPath,'/') : $rawPath);
+        $imgSrc = (strpos($rawPath, 'http') === 0) ? $rawPath : (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($rawPath,'/') : $rawPath);
       } else {
         $imgSrc = '';
       }
@@ -342,7 +287,6 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;margin-top:0
         <span class="bet-date"><?= date('d/m/Y',strtotime($bet['date_post'])) ?></span>
       </div>
       <?php if ($bet['titre']): ?><div class="bet-titre"><?= clean($bet['titre']) ?></div><?php endif; ?>
-      <?php $hasAnalyse = $hasAcces && !empty($bet['analyse_html']); ?>
       <div class="bet-img-wrap <?= ($hasAcces && $imgSrc)?'zoomable':'' ?>"
            <?= ($hasAcces && $imgSrc)?'data-src="'.clean($imgSrc).'" data-caption="'.htmlspecialchars($bet['titre']?:'Bet StratEdge',ENT_QUOTES).'"':'' ?>>
         <?php if ($imgSrc): ?>
@@ -356,15 +300,9 @@ body:not(.app-body) .bets-hero{margin-left:-2rem;margin-right:-2rem;margin-top:0
         </div>
         <?php endif; ?>
       </div>
-      <?php if ($hasAnalyse): ?>
-      <a href="/bet.php?id=<?= (int)$bet['id'] ?>" class="bet-link-analyse" style="display:block;padding:0.75rem 1.2rem;font-size:0.85rem;font-weight:700;color:var(--pink,#ff2d78);text-decoration:none;text-align:center;border-top:1px solid var(--border,rgba(255,45,120,0.15));">Voir l'analyse et commenter →</a>
-      <?php endif; ?>
     </div>
     <?php endforeach; ?>
     </div>
-    </div>
-    <?php endforeach; ?>
-    <?php endif; ?>
   </div>
   <?php endforeach; ?>
 
