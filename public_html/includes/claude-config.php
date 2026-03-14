@@ -249,6 +249,7 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
    - Gauche : Compétition + surface/round si pertinent (Orbitron 14px cyan uppercase) — TEXTE UNIQUEMENT, pas d'image
    - Droite : Date + heure FRANÇAISE (Orbitron 14px)
 4. Match card (margin:20px 28px; padding:28px; border:1px solid rgba(255,45,120,0.12); border-radius:14px) :
+   - ⚠️ OBLIGATOIRE sur les DEUX cards (normale ET locked) : afficher les drapeaux (tennis) ou logos équipes (foot/basket/hockey) à côté des noms. Ne jamais les omettre sur la card locked.
    - Noms joueurs/équipes (Orbitron 28px 700) avec <img> logo du club (height:34px) OU pour tennis : <img src='https://flagcdn.com/w40/{code}.png' style='height:24px;border-radius:2px;vertical-align:middle;margin-right:6px'> à côté du nom.
    - Format football : <img src='https://media.api-sports.io/football/teams/{id}.png' style='height:34px;vertical-align:middle;margin-right:8px'><span>NOM EQUIPE</span>
    - Format tennis : <img src='https://flagcdn.com/w40/{code}.png' style='height:24px;border-radius:2px;vertical-align:middle;margin-right:6px'><span>NOM JOUEUR</span>
@@ -329,7 +330,7 @@ La card locked DOIT CACHER le contenu premium. Structure identique à la card no
 ⚠️ CE QUI DOIT ÊTRE CACHÉ (remplacé par du contenu flouté/masqué) :
 - Section Stats (§5) : remplacer le contenu par des barres grises floues (div style='height:14px; background:rgba(255,255,255,0.08); border-radius:4px; margin:6px 0; filter:blur(3px)') — 3 ou 4 barres par colonne, garder les titres visibles
 - Contexte H2H (§6) : même chose, barres grises floues à la place du texte
-- Bloc prono (§7) : le NOM DU BET doit être COMPLÈTEMENT CACHÉ — remplacer le texte du pari par une barre grise floue (div style='height:20px; width:60%; margin:10px auto; background:rgba(255,255,255,0.1); border-radius:6px; filter:blur(6px)'). ⚠️ NE PAS écrire le nom du pari, même flouté. La COTE (le bouton pill dégradé) reste visible.
+- Bloc prono (§7) : le NOM DU BET doit être COMPLÈTEMENT CACHÉ — remplacer le texte du pari par une barre grise floue (div style='height:20px; width:60%; margin:10px auto; background:rgba(255,255,255,0.1); border-radius:6px; filter:blur(6px)'). ⚠️ NE PAS écrire le nom du pari, même flouté. La COTE reste visible : le bouton pill doit être IDENTIQUE à la card normale — fond background:#FF2D78, chiffre de la cote en color:#ffffff (blanc pur). Exemple HTML obligatoire : <div style='display:inline-block;background:#FF2D78;border-radius:18px;padding:18px 48px;box-shadow:0 4px 22px rgba(255,45,122,0.5)'><span style='font-family:Orbitron,sans-serif;font-size:58px;font-weight:900;color:#ffffff'>1.89</span></div> (remplacer 1.89 par la cote réelle). Ne pas mettre de dégradé ni shine sur le pill.
 - Analyse (§9) : contenu remplacé par barres grises floues
 - Bankroll (§8) : contenu flouté
 
@@ -337,8 +338,8 @@ La card locked DOIT CACHER le contenu premium. Structure identique à la card no
 - Header, logo, badge sport
 - Barre compétition (date, heure, compétition en texte) — TOUS SPORTS
 - Barre de confiance (Confiance XX%) et value (VALUE +X% ou Valeur neutre) restent visibles sur la locked — TOUS SPORTS
-- Match card (noms joueurs, drapeaux, VS, surface) — TOUT VISIBLE
-- La COTE dans le bloc prono (bien visible, pas floutée)
+- Match card (noms joueurs, drapeaux ou logos équipes, VS, surface) — TOUT VISIBLE, avec les mêmes <img> drapeaux/logos que sur la card normale
+- La COTE dans le bloc prono : bouton pill rose #FF2D78 avec le chiffre en color:#ffffff (blanc), bien visible, pas floutée
 - Les titres des sections (STATS, FACE À FACE, ANALYSE, etc.)
 - Pour le TENNIS : la bande promo en bas (§11) reste visible sur la card locked (identique à la card normale).
 - Pour FOOTBALL, BASKET, HOCKEY : la bande promo en bas (§12) reste visible sur la card locked (identique à la card normale).
@@ -359,5 +360,6 @@ La card locked DOIT CACHER le contenu premium. Structure identique à la card no
 5. Chaque HTML est COMPLET et AUTONOME (<!DOCTYPE html>, <style> avec @import fonts, etc.).
 6. Le glow extérieur est TOUJOURS en z-index:-1 avec isolation:isolate sur la card.
 7. ⚠️ NE JAMAIS modifier les polices : utiliser uniquement Orbitron et Rajdhani comme indiqué. Pas de changement de font-family.
+8. ⚠️ Card LOCKED : la cote doit apparaître en BLANC (#ffffff) dans le carré rose (#FF2D78) ; les drapeaux (tennis) ou logos équipes (foot/basket/hockey) doivent être présents dans la match card sur les DEUX cards (normale et locked).
 PROMPT
 );
