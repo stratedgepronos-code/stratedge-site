@@ -51,7 +51,6 @@
     <a class="s-link <?= $currentPage==='historique'?'active':'' ?>" href="/historique.php"><span class="ico">📋</span> Historique</a>
     <a class="s-link <?= $currentPage==='pronocommu'?'active':'' ?>" href="/prono-commu.php"><span class="ico">⚽</span> Prono de la commu</a>
     <a class="s-link <?= ($currentPage??'')==='montante'?'active':'' ?>" href="/montante-tennis.php"><span class="ico">🎾</span> Montante Tennis</a>
-    <a class="s-link <?= $currentPage==='chat'?'active':'' ?>" href="/chat.php"><span class="ico">💬</span> Chat<?php if($nbNonLus>0):?><span class="badge-n"><?=$nbNonLus?></span><?php endif;?></a>
     <a class="s-link <?= $currentPage==='sav'?'active':'' ?>" href="/sav.php"><span class="ico">🎫</span> SAV</a>
     <div class="side-sep"></div>
     <a class="s-link <?= ($currentPage??'')==='souscrire'?'active':'' ?>" href="/souscrire.php"><span class="ico">💳</span> Souscrire</a>
