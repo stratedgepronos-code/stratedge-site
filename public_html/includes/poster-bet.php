@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/mailer.php';
 require_once __DIR__ . '/../includes/push.php';
+require_once __DIR__ . '/../includes/tweet-ai.php';
 requireAdmin();
 $pageActive    = 'poster-bet';
 $isSuperAdmin  = ($_SESSION['membre_email'] === ADMIN_EMAIL);
@@ -276,8 +277,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($twitterActif && !empty($twitterConfig['webhook_url']) && $bet) {
                     $titre = $bet['titre'] ? ' — ' . $bet['titre'] : '';
 
-                    $tweetExplication = trim($_POST['tweet_explication'] ?? '');
                     $coteStr = !empty($bet['cote']) ? ' (cote ' . $bet['cote'] . ')' : '';
+
+                    $betFull = $db->prepare("SELECT * FROM bets WHERE id = ?");
+                    $betFull->execute([$betId]);
+                    $betData = $betFull->fetch(PDO::FETCH_ASSOC) ?: $bet;
+                    $tweetExplication = genererTweetExplication($betData, $resultat);
 
                     if ($tweetExplication !== '') {
                         $phrases = [
@@ -518,33 +523,27 @@ $resultatConfig = [
               <td>
                 <?php if (($b['resultat'] ?? 'en_cours') === 'en_cours'): ?>
                   <div style="display:flex;gap:0.3rem;flex-wrap:wrap;align-items:center;">
-                    <form method="POST" style="display:inline;" onsubmit="return injectTweetExpl(this, 'Marquer comme GAGNÉ ?')">
+                    <form method="POST" style="display:inline;" onsubmit="return confirm('Marquer comme GAGNÉ ?')">
                       <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
                       <input type="hidden" name="action" value="set_resultat">
                       <input type="hidden" name="bet_id" value="<?= $b['id'] ?>">
                       <input type="hidden" name="resultat" value="gagne">
-                      <input type="hidden" name="tweet_explication" value="">
                       <button type="submit" class="btn-sm" style="background:rgba(0,200,100,0.15);color:#00c864;border:1px solid rgba(0,200,100,0.3);">✅</button>
                     </form>
-                    <form method="POST" style="display:inline;" onsubmit="return injectTweetExpl(this, 'Marquer comme PERDU ?')">
+                    <form method="POST" style="display:inline;" onsubmit="return confirm('Marquer comme PERDU ?')">
                       <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
                       <input type="hidden" name="action" value="set_resultat">
                       <input type="hidden" name="bet_id" value="<?= $b['id'] ?>">
                       <input type="hidden" name="resultat" value="perdu">
-                      <input type="hidden" name="tweet_explication" value="">
                       <button type="submit" class="btn-sm" style="background:rgba(255,68,68,0.15);color:#ff4444;border:1px solid rgba(255,68,68,0.3);">❌</button>
                     </form>
-                    <form method="POST" style="display:inline;" onsubmit="return injectTweetExpl(this, 'Marquer comme ANNULÉ ?')">
+                    <form method="POST" style="display:inline;" onsubmit="return confirm('Marquer comme ANNULÉ ?')">
                       <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
                       <input type="hidden" name="action" value="set_resultat">
                       <input type="hidden" name="bet_id" value="<?= $b['id'] ?>">
                       <input type="hidden" name="resultat" value="annule">
-                      <input type="hidden" name="tweet_explication" value="">
                       <button type="submit" class="btn-sm" style="background:rgba(245,158,11,0.15);color:#f59e0b;border:1px solid rgba(245,158,11,0.3);">↺</button>
                     </form>
-                  </div>
-                  <div style="margin-top:6px;">
-                    <input type="text" class="tweet-expl-input" data-bet-id="<?= $b['id'] ?>" placeholder="💬 Explication tweet (optionnel)" style="width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:5px 8px;color:#f0f4f8;font-family:'Rajdhani',sans-serif;font-size:0.78rem;">
                   </div>
                 <?php else: ?>
                   <span style="background:<?= $rc['bg'] ?>;color:<?= $rc['color'] ?>;padding:0.25rem 0.6rem;border-radius:6px;font-size:0.78rem;font-weight:700;"><?= $rc['label'] ?></span>
@@ -699,15 +698,7 @@ document.getElementById('betForm').addEventListener('submit', function() {
   });
 });
 
-function injectTweetExpl(form, confirmMsg) {
-  if (!confirm(confirmMsg)) return false;
-  var betId = form.querySelector('[name="bet_id"]').value;
-  var input = form.closest('td').querySelector('.tweet-expl-input[data-bet-id="' + betId + '"]');
-  if (input) {
-    form.querySelector('[name="tweet_explication"]').value = input.value;
-  }
-  return true;
-}
+
 </script>
 </body>
 </html>
