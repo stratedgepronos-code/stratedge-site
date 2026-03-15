@@ -108,6 +108,10 @@ foreach ($roundsToClose as $closedAt) {
     }
 }
 
+// ── Suppression des matchs dont la journée de vote est passée (on garde uniquement le gagnant pour l'analyse) ──
+$stmtDel = $db->prepare("DELETE FROM commu_matches WHERE vote_closed_at < ? AND is_winner = 0");
+$stmtDel->execute([$now]);
+
 // ── Vote (POST) ──
 $voteMessage = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'vote') {

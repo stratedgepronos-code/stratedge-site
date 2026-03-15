@@ -546,6 +546,16 @@ $membre = getMembre();
       border-color: color-mix(in srgb, var(--color) 35%, transparent) !important;
       background: color-mix(in srgb, var(--color) 6%, transparent) !important;
     }
+    /* Masquer les moyens de paiement non disponibles (non cliquables) */
+    .sp-wrap [id^="starpass_"] #sk-kit #sk-access-type-block ul li.sk-disabled,
+    .sp-wrap [id^="starpass_"] #sk-kit #sk-access-type-block ul li.disabled,
+    .sp-wrap [id^="starpass_"] #sk-kit #sk-access-type-block ul li[class*="unavailable"],
+    .sp-wrap [id^="starpass_"] #sk-kit #sk-access-type-block ul li[class*="no-access"],
+    .sp-wrap [id^="starpass_"] #sk-kit #sk-other-access-type-tab-box ul li.sk-disabled,
+    .sp-wrap [id^="starpass_"] #sk-kit #sk-other-access-type-tab-box ul li.disabled,
+    .sp-wrap [id^="starpass_"] #sk-kit #sk-other-access-type-tab-box ul li[class*="unavailable"] {
+      display: none !important;
+    }
     .sp-wrap [id^="starpass_"] #sk-kit #sk-payment-method-block ul li.current,
     .sp-wrap [id^="starpass_"] #sk-kit #sk-access-type-block ul li.current {
       background: color-mix(in srgb, var(--color) 12%, transparent) !important;
@@ -1388,6 +1398,55 @@ $membre = getMembre();
           <div id="starpass_<?= $o['idd'] ?>"></div>
           <script type="text/javascript"
             src="https://script.starpass.fr/script.php?idd=<?= $o['idd'] ?>&datas=<?= urlencode($membre['id'] . ':' . $type) ?>&lang=fr">
+          </script>
+          <script>
+          (function(){
+            function hideUnavailableStarPassButtons() {
+              var wrap = document.querySelector('.sp-wrap [id^="starpass_"] #sk-kit');
+              if (!wrap) return;
+              var blocks = [
+                wrap.querySelector('#sk-access-type-block'),
+                wrap.querySelector('#sk-other-access-type-tab-box')
+              ].filter(Boolean);
+              blocks.forEach(function(block){
+                var items = block.querySelectorAll('ul li');
+                items.forEach(function(li){
+                  var style = window.getComputedStyle(li);
+                  var href = (li.querySelector('a') || li).getAttribute('href');
+                  var ariaDisabled = li.getAttribute('aria-disabled') === 'true';
+                  var className = (li.className || '').toLowerCase();
+                  var isDisabled = ariaDisabled
+                    || /disabled|unavailable|no-access|off|no-/.test(className)
+                    || style.pointerEvents === 'none'
+                    || style.opacity === '0'
+                    || (href !== null && (href === '#' || href === ''));
+                  if (isDisabled) li.style.setProperty('display', 'none', 'important');
+                });
+              });
+            }
+            function waitForStarPass() {
+              if (document.querySelector('.sp-wrap [id^="starpass_"] #sk-kit #sk-access-type-block')) {
+                hideUnavailableStarPassButtons();
+                return;
+              }
+              var obs = new MutationObserver(function() {
+                if (document.querySelector('.sp-wrap [id^="starpass_"] #sk-kit #sk-access-type-block')) {
+                  obs.disconnect();
+                  hideUnavailableStarPassButtons();
+                }
+              });
+              var spDiv = document.getElementById('starpass_<?= (int)$o["idd"] ?>');
+              if (spDiv) {
+                obs.observe(spDiv.parentElement, { childList: true, subtree: true });
+              }
+              setTimeout(function(){ hideUnavailableStarPassButtons(); }, 2500);
+            }
+            if (document.readyState === 'loading') {
+              document.addEventListener('DOMContentLoaded', waitForStarPass);
+            } else {
+              setTimeout(waitForStarPass, 100);
+            }
+          })();
           </script>
         </div>
         <div class="note-box" style="margin-top:1rem;">
