@@ -556,6 +556,10 @@ $membre = getMembre();
     .sp-wrap [id^="starpass_"] #sk-kit #sk-other-access-type-tab-box ul li[class*="unavailable"] {
       display: none !important;
     }
+    /* Masquer le bloc "Other solutions" / "Autres solutions" */
+    .sp-wrap [id^="starpass_"] #sk-kit #sk-other-access-type-tab-box {
+      display: none !important;
+    }
     .sp-wrap [id^="starpass_"] #sk-kit #sk-payment-method-block ul li.current,
     .sp-wrap [id^="starpass_"] #sk-kit #sk-access-type-block ul li.current {
       background: color-mix(in srgb, var(--color) 12%, transparent) !important;
@@ -1409,9 +1413,53 @@ $membre = getMembre();
               return (li.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
             }
             function shouldHideByLabel(li) {
-              if (!hideAboveSms) return false;
               var t = getButtonText(li);
+              if (/other\s*solutions|autres\s*solutions/i.test(t)) return true;
+              if (!hideAboveSms) return false;
               return /sms|phone|mobile\s*call|appel|mobile\s*billing|facturation\s*mobile|internet\+\s*mobile/i.test(t);
+            }
+
+            function translateStarPassToFrench(wrap) {
+              var map = [
+                ['Step 1:', 'Étape 1 :'],
+                ['Step 1 :', 'Étape 1 :'],
+                ['Step 2:', 'Étape 2 :'],
+                ['Step 2 :', 'Étape 2 :'],
+                ['Step 3:', 'Étape 3 :'],
+                ['Step 3 :', 'Étape 3 :'],
+                ['Payment', 'Paiement'],
+                ['Credit Card', 'Carte bancaire'],
+                ['Online Banking', 'Banque en ligne'],
+                ['Phone', 'Téléphone'],
+                ['Mobile Call', 'Appel mobile'],
+                ['Mobile Billing', 'Facturation mobile'],
+                ['Internet+ Mobile', 'Internet+ mobile'],
+                ['Other solutions', 'Autres solutions'],
+                ['Buy', 'Acheter'],
+                ['Buy now', 'Acheter'],
+                ['Select', 'Choisir'],
+                ['Select your country', 'Choisissez votre pays'],
+                ['Submit', 'Valider'],
+                ['Enter', 'Saisir'],
+                ['Enter your code', 'Saisissez votre code'],
+                ['Your country', 'Votre pays'],
+                ['Country', 'Pays'],
+                ['Code', 'Code']
+              ];
+              function replaceInNode(node) {
+                if (node.nodeType === 3) {
+                  var text = node.textContent;
+                  map.forEach(function(pair) {
+                    text = text.split(pair[0]).join(pair[1]);
+                  });
+                  if (text !== node.textContent) node.textContent = text;
+                  return;
+                }
+                if (node.nodeType === 1 && node.childNodes) {
+                  for (var i = 0; i < node.childNodes.length; i++) replaceInNode(node.childNodes[i]);
+                }
+              }
+              if (wrap) replaceInNode(wrap);
             }
 
             function hideUnavailableStarPassButtons() {
@@ -1437,6 +1485,7 @@ $membre = getMembre();
                   if (isDisabled) li.style.setProperty('display', 'none', 'important');
                 });
               });
+              translateStarPassToFrench(wrap);
             }
             function waitForStarPass() {
               if (document.querySelector('.sp-wrap [id^="starpass_"] #sk-kit #sk-access-type-block')) {
