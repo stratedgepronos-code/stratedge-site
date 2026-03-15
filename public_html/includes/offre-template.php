@@ -1393,7 +1393,8 @@ $membre = getMembre();
           <div class="block-title">💳 CB · PayPal · Paysafecard · Internet+</div>
           <div class="block-desc">Paiement sécurisé via <strong style="color:var(--color)">StarPass</strong> — carte bancaire, PayPal, Paysafecard ou Internet+</div>
         <?php endif; ?>
-        <div class="sp-wrap">
+        <?php $offerPriceNum = (float)str_replace(',', '.', $o['prix']); ?>
+        <div class="sp-wrap" data-offer-price="<?= $offerPriceNum ?>">
           <p>Cliquez sur le bouton ci-dessous pour payer <strong><?= $o['prix'] ?>€</strong> via StarPass</p>
           <div id="starpass_<?= $o['idd'] ?>"></div>
           <script type="text/javascript"
@@ -1401,6 +1402,18 @@ $membre = getMembre();
           </script>
           <script>
           (function(){
+            var offerPrice = parseFloat(document.querySelector('.sp-wrap[data-offer-price]')?.getAttribute('data-offer-price')) || 0;
+            var hideAboveSms = offerPrice > 4.5;
+
+            function getButtonText(li) {
+              return (li.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+            }
+            function shouldHideByLabel(li) {
+              if (!hideAboveSms) return false;
+              var t = getButtonText(li);
+              return /sms|phone|mobile\s*call|appel|mobile\s*billing|facturation\s*mobile|internet\+\s*mobile/i.test(t);
+            }
+
             function hideUnavailableStarPassButtons() {
               var wrap = document.querySelector('.sp-wrap [id^="starpass_"] #sk-kit');
               if (!wrap) return;
@@ -1419,7 +1432,8 @@ $membre = getMembre();
                     || /disabled|unavailable|no-access|off|no-/.test(className)
                     || style.pointerEvents === 'none'
                     || style.opacity === '0'
-                    || (href !== null && (href === '#' || href === ''));
+                    || (href !== null && (href === '#' || href === ''))
+                    || shouldHideByLabel(li);
                   if (isDisabled) li.style.setProperty('display', 'none', 'important');
                 });
               });
