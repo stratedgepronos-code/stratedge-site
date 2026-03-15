@@ -435,15 +435,19 @@ TENNIS;
     if ($is_team_sport) {
         $css .= <<<TEAMSPORT
 
-/* Team sport (foot, NBA, hockey) — logos + couleurs solides (background-clip:text ne fonctionne pas en rendu image) */
-.card-wrapper.team-sport .team-logo { height:26px; width:auto; max-width:40px; object-fit:contain; vertical-align:middle; }
+/* Team sport (foot, NBA, hockey) — logos + couleurs solides */
+.card-wrapper.team-sport .team-logo { height:36px; width:auto; max-width:50px; object-fit:contain; vertical-align:middle; margin-right:4px; }
+.card-wrapper.team-sport .prono-block { background:linear-gradient(135deg,rgba(255,45,122,0.12),rgba(0,229,255,0.06)) !important; border:1px solid rgba(255,45,122,0.25) !important; }
 .card-wrapper.team-sport .prono-text {
-  color:#ff2d7a;
-  font-family:'Orbitron',sans-serif; font-weight:700; font-size:13px;
+  color:#ffffff;
+  font-family:'Orbitron',sans-serif; font-weight:900; font-size:22px;
+  text-shadow:0 0 20px rgba(255,45,122,0.6),0 2px 4px rgba(0,0,0,0.5);
+  letter-spacing:0.5px;
 }
 .card-wrapper.team-sport .vs-badge {
   color:#ff2d7a;
-  font-family:'Orbitron',sans-serif; font-size:12px; font-weight:900;
+  font-family:'Orbitron',sans-serif; font-size:18px; font-weight:900;
+  text-shadow:0 0 12px rgba(255,45,122,0.5);
 }
 TEAMSPORT;
     }

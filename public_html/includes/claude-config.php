@@ -33,10 +33,20 @@ Clés obligatoires :
 - flag2 : emoji drapeau pays du joueur 2 (ex: "🇦🇷")
 - competition : compétition + surface si pertinent (ex: "ATP 250 - Buenos Aires - Terre battue")
 - prono_joueur : 1 ou 2 selon le pronostic. Si le pronostic indique que le joueur 1 gagne (ou équipe 1), mets 1. Si le joueur 2 gagne, mets 2. Sinon 1.
-- Pour le football, le basket (NBA) et le hockey : ajoute team1_logo et team2_logo (URLs directes vers une image du logo de l'équipe, de préférence PNG ou JPG, ex: CDN type logos de ligues ou Wikipedia). Si tu ne trouves pas d'URL fiable, mets "".
+
+⚠️ LOGOS OBLIGATOIRES pour football, basket (NBA), hockey et MLS :
+- team1_logo et team2_logo : URLs DIRECTES vers le logo PNG de chaque équipe. Tu DOIS fournir un logo pour chaque équipe, ne JAMAIS laisser vide.
+- FOOTBALL : utiliser API-Football https://media.api-sports.io/football/teams/{id}.png
+  IDs connus : Real Madrid=541, Barcelona=529, PSG=85, Man City=50, Liverpool=40, Bayern=157, Juventus=496, Inter=505, Milan=489, Benfica=211, Porto=212, Marseille=81, Lyon=80, Monaco=91, Lille=79, Arsenal=42, Chelsea=49, Man United=33, Tottenham=47, Napoli=492, Roma=497, Lazio=487, Dortmund=165, Atletico=530, Sevilla=536, Ajax=194, Celtic=247, Rangers=257, Sporting=228, Galatasaray=645, Fenerbahce=611, Boca Juniors=451, River Plate=455
+- MLS : utiliser https://images.mlssoccer.com/image/private/t_q-best/v1/assets/logos/teams/{slug}.png ou API-Football. Exemples IDs API-Football MLS : Atlanta United=1604, Austin FC=10261, Charlotte FC=15769, Chicago Fire=1605, Cincinnati=7395, Colorado=1606, Columbus=1607, Dallas=1609, DC United=1610, Galaxy=1601, Houston=1611, Inter Miami=9568, LAFC=1600, Minnesota United=1614, Montreal=1613, Nashville=7393, New England=1616, NYC FC=1604, NY Red Bulls=1602, Orlando City=1598, Philadelphia=1599, Portland=1617, Salt Lake=1603, San Jose=1596, Seattle=1595, St. Louis=15768, Toronto=1597, Vancouver=1615
+- BASKET NBA : https://cdn.nba.com/logos/nba/{nba_team_id}/primary/L/logo.svg (IDs : Lakers=1610612747, Warriors=1610612744, Celtics=1610612738, Nets=1610612751, Knicks=1610612752, Bucks=1610612749, Heat=1610612748, etc.)
+- HOCKEY NHL : ESPN CDN https://a.espncdn.com/combiner/i?img=/i/teamlogos/nhl/500/scoreboard/{abbrev}.png avec abbrev en minuscules (ana, bos, buf, car, cbj, cgy, chi, col, dal, det, edm, fla, la, min, mtl, nj, nsh, nyi, nyr, ott, phi, pit, sea, sjs, stl, tb, tor, utah, vgk, wsh, wpg)
+- Si tu ne connais pas l'ID exact, cherche dans ta mémoire le bon ID. En DERNIER recours seulement, mets "".
+
 Ne modifie jamais date_fr ni time_fr : utilise uniquement les valeurs fournies dans le message.
 Exemple tennis : {"date_fr":"...","time_fr":"15:30","player1":"Garin C.","player2":"Baez S.","flag1":"🇨🇱","flag2":"🇦🇷","competition":"...","prono_joueur":1}
-Exemple foot : {"date_fr":"...","time_fr":"20:00","player1":"PSG","player2":"Marseille","flag1":"🇫🇷","flag2":"🇫🇷","competition":"Ligue 1","prono_joueur":1,"team1_logo":"https://...","team2_logo":"https://..."}
+Exemple foot : {"date_fr":"...","time_fr":"20:00","player1":"PSG","player2":"Marseille","flag1":"🇫🇷","flag2":"🇫🇷","competition":"Ligue 1","prono_joueur":1,"team1_logo":"https://media.api-sports.io/football/teams/85.png","team2_logo":"https://media.api-sports.io/football/teams/81.png"}
+Exemple MLS : {"date_fr":"...","time_fr":"23:01","player1":"Vancouver Whitecaps","player2":"Minnesota United","flag1":"🇨🇦","flag2":"🇺🇸","competition":"MLS","prono_joueur":1,"team1_logo":"https://media.api-sports.io/football/teams/1615.png","team2_logo":"https://media.api-sports.io/football/teams/1614.png"}
 PROMPT
 );
 

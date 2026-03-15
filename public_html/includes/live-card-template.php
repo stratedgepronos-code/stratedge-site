@@ -64,13 +64,13 @@ if ($confiance > 100) $confiance = 100;
   .player { font-family: 'Bebas Neue', cursive; font-size: 22px; letter-spacing: 1px; line-height: 1; }
   .player.main { color: #ffffff; text-shadow: 0 0 20px rgba(0,229,255,0.3); }
   .player.opponent { color: rgba(255,255,255,0.7); }
-  .vs-badge { color: #ff2d7a; font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 900; flex-shrink: 0; }
+  .vs-badge { color: #ff2d7a; font-family: 'Orbitron', sans-serif; font-size: 16px; font-weight: 900; flex-shrink: 0; text-shadow: 0 0 12px rgba(255,45,122,0.5); }
   .match-competition { font-family: 'Rajdhani', sans-serif; font-size: 14px; color: rgba(255,255,255,0.55); margin-top: 4px; text-align: center; }
-  .prono-block { background: linear-gradient(135deg, rgba(255,45,122,0.08), rgba(0,229,255,0.06)); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 9px 14px; display: flex; align-items: center; justify-content: space-between; }
+  .prono-block { background: linear-gradient(135deg, rgba(255,45,122,0.12), rgba(0,229,255,0.06)); border: 1px solid rgba(255,45,122,0.2); border-radius: 10px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; }
   .prono-left { flex: 1; }
-  .prono-label { font-size: 12px; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 3px; font-weight: 600; }
-  .prono-text { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 18px; color: #ffffff; }
-  .prono-text em { font-style: normal; color: #ff2d7a; }
+  .prono-label { font-size: 13px; color: rgba(255,255,255,0.65); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 3px; font-weight: 700; }
+  .prono-text { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: 17px; color: #ffffff; text-shadow: 0 0 16px rgba(255,45,122,0.5), 0 2px 4px rgba(0,0,0,0.4); }
+  .prono-text em { font-style: normal; color: #ffffff; }
   .cote-block { text-align: center; flex-shrink: 0; margin-left: 14px; }
   .cote-label { font-size: 12px; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; font-weight: 600; }
   .cote-pill { display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #ff2d7a 0%, #c850c0 45%, #4158d0 100%); border-radius: 12px; padding: 8px 20px; min-width: 85px; box-shadow: 0 4px 20px rgba(255,45,122,0.5), inset 0 0 0 1px rgba(255,255,255,0.12); position: relative; overflow: hidden; }
