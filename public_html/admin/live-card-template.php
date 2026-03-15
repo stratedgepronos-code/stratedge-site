@@ -435,18 +435,14 @@ TENNIS;
     if ($is_team_sport) {
         $css .= <<<TEAMSPORT
 
-/* Team sport (foot, NBA, hockey) — logos + dégradé rose néon → bleu néon sur prono et VS */
+/* Team sport (foot, NBA, hockey) — logos + couleurs solides (background-clip:text ne fonctionne pas en rendu image) */
 .card-wrapper.team-sport .team-logo { height:26px; width:auto; max-width:40px; object-fit:contain; vertical-align:middle; }
 .card-wrapper.team-sport .prono-text {
-  background:linear-gradient(90deg,#E7337B 0%,#00e5ff 100%);
-  -webkit-background-clip:text; background-clip:text;
-  -webkit-text-fill-color:transparent; color:transparent;
+  color:#ff2d7a;
   font-family:'Orbitron',sans-serif; font-weight:700; font-size:13px;
 }
 .card-wrapper.team-sport .vs-badge {
-  background:linear-gradient(90deg,#E7337B 0%,#00e5ff 100%);
-  -webkit-background-clip:text; background-clip:text;
-  -webkit-text-fill-color:transparent; color:transparent;
+  color:#ff2d7a;
   font-family:'Orbitron',sans-serif; font-size:12px; font-weight:900;
 }
 TEAMSPORT;
