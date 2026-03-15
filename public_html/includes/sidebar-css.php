@@ -51,6 +51,8 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--txt);min
 /* ── Content area (scroll interne pour voir tout le contenu) ── */
 .content{flex:1;min-width:0;min-height:0;padding:2.5rem 3rem;position:relative;display:flex;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .content-body{flex:1;}
+/* Enfant principal du content ne doit pas rétrécir (évite contenu rogné sur page bet, etc.) */
+.content>div:not(.legal-footer){flex-shrink:0;}
 
 /* Footer légal compact dans sidebar layout */
 .content .legal-footer{background:transparent;border-top:1px solid var(--border-soft);padding:2.5rem 0 0.5rem;margin-top:3rem;}

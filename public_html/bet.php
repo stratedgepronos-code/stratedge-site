@@ -115,7 +115,7 @@ if ($analyseHtml !== '') {
 .bet-img-wrap img{width:100%;height:auto;display:block;object-fit:contain;}
 .bet-analyse{margin-top:1.5rem;}
 .bet-analyse-title{font-family:'Orbitron',sans-serif;font-size:0.85rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--pink);margin-bottom:1rem;}
-.bet-analyse-inner{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:1rem;overflow:auto;width:100%;max-width:none;}
+.bet-analyse-inner{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:1rem;overflow:visible;width:100%;max-width:none;min-height:0;}
 .bet-analyse-inner iframe{max-width:100%;border:none;}
 .bet-analyse-inner img{max-width:100%;height:auto;}
 /* Forcer le contenu HTML injecté (card) à utiliser toute la largeur */
