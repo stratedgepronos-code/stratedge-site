@@ -686,13 +686,39 @@ $membre = getMembre();
       height: auto !important;
     }
     .sp-wrap [id^="starpass_"] #sk-kit .sk-step .selecthandler-inner select {
-      background: transparent !important;
-      background-color: transparent !important;
-      color: #fff !important;
+      background: rgba(0,0,0,0.5) !important;
+      background-color: rgba(0,0,0,0.5) !important;
+      color: #f0f4f8 !important;
       border: none !important;
       font-size: 0.85rem !important;
       padding: 0.5rem 0.6rem !important;
       width: 100% !important;
+    }
+    /* Options du menu déroulant : fond sombre + texte lisible (éviter blanc sur blanc) */
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-step .selecthandler-inner select option,
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-step select option {
+      background: #111827 !important;
+      background-color: #111827 !important;
+      color: #f0f4f8 !important;
+    }
+    /* Liste déroulante custom (si StarPass utilise div/ul au lieu de select natif) */
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-step .selecthandler-inner [class*="list"],
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-step .selecthandler-inner [class*="dropdown"],
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-step .selecthandler-inner [class*="option"],
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-step [class*="select"] ul,
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-step [class*="select"] div[role="listbox"] {
+      background: #111827 !important;
+      background-color: #111827 !important;
+      color: #f0f4f8 !important;
+    }
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-step .selecthandler-inner [class*="list"] *,
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-step .selecthandler-inner [class*="dropdown"] *,
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-step .selecthandler-inner [class*="option"] *,
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-step [class*="select"] ul li,
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-step [class*="select"] div[role="listbox"] * {
+      background: #111827 !important;
+      background-color: #111827 !important;
+      color: #f0f4f8 !important;
     }
 
     /* ── Bouton "Buy now" / "Acheter" ── */
@@ -855,6 +881,30 @@ $membre = getMembre();
       background: rgba(17,24,39,0.95) !important;
       background-color: rgba(17,24,39,0.95) !important;
       border-radius: 10px !important;
+    }
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-country-flag-box ul li,
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-country-flag-box ul li *,
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-country-flag-box * {
+      color: #f0f4f8 !important;
+      background: transparent !important;
+      background-color: rgba(17,24,39,0.95) !important;
+    }
+
+    /* ── Toute liste / menu déroulant dans le widget : fond sombre, texte lisible ── */
+    .sp-wrap [id^="starpass_"] #sk-kit [class*="select"] ul,
+    .sp-wrap [id^="starpass_"] #sk-kit [class*="dropdown"] ul,
+    .sp-wrap [id^="starpass_"] #sk-kit [class*="list"] ul,
+    .sp-wrap [id^="starpass_"] #sk-kit div[style*="position: absolute"] ul,
+    .sp-wrap [id^="starpass_"] #sk-kit div[style*="position:absolute"] ul {
+      background: #111827 !important;
+      background-color: #111827 !important;
+    }
+    .sp-wrap [id^="starpass_"] #sk-kit [class*="select"] ul li,
+    .sp-wrap [id^="starpass_"] #sk-kit [class*="dropdown"] ul li,
+    .sp-wrap [id^="starpass_"] #sk-kit [class*="list"] ul li {
+      color: #f0f4f8 !important;
+      background: #111827 !important;
+      background-color: #111827 !important;
     }
 
     /* ── Alert box ── */
