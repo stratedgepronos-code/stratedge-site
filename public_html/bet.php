@@ -140,6 +140,10 @@ if ($analyseHtml !== '') {
 .no-comments{color:var(--txt3);font-size:0.9rem;padding:1rem 0;}
 /* Page bet : masquer la mascotte pour utiliser toute la largeur */
 body.page-bet .mascotte-bg{display:none;}
+/* Page bet : ne pas contraindre la hauteur — la page peut grandir et le body scrolle (évite rétrécissement après 1 s) */
+body.page-bet .app{max-height:none;min-height:calc(100vh - 58px);overflow:visible;}
+body.page-bet .content{overflow-y:visible;min-height:0;flex:1 1 auto;}
+body.page-bet .content .bet-page-wrap{flex:none;}
 @media(max-width:768px){
 .bet-page-wrap{margin-left:-0.8rem;margin-right:-0.8rem;padding-left:0.8rem;padding-right:0.8rem;}
 }
