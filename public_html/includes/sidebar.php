@@ -1,11 +1,5 @@
 <?php
 // ── Sidebar partagée pour toutes les pages membres ──
-if (!isset($nbNonLus)) {
-    $db2 = getDB();
-    $stNl = $db2->prepare("SELECT COUNT(*) FROM messages WHERE membre_id = ? AND expediteur = 'admin' AND lu = 0");
-    $stNl->execute([$membre['id']]);
-    $nbNonLus = (int)$stNl->fetchColumn();
-}
 ?>
 <nav class="top-nav">
   <a href="/" class="nav-logo">
@@ -39,7 +33,6 @@ if (!isset($nbNonLus)) {
   <a class="s-link <?= $currentPage==='bets'?'active':'' ?>" href="/bets.php"><span class="ico">🔥</span> Bets</a>
   <a class="s-link <?= $currentPage==='pronocommu'?'active':'' ?>" href="/prono-commu.php"><span class="ico">⚽</span> Prono commu</a>
   <a class="s-link <?= ($currentPage??'')==='montante'?'active':'' ?>" href="/montante-tennis.php"><span class="ico">🎾</span> Montante</a>
-  <a class="s-link <?= $currentPage==='chat'?'active':'' ?>" href="/chat.php"><span class="ico">💬</span> Chat</a>
   <a class="s-link <?= $currentPage==='sav'?'active':'' ?>" href="/sav.php"><span class="ico">🎫</span> SAV</a>
 </div>
 <!-- Mascotte en position fixe, hors de tout conteneur -->

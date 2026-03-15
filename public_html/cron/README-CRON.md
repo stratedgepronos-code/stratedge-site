@@ -1,4 +1,32 @@
-# CRON — Sauvegarde quotidienne des comptes membres
+# CRON — Tâches planifiées StratEdge
+
+---
+
+## 1. Rapport quotidien/hebdomadaire/mensuel des bets
+
+- **Fichier** : `rapport-bets.php`
+- **Fonction** : Envoie un email de rapport à l'admin avec :
+  - Nombre de paris, gagnés, perdus, remboursés
+  - Taux de réussite, cote moyenne globale
+  - Cote moyenne par section : Tennis, Multisport, Fun
+  - Détail de chaque bet de la période
+
+### Crontab
+
+```bash
+# Tous les jours à 21h (rapport quotidien + hebdo le dimanche + mensuel le 1er)
+0 21 * * * /usr/bin/php /chemin/vers/public_html/cron/rapport-bets.php
+```
+
+### Par URL (hébergeur sans SSH)
+
+`https://stratedgepronos.fr/cron/rapport-bets.php?key=VOTRE_SECRET_KEY`
+
+Paramètre optionnel : `&period=daily,weekly,monthly` pour forcer un rapport spécifique.
+
+---
+
+## 2. Sauvegarde quotidienne des comptes membres
 
 ## Script
 
