@@ -340,7 +340,7 @@ body { background:#0a0a0a; margin:0; padding:0; width:1080px; font-family:'Orbit
 }
 
 .datetime-block { text-align:center; padding:3px 0; }
-.datetime-day { font-family:'Orbitron',sans-serif; font-size:19px; font-weight:600; color:rgba(255,255,255,0.35); text-transform:uppercase; letter-spacing:3px; margin-bottom:3px; }
+.datetime-day { font-family:'Orbitron',sans-serif; font-size:21px; font-weight:600; color:rgba(255,255,255,0.55); text-transform:uppercase; letter-spacing:3px; margin-bottom:3px; }
 .datetime-time { font-family:'Orbitron',sans-serif; font-size:54px; font-weight:900; letter-spacing:4px; line-height:1; color:{$sc['time_color']}; text-shadow:{$sc['time_shadow']}; }
 
 .match-block { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:14px 22px; position:relative; }
@@ -352,25 +352,25 @@ body { background:#0a0a0a; margin:0; padding:0; width:1080px; font-family:'Orbit
 .player-info { display:flex; align-items:center; gap:8px; }
 .player { font-family:'Bebas Neue',cursive; font-size:38px; letter-spacing:1px; line-height:1; }
 .player.main { color:#fff; }
-.player.opponent { color:rgba(255,255,255,0.5); }
+.player.opponent { color:rgba(255,255,255,0.7); }
 .vs-badge { font-family:'Orbitron',sans-serif; font-size:19px; font-weight:900; color:#ff2d7a; }
-.match-comp { font-family:'Orbitron',sans-serif; font-size:14px; color:rgba(255,255,255,0.3); text-align:center; margin-top:6px; letter-spacing:1px; }
+.match-comp { font-family:'Orbitron',sans-serif; font-size:16px; color:rgba(255,255,255,0.5); text-align:center; margin-top:6px; letter-spacing:1px; }
 
 .prono-block { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:14px 22px; display:flex; align-items:center; justify-content:space-between; gap:20px; }
 .prono-left { flex:1; }
-.prono-label { font-size:14px; color:rgba(255,255,255,0.28); text-transform:uppercase; letter-spacing:2px; margin-bottom:5px; font-weight:600; }
+.prono-label { font-size:16px; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:2px; margin-bottom:5px; font-weight:600; }
 .prono-text {
   font-family:'Orbitron',sans-serif; font-weight:700; font-size:21px;
   color: #ff2d7a;
 }
 .cote-block { text-align:center; flex-shrink:0; }
-.cote-label { font-size:14px; color:rgba(255,255,255,0.28); text-transform:uppercase; letter-spacing:2px; margin-bottom:6px; font-weight:600; }
+.cote-label { font-size:16px; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:2px; margin-bottom:6px; font-weight:600; }
 .cote-pill { position:relative; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; background:#FF2D78; border-radius:14px; padding:12px 30px; min-width:120px; box-shadow:0 4px 20px rgba(255,45,122,0.5),inset 0 0 0 1px rgba(255,255,255,0.12); }
 .cote-pill-shine { position:absolute; top:0; left:0; right:0; height:50%; background:rgba(255,255,255,0.13); border-radius:14px 14px 0 0; }
 .cote-value { font-family:'Orbitron',sans-serif; font-size:40px; font-weight:900; color:#fff; position:relative; z-index:1; }
 
 .confidence-section { display:flex; align-items:center; gap:14px; }
-.confidence-label { font-size:15px; color:rgba(255,255,255,0.32); text-transform:uppercase; letter-spacing:1.5px; font-weight:600; white-space:nowrap; flex-shrink:0; }
+.confidence-label { font-size:17px; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:1.5px; font-weight:600; white-space:nowrap; flex-shrink:0; }
 .confidence-bar-bg { flex:1; height:10px; background:rgba(255,255,255,0.06); border-radius:10px; overflow:hidden; }
 .confidence-bar-fill { height:100%; width:{$conf}%; background:{$sc['conf_gradient']}; border-radius:10px; animation:barPulse 2s ease-in-out infinite; }
 @keyframes barPulse { 0%,100%{opacity:1} 50%{opacity:0.8} }
@@ -382,7 +382,7 @@ body { background:#0a0a0a; margin:0; padding:0; width:1080px; font-family:'Orbit
 .promo-eyebrow { font-size:11px; color:#39ff14; text-transform:uppercase; letter-spacing:2px; font-weight:700; font-family:'Orbitron',sans-serif; }
 .promo-main { font-family:'Bebas Neue',cursive; font-size:20px; letter-spacing:0.8px; color:#fff; }
 .promo-main-hl { color:{$sc['promo_price_color']}; }
-.promo-sub { font-size:12px; color:rgba(255,255,255,0.35); font-weight:500; font-family:'Orbitron',sans-serif; }
+.promo-sub { font-size:14px; color:rgba(255,255,255,0.55); font-weight:500; font-family:'Orbitron',sans-serif; }
 .promo-sub span { color:{$sc['promo_price_color']}; font-weight:700; }
 .promo-cta { display:inline-flex; align-items:center; gap:5px; background:linear-gradient(135deg,#39ff14,#00c896); color:#000; font-family:'Orbitron',sans-serif; font-size:14px; font-weight:900; letter-spacing:0.8px; text-transform:uppercase; padding:10px 16px; border-radius:10px; white-space:nowrap; box-shadow:0 0 14px rgba(57,255,20,0.4); }
 
@@ -409,19 +409,27 @@ CSS;
 .card-wrapper.tennis .live-dot { background:#ff2d7a !important; box-shadow:0 0 6px #ff2d7a; }
 .card-wrapper.tennis .vs-badge { background:none !important; background-image:none !important; box-shadow:none !important; border:none !important; padding:0 !important; margin:0 !important; }
 .card-wrapper.tennis .vs-badge svg { display:block; }
-.card-wrapper.tennis .player { font-family:'Orbitron',sans-serif !important; font-weight:700; font-size:32px; letter-spacing:1px; }
-.card-wrapper.tennis .promo-main { font-family:'Orbitron',sans-serif !important; font-weight:700; font-size:22px; letter-spacing:0.8px; }
-.card-wrapper.tennis .promo-sub { font-family:'Orbitron',sans-serif !important; font-size:11px; font-weight:500; }
+.card-wrapper.tennis .player { font-family:'Orbitron',sans-serif !important; font-weight:700; font-size:36px; letter-spacing:1px; }
+.card-wrapper.tennis .player.opponent { color:rgba(255,255,255,0.7); }
+.card-wrapper.tennis .datetime-day { font-size:21px; color:rgba(255,255,255,0.55); }
+.card-wrapper.tennis .datetime-time { font-size:58px; }
+.card-wrapper.tennis .match-comp { font-size:16px; color:rgba(255,255,255,0.5); }
+.card-wrapper.tennis .prono-label { font-size:16px; color:rgba(255,255,255,0.5); }
+.card-wrapper.tennis .prono-text { color:#fff; font-size:24px; }
+.card-wrapper.tennis .cote-label { font-size:16px; color:rgba(255,255,255,0.5); }
+.card-wrapper.tennis .cote-value { font-size:44px; background:transparent !important; box-shadow:none !important; }
+.card-wrapper.tennis .confidence-label { font-size:17px; color:rgba(255,255,255,0.5); }
+.card-wrapper.tennis .confidence-score { font-size:24px; }
+.card-wrapper.tennis .promo-main { font-family:'Orbitron',sans-serif !important; font-weight:700; font-size:24px; letter-spacing:0.8px; }
+.card-wrapper.tennis .promo-sub { font-family:'Orbitron',sans-serif !important; font-size:14px; font-weight:500; color:rgba(255,255,255,0.55); }
+.card-wrapper.tennis .promo-eyebrow { color:#39ff14; font-size:13px; }
 .card-wrapper.tennis .prono-block { background:linear-gradient(90deg,rgba(57,255,20,0.14),rgba(144,255,128,0.06)) !important; border-color:rgba(57,255,20,0.2); }
-.card-wrapper.tennis .prono-text { color:#fff; font-size:20px; }
 .card-wrapper.tennis .cote-pill { background:#FF2D78; box-shadow:0 4px 16px rgba(255,45,122,0.5); }
 .card-wrapper.tennis .cote-pill-shine { display:none !important; }
-.card-wrapper.tennis .cote-value { background:transparent !important; box-shadow:none !important; }
 .card-wrapper.tennis .promo-banner { background:#1A361A; border:1px solid rgba(57,255,20,0.35); }
-.card-wrapper.tennis .promo-eyebrow { color:#39ff14; }
-.card-wrapper.tennis .promo-cta { background:linear-gradient(135deg,#39ff14,#00c896); color:#000; box-shadow:0 0 14px rgba(57,255,20,0.5); }
-.card-wrapper.tennis .locked-reserved { color:#39ff14; }
-.card-wrapper.tennis .locked-cta-btn { background:linear-gradient(135deg,#39ff14,#00c896); color:#000 !important; font-family:'Orbitron',sans-serif !important; font-size:14px; font-weight:700; }
+.card-wrapper.tennis .promo-cta { background:linear-gradient(135deg,#39ff14,#00c896); color:#000; box-shadow:0 0 14px rgba(57,255,20,0.5); font-size:16px; }
+.card-wrapper.tennis .locked-reserved { color:#39ff14; font-size:18px; }
+.card-wrapper.tennis .locked-cta-btn { background:linear-gradient(135deg,#39ff14,#00c896); color:#000 !important; font-family:'Orbitron',sans-serif !important; font-size:16px; font-weight:700; }
 TENNIS;
     }
     if ($is_team_sport) {

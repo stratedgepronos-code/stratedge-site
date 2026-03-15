@@ -50,7 +50,7 @@ if ($confiance > 100) $confiance = 100;
   .logo-img { height: 26px; object-fit: contain; }
   .sport-badge { display: flex; align-items: center; gap: 5px; border-radius: 20px; padding: 3px 12px; font-family: 'Orbitron', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; box-shadow: 0 0 10px rgba(57,255,20,0.25), inset 0 0 8px rgba(57,255,20,0.05); text-shadow: 0 0 8px rgba(57,255,20,0.8); }
   .datetime-block { text-align: center; padding: 6px 0 2px; }
-  .datetime-day { font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 2px; }
+  .datetime-day { font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 600; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 3px; margin-bottom: 2px; }
   .datetime-time { font-family: 'Orbitron', sans-serif; font-size: 34px; font-weight: 900; color: #ffffff; letter-spacing: 3px; line-height: 1; text-shadow: 0 0 30px rgba(0,229,255,0.5), 0 0 60px rgba(0,229,255,0.2); background: linear-gradient(90deg, #ffffff 0%, #00e5ff 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
   .match-block { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 10px; padding: 9px 14px; position: relative; }
   .match-block::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: linear-gradient(to bottom, #ff2d7a, #00e5ff); border-radius: 3px 0 0 3px; }
@@ -63,21 +63,21 @@ if ($confiance > 100) $confiance = 100;
   .player-flag { font-size: 18px; line-height: 1; }
   .player { font-family: 'Bebas Neue', cursive; font-size: 22px; letter-spacing: 1px; line-height: 1; }
   .player.main { color: #ffffff; text-shadow: 0 0 20px rgba(0,229,255,0.3); }
-  .player.opponent { color: rgba(255,255,255,0.5); }
+  .player.opponent { color: rgba(255,255,255,0.7); }
   .vs-badge { background: linear-gradient(135deg, #ff2d7a, #00e5ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; font-family: 'Orbitron', sans-serif; font-size: 12px; font-weight: 900; flex-shrink: 0; }
-  .match-competition { font-family: 'Rajdhani', sans-serif; font-size: 12px; color: rgba(255,255,255,0.35); margin-top: 4px; text-align: center; }
+  .match-competition { font-family: 'Rajdhani', sans-serif; font-size: 14px; color: rgba(255,255,255,0.55); margin-top: 4px; text-align: center; }
   .prono-block { background: linear-gradient(135deg, rgba(255,45,122,0.08), rgba(0,229,255,0.06)); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 9px 14px; display: flex; align-items: center; justify-content: space-between; }
   .prono-left { flex: 1; }
-  .prono-label { font-size: 9px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 3px; font-weight: 600; }
-  .prono-text { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 16px; color: #ffffff; }
+  .prono-label { font-size: 12px; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 3px; font-weight: 600; }
+  .prono-text { font-family: 'Rajdhani', sans-serif; font-weight: 700; font-size: 18px; color: #ffffff; }
   .prono-text em { font-style: normal; background: linear-gradient(90deg, #ff2d7a, #00e5ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
   .cote-block { text-align: center; flex-shrink: 0; margin-left: 14px; }
-  .cote-label { font-size: 9px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; font-weight: 600; }
+  .cote-label { font-size: 12px; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 5px; font-weight: 600; }
   .cote-pill { display: inline-flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #ff2d7a 0%, #c850c0 45%, #4158d0 100%); border-radius: 12px; padding: 8px 20px; min-width: 85px; box-shadow: 0 4px 20px rgba(255,45,122,0.5), inset 0 0 0 1px rgba(255,255,255,0.12); position: relative; overflow: hidden; }
   .cote-pill::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%; background: rgba(255,255,255,0.13); border-radius: 12px 12px 0 0; }
   .cote-value { font-family: 'Orbitron', sans-serif; font-size: 22px; font-weight: 900; color: #ffffff; letter-spacing: 1px; position: relative; z-index: 1; }
   .confidence-section { display: flex; align-items: center; gap: 10px; }
-  .confidence-label { font-size: 10px; color: rgba(255,255,255,0.35); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
+  .confidence-label { font-size: 12px; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
   .confidence-bar-bg { flex: 1; height: 6px; background: rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; }
   .confidence-bar-fill { height: 100%; background: linear-gradient(90deg, #ff2d7a, #ff6b35, #00e5ff); border-radius: 10px; animation: barPulse 2s ease-in-out infinite; }
   @keyframes barPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
@@ -88,7 +88,7 @@ if ($confiance > 100) $confiance = 100;
   .promo-eyebrow { font-size: 9px; color: #39ff14; text-transform: uppercase; letter-spacing: 2.5px; font-weight: 700; font-family: 'Orbitron', sans-serif; text-shadow: 0 0 8px rgba(57,255,20,0.6); }
   .promo-main { font-family: 'Bebas Neue', cursive; font-size: 17px; letter-spacing: 1px; color: #ffffff; line-height: 1.1; }
   .promo-main em { font-style: normal; background: linear-gradient(90deg, #ff2d7a, #c850c0); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-  .promo-sub { font-size: 10px; color: rgba(255,255,255,0.4); font-weight: 500; margin-top: 1px; }
+  .promo-sub { font-size: 12px; color: rgba(255,255,255,0.55); font-weight: 500; margin-top: 1px; }
   .promo-sub span { color: rgba(0,229,255,0.85); font-weight: 700; }
   .promo-cta { display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg, #39ff14, #00c896); color: #000000; font-family: 'Orbitron', sans-serif; font-size: 9px; font-weight: 900; letter-spacing: 0.8px; text-transform: uppercase; padding: 7px 13px; border-radius: 8px; white-space: nowrap; flex-shrink: 0; box-shadow: 0 0 16px rgba(57,255,20,0.45), 0 3px 10px rgba(0,0,0,0.3); animation: ctaPulse 2.5s ease-in-out infinite; }
   @keyframes ctaPulse { 0%, 100% { box-shadow: 0 0 16px rgba(57,255,20,0.4), 0 3px 10px rgba(0,0,0,0.3); } 50% { box-shadow: 0 0 26px rgba(57,255,20,0.75), 0 3px 10px rgba(0,0,0,0.3); } }
