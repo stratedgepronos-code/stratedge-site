@@ -34,6 +34,6 @@ $ok = activerAbonnement($membreId, $type, $montant);
 if ($ok) {
     header('Location: /dashboard.php?activated=1&type=' . urlencode($type));
 } else {
-    header('Location: /dashboard.php?error=activation');
+    header('Location: /merci.php?type=' . urlencode($type));
 }
 exit;
