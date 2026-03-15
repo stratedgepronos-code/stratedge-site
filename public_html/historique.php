@@ -21,6 +21,23 @@ $sectionLabels = [
     'hockey_safe'   => '🏒 Hockey Safe',   'hockey_fun'   => '🏒 Hockey Fun',   'hockey_live'   => '🏒 Hockey Live',
     'basket_safe'   => '🏀 Basket Safe',   'basket_fun'   => '🏀 Basket Fun',   'basket_live'   => '🏀 Basket Live',
 ];
+
+// 3 catégories principales + sous-catégories
+$categoriesConfig = [
+    'multisport' => [
+        'label'   => 'Multisport',
+        'sections' => ['football_safe', 'football_live', 'hockey_safe', 'hockey_live', 'basket_safe', 'basket_live'],
+    ],
+    'tennis' => [
+        'label'   => 'Tennis',
+        'sections' => ['tennis_safe', 'tennis_fun', 'tennis_live'],
+    ],
+    'fun' => [
+        'label'   => 'Fun',
+        'sections' => ['football_fun', 'hockey_fun', 'basket_fun'],
+    ],
+];
+
 function betSectionKey($b) {
     $sport = $b['sport'] ?? null;
     if ($sport === null || $sport === '') $sport = (($b['categorie'] ?? 'multi') === 'tennis') ? 'tennis' : 'football';
@@ -36,17 +53,30 @@ foreach ($bets as $b) {
     if (!isset($sectionsBets[$key])) $sectionsBets[$key] = [];
     $sectionsBets[$key][] = $b;
 }
+
 function sectionStats($arr) {
     $g = count(array_filter($arr, fn($b) => $b['resultat'] === 'gagne'));
     $p = count(array_filter($arr, fn($b) => $b['resultat'] === 'perdu'));
     $a = count(array_filter($arr, fn($b) => $b['resultat'] === 'annule'));
     $total = count($arr);
     $taux = ($g + $p) > 0 ? round($g / ($g + $p) * 100) : null;
-    return ['gagnes' => $g, 'perdus' => $p, 'annules' => $a, 'total' => $total, 'taux' => $taux];
+    $cotes = array_filter(array_map(function($b) { $c = (float)str_replace(',', '.', $b['cote'] ?? 0); return $c > 0 ? $c : null; }, $arr));
+    $coteMoy = count($cotes) > 0 ? round(array_sum($cotes) / count($cotes), 2) : null;
+    return ['gagnes' => $g, 'perdus' => $p, 'annules' => $a, 'total' => $total, 'taux' => $taux, 'cote_moyenne' => $coteMoy];
 }
 $sectionStats = [];
 foreach ($sectionsBets as $key => $arr) {
     $sectionStats[$key] = sectionStats($arr);
+}
+
+// Stats par catégorie (multisport, tennis, fun) pour cote moyenne et totaux
+$categoryStats = [];
+foreach ($categoriesConfig as $catKey => $config) {
+    $betsCat = [];
+    foreach ($config['sections'] as $sk) {
+        if (isset($sectionsBets[$sk])) $betsCat = array_merge($betsCat, $sectionsBets[$sk]);
+    }
+    $categoryStats[$catKey] = sectionStats($betsCat);
 }
 
 $stats = $db->query("
@@ -57,6 +87,8 @@ $stats = $db->query("
         COUNT(*) as total
     FROM bets WHERE resultat != 'en_cours'
 ")->fetch();
+$cotesGlob = array_filter(array_map(function($b) { $c = (float)str_replace(',', '.', $b['cote'] ?? 0); return $c > 0 ? $c : null; }, $bets));
+$stats['cote_moyenne'] = count($cotesGlob) > 0 ? round(array_sum($cotesGlob) / count($cotesGlob), 2) : null;
 
 $typeLabels = ['safe'=>'🛡️ Safe','fun'=>'🎯 Fun','live'=>'⚡ Live','safe,fun'=>'Safe+Fun','safe,live'=>'Safe+Live'];
 $typeColors = ['safe'=>'#00d4ff','fun'=>'#a855f7','live'=>'#ff2d78'];
@@ -67,12 +99,32 @@ $resultatConfig = [
     'annule' => ['label'=>'Annule', 'color'=>'#f59e0b', 'bg'=>'rgba(245,158,11,0.12)', 'border'=>'rgba(245,158,11,0.35)', 'icon'=>'↺',  'overlay'=>'rgba(245,158,11,0.1)', 'band'=>'linear-gradient(to bottom,#f59e0b,#d97706)'],
 ];
 
-$filtreSection = $_GET['section'] ?? 'tous';
+$filtreSection = $_GET['section'] ?? 'tous';  // tous | multisport | tennis | fun | football_safe | tennis_safe | ...
 $filtre = $_GET['filtre'] ?? 'tous';
+
+// Catégorie courante pour afficher la ligne sous-catégories (multisport, tennis ou fun)
+$currentCategorie = null;
+if (isset($categoriesConfig[$filtreSection])) {
+    $currentCategorie = $filtreSection;
+} else {
+    foreach ($categoriesConfig as $catKey => $config) {
+        if (in_array($filtreSection, $config['sections'], true)) {
+            $currentCategorie = $catKey;
+            break;
+        }
+    }
+}
 
 if ($filtreSection !== 'tous' && isset($sectionsBets[$filtreSection])) {
     $betsFiltres = $sectionsBets[$filtreSection];
     $statsAffichage = $sectionStats[$filtreSection];
+    $tauxReussite = $statsAffichage['taux'];
+} elseif ($filtreSection !== 'tous' && isset($categoriesConfig[$filtreSection])) {
+    $betsFiltres = [];
+    foreach ($categoriesConfig[$filtreSection]['sections'] as $sk) {
+        if (isset($sectionsBets[$sk])) $betsFiltres = array_merge($betsFiltres, $sectionsBets[$sk]);
+    }
+    $statsAffichage = $categoryStats[$filtreSection] ?? $stats;
     $tauxReussite = $statsAffichage['taux'];
 } else {
     $betsFiltres = $bets;
@@ -356,6 +408,15 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
           <div class="mini-stat-lbl">Annules</div>
         </div>
       </div>
+      <?php $coteMoy = $statsAffichage['cote_moyenne'] ?? null; if ($coteMoy !== null): ?>
+      <div class="mini-stat" style="border-color:rgba(255,45,120,0.25);">
+        <span class="mini-stat-icon">📈</span>
+        <div>
+          <div class="mini-stat-val" style="color:#ff2d78"><?= number_format($coteMoy, 2, ',', ' ') ?></div>
+          <div class="mini-stat-lbl">Cote moy.</div>
+        </div>
+      </div>
+      <?php endif; ?>
     </div>
   </div>
 
@@ -372,28 +433,40 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
   </div>
   <?php endif; ?>
 
-  <!-- Filtre par section (taux de reussite par section) -->
+  <!-- Filtre : 3 catégories (Multisport, Tennis, Fun) + sous-catégories -->
   <div class="filters-section">
-    <div class="filters-label">Section (taux de reussite)</div>
+    <div class="filters-label">Catégorie</div>
     <div class="filters">
       <?php $baseQuery = ($filtre !== 'tous' ? '&filtre='.$filtre : ''); ?>
       <a href="?section=tous<?= $baseQuery ?>" class="filter-pill f-tous <?= $filtreSection==='tous'?'active':'' ?>">Tous <span class="filter-count"><?= $stats['total'] ?? 0 ?></span></a>
-      <?php
-        $orderSections = ['tennis_safe','tennis_fun','tennis_live','football_safe','football_fun','football_live','hockey_safe','hockey_fun','hockey_live','basket_safe','basket_fun','basket_live'];
-        foreach ($orderSections as $sk):
-          if (!isset($sectionStats[$sk])) continue;
-          $st = $sectionStats[$sk];
-          $tauxStr = $st['taux'] !== null ? $st['taux'].'%' : '—';
+      <?php foreach ($categoriesConfig as $catKey => $config):
+        $stCat = $categoryStats[$catKey] ?? ['total' => 0, 'taux' => null];
+        $tauxStr = $stCat['taux'] !== null ? $stCat['taux'].'%' : '—';
+        $coteStr = isset($stCat['cote_moyenne']) && $stCat['cote_moyenne'] !== null ? ' · ' . number_format($stCat['cote_moyenne'], 2, ',', ' ') : '';
       ?>
-      <a href="?section=<?= urlencode($sk) ?><?= $baseQuery ?>" class="filter-pill <?= $filtreSection===$sk?'active':'' ?>"><?= $sectionLabels[$sk] ?? $sk ?> <span class="filter-count"><?= $st['total'] ?> · <?= $tauxStr ?></span></a>
+      <a href="?section=<?= urlencode($catKey) ?><?= $baseQuery ?>" class="filter-pill <?= $filtreSection===$catKey?'active':'' ?>"><?= $config['label'] ?> <span class="filter-count"><?= $stCat['total'] ?> · <?= $tauxStr ?><?= $coteStr ?></span></a>
       <?php endforeach; ?>
     </div>
-    <div class="filters-label" style="margin-top:0.8rem;">Resultat</div>
+    <?php if ($currentCategorie !== null): ?>
+    <div class="filters-label" style="margin-top:0.8rem;">Sous-catégorie — <?= $categoriesConfig[$currentCategorie]['label'] ?></div>
+    <div class="filters">
+      <a href="?section=<?= urlencode($currentCategorie) ?><?= $baseQuery ?>" class="filter-pill f-tous <?= $filtreSection === $currentCategorie ? 'active' : '' ?>">Toutes</a>
+      <?php foreach ($categoriesConfig[$currentCategorie]['sections'] as $sk):
+        if (!isset($sectionStats[$sk])) continue;
+        $st = $sectionStats[$sk];
+        $tauxStr = $st['taux'] !== null ? $st['taux'].'%' : '—';
+        $coteStr = isset($st['cote_moyenne']) && $st['cote_moyenne'] !== null ? ' · ' . number_format($st['cote_moyenne'], 2, ',', ' ') : '';
+      ?>
+      <a href="?section=<?= urlencode($sk) ?><?= $baseQuery ?>" class="filter-pill <?= $filtreSection === $sk ? 'active' : '' ?>"><?= $sectionLabels[$sk] ?? $sk ?> <span class="filter-count"><?= $st['total'] ?> · <?= $tauxStr ?><?= $coteStr ?></span></a>
+      <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+    <div class="filters-label" style="margin-top:0.8rem;">Résultat</div>
     <div class="filters">
       <a href="?section=<?= urlencode($filtreSection) ?>&filtre=tous" class="filter-pill f-tous <?= $filtre==='tous'?'active':'' ?>">Tous</a>
-      <a href="?section=<?= urlencode($filtreSection) ?>&filtre=gagne" class="filter-pill f-gagne <?= $filtre==='gagne'?'active':'' ?>">✅ Gagnes</a>
+      <a href="?section=<?= urlencode($filtreSection) ?>&filtre=gagne" class="filter-pill f-gagne <?= $filtre==='gagne'?'active':'' ?>">✅ Gagnés</a>
       <a href="?section=<?= urlencode($filtreSection) ?>&filtre=perdu" class="filter-pill f-perdu <?= $filtre==='perdu'?'active':'' ?>">❌ Perdus</a>
-      <a href="?section=<?= urlencode($filtreSection) ?>&filtre=annule" class="filter-pill f-annule <?= $filtre==='annule'?'active':'' ?>">↺ Annules</a>
+      <a href="?section=<?= urlencode($filtreSection) ?>&filtre=annule" class="filter-pill f-annule <?= $filtre==='annule'?'active':'' ?>">↺ Annulés</a>
     </div>
   </div>
 
