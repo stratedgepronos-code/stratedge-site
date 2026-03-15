@@ -47,8 +47,9 @@ function envoyerEmailViaSmtp(string $to, string $subject, string $rawMessage, ?s
 
     $errno = 0;
     $errstr = '';
-    $ctx = stream_context_create(['ssl' => ['verify_peer' => true, 'verify_peer_name' => true]]);
-    $sock = @stream_socket_client('tcp://' . $host . ':' . $port, $errno, $errstr, 20, STREAM_CLIENT_CONNECT, $ctx);
+    $ctx = stream_context_create(['ssl' => ['verify_peer' => false, 'verify_peer_name' => false]]);
+    $prefix = ($secure === 'ssl') ? 'ssl://' : 'tcp://';
+    $sock = @stream_socket_client($prefix . $host . ':' . $port, $errno, $errstr, 20, STREAM_CLIENT_CONNECT, $ctx);
     if (!$sock) {
         $setErr('Connexion impossible ' . $host . ':' . $port . ' — ' . $errstr);
         error_log('[StratEdge SMTP] ' . $errstr);
@@ -91,7 +92,7 @@ function envoyerEmailViaSmtp(string $to, string $subject, string $rawMessage, ?s
     $send(base64_encode($pass));
     $code = $read();
     if (strpos($code, '235') !== 0) {
-        $setErr('Auth échouée: ' . $code . ' — Vérifier SMTP_USER (email Brevo) et SMTP_PASS (clé SMTP, pas le mot de passe du compte)');
+        $setErr('Auth échouée: ' . $code . ' — Vérifier SMTP_USER et SMTP_PASS dans smtp-config.php');
         fclose($sock);
         return false;
     }
