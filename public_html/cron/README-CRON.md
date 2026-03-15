@@ -14,8 +14,8 @@
 ### Crontab
 
 ```bash
-# Tous les jours à 21h (rapport quotidien + hebdo le dimanche + mensuel le 1er)
-0 21 * * * /usr/bin/php /chemin/vers/public_html/cron/rapport-bets.php
+# Tous les jours à minuit (rapport quotidien + hebdo le dimanche + mensuel le 1er)
+0 0 * * * /usr/bin/php /chemin/vers/public_html/cron/rapport-bets.php
 ```
 
 ### Par URL (hébergeur sans SSH)

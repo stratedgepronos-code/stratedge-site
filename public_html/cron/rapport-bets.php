@@ -7,7 +7,7 @@
 //   • Hebdo      : dimanche à 21h      → résultats de la semaine
 //   • Mensuel    : 1er du mois à 21h   → résultats du mois passé
 //
-// Crontab : 0 21 * * * /usr/bin/php /chemin/vers/public_html/cron/rapport-bets.php
+// Crontab : 0 0 * * * /usr/bin/php /chemin/vers/public_html/cron/rapport-bets.php
 // Ou par URL : https://stratedgepronos.fr/cron/rapport-bets.php?key=VOTRE_SECRET_KEY
 // ============================================================
 
