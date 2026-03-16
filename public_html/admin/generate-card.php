@@ -5,14 +5,36 @@
 // FUN  = template PHP fixe + Claude enrichit (JSON) ← NOUVEAU V12
 // SAFE = Claude génère le HTML complet              ← inchangé
 // ============================================================
+error_reporting(E_ALL);
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
 ob_start();
+
+register_shutdown_function(function() {
+    $err = error_get_last();
+    if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        if (ob_get_level()) ob_end_clean();
+        if (!headers_sent()) {
+            http_response_code(500);
+            header('Content-Type: application/json; charset=utf-8');
+        }
+        echo json_encode([
+            'error' => 'PHP Fatal: ' . $err['message'],
+            'file'  => basename($err['file']),
+            'line'  => $err['line'],
+        ]);
+        @file_put_contents(__DIR__ . '/debug-card.log',
+            '[' . date('H:i:s') . '] FATAL SHUTDOWN: ' . $err['message'] . ' in ' . $err['file'] . ':' . $err['line'] . "\n",
+            FILE_APPEND);
+    }
+});
 
 @set_time_limit(300);
 @ini_set('max_execution_time', '300');
 @ini_set('memory_limit', '512M');
 
 function sendJsonError($message, $code = 500, $extra = []) {
-    ob_clean();
+    if (ob_get_level()) ob_clean();
     if (!headers_sent()) {
         http_response_code($code);
         header('Content-Type: application/json; charset=utf-8');
