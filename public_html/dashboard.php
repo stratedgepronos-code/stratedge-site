@@ -135,6 +135,7 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
 .btn-del{background:none;border:none;color:var(--txt3);font-size:0.78rem;cursor:pointer;font-family:'Rajdhani',sans-serif;}
 .btn-del:hover{color:#ff6b9d;}
 .set-col{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;}
+.profil-abo-notif-row{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;}
 .crd{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.7rem 1.8rem;overflow:hidden;position:relative;}
 .crd::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--pink),var(--blue));}
 .crd-h{display:flex;align-items:center;gap:0.7rem;margin-bottom:1.2rem;}
@@ -185,6 +186,7 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
   .nf-grid{grid-template-columns:1fr;}
   #profil-notifs .nf-grid{grid-template-columns:repeat(4,minmax(200px,1fr));}
   .set-col{grid-template-columns:1fr;}
+  .profil-abo-notif-row{grid-template-columns:1fr;}
 }
 @media(max-width:768px){
   .grid3{grid-template-columns:1fr;}
@@ -317,6 +319,7 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
   </label>
   <button type="submit" class="btn-sv" style="margin-top:0.75rem;">Enregistrer</button></form></div>
 
+  <div class="profil-abo-notif-row">
   <div class="crd"><div class="crd-h"><span class="ico">⚡</span><span class="tl">Mon abonnement</span></div>
   <?php if($abo):?>
   <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
@@ -329,9 +332,9 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
     <a href="/#pricing" class="btn-pk" style="padding:0.55rem 1.3rem;font-size:0.9rem;">Voir les offres →</a></div>
   <?php endif;?></div>
 
-  <div class="crd" style="grid-column:1/-1;"><div class="crd-h"><span class="ico">🔔</span><span class="tl">Notifications Push</span></div>
+  <div class="crd"><div class="crd-h"><span class="ico">🔔</span><span class="tl">Notifications Push</span></div>
   <div style="text-align:center;">
-    <p style="color:var(--txt2);font-size:0.92rem;line-height:1.6;margin-bottom:1rem;max-width:500px;margin-left:auto;margin-right:auto;">Reçois une alerte instantanée dès qu'un bet est posté, qu'un résultat tombe, ou qu'un message t'attend.</p>
+    <p style="color:var(--txt2);font-size:0.92rem;line-height:1.6;margin-bottom:1rem;">Reçois une alerte instantanée dès qu'un bet est posté, qu'un résultat tombe, ou qu'un message t'attend.</p>
     <div id="nfSt" class="nf-st nf-off">⏳ Vérification...</div><br>
     <button class="btn-nf" id="btnNf" onclick="togglePush()" disabled>Activer les notifications</button>
     <div class="nf-help" id="nfHelp">
@@ -345,6 +348,7 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
       </div>
     </div>
   </div></div>
+  </div>
 
 </div>
 </div>
