@@ -10,12 +10,18 @@
 @ini_set('max_execution_time', '300');
 @ini_set('memory_limit', '512M');
 
-require_once __DIR__ . '/../includes/auth.php';
-requireAdmin();
-
-if (!defined('ABSPATH')) { define('ABSPATH', true); }
-require_once __DIR__ . '/../includes/claude-config.php';
-require_once __DIR__ . '/../includes/logo-fallback.php';
+try {
+    require_once __DIR__ . '/../includes/auth.php';
+    requireAdmin();
+    if (!defined('ABSPATH')) { define('ABSPATH', true); }
+    require_once __DIR__ . '/../includes/claude-config.php';
+    require_once __DIR__ . '/../includes/logo-fallback.php';
+} catch (Throwable $e) {
+    header('Content-Type: application/json; charset=utf-8');
+    http_response_code(500);
+    echo json_encode(['error' => 'Chargement : ' . $e->getMessage(), 'file' => basename($e->getFile()), 'line' => $e->getLine()]);
+    exit;
+}
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -105,6 +111,8 @@ $sport   = $data['sport']    ?? '';
 $typeBet = $data['type_bet'] ?? 'Safe';
 
 debugLog("Sport: $sport | Type: $typeBet | Model: " . CLAUDE_MODEL);
+
+try {
 
 // ═══════════════════════════════════════════════════════════
 // MODE LIVE — Template PHP fixe + Claude enrichit les données
@@ -407,3 +415,11 @@ if (!$cards || !isset($cards['html_normal']) || !isset($cards['html_locked'])) {
 
 debugLog("SAFE OK! 1440px");
 echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Safe', 'card_width' => 1440]);
+} catch (Throwable $e) {
+    debugLog("FATAL: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
+    if (!headers_sent()) {
+        http_response_code(500);
+        header('Content-Type: application/json; charset=utf-8');
+    }
+    echo json_encode(['error' => 'Erreur serveur : ' . $e->getMessage(), 'file' => basename($e->getFile()), 'line' => $e->getLine()]);
+}
