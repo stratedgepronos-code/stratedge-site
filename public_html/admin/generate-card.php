@@ -65,6 +65,9 @@ try {
         sendJsonError('Fichier claude-config introuvable.', 500, ['path' => $claudeFile]);
     }
     require_once $claudeFile;
+    if (!defined('CLAUDE_API_KEY') || trim((string)CLAUDE_API_KEY) === '') {
+        sendJsonError('Clé API Claude manquante ou vide. Vérifie includes/claude-config.php (CLAUDE_API_KEY).', 500);
+    }
     if (!is_readable($logoFile)) {
         sendJsonError('Fichier logo-fallback introuvable.', 500, ['path' => $logoFile]);
     }
