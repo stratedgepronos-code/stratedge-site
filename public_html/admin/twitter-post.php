@@ -156,6 +156,8 @@ $templates = [
      'texte'=>"📢 Tu veux accéder à nos analyses complètes ?\n\n🎯 Formules dès aujourd'hui sur stratedgepronos.fr\n✅ Résultats transparents, aucun filtre\n\n#Abonnement #Pronostics #StratEdge"],
     ['label'=>'📊 Stats du mois',       'emoji'=>'📊',
      'texte'=>"📊 BILAN DU MOIS :\n\n🎯 X bets joués\n✅ X gagnés\n📈 Taux de réussite : X%\n\nHistorique complet sur stratedgepronos.fr\n\n#Stats #Pronostics #StratEdge"],
+    ['label'=>'🎾 Montante Tennis',    'emoji'=>'🎾',
+     'texte'=>"🎾 MONTANTE TENNIS — Étape en cours !\n\n📊 Suivi en direct : chaque step, chaque mise, chaque résultat\n✅ Montante gratuite pour tous les membres inscrits sur le site.\n🔗 stratedgepronos.fr\n\n#Montante #Tennis #Pronostics #StratEdge #teampronos"],
 ];
 
 $activeTab = $_GET['tab'] ?? 'compose';
