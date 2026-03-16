@@ -5,24 +5,46 @@
 // FUN  = template PHP fixe + Claude enrichit (JSON) ← NOUVEAU V12
 // SAFE = Claude génère le HTML complet              ← inchangé
 // ============================================================
+ob_start();
 
 @set_time_limit(300);
 @ini_set('max_execution_time', '300');
 @ini_set('memory_limit', '512M');
 
-try {
-    require_once __DIR__ . '/../includes/auth.php';
-    requireAdmin();
-    if (!defined('ABSPATH')) { define('ABSPATH', true); }
-    require_once __DIR__ . '/../includes/claude-config.php';
-    require_once __DIR__ . '/../includes/logo-fallback.php';
-} catch (Throwable $e) {
-    header('Content-Type: application/json; charset=utf-8');
-    http_response_code(500);
-    echo json_encode(['error' => 'Chargement : ' . $e->getMessage(), 'file' => basename($e->getFile()), 'line' => $e->getLine()]);
+function sendJsonError($message, $code = 500, $extra = []) {
+    ob_clean();
+    if (!headers_sent()) {
+        http_response_code($code);
+        header('Content-Type: application/json; charset=utf-8');
+    }
+    echo json_encode(array_merge(['error' => $message], $extra));
     exit;
 }
 
+try {
+    $base = dirname(__DIR__);
+    $authFile = $base . '/includes/auth.php';
+    if (!is_readable($authFile)) {
+        sendJsonError('Fichier auth introuvable.', 500, ['path' => $authFile, 'base' => $base]);
+    }
+    require_once $authFile;
+    requireAdmin();
+    if (!defined('ABSPATH')) { define('ABSPATH', true); }
+    $claudeFile = $base . '/includes/claude-config.php';
+    $logoFile   = $base . '/includes/logo-fallback.php';
+    if (!is_readable($claudeFile)) {
+        sendJsonError('Fichier claude-config introuvable.', 500, ['path' => $claudeFile]);
+    }
+    require_once $claudeFile;
+    if (!is_readable($logoFile)) {
+        sendJsonError('Fichier logo-fallback introuvable.', 500, ['path' => $logoFile]);
+    }
+    require_once $logoFile;
+} catch (Throwable $e) {
+    sendJsonError('Chargement : ' . $e->getMessage(), 500, ['file' => basename($e->getFile()), 'line' => $e->getLine()]);
+}
+
+ob_clean();
 header('Content-Type: application/json; charset=utf-8');
 
 function debugLog($msg) {
@@ -417,9 +439,5 @@ debugLog("SAFE OK! 1440px");
 echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Safe', 'card_width' => 1440]);
 } catch (Throwable $e) {
     debugLog("FATAL: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
-    if (!headers_sent()) {
-        http_response_code(500);
-        header('Content-Type: application/json; charset=utf-8');
-    }
-    echo json_encode(['error' => 'Erreur serveur : ' . $e->getMessage(), 'file' => basename($e->getFile()), 'line' => $e->getLine()]);
+    sendJsonError('Erreur serveur : ' . $e->getMessage(), 500, ['file' => basename($e->getFile()), 'line' => $e->getLine()]);
 }

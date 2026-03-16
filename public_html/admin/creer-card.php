@@ -590,7 +590,10 @@ async function generateCard() {
     }
 
     if (!resp.ok || data.error) {
-      showError('❌ ' + (data.error || 'Erreur inconnue.') + (data.raw ? '<br><small style="opacity:0.6">' + escHtml(data.raw) + '</small>' : ''));
+      let msg = '❌ ' + (data.error || 'Erreur inconnue.');
+      if (data.file || data.line) msg += '<br><small style="opacity:0.7">' + (data.file || '') + (data.line ? ':' + data.line : '') + '</small>';
+      if (data.raw) msg += '<br><small style="opacity:0.6">' + escHtml(data.raw) + '</small>';
+      showError(msg);
       return;
     }
 
