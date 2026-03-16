@@ -4,6 +4,8 @@
 // ============================================================
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/import_football_matches.php';
+require_once __DIR__ . '/../includes/push.php';
+require_once __DIR__ . '/../includes/mailer.php';
 requireAdmin();
 $pageActive = 'prono-commu-admin';
 $db = getDB();
@@ -85,6 +87,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $db->prepare("UPDATE commu_matches SET is_winner = 0 WHERE vote_closed_at = ?")->execute([$match['vote_closed_at']]);
                 $db->prepare("UPDATE commu_matches SET is_winner = 1 WHERE id = ?")->execute([$matchId]);
                 $success = 'Match gagnant défini : ' . $match['team_home'] . ' – ' . $match['team_away'] . '.';
+                // Notif : match prono commu connu (push + email)
+                $matchLabel = $match['team_home'] . ' – ' . $match['team_away'];
+                try {
+                    envoyerPush(null, '⚽ Prono commu — Match connu !', $matchLabel . ' a été choisi. RDV sur Prono commu pour la suite.', '/prono-commu.php', 'prono-commu-match', true);
+                } catch (Throwable $e) { error_log('[prono-commu-admin] push match connu: ' . $e->getMessage()); }
+                $membresNotif = $db->query("SELECT id, email, nom FROM membres WHERE actif = 1 AND (accepte_emails IS NULL OR accepte_emails = 1)")->fetchAll(PDO::FETCH_ASSOC);
+                $contenuMail = "Le match du Prono de la commu est connu : <strong>" . htmlspecialchars($matchLabel) . "</strong>. Rendez-vous sur la page Prono commu pour suivre l'analyse (publiée avant le match).";
+                foreach ($membresNotif as $m) {
+                    @envoyerEmail($m['email'], '⚽ Prono commu — Match connu : ' . $matchLabel, emailTemplate('Prono commu — Match connu', $contenuMail, $m['email']));
+                }
             }
         }
     } elseif ($_POST['action'] === 'save_analysis') {
@@ -96,6 +108,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $stmt = $db->prepare("UPDATE commu_matches SET analysis_html = ?, analysis_at = NOW() WHERE id = ? AND is_winner = 1");
             $stmt->execute([$analysis, $matchId]);
             $success = 'Analyse enregistrée.';
+            // Notif : analyse prono commu postée (push + email)
+            $matchRow = $db->prepare("SELECT team_home, team_away FROM commu_matches WHERE id = ?");
+            $matchRow->execute([$matchId]);
+            $matchInfo = $matchRow->fetch(PDO::FETCH_ASSOC);
+            $matchLabel = $matchInfo ? ($matchInfo['team_home'] . ' – ' . $matchInfo['team_away']) : 'Match';
+            try {
+                envoyerPush(null, '📋 Prono commu — Analyse en ligne', 'L\'analyse de ' . $matchLabel . ' est disponible. RDV 40 min avant le match !', '/prono-commu.php', 'prono-commu-analyse', true);
+            } catch (Throwable $e) { error_log('[prono-commu-admin] push analyse: ' . $e->getMessage()); }
+            $membresNotif = $db->query("SELECT id, email, nom FROM membres WHERE actif = 1 AND (accepte_emails IS NULL OR accepte_emails = 1)")->fetchAll(PDO::FETCH_ASSOC);
+            $contenuMail = "L'analyse du match <strong>" . htmlspecialchars($matchLabel) . "</strong> (Prono de la commu) est en ligne. Rendez-vous sur la page Prono commu, environ 40 min avant le coup d'envoi.";
+            foreach ($membresNotif as $m) {
+                @envoyerEmail($m['email'], '📋 Prono commu — Analyse en ligne : ' . $matchLabel, emailTemplate('Prono commu — Analyse en ligne', $contenuMail, $m['email']));
+            }
         } else {
             $error = 'Sélectionne un match et saisis l\'analyse.';
         }
