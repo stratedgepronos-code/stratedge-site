@@ -582,10 +582,11 @@ async function generateCard() {
 
     let data;
     const text = await resp.text();
+    console.log('[generate-card] HTTP', resp.status, '| Réponse (' + text.length + ' car.):', text.substring(0, 500));
     try {
       data = JSON.parse(text);
     } catch (_) {
-      showError('❌ Le serveur a renvoyé une erreur (HTTP ' + resp.status + '). Réponse non-JSON : ' + escHtml(text.substring(0, 200)));
+      showError('❌ Le serveur a renvoyé une erreur (HTTP ' + resp.status + '). Réponse non-JSON : ' + escHtml(text.substring(0, 300)) + (text.length > 300 ? '…' : ''));
       return;
     }
 
@@ -593,6 +594,7 @@ async function generateCard() {
       let msg = '❌ ' + (data.error || 'Erreur inconnue.');
       if (data.file || data.line) msg += '<br><small style="opacity:0.7">' + (data.file || '') + (data.line ? ':' + data.line : '') + '</small>';
       if (data.raw) msg += '<br><small style="opacity:0.6">' + escHtml(data.raw) + '</small>';
+      if (data.path) msg += '<br><small style="opacity:0.6">path: ' + escHtml(String(data.path)) + '</small>';
       showError(msg);
       return;
     }

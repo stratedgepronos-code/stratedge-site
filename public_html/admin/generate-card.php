@@ -5,6 +5,13 @@
 // FUN  = template PHP fixe + Claude enrichit (JSON) ← NOUVEAU V12
 // SAFE = Claude génère le HTML complet              ← inchangé
 // ============================================================
+// Diagnostic : GET ?_ping=1 → réponse JSON sans auth (vérifier que le script est bien exécuté)
+if (!empty($_GET['_ping'])) {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['ok' => true, 'php' => PHP_VERSION, 'dir' => __DIR__]);
+    exit;
+}
+
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
