@@ -100,20 +100,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? 
                     $nomSafe = htmlspecialchars($m['nom']);
                     $msgSafe = nl2br(htmlspecialchars($message));
                     $contenu = "
-<h2 style=\"color:#f0f4f8;font-size:1.3rem;margin:0 0 12px;\">{$titre}</h2>
-<p style=\"color:#b0bec9;font-size:0.95rem;line-height:1.7;\">
-  Bonjour <strong style=\"color:#f0f4f8;\">{$nomSafe}</strong>,
+<h2 style=\"color:#ffffff;font-size:22px;margin:0 0 12px;\">{$titre}</h2>
+<p style=\"color:#ffffff;font-size:15px;line-height:1.7;\">
+  Bonjour <strong style=\"color:#ffffff;\">{$nomSafe}</strong>,
 </p>
-<div style=\"background:rgba(255,45,120,0.05);border:1px solid rgba(255,45,120,0.15);border-radius:12px;padding:18px 20px;margin:16px 0;\">
-  <p style=\"color:#b0bec9;font-size:0.95rem;line-height:1.8;margin:0;\">{$msgSafe}</p>
+<div style=\"background:#1a1a2e;border:1px solid #333355;border-radius:12px;padding:18px 20px;margin:16px 0;\">
+  <p style=\"color:#ffffff;font-size:15px;line-height:1.8;margin:0;\">{$msgSafe}</p>
 </div>
 <div style=\"text-align:center;margin:24px 0;\">
   <a href=\"https://stratedgepronos.fr{$url}\"
-     style=\"display:inline-block;background:linear-gradient(135deg,#ff2d78,#d6245f);color:#fff;text-decoration:none;padding:12px 32px;border-radius:10px;font-weight:700;font-size:0.95rem;letter-spacing:1px;text-transform:uppercase;\">
+     style=\"display:inline-block;background:linear-gradient(135deg,#ff2d78,#d6245f);color:#fff;text-decoration:none;padding:12px 32px;border-radius:10px;font-weight:700;font-size:15px;letter-spacing:1px;text-transform:uppercase;\">
     Voir sur StratEdge
   </a>
 </div>
-<p style=\"color:#8a9bb0;font-size:0.78rem;text-align:center;margin-top:12px;\">
+<p style=\"color:#ffffff;font-size:12px;text-align:center;margin-top:12px;\">
   Vous recevez cet email car vous etes membre de StratEdge Pronos.<br>
   Pour vous desabonner des emails, contactez le support via le SAV.
 </p>";
