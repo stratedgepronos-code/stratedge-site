@@ -15,12 +15,18 @@ if (!empty($_GET['_ping'])) {
 error_reporting(E_ALL);
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
+// Éviter tout output avant notre JSON (warnings, etc.)
+set_error_handler(function($severity, $message, $file, $line) {
+    @file_put_contents(__DIR__ . '/debug-card.log',
+        '[' . date('H:i:s') . '] PHP ' . $severity . ': ' . $message . ' in ' . $file . ':' . $line . "\n", FILE_APPEND);
+    return true; // supprime l'affichage par défaut
+});
 ob_start();
 
 register_shutdown_function(function() {
     $err = error_get_last();
     if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
-        if (ob_get_level()) ob_end_clean();
+        while (ob_get_level()) { @ob_end_clean(); }
         if (!headers_sent()) {
             http_response_code(500);
             header('Content-Type: application/json; charset=utf-8');
@@ -163,6 +169,13 @@ if (!$data) {
 
 $sport   = $data['sport']    ?? '';
 $typeBet = $data['type_bet'] ?? 'Safe';
+
+// Diagnostic POST : type_bet=_ping → 200 OK sans appeler Claude (vérifie auth + config)
+if ($typeBet === '_ping') {
+    debugLog("POST _ping OK");
+    echo json_encode(['success' => true, 'message' => 'pong', 'php' => PHP_VERSION]);
+    exit;
+}
 
 debugLog("Sport: $sport | Type: $typeBet | Model: " . CLAUDE_MODEL);
 
