@@ -30,13 +30,34 @@ function notifQueueEnsureTable(PDO $db): void {
 }
 
 /**
+ * Ajoute le super admin (ADMIN_EMAIL) au batch s'il existe en membre et n'y est pas déjà — reçoit tout.
+ */
+function notifQueueEnqueueSuperAdmin(PDO $db, string $batch, string $betType, string $betTitre): void {
+    if (!defined('ADMIN_EMAIL') || ADMIN_EMAIL === '') {
+        return;
+    }
+    $stmt = $db->prepare("SELECT id, email, nom FROM membres WHERE email = ? AND actif = 1 LIMIT 1");
+    $stmt->execute([ADMIN_EMAIL]);
+    $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$admin) {
+        return;
+    }
+    $check = $db->prepare("SELECT 1 FROM notif_queue WHERE batch_id = ? AND membre_id = ? LIMIT 1");
+    $check->execute([$batch, $admin['id']]);
+    if ($check->fetch()) {
+        return;
+    }
+    $ins = $db->prepare("INSERT INTO notif_queue (batch_id, membre_id, email, nom, bet_type, bet_titre, created_at) VALUES (?, ?, ?, ?, ?, ?, NOW())");
+    $ins->execute([$batch, $admin['id'], $admin['email'], $admin['nom'] ?? '', $betType, $betTitre]);
+}
+
+/**
  * Enfile tous les abonnés concernés par un nouveau bet (tennis vs multi).
  * @return string batch_id
  */
 function notifQueueEnqueueNouveauBet(PDO $db, string $categorie, string $betType, string $betTitre): string {
     notifQueueEnsureTable($db);
     $batch = bin2hex(random_bytes(8));
-    $admin = defined('ADMIN_EMAIL') ? ADMIN_EMAIL : '';
 
     if ($categorie === 'tennis') {
         $sql = "INSERT INTO notif_queue (batch_id, membre_id, email, nom, bet_type, bet_titre, created_at)
@@ -44,9 +65,8 @@ function notifQueueEnqueueNouveauBet(PDO $db, string $categorie, string $betType
         FROM membres m
         INNER JOIN abonnements a ON a.membre_id = m.id AND a.actif = 1
         WHERE a.type = 'tennis' AND a.date_fin > NOW()
-        AND m.email != ?
         AND (m.accepte_emails IS NULL OR m.accepte_emails = 1)";
-        $db->prepare($sql)->execute([$batch, $betType, $betTitre, $admin]);
+        $db->prepare($sql)->execute([$batch, $betType, $betTitre]);
     } else {
         $sql = "INSERT INTO notif_queue (batch_id, membre_id, email, nom, bet_type, bet_titre, created_at)
         SELECT DISTINCT ?, m.id, m.email, m.nom, ?, ?, NOW()
@@ -54,10 +74,10 @@ function notifQueueEnqueueNouveauBet(PDO $db, string $categorie, string $betType
         INNER JOIN abonnements a ON a.membre_id = m.id AND a.actif = 1
         WHERE a.type != 'tennis'
         AND (a.type = 'daily' OR a.date_fin > NOW())
-        AND m.email != ?
         AND (m.accepte_emails IS NULL OR m.accepte_emails = 1)";
-        $db->prepare($sql)->execute([$batch, $betType, $betTitre, $admin]);
+        $db->prepare($sql)->execute([$batch, $betType, $betTitre]);
     }
+    notifQueueEnqueueSuperAdmin($db, $batch, $betType, $betTitre);
     return $batch;
 }
 
@@ -67,14 +87,13 @@ function notifQueueEnqueueNouveauBet(PDO $db, string $categorie, string $betType
 function notifQueueEnqueueNouveauBetTousAbonnes(PDO $db, string $betType, string $betTitre): string {
     notifQueueEnsureTable($db);
     $batch = bin2hex(random_bytes(8));
-    $admin = defined('ADMIN_EMAIL') ? ADMIN_EMAIL : '';
     $sql = "INSERT INTO notif_queue (batch_id, membre_id, email, nom, bet_type, bet_titre, created_at)
     SELECT DISTINCT ?, m.id, m.email, m.nom, ?, ?, NOW()
     FROM membres m
     INNER JOIN abonnements a ON a.membre_id = m.id AND a.actif = 1
-    WHERE m.email != ?
-    AND (m.accepte_emails IS NULL OR m.accepte_emails = 1)";
-    $db->prepare($sql)->execute([$batch, $betType, $betTitre, $admin]);
+    WHERE (m.accepte_emails IS NULL OR m.accepte_emails = 1)";
+    $db->prepare($sql)->execute([$batch, $betType, $betTitre]);
+    notifQueueEnqueueSuperAdmin($db, $batch, $betType, $betTitre);
     return $batch;
 }
 
