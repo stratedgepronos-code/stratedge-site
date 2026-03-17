@@ -232,11 +232,14 @@ function _sendSinglePush(string $endpoint, string $p256dh, string $auth, string 
  * Envoie une notification push à un membre (ou broadcast si null).
  * Si $membreId === null et $tousInscrits === true : envoi à tous les membres ayant activé les push (ex: Montante Tennis).
  */
-function envoyerPush(?int $membreId, string $title, string $body, string $url = '/dashboard.php', string $tag = 'general', bool $tousInscrits = false): void {
+/**
+ * @return int Nombre de notifications effectivement livrées (0 si aucune souscription ou prérequis manquants)
+ */
+function envoyerPush(?int $membreId, string $title, string $body, string $url = '/dashboard.php', string $tag = 'general', bool $tousInscrits = false): int {
     global $_pushReady;
     if (!$_pushReady) {
         error_log('[Push] Prérequis manquants (openssl/curl/hkdf/vapid)');
-        return;
+        return 0;
     }
 
     $db = getDB();
@@ -265,7 +268,7 @@ function envoyerPush(?int $membreId, string $title, string $body, string $url = 
     $subscriptions = $stmt->fetchAll();
     if (empty($subscriptions)) {
         error_log('[Push] Aucune souscription trouvée' . ($membreId ? " pour membre #$membreId" : ' (broadcast)'));
-        return;
+        return 0;
     }
 
     $payload = json_encode([
@@ -302,6 +305,7 @@ function envoyerPush(?int $membreId, string $title, string $body, string $url = 
     }
 
     error_log("[Push] Envoyé: {$sent}, Expirées/supprimées: {$expired}, Échecs: {$failed}");
+    return $sent;
 }
 
 

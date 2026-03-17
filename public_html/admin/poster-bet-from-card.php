@@ -155,30 +155,19 @@ if (file_exists($twitterConfigFile)) {
     }
 }
 
-// Notifications : abonnés actifs (email + push)
+// Notifications : file d'attente + traitement par paquets (évite timeout)
 try {
-    $stmtAb = $db->prepare("
-        SELECT DISTINCT m.id, m.email, m.nom, COALESCE(a.type, 'daily') as type_abo
-        FROM membres m
-        JOIN abonnements a ON a.membre_id = m.id AND a.actif = 1
-        WHERE m.email != ?
-    ");
-    $stmtAb->execute([defined('ADMIN_EMAIL') ? ADMIN_EMAIL : '']);
-    $abonnesActifs = $stmtAb->fetchAll(PDO::FETCH_ASSOC);
-    $typeLabels = ['safe' => '🛡️ Safe', 'fun' => '🎯 Fun', 'live' => '⚡ Live', 'safe,fun' => '🛡️+🎯 Safe+Fun', 'safe,live' => '🛡️+⚡ Safe+Live'];
-    $pushLabel = $typeLabels[$type] ?? $type;
-    $pushTitle = '🔥 Nouveau bet disponible !';
-    $pushBody = $pushLabel . ($titre ? ' — ' . $titre : '') . ' vient d\'être posté';
-    foreach ($abonnesActifs as $ab) {
-        emailNouveauBet($ab['email'], $ab['nom'], $type, $titre);
-        if (!empty($ab['id'])) {
-            try {
-                envoyerPush((int)$ab['id'], $pushTitle, $pushBody, '/bets.php', 'nouveau-bet');
-            } catch (Throwable $e) { /* ignore */ }
+    require_once __DIR__ . '/../includes/notif-queue.php';
+    $cat = ($categorie === 'tennis') ? 'tennis' : 'multi';
+    $batch = notifQueueEnqueueNouveauBet($db, $cat, $type, $titre);
+    for ($r = 0; $r < 30; $r++) {
+        $st = notifQueueProcessBatch($db, 80);
+        if ($st['processed'] === 0) {
+            break;
         }
     }
 } catch (Throwable $e) {
-    // Ne pas faire échouer la réponse
+    error_log('[poster-bet-from-card] notif-queue: ' . $e->getMessage());
 }
 
 echo json_encode(['success' => true]);
