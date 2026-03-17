@@ -320,32 +320,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $resCode = $resMap[$resultat] ?? $resultat;
                     $titreResult = ($bet && isset($bet['titre'])) ? $bet['titre'] : 'Bet StratEdge';
 
-                    // ── Push + Email résultat (ne pas faire échouer la page) ──
+                    // ── Push + Email résultat (file d’attente : pas de timeout + super admin inclus) ──
                     try {
-                        // Requête compatible : pas de référence à accepte_emails (colonne potentiellement absente)
-                        $stmtAbo = $db->prepare("
-                            SELECT DISTINCT m.id, m.email, m.nom, a.type as type_abo
-                            FROM membres m JOIN abonnements a ON a.membre_id = m.id
-                            WHERE a.actif = 1 AND m.email != ?
-                        ");
-                        $stmtAbo->execute([ADMIN_EMAIL]);
-                        $abonnesResult = $stmtAbo->fetchAll(PDO::FETCH_ASSOC);
-
-                        error_log('[poster-bet] set_resultat notif: ' . count($abonnesResult) . ' abonnés trouvés pour résultat');
-
-                        foreach ($abonnesResult as $ab) {
-                            try {
-                                emailResultatBet($ab['email'], $ab['nom'], $titreResult, $resCode, $ab['type_abo'] ?? '');
-                            } catch (Throwable $e) {
-                                error_log('[poster-bet] emailResultatBet: ' . $e->getMessage());
+                        require_once __DIR__ . '/../includes/notif-queue.php';
+                        resultatQueueEnqueue($db, $titreResult, $resCode);
+                        $pendingR = resultatQueuePendingCount($db);
+                        $totalR = 0;
+                        for ($ri = 0; $ri < 45; $ri++) {
+                            $stR = resultatQueueProcessBatch($db, 90);
+                            $totalR += $stR['processed'];
+                            if ($stR['processed'] === 0) {
+                                break;
                             }
-                            if (!empty($ab['id'])) {
-                                try {
-                                    pushResultatBet((int)$ab['id'], $ab['type_abo'] ?? '', $titreResult, $resCode);
-                                } catch (Throwable $e) {
-                                    error_log('[poster-bet] pushResultatBet: ' . $e->getMessage());
-                                }
-                            }
+                        }
+                        $leftR = resultatQueuePendingCount($db);
+                        @file_put_contents(__DIR__ . '/../notif_debug.log', date('c') . " resultat_queue emails_ok={$totalR} pending_end={$leftR} titre=" . mb_substr($titreResult, 0, 80) . "\n", FILE_APPEND | LOCK_EX);
+                        if ($leftR > 0) {
+                            error_log('[poster-bet] set_resultat file résultat reste=' . $leftR . ' — lancer cron process-notif-queue.php');
                         }
                     } catch (Throwable $e) {
                         error_log('[poster-bet] set_resultat push/email: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());

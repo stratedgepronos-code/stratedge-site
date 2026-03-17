@@ -164,3 +164,110 @@ function notifQueuePendingCount(PDO $db): int {
         return 0;
     }
 }
+
+// ── File résultat bet (gagné / perdu / annulé) — même principe que nouveaux bets ──
+
+function resultatQueueEnsureTable(PDO $db): void {
+    $db->exec("CREATE TABLE IF NOT EXISTS notif_queue_resultat (
+      id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+      batch_id VARCHAR(32) NOT NULL,
+      membre_id INT UNSIGNED NOT NULL,
+      email VARCHAR(255) NOT NULL,
+      nom VARCHAR(120) NOT NULL DEFAULT '',
+      bet_titre VARCHAR(500) NOT NULL DEFAULT '',
+      res_code VARCHAR(16) NOT NULL DEFAULT '',
+      type_abo VARCHAR(64) NOT NULL DEFAULT '',
+      created_at DATETIME NOT NULL,
+      sent_at DATETIME NULL DEFAULT NULL,
+      last_error VARCHAR(500) NULL,
+      KEY idx_pending_r (sent_at, id),
+      KEY idx_batch_r (batch_id)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
+}
+
+function resultatQueueEnqueueSuperAdmin(PDO $db, string $batch, string $titre, string $resCode): void {
+    if (!defined('ADMIN_EMAIL') || ADMIN_EMAIL === '') {
+        return;
+    }
+    $stmt = $db->prepare('SELECT id, email, nom FROM membres WHERE email = ? AND actif = 1 LIMIT 1');
+    $stmt->execute([ADMIN_EMAIL]);
+    $admin = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$admin) {
+        return;
+    }
+    $check = $db->prepare('SELECT 1 FROM notif_queue_resultat WHERE batch_id = ? AND membre_id = ? LIMIT 1');
+    $check->execute([$batch, $admin['id']]);
+    if ($check->fetch()) {
+        return;
+    }
+    $ins = $db->prepare('INSERT INTO notif_queue_resultat (batch_id, membre_id, email, nom, bet_titre, res_code, type_abo, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, NOW())');
+    $ins->execute([$batch, $admin['id'], $admin['email'], $admin['nom'] ?? '', $titre, $resCode, '']);
+}
+
+/**
+ * Enfile tous les abonnés actifs + super admin (même sans abo) pour notif résultat.
+ */
+function resultatQueueEnqueue(PDO $db, string $titre, string $resCode): string {
+    resultatQueueEnsureTable($db);
+    $batch = bin2hex(random_bytes(8));
+    $sql = "INSERT INTO notif_queue_resultat (batch_id, membre_id, email, nom, bet_titre, res_code, type_abo, created_at)
+    SELECT DISTINCT ?, m.id, m.email, m.nom, ?, ?, COALESCE(a.type, ''), NOW()
+    FROM membres m
+    INNER JOIN abonnements a ON a.membre_id = m.id AND a.actif = 1";
+    $db->prepare($sql)->execute([$batch, $titre, $resCode]);
+    resultatQueueEnqueueSuperAdmin($db, $batch, $titre, $resCode);
+    return $batch;
+}
+
+/**
+ * @return array{processed:int,emails_ok:int,emails_fail:int,push_ok:int,push_none:int}
+ */
+function resultatQueueProcessBatch(PDO $db, int $limit = 100): array {
+    resultatQueueEnsureTable($db);
+    set_time_limit(300);
+    ignore_user_abort(true);
+
+    $stats = ['processed' => 0, 'emails_ok' => 0, 'emails_fail' => 0, 'push_ok' => 0, 'push_none' => 0];
+    $stmt = $db->prepare('SELECT id, membre_id, email, nom, bet_titre, res_code, type_abo FROM notif_queue_resultat WHERE sent_at IS NULL ORDER BY id ASC LIMIT ?');
+    $stmt->bindValue(1, $limit, PDO::PARAM_INT);
+    $stmt->execute();
+    $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if (empty($rows)) {
+        return $stats;
+    }
+    $upd = $db->prepare('UPDATE notif_queue_resultat SET sent_at = NOW(), last_error = ? WHERE id = ?');
+    foreach ($rows as $r) {
+        $errs = [];
+        $okMail = @emailResultatBet($r['email'], $r['nom'], $r['bet_titre'], $r['res_code'], $r['type_abo'] ?? '');
+        if ($okMail) {
+            $stats['emails_ok']++;
+        } else {
+            $stats['emails_fail']++;
+            $errs[] = 'email';
+        }
+        try {
+            $n = pushResultatBet((int)$r['membre_id'], $r['type_abo'] ?? '', $r['bet_titre'], $r['res_code']);
+            if ($n > 0) {
+                $stats['push_ok']++;
+            } else {
+                $stats['push_none']++;
+                $errs[] = 'push0';
+            }
+        } catch (Throwable $e) {
+            $errs[] = 'push_err';
+            $stats['push_none']++;
+            error_log('[resultat-queue] push id=' . $r['membre_id'] . ' ' . $e->getMessage());
+        }
+        $upd->execute([$errs ? implode(',', $errs) : null, $r['id']]);
+        $stats['processed']++;
+    }
+    return $stats;
+}
+
+function resultatQueuePendingCount(PDO $db): int {
+    try {
+        return (int)$db->query('SELECT COUNT(*) FROM notif_queue_resultat WHERE sent_at IS NULL')->fetchColumn();
+    } catch (Throwable $e) {
+        return 0;
+    }
+}

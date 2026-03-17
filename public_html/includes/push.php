@@ -341,10 +341,10 @@ function pushNouveauBet(string $typeBet, string $titre = ''): void {
 /**
  * Push ciblé : résultat d'un bet
  */
-function pushResultatBet(int $membreId, string $typeBet, string $titre, string $resultat): void {
+function pushResultatBet(int $membreId, string $typeBet, string $titre, string $resultat): int {
     $icons = ['win' => '✅', 'lose' => '❌', 'void' => '↩️'];
     $icon  = $icons[$resultat] ?? '📊';
-    envoyerPush(
+    return envoyerPush(
         $membreId,
         $icon . ' Résultat du bet',
         $titre . ' : ' . strtoupper($resultat),

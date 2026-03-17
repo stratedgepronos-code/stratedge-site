@@ -42,7 +42,22 @@ while ($round < $maxRounds) {
 }
 
 $left = notifQueuePendingCount($db);
-echo "OK pending_start={$pending} processed={$totalProc} pending_end={$left}\n";
-if ($left > 0) {
-    echo "Note: relancer le cron ou attendre la prochaine exécution pour vider la file.\n";
+echo "OK nouveaux_bets pending_start={$pending} processed={$totalProc} pending_end={$left}\n";
+
+$pendingR = resultatQueuePendingCount($db);
+$totalR = 0;
+$round = 0;
+while ($round < $maxRounds) {
+    $st = resultatQueueProcessBatch($db, 120);
+    $totalR += $st['processed'];
+    if ($st['processed'] === 0) {
+        break;
+    }
+    $round++;
+}
+$leftR = resultatQueuePendingCount($db);
+echo "OK resultats_bets pending_start={$pendingR} processed={$totalR} pending_end={$leftR}\n";
+
+if ($left > 0 || $leftR > 0) {
+    echo "Note: relancer le cron pour vider les files restantes.\n";
 }

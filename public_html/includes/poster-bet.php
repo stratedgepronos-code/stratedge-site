@@ -210,19 +210,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $db->prepare("UPDATE bets SET resultat=?, date_resultat=NOW(), actif=0 WHERE id=?")
                    ->execute([$resultat, $betId]);
 
-                // ── Push + Email résultat à tous les abonnés actifs ──
+                // ── Push + Email résultat (file + super admin) ──
                 $resMap = ['gagne' => 'win', 'perdu' => 'lose', 'annule' => 'void'];
                 $resCode = $resMap[$resultat] ?? $resultat;
                 $titreResult = $bet['titre'] ?? 'Bet StratEdge';
-                $abonnesResult = $db->query("
-                    SELECT DISTINCT m.id, m.email, m.nom, a.type as type_abo
-                    FROM membres m JOIN abonnements a ON a.membre_id = m.id
-                    WHERE a.actif = 1 AND m.email != '" . ADMIN_EMAIL . "'
-                    AND (m.accepte_emails IS NULL OR m.accepte_emails = 1)
-                ")->fetchAll();
-                foreach ($abonnesResult as $ab) {
-                    emailResultatBet($ab['email'], $ab['nom'], $titreResult, $resCode, $ab['type_abo']);
-                    pushResultatBet($ab['id'], $ab['type_abo'], $titreResult, $resCode);
+                try {
+                    require_once __DIR__ . '/notif-queue.php';
+                    resultatQueueEnqueue($db, $titreResult, $resCode);
+                    for ($ri = 0; $ri < 40; $ri++) {
+                        $stR = resultatQueueProcessBatch($db, 80);
+                        if ($stR['processed'] === 0) {
+                            break;
+                        }
+                    }
+                    $leftR = resultatQueuePendingCount($db);
+                    @file_put_contents(__DIR__ . '/../notif_debug.log', date('c') . " resultat_queue (membre) pending_end={$leftR}\n", FILE_APPEND | LOCK_EX);
+                } catch (Throwable $e) {
+                    error_log('[poster-bet membre] set_resultat notif: ' . $e->getMessage());
                 }
 
                 // ── Tweet résultat via IFTTT / Make (même webhook que les nouveaux bets) ──
