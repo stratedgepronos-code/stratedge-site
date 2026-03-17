@@ -13,7 +13,15 @@
 
 if (!defined('ABSPATH')) { define('ABSPATH', true); }
 
-define('CLAUDE_API_KEY', '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');
+// Clé API : fichier LOCAL (jamais versionné) — un git pull ne l’efface pas
+$__claude_local = __DIR__ . '/claude-config.local.php';
+if (is_file($__claude_local)) {
+    require_once $__claude_local;
+}
+if (!defined('CLAUDE_API_KEY')) {
+    $k = getenv('CLAUDE_API_KEY');
+    define('CLAUDE_API_KEY', (is_string($k) && $k !== '') ? $k : '');
+}
 
 define('CLAUDE_MODEL', 'claude-sonnet-4-6');
 

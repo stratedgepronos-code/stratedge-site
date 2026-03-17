@@ -22,6 +22,7 @@ error_log
 *.env
 public_html/includes/smtp-config.php
 public_html/includes/football_data_config.php
+public_html/includes/claude-config.local.php
 
 # Cache
 __pycache__/
