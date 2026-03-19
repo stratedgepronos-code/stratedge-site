@@ -13,7 +13,7 @@
 
 if (!defined('ABSPATH')) { define('ABSPATH', true); }
 
-// Clé API : fichier LOCAL (jamais versionné) — un git pull ne l’efface pas
+// Clé API UNIQUEMENT dans claude-config.local.php (gitignored) → jamais écrasée par git pull
 $__claude_local = __DIR__ . '/claude-config.local.php';
 if (is_file($__claude_local)) {
     require_once $__claude_local;
