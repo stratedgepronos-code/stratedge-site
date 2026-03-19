@@ -14,7 +14,7 @@ if ($url === false || $url === '') {
     http_response_code(400);
     exit;
 }
-$allowed = ['upload.wikimedia.org', 'commons.wikimedia.org', 'en.wikipedia.org', 'static.wikia.nocookie.net', 'a.espncdn.com'];
+$allowed = ['upload.wikimedia.org', 'commons.wikimedia.org', 'en.wikipedia.org', 'static.wikia.nocookie.net', 'a.espncdn.com', 'media.api-sports.io', 'cdn.nba.com'];
 $host = parse_url($url, PHP_URL_HOST);
 if (!in_array($host, $allowed, true)) {
     http_response_code(403);

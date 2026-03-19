@@ -203,26 +203,26 @@ if ($typeBet === 'Live') {
         $prono = $data['prono'] ?? '';
         $cote  = $data['cote']  ?? '1.50';
 
-        // Date et heure fiables : serveur Europe/Paris ou champs envoyés par le formulaire
+        // Heure par défaut (secours) : serveur Europe/Paris ou champs formulaire
         $tz = new DateTimeZone('Europe/Paris');
         $now = new DateTime('now', $tz);
         if (!empty($data['date_fr']) && !empty($data['time_fr'])) {
-            $date_fr = trim($data['date_fr']);
-            $time_fr = preg_replace('/[^0-9:]/', '', trim($data['time_fr']));
-            if (strlen($time_fr) < 4) $time_fr = $now->format('H:i');
+            $default_date_fr = trim($data['date_fr']);
+            $default_time_fr = preg_replace('/[^0-9:]/', '', trim($data['time_fr']));
+            if (strlen($default_time_fr) < 4) $default_time_fr = $now->format('H:i');
         } else {
             if (class_exists('IntlDateFormatter')) {
                 $formatter = new IntlDateFormatter('fr_FR', IntlDateFormatter::FULL, IntlDateFormatter::NONE, 'Europe/Paris', IntlDateFormatter::GREGORIAN);
-                $date_fr = ucfirst($formatter->format($now));
+                $default_date_fr = ucfirst($formatter->format($now));
             } else {
                 $jours = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
                 $mois = ['','janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
-                $date_fr = $jours[(int)$now->format('w')] . ' ' . $now->format('d') . ' ' . $mois[(int)$now->format('n')] . ' ' . $now->format('Y');
+                $default_date_fr = $jours[(int)$now->format('w')] . ' ' . $now->format('d') . ' ' . $mois[(int)$now->format('n')] . ' ' . $now->format('Y');
             }
-            $time_fr = $now->format('H:i');
+            $default_time_fr = $now->format('H:i');
         }
 
-        $userMsg = "Sport : $sport\nMatch : $match\nPronostic : $prono\nCote : $cote\n\nDate et heure à utiliser telles quelles : date_fr = \"$date_fr\" , time_fr = \"$time_fr\" (fuseau Europe/Paris).";
+        $userMsg = "Sport : $sport\nMatch : $match\nPronostic : $prono\nCote : $cote\n\nTu DOIS renvoyer date_fr et time_fr correspondant à l'heure RÉELLE du match (coup d'envoi), fuseau Europe/Paris. Si tu ne peux pas la déduire, utilise ces valeurs par défaut (secours) : date_fr = \"$default_date_fr\" , time_fr = \"$default_time_fr\".";
         debugLog("LIVE — Enrichissement via Claude...");
 
         $result = callClaude(CLAUDE_LIVE_ENRICH_PROMPT, $userMsg, 1000);
@@ -249,9 +249,15 @@ if ($typeBet === 'Live') {
             ];
         }
 
-        // Toujours utiliser nos date/heure (pas celles de Claude)
-        $enriched['date_fr'] = $date_fr;
-        $enriched['time_fr'] = $time_fr;
+        // Toujours utiliser l'heure renvoyée par Claude (l'IA s'en charge) ; secours uniquement si vide
+        if (empty($enriched['date_fr']) || empty($enriched['time_fr'])) {
+            $enriched['date_fr'] = $default_date_fr;
+            $enriched['time_fr'] = $default_time_fr;
+        } else {
+            $enriched['date_fr'] = trim($enriched['date_fr']);
+            $enriched['time_fr'] = preg_replace('/[^0-9:]/', '', trim($enriched['time_fr']));
+            if (strlen($enriched['time_fr']) < 4) $enriched['time_fr'] = $default_time_fr;
+        }
 
         $coteFloat  = floatval($cote);
         $confidence = ($coteFloat > 0) ? min(95, max(30, round(115 / $coteFloat))) : 60;
@@ -327,6 +333,8 @@ if ($typeBet === 'Fun') {
         echo json_encode(['error' => 'Claude n\'a pas pu analyser les paris. Vérifiez le format saisi.']);
         exit;
     }
+
+    // Date/heure = toujours celles renvoyées par l'IA (pas de saisie admin)
 
     // Recalcul cote totale côté PHP (sécurité si Claude se trompe)
     $coteTotale = 1.0;
@@ -411,6 +419,8 @@ if ($typeBet === 'Safe Combiné') {
     if (isset($enriched['cote_totale']) && abs(floatval($enriched['cote_totale']) - floatval($coteTotale)) < 0.15) {
         $coteTotale = $enriched['cote_totale'];
     }
+
+    // Date/heure = toujours celles renvoyées par l'IA (pas de saisie admin)
 
     $confGlobale = intval($enriched['confidence_globale'] ?? 65);
 

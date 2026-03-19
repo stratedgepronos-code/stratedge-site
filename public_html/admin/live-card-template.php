@@ -101,7 +101,7 @@ function _curlFetch($url, $ua = '') {
 function logoProxyUrl($url) {
     if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) return '';
     $host = parse_url($url, PHP_URL_HOST);
-    $proxyHosts = ['upload.wikimedia.org', 'commons.wikimedia.org', 'en.wikipedia.org', 'a.espncdn.com'];
+    $proxyHosts = ['upload.wikimedia.org', 'commons.wikimedia.org', 'en.wikipedia.org', 'a.espncdn.com', 'media.api-sports.io', 'cdn.nba.com'];
     if (in_array($host, $proxyHosts, true)) {
         $base = 'https://stratedgepronos.fr';
         $u = str_replace(['+', '/'], ['-', '_'], base64_encode($url));
