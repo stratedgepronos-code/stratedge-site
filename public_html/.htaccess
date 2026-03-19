@@ -24,6 +24,9 @@ RewriteRule ^uploads/(bets|locked)/(.+\.(jpg|jpeg|png|webp|gif))$ /restore-image
 RewriteRule ^panel-x9k3m/?$ admin/index.php [L]
 RewriteRule ^panel-x9k3m/(.*)$ admin/$1 [L]
 
+# Alias pratique : /poster-bet.php → admin (évite 404)
+RewriteRule ^poster-bet\.php$ admin/poster-bet.php [L]
+
 # Sécurité headers
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"

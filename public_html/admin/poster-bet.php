@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/mailer.php';
 require_once __DIR__ . '/../includes/push.php';
@@ -235,7 +235,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stc->execute([$batch]);
                     $nbQueued = (int)$stc->fetchColumn();
 
-                    $notifLog = date('Y-m-d H:i:s') . " | batch={$batch} | queued={$nbQueued} | cat=" . ($lastCategorie ?? '') . " | type={$lastType}\n";"
+                    $notifLog = date('Y-m-d H:i:s') . " | batch={$batch} | queued={$nbQueued} | cat=" . ($lastCategorie ?? '') . " | type={$lastType}\n";
 
                     $emailsOk = 0;
                     $emailsFail = 0;
@@ -406,16 +406,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         elseif ($_POST['action'] === 'delete_bet') {
-            if (!isSuperAdmin()) {
-                $error = 'Seul le super admin peut supprimer un bet.';
-            } else {
-                $betId = (int)($_POST['bet_id'] ?? 0);
-                $s = $db->prepare("SELECT image_path FROM bets WHERE id = ?"); $s->execute([$betId]);
-                $bet = $s->fetch();
-                if ($bet && $bet['image_path'] && file_exists(__DIR__ . '/../' . $bet['image_path'])) unlink(__DIR__ . '/../' . $bet['image_path']);
-                $db->prepare("DELETE FROM bets WHERE id = ?")->execute([$betId]);
-                $success = 'Bet supprimé.';
-            }
+            $betId = (int)($_POST['bet_id'] ?? 0);
+            $s = $db->prepare("SELECT image_path FROM bets WHERE id = ?"); $s->execute([$betId]);
+            $bet = $s->fetch();
+            if ($bet && $bet['image_path'] && file_exists(__DIR__ . '/../' . $bet['image_path'])) unlink(__DIR__ . '/../' . $bet['image_path']);
+            $db->prepare("DELETE FROM bets WHERE id = ?")->execute([$betId]);
+            $success = 'Bet supprimé.';
         }
 
         elseif ($_POST['action'] === 'toggle_bet') {
@@ -711,16 +707,12 @@ $resultatConfig = [
                 </form>
               </td>
               <td>
-                <?php if ($isSuperAdmin): ?>
                 <form method="POST" onsubmit="return confirm('Supprimer ce bet ?')">
                   <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
                   <input type="hidden" name="action" value="delete_bet">
                   <input type="hidden" name="bet_id" value="<?= $b['id'] ?>">
                   <button type="submit" class="btn-sm btn-danger">🗑</button>
                 </form>
-                <?php else: ?>
-                <span style="color:var(--text-muted);font-size:0.8rem;" title="Réservé au super admin">—</span>
-                <?php endif; ?>
               </td>
             </tr>
           <?php endforeach; ?>
