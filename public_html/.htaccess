@@ -10,7 +10,8 @@ RewriteEngine On
 RewriteCond %{HTTPS} off
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
-# Bloquer accès direct au dossier includes
+# Bloquer accès direct au dossier includes (sauf calendrier : CSS/JS servis au navigateur)
+RewriteCond %{REQUEST_URI} !/includes/calendar-strateedge\.(css|js)$
 RewriteRule ^includes/ - [F,L]
 
 # Bloquer accès direct aux uploads PHP

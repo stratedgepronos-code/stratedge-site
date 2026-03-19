@@ -37,9 +37,17 @@
 }
 .date-picker-wrap.startedge-cal .cal-icon svg,
 .startedge-date-wrap .cal-icon svg {
+  display: block;
   width: 20px;
   height: 20px;
+  max-width: 20px;
+  max-height: 20px;
+  flex-shrink: 0;
   fill: currentColor;
+}
+/* Popover vide : évite un rectangle avant chargement du JS */
+.strateedge-date-wrap .cal-popover:not(.is-open):empty {
+  display: none;
 }
 
 /* Popover calendrier */

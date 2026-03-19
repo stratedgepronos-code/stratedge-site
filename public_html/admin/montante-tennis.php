@@ -242,7 +242,7 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
 .montante-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.06);}
 .montante-row:last-child{border-bottom:none;}
 </style>
-<link href="../includes/calendar-strateedge.css" rel="stylesheet">
+<link href="/includes/calendar-strateedge.css" rel="stylesheet">
 </head>
 <body>
 
@@ -257,7 +257,7 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
 
   <!-- Créer ou gérer la montante -->
   <div class="card">
-    <h2>🏗️ <?= $config ? 'Montante en cours' : 'Créer une montante' ?></h2>
+    <h2>🎾 <?= $config ? 'Montante en cours' : 'Créer une montante' ?></h2>
     <?php if ($config): ?>
     <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
       <strong style="font-size:1.1rem;"><?= clean($config['nom']) ?></strong>
@@ -455,7 +455,6 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
   <?php endif; ?>
 </div>
 
-<script src="../includes/calendar-strateedge.js"></script>
-<script src="../includes/calendar-strateedge.js"></script>
+<script src="/includes/calendar-strateedge.js" defer></script>
 </body>
 </html>
