@@ -241,8 +241,13 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
 .btn-delete:hover{background:rgba(255,68,68,0.25);}
 .montante-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.06);}
 .montante-row:last-child{border-bottom:none;}
+/* Calendrier : styles de secours si le fichier /assets/ ne charge pas (FTP) */
+.strateedge-date-wrap{position:relative;width:100%;min-height:42px;}
+.strateedge-date-wrap .cal-icon{position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);line-height:0;color:#ff2d78;}
+.strateedge-date-wrap .cal-icon svg{display:block;width:20px!important;height:20px!important;max-width:20px;max-height:20px;}
+.strateedge-date-wrap .cal-popover:not(.is-open):empty{display:none;}
 </style>
-<link href="/includes/calendar-strateedge.css" rel="stylesheet">
+<link href="/assets/css/calendar-strateedge.css" rel="stylesheet">
 </head>
 <body>
 
@@ -291,7 +296,7 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
             <div class="strateedge-date-wrap">
               <input type="text" class="strateedge-date-display" placeholder="jj/mm/aaaa" readonly>
               <input type="hidden" name="date_debut" value="<?= date('Y-m-d') ?>">
-              <span class="cal-icon" aria-hidden="true"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg></span>
+              <span class="cal-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" focusable="false"><path fill="#ff2d78" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg></span>
               <div class="cal-popover" role="dialog" aria-label="Choisir une date"></div>
             </div>
           </div>
@@ -318,7 +323,7 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
           <div class="strateedge-date-wrap">
             <input type="text" class="strateedge-date-display" placeholder="jj/mm/aaaa" readonly>
             <input type="hidden" name="date_match" value="">
-            <span class="cal-icon" aria-hidden="true"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg></span>
+            <span class="cal-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" focusable="false"><path fill="#ff2d78" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg></span>
             <div class="cal-popover" role="dialog" aria-label="Choisir une date"></div>
           </div>
         </div>
@@ -362,7 +367,7 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
             <div class="strateedge-date-wrap">
               <input type="text" class="strateedge-date-display" placeholder="jj/mm/aaaa" readonly>
               <input type="hidden" name="date_match" value="<?= $editStepRow['date_match'] ? htmlspecialchars($editStepRow['date_match']) : '' ?>">
-              <span class="cal-icon" aria-hidden="true"><svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg></span>
+              <span class="cal-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" focusable="false"><path fill="#ff2d78" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg></span>
               <div class="cal-popover" role="dialog" aria-label="Choisir une date"></div>
             </div>
           </div>
@@ -455,6 +460,6 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
   <?php endif; ?>
 </div>
 
-<script src="/includes/calendar-strateedge.js" defer></script>
+<script src="/assets/js/calendar-strateedge.js" defer></script>
 </body>
 </html>
