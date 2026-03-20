@@ -14,6 +14,7 @@ require_once __DIR__ . '/sidebar.php';
   <title>HT Markets Tracker — Admin StratEdge</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="../includes/calendar-strateedge.css">
   <style>
     :root{--bg-dark:#050810;--bg-card:#0d1220;--bg-card2:#111827;--neon-green:#ff2d78;--neon-green-dim:#d6245f;--neon-blue:#00d4ff;--neon-purple:#a855f7;--text-primary:#f0f4f8;--text-secondary:#b0bec9;--text-muted:#8a9bb0;--border-subtle:rgba(255,45,120,0.12);--win:#00ff88;--lose:#ff4455;--gold:#c8a45e}
     *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
@@ -54,6 +55,9 @@ require_once __DIR__ . '/sidebar.php';
     .fg{display:flex;flex-direction:column;gap:.3rem}
     .fg label{font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted)}
     .fg input,.fg select{background:rgba(255,255,255,.04);border:1px solid var(--border-subtle);border-radius:8px;padding:.55rem .75rem;color:var(--text-primary);font-family:'Rajdhani',sans-serif;font-size:.92rem;transition:border .2s}
+    .fg .strateedge-date-wrap .strateedge-date-display{background:rgba(255,255,255,.04);border:1px solid var(--border-subtle);border-radius:8px;padding:.55rem 2.5rem .55rem .75rem;color:var(--text-primary);font-family:'Rajdhani',sans-serif;font-size:.92rem;transition:border .2s}
+    .fg .strateedge-date-wrap .strateedge-date-display:focus{outline:none;border-color:var(--neon-green);box-shadow:0 0 12px rgba(255,45,120,.15)}
+    .fg .strateedge-date-wrap{min-height:38px}
     .fg input:focus,.fg select:focus{outline:none;border-color:var(--neon-green);box-shadow:0 0 12px rgba(255,45,120,.15)}
     .fg select option{background:#0d1220;color:#f0f4f8}
     .btn-add{background:linear-gradient(135deg,var(--neon-green),#ff6b9d);color:#fff;border:none;border-radius:10px;padding:.65rem 1.5rem;font-family:'Orbitron',sans-serif;font-size:.75rem;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .3s;text-transform:uppercase;white-space:nowrap}
@@ -149,7 +153,14 @@ require_once __DIR__ . '/sidebar.php';
   <div class="section">
     <div class="sec-title"><span class="ico">➕</span> Ajouter un Bet</div>
     <div class="form-grid" id="betForm">
-      <div class="fg"><label>Date</label><input type="date" id="fDate"></div>
+      <div class="fg"><label>Date</label>
+        <div class="strateedge-date-wrap" style="min-height:38px">
+          <input type="hidden" id="fDate" value="<?= date('Y-m-d') ?>">
+          <input type="text" class="strateedge-date-display" readonly placeholder="jj/mm/aaaa" value="<?= date('d/m/Y') ?>">
+          <span class="cal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+          <div class="cal-popover"></div>
+        </div>
+      </div>
       <div class="fg"><label>Ligue</label><input type="text" id="fLeague" placeholder="ex: Bundesliga 2"></div>
       <div class="fg"><label>Match</label><input type="text" id="fMatch" placeholder="ex: Hannover vs Braunschweig"></div>
       <div class="fg"><label>Heure</label><input type="time" id="fTime"></div>
@@ -517,8 +528,8 @@ function importJSON(e) {
 }
 
 // ─── INIT ───
-document.getElementById('fDate').value = new Date().toISOString().split('T')[0];
 render();
 </script>
+<script src="../includes/calendar-strateedge.js"></script>
 </body>
 </html>
