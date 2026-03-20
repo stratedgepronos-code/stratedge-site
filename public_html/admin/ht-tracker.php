@@ -58,6 +58,8 @@ require_once __DIR__ . '/sidebar.php';
     .fg .strateedge-date-wrap .strateedge-date-display{background:rgba(255,255,255,.04);border:1px solid var(--border-subtle);border-radius:8px;padding:.55rem 2.5rem .55rem .75rem;color:var(--text-primary);font-family:'Rajdhani',sans-serif;font-size:.92rem;transition:border .2s}
     .fg .strateedge-date-wrap .strateedge-date-display:focus{outline:none;border-color:var(--neon-green);box-shadow:0 0 12px rgba(255,45,120,.15)}
     .fg .strateedge-date-wrap{min-height:38px}
+    .fg .strateedge-date-wrap .cal-icon{position:absolute;right:.75rem;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--neon-green)}
+    .fg .strateedge-date-wrap .cal-icon svg{display:block;width:20px;height:20px;max-width:20px;max-height:20px}
     .fg input:focus,.fg select:focus{outline:none;border-color:var(--neon-green);box-shadow:0 0 12px rgba(255,45,120,.15)}
     .fg select option{background:#0d1220;color:#f0f4f8}
     .btn-add{background:linear-gradient(135deg,var(--neon-green),#ff6b9d);color:#fff;border:none;border-radius:10px;padding:.65rem 1.5rem;font-family:'Orbitron',sans-serif;font-size:.75rem;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .3s;text-transform:uppercase;white-space:nowrap}
@@ -157,7 +159,7 @@ require_once __DIR__ . '/sidebar.php';
         <div class="strateedge-date-wrap" style="min-height:38px">
           <input type="hidden" id="fDate" value="<?= date('Y-m-d') ?>">
           <input type="text" class="strateedge-date-display" readonly placeholder="jj/mm/aaaa" value="<?= date('d/m/Y') ?>">
-          <span class="cal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+          <span class="cal-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:block;width:20px;height:20px;max-width:20px;max-height:20px"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
           <div class="cal-popover"></div>
         </div>
       </div>
