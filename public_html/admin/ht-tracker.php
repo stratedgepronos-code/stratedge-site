@@ -14,7 +14,7 @@ require_once __DIR__ . '/sidebar.php';
   <title>HT Markets Tracker — Admin StratEdge</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Bebas+Neue&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-  <link rel="stylesheet" href="../includes/calendar-strateedge.css">
+  <link rel="stylesheet" href="../assets/css/calendar-strateedge.css">
   <style>
     :root{--bg-dark:#050810;--bg-card:#0d1220;--bg-card2:#111827;--neon-green:#ff2d78;--neon-green-dim:#d6245f;--neon-blue:#00d4ff;--neon-purple:#a855f7;--text-primary:#f0f4f8;--text-secondary:#b0bec9;--text-muted:#8a9bb0;--border-subtle:rgba(255,45,120,0.12);--win:#00ff88;--lose:#ff4455;--gold:#c8a45e}
     *,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
@@ -534,6 +534,6 @@ function importJSON(e) {
 // ─── INIT ───
 render();
 </script>
-<script src="../includes/calendar-strateedge.js"></script>
+<script src="../assets/js/calendar-strateedge.js"></script>
 </body>
 </html>
