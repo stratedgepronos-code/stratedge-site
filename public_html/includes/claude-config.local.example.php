@@ -11,4 +11,4 @@
 if (!defined('ABSPATH')) {
     define('ABSPATH', true);
 }
-define('CLAUDE_API_KEY', 'sk-ant-api03-TA_CLE_ICI');
+define('CLAUDE_API_KEY', 'TA_CLE_ICI');
