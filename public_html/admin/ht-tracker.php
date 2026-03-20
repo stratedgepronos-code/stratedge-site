@@ -54,15 +54,17 @@ require_once __DIR__ . '/sidebar.php';
     .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;align-items:end}
     .fg{display:flex;flex-direction:column;gap:.3rem}
     .fg label{font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted)}
-    .fg input,.fg select{background:rgba(255,255,255,.04);border:1px solid var(--border-subtle);border-radius:8px;padding:.55rem .75rem;color:var(--text-primary);font-family:'Rajdhani',sans-serif;font-size:.92rem;transition:border .2s}
-    .fg .strateedge-date-wrap .strateedge-date-display{background:rgba(255,255,255,.04);border:1px solid var(--border-subtle);border-radius:8px;padding:.55rem 2.5rem .55rem .75rem;color:var(--text-primary);font-family:'Rajdhani',sans-serif;font-size:.92rem;transition:border .2s}
-    .fg .strateedge-date-wrap .strateedge-date-display:focus{outline:none;border-color:var(--neon-green);box-shadow:0 0 12px rgba(255,45,120,.15)}
-    .fg .strateedge-date-wrap{min-height:38px}
-    .fg .strateedge-date-wrap .cal-icon{position:absolute;right:.75rem;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--neon-green)}
-    .fg .strateedge-date-wrap .cal-icon svg{display:block;width:20px;height:20px;max-width:20px;max-height:20px}
+    .fg input,.fg select{background:rgba(255,255,255,.04);border:1px solid var(--border-subtle);border-radius:8px;padding:.55rem .75rem;color:var(--text-primary);font-family:'Rajdhani',sans-serif;font-size:.92rem;transition:border .2s;height:38px}
     .fg input:focus,.fg select:focus{outline:none;border-color:var(--neon-green);box-shadow:0 0 12px rgba(255,45,120,.15)}
     .fg select option{background:#0d1220;color:#f0f4f8}
-    .btn-add{background:linear-gradient(135deg,var(--neon-green),#ff6b9d);color:#fff;border:none;border-radius:10px;padding:.65rem 1.5rem;font-family:'Orbitron',sans-serif;font-size:.75rem;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .3s;text-transform:uppercase;white-space:nowrap}
+    /* Date picker override — forcer le wrapper à se comporter comme un input normal */
+    .fg .strateedge-date-wrap{position:relative;width:100%;height:38px;min-height:unset}
+    .fg .strateedge-date-wrap .strateedge-date-display{width:100%;height:38px;background:rgba(255,255,255,.04);border:1px solid var(--border-subtle);border-radius:8px;padding:.55rem 2.2rem .55rem .75rem;color:var(--text-primary);font-family:'Rajdhani',sans-serif;font-size:.92rem;cursor:pointer;transition:border .2s}
+    .fg .strateedge-date-wrap .strateedge-date-display:focus{outline:none;border-color:var(--neon-green);box-shadow:0 0 12px rgba(255,45,120,.15)}
+    .fg .strateedge-date-wrap .cal-icon{position:absolute;right:8px;top:0;height:38px;display:flex;align-items:center;pointer-events:none;color:var(--neon-green);z-index:1}
+    .fg .strateedge-date-wrap .cal-icon svg{width:16px;height:16px;flex-shrink:0}
+    .fg .strateedge-date-wrap .cal-popover{top:42px}
+    .btn-add{background:linear-gradient(135deg,var(--neon-green),#ff6b9d);color:#fff;border:none;border-radius:10px;padding:.65rem 1.5rem;font-family:'Orbitron',sans-serif;font-size:.75rem;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .3s;text-transform:uppercase;white-space:nowrap;height:38px}
     .btn-add:hover{transform:translateY(-2px);box-shadow:0 6px 25px rgba(255,45,120,.35)}
 
     /* ─── BETS TABLE ─── */
@@ -156,10 +158,10 @@ require_once __DIR__ . '/sidebar.php';
     <div class="sec-title"><span class="ico">➕</span> Ajouter un Bet</div>
     <div class="form-grid" id="betForm">
       <div class="fg"><label>Date</label>
-        <div class="strateedge-date-wrap" style="min-height:38px">
+        <div class="strateedge-date-wrap">
           <input type="hidden" id="fDate" value="<?= date('Y-m-d') ?>">
           <input type="text" class="strateedge-date-display" readonly placeholder="jj/mm/aaaa" value="<?= date('d/m/Y') ?>">
-          <span class="cal-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:block;width:20px;height:20px;max-width:20px;max-height:20px"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
+          <span class="cal-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>
           <div class="cal-popover"></div>
         </div>
       </div>
