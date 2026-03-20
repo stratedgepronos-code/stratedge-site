@@ -46,6 +46,8 @@ require_once __DIR__ . '/sidebar.php';
 
     /* ─── SECTIONS ─── */
     .section{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:14px;padding:1.5rem;margin-bottom:1.5rem;position:relative;overflow:hidden}
+    /* Calendrier : pas de clip + au-dessus des sections suivantes (charts) */
+    .section.section-bet-form{overflow:visible;z-index:25}
     .section::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--neon-green),var(--neon-blue));opacity:.6}
     .sec-title{font-family:'Orbitron',sans-serif;font-size:.95rem;font-weight:700;margin-bottom:1rem;display:flex;align-items:center;gap:.6rem}
     .sec-title .ico{font-size:1.1rem}
@@ -63,7 +65,7 @@ require_once __DIR__ . '/sidebar.php';
     .fg .strateedge-date-wrap .strateedge-date-display:focus{outline:none;border-color:var(--neon-green);box-shadow:0 0 12px rgba(255,45,120,.15)}
     .fg .strateedge-date-wrap .cal-icon{position:absolute;right:8px;top:0;height:38px;display:flex;align-items:center;pointer-events:none;color:var(--neon-green);z-index:1}
     .fg .strateedge-date-wrap .cal-icon svg{width:16px;height:16px;flex-shrink:0}
-    .fg .strateedge-date-wrap .cal-popover{top:42px}
+    .fg .strateedge-date-wrap .cal-popover{top:42px;z-index:1000}
     .btn-add{background:linear-gradient(135deg,var(--neon-green),#ff6b9d);color:#fff;border:none;border-radius:10px;padding:.65rem 1.5rem;font-family:'Orbitron',sans-serif;font-size:.75rem;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .3s;text-transform:uppercase;white-space:nowrap;height:38px}
     .btn-add:hover{transform:translateY(-2px);box-shadow:0 6px 25px rgba(255,45,120,.35)}
 
@@ -154,7 +156,7 @@ require_once __DIR__ . '/sidebar.php';
   </div>
 
   <!-- ADD BET -->
-  <div class="section">
+  <div class="section section-bet-form">
     <div class="sec-title"><span class="ico">➕</span> Ajouter un Bet</div>
     <div class="form-grid" id="betForm">
       <div class="fg"><label>Date</label>
