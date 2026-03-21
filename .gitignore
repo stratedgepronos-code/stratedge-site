@@ -34,3 +34,6 @@ vendor/
 
 # Uploads : NE PAS versionner (images uploadées en prod, supprimées à chaque deploy sinon)
 public_html/uploads/
+
+# Slot bracket — données palmarès générées sur le serveur
+public_html/slot-history.json
