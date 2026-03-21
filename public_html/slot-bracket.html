@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Passion+One:wght@400;700;900&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#0a0810;color:#e8e0d0;font-family:'Chakra Petch',sans-serif;min-height:100vh}
+body{background:#0a0810;color:#e8e0d0;font-family:'Chakra Petch',sans-serif;min-height:100vh;overflow-x:hidden}
 ::placeholder{color:rgba(212,175,55,0.25)}
 body::before{content:'';position:fixed;inset:0;z-index:0;opacity:0.03;pointer-events:none;background-image:repeating-linear-gradient(45deg,transparent,transparent 35px,rgba(212,175,55,0.5) 35px,rgba(212,175,55,0.5) 36px)}
 .page{position:relative;z-index:1;padding:12px 8px}
@@ -36,8 +36,9 @@ body::before{content:'';position:fixed;inset:0;z-index:0;opacity:0.03;pointer-ev
 .hdr h1{font-family:'Passion One',sans-serif;font-size:clamp(24px,4vw,44px);font-weight:900;letter-spacing:3px;line-height:1;background:linear-gradient(135deg,#d4af37,#f5e6a3,#d4af37);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:0 0 2px}
 .hdr h2{font-family:'Passion One',sans-serif;font-size:clamp(14px,2.5vw,22px);font-weight:400;color:#d4af37;letter-spacing:6px}
 
-/* ═══ BRACKET WORLD CUP LAYOUT ═══ */
-.bracket-wrap{display:flex;align-items:center;justify-content:center;gap:0;padding:8px 0;overflow-x:auto;min-height:600px;-webkit-overflow-scrolling:touch}
+/* ═══ BRACKET WORLD CUP LAYOUT — scale pour tenir dans l'écran ═══ */
+.bracket-viewport{width:100%;max-width:100%;overflow:hidden;display:flex;justify-content:center;align-items:flex-start;min-height:0}
+.bracket-wrap{display:flex;align-items:center;justify-content:center;gap:0;padding:8px 0;overflow:visible;min-height:560px;flex-shrink:0;transform-origin:top center;will-change:transform}
 .bcol{display:flex;flex-direction:column;justify-content:space-around;flex-shrink:0}
 .bcol-label{font-family:'Passion One',sans-serif;font-size:9px;letter-spacing:3px;color:rgba(212,175,55,0.35);text-align:center;margin-bottom:6px;white-space:nowrap}
 .bcol-label.fin{color:#d4af37;font-size:11px}
@@ -126,7 +127,7 @@ body::before{content:'';position:fixed;inset:0;z-index:0;opacity:0.03;pointer-ev
   <h2>BRACKET TOURNAMENT</h2>
 </div>
 
-<div class="bracket-wrap" id="bracket"></div>
+<div class="bracket-viewport" id="bracketViewport"><div class="bracket-wrap" id="bracket"></div></div>
 
 <div class="chb" id="chb">
   <div style="font-size:40px;margin-bottom:4px">🏆</div>
@@ -219,6 +220,30 @@ function togP(id){
   setTimeout(syncSave, 100);
 }
 
+// ═══ BRACKET — adapter la largeur à l'écran (scale, pas de scroll horizontal) ═══
+var bracketFitTimer=null;
+function scheduleBracketFit(){
+  requestAnimationFrame(function(){requestAnimationFrame(scaleBracketToFit);});
+}
+function scaleBracketToFit(){
+  var outer=document.getElementById('bracketViewport');
+  var inner=document.getElementById('bracket');
+  if(!outer||!inner)return;
+  inner.style.transform='';
+  outer.style.minHeight='';
+  if(!inner.querySelector('.bcol')){outer.style.height='';return;}
+  var w=inner.scrollWidth;
+  if(w<20)return;
+  var avail=Math.max(240,outer.getBoundingClientRect().width-6);
+  var s=avail/w;
+  if(s>1.42)s=1.42;
+  if(s<0.22)s=0.22;
+  inner.style.transform='scale('+s+')';
+  inner.style.transformOrigin='top center';
+  var h=inner.scrollHeight;
+  outer.style.height=Math.ceil(h*s+8)+'px';
+}
+
 // ═══ BUILD BRACKET — WORLD CUP STYLE ═══
 function buildBracket(){
   initData();
@@ -226,7 +251,7 @@ function buildBracket(){
   document.getElementById('chb').classList.remove('show');
   var lw=document.getElementById('logo-wrap-main');if(lw)lw.classList.remove('winner');
 
-  if(active.length===3){build3P(bk);return;}
+  if(active.length===3){build3P(bk);scheduleBracketFit();return;}
 
   // 2 PLAYERS: Left side → Center ← Right side
   // Left: R16(0-3) → QF(0-1) → SF(0)
@@ -266,6 +291,7 @@ function buildBracket(){
   bk.appendChild(mkConn());
   // RIGHT HUITIÈMES
   bk.appendChild(mkCol('HUITIÈMES','r16',[4,5,6,7],gaps.r16,true));
+  scheduleBracketFit();
 }
 
 function mkCol(label,rk,indices,gap,isRight){
@@ -635,6 +661,11 @@ function startSync(){
   st.textContent = '@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}';
   document.head.appendChild(st);
 })();
+
+window.addEventListener('resize',function(){
+  clearTimeout(bracketFitTimer);
+  bracketFitTimer=setTimeout(scaleBracketToFit,100);
+});
 
 // ═══ INIT ═══
 buildPSel();
