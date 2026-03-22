@@ -41,47 +41,8 @@ $categoriesConfig = [
     ],
 ];
 
-/** Historique : null = tout voir (membres, super admin, admin général). Sinon liste des clés section autorisées. */
-function historique_allowed_section_keys(): ?array {
-    if (!isAdmin()) {
-        return null;
-    }
-    if (isSuperAdmin()) {
-        return null;
-    }
-    $r = $_SESSION['admin_role'] ?? '';
-    if ($r === 'admin') {
-        return null;
-    }
-    if (isAdminTennis()) {
-        return ['tennis_safe', 'tennis_fun', 'tennis_live'];
-    }
-    if (isAdminFun() || isAdminFunSport()) {
-        return ['football_fun', 'hockey_fun', 'basket_fun'];
-    }
-    return null;
-}
-
-/** Ordre d’affichage : Multisport → Tennis → Fun ; filtré selon les droits admin. */
-function historique_visible_category_keys(?array $allowedKeys, array $categoriesConfig): array {
-    $order = ['multisport', 'tennis', 'fun'];
-    if ($allowedKeys === null) {
-        return $order;
-    }
-    $out = [];
-    foreach ($order as $ck) {
-        if (!isset($categoriesConfig[$ck])) {
-            continue;
-        }
-        foreach ($categoriesConfig[$ck]['sections'] as $sk) {
-            if (in_array($sk, $allowedKeys, true)) {
-                $out[] = $ck;
-                break;
-            }
-        }
-    }
-    return $out;
-}
+/** Page historique publique : toutes les catégories visibles pour membres et non-membres (pas de filtre par rôle admin). */
+$visibleCategoryKeys = ['multisport', 'tennis', 'fun'];
 
 function betSectionKey($b) {
     $sport = $b['sport'] ?? null;
@@ -91,28 +52,6 @@ function betSectionKey($b) {
     $type = $b['type'] ?? 'safe';
     if (strpos($type, 'live') !== false) $t = 'live'; elseif (strpos($type, 'fun') !== false) $t = 'fun'; else $t = 'safe';
     return $sport . '_' . $t;
-}
-
-$historiqueAllowedKeys = historique_allowed_section_keys();
-if ($historiqueAllowedKeys !== null) {
-    $bets = array_values(array_filter($bets, function ($b) use ($historiqueAllowedKeys) {
-        return in_array(betSectionKey($b), $historiqueAllowedKeys, true);
-    }));
-}
-
-$visibleCategoryKeys = historique_visible_category_keys($historiqueAllowedKeys, $categoriesConfig);
-
-if ($historiqueAllowedKeys !== null) {
-    $sectionOk = ($filtreSection === 'tous');
-    if (!$sectionOk && isset($categoriesConfig[$filtreSection]) && in_array($filtreSection, $visibleCategoryKeys, true)) {
-        $sectionOk = true;
-    }
-    if (!$sectionOk && in_array($filtreSection, $historiqueAllowedKeys, true)) {
-        $sectionOk = true;
-    }
-    if (!$sectionOk) {
-        $filtreSection = 'tous';
-    }
 }
 
 $sectionsBets = [];
@@ -196,12 +135,114 @@ if ($filtreSection !== 'tous' && isset($sectionsBets[$filtreSection])) {
         ? round($stats['gagnes'] / ($stats['gagnes'] + $stats['perdus']) * 100)
         : null;
 }
+
+// Données graphiques : section / catégorie courante, tous les résultats, avant filtre « gagné / perdu / annulé »
+$betsPourChart = array_values($betsFiltres);
 if ($filtre !== 'tous') {
     $betsFiltres = array_filter($betsFiltres, fn($b) => $b['resultat'] === $filtre);
 }
 $betsFiltres = array_values($betsFiltres);
 $betsPerPage = 18;
 $totalBets = count($betsFiltres);
+
+$chartBets = $betsPourChart;
+
+$parMois = [];
+foreach ($chartBets as $b) {
+    $d = $b['date_resultat'] ?? $b['date_post'] ?? null;
+    if (!$d) {
+        continue;
+    }
+    $moisKey = date('Y-m', strtotime($d));
+    if (!isset($parMois[$moisKey])) {
+        $parMois[$moisKey] = ['g' => 0, 'p' => 0, 'a' => 0];
+    }
+    if ($b['resultat'] === 'gagne') {
+        $parMois[$moisKey]['g']++;
+    } elseif ($b['resultat'] === 'perdu') {
+        $parMois[$moisKey]['p']++;
+    } elseif ($b['resultat'] === 'annule') {
+        $parMois[$moisKey]['a']++;
+    }
+}
+ksort($parMois);
+$chartMoisLabels = array_keys($parMois);
+$chartMoisG = array_column(array_values($parMois), 'g');
+$chartMoisP = array_column(array_values($parMois), 'p');
+$chartMoisA = array_column(array_values($parMois), 'a');
+$moisFr = ['01' => 'Jan', '02' => 'Fév', '03' => 'Mar', '04' => 'Avr', '05' => 'Mai', '06' => 'Juin', '07' => 'Juil', '08' => 'Aoû', '09' => 'Sep', '10' => 'Oct', '11' => 'Nov', '12' => 'Déc'];
+$chartMoisLabelsFr = array_map(static function ($k) use ($moisFr) {
+    $parts = explode('-', $k);
+    return ($moisFr[$parts[1] ?? ''] ?? ($parts[1] ?? '')) . ' ' . substr($parts[0] ?? '', 2);
+}, $chartMoisLabels);
+
+$chartWinrateLabels = [];
+$chartWinrateData = [];
+$cumG = 0;
+$cumP = 0;
+$chartBetsSorted = $chartBets;
+usort($chartBetsSorted, static function ($a, $b) {
+    $da = $a['date_resultat'] ?? $a['date_post'] ?? '2000-01-01';
+    $db = $b['date_resultat'] ?? $b['date_post'] ?? '2000-01-01';
+    return strcmp($da, $db);
+});
+$step = max(1, (int) floor(count($chartBetsSorted) / 30));
+foreach ($chartBetsSorted as $i => $b) {
+    if ($b['resultat'] === 'gagne') {
+        $cumG++;
+    } elseif ($b['resultat'] === 'perdu') {
+        $cumP++;
+    }
+    if (($i % $step === 0 || $i === count($chartBetsSorted) - 1) && ($cumG + $cumP) > 0) {
+        $d = $b['date_resultat'] ?? $b['date_post'] ?? '';
+        $chartWinrateLabels[] = $d ? date('d/m', strtotime($d)) : '#' . ($i + 1);
+        $chartWinrateData[] = round($cumG / ($cumG + $cumP) * 100, 1);
+    }
+}
+
+$currentStreak = 0;
+$currentStreakType = '';
+$bestStreak = 0;
+$tempStreak = 0;
+$cotesGagneesChart = [];
+foreach ($chartBetsSorted as $b) {
+    if ($b['resultat'] === 'gagne') {
+        $tempStreak++;
+        if ($tempStreak > $bestStreak) {
+            $bestStreak = $tempStreak;
+        }
+        $coteVal = (float) str_replace(',', '.', (string) ($b['cote'] ?? 0));
+        if ($coteVal > 0) {
+            $cotesGagneesChart[] = $coteVal;
+        }
+    } elseif ($b['resultat'] === 'perdu') {
+        $tempStreak = 0;
+    }
+}
+$reversed = array_reverse($chartBetsSorted);
+foreach ($reversed as $b) {
+    if ($b['resultat'] === 'gagne') {
+        $currentStreak++;
+        $currentStreakType = 'W';
+    } elseif ($b['resultat'] === 'perdu') {
+        if ($currentStreakType === '') {
+            $currentStreak = 1;
+            $currentStreakType = 'L';
+        }
+        break;
+    } else {
+        continue;
+    }
+    if ($currentStreakType === 'W') {
+        continue;
+    }
+    break;
+}
+$chartCoteMoyGagnes = count($cotesGagneesChart) > 0 ? round(array_sum($cotesGagneesChart) / count($cotesGagneesChart), 2) : 0;
+// Afficher la zone graphiques dès qu’il y a au moins 1 bet dans le périmètre (évite masquage avec 1–2 paris)
+$hasChartData = count($chartBets) >= 1;
+$hasWinrateSeries = count($chartWinrateLabels) >= 1;
+$hasMoisSeries = count($chartMoisLabels) > 0;
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -294,6 +335,23 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
 .filter-count{font-family:'Space Mono',monospace;font-size:0.68rem;padding:0.1rem 0.4rem;border-radius:50px;background:rgba(255,255,255,0.08);}
 .filter-pill.active .filter-count{background:rgba(255,255,255,0.15);}
 
+/* ═══ Graphiques Chart.js ═══ */
+.charts-band{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:2rem;}
+.chart-card{background:var(--card,#111827);border:1px solid var(--border,rgba(255,45,120,0.15));border-radius:14px;padding:1.2rem 1.4rem;position:relative;overflow:hidden;}
+.chart-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#ff2d78,#00d4ff);opacity:0.5;}
+.chart-card-title{font-family:'Orbitron',sans-serif;font-size:0.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--txt3,#8a9bb0);margin-bottom:0.8rem;display:flex;align-items:center;gap:0.5rem;}
+.chart-box{position:relative;height:220px;min-height:200px;}
+.chart-box canvas{width:100%!important;height:100%!important;display:block;}
+.chart-fallback{font-size:0.9rem;color:var(--txt3,#8a9bb0);padding:1.5rem;text-align:center;line-height:1.5;}
+.stats-band{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem;}
+.stat-box{background:var(--card,#111827);border:1px solid var(--border,rgba(255,45,120,0.15));border-radius:12px;padding:1rem 1.2rem;text-align:center;position:relative;overflow:hidden;}
+.stat-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:0.4;}
+.stat-box.streak::before{background:#ff2d78;}
+.stat-box.best::before{background:#d4af37;}
+.stat-box.cote::before{background:#00d4ff;}
+.stat-box-value{font-family:'Orbitron',sans-serif;font-size:1.6rem;font-weight:900;line-height:1.2;}
+.stat-box-label{font-size:0.7rem;color:var(--txt3,#8a9bb0);text-transform:uppercase;letter-spacing:1px;margin-top:0.3rem;}
+
 /* ═══ Cards historique — grille 3 colonnes ═══ */
 .hist-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr));gap:1.2rem;}
 .hist-card{display:flex;flex-direction:column;background:var(--card,#111827);border-radius:14px;overflow:hidden;transition:all .35s;border:1px solid var(--border,rgba(255,45,120,0.15));opacity:0;animation:cardSlide .4s ease-out forwards;position:relative;}
@@ -346,10 +404,19 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
 
 /* ═══ Responsive ═══ */
 @media(max-width:900px){
+  .charts-band{grid-template-columns:1fr;}
+  .stats-band{grid-template-columns:repeat(3,1fr);gap:0.7rem;}
   .stats-dashboard{gap:1.5rem;}
   .mini-stat{min-width:130px;padding:0.8rem 1rem;}
 }
 @media(max-width:768px){
+  .charts-band{grid-template-columns:1fr;gap:0.8rem;}
+  .chart-box{height:170px;}
+  .chart-card{padding:1rem;}
+  .stats-band{grid-template-columns:repeat(3,1fr);gap:0.5rem;}
+  .stat-box{padding:0.7rem 0.6rem;}
+  .stat-box-value{font-size:1.2rem;}
+  .stat-box-label{font-size:0.6rem;}
   .hist-hero{margin-left:-0.8rem !important;margin-right:-0.8rem !important;margin-top:-1rem;padding:1.5rem 0.8rem 1.5rem !important;}
   .hist-hero::before{display:none;}
   .hist-title{font-size:1.5rem;}
@@ -498,7 +565,7 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
   </div>
   <?php endif; ?>
 
-  <!-- Filtre : Multisports → Tennis → Fun (+ droits admin : tennis / fun / tout pour super & membres) -->
+  <!-- Filtres : Multisports → Tennis → Fun (public : tous les visiteurs voient les mêmes données) -->
   <div class="filters-section">
     <div class="filters-label">Catégorie</div>
     <div class="filters filters-categories">
@@ -518,9 +585,6 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
     <div class="filters">
       <a href="?section=<?= urlencode($currentCategorie) ?><?= $baseQuery ?>" class="filter-pill f-tous <?= $filtreSection === $currentCategorie ? 'active' : '' ?>">Toutes</a>
       <?php foreach ($categoriesConfig[$currentCategorie]['sections'] as $sk):
-        if ($historiqueAllowedKeys !== null && !in_array($sk, $historiqueAllowedKeys, true)) {
-            continue;
-        }
         if (!isset($sectionStats[$sk])) continue;
         $st = $sectionStats[$sk];
         $tauxStr = $st['taux'] !== null ? $st['taux'].'%' : '—';
@@ -538,6 +602,104 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
       <a href="?section=<?= urlencode($filtreSection) ?>&filtre=annule" class="filter-pill f-annule <?= $filtre==='annule'?'active':'' ?>">↺ Annulés</a>
     </div>
   </div>
+
+  <!-- Graphiques dynamiques (section / catégorie sélectionnée, indépendamment du filtre résultat) -->
+  <?php if ($hasChartData): ?>
+  <div class="stats-band">
+    <div class="stat-box streak">
+      <div class="stat-box-value" style="color:<?= $currentStreakType === 'W' ? '#00c864' : '#ff4444' ?>">
+        <?= $currentStreakType === 'W' ? '🔥 ' . $currentStreak . 'W' : ($currentStreakType === 'L' ? '❌ ' . $currentStreak . 'L' : '—') ?>
+      </div>
+      <div class="stat-box-label">Streak actuelle</div>
+    </div>
+    <div class="stat-box best">
+      <div class="stat-box-value" style="color:#d4af37">🏆 <?= $bestStreak ?>W</div>
+      <div class="stat-box-label">Meilleure streak</div>
+    </div>
+    <div class="stat-box cote">
+      <div class="stat-box-value" style="color:#00d4ff"><?= $chartCoteMoyGagnes > 0 ? number_format($chartCoteMoyGagnes, 2, ',', ' ') : '—' ?></div>
+      <div class="stat-box-label">Cote moy. gagnée</div>
+    </div>
+  </div>
+
+  <div class="charts-band">
+    <div class="chart-card">
+      <div class="chart-card-title">📈 Évolution du winrate</div>
+      <div class="chart-box" id="chartWinrateWrap">
+        <?php if ($hasWinrateSeries): ?>
+        <canvas id="chartWinrate"></canvas>
+        <?php else: ?>
+        <p class="chart-fallback">Pas assez de paris <strong>gagnés / perdus</strong> dans cette sélection pour tracer la courbe (ex. uniquement des annulés).</p>
+        <?php endif; ?>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-title">📊 Résultats par mois</div>
+      <div class="chart-box" id="chartMoisWrap">
+        <?php if ($hasMoisSeries): ?>
+        <canvas id="chartMois"></canvas>
+        <?php else: ?>
+        <p class="chart-fallback">Aucune date de résultat exploitable pour grouper par mois. Vérifie les champs <code>date_resultat</code> / <code>date_post</code> en base.</p>
+        <?php endif; ?>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script>
+  (function(){
+    var cOpts = {responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#111827',borderColor:'rgba(255,45,120,0.3)',borderWidth:1,titleFont:{family:'Orbitron',size:10},bodyFont:{family:'Rajdhani',size:13},padding:10,cornerRadius:8}},scales:{x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8a9bb0',font:{family:'Rajdhani',size:11},maxRotation:0}},y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#8a9bb0',font:{family:'Rajdhani',size:11}}}}};
+
+    if (typeof Chart === 'undefined') {
+      var w = document.getElementById('chartWinrateWrap');
+      var m = document.getElementById('chartMoisWrap');
+      if (w && !w.querySelector('.chart-fallback')) w.innerHTML = '<p class="chart-fallback">Bibliothèque graphique indisponible (Chart.js bloqué ou réseau). Vérifiez la connexion et la politique de sécurité (CDN cdnjs).</p>';
+      if (m && !m.querySelector('.chart-fallback')) m.innerHTML = '<p class="chart-fallback">Bibliothèque graphique indisponible.</p>';
+      return;
+    }
+
+    var wrLabels = <?= json_encode($chartWinrateLabels, JSON_UNESCAPED_UNICODE) ?>;
+    var wrData = <?= json_encode($chartWinrateData) ?>;
+    var elWr = document.getElementById('chartWinrate');
+    if (elWr && wrLabels.length >= 1 && wrData.length >= 1) {
+      new Chart(elWr, {
+        type: 'line',
+        data: { labels: wrLabels, datasets: [{
+          data: wrData,
+          borderColor: '#00d4ff',
+          backgroundColor: 'rgba(0,212,255,0.08)',
+          borderWidth: 2,
+          fill: true,
+          tension: 0.35,
+          pointRadius: wrLabels.length <= 3 ? 4 : 0,
+          pointHoverRadius: 5,
+          pointHoverBackgroundColor: '#00d4ff',
+          pointHoverBorderColor: '#fff',
+          pointHoverBorderWidth: 2
+        }]},
+        options: Object.assign({}, cOpts, { scales: Object.assign({}, cOpts.scales, { y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8a9bb0', font: { family: 'Rajdhani', size: 11 }, callback: function(v) { return v + '%'; } }, min: 0, max: 100 } }) })
+      });
+    }
+
+    var mLabels = <?= json_encode($chartMoisLabelsFr, JSON_UNESCAPED_UNICODE) ?>;
+    var mG = <?= json_encode($chartMoisG) ?>;
+    var mP = <?= json_encode($chartMoisP) ?>;
+    var mA = <?= json_encode($chartMoisA) ?>;
+    var elM = document.getElementById('chartMois');
+    if (elM && mLabels.length > 0) {
+      new Chart(elM, {
+        type: 'bar',
+        data: { labels: mLabels, datasets: [
+          { label: 'Gagnés', data: mG, backgroundColor: 'rgba(0,200,100,0.7)', borderRadius: 4, barPercentage: 0.7 },
+          { label: 'Perdus', data: mP, backgroundColor: 'rgba(255,68,68,0.7)', borderRadius: 4, barPercentage: 0.7 },
+          { label: 'Annulés', data: mA, backgroundColor: 'rgba(245,158,11,0.5)', borderRadius: 4, barPercentage: 0.7 }
+        ]},
+        options: Object.assign({}, cOpts, { plugins: Object.assign({}, cOpts.plugins, { legend: { display: true, labels: { color: '#8a9bb0', font: { family: 'Rajdhani', size: 11 }, boxWidth: 10, boxHeight: 10, padding: 12, usePointStyle: true, pointStyle: 'rectRounded' } } }), scales: Object.assign({}, cOpts.scales, { x: Object.assign({}, cOpts.scales.x, { stacked: true }), y: Object.assign({}, cOpts.scales.y, { stacked: true, beginAtZero: true }) }) })
+      });
+    }
+  })();
+  </script>
+  <?php endif; ?>
 
   <!-- Cards historique -->
   <?php if (empty($betsFiltres)): ?>
