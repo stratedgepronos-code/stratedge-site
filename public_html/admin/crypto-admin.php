@@ -31,6 +31,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? 
                 $db->prepare("INSERT INTO abonnements (membre_id, type, actif, date_debut, date_fin) VALUES (?,?,1,NOW(),?)")
                    ->execute([$pay['membre_id'], $pay['offre'], $expire]);
 
+                try {
+                    require_once __DIR__ . '/../includes/giveaway-functions.php';
+                    ajouterPointsGiveaway((int)$pay['membre_id'], (string)$pay['offre']);
+                } catch (Throwable $e) { /* GiveAway optionnel */ }
+
                 envoyerEmailTexte($pay['email'], "✅ Accès activé — StratEdge Pronos",
                     "Bonjour {$pay['nom']},\n\nVotre paiement crypto a été validé !\n"
                     . "Votre accès {$pay['offre']} est maintenant actif.\n\n"

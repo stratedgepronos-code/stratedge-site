@@ -347,7 +347,15 @@ function activerAbonnement(int $membreId, string $type): bool {
         INSERT INTO abonnements (membre_id, type, date_fin, actif, montant)
         VALUES (?, ?, ?, 1, ?)
     ");
-    return $stmt->execute([$membreId, $type, $dateFin, $montant]);
+    $ok = $stmt->execute([$membreId, $type, $dateFin, $montant]);
+
+    // GiveAway : points mensuels (Daily, Week-End, Weekly, VIP Max — pas tennis/fun)
+    try {
+        require_once __DIR__ . '/giveaway-functions.php';
+        ajouterPointsGiveaway($membreId, $type);
+    } catch (Throwable $e) { /* silencieux si tables absentes */ }
+
+    return $ok;
 }
 
 // ── Historique des abonnements ─────────────────────────────

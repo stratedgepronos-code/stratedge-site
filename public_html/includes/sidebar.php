@@ -26,6 +26,7 @@
   <a href="/montante-tennis.php">🎾 Montante Tennis</a>
   <a href="/souscrire.php">💳 Souscrire</a>
   <a href="/sav.php">🎫 SAV</a>
+  <a href="/giveaway.php">🎁 GiveAway</a>
   <?php if (isAdmin()): ?><a href="/panel-x9k3m/index.php">⚙️ Panel</a><?php endif; ?>
   <a href="/logout.php">🚪 Déconnexion</a>
 </div>
@@ -54,6 +55,7 @@
     <a class="s-link <?= $currentPage==='pronocommu'?'active':'' ?>" href="/prono-commu.php"><span class="ico">⚽</span> Prono de la commu</a>
     <a class="s-link <?= ($currentPage??'')==='montante'?'active':'' ?>" href="/montante-tennis.php"><span class="ico">🎾</span> Montante Tennis</a>
     <a class="s-link <?= $currentPage==='sav'?'active':'' ?>" href="/sav.php"><span class="ico">🎫</span> SAV</a>
+    <a class="s-link <?= ($currentPage??'')==='giveaway'?'active':'' ?>" href="/giveaway.php"><span class="ico">🎁</span> GiveAway</a>
     <div class="side-sep"></div>
     <a class="s-link <?= ($currentPage??'')==='souscrire'?'active':'' ?>" href="/souscrire.php"><span class="ico">💳</span> Souscrire</a>
     <a class="s-link" href="https://x.com/strat_edge_" target="_blank" rel="noopener noreferrer"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></span> Suivre sur X</a>
