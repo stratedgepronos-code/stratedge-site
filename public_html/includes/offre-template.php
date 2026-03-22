@@ -1130,6 +1130,80 @@ $membre = getMembre();
     .note-box p { font-size:0.8rem; color:#a09040; line-height:1.6; }
     .note-box strong { color:#ffc107; }
 
+    .stake-block {
+      margin-top:1rem;
+      background:linear-gradient(135deg,rgba(0,212,255,0.12),color-mix(in srgb, var(--color) 12%, transparent));
+      border:1px solid transparent;
+      border-radius:14px;
+      padding:1rem 1.1rem;
+      position:relative;
+      overflow:hidden;
+    }
+    .stake-block::after {
+      content:''; position:absolute; inset:-1px; border-radius:15px; padding:1px;
+      background:linear-gradient(135deg,#00d4ff,var(--color));
+      -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
+      -webkit-mask-composite:xor; mask-composite:exclude;
+      pointer-events:none;
+    }
+    .stake-block-title {
+      font-family:'Orbitron',sans-serif;
+      font-size:0.72rem;
+      letter-spacing:1.6px;
+      text-transform:uppercase;
+      background:linear-gradient(135deg,#00d4ff,var(--color));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      margin-bottom:0.4rem;
+    }
+    .stake-block-desc {
+      font-size:0.84rem;
+      color:var(--txt2);
+      margin-bottom:0.8rem;
+      line-height:1.45;
+      position:relative; z-index:1;
+    }
+    .btn-stake-offer {
+      display:flex; align-items:center; justify-content:center; gap:0.45rem;
+      width:100%; padding:0.9rem;
+      background:linear-gradient(135deg,#00d4ff,#0089ff 55%,var(--color));
+      color:#fff; border:1px solid rgba(0,212,255,0.35); border-radius:12px;
+      font-family:'Orbitron',sans-serif; font-size:0.76rem;
+      font-weight:700; letter-spacing:1.1px; text-transform:uppercase;
+      text-decoration:none; transition:all .25s;
+      box-shadow:0 6px 20px rgba(0,166,255,0.24);
+      position:relative; overflow:hidden; z-index:1;
+    }
+    .btn-stake-offer::before {
+      content:'';
+      position:absolute;
+      top:-150%; left:-18%;
+      width:36%; height:320%;
+      background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,0.34),rgba(255,255,255,0));
+      transform:rotate(24deg);
+      transition:left .45s ease;
+      pointer-events:none;
+    }
+    .btn-stake-offer:hover { transform:translateY(-2px); box-shadow:0 10px 30px rgba(0,166,255,0.4); }
+    .btn-stake-offer:hover::before { left:118%; }
+    .stake-block-note {
+      margin-top:0.5rem; font-size:0.72rem; text-align:center;
+      background:linear-gradient(135deg,#7fdfff,color-mix(in srgb, var(--color) 70%, #fff));
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      position:relative; z-index:1;
+    }
+    @keyframes stakePulseBlock {
+      0%, 100% { box-shadow:0 6px 20px rgba(0,166,255,0.24); }
+      50% { box-shadow:0 11px 32px rgba(0,166,255,0.42); }
+    }
+    @media (hover:hover) and (pointer:fine) and (min-width:901px) {
+      .btn-stake-offer { animation: stakePulseBlock 2.4s ease-in-out infinite; }
+      .btn-stake-offer:hover { animation-play-state: paused; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .btn-stake-offer { animation:none !important; }
+    }
+
+    /* Legacy tennis stake (kept for backward compat) */
     .stake-tennis-block {
       margin-top:1rem;
       background:linear-gradient(135deg,rgba(0,212,255,0.12),rgba(0,212,106,0.08));
@@ -1437,6 +1511,15 @@ $membre = getMembre();
 
     <!-- ── COLONNE PAIEMENT ── -->
     <div class="payment-col">
+
+      <?php if ($type !== 'tennis'): ?>
+      <div class="stake-block">
+        <div class="stake-block-title">Bonus Partenaire Stake</div>
+        <div class="stake-block-desc">Crée ton compte Stake avec notre lien partenaire et débloque un bonus exclusif StratEdge.</div>
+        <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake-offer">🎰 S'inscrire sur Stake · Lien bonus</a>
+        <div class="stake-block-note">Lien bonus officiel · 1 mois VIP Max offert via ce lien</div>
+      </div>
+      <?php endif; ?>
 
       <!-- StarPass -->
       <div class="payment-block">
