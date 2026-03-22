@@ -184,7 +184,13 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
       <span>📊</span> Tableau de bord
     </a>
 
-    <?php $bettingOpen = in_array($pageActive, ['poster-bet','creer-card','edit-bet-image','historique','prono-commu-admin','montante-tennis','ht-tracker']); ?>
+    <?php
+    $bettingOpenPages = ['poster-bet','creer-card','edit-bet-image','prono-commu-admin','montante-tennis','ht-tracker'];
+    if (function_exists('isSuperAdmin') && isSuperAdmin()) {
+        $bettingOpenPages[] = 'historique';
+    }
+    $bettingOpen = in_array($pageActive, $bettingOpenPages, true);
+    ?>
     <div class="nav-group <?= $bettingOpen ? 'open' : '' ?>" data-group="betting">
       <button type="button" class="nav-group-toggle" onclick="toggleNavGroup(this)">
         <span>📌</span> Betting
@@ -199,10 +205,12 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
         <?php endif; ?>
         <a href="edit-bet-image.php" <?= ($pageActive==='edit-bet-image') ?'class="active"':'' ?>><span>🖼️</span> Modifier image bet</a>
         <a href="ht-tracker.php" <?= ($pageActive==='ht-tracker') ?'class="active"':'' ?> style="<?= ($pageActive==='ht-tracker') ? '' : 'color:rgba(0,212,255,0.85);' ?>"><span>🎯</span> Bet Mi-Temps</a>
+        <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
         <a href="historique.php" <?= ($pageActive==='historique') ?'class="active"':'' ?>>
           <span>📂</span> Historique
           <?php if ($nbBetsHistorique > 0): ?><span class="badge-count"><?= $nbBetsHistorique ?></span><?php endif; ?>
         </a>
+        <?php endif; ?>
       </div>
     </div>
 
@@ -284,7 +292,9 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 <nav class="admin-mob-tabs">
   <a href="index.php" class="<?= ($pageActive==='index') ? 'active' : '' ?>"><span class="ico">📊</span><span>Dashboard</span></a>
   <a href="poster-bet.php" class="<?= ($pageActive==='poster-bet') ? 'active' : '' ?>"><span class="ico">📸</span><span>Poster</span></a>
+  <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
   <a href="historique.php" class="<?= ($pageActive==='historique') ? 'active' : '' ?>"><span class="ico">📂</span><span>Historique</span></a>
+  <?php endif; ?>
   <a href="messages.php" class="<?= ($pageActive==='messages') ? 'active' : '' ?>"><span class="ico">💬</span><span>Messages</span></a>
   <a href="tickets.php" class="<?= ($pageActive==='tickets') ? 'active' : '' ?>"><span class="ico">🎫</span><span>SAV</span></a>
 </nav>
