@@ -704,8 +704,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       <li><a href="#stake">Stake.bet</a></li>
       <li><a href="bets.php">📊 Les Bets</a></li>
       <?php if (isLoggedIn()): ?>
-        <li><a href="giveaway.php">🎁 GiveAway</a></li>
-        <li><a href="register.php" class="nav-cta">S'inscrire</a></li>
         <?php if (isAdmin()): ?>
           <li><a href="panel-x9k3m/index.php" style="background:rgba(255,193,7,0.15);border:1px solid rgba(255,193,7,0.3);color:#ffc107;padding:0.5rem 1.2rem;border-radius:6px;font-weight:700;">⚙️ Panel</a></li>
         <?php endif; ?>
@@ -758,9 +756,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       </a>
       <a href="sav.php" onclick="closeMenu()">
         <span class="m-icon">🎫</span> Support / SAV
-      </a>
-      <a href="giveaway.php" onclick="closeMenu()">
-        <span class="m-icon">🎁</span> GiveAway
       </a>
       <?php if (isAdmin()): ?>
         <div class="mobile-menu-divider"></div>

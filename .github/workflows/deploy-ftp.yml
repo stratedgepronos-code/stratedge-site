@@ -21,3 +21,9 @@ jobs:
           local-dir: ./public_html/
           server-dir: /public_html/
           dangerous-clean-slate: false
+          # Ré-inclure les défauts + claude-config.local.php (hors Git) : exclu du publish/delete FTP
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            includes/claude-config.local.php

@@ -33,6 +33,7 @@ jobs:
               --exclude='uploads/' \
               --filter 'P includes/smtp-config.php' \
               --filter 'P includes/football_data_config.php' \
+              --filter 'P includes/claude-config.local.php' \
               --timeout=60 \
               -e "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p ${{ env.SSH_PORT }}" \
               public_html/ \
