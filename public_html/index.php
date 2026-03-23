@@ -186,8 +186,9 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .starpass-info { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem; }
     .crypto-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px 24px; margin-top: 0.5rem; background: linear-gradient(135deg, #f7931a, #e2820a); color: #fff; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; border: none; border-radius: 8px; cursor: pointer; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(247,147,26,0.3); }
     .crypto-btn:hover { background: linear-gradient(135deg, #ffaa33, #f7931a); box-shadow: 0 6px 25px rgba(247,147,26,0.5); transform: translateY(-2px); }
-    .giveaway-badge { margin-top: 0.7rem; padding: 0.55rem 0.8rem; border-radius: 10px; background: linear-gradient(135deg, rgba(255,45,120,0.08), rgba(0,212,255,0.08)) padding-box, linear-gradient(135deg, #ff2d78, #a855f7, #00d4ff) border-box; border: 1px solid transparent; position: relative; text-align: center; overflow: hidden; animation: giveawayPulse 3s ease-in-out infinite; }
-    .giveaway-badge::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, transparent 0%, rgba(255,45,120,0.15) 25%, rgba(168,85,247,0.12) 50%, rgba(0,212,255,0.15) 75%, transparent 100%); transform: translateX(-100%); animation: giveawaySweep 4s ease-in-out infinite; z-index: 1; }
+    .giveaway-badge { margin-top: 0.7rem; padding: 0.55rem 0.8rem; border-radius: 10px; background: linear-gradient(135deg, rgba(255,45,120,0.08), rgba(0,212,255,0.08)) padding-box, linear-gradient(135deg, #ff2d78, #a855f7, #00d4ff) border-box; border: 1px solid transparent; position: relative; text-align: center; animation: giveawayPulse 3s ease-in-out infinite; }
+    .giveaway-badge .gw-sweep { position: absolute; inset: 1px; border-radius: 9px; overflow: hidden; pointer-events: none; }
+    .giveaway-badge .gw-sweep::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(90deg, transparent 0%, rgba(255,45,120,0.15) 30%, rgba(168,85,247,0.12) 50%, rgba(0,212,255,0.15) 70%, transparent 100%); transform: translateX(-100%); animation: giveawaySweep 4s ease-in-out infinite; }
     .giveaway-badge .gw-emoji { position: relative; z-index: 2; }
     .giveaway-badge .gw-txt { font-family: 'Orbitron', sans-serif; font-size: 0.7rem; font-weight: 700; letter-spacing: 1.5px; background: linear-gradient(135deg, #ff2d78, #a855f7, #00d4ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 8px rgba(255,45,120,0.3)); }
     .giveaway-badge .gw-main { display: flex; align-items: center; justify-content: center; gap: 0.4rem; position: relative; z-index: 2; }
@@ -912,7 +913,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <?php else: ?>
           <a href="login.php?redirect=offre-daily.php" class="starpass-btn">🔒 Se connecter pour payer</a>
         <?php endif; ?>
-        <div class="giveaway-badge">
+        <div class="giveaway-badge"><div class="gw-sweep"></div>
           <div class="gw-main"><span class="gw-emoji">🎁</span> <span class="gw-txt">Éligible au GiveAway mensuel !</span></div>
           <div class="gw-date">À partir de Septembre</div>
         </div>
@@ -953,7 +954,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <?php else: ?>
           <a href="login.php?redirect=offre-weekend.php" class="starpass-btn">🔒 Se connecter pour payer</a>
         <?php endif; ?>
-        <div class="giveaway-badge">
+        <div class="giveaway-badge"><div class="gw-sweep"></div>
           <div class="gw-main"><span class="gw-emoji">🎁</span> <span class="gw-txt">Éligible au GiveAway mensuel !</span></div>
           <div class="gw-date">À partir de Septembre</div>
         </div>
@@ -993,7 +994,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <?php else: ?>
           <a href="login.php?redirect=offre-weekly.php" class="starpass-btn">🔒 Se connecter pour payer</a>
         <?php endif; ?>
-        <div class="giveaway-badge">
+        <div class="giveaway-badge"><div class="gw-sweep"></div>
           <div class="gw-main"><span class="gw-emoji">🎁</span> <span class="gw-txt">Éligible au GiveAway mensuel !</span></div>
           <div class="gw-date">À partir de Septembre</div>
         </div>
@@ -1079,7 +1080,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
           <?php else: ?>
             <a href="login.php?redirect=offre.php?type=vip_max" class="vip-btn">🔒 Se connecter pour payer</a>
           <?php endif; ?>
-          <div class="giveaway-badge">
+          <div class="giveaway-badge"><div class="gw-sweep"></div>
             <div class="gw-main"><span class="gw-emoji">🎁</span> <span class="gw-txt">Éligible au GiveAway mensuel !</span></div>
             <div class="gw-date">À partir de Septembre</div>
           </div>
