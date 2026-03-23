@@ -1041,11 +1041,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <p class="starpass-info">SMS · Appel · CB · Paysafecard via StarPass</p>
         <div class="crypto-separator">— ou —</div>
         <a href="offre-daily.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
-        <div class="stake-wrap">
-          <div class="stake-sep">Bonus Partenaire</div>
-          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
-          <div class="stake-offer">1 mois <span class="vip-mini"><svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="vm1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#vm1)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#vm1)"/><circle cx="6" cy="17" r="3" fill="url(#vm1)"/><circle cx="22" cy="9" r="3.5" fill="url(#vm1)"/><circle cx="38" cy="17" r="3" fill="url(#vm1)"/></svg><span class="vip-mini-label"><span class="vip-mini-txt vip-mini-vip">VIP</span><span class="vip-mini-txt vip-mini-max">MAX</span></span></span> offert via ce lien</div>
-        </div>
       </div>
     </div>
 
@@ -1090,11 +1085,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <p class="starpass-info">CB · PayPal · Paysafecard · Internet+ via StarPass</p>
         <div class="crypto-separator">— ou —</div>
         <a href="offre-weekend.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
-        <div class="stake-wrap">
-          <div class="stake-sep">Bonus Partenaire</div>
-          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
-          <div class="stake-offer">1 mois <span class="vip-mini"><svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="vm2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#vm2)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#vm2)"/><circle cx="6" cy="17" r="3" fill="url(#vm2)"/><circle cx="22" cy="9" r="3.5" fill="url(#vm2)"/><circle cx="38" cy="17" r="3" fill="url(#vm2)"/></svg><span class="vip-mini-label"><span class="vip-mini-txt vip-mini-vip">VIP</span><span class="vip-mini-txt vip-mini-max">MAX</span></span></span> offert via ce lien</div>
-        </div>
       </div>
     </div>
 
@@ -1138,11 +1128,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <p class="starpass-info">CB · PayPal · Paysafecard · Internet+ via StarPass</p>
         <div class="crypto-separator">— ou —</div>
         <a href="offre-weekly.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
-        <div class="stake-wrap">
-          <div class="stake-sep">Bonus Partenaire</div>
-          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
-          <div class="stake-offer">1 mois <span class="vip-mini"><svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="vm3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#vm3)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#vm3)"/><circle cx="6" cy="17" r="3" fill="url(#vm3)"/><circle cx="22" cy="9" r="3.5" fill="url(#vm3)"/><circle cx="38" cy="17" r="3" fill="url(#vm3)"/></svg><span class="vip-mini-label"><span class="vip-mini-txt vip-mini-vip">VIP</span><span class="vip-mini-txt vip-mini-max">MAX</span></span></span> offert via ce lien</div>
-        </div>
       </div>
     </div>
 
@@ -1232,11 +1217,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
           <p style="font-size:0.75rem;color:rgba(245,200,66,0.3);margin-top:0.5rem;">CB · PayPal · Paysafecard · Internet+ via StarPass</p>
           <div class="crypto-separator" style="color:rgba(245,200,66,0.2);">— ou —</div>
           <a href="offre.php?type=vip_max#crypto" class="crypto-btn vip-crypto-btn">₿ Payer en Crypto</a>
-          <div class="stake-wrap">
-            <div class="stake-sep" style="color:rgba(245,200,66,0.35);">Bonus Partenaire</div>
-            <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
-            <div class="stake-offer" style="color:rgba(0,212,255,0.75);">1 mois <span class="vip-mini"><svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="vm4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#vm4)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#vm4)"/><circle cx="6" cy="17" r="3" fill="url(#vm4)"/><circle cx="22" cy="9" r="3.5" fill="url(#vm4)"/><circle cx="38" cy="17" r="3" fill="url(#vm4)"/></svg><span class="vip-mini-label"><span class="vip-mini-txt vip-mini-vip">VIP</span><span class="vip-mini-txt vip-mini-max">MAX</span></span></span> offert via ce lien</div>
-          </div>
         </div>
       </div>
     </div>
@@ -1283,9 +1263,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <div class="tennis-sep">— ou —</div>
         <a href="offre-tennis.php#crypto" class="tennis-btn-crypto">₿ Payer en Crypto</a>
         <div class="tennis-methods">CB · PayPal · Paysafecard · Crypto</div>
-        <div class="tennis-stake-sep">BONUS PARTENAIRE</div>
-        <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="tennis-btn-stake">🎁 S'inscrire sur Stake · Lien bonus</a>
-        <div class="tennis-stake-note">1 mois StratEdge offert via ce lien</div>
       </div>
 
     </div>

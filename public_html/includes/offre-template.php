@@ -1254,6 +1254,108 @@ $gwBannerMod = [
     .note-box p { font-size:0.8rem; color:#a09040; line-height:1.6; }
     .note-box strong { color:#ffc107; }
 
+    /* Bonus Stake — daily / week-end / weekly / VIP (même UX que l’accueil, hors tennis) */
+    .payment-col .stake-pay-block { padding-top:1.1rem; padding-bottom:1.15rem; }
+    .payment-col .stake-wrap {
+      margin-top:1.25rem;
+      padding-top:1.15rem;
+      border-top:1px solid var(--border);
+      text-align:center;
+    }
+    .payment-col .stake-pay-block .stake-wrap {
+      margin-top:0;
+      padding-top:0;
+      border-top:none;
+    }
+    .payment-col .stake-sep {
+      font-family:'Space Mono',monospace;
+      font-size:0.6rem;
+      letter-spacing:2px;
+      color:var(--txt3);
+      margin-bottom:0.45rem;
+      text-transform:uppercase;
+    }
+    .payment-col .stake-btn {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      width:100%;
+      padding:0.95rem 1.2rem;
+      background:linear-gradient(135deg,#00d4ff,#0089ff);
+      color:#fff;
+      font-family:'Orbitron',sans-serif;
+      font-size:0.76rem;
+      font-weight:700;
+      letter-spacing:1.2px;
+      text-transform:uppercase;
+      border:1px solid rgba(0,212,255,0.35);
+      border-radius:10px;
+      cursor:pointer;
+      text-decoration:none;
+      transition:all 0.25s;
+      box-shadow:0 6px 18px rgba(0,166,255,0.22);
+    }
+    .payment-col .stake-btn:hover {
+      transform:translateY(-2px);
+      box-shadow:0 10px 28px rgba(0,166,255,0.38);
+      color:#fff;
+    }
+    .payment-col .stake-wrap .stake-offer {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:0.35rem;
+      flex-wrap:wrap;
+      font-family:'Rajdhani',sans-serif;
+      font-size:0.78rem;
+      font-weight:600;
+      color:rgba(0,212,255,0.85);
+      margin-top:0.45rem;
+      padding:0;
+      text-align:center;
+    }
+    .payment-col .stake-wrap .stake-offer .vip-mini {
+      display:inline-flex;
+      align-items:center;
+      gap:3px;
+      background:linear-gradient(135deg,rgba(200,150,12,0.15),rgba(245,200,66,0.08));
+      border:1px solid rgba(245,200,66,0.3);
+      border-radius:5px;
+      padding:1px 6px;
+      vertical-align:middle;
+    }
+    .payment-col .stake-wrap .stake-offer .vip-mini svg { width:14px; height:14px; flex-shrink:0; }
+    .payment-col .stake-wrap .stake-offer .vip-mini-label {
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      line-height:1;
+    }
+    .payment-col .stake-wrap .stake-offer .vip-mini-txt {
+      font-family:'Orbitron',sans-serif;
+      font-size:0.55rem;
+      font-weight:900;
+      letter-spacing:0.5px;
+      background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6);
+      -webkit-background-clip:text;
+      background-clip:text;
+      -webkit-text-fill-color:transparent;
+      line-height:1;
+    }
+    .payment-col .stake-wrap .stake-offer .vip-mini-vip { font-size:0.6rem; }
+    .payment-col .stake-wrap .stake-offer .vip-mini-max { font-size:0.5rem; }
+    @media (hover:hover) and (pointer:fine) and (min-width:901px) {
+      .payment-col .stake-btn {
+        animation:stakePayPulseSoft 2.4s ease-in-out infinite;
+      }
+      .payment-col .stake-btn:hover { animation-play-state:paused; }
+    }
+    @keyframes stakePayPulseSoft {
+      0%, 100% { box-shadow:0 6px 18px rgba(0,166,255,0.22); }
+      50% { box-shadow:0 11px 28px rgba(0,166,255,0.4); }
+    }
+
     .stake-tennis-block {
       margin-top:1rem;
       background:linear-gradient(135deg,rgba(0,212,255,0.12),rgba(0,212,106,0.08));
@@ -1311,6 +1413,7 @@ $gwBannerMod = [
     }
     @media (prefers-reduced-motion: reduce) {
       .btn-stake-tennis { animation:none !important; }
+      .payment-col .stake-btn { animation:none !important; }
       .offer-gw-shimmer { animation:none !important; }
       .offer-gw-banner:hover { transform:none; }
     }
@@ -1444,6 +1547,7 @@ $gwBannerMod = [
       .np-success-title{font-size:1.1rem;}
       .btn-generate{font-size:0.85rem;padding:0.85rem;}
       .btn-crypto{font-size:0.72rem;padding:0.8rem;}
+      .payment-col .stake-btn{font-size:0.7rem;padding:10px 14px;min-height:44px;}
       .other-offers{padding:1.2rem 1rem;border-radius:16px;}
     }
     @media (max-width:480px) {
@@ -1708,6 +1812,16 @@ $gwBannerMod = [
           <p><strong>⚠️ Important :</strong> Après paiement StarPass, vous serez automatiquement redirigé vers votre espace membre. Si ce n'est pas le cas, contactez le support depuis votre dashboard.</p>
         </div>
       </div>
+
+      <?php if ($type !== 'tennis'): ?>
+      <div class="payment-block stake-pay-block">
+        <div class="stake-wrap">
+          <div class="stake-sep">Bonus Partenaire</div>
+          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
+          <div class="stake-offer">1 mois <span class="vip-mini"><svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="vmStakePay" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#vmStakePay)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#vmStakePay)"/><circle cx="6" cy="17" r="3" fill="url(#vmStakePay)"/><circle cx="22" cy="9" r="3.5" fill="url(#vmStakePay)"/><circle cx="38" cy="17" r="3" fill="url(#vmStakePay)"/></svg><span class="vip-mini-label"><span class="vip-mini-txt vip-mini-vip">VIP</span><span class="vip-mini-txt vip-mini-max">MAX</span></span></span> offert via ce lien</div>
+        </div>
+      </div>
+      <?php endif; ?>
 
       <?php if ($type === 'tennis'): ?>
       <div class="stake-tennis-block">

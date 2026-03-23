@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/mailer.php';
 require_once __DIR__ . '/../includes/push.php';
+require_once __DIR__ . '/../includes/broadcast-sanitize.php';
 requireAdmin();
 $db = getDB();
 $pageActive = 'broadcast';
@@ -13,20 +14,43 @@ $stats   = ['push' => 0, 'email' => 0, 'total' => 0];
 // ── Traitement envoi ─────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? '')) {
     $titre       = trim($_POST['titre'] ?? '');
-    $message     = trim($_POST['message'] ?? '');
+    $message     = $_POST['message'] ?? '';
+    $message     = is_string($message) ? $message : '';
+    $messageHtml = isset($_POST['message_html']);
     $cibles      = $_POST['cibles'] ?? [];   // tableau (multi-checkbox)
     $envoyerPush = isset($_POST['envoyer_push']);
     $envoyerMail = isset($_POST['envoyer_mail']);
     $url         = trim($_POST['url'] ?? '/dashboard.php');
     $isTest      = in_array('test', $cibles);
 
-    if (!$titre || !$message) {
-        $error = 'Le titre et le message sont obligatoires.';
-    } elseif (!$envoyerPush && !$envoyerMail) {
-        $error = 'Choisis au moins un canal : Push et/ou Email.';
-    } elseif (empty($cibles)) {
-        $error = 'Choisis au moins un groupe de destinataires.';
+    $msgMaxPlain = 200;
+    $msgMaxHtml  = 60000;
+    $error       = '';
+
+    if ($messageHtml) {
+        if (strlen($message) > $msgMaxHtml) {
+            $error = 'Message HTML trop long (max ' . $msgMaxHtml . ' caractères).';
+        }
     } else {
+        $message = trim($message);
+        if (strlen($message) > $msgMaxPlain) {
+            $error = 'Message trop long (max ' . $msgMaxPlain . ' caractères).';
+        }
+    }
+
+    $messageVide = $messageHtml ? (trim($message) === '') : ($message === '');
+    if (!$titre || $messageVide) {
+        $error = $error ?: 'Le titre et le message sont obligatoires.';
+    }
+
+    if ($error === '' && !$envoyerPush && !$envoyerMail) {
+        $error = 'Choisis au moins un canal : Push et/ou Email.';
+    }
+    if ($error === '' && empty($cibles)) {
+        $error = 'Choisis au moins un groupe de destinataires.';
+    }
+
+    if ($error === '') {
         // ── Mode test : une seule adresse ───────────────────────
         if ($isTest) {
             $testEmail = trim($_POST['test_email'] ?? '');
@@ -83,11 +107,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? 
 
         $stats['total'] = count($membres);
 
+        $titreMailSafe = htmlspecialchars($titre, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $bodyPush      = broadcast_message_to_plain($message, $messageHtml);
+        if (function_exists('mb_strlen') && mb_strlen($bodyPush) > 240) {
+            $bodyPush = mb_substr($bodyPush, 0, 237) . '…';
+        } elseif (strlen($bodyPush) > 240) {
+            $bodyPush = substr($bodyPush, 0, 237) . '…';
+        }
+
         // ── Envoi PUSH ──────────────────────────────────────────
         if ($envoyerPush && function_exists('envoyerPush')) {
             foreach ($membres as $m) {
                 try {
-                    envoyerPush((int)$m['id'], $titre, $message, $url, 'broadcast-' . time());
+                    envoyerPush((int)$m['id'], $titre, $bodyPush, $url, 'broadcast-' . time());
                     $stats['push']++;
                 } catch (Exception $e) { /* silencieux */ }
             }
@@ -95,20 +127,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? 
 
         // ── Envoi EMAIL ─────────────────────────────────────────
         if ($envoyerMail) {
+            $msgEmailBlock = $messageHtml
+                ? sanitize_broadcast_email_html($message)
+                : nl2br(htmlspecialchars($message, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+            $urlBtn    = ($url !== '' && isset($url[0]) && $url[0] === '/') ? $url : '/' . ltrim((string)$url, '/');
+            $urlBtnEsc = htmlspecialchars($urlBtn, ENT_QUOTES | ENT_HTML5, 'UTF-8');
             foreach ($membres as $m) {
                 try {
-                    $nomSafe = htmlspecialchars($m['nom']);
-                    $msgSafe = nl2br(htmlspecialchars($message));
+                    $nomSafe = htmlspecialchars($m['nom'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
                     $contenu = "
-<h2 style=\"color:#ffffff;font-size:22px;margin:0 0 12px;\">{$titre}</h2>
+<h2 style=\"color:#ffffff;font-size:22px;margin:0 0 12px;\">{$titreMailSafe}</h2>
 <p style=\"color:#ffffff;font-size:15px;line-height:1.7;\">
   Bonjour <strong style=\"color:#ffffff;\">{$nomSafe}</strong>,
 </p>
 <div style=\"background:#1a1a2e;border:1px solid #333355;border-radius:12px;padding:18px 20px;margin:16px 0;\">
-  <p style=\"color:#ffffff;font-size:15px;line-height:1.8;margin:0;\">{$msgSafe}</p>
+  <div style=\"color:#ffffff;font-size:15px;line-height:1.8;margin:0;\">{$msgEmailBlock}</div>
 </div>
 <div style=\"text-align:center;margin:24px 0;\">
-  <a href=\"https://stratedgepronos.fr{$url}\"
+  <a href=\"https://stratedgepronos.fr{$urlBtnEsc}\"
      style=\"display:inline-block;background:linear-gradient(135deg,#ff2d78,#d6245f);color:#fff;text-decoration:none;padding:12px 32px;border-radius:10px;font-weight:700;font-size:15px;letter-spacing:1px;text-transform:uppercase;\">
     Voir sur StratEdge
   </a>
@@ -117,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? 
   Vous recevez cet email car vous etes membre de StratEdge Pronos.<br>
   Pour vous desabonner des emails, contactez le support via le SAV.
 </p>";
-                    envoyerEmail($m['email'], $titre . ' — StratEdge Pronos', emailTemplate($titre, $contenu));
+                    envoyerEmail($m['email'], $titre . ' — StratEdge Pronos', emailTemplate($titreMailSafe, $contenu));
                     $stats['email']++;
                 } catch (Exception $e) { /* silencieux */ }
             }
@@ -256,9 +292,20 @@ $nbAbonnes = (int)$db->query("
         <div class="form-group">
           <label>Message *</label>
           <textarea class="form-textarea" name="message" id="inputMsg" maxlength="200"
-                    placeholder="Ex: Un nouveau bet Safe est disponible. Connecte-toi pour le voir !" required
-                    oninput="updatePreview()"><?= htmlspecialchars($_POST['message'] ?? '') ?></textarea>
-          <div class="char-count"><span id="countMsg">0</span>/200</div>
+                    placeholder="Ex: Un nouveau bet Safe est disponible. Connecte-toi pour le voir ! (ou du HTML si option cochée)" required
+                    oninput="updatePreview()"><?= htmlspecialchars($_POST['message'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
+          <div class="char-count"><span id="countMsg">0</span>/<span id="countMsgMax">200</span></div>
+        </div>
+
+        <div class="form-group" style="margin-top:-0.5rem;">
+          <label class="cible-label" style="cursor:pointer;display:flex;align-items:flex-start;gap:0.65rem;text-align:left;white-space:normal;">
+            <input type="checkbox" name="message_html" id="chkMsgHtml" value="1" style="margin-top:0.2rem;flex-shrink:0;"
+                   <?= isset($_POST['message_html']) ? 'checked' : '' ?> onchange="toggleMsgHtmlMode()">
+            <span><strong>HTML dans l’email</strong> — mise en forme, tableaux, images (<code>https://</code> uniquement). Les <strong>push</strong> restent en <strong>texte brut</strong> (aperçu ci-contre).</span>
+          </label>
+          <div id="msgHtmlHelp" style="display:none;font-size:0.78rem;color:var(--text-muted);margin-top:0.55rem;line-height:1.55;padding-left:1.6rem;">
+            Balises filtrées : titres, paragraphes, listes, liens, tableaux, <code>&lt;img src="https://…"&gt;</code>. Pas de JavaScript, pas de <code>data:</code> / <code>javascript:</code>.
+          </div>
         </div>
 
         <div class="form-group">
@@ -438,15 +485,39 @@ function onCibleChange(el) {
   }
   if (el.id === 'cTest') toggleTestEmail();
 }
-window.addEventListener('DOMContentLoaded', toggleTestEmail);
+window.addEventListener('DOMContentLoaded', function() {
+  toggleTestEmail();
+  toggleMsgHtmlMode();
+});
+
+function stripHtmlToPreview(html) {
+  let txt = html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  if (txt.length > 200) txt = txt.slice(0, 197) + '…';
+  return txt || '(aperçu texte push)';
+}
+
+function toggleMsgHtmlMode() {
+  const chk = document.getElementById('chkMsgHtml');
+  const ta = document.getElementById('inputMsg');
+  const help = document.getElementById('msgHtmlHelp');
+  const maxEl = document.getElementById('countMsgMax');
+  const max = chk.checked ? 60000 : 200;
+  ta.setAttribute('maxlength', max);
+  maxEl.textContent = max;
+  if (ta.value.length > max) ta.value = ta.value.slice(0, max);
+  help.style.display = chk.checked ? 'block' : 'none';
+  updatePreview();
+}
 
 function updatePreview() {
   const t = document.getElementById('inputTitre').value || 'Titre de la notification';
-  const m = document.getElementById('inputMsg').value || 'Le message s\'affichera ici...';
+  const raw = document.getElementById('inputMsg').value || '';
+  const htmlMode = document.getElementById('chkMsgHtml').checked;
+  const mPush = htmlMode ? stripHtmlToPreview(raw) : (raw || 'Le message s\'affichera ici...');
   document.getElementById('prevTitle').textContent = t;
-  document.getElementById('prevMsg').textContent = m;
+  document.getElementById('prevMsg').textContent = mPush;
   document.getElementById('countTitre').textContent = document.getElementById('inputTitre').value.length;
-  document.getElementById('countMsg').textContent = document.getElementById('inputMsg').value.length;
+  document.getElementById('countMsg').textContent = raw.length;
 }
 
 function showConfirm() {
