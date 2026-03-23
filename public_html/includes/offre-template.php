@@ -1516,7 +1516,7 @@ $membre = getMembre();
       <div class="stake-block">
         <div class="stake-block-title">Bonus Partenaire Stake</div>
         <div class="stake-block-desc">Crée ton compte Stake avec notre lien partenaire et débloque un bonus exclusif StratEdge.</div>
-        <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake-offer">🎰 S'inscrire sur Stake · Lien bonus</a>
+        <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake-offer">🎰 S'inscrire sur Stake · Lien bonus</a>
         <div class="stake-block-note">Lien bonus officiel · 1 mois VIP Max offert via ce lien</div>
       </div>
       <?php endif; ?>
