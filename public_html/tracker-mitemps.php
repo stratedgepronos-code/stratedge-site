@@ -1,7 +1,8 @@
 <?php
 /**
- * Tracker bets mi-temps — données en localStorage par compte membre.
- * Le HTML de référence est tracker-mitemps.html (même dossier).
+ * Tracker bets mi-temps — super-admin uniquement (isSuperAdmin).
+ * Données en localStorage par compte (clé ht_bets_u{id}).
+ * Template : includes/tracker-mitemps.html (hors web grâce à includes/.htaccess).
  */
 require_once __DIR__ . '/includes/auth.php';
 
@@ -10,12 +11,16 @@ if (!$membre) {
     header('Location: /login.php?redirect=' . rawurlencode('/tracker-mitemps.php'));
     exit;
 }
+if (!isSuperAdmin()) {
+    header('Location: /dashboard.php');
+    exit;
+}
 
 $currentPage = 'mitemps';
 $avatarUrl = getAvatarUrl($membre);
 $htLsKeyJson = json_encode('ht_bets_u' . (int) $membre['id'], JSON_UNESCAPED_UNICODE);
 
-$htmlPath = __DIR__ . '/tracker-mitemps.html';
+$htmlPath = __DIR__ . '/includes/tracker-mitemps.html';
 if (!is_readable($htmlPath)) {
     http_response_code(500);
     echo 'Fichier tracker-mitemps.html introuvable.';

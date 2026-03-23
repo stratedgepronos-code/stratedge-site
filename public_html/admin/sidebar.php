@@ -184,7 +184,13 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
       <span>📊</span> Tableau de bord
     </a>
 
-    <?php $bettingOpen = in_array($pageActive, ['poster-bet','creer-card','edit-bet-image','historique','prono-commu-admin','montante-tennis']); ?>
+    <?php
+    $bettingOpenPages = ['poster-bet','creer-card','edit-bet-image','prono-commu-admin','montante-tennis','ht-tracker'];
+    if (function_exists('isSuperAdmin') && isSuperAdmin()) {
+        $bettingOpenPages[] = 'historique';
+    }
+    $bettingOpen = in_array($pageActive, $bettingOpenPages, true);
+    ?>
     <div class="nav-group <?= $bettingOpen ? 'open' : '' ?>" data-group="betting">
       <button type="button" class="nav-group-toggle" onclick="toggleNavGroup(this)">
         <span>📌</span> Betting
@@ -198,10 +204,16 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
         <a href="montante-tennis.php" <?= ($pageActive==='montante-tennis') ?'class="active"':'' ?>><span>🎾</span> Montante Tennis</a>
         <?php endif; ?>
         <a href="edit-bet-image.php" <?= ($pageActive==='edit-bet-image') ?'class="active"':'' ?>><span>🖼️</span> Modifier image bet</a>
+        <a href="ht-tracker.php" <?= ($pageActive==='ht-tracker') ?'class="active"':'' ?> style="<?= ($pageActive==='ht-tracker') ? '' : 'color:rgba(0,212,255,0.85);' ?>"><span>🎯</span> Bet Mi-Temps</a>
+        <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
+        <a href="../tracker-mitemps.php" style="color:rgba(0,212,255,0.85);"><span>⏱️</span> Tracker mi-temps (perso)</a>
+        <?php endif; ?>
+        <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
         <a href="historique.php" <?= ($pageActive==='historique') ?'class="active"':'' ?>>
           <span>📂</span> Historique
           <?php if ($nbBetsHistorique > 0): ?><span class="badge-count"><?= $nbBetsHistorique ?></span><?php endif; ?>
         </a>
+        <?php endif; ?>
       </div>
     </div>
 
@@ -256,10 +268,6 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
       <?php if ($nbTicketsOpen > 0): ?><span class="badge-count"><?= $nbTicketsOpen ?></span><?php endif; ?>
     </a>
 
-    <a href="giveaway.php" <?= ($pageActive==='giveaway') ?'class="active"':'' ?>>
-      <span>🎁</span> GiveAway
-    </a>
-
     <?php $pushOpen = in_array($pageActive, ['broadcast','twitter-post']); ?>
     <div class="nav-group <?= $pushOpen ? 'open' : '' ?>" data-group="push">
       <button type="button" class="nav-group-toggle" onclick="toggleNavGroup(this)">
@@ -287,10 +295,11 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 <nav class="admin-mob-tabs">
   <a href="index.php" class="<?= ($pageActive==='index') ? 'active' : '' ?>"><span class="ico">📊</span><span>Dashboard</span></a>
   <a href="poster-bet.php" class="<?= ($pageActive==='poster-bet') ? 'active' : '' ?>"><span class="ico">📸</span><span>Poster</span></a>
+  <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
   <a href="historique.php" class="<?= ($pageActive==='historique') ? 'active' : '' ?>"><span class="ico">📂</span><span>Historique</span></a>
+  <?php endif; ?>
   <a href="messages.php" class="<?= ($pageActive==='messages') ? 'active' : '' ?>"><span class="ico">💬</span><span>Messages</span></a>
   <a href="tickets.php" class="<?= ($pageActive==='tickets') ? 'active' : '' ?>"><span class="ico">🎫</span><span>SAV</span></a>
-  <a href="giveaway.php" class="<?= ($pageActive==='giveaway') ? 'active' : '' ?>"><span class="ico">🎁</span><span>GiveAway</span></a>
 </nav>
 
 <script>
