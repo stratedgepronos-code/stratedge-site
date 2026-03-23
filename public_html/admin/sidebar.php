@@ -1,7 +1,7 @@
 <?php
 // ── Sidebar partagée — inclure en haut de chaque page admin ──
 // Usage : require_once __DIR__ . '/sidebar.php';
-// Avant d'inclure, définir : $pageActive = 'index' | 'poster-bet' | 'membres' | 'messages' | 'tickets' | 'historique'
+// Avant d'inclure, définir : $pageActive = 'index' | 'poster-bet' | 'giveaway' | 'membres' | 'messages' | 'tickets' | 'historique' | …
 
 // Toutes les requêtes en try/catch pour éviter crash si colonne/table manquante
 $nbTicketsOpen = 0; $nbMsgNonLus = 0; $nbBetsHistorique = 0; $nbChatNonLus = 0; $nbInboxNonLus = 0;
@@ -232,6 +232,10 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 
     <a href="code-promo.php" <?= ($pageActive==='code-promo') ?'class="active"':'' ?>>
       <span>🎟️</span> Code promo
+    </a>
+
+    <a href="giveaway.php" <?= ($pageActive==='giveaway') ?'class="active"':'' ?> style="<?= ($pageActive==='giveaway') ? '' : 'color:rgba(255,45,120,0.92);' ?>">
+      <span>🎁</span> GiveAway
     </a>
 
     <?php if (isSuperAdmin()): ?>
