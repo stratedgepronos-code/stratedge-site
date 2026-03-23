@@ -5,6 +5,7 @@
 
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/promo.php';
+require_once __DIR__ . '/giveaway-functions.php';
 requireLogin();
 
 $offres = [
@@ -99,6 +100,15 @@ if (!isset($offres[$type])) { header('Location: /souscrire.php'); exit; }
 
 $o      = $offres[$type];
 $membre = getMembre();
+$gwPtsPack   = (int)(GIVEAWAY_POINTS[$type] ?? 0);
+$gwShowBadge = $gwPtsPack > 0;
+/** Modificateur CSS du bandeau GiveAway (aligné sur l’accueil) */
+$gwBannerMod = [
+    'daily'   => 'offer-gw--daily',
+    'weekend' => 'offer-gw--weekend',
+    'weekly'  => 'offer-gw--weekly',
+    'vip_max' => 'offer-gw--vip',
+][$type] ?? '';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -282,6 +292,120 @@ $membre = getMembre();
       text-shadow:0 0 30px color-mix(in srgb, var(--color) 60%, transparent);
     }
     .offre-duree { color:var(--txt3); font-size:0.82rem; margin-bottom:0; }
+
+    @keyframes giveawaySweep { 0% { left: -100%; } 100% { left: 200%; } }
+
+    /* Bandeau GiveAway (même bloc que l’accueil — daily / week-end / weekly / VIP) */
+    .offer-gw-banner {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      margin: 1rem 0 0;
+      border-radius: 14px;
+      padding: 2px;
+      position: relative;
+      transition: transform 0.28s ease, box-shadow 0.28s ease;
+    }
+    .offer-gw-banner:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 14px 36px rgba(255, 45, 120, 0.18), 0 0 24px rgba(0, 212, 255, 0.08);
+    }
+    .offer-gw--daily { background: linear-gradient(135deg, #ff2d78, #a855f7, #00d4ff); }
+    .offer-gw--weekend { background: linear-gradient(135deg, #00d4ff, #7c3aed, #ff2d78); }
+    .offer-gw--weekly { background: linear-gradient(135deg, #a855f7, #ff2d78, #00d4ff); }
+    .offer-gw--vip {
+      background: linear-gradient(135deg, #c8960c, #f5c842, #fff8dc, #e8a020);
+      box-shadow: 0 0 20px rgba(245, 200, 66, 0.12);
+    }
+    .offer-gw-banner:hover.offer-gw--vip { box-shadow: 0 14px 40px rgba(245, 200, 66, 0.22); }
+    .offer-gw-inner {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.7rem 1rem;
+      border-radius: 12px;
+      background: linear-gradient(165deg, rgba(13, 18, 32, 0.97), rgba(17, 24, 39, 0.98));
+      position: relative;
+      overflow: hidden;
+      text-align: left;
+    }
+    .offre-card--vip .offer-gw-inner {
+      background: linear-gradient(165deg, rgba(20, 18, 8, 0.96), rgba(13, 18, 32, 0.98));
+    }
+    .offer-gw-shimmer {
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 55%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.07), transparent);
+      animation: giveawaySweep 4.5s ease-in-out infinite;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .offer-gw-icon { font-size: 1.45rem; line-height: 1; position: relative; z-index: 1; filter: drop-shadow(0 0 10px rgba(255, 45, 120, 0.35)); }
+    .offre-card--vip .offer-gw-icon { filter: drop-shadow(0 0 10px rgba(245, 200, 66, 0.45)); }
+    .offer-gw-copy { position: relative; z-index: 1; flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+    .offer-gw-label {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.58rem;
+      font-weight: 800;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #ff2d78, #a855f7, #00d4ff);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .offer-gw--vip .offer-gw-label {
+      background: linear-gradient(135deg, #f5c842, #fffbe6, #e8a020);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .offer-gw-ptsline {
+      display: flex;
+      align-items: baseline;
+      flex-wrap: wrap;
+      gap: 0.2rem 0.45rem;
+    }
+    .offer-gw-n {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.65rem;
+      font-weight: 900;
+      line-height: 1;
+      color: #00d4ff;
+      text-shadow: 0 0 22px rgba(0, 212, 255, 0.35);
+    }
+    .offer-gw--vip .offer-gw-n {
+      background: linear-gradient(135deg, #f5c842, #fffbe6, #e8a020);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: none;
+      filter: drop-shadow(0 0 12px rgba(245, 200, 66, 0.35));
+    }
+    .offer-gw-unit {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: rgba(0, 212, 255, 0.88);
+      letter-spacing: 1px;
+    }
+    .offer-gw--vip .offer-gw-unit { color: rgba(245, 200, 66, 0.85); }
+    .offer-gw-hint {
+      font-size: 0.68rem;
+      color: var(--txt3);
+      letter-spacing: 0.3px;
+    }
+    .offer-gw-ribbon {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.52rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.35);
+      margin-top: 0.1rem;
+    }
 
     /* Avantages */
     .offre-avantages { padding:1.5rem 2rem; }
@@ -1130,80 +1254,6 @@ $membre = getMembre();
     .note-box p { font-size:0.8rem; color:#a09040; line-height:1.6; }
     .note-box strong { color:#ffc107; }
 
-    .stake-block {
-      margin-top:1rem;
-      background:linear-gradient(135deg,rgba(0,212,255,0.12),color-mix(in srgb, var(--color) 12%, transparent));
-      border:1px solid transparent;
-      border-radius:14px;
-      padding:1rem 1.1rem;
-      position:relative;
-      overflow:hidden;
-    }
-    .stake-block::after {
-      content:''; position:absolute; inset:-1px; border-radius:15px; padding:1px;
-      background:linear-gradient(135deg,#00d4ff,var(--color));
-      -webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);
-      -webkit-mask-composite:xor; mask-composite:exclude;
-      pointer-events:none;
-    }
-    .stake-block-title {
-      font-family:'Orbitron',sans-serif;
-      font-size:0.72rem;
-      letter-spacing:1.6px;
-      text-transform:uppercase;
-      background:linear-gradient(135deg,#00d4ff,var(--color));
-      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-      margin-bottom:0.4rem;
-    }
-    .stake-block-desc {
-      font-size:0.84rem;
-      color:var(--txt2);
-      margin-bottom:0.8rem;
-      line-height:1.45;
-      position:relative; z-index:1;
-    }
-    .btn-stake-offer {
-      display:flex; align-items:center; justify-content:center; gap:0.45rem;
-      width:100%; padding:0.9rem;
-      background:linear-gradient(135deg,#00d4ff,#0089ff 55%,var(--color));
-      color:#fff; border:1px solid rgba(0,212,255,0.35); border-radius:12px;
-      font-family:'Orbitron',sans-serif; font-size:0.76rem;
-      font-weight:700; letter-spacing:1.1px; text-transform:uppercase;
-      text-decoration:none; transition:all .25s;
-      box-shadow:0 6px 20px rgba(0,166,255,0.24);
-      position:relative; overflow:hidden; z-index:1;
-    }
-    .btn-stake-offer::before {
-      content:'';
-      position:absolute;
-      top:-150%; left:-18%;
-      width:36%; height:320%;
-      background:linear-gradient(180deg,rgba(255,255,255,0),rgba(255,255,255,0.34),rgba(255,255,255,0));
-      transform:rotate(24deg);
-      transition:left .45s ease;
-      pointer-events:none;
-    }
-    .btn-stake-offer:hover { transform:translateY(-2px); box-shadow:0 10px 30px rgba(0,166,255,0.4); }
-    .btn-stake-offer:hover::before { left:118%; }
-    .stake-block-note {
-      margin-top:0.5rem; font-size:0.72rem; text-align:center;
-      background:linear-gradient(135deg,#7fdfff,color-mix(in srgb, var(--color) 70%, #fff));
-      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-      position:relative; z-index:1;
-    }
-    @keyframes stakePulseBlock {
-      0%, 100% { box-shadow:0 6px 20px rgba(0,166,255,0.24); }
-      50% { box-shadow:0 11px 32px rgba(0,166,255,0.42); }
-    }
-    @media (hover:hover) and (pointer:fine) and (min-width:901px) {
-      .btn-stake-offer { animation: stakePulseBlock 2.4s ease-in-out infinite; }
-      .btn-stake-offer:hover { animation-play-state: paused; }
-    }
-    @media (prefers-reduced-motion: reduce) {
-      .btn-stake-offer { animation:none !important; }
-    }
-
-    /* Legacy tennis stake (kept for backward compat) */
     .stake-tennis-block {
       margin-top:1rem;
       background:linear-gradient(135deg,rgba(0,212,255,0.12),rgba(0,212,106,0.08));
@@ -1261,6 +1311,8 @@ $membre = getMembre();
     }
     @media (prefers-reduced-motion: reduce) {
       .btn-stake-tennis { animation:none !important; }
+      .offer-gw-shimmer { animation:none !important; }
+      .offer-gw-banner:hover { transform:none; }
     }
 
     /* Crypto tabs */
@@ -1407,6 +1459,9 @@ $membre = getMembre();
       .offre-video-wrap { width:80px; height:80px; }
       .offre-badge{font-size:0.55rem;}
       .offre-duree{font-size:0.78rem;}
+      .offer-gw-n { font-size: 1.35rem; }
+      .offer-gw-inner { padding: 0.6rem 0.85rem; gap: 0.55rem; }
+      .offer-gw-icon { font-size: 1.2rem; }
       .avantage{font-size:0.85rem;padding:0.5rem 0;}
       .payment-block { padding:1.2rem; border-radius:14px; }
       .block-title{font-size:0.72rem;}
@@ -1479,7 +1534,7 @@ $membre = getMembre();
 
     <!-- ── COLONNE OFFRE ── -->
     <div>
-      <div class="offre-card">
+      <div class="offre-card<?= $type === 'vip_max' ? ' offre-card--vip' : '' ?>">
         <div class="offre-card-top">
           <div class="offre-badge"><?= $o['badge'] ?></div>
           <div class="offre-video-wrap">
@@ -1491,6 +1546,19 @@ $membre = getMembre();
             <span class="cur">€</span><span class="num"><?= $o['prix'] ?></span>
           </div>
           <div class="offre-duree"><?= $o['duree'] ?></div>
+          <?php if ($gwShowBadge && $gwBannerMod !== ''): ?>
+          <a href="/giveaway.php" class="offer-gw-banner <?= htmlspecialchars($gwBannerMod) ?>" aria-label="GiveAway mensuel, <?= (int)$gwPtsPack ?> point<?= $gwPtsPack > 1 ? 's' : '' ?> par achat">
+            <span class="offer-gw-inner">
+              <span class="offer-gw-shimmer" aria-hidden="true"></span>
+              <span class="offer-gw-icon">🎁</span>
+              <span class="offer-gw-copy">
+                <span class="offer-gw-label">GiveAway mensuel</span>
+                <span class="offer-gw-ptsline"><strong class="offer-gw-n"><?= (int)$gwPtsPack ?></strong><span class="offer-gw-unit">pts</span><span class="offer-gw-hint">par achat</span></span>
+                <span class="offer-gw-ribbon">Tirage &amp; roue chaque mois</span>
+              </span>
+            </span>
+          </a>
+          <?php endif; ?>
         </div>
 
         <div class="offre-avantages">
@@ -1511,15 +1579,6 @@ $membre = getMembre();
 
     <!-- ── COLONNE PAIEMENT ── -->
     <div class="payment-col">
-
-      <?php if ($type !== 'tennis'): ?>
-      <div class="stake-block">
-        <div class="stake-block-title">Bonus Partenaire Stake</div>
-        <div class="stake-block-desc">Crée ton compte Stake avec notre lien partenaire et débloque un bonus exclusif StratEdge.</div>
-        <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake-offer">🎰 S'inscrire sur Stake · Lien bonus</a>
-        <div class="stake-block-note">Lien bonus officiel · 1 mois VIP Max offert via ce lien</div>
-      </div>
-      <?php endif; ?>
 
       <!-- StarPass -->
       <div class="payment-block">

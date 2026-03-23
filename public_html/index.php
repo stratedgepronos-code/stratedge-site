@@ -194,6 +194,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       display: block;
       text-decoration: none;
       color: inherit;
+      cursor: default;
       margin: 0.75rem 0 1rem;
       border-radius: 14px;
       padding: 2px;
@@ -996,7 +997,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
   </div>
   <div class="pricing-grid">
     <?php
-    $gwGiveawayHref = isLoggedIn() ? 'giveaway.php' : 'login.php?redirect=' . rawurlencode('giveaway.php');
     /* Points GiveAway affichés sur l’accueil (par formule) — hors tennis */
     $gwHomePts = ['daily' => 4, 'weekend' => 10, 'weekly' => 20, 'vip_max' => 50];
     ?>
@@ -1012,7 +1012,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       </div>
       <div class="price-amount"><span class="currency">€</span>4,50</div>
       <div class="price-period">/ prochain bet</div>
-      <a href="<?= htmlspecialchars($gwGiveawayHref) ?>" class="offer-gw-banner offer-gw--daily" aria-label="GiveAway mensuel, 4 points par achat">
+      <div class="offer-gw-banner offer-gw--daily" role="group" aria-label="GiveAway mensuel, 4 points par achat">
         <span class="offer-gw-inner">
           <span class="offer-gw-shimmer" aria-hidden="true"></span>
           <span class="offer-gw-icon">🎁</span>
@@ -1022,7 +1022,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
             <span class="offer-gw-ribbon">Tirage &amp; roue chaque mois</span>
           </span>
         </span>
-      </a>
+      </div>
       <ul class="price-features">
         <li>Accès au prochain bet "Safe"</li>
         <li>Accès au prochain bet "Live"</li>
@@ -1061,7 +1061,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       </div>
       <div class="price-amount"><span class="currency">€</span>10</div>
       <div class="price-period">/ souscription (ven → dim)</div>
-      <a href="<?= htmlspecialchars($gwGiveawayHref) ?>" class="offer-gw-banner offer-gw--weekend" aria-label="GiveAway mensuel, 10 points par achat">
+      <div class="offer-gw-banner offer-gw--weekend" role="group" aria-label="GiveAway mensuel, 10 points par achat">
         <span class="offer-gw-inner">
           <span class="offer-gw-shimmer" aria-hidden="true"></span>
           <span class="offer-gw-icon">🎁</span>
@@ -1071,7 +1071,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
             <span class="offer-gw-ribbon">Tirage &amp; roue chaque mois</span>
           </span>
         </span>
-      </a>
+      </div>
       <ul class="price-features">
         <li><div style="display:block;"><span style="white-space:nowrap;">Accès bets "Safe" &amp; "Fun"</span><br><span style="font-size:0.85em;opacity:0.75;">Fun bets avec supplément</span></div></li>
         <li>Du vendredi au dimanche</li>
@@ -1109,7 +1109,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       </div>
       <div class="price-amount"><span class="currency">€</span>20</div>
       <div class="price-period">/ semaine (7 jours glissants)</div>
-      <a href="<?= htmlspecialchars($gwGiveawayHref) ?>" class="offer-gw-banner offer-gw--weekly" aria-label="GiveAway mensuel, 20 points par achat">
+      <div class="offer-gw-banner offer-gw--weekly" role="group" aria-label="GiveAway mensuel, 20 points par achat">
         <span class="offer-gw-inner">
           <span class="offer-gw-shimmer" aria-hidden="true"></span>
           <span class="offer-gw-icon">🎁</span>
@@ -1119,7 +1119,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
             <span class="offer-gw-ribbon">Tirage &amp; roue chaque mois</span>
           </span>
         </span>
-      </a>
+      </div>
       <ul class="price-features">
         <li>Accès bets "Safe" &amp; "Fun"</li>
         <li>Abonnement 1 semaine complète</li>
@@ -1188,7 +1188,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         </div>
         <div class="vip-price-num"><span class="currency">€</span>50</div>
         <div class="vip-price-dur">/ mois (30 jours)</div>
-        <a href="<?= htmlspecialchars($gwGiveawayHref) ?>" class="offer-gw-banner offer-gw--vip" aria-label="GiveAway mensuel, 50 points par achat">
+        <div class="offer-gw-banner offer-gw--vip" role="group" aria-label="GiveAway mensuel, 50 points par achat">
           <span class="offer-gw-inner">
             <span class="offer-gw-shimmer" aria-hidden="true"></span>
             <span class="offer-gw-icon">🎁</span>
@@ -1198,7 +1198,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
               <span class="offer-gw-ribbon">Tirage &amp; roue chaque mois</span>
             </span>
           </span>
-        </a>
+        </div>
         <ul class="vip-features">
           <li>Tous les bets Multi-sport</li>
           <li>Tennis ATP &amp; WTA exclusif</li>
