@@ -187,8 +187,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .crypto-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px 24px; margin-top: 0.5rem; background: linear-gradient(135deg, #f7931a, #e2820a); color: #fff; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; border: none; border-radius: 8px; cursor: pointer; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(247,147,26,0.3); }
     .crypto-btn:hover { background: linear-gradient(135deg, #ffaa33, #f7931a); box-shadow: 0 6px 25px rgba(247,147,26,0.5); transform: translateY(-2px); }
     .giveaway-badge { margin-top: 0.7rem; padding: 0.55rem 0.8rem; border-radius: 10px; border: 1px solid transparent; position: relative; text-align: center; animation: giveawayPulse 3s ease-in-out infinite; background: linear-gradient(135deg, rgba(255,45,120,0.08), rgba(0,212,255,0.08)) padding-box, linear-gradient(135deg, #ff2d78, #a855f7, #00d4ff) border-box; }
-    .giveaway-badge::after { content: ''; position: absolute; inset: 1px; border-radius: 9px; background: linear-gradient(90deg, transparent 0%, transparent 35%, rgba(255,255,255,0.07) 50%, transparent 65%, transparent 100%); background-size: 300% 100%; animation: gwShimmer 4s ease-in-out infinite; pointer-events: none; z-index: 1; }
-    @keyframes gwShimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
     .giveaway-badge .gw-emoji { position: relative; z-index: 2; }
     .giveaway-badge .gw-txt { font-family: 'Orbitron', sans-serif; font-size: 0.7rem; font-weight: 700; letter-spacing: 1.5px; background: linear-gradient(135deg, #ff2d78, #a855f7, #00d4ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 8px rgba(255,45,120,0.3)); }
     .giveaway-badge .gw-main { display: flex; align-items: center; justify-content: center; gap: 0.4rem; position: relative; z-index: 2; }
@@ -920,7 +918,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <a href="offre-daily.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
         <div class="stake-wrap">
           <div class="stake-sep">Bonus Partenaire</div>
-          <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
+          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
           <div class="stake-offer">1 mois <span class="vip-mini"><svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="vm1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#vm1)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#vm1)"/><circle cx="6" cy="17" r="3" fill="url(#vm1)"/><circle cx="22" cy="9" r="3.5" fill="url(#vm1)"/><circle cx="38" cy="17" r="3" fill="url(#vm1)"/></svg><span style="display:flex;flex-direction:column;align-items:center;line-height:1;"><span class="vip-mini-txt vip-mini-vip">VIP</span><span class="vip-mini-txt vip-mini-max">MAX</span></span></span> offert via ce lien</div>
         </div>
       </div>
@@ -961,7 +959,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <a href="offre-weekend.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
         <div class="stake-wrap">
           <div class="stake-sep">Bonus Partenaire</div>
-          <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
+          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
           <div class="stake-offer">1 mois <span class="vip-mini"><svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="vm2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#vm2)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#vm2)"/><circle cx="6" cy="17" r="3" fill="url(#vm2)"/><circle cx="22" cy="9" r="3.5" fill="url(#vm2)"/><circle cx="38" cy="17" r="3" fill="url(#vm2)"/></svg><span style="display:flex;flex-direction:column;align-items:center;line-height:1;"><span class="vip-mini-txt vip-mini-vip">VIP</span><span class="vip-mini-txt vip-mini-max">MAX</span></span></span> offert via ce lien</div>
         </div>
       </div>
@@ -1001,7 +999,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <a href="offre-weekly.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
         <div class="stake-wrap">
           <div class="stake-sep">Bonus Partenaire</div>
-          <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
+          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
           <div class="stake-offer">1 mois <span class="vip-mini"><svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="vm3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#vm3)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#vm3)"/><circle cx="6" cy="17" r="3" fill="url(#vm3)"/><circle cx="22" cy="9" r="3.5" fill="url(#vm3)"/><circle cx="38" cy="17" r="3" fill="url(#vm3)"/></svg><span style="display:flex;flex-direction:column;align-items:center;line-height:1;"><span class="vip-mini-txt vip-mini-vip">VIP</span><span class="vip-mini-txt vip-mini-max">MAX</span></span></span> offert via ce lien</div>
         </div>
       </div>
@@ -1087,7 +1085,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
           <a href="offre.php?type=vip_max#crypto" class="crypto-btn vip-crypto-btn">₿ Payer en Crypto</a>
           <div class="stake-wrap">
             <div class="stake-sep" style="color:rgba(245,200,66,0.3);">Bonus Partenaire</div>
-            <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
+            <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
             <div class="stake-offer">1 mois <span class="vip-mini"><svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="vm4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#vm4)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#vm4)"/><circle cx="6" cy="17" r="3" fill="url(#vm4)"/><circle cx="22" cy="9" r="3.5" fill="url(#vm4)"/><circle cx="38" cy="17" r="3" fill="url(#vm4)"/></svg><span style="display:flex;flex-direction:column;align-items:center;line-height:1;"><span class="vip-mini-txt vip-mini-vip">VIP</span><span class="vip-mini-txt vip-mini-max">MAX</span></span></span> offert via ce lien</div>
           </div>
         </div>
@@ -1174,7 +1172,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <li>Retraits instantanés en crypto</li>
         <li>Inscrivez-vous via notre lien = 1 mois offert</li>
       </ul>
-      <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake">S'inscrire sur Stake.bet →</a>
+      <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake">S'inscrire sur Stake.bet →</a>
       <div class="stake-offer"><strong>🎁 1 MOIS GRATUIT chez StratEdge Pronos pour une inscription via ce lien</strong></div>
     </div>
     <div class="stake-visual">
@@ -1189,7 +1187,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
   <p>Rejoins les parieurs qui font confiance à la data, pas au hasard. Ton premier bet gagnant est à un clic.</p>
   <div class="footer-cta-btns">
     <a href="#pricing" class="btn-primary">Voir les formules ↓</a>
-    <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="btn-outline">Ouvrir un compte Stake.bet</a>
+    <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="btn-outline">Ouvrir un compte Stake.bet</a>
   </div>
 </div>
 
