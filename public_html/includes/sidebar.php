@@ -22,6 +22,7 @@
   <a href="/dashboard.php?tab=profil">👤 Mon Profil</a>
   <a href="/bets.php">🔥 Les Bets</a>
   <a href="/historique.php">📋 Historique</a>
+  <a href="/tracker-mitemps.php">⏱️ Tracker mi-temps</a>
   <a href="/giveaway.php">🎁 GiveAway</a>
   <a href="/prono-commu.php">⚽ Prono commu</a>
   <a href="/montante-tennis.php">🎾 Montante Tennis</a>
@@ -34,6 +35,7 @@
   <a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')!=='profil'?'active':'' ?>" href="/dashboard.php"><span class="ico">📊</span> Dashboard</a>
   <a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')==='profil'?'active':'' ?>" href="/dashboard.php?tab=profil"><span class="ico">👤</span> Profil</a>
   <a class="s-link <?= $currentPage==='bets'?'active':'' ?>" href="/bets.php"><span class="ico">🔥</span> Bets</a>
+  <a class="s-link <?= ($currentPage??'')==='mitemps'?'active':'' ?>" href="/tracker-mitemps.php"><span class="ico">⏱️</span> Mi-temps</a>
   <a class="s-link <?= ($currentPage??'')==='giveaway'?'active':'' ?>" href="/giveaway.php"><span class="ico">🎁</span> GiveAway</a>
   <a class="s-link <?= $currentPage==='pronocommu'?'active':'' ?>" href="/prono-commu.php"><span class="ico">⚽</span> Prono commu</a>
   <a class="s-link <?= ($currentPage??'')==='montante'?'active':'' ?>" href="/montante-tennis.php"><span class="ico">🎾</span> Montante</a>
@@ -53,6 +55,7 @@
     <div class="side-sep"></div>
     <a class="s-link <?= $currentPage==='bets'?'active':'' ?>" href="/bets.php"><span class="ico">🔥</span> Les Bets</a>
     <a class="s-link <?= $currentPage==='historique'?'active':'' ?>" href="/historique.php"><span class="ico">📋</span> Historique</a>
+    <a class="s-link <?= ($currentPage??'')==='mitemps'?'active':'' ?>" href="/tracker-mitemps.php"><span class="ico">⏱️</span> Tracker mi-temps</a>
     <a class="s-link <?= ($currentPage??'')==='giveaway'?'active':'' ?>" href="/giveaway.php"><span class="ico">🎁</span> GiveAway</a>
     <a class="s-link <?= $currentPage==='pronocommu'?'active':'' ?>" href="/prono-commu.php"><span class="ico">⚽</span> Prono de la commu</a>
     <a class="s-link <?= ($currentPage??'')==='montante'?'active':'' ?>" href="/montante-tennis.php"><span class="ico">🎾</span> Montante Tennis</a>

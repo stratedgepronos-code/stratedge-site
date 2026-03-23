@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>⏱️ Tracker Mi-Temps — StratEdge</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#060810;--card:#0d1220;--pink:#ff2d78;--cyan:#00d4ff;--purple:#a855f7;--green:#00c864;--red:#ff4444;--gold:#f5c842;--txt:#f0f4f8;--txt2:#b0bec9;--txt3:#6b7a90;--border:rgba(255,45,120,0.12);}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh;}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(255,45,120,0.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,45,120,0.02) 1px,transparent 1px);background-size:50px 50px;pointer-events:none;}
+.page{position:relative;z-index:1;max-width:1300px;margin:0 auto;padding:1.5rem;}
+
+/* HEADER */
+.hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;}
+.hdr-left h1{font-family:'Orbitron',sans-serif;font-size:1.4rem;font-weight:900;}
+.hdr-left h1 span{background:linear-gradient(135deg,var(--pink),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.hdr-left p{font-size:.85rem;color:var(--txt3);}
+.hdr-tag{font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:3px;color:var(--pink);background:rgba(255,45,120,.08);border:1px solid rgba(255,45,120,.25);padding:.3rem .8rem;border-radius:20px;}
+.hdr-actions{display:flex;gap:.5rem;}
+.btn-sm{padding:.45rem 1rem;font-family:'Orbitron',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:1px;border-radius:8px;border:1px solid var(--border);background:var(--card);color:var(--txt2);cursor:pointer;transition:all .2s;}
+.btn-sm:hover{border-color:var(--pink);color:var(--pink);}
+.btn-sm.primary{background:linear-gradient(135deg,var(--pink),#c4185a);color:#fff;border:none;}
+.btn-sm.primary:hover{box-shadow:0 4px 15px rgba(255,45,120,.3);}
+.btn-sm.danger{color:var(--red);border-color:rgba(255,68,68,.2);}
+
+/* STATS BAND */
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:.8rem;margin-bottom:1.5rem;}
+.stat-box{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:.8rem;text-align:center;position:relative;overflow:hidden;}
+.stat-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:.5;}
+.stat-box.g::before{background:var(--green);}
+.stat-box.r::before{background:var(--red);}
+.stat-box.c::before{background:var(--cyan);}
+.stat-box.p::before{background:var(--pink);}
+.stat-box.gold::before{background:var(--gold);}
+.stat-val{font-family:'Orbitron',sans-serif;font-size:1.5rem;font-weight:900;}
+.stat-lbl{font-size:.65rem;color:var(--txt3);text-transform:uppercase;letter-spacing:1px;margin-top:.15rem;}
+
+/* CHARTS */
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem;}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.1rem;position:relative;overflow:hidden;}
+.chart-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--pink),var(--cyan));opacity:.4;}
+.chart-title{font-family:'Orbitron',sans-serif;font-size:.62rem;letter-spacing:2px;color:var(--txt3);text-transform:uppercase;margin-bottom:.7rem;}
+.chart-box{position:relative;height:200px;}
+
+/* FORM */
+.form-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:1.2rem;margin-bottom:1.5rem;}
+.form-title{font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:2px;color:var(--cyan);text-transform:uppercase;margin-bottom:.8rem;}
+.form-grid{display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr 1fr 1fr auto;gap:.6rem;align-items:end;}
+.field label{display:block;font-size:.65rem;color:var(--txt3);text-transform:uppercase;letter-spacing:1px;margin-bottom:.3rem;font-family:'Space Mono',monospace;}
+.field input,.field select{width:100%;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:.55rem .7rem;color:var(--txt);font-family:'Rajdhani',sans-serif;font-size:.9rem;}
+.field input:focus,.field select:focus{border-color:var(--pink);outline:none;}
+.field select option{background:#0d1220;}
+.btn-add{padding:.55rem 1.2rem;font-family:'Orbitron',sans-serif;font-size:.65rem;font-weight:700;letter-spacing:1px;color:#fff;background:linear-gradient(135deg,var(--green),#00a050);border:none;border-radius:8px;cursor:pointer;white-space:nowrap;transition:all .2s;}
+.btn-add:hover{box-shadow:0 4px 15px rgba(0,200,100,.3);}
+
+/* TABLE */
+.tbl-card{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.tbl-header{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.2rem;border-bottom:1px solid var(--border);}
+.tbl-title{font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:2px;color:var(--txt2);}
+.tbl-count{font-family:'Space Mono',monospace;font-size:.62rem;color:var(--txt3);}
+.tbl-wrap{max-height:400px;overflow-y:auto;}
+table{width:100%;border-collapse:collapse;}
+th{font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:1.5px;color:var(--txt3);text-transform:uppercase;padding:.6rem .8rem;text-align:left;background:rgba(0,0,0,.2);position:sticky;top:0;z-index:2;}
+td{padding:.55rem .8rem;font-size:.85rem;border-bottom:1px solid rgba(255,255,255,.03);}
+tr:hover td{background:rgba(255,45,120,.02);}
+.badge{padding:.15rem .5rem;border-radius:5px;font-family:'Orbitron',sans-serif;font-size:.58rem;font-weight:700;letter-spacing:.5px;}
+.badge.win{background:rgba(0,200,100,.12);color:var(--green);border:1px solid rgba(0,200,100,.25);}
+.badge.lose{background:rgba(255,68,68,.12);color:var(--red);border:1px solid rgba(255,68,68,.25);}
+.badge.push{background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.25);}
+.badge.pending{background:rgba(255,255,255,.05);color:var(--txt3);border:1px solid rgba(255,255,255,.08);}
+.market-tag{padding:.1rem .4rem;border-radius:4px;font-size:.6rem;font-weight:600;background:rgba(0,212,255,.08);color:var(--cyan);border:1px solid rgba(0,212,255,.15);}
+.del-btn{background:none;border:none;color:var(--txt3);cursor:pointer;font-size:.9rem;transition:color .2s;padding:.2rem;}
+.del-btn:hover{color:var(--red);}
+.empty-tbl{text-align:center;padding:3rem;color:var(--txt3);}
+.empty-tbl span{font-size:2.5rem;display:block;margin-bottom:.5rem;}
+
+/* Filters */
+.filters{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:1rem;}
+.fpill{padding:.35rem .8rem;border-radius:20px;font-size:.78rem;font-weight:600;border:1px solid rgba(255,255,255,.08);color:var(--txt3);cursor:pointer;transition:all .2s;background:transparent;}
+.fpill:hover{border-color:rgba(255,255,255,.2);color:var(--txt);}
+.fpill.active{background:rgba(255,45,120,.12);border-color:rgba(255,45,120,.3);color:var(--pink);}
+
+/* PROFIT TRACKER */
+.profit-box{display:flex;align-items:baseline;gap:.5rem;}
+.profit-val{font-family:'Orbitron',sans-serif;font-size:1.8rem;font-weight:900;}
+.profit-unit{font-size:.8rem;color:var(--txt3);}
+
+@media(max-width:900px){
+  .stats{grid-template-columns:repeat(3,1fr);}
+  .charts{grid-template-columns:1fr;}
+  .form-grid{grid-template-columns:1fr 1fr;gap:.5rem;}
+}
+@media(max-width:600px){
+  .stats{grid-template-columns:repeat(2,1fr);}
+  .form-grid{grid-template-columns:1fr;}
+  table{font-size:.8rem;}
+  td,th{padding:.4rem .5rem;}
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="hdr">
+    <div class="hdr-left">
+      <div class="hdr-tag" style="margin-bottom:.4rem;">⏱️ STRATEDGE — MI-TEMPS</div>
+      <h1>Tracker <span>Mi-Temps</span></h1>
+      <p>Test de rentabilité Over/Under buts 1ère mi-temps — sans mise réelle</p>
+    </div>
+    <div class="hdr-actions">
+      <button class="btn-sm" onclick="exportCSV()">📥 Export CSV</button>
+      <button class="btn-sm" onclick="importJSON()">📂 Importer</button>
+      <button class="btn-sm" onclick="exportJSON()">💾 Sauvegarder</button>
+      <button class="btn-sm danger" onclick="clearAll()">🗑️ Reset</button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats" id="statsGrid"></div>
+
+  <!-- CHARTS -->
+  <div class="charts">
+    <div class="chart-card">
+      <div class="chart-title">📈 Profit cumulé (unités)</div>
+      <div class="chart-box"><canvas id="chartProfit"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">📊 Résultats par marché</div>
+      <div class="chart-box"><canvas id="chartMarkets"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">🏆 Winrate par ligue</div>
+      <div class="chart-box"><canvas id="chartLeagues"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">📅 Résultats par semaine</div>
+      <div class="chart-box"><canvas id="chartWeekly"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ADD FORM -->
+  <div class="form-card">
+    <div class="form-title">➕ Ajouter un bet mi-temps</div>
+    <div class="form-grid">
+      <div class="field"><label>Match</label><input type="text" id="fMatch" placeholder="PSG vs Marseille"></div>
+      <div class="field"><label>Ligue</label><input type="text" id="fLeague" placeholder="Ligue 1" list="leagues"></div>
+      <div class="field"><label>Marché</label>
+        <select id="fMarket">
+          <option value="O0.5HT">Over 0.5 MT</option>
+          <option value="U0.5HT">Under 0.5 MT</option>
+          <option value="O1.5HT" selected>Over 1.5 MT</option>
+          <option value="U1.5HT">Under 1.5 MT</option>
+          <option value="O2.5HT">Over 2.5 MT</option>
+          <option value="U2.5HT">Under 2.5 MT</option>
+          <option value="BTTSHT">BTTS MT Oui</option>
+          <option value="NBTTSHT">BTTS MT Non</option>
+        </select>
+      </div>
+      <div class="field"><label>Cote</label><input type="number" id="fOdds" step="0.01" min="1" value="1.80" placeholder="1.80"></div>
+      <div class="field"><label>Score MT</label><input type="text" id="fScore" placeholder="1-0"></div>
+      <div class="field"><label>Résultat</label>
+        <select id="fResult">
+          <option value="pending">⏳ En cours</option>
+          <option value="win">✅ Gagné</option>
+          <option value="lose">❌ Perdu</option>
+          <option value="push">↺ Annulé</option>
+        </select>
+      </div>
+      <button class="btn-add" onclick="addBet()">+ Ajouter</button>
+    </div>
+    <datalist id="leagues">
+      <option value="Ligue 1"><option value="Premier League"><option value="La Liga"><option value="Serie A">
+      <option value="Bundesliga"><option value="Eredivisie"><option value="Liga Portugal"><option value="Champions League">
+      <option value="Europa League"><option value="Conference League"><option value="Ligue 2"><option value="Championship">
+      <option value="J-League"><option value="K-League"><option value="A-League"><option value="Liga MX"><option value="MLS">
+    </datalist>
+  </div>
+
+  <!-- FILTERS -->
+  <div class="filters" id="filtersBar"></div>
+
+  <!-- TABLE -->
+  <div class="tbl-card">
+    <div class="tbl-header">
+      <div class="tbl-title">📋 Historique des bets</div>
+      <div class="tbl-count" id="tblCount"></div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Date</th><th>Match</th><th>Ligue</th><th>Marché</th><th>Cote</th><th>Score MT</th><th>Résultat</th><th>P/L</th><th></th></tr></thead>
+        <tbody id="tblBody"></tbody>
+      </table>
+      <div class="empty-tbl" id="emptyTbl" style="display:none;"><span>⏱️</span>Aucun bet enregistré.<br>Ajoute ton premier bet mi-temps !</div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept=".json" style="display:none" onchange="handleImport(event)">
+
+<script>
+// ═══ DATA ═══
+var BETS = JSON.parse(localStorage.getItem('ht_bets') || '[]');
+var activeFilter = 'all';
+var MARKET_LABELS = {
+  'O0.5HT':'Over 0.5 MT','U0.5HT':'Under 0.5 MT','O1.5HT':'Over 1.5 MT','U1.5HT':'Under 1.5 MT',
+  'O2.5HT':'Over 2.5 MT','U2.5HT':'Under 2.5 MT','BTTSHT':'BTTS MT Oui','NBTTSHT':'BTTS MT Non'
+};
+var RESULT_CFG = {
+  win:{label:'✅ Gagné',cls:'win'},lose:{label:'❌ Perdu',cls:'lose'},
+  push:{label:'↺ Annulé',cls:'push'},pending:{label:'⏳ En cours',cls:'pending'}
+};
+
+function save(){ localStorage.setItem('ht_bets', JSON.stringify(BETS)); }
+
+// ═══ ADD ═══
+function addBet(){
+  var m = document.getElementById('fMatch').value.trim();
+  if(!m){alert('Nom du match requis');return;}
+  var bet = {
+    id: Date.now(),
+    date: new Date().toISOString().slice(0,10),
+    match: m,
+    league: document.getElementById('fLeague').value.trim() || '—',
+    market: document.getElementById('fMarket').value,
+    odds: parseFloat(document.getElementById('fOdds').value) || 1.80,
+    score: document.getElementById('fScore').value.trim() || '—',
+    result: document.getElementById('fResult').value
+  };
+  BETS.unshift(bet);
+  save();
+  document.getElementById('fMatch').value = '';
+  document.getElementById('fScore').value = '';
+  render();
+}
+
+function deleteBet(id){
+  if(!confirm('Supprimer ce bet ?'))return;
+  BETS = BETS.filter(function(b){return b.id !== id;});
+  save(); render();
+}
+
+function updateResult(id, val){
+  for(var i=0;i<BETS.length;i++){
+    if(BETS[i].id===id){BETS[i].result=val;break;}
+  }
+  save(); render();
+}
+
+function updateScore(id, val){
+  for(var i=0;i<BETS.length;i++){
+    if(BETS[i].id===id){BETS[i].score=val;break;}
+  }
+  save();
+}
+
+// ═══ STATS ═══
+function calcStats(bets){
+  var w=0,l=0,p=0,pend=0,profit=0;
+  bets.forEach(function(b){
+    if(b.result==='win'){w++;profit+=(b.odds-1);}
+    else if(b.result==='lose'){l++;profit-=1;}
+    else if(b.result==='push'){p++;}
+    else{pend++;}
+  });
+  var total=w+l;
+  var wr=total>0?Math.round(w/total*100):0;
+  var roi=total>0?Math.round(profit/total*100):0;
+  return {wins:w,losses:l,pushes:p,pending:pend,total:w+l+p+pend,wr:wr,profit:profit.toFixed(2),roi:roi};
+}
+
+function renderStats(){
+  var filtered = activeFilter==='all' ? BETS : BETS.filter(function(b){return b.market===activeFilter;});
+  var s = calcStats(filtered);
+  var profitColor = parseFloat(s.profit)>=0?'var(--green)':'var(--red)';
+  var html = ''
+    +'<div class="stat-box c"><div class="stat-val" style="color:var(--txt)">'+s.total+'</div><div class="stat-lbl">Total bets</div></div>'
+    +'<div class="stat-box g"><div class="stat-val" style="color:var(--green)">'+s.wins+'</div><div class="stat-lbl">Gagnés</div></div>'
+    +'<div class="stat-box r"><div class="stat-val" style="color:var(--red)">'+s.losses+'</div><div class="stat-lbl">Perdus</div></div>'
+    +'<div class="stat-box p"><div class="stat-val" style="color:var(--pink)">'+s.wr+'%</div><div class="stat-lbl">Winrate</div></div>'
+    +'<div class="stat-box gold"><div class="profit-box"><span class="profit-val" style="color:'+profitColor+'">'+s.profit+'</span><span class="profit-unit">u</span></div><div class="stat-lbl">Profit</div></div>'
+    +'<div class="stat-box c"><div class="stat-val" style="color:'+(s.roi>=0?'var(--cyan)':'var(--red)')+'">'+s.roi+'%</div><div class="stat-lbl">ROI</div></div>';
+  document.getElementById('statsGrid').innerHTML=html;
+}
+
+// ═══ FILTERS ═══
+function renderFilters(){
+  var markets={};
+  BETS.forEach(function(b){markets[b.market]=(markets[b.market]||0)+1;});
+  var html='<div class="fpill '+(activeFilter==='all'?'active':'')+'" onclick="setFilter(\'all\')">Tous ('+BETS.length+')</div>';
+  Object.keys(MARKET_LABELS).forEach(function(k){
+    if(!markets[k])return;
+    html+='<div class="fpill '+(activeFilter===k?'active':'')+'" onclick="setFilter(\''+k+'\')">'+MARKET_LABELS[k]+' ('+markets[k]+')</div>';
+  });
+  document.getElementById('filtersBar').innerHTML=html;
+}
+
+function setFilter(f){activeFilter=f;render();}
+
+// ═══ TABLE ═══
+function renderTable(){
+  var filtered = activeFilter==='all' ? BETS : BETS.filter(function(b){return b.market===activeFilter;});
+  document.getElementById('tblCount').textContent=filtered.length+' bet'+(filtered.length>1?'s':'');
+  if(filtered.length===0){
+    document.getElementById('tblBody').innerHTML='';
+    document.getElementById('emptyTbl').style.display='block';
+    return;
+  }
+  document.getElementById('emptyTbl').style.display='none';
+  var html='';
+  filtered.forEach(function(b){
+    var rc=RESULT_CFG[b.result]||RESULT_CFG.pending;
+    var pl='—';
+    if(b.result==='win')pl='<span style="color:var(--green);font-weight:700">+'+(b.odds-1).toFixed(2)+'u</span>';
+    else if(b.result==='lose')pl='<span style="color:var(--red);font-weight:700">-1.00u</span>';
+    html+='<tr>'
+      +'<td style="font-family:Space Mono,monospace;font-size:.72rem;color:var(--txt3)">'+b.date+'</td>'
+      +'<td style="font-weight:600">'+b.match+'</td>'
+      +'<td style="color:var(--txt3)">'+b.league+'</td>'
+      +'<td><span class="market-tag">'+MARKET_LABELS[b.market]+'</span></td>'
+      +'<td style="font-family:Orbitron,sans-serif;font-size:.75rem;color:var(--cyan)">'+b.odds.toFixed(2)+'</td>'
+      +'<td><input type="text" value="'+b.score+'" style="width:50px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:5px;padding:2px 5px;color:var(--txt);font-size:.82rem;text-align:center;" onchange="updateScore('+b.id+',this.value)"></td>'
+      +'<td><select style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:5px;padding:2px 4px;color:var(--txt);font-size:.78rem;" onchange="updateResult('+b.id+',this.value)">'
+      +'<option value="pending" '+(b.result==='pending'?'selected':'')+'>⏳</option>'
+      +'<option value="win" '+(b.result==='win'?'selected':'')+'>✅</option>'
+      +'<option value="lose" '+(b.result==='lose'?'selected':'')+'>❌</option>'
+      +'<option value="push" '+(b.result==='push'?'selected':'')+'>↺</option>'
+      +'</select></td>'
+      +'<td>'+pl+'</td>'
+      +'<td><button class="del-btn" onclick="deleteBet('+b.id+')">🗑️</button></td>'
+      +'</tr>';
+  });
+  document.getElementById('tblBody').innerHTML=html;
+}
+
+// ═══ CHARTS ═══
+var charts={};
+var cOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{backgroundColor:'#111827',borderColor:'rgba(255,45,120,.3)',borderWidth:1,titleFont:{family:'Orbitron',size:10},bodyFont:{family:'Rajdhani',size:13},padding:8,cornerRadius:6}},scales:{x:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#6b7a90',font:{family:'Rajdhani',size:10},maxRotation:0}},y:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#6b7a90',font:{family:'Rajdhani',size:10}}}}};
+
+function renderCharts(){
+  var settled=BETS.filter(function(b){return b.result==='win'||b.result==='lose';}).slice().reverse();
+
+  // 1) Profit cumulé
+  var labels=[],data=[],cum=0;
+  settled.forEach(function(b,i){
+    cum+=(b.result==='win'?(b.odds-1):-1);
+    labels.push('#'+(i+1));
+    data.push(Math.round(cum*100)/100);
+  });
+  if(charts.profit)charts.profit.destroy();
+  if(labels.length>1){
+    charts.profit=new Chart(document.getElementById('chartProfit'),{type:'line',data:{labels:labels,datasets:[{data:data,borderColor:'#00d4ff',backgroundColor:'rgba(0,212,255,.06)',borderWidth:2,fill:true,tension:.3,pointRadius:0,pointHoverRadius:4,pointHoverBackgroundColor:'#00d4ff'}]},options:Object.assign({},cOpts,{scales:Object.assign({},cOpts.scales,{y:Object.assign({},cOpts.scales.y,{ticks:Object.assign({},cOpts.scales.y.ticks,{callback:function(v){return v+'u'}})})})})});
+  }
+
+  // 2) Par marché
+  var byMarket={};
+  settled.forEach(function(b){
+    if(!byMarket[b.market])byMarket[b.market]={w:0,l:0};
+    if(b.result==='win')byMarket[b.market].w++;else byMarket[b.market].l++;
+  });
+  var mLabels=[],mW=[],mL=[];
+  Object.keys(byMarket).forEach(function(k){
+    mLabels.push(MARKET_LABELS[k]||k);
+    mW.push(byMarket[k].w);
+    mL.push(byMarket[k].l);
+  });
+  if(charts.markets)charts.markets.destroy();
+  if(mLabels.length>0){
+    charts.markets=new Chart(document.getElementById('chartMarkets'),{type:'bar',data:{labels:mLabels,datasets:[{label:'Gagnés',data:mW,backgroundColor:'rgba(0,200,100,.7)',borderRadius:4,barPercentage:.6},{label:'Perdus',data:mL,backgroundColor:'rgba(255,68,68,.6)',borderRadius:4,barPercentage:.6}]},options:Object.assign({},cOpts,{plugins:Object.assign({},cOpts.plugins,{legend:{display:true,labels:{color:'#8a9bb0',font:{family:'Rajdhani',size:11},boxWidth:8,usePointStyle:true}}}),scales:Object.assign({},cOpts.scales,{y:Object.assign({},cOpts.scales.y,{beginAtZero:true})})})});
+  }
+
+  // 3) Par ligue
+  var byLeague={};
+  settled.forEach(function(b){
+    var lg=b.league||'—';
+    if(!byLeague[lg])byLeague[lg]={w:0,l:0};
+    if(b.result==='win')byLeague[lg].w++;else byLeague[lg].l++;
+  });
+  var lLabels=[],lWR=[];
+  Object.keys(byLeague).sort(function(a,b){
+    var ta=byLeague[a].w+byLeague[a].l,tb=byLeague[b].w+byLeague[b].l;return tb-ta;
+  }).forEach(function(k){
+    var t=byLeague[k].w+byLeague[k].l;
+    if(t<1)return;
+    lLabels.push(k+' ('+t+')');
+    lWR.push(Math.round(byLeague[k].w/t*100));
+  });
+  if(charts.leagues)charts.leagues.destroy();
+  if(lLabels.length>0){
+    charts.leagues=new Chart(document.getElementById('chartLeagues'),{type:'bar',data:{labels:lLabels,datasets:[{data:lWR,backgroundColor:lWR.map(function(v){return v>=60?'rgba(0,200,100,.7)':(v>=50?'rgba(0,212,255,.6)':'rgba(255,68,68,.5)');}),borderRadius:4,barPercentage:.6}]},options:Object.assign({},cOpts,{indexAxis:'y',scales:{x:{grid:{color:'rgba(255,255,255,.03)'},ticks:{color:'#6b7a90',font:{family:'Rajdhani',size:10},callback:function(v){return v+'%'}},max:100,beginAtZero:true},y:{grid:{display:false},ticks:{color:'#b0bec9',font:{family:'Rajdhani',size:11}}}}})});
+  }
+
+  // 4) Par semaine
+  var byWeek={};
+  settled.forEach(function(b){
+    var d=new Date(b.date);
+    var onejan=new Date(d.getFullYear(),0,1);
+    var wk='S'+Math.ceil(((d-onejan)/86400000+onejan.getDay()+1)/7);
+    if(!byWeek[wk])byWeek[wk]={w:0,l:0};
+    if(b.result==='win')byWeek[wk].w++;else byWeek[wk].l++;
+  });
+  var wLabels=Object.keys(byWeek),wW=[],wL=[];
+  wLabels.forEach(function(k){wW.push(byWeek[k].w);wL.push(byWeek[k].l);});
+  if(charts.weekly)charts.weekly.destroy();
+  if(wLabels.length>0){
+    charts.weekly=new Chart(document.getElementById('chartWeekly'),{type:'bar',data:{labels:wLabels,datasets:[{label:'Gagnés',data:wW,backgroundColor:'rgba(0,200,100,.7)',borderRadius:4,barPercentage:.7},{label:'Perdus',data:wL,backgroundColor:'rgba(255,68,68,.6)',borderRadius:4,barPercentage:.7}]},options:Object.assign({},cOpts,{plugins:Object.assign({},cOpts.plugins,{legend:{display:true,labels:{color:'#8a9bb0',font:{family:'Rajdhani',size:11},boxWidth:8,usePointStyle:true}}}),scales:Object.assign({},cOpts.scales,{x:Object.assign({},cOpts.scales.x,{stacked:true}),y:Object.assign({},cOpts.scales.y,{stacked:true,beginAtZero:true})})})});
+  }
+}
+
+// ═══ RENDER ALL ═══
+function render(){renderStats();renderFilters();renderTable();renderCharts();}
+
+// ═══ IMPORT/EXPORT ═══
+function exportJSON(){
+  var blob=new Blob([JSON.stringify(BETS,null,2)],{type:'application/json'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='ht-tracker-'+new Date().toISOString().slice(0,10)+'.json';a.click();
+}
+function importJSON(){document.getElementById('fileInput').click();}
+function handleImport(e){
+  var f=e.target.files[0];if(!f)return;
+  var r=new FileReader();r.onload=function(ev){
+    try{var d=JSON.parse(ev.target.result);if(Array.isArray(d)){BETS=d;save();render();alert('✅ '+d.length+' bets importés');}}
+    catch(err){alert('Erreur: fichier invalide');}
+  };r.readAsText(f);e.target.value='';
+}
+function exportCSV(){
+  var csv='Date,Match,Ligue,Marché,Cote,Score MT,Résultat,P/L\n';
+  BETS.forEach(function(b){
+    var pl=b.result==='win'?'+'+(b.odds-1).toFixed(2):(b.result==='lose'?'-1.00':'0');
+    csv+=b.date+','+b.match.replace(/,/g,';')+','+b.league+','+MARKET_LABELS[b.market]+','+b.odds.toFixed(2)+','+b.score+','+b.result+','+pl+'\n';
+  });
+  var blob=new Blob([csv],{type:'text/csv'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='ht-tracker-'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+function clearAll(){
+  if(!confirm('Supprimer TOUS les bets ?'))return;
+  BETS=[];save();render();
+}
+
+// ═══ INIT ═══
+render();
+</script>
+</body>
+</html>
