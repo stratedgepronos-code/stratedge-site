@@ -1,7 +1,6 @@
 <?php
 require_once __DIR__ . '/gate.php';
 require_once __DIR__ . '/includes/auth.php';
-require_once __DIR__ . '/includes/giveaway-functions.php';
 require_once __DIR__ . '/includes/visiteurs-log.php';
 $membre = isLoggedIn() ? getMembre() : null;
 log_visite();
@@ -187,60 +186,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .starpass-info { font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem; }
     .crypto-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px 24px; margin-top: 0.5rem; background: linear-gradient(135deg, #f7931a, #e2820a); color: #fff; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; border: none; border-radius: 8px; cursor: pointer; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(247,147,26,0.3); }
     .crypto-btn:hover { background: linear-gradient(135deg, #ffaa33, #f7931a); box-shadow: 0 6px 25px rgba(247,147,26,0.5); transform: translateY(-2px); }
-
-    /* GiveAway mensuel — bordure néon sur .giveaway-shell ; vague .giveaway-shine clipée à l'intérieur */
-    .giveaway-shell {
-      margin-top: 0.7rem;
-      display: block;
-      text-decoration: none;
-      color: inherit;
-      cursor: pointer;
-      border-radius: 11px;
-      padding: 1px;
-      background: linear-gradient(135deg, #ff2d78, #a855f7, #00d4ff);
-      animation: giveawayPulse 3s ease-in-out infinite;
-    }
-    .giveaway-badge {
-      display: block;
-      position: relative;
-      overflow: hidden;
-      border-radius: 10px;
-      padding: 0.55rem 0.8rem;
-      background: linear-gradient(135deg, rgba(255,45,120,0.08), rgba(0,212,255,0.08));
-      text-align: center;
-    }
-    .giveaway-shine {
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 60%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,45,120,0.12), rgba(168,85,247,0.1), rgba(0,212,255,0.12), transparent);
-      animation: giveawaySweep 4s ease-in-out infinite;
-      pointer-events: none;
-      z-index: 1;
-    }
-    .giveaway-badge .gw-emoji { position: relative; z-index: 2; filter: drop-shadow(0 0 6px rgba(255,45,120,0.45)); }
-    .giveaway-badge .gw-txt { font-family: 'Orbitron', sans-serif; font-size: 0.7rem; font-weight: 700; letter-spacing: 1.5px; background: linear-gradient(135deg, #ff2d78, #a855f7, #00d4ff); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 8px rgba(255,45,120,0.3)); }
-    .giveaway-badge .gw-main { display: flex; align-items: center; justify-content: center; gap: 0.4rem; position: relative; z-index: 2; }
-    .giveaway-badge .gw-date { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: var(--text-muted); margin-top: 0.2rem; letter-spacing: 0.5px; position: relative; z-index: 2; line-height: 1.35; }
-    .giveaway-badge .gw-date strong { color: #00d4ff; font-family: 'Orbitron', sans-serif; font-weight: 700; }
-    @keyframes giveawayPulse { 0%,100% { box-shadow: 0 0 8px rgba(255,45,120,0.06), 0 0 8px rgba(0,212,255,0.06); } 50% { box-shadow: 0 0 18px rgba(255,45,120,0.12), 0 0 18px rgba(0,212,255,0.12); } }
-    @keyframes giveawaySweep { 0% { left: -100%; } 100% { left: 200%; } }
-
-    /* Stake — blocs sous le bouton crypto (uniquement dans .stake-wrap pour ne pas écraser #stake) */
-    .stake-wrap { margin-top: 0.6rem; text-align: center; }
-    .stake-sep { font-family: 'Space Mono', monospace; font-size: 0.6rem; letter-spacing: 2px; color: var(--text-muted); margin-bottom: 0.4rem; text-transform: uppercase; }
-    .stake-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 0.95rem 1.2rem; background: linear-gradient(135deg, #00d4ff, #0089ff); color: #fff; font-family: 'Orbitron', sans-serif; font-size: 0.76rem; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; border: 1px solid rgba(0,212,255,0.35); border-radius: 10px; cursor: pointer; text-decoration: none; transition: all 0.25s; box-shadow: 0 6px 18px rgba(0,166,255,0.22); }
-    .stake-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(0,166,255,0.38); color: #fff; }
-    .stake-wrap .stake-offer { display: flex; align-items: center; justify-content: center; gap: 0.35rem; flex-wrap: wrap; font-family: 'Rajdhani', sans-serif; font-size: 0.78rem; font-weight: 600; color: rgba(0,212,255,0.85); margin-top: 0.4rem; padding: 0; text-align: center; }
-    .stake-wrap .stake-offer .vip-mini { display: inline-flex; align-items: center; gap: 3px; background: linear-gradient(135deg, rgba(200,150,12,0.15), rgba(245,200,66,0.08)); border: 1px solid rgba(245,200,66,0.3); border-radius: 5px; padding: 1px 6px; vertical-align: middle; }
-    .stake-wrap .stake-offer .vip-mini svg { width: 14px; height: 14px; flex-shrink: 0; }
-    .stake-wrap .stake-offer .vip-mini-label { display: flex; flex-direction: column; align-items: center; line-height: 1; }
-    .stake-wrap .stake-offer .vip-mini-txt { font-family: 'Orbitron', sans-serif; font-size: 0.55rem; font-weight: 900; letter-spacing: 0.5px; background: linear-gradient(135deg, #c8960c, #f5c842, #fffbe6); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; line-height: 1; }
-    .stake-wrap .stake-offer .vip-mini-vip { font-size: 0.6rem; }
-    .stake-wrap .stake-offer .vip-mini-max { font-size: 0.5rem; }
-
     .crypto-separator { text-align: center; color: var(--text-muted); font-size: 0.75rem; margin: 0.8rem 0 0.3rem; text-transform: uppercase; letter-spacing: 2px; }
     .discount-badge { position: absolute; top: 1rem; right: 1rem; background: var(--accent-orange); color: white; font-family: 'Orbitron', sans-serif; font-size: 0.65rem; font-weight: 700; padding: 0.3rem 0.6rem; border-radius: 6px; letter-spacing: 1px; }
     .price-card.featured .discount-badge { top: 2.8rem; }
@@ -450,11 +395,9 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     @media (prefers-reduced-motion: reduce) {
       .btn-stake,
       .tennis-btn-stake { animation: none !important; }
-      .giveaway-shell { animation: none !important; }
-      .giveaway-shine { animation: none !important; }
     }
-    #stake .stake-offer { padding: 0.5rem 0; text-align: left; margin-top: 1rem; }
-    #stake .stake-offer strong { color: var(--neon-blue); font-family: 'Orbitron', sans-serif; font-size: 0.9rem; }
+    .stake-offer { padding: 0.5rem 0; text-align: left; margin-top: 1rem; }
+    .stake-offer strong { color: var(--neon-blue); font-family: 'Orbitron', sans-serif; font-size: 0.9rem; }
     .stake-visual { text-align: center; }
     .stake-visual img { width: 100%; max-width: 400px; border-radius: 16px; }
 
@@ -717,9 +660,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .review-avatar{width:36px;height:36px;}
       .starpass-btn { font-size: 0.85rem; padding: 0.6rem 0.9rem; min-height:44px; }
       .crypto-btn { font-size: 0.75rem; padding: 10px 14px; min-height:44px; }
-      .stake-btn { font-size: 0.7rem; padding: 10px 14px; min-height:44px; }
-      .giveaway-badge .gw-txt { font-size: 0.62rem; }
-      .giveaway-badge .gw-date { font-size: 0.55rem; }
       .discount-badge{font-size:0.6rem;}
     }
     @media (max-width: 380px) {
@@ -764,6 +704,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       <li><a href="#stake">Stake.bet</a></li>
       <li><a href="bets.php">📊 Les Bets</a></li>
       <?php if (isLoggedIn()): ?>
+        <li><a href="register.php" class="nav-cta">S'inscrire</a></li>
         <?php if (isAdmin()): ?>
           <li><a href="panel-x9k3m/index.php" style="background:rgba(255,193,7,0.15);border:1px solid rgba(255,193,7,0.3);color:#ffc107;padding:0.5rem 1.2rem;border-radius:6px;font-weight:700;">⚙️ Panel</a></li>
         <?php endif; ?>
@@ -921,7 +862,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     <p class="section-subtitle fade-up">Sans engagement. Payez uniquement ce dont vous avez besoin.</p>
   </div>
   <div class="pricing-grid">
-    <?php $gwGiveawayHref = isLoggedIn() ? 'giveaway.php' : 'login.php?redirect=' . rawurlencode('giveaway.php'); ?>
 
     <!-- DAILY -->
     <div class="price-card fade-up">
@@ -950,21 +890,8 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
           <a href="login.php?redirect=offre-daily.php" class="starpass-btn">🔒 Se connecter pour payer</a>
         <?php endif; ?>
         <p class="starpass-info">SMS · Appel · CB · Paysafecard via StarPass</p>
-        <?php $gwPd = (int)GIVEAWAY_POINTS['daily']; ?>
-        <a href="<?= htmlspecialchars($gwGiveawayHref) ?>" class="giveaway-shell">
-          <span class="giveaway-badge">
-            <span class="giveaway-shine" aria-hidden="true"></span>
-            <span class="gw-main"><span class="gw-emoji">🎁</span> <span class="gw-txt">Éligible au GiveAway mensuel !</span></span>
-            <span class="gw-date"><strong>+<?= $gwPd ?></strong> pt<?= $gwPd > 1 ? 's' : '' ?> ajouté<?= $gwPd > 1 ? 's' : '' ?> au tirage du mois</span>
-          </span>
-        </a>
         <div class="crypto-separator">— ou —</div>
         <a href="offre-daily.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
-        <div class="stake-wrap">
-          <div class="stake-sep">Bonus Partenaire</div>
-          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
-          <div class="stake-offer">1 mois <span class="vip-mini"><svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="vm1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#vm1)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#vm1)"/><circle cx="6" cy="17" r="3" fill="url(#vm1)"/><circle cx="22" cy="9" r="3.5" fill="url(#vm1)"/><circle cx="38" cy="17" r="3" fill="url(#vm1)"/></svg><span class="vip-mini-label"><span class="vip-mini-txt vip-mini-vip">VIP</span><span class="vip-mini-txt vip-mini-max">MAX</span></span></span> offert via ce lien</div>
-        </div>
       </div>
     </div>
 
@@ -996,21 +923,8 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
           <a href="login.php?redirect=offre-weekend.php" class="starpass-btn">🔒 Se connecter pour payer</a>
         <?php endif; ?>
         <p class="starpass-info">CB · PayPal · Paysafecard · Internet+ via StarPass</p>
-        <?php $gwPw = (int)GIVEAWAY_POINTS['weekend']; ?>
-        <a href="<?= htmlspecialchars($gwGiveawayHref) ?>" class="giveaway-shell">
-          <span class="giveaway-badge">
-            <span class="giveaway-shine" aria-hidden="true"></span>
-            <span class="gw-main"><span class="gw-emoji">🎁</span> <span class="gw-txt">Éligible au GiveAway mensuel !</span></span>
-            <span class="gw-date"><strong>+<?= $gwPw ?></strong> pt<?= $gwPw > 1 ? 's' : '' ?> ajouté<?= $gwPw > 1 ? 's' : '' ?> au tirage du mois</span>
-          </span>
-        </a>
         <div class="crypto-separator">— ou —</div>
         <a href="offre-weekend.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
-        <div class="stake-wrap">
-          <div class="stake-sep">Bonus Partenaire</div>
-          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
-          <div class="stake-offer">1 mois <span class="vip-mini"><svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="vm2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#vm2)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#vm2)"/><circle cx="6" cy="17" r="3" fill="url(#vm2)"/><circle cx="22" cy="9" r="3.5" fill="url(#vm2)"/><circle cx="38" cy="17" r="3" fill="url(#vm2)"/></svg><span class="vip-mini-label"><span class="vip-mini-txt vip-mini-vip">VIP</span><span class="vip-mini-txt vip-mini-max">MAX</span></span></span> offert via ce lien</div>
-        </div>
       </div>
     </div>
 
@@ -1041,21 +955,8 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
           <a href="login.php?redirect=offre-weekly.php" class="starpass-btn">🔒 Se connecter pour payer</a>
         <?php endif; ?>
         <p class="starpass-info">CB · PayPal · Paysafecard · Internet+ via StarPass</p>
-        <?php $gwPwl = (int)GIVEAWAY_POINTS['weekly']; ?>
-        <a href="<?= htmlspecialchars($gwGiveawayHref) ?>" class="giveaway-shell">
-          <span class="giveaway-badge">
-            <span class="giveaway-shine" aria-hidden="true"></span>
-            <span class="gw-main"><span class="gw-emoji">🎁</span> <span class="gw-txt">Éligible au GiveAway mensuel !</span></span>
-            <span class="gw-date"><strong>+<?= $gwPwl ?></strong> pt<?= $gwPwl > 1 ? 's' : '' ?> ajouté<?= $gwPwl > 1 ? 's' : '' ?> au tirage du mois</span>
-          </span>
-        </a>
         <div class="crypto-separator">— ou —</div>
         <a href="offre-weekly.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
-        <div class="stake-wrap">
-          <div class="stake-sep">Bonus Partenaire</div>
-          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
-          <div class="stake-offer">1 mois <span class="vip-mini"><svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="vm3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#vm3)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#vm3)"/><circle cx="6" cy="17" r="3" fill="url(#vm3)"/><circle cx="22" cy="9" r="3.5" fill="url(#vm3)"/><circle cx="38" cy="17" r="3" fill="url(#vm3)"/></svg><span class="vip-mini-label"><span class="vip-mini-txt vip-mini-vip">VIP</span><span class="vip-mini-txt vip-mini-max">MAX</span></span></span> offert via ce lien</div>
-        </div>
       </div>
     </div>
 
@@ -1132,21 +1033,8 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
             <a href="login.php?redirect=offre.php?type=vip_max" class="vip-btn">🔒 Se connecter pour payer</a>
           <?php endif; ?>
           <p style="font-size:0.75rem;color:rgba(245,200,66,0.3);margin-top:0.5rem;">CB · PayPal · Paysafecard · Internet+ via StarPass</p>
-          <?php $gwPv = (int)GIVEAWAY_POINTS['vip_max']; ?>
-          <a href="<?= htmlspecialchars($gwGiveawayHref) ?>" class="giveaway-shell">
-            <span class="giveaway-badge">
-              <span class="giveaway-shine" aria-hidden="true"></span>
-              <span class="gw-main"><span class="gw-emoji">🎁</span> <span class="gw-txt">Éligible au GiveAway mensuel !</span></span>
-              <span class="gw-date"><strong>+<?= $gwPv ?></strong> pt<?= $gwPv > 1 ? 's' : '' ?> ajouté<?= $gwPv > 1 ? 's' : '' ?> au tirage du mois</span>
-            </span>
-          </a>
           <div class="crypto-separator" style="color:rgba(245,200,66,0.2);">— ou —</div>
           <a href="offre.php?type=vip_max#crypto" class="crypto-btn vip-crypto-btn">₿ Payer en Crypto</a>
-          <div class="stake-wrap">
-            <div class="stake-sep" style="color:rgba(245,200,66,0.35);">Bonus Partenaire</div>
-            <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
-            <div class="stake-offer" style="color:rgba(0,212,255,0.75);">1 mois <span class="vip-mini"><svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="vm4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#vm4)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#vm4)"/><circle cx="6" cy="17" r="3" fill="url(#vm4)"/><circle cx="22" cy="9" r="3.5" fill="url(#vm4)"/><circle cx="38" cy="17" r="3" fill="url(#vm4)"/></svg><span class="vip-mini-label"><span class="vip-mini-txt vip-mini-vip">VIP</span><span class="vip-mini-txt vip-mini-max">MAX</span></span></span> offert via ce lien</div>
-          </div>
         </div>
       </div>
     </div>
