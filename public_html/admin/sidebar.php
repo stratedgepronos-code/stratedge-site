@@ -206,9 +206,6 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
         <a href="edit-bet-image.php" <?= ($pageActive==='edit-bet-image') ?'class="active"':'' ?>><span>🖼️</span> Modifier image bet</a>
         <a href="ht-tracker.php" <?= ($pageActive==='ht-tracker') ?'class="active"':'' ?> style="<?= ($pageActive==='ht-tracker') ? '' : 'color:rgba(0,212,255,0.85);' ?>"><span>🎯</span> Bet Mi-Temps</a>
         <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
-        <a href="../tracker-mitemps.php" style="color:rgba(0,212,255,0.85);"><span>⏱️</span> Tracker mi-temps (perso)</a>
-        <?php endif; ?>
-        <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
         <a href="historique.php" <?= ($pageActive==='historique') ?'class="active"':'' ?>>
           <span>📂</span> Historique
           <?php if ($nbBetsHistorique > 0): ?><span class="badge-count"><?= $nbBetsHistorique ?></span><?php endif; ?>
