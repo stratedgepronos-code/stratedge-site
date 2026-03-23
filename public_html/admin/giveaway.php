@@ -85,12 +85,19 @@ foreach ($classement as $p) {
 <title>🎁 GiveAway Admin — StratEdge</title>
 <link rel="icon" type="image/png" href="/assets/images/mascotte.png">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<?php require_once __DIR__ . '/sidebar.php'; ?>
 <style>
+:root{
+  --bg-dark:#050810;--bg-card:#0d1220;--neon-green:#ff2d78;--text-primary:#f0f4f8;--text-secondary:#b0bec9;--text-muted:#8a9bb0;
+  --border-subtle:rgba(255,45,120,0.12);--card:#111827;--txt3:#8a9bb0;--txt2:#b0bec9;
+}
+*{box-sizing:border-box;}
+html,body{overflow-x:hidden;margin:0;}
+body{font-family:'Rajdhani',sans-serif;background:var(--bg-dark);color:var(--text-primary);min-height:100vh;}
 .ga-layout{display:grid;grid-template-columns:1fr 380px;gap:2rem;align-items:start;margin-top:1rem;}
 .ga-title{font-family:'Orbitron',sans-serif;font-size:1.3rem;font-weight:900;margin-bottom:.3rem;}
 .ga-title span{background:linear-gradient(135deg,#ff2d78,#a855f7,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.ga-sub{color:var(--txt3);font-size:.9rem;margin-bottom:1.5rem;}
+.ga-sub{color:var(--text-muted);font-size:.9rem;margin-bottom:1.5rem;}
+.ga-main-inner{max-width:1200px;}
 .ga-wheel-zone{display:flex;flex-direction:column;align-items:center;}
 .ga-wbox{position:relative;width:460px;max-width:100%;}
 .ga-wbox canvas{display:block;width:100%;height:auto;border-radius:50%;box-shadow:0 0 40px rgba(255,45,120,.1);}
@@ -98,6 +105,11 @@ foreach ($classement as $p) {
 .ga-ptr.flash{filter:drop-shadow(0 4px 25px rgba(255,45,120,1)) drop-shadow(0 0 12px #fff);}
 .ga-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:80px;height:80px;border-radius:50%;background:radial-gradient(circle,#111827,#0a0e17);border:2px solid rgba(255,45,120,.3);display:flex;align-items:center;justify-content:center;z-index:5;box-shadow:0 0 20px rgba(255,45,120,.2);}
 .ga-center img{width:62px;height:auto;filter:drop-shadow(0 0 6px rgba(255,45,120,.3));}
+/* Roue vide : le logo central masquait le texte canvas */
+.ga-wbox--empty .ga-center{display:none;}
+.ga-wheel-placeholder{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:4;text-align:center;pointer-events:none;padding:0 1rem;}
+.ga-wheel-placeholder p{margin:0;font-family:'Orbitron',sans-serif;font-size:1rem;color:var(--text-muted);max-width:220px;line-height:1.35;}
+.ga-wheel-placeholder small{display:block;margin-top:.5rem;font-size:.75rem;color:var(--text-muted);opacity:.85;}
 .spin-btn{margin-top:1.2rem;padding:.9rem 2.5rem;font-family:'Orbitron',sans-serif;font-size:.9rem;font-weight:900;letter-spacing:3px;color:#fff;background:linear-gradient(135deg,#ff2d78,#c4185a);border:none;border-radius:12px;cursor:pointer;transition:all .3s;box-shadow:0 6px 25px rgba(255,45,120,.3);}
 .spin-btn:hover{transform:translateY(-2px);box-shadow:0 10px 35px rgba(255,45,120,.5);}
 .spin-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;}
@@ -130,8 +142,8 @@ foreach ($classement as $p) {
 @keyframes crB{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
 .win-label{font-family:'Space Mono',monospace;font-size:.7rem;letter-spacing:4px;color:#ff2d78;}
 .win-name{font-family:'Orbitron',sans-serif;font-size:clamp(2rem,5vw,3rem);font-weight:900;background:linear-gradient(135deg,#ff2d78,#f5c842,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:.3rem 0;}
-.win-info{font-size:1.1rem;color:var(--txt2);}
-.win-close{margin-top:1.5rem;padding:.6rem 2rem;font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:2px;color:var(--txt2);background:0 0;border:1px solid rgba(255,45,120,.2);border-radius:30px;cursor:pointer;}
+.win-info{font-size:1.1rem;color:var(--text-secondary);}
+.win-close{margin-top:1.5rem;padding:.6rem 2rem;font-family:'Orbitron',sans-serif;font-size:.65rem;letter-spacing:2px;color:var(--text-secondary);background:0 0;border:1px solid rgba(255,45,120,.2);border-radius:30px;cursor:pointer;}
 .cfc-w{position:fixed;inset:0;z-index:999;pointer-events:none;overflow:hidden;display:none;}
 .cfc-w.show{display:block;}.cfc-p{position:absolute;top:-3%;animation:cfF linear forwards;}
 @keyframes cfF{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
@@ -140,6 +152,9 @@ foreach ($classement as $p) {
 </style>
 </head>
 <body>
+<?php require_once __DIR__ . '/sidebar.php'; ?>
+<div class="main" style="padding:2rem 1.5rem 2rem;">
+<div class="ga-main-inner">
 <?php if ($success): ?><div class="ga-alert ok"><?= $success ?></div><?php endif; ?>
 <?php if ($error): ?><div class="ga-alert err"><?= $error ?></div><?php endif; ?>
 
@@ -150,7 +165,7 @@ foreach ($classement as $p) {
 <div class="ga-drawn">
   <div>👑 TIRAGE EFFECTUÉ</div>
   <div class="ga-drawn-name"><?= htmlspecialchars($config['gagnant_nom'] ?? '?') ?></div>
-  <div style="font-size:.8rem;color:var(--txt3);margin-top:.3rem;"><?= date('d/m/Y H:i', strtotime($config['drawn_at'])) ?></div>
+  <div style="font-size:.8rem;color:var(--text-muted);margin-top:.3rem;"><?= date('d/m/Y H:i', strtotime($config['drawn_at'])) ?></div>
   <form method="post" style="margin-top:.6rem;"><input type="hidden" name="action" value="reset"><button class="reset-btn" onclick="return confirm('Re-tirer au sort ce mois ?')">🔄 Réinitialiser</button></form>
 </div>
 <?php endif; ?>
@@ -158,8 +173,14 @@ foreach ($classement as $p) {
 <div class="ga-layout">
   <!-- WHEEL -->
   <div class="ga-wheel-zone">
-    <div class="ga-wbox">
+    <div class="ga-wbox<?= empty($classement) ? ' ga-wbox--empty' : '' ?>">
       <canvas id="cv" width="600" height="600"></canvas>
+      <?php if (empty($classement)): ?>
+      <div class="ga-wheel-placeholder">
+        <p>Aucun participant</p>
+        <small>Les points s’ajoutent quand un membre achète un pack Daily, Week-End, Weekly ou VIP Max (hors tennis).</small>
+      </div>
+      <?php endif; ?>
       <div class="ga-ptr" id="ptr">
         <svg viewBox="0 0 40 50" width="36" height="45"><defs><linearGradient id="pg" x1="20" y1="0" x2="20" y2="50" gradientUnits="userSpaceOnUse"><stop stop-color="#ff2d78"/><stop offset="1" stop-color="#c4185a"/></linearGradient></defs><path d="M20 50 L6 10 Q20 0 34 10 Z" fill="url(#pg)"/><circle cx="20" cy="14" r="4" fill="#fff" opacity=".9"/></svg>
       </div>
@@ -188,7 +209,7 @@ foreach ($classement as $p) {
     <div class="ga-card">
       <div class="ga-card-title">🏆 Classement (<?= count($classement) ?>)</div>
       <?php if (empty($classement)): ?>
-        <p style="color:var(--txt3);font-size:.85rem;font-style:italic;">Aucun participant ce mois.</p>
+        <p style="color:var(--text-muted);font-size:.85rem;font-style:italic;">Aucun participant ce mois.</p>
       <?php else: ?>
         <?php foreach ($classement as $i => $p):
           $pct = $totalPts > 0 ? round($p['total_pts']/$totalPts*100,1) : 0;
@@ -289,5 +310,7 @@ function fireCfc(){var c=document.getElementById('cfcW');c.innerHTML='';c.classL
 
 draw(0);
 </script>
+</div><!-- .ga-main-inner -->
+</div><!-- .main -->
 </body>
 </html>
