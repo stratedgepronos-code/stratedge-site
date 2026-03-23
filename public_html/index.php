@@ -187,44 +187,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .crypto-btn { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; padding: 14px 24px; margin-top: 0.5rem; background: linear-gradient(135deg, #f7931a, #e2820a); color: #fff; font-family: 'Orbitron', sans-serif; font-size: 0.85rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; border: none; border-radius: 8px; cursor: pointer; text-decoration: none; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(247,147,26,0.3); }
     .crypto-btn:hover { background: linear-gradient(135deg, #ffaa33, #f7931a); box-shadow: 0 6px 25px rgba(247,147,26,0.5); transform: translateY(-2px); }
 
-    /* GiveAway mensuel — bordure néon sur .giveaway-shell ; vague .giveaway-shine clipée à l'intérieur */
-    .giveaway-shell {
-      margin-top: 0.7rem;
-      display: block;
-      text-decoration: none;
-      color: inherit;
-      cursor: pointer;
-      border-radius: 11px;
-      padding: 1px;
-      background: linear-gradient(135deg, #ff2d78, #a855f7, #00d4ff);
-      animation: giveawayPulse 3s ease-in-out infinite;
-    }
-    .giveaway-badge {
-      display: block;
-      position: relative;
-      overflow: hidden;
-      border-radius: 10px;
-      padding: 0.55rem 0.8rem;
-      background: linear-gradient(135deg, rgba(255,45,120,0.08), rgba(0,212,255,0.08));
-      text-align: center;
-    }
-    .giveaway-shine {
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 60%;
-      height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255,45,120,0.12), rgba(168,85,247,0.1), rgba(0,212,255,0.12), transparent);
-      animation: giveawaySweep 4s ease-in-out infinite;
-      pointer-events: none;
-      z-index: 1;
-    }
-    .giveaway-badge .gw-emoji { position: relative; z-index: 2; filter: drop-shadow(0 0 6px rgba(255,45,120,0.45)); }
-    .giveaway-badge .gw-txt { font-family: 'Orbitron', sans-serif; font-size: 0.7rem; font-weight: 700; letter-spacing: 1.5px; background: linear-gradient(135deg, #ff2d78, #a855f7, #00d4ff); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 0 8px rgba(255,45,120,0.3)); }
-    .giveaway-badge .gw-main { display: flex; align-items: center; justify-content: center; gap: 0.4rem; position: relative; z-index: 2; }
-    .giveaway-badge .gw-date { font-family: 'Space Mono', monospace; font-size: 0.6rem; color: var(--text-muted); margin-top: 0.2rem; letter-spacing: 0.5px; position: relative; z-index: 2; line-height: 1.35; }
-    .giveaway-badge .gw-date strong { color: #00d4ff; font-family: 'Orbitron', sans-serif; font-weight: 700; }
-    @keyframes giveawayPulse { 0%,100% { box-shadow: 0 0 8px rgba(255,45,120,0.06), 0 0 8px rgba(0,212,255,0.06); } 50% { box-shadow: 0 0 18px rgba(255,45,120,0.12), 0 0 18px rgba(0,212,255,0.12); } }
     @keyframes giveawaySweep { 0% { left: -100%; } 100% { left: 200%; } }
 
     /* Bandeau GiveAway sur la face de la carte (Daily / Week-End / Weekly / VIP — pas tennis) */
@@ -561,8 +523,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     @media (prefers-reduced-motion: reduce) {
       .btn-stake,
       .tennis-btn-stake { animation: none !important; }
-      .giveaway-shell { animation: none !important; }
-      .giveaway-shine { animation: none !important; }
       .offer-gw-shimmer { animation: none !important; }
       .offer-gw-banner:hover { transform: none; }
     }
@@ -831,8 +791,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .starpass-btn { font-size: 0.85rem; padding: 0.6rem 0.9rem; min-height:44px; }
       .crypto-btn { font-size: 0.75rem; padding: 10px 14px; min-height:44px; }
       .stake-btn { font-size: 0.7rem; padding: 10px 14px; min-height:44px; }
-      .giveaway-badge .gw-txt { font-size: 0.62rem; }
-      .giveaway-badge .gw-date { font-size: 0.55rem; }
       .offer-gw-n { font-size: 1.35rem; }
       .offer-gw-inner { padding: 0.6rem 0.85rem; gap: 0.55rem; }
       .offer-gw-icon { font-size: 1.2rem; }
@@ -1081,13 +1039,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
           <a href="login.php?redirect=offre-daily.php" class="starpass-btn">🔒 Se connecter pour payer</a>
         <?php endif; ?>
         <p class="starpass-info">SMS · Appel · CB · Paysafecard via StarPass</p>
-        <a href="<?= htmlspecialchars($gwGiveawayHref) ?>" class="giveaway-shell">
-          <span class="giveaway-badge">
-            <span class="giveaway-shine" aria-hidden="true"></span>
-            <span class="gw-main"><span class="gw-emoji">🎁</span> <span class="gw-txt">Éligible au GiveAway mensuel !</span></span>
-            <span class="gw-date"><strong>+<?= (int)$gwHomePts['daily'] ?></strong> pts crédités pour le tirage du mois</span>
-          </span>
-        </a>
         <div class="crypto-separator">— ou —</div>
         <a href="offre-daily.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
         <div class="stake-wrap">
@@ -1137,13 +1088,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
           <a href="login.php?redirect=offre-weekend.php" class="starpass-btn">🔒 Se connecter pour payer</a>
         <?php endif; ?>
         <p class="starpass-info">CB · PayPal · Paysafecard · Internet+ via StarPass</p>
-        <a href="<?= htmlspecialchars($gwGiveawayHref) ?>" class="giveaway-shell">
-          <span class="giveaway-badge">
-            <span class="giveaway-shine" aria-hidden="true"></span>
-            <span class="gw-main"><span class="gw-emoji">🎁</span> <span class="gw-txt">Éligible au GiveAway mensuel !</span></span>
-            <span class="gw-date"><strong>+<?= (int)$gwHomePts['weekend'] ?></strong> pts crédités pour le tirage du mois</span>
-          </span>
-        </a>
         <div class="crypto-separator">— ou —</div>
         <a href="offre-weekend.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
         <div class="stake-wrap">
@@ -1192,13 +1136,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
           <a href="login.php?redirect=offre-weekly.php" class="starpass-btn">🔒 Se connecter pour payer</a>
         <?php endif; ?>
         <p class="starpass-info">CB · PayPal · Paysafecard · Internet+ via StarPass</p>
-        <a href="<?= htmlspecialchars($gwGiveawayHref) ?>" class="giveaway-shell">
-          <span class="giveaway-badge">
-            <span class="giveaway-shine" aria-hidden="true"></span>
-            <span class="gw-main"><span class="gw-emoji">🎁</span> <span class="gw-txt">Éligible au GiveAway mensuel !</span></span>
-            <span class="gw-date"><strong>+<?= (int)$gwHomePts['weekly'] ?></strong> pts crédités pour le tirage du mois</span>
-          </span>
-        </a>
         <div class="crypto-separator">— ou —</div>
         <a href="offre-weekly.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
         <div class="stake-wrap">
@@ -1293,13 +1230,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
             <a href="login.php?redirect=offre.php?type=vip_max" class="vip-btn">🔒 Se connecter pour payer</a>
           <?php endif; ?>
           <p style="font-size:0.75rem;color:rgba(245,200,66,0.3);margin-top:0.5rem;">CB · PayPal · Paysafecard · Internet+ via StarPass</p>
-          <a href="<?= htmlspecialchars($gwGiveawayHref) ?>" class="giveaway-shell">
-            <span class="giveaway-badge">
-              <span class="giveaway-shine" aria-hidden="true"></span>
-              <span class="gw-main"><span class="gw-emoji">🎁</span> <span class="gw-txt">Éligible au GiveAway mensuel !</span></span>
-              <span class="gw-date"><strong>+<?= (int)$gwHomePts['vip_max'] ?></strong> pts crédités pour le tirage du mois</span>
-            </span>
-          </a>
           <div class="crypto-separator" style="color:rgba(245,200,66,0.2);">— ou —</div>
           <a href="offre.php?type=vip_max#crypto" class="crypto-btn vip-crypto-btn">₿ Payer en Crypto</a>
           <div class="stake-wrap">
