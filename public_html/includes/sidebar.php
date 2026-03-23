@@ -37,6 +37,7 @@
   <a class="s-link <?= $currentPage==='pronocommu'?'active':'' ?>" href="/prono-commu.php"><span class="ico">⚽</span> Prono commu</a>
   <a class="s-link <?= ($currentPage??'')==='montante'?'active':'' ?>" href="/montante-tennis.php"><span class="ico">🎾</span> Montante</a>
   <a class="s-link <?= $currentPage==='sav'?'active':'' ?>" href="/sav.php"><span class="ico">🎫</span> SAV</a>
+  <a class="s-link <?= ($currentPage??'')==='giveaway'?'active':'' ?>" href="/giveaway.php"><span class="ico">🎁</span> GiveAway</a>
 </div>
 <!-- Mascotte en position fixe, hors de tout conteneur -->
 <div class="mascotte-bg"><img src="/assets/images/mascotte.png" alt=""></div>

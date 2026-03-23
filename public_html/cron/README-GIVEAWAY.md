@@ -16,7 +16,8 @@ Le script vérifie tout seul si c’est le dernier jour du mois.
 
 ## Panel `panel-x9k3m`
 
-Si ton admin est servi sous `/panel-x9k3m/`, copie aussi **`admin/giveaway.php`** à cet emplacement (ou même alias) pour que le lien du mail de rappel fonctionne — ou adapte l’URL dans `giveaway-reminder.php`.
+Le dépôt contient **`panel-x9k3m/giveaway.php`** : il charge `admin/giveaway.php`. Après déploiement Git, l’URL  
+`https://stratedgepronos.fr/panel-x9k3m/giveaway.php` fonctionne sans copie manuelle.
 
 ## Points
 Daily 1 · Week-End 3 · Weekly 6 · VIP Max 10 — Tennis / Fun : 0 pt.
