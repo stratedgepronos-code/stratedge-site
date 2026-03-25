@@ -825,23 +825,54 @@ $gwBannerMod = [
       background-color: #111827 !important;
       color: #f0f4f8 !important;
     }
-    /* Opérateur SMS StarPass : texte lisible (évite gris sur fond noir) */
+    /* Opérateur SMS StarPass : hauteur + contraste (évite barre « trop fine ») */
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-sms-select-operator,
+    .sp-wrap [id^="starpass_"] #sk-kit div.sk-sms-select-operator,
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-step [class*="sms-select-operator"] {
+      min-height: 48px !important;
+      height: auto !important;
+      max-height: none !important;
+      overflow: visible !important;
+      display: block !important;
+      box-sizing: border-box !important;
+    }
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-sms-select-operator .selecthandler-outer,
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-sms-select-operator .selecthandler-inner,
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-step .sk-sms-select-operator .selecthandler-inner {
+      min-height: 48px !important;
+      height: auto !important;
+      max-height: none !important;
+      overflow: visible !important;
+      display: flex !important;
+      align-items: center !important;
+      box-sizing: border-box !important;
+    }
     .sp-wrap [id^="starpass_"] #sk-kit #sk-sms-select-operator,
     .sp-wrap [id^="starpass_"] #sk-kit select#sk-sms-select-operator,
     .sp-wrap [id^="starpass_"] #sk-kit .sk-sms-select-operator select,
     .sp-wrap [id^="starpass_"] #sk-kit select.sk-sms-select-operator,
-    .sp-wrap [id^="starpass_"] #sk-kit .sk-sms-select-operator {
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-sms-select-operator select {
       color: #f8fafc !important;
       -webkit-text-fill-color: #f8fafc !important;
       background-color: #1e293b !important;
       border: 1px solid rgba(255, 45, 120, 0.35) !important;
       border-radius: 10px !important;
+      min-height: 48px !important;
+      height: auto !important;
+      line-height: 1.35 !important;
+      font-size: 0.95rem !important;
+      padding: 0.65rem 2.25rem 0.65rem 0.85rem !important;
+      box-sizing: border-box !important;
+      appearance: auto !important;
+      -webkit-appearance: menulist !important;
     }
     .sp-wrap [id^="starpass_"] #sk-kit #sk-sms-select-operator option,
     .sp-wrap [id^="starpass_"] #sk-kit select#sk-sms-select-operator option,
     .sp-wrap [id^="starpass_"] #sk-kit .sk-sms-select-operator select option {
       background: #0f172a !important;
       color: #f1f5f9 !important;
+      padding: 0.5rem 0.75rem !important;
+      min-height: 2.25rem !important;
     }
     /* Liste déroulante custom (si StarPass utilise div/ul au lieu de select natif) */
     .sp-wrap [id^="starpass_"] #sk-kit .sk-step .selecthandler-inner [class*="list"],
