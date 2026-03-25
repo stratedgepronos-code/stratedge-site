@@ -265,11 +265,12 @@ function sportConfig($sport) {
         'baseball' => ['⚾','Baseball','Baseball Pro'],
     ];
     $s = $map[$sport] ?? ['⚽','Football','Football Pro'];
+    $mascotteFile = ($sport === 'baseball') ? 'mascotte-mlb.png' : 'mascotte.png';
     return [
         'emoji'        => $s[0],
         'label'        => $s[1],
         'pack'         => $s[2],
-        'mascotte_url'   => 'https://stratedgepronos.fr/assets/images/mascotte.png',
+        'mascotte_url'   => 'https://stratedgepronos.fr/assets/images/' . $mascotteFile,
         // Autres sports : même rendu que tennis — pleine hauteur, transparent derrière le texte
         'mascotte_style' => "opacity:0.45; background:none !important; height:100%; width:auto; object-fit:contain;",
         'mascotte_locked'=> "opacity:0.25; background:none !important; height:100%; width:auto; object-fit:contain;",

@@ -238,7 +238,8 @@ Logos clubs/joueurs — ⚠️ IMPORTANT : ajouter les logos à côté des noms 
 Mascotte WATERMARK — ⚠️⚠️ OBLIGATOIRE POUR TOUS LES SPORTS (y compris baseball, football, basket, hockey), doit occuper toute la hauteur de la card en arrière-plan transparent :
 HTML EXACT pour la mascotte (à placer IMMÉDIATEMENT après l'ouverture de la div principale de la card, AVANT tout contenu) :
 - TENNIS : <img src='https://stratedgepronos.fr/assets/images/mascotte-tennis.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
-- FOOTBALL / BASKET / HOCKEY / BASEBALL et tout autre sport : <img src='https://stratedgepronos.fr/assets/images/mascotte.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
+- FOOTBALL / BASKET / HOCKEY et tout autre sport : <img src='https://stratedgepronos.fr/assets/images/mascotte.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
+- BASEBALL (MLB) : <img src='https://stratedgepronos.fr/assets/images/mascotte-mlb.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
 - Card locked : même chose mais opacity:0.25
 ⚠️ NE JAMAIS OUBLIER la mascotte ! La div principale DOIT avoir position:relative et le contenu z-index:2. mascotte.png = pleine hauteur, transparente derrière le texte. Si tu oublies la mascotte, la card sera rejetée.
 
