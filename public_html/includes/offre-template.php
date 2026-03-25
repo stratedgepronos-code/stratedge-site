@@ -1925,6 +1925,12 @@ $gwBannerMod = [
               return /sms|phone|mobile\s*call|appel|mobile\s*billing|facturation\s*mobile|internet\+\s*mobile/i.test(t);
             }
 
+            /** Toutes les offres : masquer Banque en ligne / Online banking */
+            function isOnlineBankingTab(li) {
+              var t = getButtonText(li);
+              return /banque\s*en\s*ligne|online\s*banking|internet\s*banking/.test(t);
+            }
+
             function translateStarPassToFrench(wrap) {
               var map = [
                 ['Step 1:', 'Étape 1 :'],
@@ -1979,6 +1985,10 @@ $gwBannerMod = [
               blocks.forEach(function(block){
                 var items = block.querySelectorAll('ul li');
                 items.forEach(function(li){
+                  if (isOnlineBankingTab(li)) {
+                    li.style.setProperty('display', 'none', 'important');
+                    return;
+                  }
                   if (isDailyOffer) {
                     if (!isAllowedDailyAccessTab(li)) {
                       li.style.setProperty('display', 'none', 'important');
