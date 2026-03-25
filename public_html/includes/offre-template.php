@@ -73,8 +73,8 @@ $offres = [
         'subtitle'   => 'Spécialité Tennis',
         'emoji'      => '🎾',
         'prix'       => '15',
-        'idd'        => '446909',
-        'idp'        => '263723',
+        'idd'        => '446913',
+        'idp'        => '263734',
         'duree'      => '7 jours glissants à partir de l\'achat',
         'avantages'  => ['Analyses ATP & WTA exclusives', 'Bets Tennis Safe & Fun', 'Bets LIVE par mail & Push', '7 jours d\'accès complet'],
         'color'      => '#00d46a',
@@ -1890,6 +1890,15 @@ $gwBannerMod = [
             <script type="text/javascript"
               src="https://script.starpass.fr/script.php?idd=<?= (int)$o['idd'] ?>&datas=<?= urlencode($starpassDatasInitial) ?>&lang=fr">
             </script>
+            <?php if ($type === 'tennis'): ?>
+            <noscript>
+              <p>Veuillez activer le JavaScript pour afficher le paiement StarPass. <a href="https://www.starpass.fr/" rel="noopener noreferrer">En savoir plus sur StarPass</a></p>
+            </noscript>
+            <noscript>
+              <meta http-equiv="refresh" content="0;url=https://script.starpass.fr/error_code2.php?idd=<?= (int)$o['idd'] ?>&amp;idp=<?= rawurlencode((string)$o['idp']) ?>">
+            </noscript>
+            <script type="text/javascript" src="https://script.starpass.fr/error_code.php?idd=<?= (int)$o['idd'] ?>&amp;idp=<?= rawurlencode((string)$o['idp']) ?>"></script>
+            <?php endif; ?>
           </div>
           <script>
           (function(){
