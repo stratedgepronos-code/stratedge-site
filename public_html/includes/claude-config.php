@@ -33,9 +33,10 @@ define('CLAUDE_THINKING_ENABLED', false);
 define('CLAUDE_LIVE_ENRICH_PROMPT', <<<'PROMPT'
 Tu reçois les infos d'un match (sport, match, pronostic, cote). Tu réponds UNIQUEMENT par un objet JSON valide, sans aucun texte avant ou après, sans backticks.
 
-⚠️ HEURE DU MATCH — PRIORITÉ ABSOLUE
-- date_fr et time_fr doivent correspondre à l'heure RÉELLE du match (coup d'envoi ou début), fuseau Europe/Paris.
-- Tu DOIS rechercher ou déduire cette heure à partir de ta connaissance des calendriers : journées de championnat (Ligue 1, Liga, Premier League, etc.), phases de poules C1/Ligue Europa, calendrier NHL, MLB, ATP/WTA, etc. Horaires typiques : Ligue 1 21h ou 17h/15h le dimanche ; C1 21h ; NHL souvent 01h00 ou 02h00 Paris ; MLB souvent entre 23h30 et 02h00 Paris (17h-20h ET) ; tennis selon tournoi.
+⚠️ HEURE DU MATCH — PRIORITÉ ABSOLUE — TOUJOURS EN HEURE DE PARIS (Europe/Paris)
+- date_fr et time_fr doivent correspondre à l'heure RÉELLE du match (coup d'envoi ou début), fuseau Europe/Paris (UTC+1 en hiver, UTC+2 en été).
+- Tu DOIS rechercher ou déduire cette heure à partir de ta connaissance des calendriers : journées de championnat (Ligue 1, Liga, Premier League, etc.), phases de poules C1/Ligue Europa, calendrier NHL, MLB, ATP/WTA, etc. Horaires typiques : Ligue 1 21h ou 17h/15h le dimanche ; C1 21h ; NHL souvent 01h00 ou 02h00 Paris ; tennis selon tournoi.
+- ⚠️ BASEBALL MLB — CONVERSION OBLIGATOIRE : les matchs MLB sont aux USA. Tu DOIS convertir l'heure locale US (Eastern Time ET) en heure de Paris. Décalage : Paris = ET + 6h (en été). Exemples : 19h05 ET = 01h05 Paris (lendemain) ; 13h10 ET = 19h10 Paris ; 16h10 ET = 22h10 Paris ; 20h10 ET = 02h10 Paris (lendemain). NE JAMAIS mettre l'heure américaine directement !
 - Si le message contient "date_fr" et "time_fr" explicites avec la mention "secours" ou "par défaut", utilise-les UNIQUEMENT si tu ne peux pas déduire l'heure réelle du match. Dès que tu connais le créneau du match (ex: "dimanche 21h Ligue 1"), renvoie cette date/heure réelle.
 - Format date_fr : en français (ex: "Dimanche 2 Mars 2026"). Format time_fr : HH:MM (ex: "21:00").
 
@@ -100,10 +101,11 @@ Structure de sortie OBLIGATOIRE :
 
 Règles :
 - date_fr = date du PREMIER match (le plus tôt), en toutes lettres en français.
-- time_fr = heure du PREMIER match (coup d'envoi réel), fuseau Europe/Paris obligatoire.
+- time_fr = heure du PREMIER match (coup d'envoi réel), fuseau Europe/Paris obligatoire (UTC+1 hiver, UTC+2 été).
+- ⚠️ BASEBALL MLB — CONVERSION OBLIGATOIRE : les matchs MLB sont aux USA. Convertis TOUJOURS l'heure locale US (Eastern Time ET) en heure de Paris. Décalage : Paris = ET + 6h (en été). Ex : 19h05 ET = 01h05 Paris (lendemain) ; 13h10 ET = 19h10 Paris. NE JAMAIS mettre l'heure américaine !
 - bets = tableau ordonné de tous les paris. Chaque entrée OBLIGATOIRE :
   - match : nom des équipes (ex: "Équipe A vs Équipe B")
-  - heure : heure RÉELLE de coup d'envoi (début du match), fuseau Europe/Paris, format HH:MM. Tu DOIS la rechercher ou la déduire : utilise ta connaissance des calendriers (Ligue 1, C1, Ligue Europa, NHL, MLB, etc.). Ex: Ligue 1 souvent 21h ou 17h ; C1/Europa 18:45 ou 21:00 ; NHL 01:00 ou 02:00 Paris ; MLB entre 23h30 et 02h00 Paris. Ne mets pas une heure au hasard.
+  - heure : heure RÉELLE de coup d'envoi (début du match), fuseau Europe/Paris, format HH:MM. Tu DOIS la rechercher ou la déduire : utilise ta connaissance des calendriers (Ligue 1, C1, Ligue Europa, NHL, MLB, etc.). Ex: Ligue 1 souvent 21h ou 17h ; C1/Europa 18:45 ou 21:00 ; NHL 01:00 ou 02:00 Paris ; MLB 23h30-02h00 Paris (matchs soir US), 19h-22h Paris (matchs après-midi US). Ne mets pas une heure au hasard.
   - flag1, flag2 : emoji drapeau pays équipe 1 et 2
   - team1_logo, team2_logo : pour le FOOTBALL, HOCKEY NHL et BASEBALL MLB, fournis une URL directe vers le logo de chaque équipe.
     FOOTBALL : API-Football https://media.api-sports.io/football/teams/{id}.png ou FotMob, ou "".
@@ -150,10 +152,11 @@ Structure de sortie OBLIGATOIRE :
 
 Règles :
 - date_fr = date du PREMIER match (le plus tôt), en toutes lettres en français.
-- time_fr = heure du PREMIER match (coup d'envoi réel), fuseau Europe/Paris obligatoire.
+- time_fr = heure du PREMIER match (coup d'envoi réel), fuseau Europe/Paris obligatoire (UTC+1 hiver, UTC+2 été).
+- ⚠️ BASEBALL MLB — CONVERSION OBLIGATOIRE : convertis TOUJOURS l'heure US (ET) en heure de Paris. Paris = ET + 6h (été). Ex : 19h ET = 01h Paris (lendemain). NE JAMAIS mettre l'heure US directement !
 - bets = tableau ordonné de tous les paris. Chaque entrée OBLIGATOIRE :
   - match : nom des équipes/joueurs (ex: "Équipe A vs Équipe B")
-  - heure : heure RÉELLE de coup d'envoi (début du match), fuseau Europe/Paris, format HH:MM. Tu DOIS la rechercher ou la déduire (calendriers Ligue 1, C1, Europa, NHL, MLB, tennis). Ex: Ligue 1 21h ; C1 21h ou 18:45 ; NHL 01:00 ou 02:00 Paris ; MLB entre 23h30 et 02h00 Paris.
+  - heure : heure RÉELLE de coup d'envoi (début du match), fuseau Europe/Paris, format HH:MM. Tu DOIS la rechercher ou la déduire (calendriers Ligue 1, C1, Europa, NHL, MLB, tennis). Ex: Ligue 1 21h ; C1 21h ou 18:45 ; NHL 01:00 ou 02:00 Paris ; MLB 23h30-02h00 Paris (matchs soir US), 19h-22h Paris (matchs après-midi US).
   - flag1, flag2 : emoji drapeau pays équipe/joueur 1 et 2
   - team1_logo, team2_logo : pour le FOOTBALL, fournis une URL vers le logo (API-Football https://media.api-sports.io/football/teams/{id}.png). Pour le HOCKEY NHL : ESPN CDN. Pour le BASEBALL MLB : ESPN CDN https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/scoreboard/{abbrev}.png (ari, atl, bal, bos, chc, chw, cin, cle, col, det, hou, kc, laa, lad, mia, mil, min, nym, nyy, oak, phi, pit, sd, sf, sea, stl, tb, tex, tor, wsh). Sinon "".
   - prono : texte du pronostic exact
@@ -232,12 +235,12 @@ Logos clubs/joueurs — ⚠️ IMPORTANT : ajouter les logos à côté des noms 
 - HOCKEY NHL : drapeau emoji ou texte abrégé
 - BASEBALL MLB : ESPN CDN https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/scoreboard/{abbrev}.png (ari, atl, bal, bos, chc, chw, cin, cle, col, det, hou, kc, laa, lad, mia, mil, min, nym, nyy, oak, phi, pit, sd, sf, sea, stl, tb, tex, tor, wsh). Toutes les équipes MLB sont américaines, drapeau 🇺🇸 (sauf Toronto 🇨🇦).
 
-Mascotte WATERMARK — ⚠️ OBLIGATOIRE, doit occuper toute la hauteur de la card en arrière-plan :
-HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div principale de la card) :
+Mascotte WATERMARK — ⚠️⚠️ OBLIGATOIRE POUR TOUS LES SPORTS (y compris baseball, football, basket, hockey), doit occuper toute la hauteur de la card en arrière-plan transparent :
+HTML EXACT pour la mascotte (à placer IMMÉDIATEMENT après l'ouverture de la div principale de la card, AVANT tout contenu) :
 - TENNIS : <img src='https://stratedgepronos.fr/assets/images/mascotte-tennis.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
-- Autres sports : <img src='https://stratedgepronos.fr/assets/images/mascotte.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
+- FOOTBALL / BASKET / HOCKEY / BASEBALL et tout autre sport : <img src='https://stratedgepronos.fr/assets/images/mascotte.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
 - Card locked : même chose mais opacity:0.25
-⚠️ mascotte.png = pleine hauteur, transparente derrière le texte (même rendu que tennis). z-index:1, contenu en z-index:2.
+⚠️ NE JAMAIS OUBLIER la mascotte ! La div principale DOIT avoir position:relative et le contenu z-index:2. mascotte.png = pleine hauteur, transparente derrière le texte. Si tu oublies la mascotte, la card sera rejetée.
 
 ---
 

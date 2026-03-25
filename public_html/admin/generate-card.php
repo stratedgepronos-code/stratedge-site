@@ -449,7 +449,9 @@ if ($typeBet === 'Safe Combiné') {
 // MODE SAFE — Claude génère le HTML complet (inchangé)
 // ═══════════════════════════════════════════════════════════
 $systemPrompt = CLAUDE_CARD_PROMPT;
-$dateInfo = "Nous sommes le " . date('d/m/Y') . " (saison " . date('Y') . "/" . (date('Y')+1) . " en football, saison " . date('Y') . " en tennis). Heure = fuseau Europe/Paris.\n\n";
+$tz_safe = new DateTimeZone('Europe/Paris');
+$now_safe = new DateTime('now', $tz_safe);
+$dateInfo = "Nous sommes le " . $now_safe->format('d/m/Y') . " à " . $now_safe->format('H:i') . " heure de Paris (saison " . date('Y') . "/" . (date('Y')+1) . " en football, saison " . date('Y') . " en tennis, saison MLB " . date('Y') . "). Heure = fuseau Europe/Paris OBLIGATOIRE. Pour le baseball MLB : convertis TOUJOURS l'heure américaine (ET) en heure de Paris (Paris = ET + 6h en été). Ex : 19h05 ET = 01h05 Paris (lendemain).\n\n";
 
 $betData = json_encode([
     'sport'    => $sport,
