@@ -199,7 +199,9 @@ $gwBannerMod = [
       padding:0 2.35rem 0 1.15rem;
     }
     .nav-inner {
-      max-width:1100px; margin:0 auto;
+      width: 100%;
+      max-width: min(1720px, calc(100vw - 2.5rem));
+      margin: 0 auto;
       display:flex; align-items:center; justify-content:space-between;
       height:68px;
     }
@@ -220,11 +222,15 @@ $gwBannerMod = [
       padding:0.3rem 0.9rem; border-radius:20px;
     }
 
-    /* ── PAGE ── */
+    /* ── PAGE (pleine largeur utile — packs) ── */
     .page {
-      max-width:1100px; margin:0 auto;
-      padding:4rem 2.35rem 6rem 1.15rem;
-      position:relative; z-index:1;
+      width: 100%;
+      max-width: min(1720px, calc(100vw - 2.5rem));
+      margin: 0 auto;
+      padding: 4rem clamp(1rem, 3vw, 2.5rem) 6rem;
+      position: relative;
+      z-index: 1;
+      box-sizing: border-box;
     }
 
     /* ── HERO ── */
@@ -251,12 +257,12 @@ $gwBannerMod = [
     .hero-title .accent { color:var(--color); }
     .hero-subtitle { color:var(--txt3); font-size:1rem; }
 
-    /* ── LAYOUT ── */
+    /* ── LAYOUT : carte offre fixe, colonne paiement = tout le reste ── */
     .layout {
-      display:grid;
-      grid-template-columns:340px 1fr;
-      gap:2rem;
-      align-items:start;
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+      gap: clamp(1.25rem, 2.5vw, 2.25rem);
+      align-items: start;
     }
 
     /* ── CARTE OFFRE ── */
@@ -487,15 +493,20 @@ $gwBannerMod = [
     .membre-chip strong { color:var(--txt2); }
 
     /* ── PAIEMENT ── */
-    .payment-col { animation:fadeUp 0.7s ease 0.2s both; }
+    .payment-col {
+      animation: fadeUp 0.7s ease 0.2s both;
+      min-width: 0;
+      width: 100%;
+    }
 
-    /* StarPass + crypto côte à côte */
+    /* StarPass + crypto : deux colonnes qui s’étirent sur toute la largeur dispo */
     .payment-methods-row {
       display: grid;
-      grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
-      gap: 1.25rem 1.35rem;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: clamp(1rem, 2vw, 2rem);
       align-items: start;
       margin-bottom: 1.5rem;
+      width: 100%;
     }
     .payment-methods-row > .payment-block { margin-bottom: 0; }
     .payment-block--starpass { min-width: 0; }
@@ -508,6 +519,8 @@ $gwBannerMod = [
       padding:2rem;
       margin-bottom:1.5rem;
       position:relative; overflow:hidden;
+      width: 100%;
+      box-sizing: border-box;
     }
     .payment-block::before {
       content:''; position:absolute; top:0; left:0; right:0; height:2px;
