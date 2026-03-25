@@ -825,6 +825,24 @@ $gwBannerMod = [
       background-color: #111827 !important;
       color: #f0f4f8 !important;
     }
+    /* Opérateur SMS StarPass : texte lisible (évite gris sur fond noir) */
+    .sp-wrap [id^="starpass_"] #sk-kit #sk-sms-select-operator,
+    .sp-wrap [id^="starpass_"] #sk-kit select#sk-sms-select-operator,
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-sms-select-operator select,
+    .sp-wrap [id^="starpass_"] #sk-kit select.sk-sms-select-operator,
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-sms-select-operator {
+      color: #f8fafc !important;
+      -webkit-text-fill-color: #f8fafc !important;
+      background-color: #1e293b !important;
+      border: 1px solid rgba(255, 45, 120, 0.35) !important;
+      border-radius: 10px !important;
+    }
+    .sp-wrap [id^="starpass_"] #sk-kit #sk-sms-select-operator option,
+    .sp-wrap [id^="starpass_"] #sk-kit select#sk-sms-select-operator option,
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-sms-select-operator select option {
+      background: #0f172a !important;
+      color: #f1f5f9 !important;
+    }
     /* Liste déroulante custom (si StarPass utilise div/ul au lieu de select natif) */
     .sp-wrap [id^="starpass_"] #sk-kit .sk-step .selecthandler-inner [class*="list"],
     .sp-wrap [id^="starpass_"] #sk-kit .sk-step .selecthandler-inner [class*="dropdown"],
@@ -1704,9 +1722,21 @@ $gwBannerMod = [
           (function(){
             var offerPrice = parseFloat(document.querySelector('.sp-wrap[data-offer-price]')?.getAttribute('data-offer-price')) || 0;
             var hideAboveSms = offerPrice > 4.5;
+            var isDailyOffer = <?= json_encode($type === 'daily') ?>;
 
             function getButtonText(li) {
               return (li.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
+            }
+            /** Offre Daily : uniquement SMS, CB, PayPal, Paysafecard, Internet+ mobile */
+            function isAllowedDailyAccessTab(li) {
+              var t = getButtonText(li);
+              if (/autres\s*solutions|other\s*solutions|banque\s*en\s*ligne|online\s*banking/.test(t)) return false;
+              if (/^sms\b|envoyer\s*un\s*sms|premium\s*sms|text\s*message|facturation\s*mobile|mobile\s*billing/.test(t)) return true;
+              if (/carte\s*bancaire|credit\s*card|debit\s*card|bank\s*card|\bcb\b|card\s*payment/.test(t)) return true;
+              if (/paypal/.test(t)) return true;
+              if (/paysafe|pay\s*safe/.test(t)) return true;
+              if (/internet\s*\+\s*mobile/.test(t)) return true;
+              return false;
             }
             function shouldHideByLabel(li) {
               var t = getButtonText(li);
@@ -1763,11 +1793,18 @@ $gwBannerMod = [
               if (!wrap) return;
               var blocks = [
                 wrap.querySelector('#sk-access-type-block'),
+                wrap.querySelector('#sk-access-type-tab'),
                 wrap.querySelector('#sk-other-access-type-tab-box')
               ].filter(Boolean);
               blocks.forEach(function(block){
                 var items = block.querySelectorAll('ul li');
                 items.forEach(function(li){
+                  if (isDailyOffer) {
+                    if (!isAllowedDailyAccessTab(li)) {
+                      li.style.setProperty('display', 'none', 'important');
+                    }
+                    return;
+                  }
                   var style = window.getComputedStyle(li);
                   var href = (li.querySelector('a') || li).getAttribute('href');
                   var ariaDisabled = li.getAttribute('aria-disabled') === 'true';

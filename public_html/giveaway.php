@@ -119,6 +119,21 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
   .gw-wheel-box{width:320px;margin:0 auto;}
   .gw-how-grid{grid-template-columns:1fr;}
 }
+
+/* Voile « coming soon » sur tout le contenu sous le hero */
+.gw-coming-soon-wrap{position:relative;min-height:320px;border-radius:16px;}
+.gw-soon-overlay{
+  position:absolute;inset:0;z-index:40;
+  background:rgba(5,8,22,0.88);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  display:flex;align-items:center;justify-content:center;padding:2rem;
+  border-radius:16px;pointer-events:auto;
+}
+.gw-soon-text{
+  margin:0;text-align:center;font-family:'Orbitron',sans-serif;font-weight:900;
+  font-size:clamp(1.35rem,4.5vw,2.35rem);line-height:1.25;color:#fff;
+  text-shadow:0 0 40px rgba(255,45,120,0.45),0 0 80px rgba(0,212,255,0.2);
+  letter-spacing:0.06em;text-transform:uppercase;max-width:22ch;
+}
 </style>
 </head>
 <body>
@@ -139,6 +154,7 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
 </div>
 <?php endif; ?>
 
+<div class="gw-coming-soon-wrap">
 <div class="gw-layout">
   <!-- LEFT: WHEEL -->
   <div class="gw-wheel-zone">
@@ -216,6 +232,10 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
       <p style="font-size:.75rem;color:var(--txt3);margin-top:.6rem;line-height:1.4;">Chaque achat entre le 1er et le dernier jour du mois te rapporte des points. Plus tu en as, plus tu as de chances de gagner le tirage au sort. Tirage en fin de mois par l'admin.</p>
     </div>
   </div>
+</div>
+<div class="gw-soon-overlay" role="presentation">
+  <p class="gw-soon-text">Début des Giveaway Septembre</p>
+</div>
 </div>
 
 <script>
