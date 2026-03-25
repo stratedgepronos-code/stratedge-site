@@ -1,6 +1,5 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
-require_once __DIR__ . '/includes/stratedge-bet-categories.php';
 
 $db = getDB();
 $membre = isLoggedIn() ? getMembre() : null;
@@ -14,30 +13,64 @@ $bets = $db->query("
 ")->fetchAll();
 
 $filtreSection = $_GET['section'] ?? 'tous';
+if ($filtreSection === 'tennis_safe' || $filtreSection === 'tennis_live') {
+    $filtreSection = 'tennis_safe_live';
+}
 $filtre = $_GET['filtre'] ?? 'tous';
 
 // Sections : sport + type (tennis, foot, hockey, basket × safe, fun, live)
 $sportOrder = ['tennis' => 0, 'football' => 1, 'hockey' => 2, 'basket' => 3];
 $typeOrder  = ['safe' => 0, 'fun' => 1, 'live' => 2];
 $sectionLabels = [
+    'tennis_safe_live' => '🎾 Tennis Safe & Live',
     'tennis_safe'   => '🎾 Tennis Safe',   'tennis_fun'   => '🎾 Tennis Fun',   'tennis_live'   => '🎾 Tennis Live',
     'football_safe' => '⚽ Foot Safe',     'football_fun' => '⚽ Foot Fun',     'football_live' => '⚽ Foot Live',
     'hockey_safe'   => '🏒 Hockey Safe',   'hockey_fun'   => '🏒 Hockey Fun',   'hockey_live'   => '🏒 Hockey Live',
     'basket_safe'   => '🏀 Basket Safe',   'basket_fun'   => '🏀 Basket Fun',   'basket_live'   => '🏀 Basket Live',
 ];
 
-// 3 catégories principales (même définition que l’accueil : includes/stratedge-bet-categories.php)
-$categoriesConfig = stratedge_bet_categories_config();
+// 3 catégories principales + sous-catégories
+$categoriesConfig = [
+    'multisport' => [
+        'label'   => 'Multisports',
+        'sections' => ['football_safe', 'football_live', 'hockey_safe', 'hockey_live', 'basket_safe', 'basket_live'],
+    ],
+    'tennis' => [
+        'label'   => 'Tennis',
+        'sections' => ['tennis_safe_live', 'tennis_fun'],
+    ],
+    'fun' => [
+        'label'   => 'Fun',
+        'sections' => ['football_fun', 'hockey_fun', 'basket_fun'],
+    ],
+];
 
 /** Page historique publique : toutes les catégories visibles pour membres et non-membres (pas de filtre par rôle admin). */
 $visibleCategoryKeys = ['multisport', 'tennis', 'fun'];
 
+function betSectionKey($b) {
+    $sport = $b['sport'] ?? null;
+    if ($sport === null || $sport === '') $sport = (($b['categorie'] ?? 'multi') === 'tennis') ? 'tennis' : 'football';
+    $sport = strtolower(trim($sport));
+    if (!in_array($sport, ['tennis','football','basket','hockey'], true)) $sport = 'football';
+    $type = $b['type'] ?? 'safe';
+    if (strpos($type, 'live') !== false) $t = 'live'; elseif (strpos($type, 'fun') !== false) $t = 'fun'; else $t = 'safe';
+    return $sport . '_' . $t;
+}
+
 $sectionsBets = [];
 foreach ($bets as $b) {
-    $key = stratedge_bet_section_key($b);
+    $key = betSectionKey($b);
     if (!isset($sectionsBets[$key])) $sectionsBets[$key] = [];
     $sectionsBets[$key][] = $b;
 }
+// Tennis : un seul signet Safe + Live (tickets et stats fusionnés)
+$sectionsBets['tennis_safe_live'] = array_merge($sectionsBets['tennis_safe'] ?? [], $sectionsBets['tennis_live'] ?? []);
+usort($sectionsBets['tennis_safe_live'], static function ($a, $b) {
+    $da = strtotime($a['date_resultat'] ?? $a['date_post'] ?? '1970-01-01');
+    $db = strtotime($b['date_resultat'] ?? $b['date_post'] ?? '1970-01-01');
+    return $db <=> $da;
+});
 
 function sectionStats($arr) {
     $g = count(array_filter($arr, fn($b) => $b['resultat'] === 'gagne'));

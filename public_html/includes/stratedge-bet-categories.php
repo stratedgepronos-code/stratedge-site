@@ -15,7 +15,7 @@ function stratedge_bet_categories_config(): array {
         ],
         'tennis' => [
             'label'    => 'Tennis',
-            'sections' => ['tennis_safe', 'tennis_fun', 'tennis_live'],
+            'sections' => ['tennis_safe_live', 'tennis_fun'],
         ],
         'fun' => [
             'label'    => 'Fun',
@@ -81,6 +81,10 @@ function stratedge_cotes_moyennes_par_categorie(?PDO $db = null): array {
         }
         $sectionsBets[$key][] = $b;
     }
+    $sectionsBets['tennis_safe_live'] = array_merge(
+        $sectionsBets['tennis_safe'] ?? [],
+        $sectionsBets['tennis_live'] ?? []
+    );
 
     $out = ['multisport' => null, 'tennis' => null, 'fun' => null];
     foreach ($categoriesConfig as $catKey => $config) {
