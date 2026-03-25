@@ -1332,19 +1332,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
 
 </section>
 
-<!-- REVIEWS -->
-<section id="reviews">
-  <div style="max-width:1200px; margin:0 auto;">
-    <div class="section-tag fade-up">Témoignages</div>
-    <h2 class="section-title fade-up">Ce qu'ils en <span style="color:var(--neon-green)">disent</span></h2>
-  </div>
-  <div class="reviews-grid">
-    <div class="review-card fade-up"><div class="review-stars">★★★★★</div><p class="review-text">"Analyse sérieuse, bets rentables. J'ai récupéré mon abonnement dès le premier pari. Je reviens chaque week-end sans hésiter."</p><div class="review-author"><div class="review-avatar">T</div><div><div class="review-name">Thomas</div><div class="review-sub">Abonné Weekly</div></div></div></div>
-    <div class="review-card fade-up"><div class="review-stars">★★★★★</div><p class="review-text">"C'est simple, j'attends le weekly Stake, puis je prends mon abbo ! Les paris sont excellents, je suis dans le vert depuis que je suis leurs bets !"</p><div class="review-author"><div class="review-avatar">M</div><div><div class="review-name">Mehdi</div><div class="review-sub">Abonné Weekly</div></div></div></div>
-    <div class="review-card fade-up"><div class="review-stars">★★★★★</div><p class="review-text">"Dès que j'ai mon weekly ou le monthly, je viens récupérer mon abonnement ! Y'a du savoir-faire, ça se ressent directement !"</p><div class="review-author"><div class="review-avatar">A</div><div><div class="review-name">ArToM</div><div class="review-sub">Abonné Weekly</div></div></div></div>
-  </div>
-</section>
-
 <!-- STAKE -->
 <section id="stake">
   <div style="max-width:1200px; margin:0 auto;">
@@ -1367,6 +1354,19 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     <div class="stake-visual">
       <img src="assets/images/stake bet.jpg" alt="Stake.bet">
     </div>
+  </div>
+</section>
+
+<!-- REVIEWS -->
+<section id="reviews">
+  <div style="max-width:1200px; margin:0 auto;">
+    <div class="section-tag fade-up">Témoignages</div>
+    <h2 class="section-title fade-up">Ce qu'ils en <span style="color:var(--neon-green)">disent</span></h2>
+  </div>
+  <div class="reviews-grid">
+    <div class="review-card fade-up"><div class="review-stars">★★★★★</div><p class="review-text">"Analyse sérieuse, bets rentables. J'ai récupéré mon abonnement dès le premier pari. Je reviens chaque week-end sans hésiter."</p><div class="review-author"><div class="review-avatar">T</div><div><div class="review-name">Thomas</div><div class="review-sub">Abonné Weekly</div></div></div></div>
+    <div class="review-card fade-up"><div class="review-stars">★★★★★</div><p class="review-text">"C'est simple, j'attends le weekly Stake, puis je prends mon abbo ! Les paris sont excellents, je suis dans le vert depuis que je suis leurs bets !"</p><div class="review-author"><div class="review-avatar">M</div><div><div class="review-name">Mehdi</div><div class="review-sub">Abonné Weekly</div></div></div></div>
+    <div class="review-card fade-up"><div class="review-stars">★★★★★</div><p class="review-text">"Dès que j'ai mon weekly ou le monthly, je viens récupérer mon abonnement ! Y'a du savoir-faire, ça se ressent directement !"</p><div class="review-author"><div class="review-avatar">A</div><div><div class="review-name">ArToM</div><div class="review-sub">Abonné Weekly</div></div></div></div>
   </div>
 </section>
 
