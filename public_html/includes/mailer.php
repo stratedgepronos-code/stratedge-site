@@ -350,6 +350,13 @@ function emailConfirmationAbonnement(string $email, string $nom, string $type): 
             'contenu'    => 'Accès aux bets Safe & Fun + envoi des bets LIVE par SMS',
             'conditions' => 'Votre accès est valable pour le week-end en cours (vendredi 00h00 → dimanche 23h59), peu importe l\'heure d\'achat. Aucune reconduction automatique.',
         ],
+        'weekend_fun' => [
+            'label'      => '📅 Week-End + Fun bets',
+            'montant'    => '20€',
+            'duree'      => 'Du vendredi 00h00 au dimanche 23h59',
+            'contenu'    => 'Accès bets Safe & Fun (formule avec supplément) + bets LIVE',
+            'conditions' => 'Votre accès est valable pour le week-end en cours (vendredi 00h00 → dimanche 23h59). Aucune reconduction automatique.',
+        ],
         'weekly' => [
             'label'      => '🏆 Weekly — 7 jours',
             'montant'    => '20€',

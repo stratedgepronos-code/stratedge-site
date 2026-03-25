@@ -106,7 +106,7 @@ if (!in_array($status, ['finished', 'partially_paid'])) {
 
 // ── Extraire membre_id et type depuis order_id ────────────
 // Format attendu : SE_{membre_id}_{type}_{timestamp}
-if (!preg_match('/^SE_(\d+)_(daily|weekend|weekly)_\d+$/', $orderId, $matches)) {
+if (!preg_match('/^SE_(\d+)_(daily|weekend_fun|weekend|weekly|tennis|vip_max)_\d+$/', $orderId, $matches)) {
     http_response_code(400);
     ipnLog('ERREUR: order_id malformé: ' . $orderId);
     exit;

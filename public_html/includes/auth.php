@@ -231,7 +231,7 @@ function getAbonnementActif(int $membreId): ?array {
           AND (
             type = 'daily'
             OR type = 'rasstoss'
-            OR (type IN ('weekend','weekly','tennis','fun') AND date_fin > NOW())
+            OR (type IN ('weekend','weekend_fun','weekly','tennis','vip_max','fun') AND date_fin > NOW())
           )
         ORDER BY date_achat DESC
         LIMIT 1
@@ -249,7 +249,7 @@ function getAllAbonnementsActifs(int $membreId): array {
           AND actif = 1
           AND (
             type IN ('daily','rasstoss')
-            OR (type IN ('weekend','weekly','tennis','fun') AND date_fin > NOW())
+            OR (type IN ('weekend','weekend_fun','weekly','tennis','vip_max','fun') AND date_fin > NOW())
           )
     ");
     $stmt->execute([$membreId]);
@@ -286,6 +286,15 @@ function getMembreAcces(int $membreId): array {
             case 'weekend':
             case 'weekly':
                 $acces['multi'] = true;
+                break;
+            case 'weekend_fun':
+                $acces['multi'] = true;
+                $acces['fun']   = true;
+                break;
+            case 'vip_max':
+                $acces['multi']  = true;
+                $acces['fun']    = true;
+                $acces['tennis'] = true;
                 break;
         }
     }
@@ -325,7 +334,7 @@ function activerAbonnement(int $membreId, string $type): bool {
 
     // Calcul date de fin
     $dateFin = null;
-    if ($type === 'weekend') {
+    if ($type === 'weekend' || $type === 'weekend_fun') {
         // Prochain dimanche 23:59
         $now = new DateTime('now', new DateTimeZone('Europe/Paris'));
         $sunday = clone $now;
@@ -333,14 +342,16 @@ function activerAbonnement(int $membreId, string $type): bool {
         $sunday->setTime(23, 59, 59);
         if ($sunday < $now) $sunday->modify('+7 days');
         $dateFin = $sunday->format('Y-m-d H:i:s');
-    } elseif ($type === 'weekly') {
+    } elseif ($type === 'weekly' || $type === 'tennis') {
         $dateFin = date('Y-m-d H:i:s', strtotime('+7 days'));
+    } elseif ($type === 'vip_max') {
+        $dateFin = date('Y-m-d H:i:s', strtotime('+30 days'));
     } elseif ($type === 'fun') {
         $dateFin = date('Y-m-d H:i:s', strtotime('+7 days'));
     }
     if ($type === 'rasstoss') { $dateFin = '2090-01-01 00:00:00'; }
 
-    $montants = ['daily' => 4.50, 'weekend' => 10.00, 'weekly' => 20.00, 'tennis' => 15.00, 'fun' => 10.00, 'rasstoss' => 0.00];
+    $montants = ['daily' => 4.50, 'weekend' => 10.00, 'weekend_fun' => 20.00, 'weekly' => 20.00, 'tennis' => 15.00, 'vip_max' => 50.00, 'fun' => 10.00, 'rasstoss' => 0.00];
     $montant = $montants[$type] ?? 0;
 
     $stmt = $db->prepare("

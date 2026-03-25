@@ -8,10 +8,11 @@ if (!defined('ABSPATH')) define('ABSPATH', true);
 
 // Points par type d'abonnement (Tennis et Fun exclus)
 define('GIVEAWAY_POINTS', [
-    'daily'   => 1,
-    'weekend' => 3,
-    'weekly'  => 6,
-    'vip_max' => 10,
+    'daily'         => 1,
+    'weekend'       => 3,
+    'weekend_fun'   => 3,
+    'weekly'        => 6,
+    'vip_max'       => 10,
 ]);
 
 // ── Auto-création des tables ────────────────────────────────

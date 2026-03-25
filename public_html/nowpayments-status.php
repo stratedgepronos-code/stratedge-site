@@ -99,7 +99,7 @@ $result = [
 // → on affiche juste le message progressif, PAS de redirection
 if (in_array($status, ['finished', 'partially_paid'])) {
     $orderId = $data['order_id'] ?? '';
-    if (preg_match('/^SE_(\d+)_(daily|weekend|weekly)_\d+$/', $orderId, $m)) {
+    if (preg_match('/^SE_(\d+)_(daily|weekend_fun|weekend|weekly|tennis|vip_max)_\d+$/', $orderId, $m)) {
         $mid  = (int) $m[1];
         $type = $m[2];
         if ($mid === $membre['id']) {

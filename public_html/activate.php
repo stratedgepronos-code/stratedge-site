@@ -22,7 +22,7 @@ $type       = $parts[1] ?? '';
 $montant    = isset($parts[2]) ? (float)$parts[2] : 0;
 
 // Vérifications de base
-$typesValides = ['daily', 'weekend', 'weekly', 'tennis', 'vip_max', 'rasstoss'];
+$typesValides = ['daily', 'weekend', 'weekend_fun', 'weekly', 'tennis', 'vip_max', 'rasstoss'];
 if ($membreId <= 0 || !in_array($type, $typesValides)) {
     header('Location: /dashboard.php?error=activation');
     exit;
