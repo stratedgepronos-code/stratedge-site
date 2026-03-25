@@ -978,7 +978,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
             <div class="stat-cote-line"><span>Fun</span><span class="stat-cote-val"><?= $cotesMoyennesAccueil['fun'] !== null ? htmlspecialchars(number_format($cotesMoyennesAccueil['fun'], 2, '.', '')) : '—' ?></span></div>
           </div>
         </div>
-        <div class="stat"><div class="stat-value">4.8</div><div class="stat-label">/5 ★</div></div>
       </div>
       <div class="hero-btns">
         <a href="#pricing" class="btn-primary">Voir les formules ↓</a>
