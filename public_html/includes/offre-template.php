@@ -180,7 +180,7 @@ $gwBannerMod = [
       background:rgba(6,8,16,0.85);
       backdrop-filter:blur(24px);
       border-bottom:1px solid var(--border);
-      padding:0 2rem;
+      padding:0 2.35rem 0 1.15rem;
     }
     .nav-inner {
       max-width:1100px; margin:0 auto;
@@ -207,7 +207,7 @@ $gwBannerMod = [
     /* ── PAGE ── */
     .page {
       max-width:1100px; margin:0 auto;
-      padding:4rem 2rem 6rem;
+      padding:4rem 2.35rem 6rem 1.15rem;
       position:relative; z-index:1;
     }
 
@@ -438,6 +438,18 @@ $gwBannerMod = [
     /* ── PAIEMENT ── */
     .payment-col { animation:fadeUp 0.7s ease 0.2s both; }
 
+    /* StarPass + crypto côte à côte */
+    .payment-methods-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+      gap: 1.25rem 1.35rem;
+      align-items: start;
+      margin-bottom: 1.5rem;
+    }
+    .payment-methods-row > .payment-block { margin-bottom: 0; }
+    .payment-block--starpass { min-width: 0; }
+    #crypto.payment-block { min-width: 0; }
+
     .payment-block {
       background:var(--bg2);
       border:1px solid var(--border);
@@ -470,6 +482,8 @@ $gwBannerMod = [
       border:1px solid var(--border);
       border-radius:14px; padding:1.5rem;
       text-align:center;
+      min-width:0;
+      max-width:100%;
     }
     .sp-wrap p { color:var(--txt3); font-size:0.83rem; margin-bottom:1rem; }
     .sp-wrap strong { color:var(--color); }
@@ -1578,6 +1592,12 @@ $gwBannerMod = [
       to   { opacity:1; transform:translateY(0); }
     }
 
+    @media (max-width:1040px) {
+      .payment-methods-row {
+        grid-template-columns: 1fr;
+        gap: 1.25rem;
+      }
+    }
     @media (max-width:860px) {
       html,body{overflow-x:hidden;}
       .layout { grid-template-columns:1fr; }
@@ -1733,8 +1753,10 @@ $gwBannerMod = [
     <!-- ── COLONNE PAIEMENT ── -->
     <div class="payment-col">
 
+      <div class="payment-methods-row">
+
       <!-- StarPass -->
-      <div class="payment-block">
+      <div class="payment-block payment-block--starpass">
         <?php if ($type === 'daily'): ?>
           <div class="block-title">📱 SMS · Appel · CB · Paysafecard</div>
           <div class="block-desc">Paiement sécurisé via <strong style="color:var(--color)">StarPass</strong> — SMS, appel, carte bancaire ou <strong>Paysafecard</strong></div>
@@ -1881,25 +1903,6 @@ $gwBannerMod = [
         </div>
       </div>
 
-      <?php if ($type !== 'tennis'): ?>
-      <div class="payment-block stake-pay-block">
-        <div class="stake-wrap">
-          <div class="stake-sep">Bonus Partenaire</div>
-          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
-          <div class="stake-offer">1 mois <span class="vip-mini"><svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="vmStakePay" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#vmStakePay)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#vmStakePay)"/><circle cx="6" cy="17" r="3" fill="url(#vmStakePay)"/><circle cx="22" cy="9" r="3.5" fill="url(#vmStakePay)"/><circle cx="38" cy="17" r="3" fill="url(#vmStakePay)"/></svg><span class="vip-mini-label"><span class="vip-mini-txt vip-mini-vip">VIP</span><span class="vip-mini-txt vip-mini-max">MAX</span></span></span> offert via ce lien</div>
-        </div>
-      </div>
-      <?php endif; ?>
-
-      <?php if ($type === 'tennis'): ?>
-      <div class="stake-tennis-block">
-        <div class="stake-tennis-title">Bonus Partenaire Stake</div>
-        <div class="stake-tennis-desc">Crée ton compte Stake avec notre lien partenaire et débloque un bonus exclusif StratEdge.</div>
-        <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake-tennis">🎁 S'inscrire sur Stake</a>
-        <div class="stake-tennis-note">Lien bonus officiel · 1 mois StratEdge offert</div>
-      </div>
-      <?php endif; ?>
-
       <div class="payment-block" id="crypto">
         <div class="block-title">₿ Crypto-monnaie</div>
         <div class="block-desc">Choisissez votre crypto, générez une adresse unique et payez — activation automatique en quelques minutes</div>
@@ -1993,6 +1996,27 @@ $gwBannerMod = [
           <span class="sec-badge">🛡️ 0.5% de frais seulement</span>
         </div>
       </div>
+
+      </div><!-- /.payment-methods-row -->
+
+      <?php if ($type !== 'tennis'): ?>
+      <div class="payment-block stake-pay-block">
+        <div class="stake-wrap">
+          <div class="stake-sep">Bonus Partenaire</div>
+          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
+          <div class="stake-offer">1 mois <span class="vip-mini"><svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="vmStakePay" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#vmStakePay)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#vmStakePay)"/><circle cx="6" cy="17" r="3" fill="url(#vmStakePay)"/><circle cx="22" cy="9" r="3.5" fill="url(#vmStakePay)"/><circle cx="38" cy="17" r="3" fill="url(#vmStakePay)"/></svg><span class="vip-mini-label"><span class="vip-mini-txt vip-mini-vip">VIP</span><span class="vip-mini-txt vip-mini-max">MAX</span></span></span> offert via ce lien</div>
+        </div>
+      </div>
+      <?php endif; ?>
+
+      <?php if ($type === 'tennis'): ?>
+      <div class="stake-tennis-block">
+        <div class="stake-tennis-title">Bonus Partenaire Stake</div>
+        <div class="stake-tennis-desc">Crée ton compte Stake avec notre lien partenaire et débloque un bonus exclusif StratEdge.</div>
+        <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake-tennis">🎁 S'inscrire sur Stake</a>
+        <div class="stake-tennis-note">Lien bonus officiel · 1 mois StratEdge offert</div>
+      </div>
+      <?php endif; ?>
 
       <!-- Autres offres (masqué pour tennis) -->
       <?php if ($type !== 'tennis'): ?>
@@ -2173,7 +2197,7 @@ function copyText(id) {
 (function() {
   if (window.location.hash === '#crypto') {
     // Masquer le bloc StarPass immédiatement
-    var spBlock = document.querySelector('.payment-block:first-of-type');
+    var spBlock = document.querySelector('.payment-block--starpass');
     if (spBlock) spBlock.style.display = 'none';
     // Remonter en haut de page instantanément
     window.scrollTo(0, 0);
