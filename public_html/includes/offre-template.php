@@ -509,6 +509,17 @@ $gwBannerMod = [
       width: 100%;
     }
     .payment-methods-row > .payment-block { margin-bottom: 0; }
+    .payment-methods-row > .payment-crypto-column { margin-bottom: 0; }
+    .payment-crypto-column {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(1rem, 2vw, 1.5rem);
+      min-width: 0;
+      width: 100%;
+      align-items: stretch;
+    }
+    .payment-crypto-column > .payment-block { margin-bottom: 0; }
+    .payment-crypto-column > .other-offers { margin-bottom: 0; }
     .payment-block--starpass { min-width: 0; }
     #crypto.payment-block { min-width: 0; }
 
@@ -2068,6 +2079,7 @@ $gwBannerMod = [
         </div>
       </div>
 
+      <div class="payment-crypto-column">
       <div class="payment-block" id="crypto">
         <div class="block-title">₿ Crypto-monnaie</div>
         <div class="block-desc">Choisissez votre crypto, générez une adresse unique et payez — activation automatique en quelques minutes</div>
@@ -2162,8 +2174,6 @@ $gwBannerMod = [
         </div>
       </div>
 
-      </div><!-- /.payment-methods-row -->
-
       <?php if ($type !== 'tennis'): ?>
       <div class="payment-block stake-pay-block">
         <div class="stake-wrap">
@@ -2183,7 +2193,6 @@ $gwBannerMod = [
       </div>
       <?php endif; ?>
 
-      <!-- Autres offres (masqué pour tennis) -->
       <?php if ($type !== 'tennis'): ?>
       <div class="other-offers">
         <div class="other-title">Autres formules disponibles</div>
@@ -2202,6 +2211,10 @@ $gwBannerMod = [
         </div>
       </div>
       <?php endif; ?>
+
+      </div><!-- /.payment-crypto-column -->
+
+      </div><!-- /.payment-methods-row -->
 
     </div>
   </div>
