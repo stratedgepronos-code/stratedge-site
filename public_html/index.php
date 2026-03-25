@@ -182,6 +182,29 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .feature-icon { width: 50px; height: 50px; border-radius: 12px; background: rgba(255,45,120,0.1); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.2rem; }
     .feature-card h3 { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--text-primary); }
     .feature-card p { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; }
+    .feature-card--giveaway { padding-top: 2.35rem; }
+    .feature-coming-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 2;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.55rem;
+      font-weight: 800;
+      letter-spacing: 1.1px;
+      text-transform: uppercase;
+      color: #fff;
+      background: linear-gradient(135deg, #a855f7, #ff2d78);
+      padding: 0.4rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.2);
+      box-shadow: 0 0 0 0 rgba(168,85,247,0.55);
+      animation: featureSeptPulse 2.2s ease-in-out infinite;
+    }
+    @keyframes featureSeptPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,45,120,0.45); }
+      50% { transform: scale(1.06); box-shadow: 0 0 18px 6px rgba(168,85,247,0.4); }
+    }
 
     /* HOW IT WORKS */
     #how { background: var(--bg-dark); }
@@ -568,11 +591,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .stake-visual img { width: 100%; max-width: 400px; border-radius: 16px; }
 
     /* FOOTER */
-    .footer-cta { background: linear-gradient(135deg, rgba(255,45,120,0.08), rgba(0,212,255,0.05)); border-top: 1px solid rgba(255,45,120,0.15); border-bottom: 1px solid rgba(255,255,255,0.03); padding: 4rem 2rem; text-align: center; }
-    .footer-cta h2 { font-family: 'Orbitron', sans-serif; font-size: clamp(1.5rem, 3vw, 2.2rem); font-weight: 900; color: var(--text-primary); margin-bottom: 1rem; }
-    .footer-cta h2 span { color: var(--neon-green); }
-    .footer-cta p { color: var(--text-muted); max-width: 550px; margin: 0 auto 2rem; font-size: 0.95rem; line-height: 1.6; }
-    .footer-cta-btns { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
     footer { background: #050810; padding: 0; }
     .footer-main { max-width: 1200px; margin: 0 auto; padding: 4rem 2rem 3rem; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem; }
     .footer-brand p { color: var(--text-muted); font-size: 0.85rem; line-height: 1.7; margin-top: 1rem; max-width: 300px; }
@@ -805,11 +823,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .footer-main { grid-template-columns: 1fr; gap: 1.5rem; }
       .footer-bottom { flex-direction: column; text-align: center; gap: 0.6rem; }
       .footer-legal { flex-wrap: wrap; justify-content: center; gap: 0.8rem; font-size:0.78rem; }
-      .footer-cta{padding:2rem 1rem;}
-      .footer-cta h2 { font-size: 1.2rem; }
-      .footer-cta p{font-size:0.88rem;}
-      .footer-cta-btns { flex-direction: column; align-items: center; }
-      .footer-cta-btns a { width: 100%; text-align: center; justify-content: center; min-height:48px; }
       .stake-banner { padding: 1.3rem 0.8rem; border-radius: 14px; }
       .stake-content h3 { font-size: 1.2rem; }
       .stake-content p{font-size:0.88rem;}
@@ -850,8 +863,8 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .btn-primary { padding: 0.75rem 1.2rem; font-size: 0.92rem; }
       .btn-outline { padding: 0.75rem 1.2rem; font-size: 0.88rem; }
       .feature-card{padding:1rem;}
+      .feature-coming-badge { font-size: 0.48rem; padding: 0.32rem 0.55rem; right: 8px; top: 8px; }
       .review-card{padding:1rem;}
-      .footer-cta h2{font-size:1.05rem;}
     }
     @media (min-width: 1600px) {
       .hero-visual { width: min(900px, min(35vw, 70vh)); }
@@ -1013,7 +1026,12 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     <div class="feature-card fade-up"><div class="feature-icon">⚡</div><h3>Bets LIVE par mail &amp; Push</h3><p>Recevez les pronos LIVE directement par email et notification push. Le LIVE offre les meilleures cotes et moins d'aléatoire.</p></div>
     <div class="feature-card fade-up"><div class="feature-icon">🎯</div><h3>Cotes moyennes par univers</h3><p>Multisports, Tennis et Fun : les moyennes affichées en page d’accueil sont calculées à partir de l’<a href="historique.php" style="color:var(--neon-green);">historique des bets</a> (même logique que la page historique).</p></div>
     <div class="feature-card fade-up"><div class="feature-icon">🏆</div><h3>11 ans d'expérience</h3><p>Des hauts, des bas, puis la maîtrise. Gestion de bankroll, contrôle des émotions, stratégies éprouvées sur la durée.</p></div>
-    <div class="feature-card fade-up"><div class="feature-icon">🎁</div><h3>Cadeaux mensuels</h3><p>Chaque mois, un tirage au sort parmi les abonnés : séjour, places de parc, argent sur Stake.bet… On récompense la fidélité.</p></div>
+    <div class="feature-card fade-up feature-card--giveaway">
+      <span class="feature-coming-badge" title="Programme cadeaux">À partir de septembre</span>
+      <div class="feature-icon">🎁</div>
+      <h3>Cadeaux mensuels</h3>
+      <p>Chaque mois, un tirage au sort parmi les abonnés : séjour, places de parc, argent sur Stake.bet… On récompense la fidélité.</p>
+    </div>
   </div>
 </section>
 
@@ -1351,16 +1369,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     </div>
   </div>
 </section>
-
-<!-- FOOTER CTA -->
-<div class="footer-cta fade-up">
-  <h2>Prêt à <span>battre les bookmakers</span> ?</h2>
-  <p>Rejoins les parieurs qui font confiance à la data, pas au hasard. Ton premier bet gagnant est à un clic.</p>
-  <div class="footer-cta-btns">
-    <a href="#pricing" class="btn-primary">Voir les formules ↓</a>
-    <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="btn-outline">Ouvrir un compte Stake.bet</a>
-  </div>
-</div>
 
 <!-- FOOTER -->
 <?php require_once __DIR__ . '/includes/footer-main.php'; ?>
