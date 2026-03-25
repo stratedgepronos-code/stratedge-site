@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/stratedge-bet-categories.php';
 
 $db = getDB();
 $membre = isLoggedIn() ? getMembre() : null;
@@ -25,38 +26,15 @@ $sectionLabels = [
     'basket_safe'   => '🏀 Basket Safe',   'basket_fun'   => '🏀 Basket Fun',   'basket_live'   => '🏀 Basket Live',
 ];
 
-// 3 catégories principales + sous-catégories
-$categoriesConfig = [
-    'multisport' => [
-        'label'   => 'Multisports',
-        'sections' => ['football_safe', 'football_live', 'hockey_safe', 'hockey_live', 'basket_safe', 'basket_live'],
-    ],
-    'tennis' => [
-        'label'   => 'Tennis',
-        'sections' => ['tennis_safe', 'tennis_fun', 'tennis_live'],
-    ],
-    'fun' => [
-        'label'   => 'Fun',
-        'sections' => ['football_fun', 'hockey_fun', 'basket_fun'],
-    ],
-];
+// 3 catégories principales (même définition que l’accueil : includes/stratedge-bet-categories.php)
+$categoriesConfig = stratedge_bet_categories_config();
 
 /** Page historique publique : toutes les catégories visibles pour membres et non-membres (pas de filtre par rôle admin). */
 $visibleCategoryKeys = ['multisport', 'tennis', 'fun'];
 
-function betSectionKey($b) {
-    $sport = $b['sport'] ?? null;
-    if ($sport === null || $sport === '') $sport = (($b['categorie'] ?? 'multi') === 'tennis') ? 'tennis' : 'football';
-    $sport = strtolower(trim($sport));
-    if (!in_array($sport, ['tennis','football','basket','hockey'], true)) $sport = 'football';
-    $type = $b['type'] ?? 'safe';
-    if (strpos($type, 'live') !== false) $t = 'live'; elseif (strpos($type, 'fun') !== false) $t = 'fun'; else $t = 'safe';
-    return $sport . '_' . $t;
-}
-
 $sectionsBets = [];
 foreach ($bets as $b) {
-    $key = betSectionKey($b);
+    $key = stratedge_bet_section_key($b);
     if (!isset($sectionsBets[$key])) $sectionsBets[$key] = [];
     $sectionsBets[$key][] = $b;
 }

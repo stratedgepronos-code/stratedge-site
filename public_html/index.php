@@ -1,9 +1,17 @@
 <?php
 require_once __DIR__ . '/gate.php';
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/stratedge-bet-categories.php';
 require_once __DIR__ . '/includes/visiteurs-log.php';
 $membre = isLoggedIn() ? getMembre() : null;
 log_visite();
+
+$cotesMoyennesAccueil = ['multisport' => null, 'tennis' => null, 'fun' => null];
+try {
+    $cotesMoyennesAccueil = stratedge_cotes_moyennes_par_categorie();
+} catch (Throwable $e) {
+    /* BDD indisponible : placeholders — */
+}
 
 // ── Places fondateur VIP Max ──────────────────────────────
 $fondateurPlaces  = 0;
@@ -79,10 +87,37 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .hero-slogan { font-family: 'Rajdhani', sans-serif; font-size: clamp(1.3rem, 2.2vw, 1.8rem); font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 1.5rem; border-left: 3px solid var(--neon-green); padding-left: 1rem; }
     .hero-slogan span { color: var(--neon-green); font-weight: 700; }
     .hero-desc { font-size: 1.25rem; color: var(--text-secondary); margin-bottom: 2rem; max-width: 580px; line-height: 1.7; }
-    .hero-stats { display: flex; gap: 3rem; margin-bottom: 2rem; }
+    .hero-stats { display: flex; gap: 3rem; margin-bottom: 2rem; align-items: flex-start; }
     .stat { text-align: center; }
     .stat-value { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; font-weight: 900; color: var(--neon-green); }
     .stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .stat-cotes-hero {
+      text-align: left;
+      min-width: min(100%, 220px);
+      padding: 0.35rem 0.5rem 0;
+      border-left: 2px solid rgba(255,45,120,0.35);
+      padding-left: 1rem;
+    }
+    .stat-cotes-hero .stat-label { text-align: left; margin-bottom: 0.5rem; line-height: 1.3; }
+    .stat-cotes-rows { display: flex; flex-direction: column; gap: 0.35rem; }
+    .stat-cote-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+      font-size: 0.78rem;
+      color: var(--text-secondary);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .stat-cote-line span:first-child { font-weight: 600; color: var(--text-muted); }
+    .stat-cote-val {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--neon-green);
+      line-height: 1;
+    }
     .hero-btns { display: flex; gap: 1rem; }
     /* Mascotte responsive : largeur max 1100px, fixée en bas du block */
     .hero-visual { position: absolute; bottom: 0; top: auto; right: 2%; left: auto; transform-origin: bottom right; z-index: 2; pointer-events: none; width: min(1100px, min(42vw, 80vh)); max-width: 100%; max-height: 100%; display: flex; align-items: flex-end; }
@@ -717,6 +752,8 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .hero-inner { padding: 80px 1.2rem 2.5rem; }
       .hero-text { text-align: center; max-width: 100%; }
       .hero-stats { justify-content: center; gap: 1.2rem; flex-wrap: wrap; }
+      .stat-cotes-hero { text-align: center; border-left: none; padding-left: 0; margin: 0 auto; min-width: auto; max-width: 320px; }
+      .stat-cotes-hero .stat-label { text-align: center; }
       .hero-btns { justify-content: center; flex-wrap: wrap; }
       .hero-visual { display: none; }
       .hero-glow, .hero-glow-2, .hero-glow-mascot { display: none; }
@@ -742,6 +779,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .hero-desc { font-size: 0.9rem; }
       .hero-stats { flex-wrap: wrap; gap: 0.7rem; justify-content: center; }
       .stat { min-width: 85px; text-align: center; }
+      .stat-cote-val { font-size: 1.15rem; }
       .stat-value { font-size: 1.5rem; }
       .stat-label { font-size: 0.65rem; }
       .hero-btns { flex-direction: column; width: 100%; gap: 0.7rem; }
@@ -932,7 +970,14 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       <p class="hero-desc">Fort de 11 ans d'expérience, StratEdge analyse, croise et compare toutes les statistiques des grands championnats. xG, Poisson, Value — tout est analysé pour ne laisser aucune chance aux bookmakers.</p>
       <div class="hero-stats">
         <div class="stat"><div class="stat-value">11+</div><div class="stat-label">Ans d'XP</div></div>
-        <div class="stat"><div class="stat-value">1.93</div><div class="stat-label">Cote moyenne</div></div>
+        <div class="stat stat-cotes-hero">
+          <div class="stat-label">Cotes moyennes<br><span style="font-size:0.65rem;opacity:0.85;font-weight:500;">(historique des bets)</span></div>
+          <div class="stat-cotes-rows">
+            <div class="stat-cote-line"><span>Multisports</span><span class="stat-cote-val"><?= $cotesMoyennesAccueil['multisport'] !== null ? htmlspecialchars(number_format($cotesMoyennesAccueil['multisport'], 2, '.', '')) : '—' ?></span></div>
+            <div class="stat-cote-line"><span>Tennis</span><span class="stat-cote-val"><?= $cotesMoyennesAccueil['tennis'] !== null ? htmlspecialchars(number_format($cotesMoyennesAccueil['tennis'], 2, '.', '')) : '—' ?></span></div>
+            <div class="stat-cote-line"><span>Fun</span><span class="stat-cote-val"><?= $cotesMoyennesAccueil['fun'] !== null ? htmlspecialchars(number_format($cotesMoyennesAccueil['fun'], 2, '.', '')) : '—' ?></span></div>
+          </div>
+        </div>
         <div class="stat"><div class="stat-value">4.8</div><div class="stat-label">/5 ★</div></div>
       </div>
       <div class="hero-btns">
@@ -967,7 +1012,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     <div class="feature-card fade-up"><div class="feature-icon">📊</div><h3>Analyse Data</h3><p>Croisement de xG, modèle de Poisson, value bets… Chaque pronostic est le fruit d'une analyse statistique rigoureuse, pas d'un feeling.</p></div>
     <div class="feature-card fade-up"><div class="feature-icon">📱</div><h3>Paiement par SMS · Crypto · Paysafecard</h3><p>Payez par SMS (Daily), carte bancaire, PayPal ou <strong>Paysafecard</strong> via StarPass. Simple, rapide, sécurisé.</p></div>
     <div class="feature-card fade-up"><div class="feature-icon">⚡</div><h3>Bets LIVE par mail &amp; Push</h3><p>Recevez les pronos LIVE directement par email et notification push. Le LIVE offre les meilleures cotes et moins d'aléatoire.</p></div>
-    <div class="feature-card fade-up"><div class="feature-icon">🎯</div><h3>Cotes 1.93+</h3><p>On ne joue pas en dessous de 1.93. Des cotes élevées pour un ratio risque/gain optimal sur chaque bet.</p></div>
+    <div class="feature-card fade-up"><div class="feature-icon">🎯</div><h3>Cotes moyennes par univers</h3><p>Multisports, Tennis et Fun : les moyennes affichées en page d’accueil sont calculées à partir de l’<a href="historique.php" style="color:var(--neon-green);">historique des bets</a> (même logique que la page historique).</p></div>
     <div class="feature-card fade-up"><div class="feature-icon">🏆</div><h3>11 ans d'expérience</h3><p>Des hauts, des bas, puis la maîtrise. Gestion de bankroll, contrôle des émotions, stratégies éprouvées sur la durée.</p></div>
     <div class="feature-card fade-up"><div class="feature-icon">🎁</div><h3>Cadeaux mensuels</h3><p>Chaque mois, un tirage au sort parmi les abonnés : séjour, places de parc, argent sur Stake.bet… On récompense la fidélité.</p></div>
   </div>
