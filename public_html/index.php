@@ -99,24 +99,32 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       padding-left: 1rem;
     }
     .stat-cotes-hero .stat-label { text-align: left; margin-bottom: 0.5rem; line-height: 1.3; }
-    .stat-cotes-rows { display: flex; flex-direction: column; gap: 0.35rem; }
-    .stat-cote-line {
-      display: flex;
-      justify-content: space-between;
+    .stat-cotes-rows {
+      display: grid;
+      grid-template-columns: max-content minmax(3.5em, max-content);
+      column-gap: 1rem;
+      row-gap: 0.35rem;
       align-items: baseline;
-      gap: 1rem;
+      width: max-content;
+      max-width: 100%;
+    }
+    .stat-cote-line { display: contents; }
+    .stat-cote-name {
       font-size: 0.78rem;
-      color: var(--text-secondary);
+      font-weight: 600;
+      color: var(--text-muted);
       text-transform: none;
       letter-spacing: 0;
     }
-    .stat-cote-line span:first-child { font-weight: 600; color: var(--text-muted); }
     .stat-cote-val {
       font-family: 'Orbitron', sans-serif;
       font-size: 1.35rem;
       font-weight: 800;
       color: var(--neon-green);
       line-height: 1;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
     }
     .hero-btns { display: flex; gap: 1rem; }
     /* Mascotte responsive : largeur max 1100px, fixée en bas du block */
@@ -772,6 +780,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .hero-stats { justify-content: center; gap: 1.2rem; flex-wrap: wrap; }
       .stat-cotes-hero { text-align: center; border-left: none; padding-left: 0; margin: 0 auto; min-width: auto; max-width: 320px; }
       .stat-cotes-hero .stat-label { text-align: center; }
+      .stat-cotes-rows { margin-inline: auto; }
       .hero-btns { justify-content: center; flex-wrap: wrap; }
       .hero-visual { display: none; }
       .hero-glow, .hero-glow-2, .hero-glow-mascot { display: none; }
@@ -986,9 +995,9 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <div class="stat stat-cotes-hero">
           <div class="stat-label">Cotes moyennes<br><span style="font-size:0.65rem;opacity:0.85;font-weight:500;">(historique des bets)</span></div>
           <div class="stat-cotes-rows">
-            <div class="stat-cote-line"><span>Multisports</span><span class="stat-cote-val"><?= $cotesMoyennesAccueil['multisport'] !== null ? htmlspecialchars(number_format($cotesMoyennesAccueil['multisport'], 2, '.', '')) : '—' ?></span></div>
-            <div class="stat-cote-line"><span>Tennis</span><span class="stat-cote-val"><?= $cotesMoyennesAccueil['tennis'] !== null ? htmlspecialchars(number_format($cotesMoyennesAccueil['tennis'], 2, '.', '')) : '—' ?></span></div>
-            <div class="stat-cote-line"><span>Fun</span><span class="stat-cote-val"><?= $cotesMoyennesAccueil['fun'] !== null ? htmlspecialchars(number_format($cotesMoyennesAccueil['fun'], 2, '.', '')) : '—' ?></span></div>
+            <div class="stat-cote-line"><span class="stat-cote-name">Multisports</span><span class="stat-cote-val"><?= $cotesMoyennesAccueil['multisport'] !== null ? htmlspecialchars(number_format($cotesMoyennesAccueil['multisport'], 2, '.', '')) : '—' ?></span></div>
+            <div class="stat-cote-line"><span class="stat-cote-name">Tennis</span><span class="stat-cote-val"><?= $cotesMoyennesAccueil['tennis'] !== null ? htmlspecialchars(number_format($cotesMoyennesAccueil['tennis'], 2, '.', '')) : '—' ?></span></div>
+            <div class="stat-cote-line"><span class="stat-cote-name">Fun</span><span class="stat-cote-val"><?= $cotesMoyennesAccueil['fun'] !== null ? htmlspecialchars(number_format($cotesMoyennesAccueil['fun'], 2, '.', '')) : '—' ?></span></div>
           </div>
         </div>
       </div>
