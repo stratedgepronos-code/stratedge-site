@@ -31,10 +31,18 @@ $offres = [
         'subtitle'   => 'Vendredi → Dimanche',
         'emoji'      => '📅',
         'prix'       => '10',
+        'prix_fun'   => '20',
+        /* Code StarPass distinct à 20€ (Safe + Fun) — ou variable d’env STARPASS_WEEKEND_FUN_IDD */
         'idd'        => '446904',
+        'idd_with_fun' => '',
         'idp'        => '263723',
         'duree'      => 'Du vendredi 00h00 au dimanche 23h59',
-        'avantages'  => ['Accès bets Safe & Fun', 'Bets LIVE par mail &amp; Push', 'Tous les matchs du week-end', 'Sans engagement'],
+        'avantages'  => [
+            '<div class="avantage-safe-fun-block"><span class="av-safe-line">Accès bets « Safe »</span><br><span class="fun-supplement-pulse">Fun bets avec supplément (+10€ si option cochée)</span></div>',
+            'Bets LIVE par mail &amp; Push',
+            'Tous les matchs du week-end',
+            'Sans engagement',
+        ],
         'color'      => '#00d4ff',
         'glow'       => 'rgba(0,212,255,0.18)',
         'gradient'   => 'linear-gradient(135deg,#00d4ff,#0099cc)',
@@ -98,8 +106,16 @@ $offres = [
 
 if (!isset($offres[$type])) { header('Location: /souscrire.php'); exit; }
 
+$envWeekendFunIdd = getenv('STARPASS_WEEKEND_FUN_IDD');
+if ($envWeekendFunIdd !== false && trim($envWeekendFunIdd) !== '') {
+    $offres['weekend']['idd_with_fun'] = trim($envWeekendFunIdd);
+}
+
 $o      = $offres[$type];
 $membre = getMembre();
+$weekendFunIdd        = ($type === 'weekend') ? trim((string)($o['idd_with_fun'] ?? '')) : '';
+$weekendFunStarPassOk = $weekendFunIdd !== '';
+$starpassDatasInitial = $membre['id'] . ':' . $type;
 $gwPtsPack   = (int)(GIVEAWAY_POINTS[$type] ?? 0);
 $gwShowBadge = $gwPtsPack > 0;
 /** Modificateur CSS du bandeau GiveAway (aligné sur l’accueil) */
@@ -183,7 +199,9 @@ $gwBannerMod = [
       padding:0 2.35rem 0 1.15rem;
     }
     .nav-inner {
-      max-width:1100px; margin:0 auto;
+      width: 100%;
+      max-width: min(1720px, calc(100vw - 2.5rem));
+      margin: 0 auto;
       display:flex; align-items:center; justify-content:space-between;
       height:68px;
     }
@@ -204,11 +222,15 @@ $gwBannerMod = [
       padding:0.3rem 0.9rem; border-radius:20px;
     }
 
-    /* ── PAGE ── */
+    /* ── PAGE (pleine largeur utile — packs) ── */
     .page {
-      max-width:1100px; margin:0 auto;
-      padding:4rem 2.35rem 6rem 1.15rem;
-      position:relative; z-index:1;
+      width: 100%;
+      max-width: min(1720px, calc(100vw - 2.5rem));
+      margin: 0 auto;
+      padding: 4rem clamp(1rem, 3vw, 2.5rem) 6rem;
+      position: relative;
+      z-index: 1;
+      box-sizing: border-box;
     }
 
     /* ── HERO ── */
@@ -235,12 +257,12 @@ $gwBannerMod = [
     .hero-title .accent { color:var(--color); }
     .hero-subtitle { color:var(--txt3); font-size:1rem; }
 
-    /* ── LAYOUT ── */
+    /* ── LAYOUT : carte offre fixe, colonne paiement = tout le reste ── */
     .layout {
-      display:grid;
-      grid-template-columns:340px 1fr;
-      gap:2rem;
-      align-items:start;
+      display: grid;
+      grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+      gap: clamp(1.25rem, 2.5vw, 2.25rem);
+      align-items: start;
     }
 
     /* ── CARTE OFFRE ── */
@@ -318,6 +340,41 @@ $gwBannerMod = [
       box-shadow: 0 0 20px rgba(245, 200, 66, 0.12);
     }
     .offer-gw-banner:hover.offer-gw--vip { box-shadow: 0 14px 40px rgba(245, 200, 66, 0.22); }
+
+    .avantage-safe-fun-block { line-height: 1.45; }
+    .avantage-safe-fun-block .av-safe-line { font-weight: 700; color: var(--txt); }
+    .fun-supplement-pulse {
+      display: inline-block;
+      margin-top: 0.2rem;
+      font-weight: 700;
+      font-size: 0.82rem;
+      color: var(--color);
+      animation: funPulse 2.2s ease-in-out infinite;
+    }
+    @keyframes funPulse {
+      0%, 100% { opacity: 1; filter: brightness(1); }
+      50% { opacity: 0.88; filter: brightness(1.15); }
+    }
+    .weekend-fun-opt {
+      margin-bottom: 1rem;
+      padding: 0.85rem 1rem;
+      border-radius: 12px;
+      border: 1px solid color-mix(in srgb, var(--color) 28%, transparent);
+      background: rgba(0, 0, 0, 0.25);
+    }
+    .weekend-fun-label {
+      display: flex;
+      gap: 0.65rem;
+      align-items: flex-start;
+      cursor: pointer;
+      font-size: 0.88rem;
+      line-height: 1.45;
+      color: var(--txt2);
+    }
+    .weekend-fun-label input { margin-top: 0.2rem; flex-shrink: 0; accent-color: var(--color); }
+    .weekend-fun-warn { margin-top: 0.55rem; font-size: 0.75rem; color: var(--txt3); line-height: 1.4; }
+    .weekend-fun-warn code { font-size: 0.7rem; color: var(--cyan); }
+
     .offer-gw-inner {
       display: flex;
       align-items: center;
@@ -436,17 +493,33 @@ $gwBannerMod = [
     .membre-chip strong { color:var(--txt2); }
 
     /* ── PAIEMENT ── */
-    .payment-col { animation:fadeUp 0.7s ease 0.2s both; }
+    .payment-col {
+      animation: fadeUp 0.7s ease 0.2s both;
+      min-width: 0;
+      width: 100%;
+    }
 
-    /* StarPass + crypto côte à côte */
+    /* StarPass + crypto : deux colonnes qui s’étirent sur toute la largeur dispo */
     .payment-methods-row {
       display: grid;
-      grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
-      gap: 1.25rem 1.35rem;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: clamp(1rem, 2vw, 2rem);
       align-items: start;
       margin-bottom: 1.5rem;
+      width: 100%;
     }
     .payment-methods-row > .payment-block { margin-bottom: 0; }
+    .payment-methods-row > .payment-crypto-column { margin-bottom: 0; }
+    .payment-crypto-column {
+      display: flex;
+      flex-direction: column;
+      gap: clamp(1rem, 2vw, 1.5rem);
+      min-width: 0;
+      width: 100%;
+      align-items: stretch;
+    }
+    .payment-crypto-column > .payment-block { margin-bottom: 0; }
+    .payment-crypto-column > .other-offers { margin-bottom: 0; }
     .payment-block--starpass { min-width: 0; }
     #crypto.payment-block { min-width: 0; }
 
@@ -457,6 +530,8 @@ $gwBannerMod = [
       padding:2rem;
       margin-bottom:1.5rem;
       position:relative; overflow:hidden;
+      width: 100%;
+      box-sizing: border-box;
     }
     .payment-block::before {
       content:''; position:absolute; top:0; left:0; right:0; height:2px;
@@ -694,8 +769,8 @@ $gwBannerMod = [
     .sp-wrap [id^="starpass_"] #sk-kit #sk-other-access-type-tab-box ul li[class*="unavailable"] {
       display: none !important;
     }
-    /* Masquer le bloc "Other solutions" / "Autres solutions" */
-    .sp-wrap [id^="starpass_"] #sk-kit #sk-other-access-type-tab-box {
+    /* Masquer "Autres solutions" sauf Daily (filtrage des moyens en JS) */
+    .sp-wrap:not(.sp-wrap--daily) [id^="starpass_"] #sk-kit #sk-other-access-type-tab-box {
       display: none !important;
     }
     .sp-wrap [id^="starpass_"] #sk-kit #sk-payment-method-block ul li.current,
@@ -838,6 +913,29 @@ $gwBannerMod = [
       background: #111827 !important;
       background-color: #111827 !important;
       color: #f0f4f8 !important;
+    }
+    /* Bloc pays client StarPass (#sk-customer-country) — texte lisible */
+    .sp-wrap [id^="starpass_"] #sk-kit #sk-customer-country,
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-customer-country,
+    .sp-wrap [id^="starpass_"] #sk-kit [id*="customer-country"],
+    .sp-wrap [id^="starpass_"] #sk-kit [id*="customer-country"] * {
+      color: #f0f4f8 !important;
+      -webkit-text-fill-color: #f0f4f8 !important;
+    }
+    .sp-wrap [id^="starpass_"] #sk-kit #sk-customer-country select,
+    .sp-wrap [id^="starpass_"] #sk-kit .sk-customer-country select,
+    .sp-wrap [id^="starpass_"] #sk-kit [id*="customer-country"] select {
+      color-scheme: dark !important;
+      color: #f0f4f8 !important;
+      -webkit-text-fill-color: #f0f4f8 !important;
+      background: #111827 !important;
+      background-color: #111827 !important;
+      border: 1px solid rgba(255,255,255,0.14) !important;
+    }
+    .sp-wrap [id^="starpass_"] #sk-kit #sk-customer-country .selecthandler-inner,
+    .sp-wrap [id^="starpass_"] #sk-kit [id*="customer-country"] .selecthandler-inner {
+      background: rgba(17,24,39,0.95) !important;
+      border: 1px solid rgba(255,255,255,0.12) !important;
     }
     /* Opérateur SMS StarPass : hauteur + contraste (évite barre « trop fine ») */
     .sp-wrap [id^="starpass_"] #sk-kit .sk-sms-select-operator,
@@ -1716,7 +1814,7 @@ $gwBannerMod = [
             </video>
           </div>
           <div class="offre-prix">
-            <span class="cur">€</span><span class="num"><?= $o['prix'] ?></span>
+            <span class="cur">€</span><span class="num" id="offrePrixNum"<?= $type === 'weekend' ? ' data-prix-base="' . htmlspecialchars($o['prix'], ENT_QUOTES, 'UTF-8') . '" data-prix-fun="' . htmlspecialchars($o['prix_fun'] ?? '20', ENT_QUOTES, 'UTF-8') . '"' : '' ?>><?= $o['prix'] ?></span>
           </div>
           <div class="offre-duree"><?= $o['duree'] ?></div>
           <?php if ($gwShowBadge && $gwBannerMod !== ''): ?>
@@ -1758,42 +1856,66 @@ $gwBannerMod = [
       <!-- StarPass -->
       <div class="payment-block payment-block--starpass">
         <?php if ($type === 'daily'): ?>
-          <div class="block-title">📱 SMS · Appel · CB · Paysafecard</div>
-          <div class="block-desc">Paiement sécurisé via <strong style="color:var(--color)">StarPass</strong> — SMS, appel, carte bancaire ou <strong>Paysafecard</strong></div>
+          <div class="block-title">💳 Paysafecard · Internet+ mobile · CB · SMS</div>
+          <div class="block-desc">Paiement sécurisé via <strong style="color:var(--color)">StarPass</strong> — uniquement ces moyens sur l’offre Daily</div>
         <?php else: ?>
           <div class="block-title">💳 CB · PayPal · Paysafecard · Internet+</div>
           <div class="block-desc">Paiement sécurisé via <strong style="color:var(--color)">StarPass</strong> — carte bancaire, PayPal, Paysafecard ou Internet+</div>
         <?php endif; ?>
-        <?php $offerPriceNum = (float)str_replace(',', '.', $o['prix']); ?>
-        <div class="sp-wrap" data-offer-price="<?= $offerPriceNum ?>">
-          <p>Cliquez sur le bouton ci-dessous pour payer <strong><?= $o['prix'] ?>€</strong> via StarPass</p>
-          <div id="starpass_<?= $o['idd'] ?>"></div>
-          <script type="text/javascript"
-            src="https://script.starpass.fr/script.php?idd=<?= $o['idd'] ?>&datas=<?= urlencode($membre['id'] . ':' . $type) ?>&lang=fr">
-          </script>
+        <?php
+        $offerPriceNum = (float)str_replace(',', '.', $o['prix']);
+        $spWrapClass = 'sp-wrap' . ($type === 'daily' ? ' sp-wrap--daily' : '');
+        $spWrapAttrs = 'class="' . htmlspecialchars($spWrapClass, ENT_QUOTES, 'UTF-8') . '" id="spWrapRoot" data-offer-price="' . $offerPriceNum . '" data-offer-type="' . htmlspecialchars($type, ENT_QUOTES, 'UTF-8') . '"';
+        if ($type === 'weekend') {
+            $spWrapAttrs .= ' data-idd-base="' . (int)$o['idd'] . '" data-idd-fun="' . ($weekendFunStarPassOk ? (int)$weekendFunIdd : 0) . '"';
+            $spWrapAttrs .= ' data-prix-base="' . htmlspecialchars($o['prix'], ENT_QUOTES, 'UTF-8') . '"';
+            $spWrapAttrs .= ' data-prix-fun="' . htmlspecialchars($o['prix_fun'] ?? '20', ENT_QUOTES, 'UTF-8') . '"';
+        }
+        ?>
+        <div <?= $spWrapAttrs ?>>
+          <?php if ($type === 'weekend'): ?>
+          <div class="weekend-fun-opt">
+            <label class="weekend-fun-label" for="chkWeekendFun">
+              <input type="checkbox" id="chkWeekendFun" name="weekend_fun" value="1" <?= $weekendFunStarPassOk ? '' : 'disabled' ?>>
+              <span><strong>Option Fun bets (+10€)</strong> — accès <strong>Safe</strong> + <strong>Fun</strong> jusqu’au dimanche 23h59 (StarPass à 20€).</span>
+            </label>
+            <?php if (!$weekendFunStarPassOk): ?>
+            <p class="weekend-fun-warn">Pour activer l’option : renseigne <code>idd_with_fun</code> dans ce fichier (code StarPass à <strong>20€</strong>) ou la variable d’environnement <code>STARPASS_WEEKEND_FUN_IDD</code> sur le serveur.</p>
+            <?php endif; ?>
+          </div>
+          <?php endif; ?>
+          <p id="spPayLine">Cliquez sur le bouton ci-dessous pour payer <strong id="spPayAmount"><?= htmlspecialchars($o['prix']) ?></strong>€ via StarPass</p>
+          <div id="starpassMount">
+            <div id="starpass_<?= (int)$o['idd'] ?>"></div>
+            <script type="text/javascript"
+              src="https://script.starpass.fr/script.php?idd=<?= (int)$o['idd'] ?>&datas=<?= urlencode($starpassDatasInitial) ?>&lang=fr">
+            </script>
             <?php if ($type === 'tennis'): ?>
             <noscript>
               <p>Veuillez activer le JavaScript pour afficher le paiement StarPass. <a href="https://www.starpass.fr/" rel="noopener noreferrer">En savoir plus sur StarPass</a></p>
             </noscript>
             <?php endif; ?>
+          </div>
           <script>
           (function(){
-            var offerPrice = parseFloat(document.querySelector('.sp-wrap[data-offer-price]')?.getAttribute('data-offer-price')) || 0;
+            var packType = <?= json_encode($type, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+            var isDailyOffer = packType === 'daily';
+            var spRoot = document.getElementById('spWrapRoot');
+            var offerPrice = parseFloat(spRoot && spRoot.getAttribute('data-offer-price')) || 0;
             var hideAboveSms = offerPrice > 4.5;
-            var isDailyOffer = <?= json_encode($type === 'daily') ?>;
 
             function getButtonText(li) {
               return (li.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
             }
-            /** Offre Daily : uniquement SMS, CB, PayPal, Paysafecard, Internet+ mobile */
+            /** Daily : uniquement Paysafecard, Internet+ mobile, carte bancaire, SMS (pas PayPal, pas banque en ligne, pas onglet Autres solutions) */
             function isAllowedDailyAccessTab(li) {
               var t = getButtonText(li);
               if (/autres\s*solutions|other\s*solutions|banque\s*en\s*ligne|online\s*banking/.test(t)) return false;
-              if (/^sms\b|envoyer\s*un\s*sms|premium\s*sms|text\s*message|facturation\s*mobile|mobile\s*billing/.test(t)) return true;
-              if (/carte\s*bancaire|credit\s*card|debit\s*card|bank\s*card|\bcb\b|card\s*payment/.test(t)) return true;
-              if (/paypal/.test(t)) return true;
+              if (/paypal/.test(t)) return false;
               if (/paysafe|pay\s*safe/.test(t)) return true;
-              if (/internet\s*\+\s*mobile/.test(t)) return true;
+              if (/internet\s*\+\s*mobile|internet\+\s*mobile|^internet\+$/i.test(t.trim())) return true;
+              if (/carte\s*bancaire|credit\s*card|debit\s*card|bank\s*card|\bcb\b|card\s*payment|visa|mastercard/.test(t)) return true;
+              if (/^sms\b|envoyer\s*un\s*sms|premium\s*sms|text\s*message|facturation\s*mobile|mobile\s*billing/.test(t)) return true;
               return false;
             }
             function shouldHideByLabel(li) {
@@ -1860,7 +1982,18 @@ $gwBannerMod = [
                   if (isDailyOffer) {
                     if (!isAllowedDailyAccessTab(li)) {
                       li.style.setProperty('display', 'none', 'important');
+                      return;
                     }
+                    var st = window.getComputedStyle(li);
+                    var hrefD = (li.querySelector('a') || li).getAttribute('href');
+                    var ariaD = li.getAttribute('aria-disabled') === 'true';
+                    var cls = (li.className || '').toLowerCase();
+                    var dis = ariaD
+                      || /disabled|unavailable|no-access|off|no-/.test(cls)
+                      || st.pointerEvents === 'none'
+                      || st.opacity === '0'
+                      || (hrefD !== null && (hrefD === '#' || hrefD === ''));
+                    if (dis) li.style.setProperty('display', 'none', 'important');
                     return;
                   }
                   var style = window.getComputedStyle(li);
@@ -1878,23 +2011,66 @@ $gwBannerMod = [
               });
               translateStarPassToFrench(wrap);
             }
+
+            var starPassObs = null;
             function waitForStarPass() {
               if (document.querySelector('.sp-wrap [id^="starpass_"] #sk-kit #sk-access-type-block')) {
                 hideUnavailableStarPassButtons();
                 return;
               }
-              var obs = new MutationObserver(function() {
+              if (starPassObs) starPassObs.disconnect();
+              starPassObs = new MutationObserver(function() {
                 if (document.querySelector('.sp-wrap [id^="starpass_"] #sk-kit #sk-access-type-block')) {
-                  obs.disconnect();
+                  starPassObs.disconnect();
+                  starPassObs = null;
                   hideUnavailableStarPassButtons();
                 }
               });
-              var spDiv = document.getElementById('starpass_<?= (int)$o["idd"] ?>');
-              if (spDiv) {
-                obs.observe(spDiv.parentElement, { childList: true, subtree: true });
-              }
+              var mount = document.getElementById('starpassMount');
+              if (mount) starPassObs.observe(mount, { childList: true, subtree: true });
               setTimeout(function(){ hideUnavailableStarPassButtons(); }, 2500);
             }
+
+            function mountStarPassWidget(idd, datasSuffix) {
+              var mount = document.getElementById('starpassMount');
+              if (!mount) return;
+              mount.innerHTML = '';
+              var div = document.createElement('div');
+              div.id = 'starpass_' + idd;
+              mount.appendChild(div);
+              var s = document.createElement('script');
+              s.type = 'text/javascript';
+              s.src = 'https://script.starpass.fr/script.php?idd=' + encodeURIComponent(idd)
+                + '&datas=' + encodeURIComponent(String(<?= (int)$membre['id'] ?>) + ':' + datasSuffix)
+                + '&lang=fr';
+              mount.appendChild(s);
+              setTimeout(waitForStarPass, 80);
+            }
+
+            function syncWeekendFunUi() {
+              if (packType !== 'weekend' || !spRoot) return;
+              var chk = document.getElementById('chkWeekendFun');
+              var iddFun = parseInt(spRoot.getAttribute('data-idd-fun') || '0', 10);
+              var iddBase = parseInt(spRoot.getAttribute('data-idd-base') || '0', 10);
+              var funOn = chk && chk.checked && iddFun > 0;
+              var idd = funOn ? iddFun : iddBase;
+              var datasType = funOn ? 'weekend_fun' : 'weekend';
+              var pb = spRoot.getAttribute('data-prix-base') || '10';
+              var pf = spRoot.getAttribute('data-prix-fun') || '20';
+              var pr = funOn ? pf : pb;
+              spRoot.setAttribute('data-offer-price', String(pr).replace(',', '.'));
+              var elN = document.getElementById('offrePrixNum');
+              var elA = document.getElementById('spPayAmount');
+              if (elN) elN.textContent = pr;
+              if (elA) elA.textContent = pr;
+              mountStarPassWidget(idd, datasType);
+            }
+
+            if (packType === 'weekend') {
+              var chkW = document.getElementById('chkWeekendFun');
+              if (chkW && !chkW.disabled) chkW.addEventListener('change', syncWeekendFunUi);
+            }
+
             if (document.readyState === 'loading') {
               document.addEventListener('DOMContentLoaded', waitForStarPass);
             } else {
@@ -1908,6 +2084,7 @@ $gwBannerMod = [
         </div>
       </div>
 
+      <div class="payment-crypto-column">
       <div class="payment-block" id="crypto">
         <div class="block-title">₿ Crypto-monnaie</div>
         <div class="block-desc">Choisissez votre crypto, générez une adresse unique et payez — activation automatique en quelques minutes</div>
@@ -2002,8 +2179,6 @@ $gwBannerMod = [
         </div>
       </div>
 
-      </div><!-- /.payment-methods-row -->
-
       <?php if ($type !== 'tennis'): ?>
       <div class="payment-block stake-pay-block">
         <div class="stake-wrap">
@@ -2023,7 +2198,6 @@ $gwBannerMod = [
       </div>
       <?php endif; ?>
 
-      <!-- Autres offres (masqué pour tennis) -->
       <?php if ($type !== 'tennis'): ?>
       <div class="other-offers">
         <div class="other-title">Autres formules disponibles</div>
@@ -2042,6 +2216,10 @@ $gwBannerMod = [
         </div>
       </div>
       <?php endif; ?>
+
+      </div><!-- /.payment-crypto-column -->
+
+      </div><!-- /.payment-methods-row -->
 
     </div>
   </div>
@@ -2080,11 +2258,14 @@ async function genererAdresse() {
   btn.disabled = true;
   btn.textContent = '⏳ Génération en cours…';
 
+  const chkFun = document.getElementById('chkWeekendFun');
+  const optFun = (chkFun && chkFun.checked && !chkFun.disabled) ? '&option_fun=1' : '';
+
   try {
     const resp = await fetch('nowpayments-create.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: `crypto=${selectedCoin}&offre=<?= $type ?>&code_promo=${encodeURIComponent((document.getElementById('code_promo')&&document.getElementById('code_promo').value)||'')}`,
+      body: `crypto=${selectedCoin}&offre=<?= $type ?>&code_promo=${encodeURIComponent((document.getElementById('code_promo')&&document.getElementById('code_promo').value)||'')}` + optFun,
     });
 
     const data = await resp.json();
