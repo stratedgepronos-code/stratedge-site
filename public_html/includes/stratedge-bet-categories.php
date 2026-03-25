@@ -11,7 +11,7 @@ function stratedge_bet_categories_config(): array {
     return [
         'multisport' => [
             'label'    => 'Multisports',
-            'sections' => ['football_safe', 'football_live', 'hockey_safe', 'hockey_live', 'basket_safe', 'basket_live'],
+            'sections' => ['football_safe', 'football_live', 'hockey_safe', 'hockey_live', 'basket_safe', 'basket_live', 'baseball_safe', 'baseball_live'],
         ],
         'tennis' => [
             'label'    => 'Tennis',
@@ -19,7 +19,7 @@ function stratedge_bet_categories_config(): array {
         ],
         'fun' => [
             'label'    => 'Fun',
-            'sections' => ['football_fun', 'hockey_fun', 'basket_fun'],
+            'sections' => ['football_fun', 'hockey_fun', 'basket_fun', 'baseball_fun'],
         ],
     ];
 }
@@ -30,7 +30,7 @@ function stratedge_bet_section_key(array $b): string {
         $sport = (($b['categorie'] ?? 'multi') === 'tennis') ? 'tennis' : 'football';
     }
     $sport = strtolower(trim((string)$sport));
-    if (!in_array($sport, ['tennis', 'football', 'basket', 'hockey'], true)) {
+    if (!in_array($sport, ['tennis', 'football', 'basket', 'hockey', 'baseball'], true)) {
         $sport = 'football';
     }
     $type = (string)($b['type'] ?? 'safe');

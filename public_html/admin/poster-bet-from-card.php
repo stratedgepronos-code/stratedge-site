@@ -27,7 +27,7 @@ $titre      = trim((string)($_POST['titre'] ?? ''));
 $type       = in_array($_POST['type'] ?? '', ['safe','live','fun']) ? $_POST['type'] : 'safe';
 $description = trim((string)($_POST['description'] ?? ''));
 $categorie  = ($_POST['categorie'] ?? '') === 'tennis' ? 'tennis' : 'multi';
-$sport      = in_array($_POST['sport'] ?? '', ['tennis','football','basket','hockey']) ? $_POST['sport'] : 'football';
+$sport      = in_array($_POST['sport'] ?? '', ['tennis','football','basket','hockey','baseball']) ? $_POST['sport'] : 'football';
 $analyseHtml = trim((string)($_POST['analyse_html'] ?? ''));
 $coteRaw    = trim((string)($_POST['cote'] ?? ''));
 
@@ -36,7 +36,7 @@ $isSuperAdmin = isSuperAdmin();
 if ($adminRole === 'admin_fun_sport') {
     $type = 'fun';
     $categorie = 'multi';
-    $sport = in_array($sport, ['football','basket','hockey']) ? $sport : 'football';
+    $sport = in_array($sport, ['football','basket','hockey','baseball']) ? $sport : 'football';
 } elseif ($adminRole === 'admin_tennis') {
     $categorie = 'tennis';
     $sport = 'tennis';

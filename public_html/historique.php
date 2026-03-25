@@ -19,7 +19,7 @@ if ($filtreSection === 'tennis_safe' || $filtreSection === 'tennis_live') {
 $filtre = $_GET['filtre'] ?? 'tous';
 
 // Sections : sport + type (tennis, foot, hockey, basket × safe, fun, live)
-$sportOrder = ['tennis' => 0, 'football' => 1, 'hockey' => 2, 'basket' => 3];
+$sportOrder = ['tennis' => 0, 'football' => 1, 'hockey' => 2, 'basket' => 3, 'baseball' => 4];
 $typeOrder  = ['safe' => 0, 'fun' => 1, 'live' => 2];
 $sectionLabels = [
     'tennis_safe_live' => '🎾 Tennis Safe & Live',
@@ -27,13 +27,14 @@ $sectionLabels = [
     'football_safe' => '⚽ Foot Safe',     'football_fun' => '⚽ Foot Fun',     'football_live' => '⚽ Foot Live',
     'hockey_safe'   => '🏒 Hockey Safe',   'hockey_fun'   => '🏒 Hockey Fun',   'hockey_live'   => '🏒 Hockey Live',
     'basket_safe'   => '🏀 Basket Safe',   'basket_fun'   => '🏀 Basket Fun',   'basket_live'   => '🏀 Basket Live',
+    'baseball_safe' => '⚾ Baseball Safe', 'baseball_fun' => '⚾ Baseball Fun', 'baseball_live' => '⚾ Baseball Live',
 ];
 
 // 3 catégories principales + sous-catégories
 $categoriesConfig = [
     'multisport' => [
         'label'   => 'Multisports',
-        'sections' => ['football_safe', 'football_live', 'hockey_safe', 'hockey_live', 'basket_safe', 'basket_live'],
+        'sections' => ['football_safe', 'football_live', 'hockey_safe', 'hockey_live', 'basket_safe', 'basket_live', 'baseball_safe', 'baseball_live'],
     ],
     'tennis' => [
         'label'   => 'Tennis',
@@ -41,7 +42,7 @@ $categoriesConfig = [
     ],
     'fun' => [
         'label'   => 'Fun',
-        'sections' => ['football_fun', 'hockey_fun', 'basket_fun'],
+        'sections' => ['football_fun', 'hockey_fun', 'basket_fun', 'baseball_fun'],
     ],
 ];
 
@@ -52,7 +53,7 @@ function betSectionKey($b) {
     $sport = $b['sport'] ?? null;
     if ($sport === null || $sport === '') $sport = (($b['categorie'] ?? 'multi') === 'tennis') ? 'tennis' : 'football';
     $sport = strtolower(trim($sport));
-    if (!in_array($sport, ['tennis','football','basket','hockey'], true)) $sport = 'football';
+    if (!in_array($sport, ['tennis','football','basket','hockey','baseball'], true)) $sport = 'football';
     $type = $b['type'] ?? 'safe';
     if (strpos($type, 'live') !== false) $t = 'live'; elseif (strpos($type, 'fun') !== false) $t = 'fun'; else $t = 'safe';
     return $sport . '_' . $t;

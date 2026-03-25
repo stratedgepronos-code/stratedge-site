@@ -215,6 +215,7 @@ $isAdminTennis = isAdminTennis();
           <option value="football">⚽ Foot</option>
           <option value="basket">🏀 NBA</option>
           <option value="hockey">🏒 NHL</option>
+          <option value="baseball">⚾ MLB</option>
           <?php elseif ($isAdminTennis): ?>
           <option value="tennis" selected>🎾 Tennis</option>
           <?php else: ?>
@@ -222,6 +223,7 @@ $isAdminTennis = isAdminTennis();
           <option value="football">⚽ Football</option>
           <option value="basket">🏀 Basket</option>
           <option value="hockey">🏒 Hockey</option>
+          <option value="baseball">⚾ Baseball (MLB)</option>
           <?php endif; ?>
         </select>
       </div>

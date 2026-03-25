@@ -179,6 +179,49 @@ function nhlLogoUrl($teamName) {
 }
 
 // ────────────────────────────────────────────────────────────
+// MLB : nom d'équipe → URL logo ESPN (scoreboard 500px)
+// ────────────────────────────────────────────────────────────
+function mlbLogoUrl($teamName) {
+    $name = strtolower(trim(preg_replace('/[^a-z0-9\s]/i', '', $teamName)));
+    $map = [
+        'arizona' => 'ari', 'diamondbacks' => 'ari', 'dbacks' => 'ari',
+        'atlanta' => 'atl', 'braves' => 'atl',
+        'baltimore' => 'bal', 'orioles' => 'bal',
+        'boston' => 'bos', 'red sox' => 'bos',
+        'chicago cubs' => 'chc', 'cubs' => 'chc',
+        'chicago white sox' => 'chw', 'white sox' => 'chw',
+        'cincinnati' => 'cin', 'reds' => 'cin',
+        'cleveland' => 'cle', 'guardians' => 'cle',
+        'colorado' => 'col', 'rockies' => 'col',
+        'detroit' => 'det', 'tigers' => 'det',
+        'houston' => 'hou', 'astros' => 'hou',
+        'kansas city' => 'kc', 'royals' => 'kc',
+        'los angeles angels' => 'laa', 'angels' => 'laa',
+        'los angeles dodgers' => 'lad', 'dodgers' => 'lad',
+        'miami' => 'mia', 'marlins' => 'mia',
+        'milwaukee' => 'mil', 'brewers' => 'mil',
+        'minnesota' => 'min', 'twins' => 'min',
+        'new york mets' => 'nym', 'mets' => 'nym',
+        'new york yankees' => 'nyy', 'yankees' => 'nyy',
+        'oakland' => 'oak', 'athletics' => 'oak',
+        'philadelphia' => 'phi', 'phillies' => 'phi',
+        'pittsburgh' => 'pit', 'pirates' => 'pit',
+        'san diego' => 'sd', 'padres' => 'sd',
+        'san francisco' => 'sf', 'giants' => 'sf',
+        'seattle' => 'sea', 'mariners' => 'sea',
+        'st louis' => 'stl', 'cardinals' => 'stl',
+        'tampa bay' => 'tb', 'rays' => 'tb',
+        'texas' => 'tex', 'rangers' => 'tex',
+        'toronto' => 'tor', 'blue jays' => 'tor',
+        'washington' => 'wsh', 'nationals' => 'wsh',
+    ];
+    foreach ($map as $key => $abbrev) {
+        if (strpos($name, $key) !== false) return 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/scoreboard/' . $abbrev . '.png';
+    }
+    return '';
+}
+
+// ────────────────────────────────────────────────────────────
 // SPORT CONFIG — couleurs, mascotte, badge
 // ────────────────────────────────────────────────────────────
 function sportConfig($sport) {
@@ -267,13 +310,21 @@ function generateLiveCards($d) {
     $flag2  = flagImg($d['flag2'] ?? '');
     $logo1_url = trim($d['team1_logo'] ?? '');
     $logo2_url = trim($d['team2_logo'] ?? '');
-    $is_team_sport = in_array($sport, ['football', 'basket', 'hockey']);
+    $is_team_sport = in_array($sport, ['football', 'basket', 'hockey', 'baseball']);
     if ($is_team_sport) {
         if ($logo1_url === '' || !filter_var($logo1_url, FILTER_VALIDATE_URL)) {
             $logo1_url = function_exists('stratedge_fetch_team_logo_url') ? stratedge_fetch_team_logo_url($d['player1'] ?? '') : '';
         }
         if ($logo2_url === '' || !filter_var($logo2_url, FILTER_VALIDATE_URL)) {
             $logo2_url = function_exists('stratedge_fetch_team_logo_url') ? stratedge_fetch_team_logo_url($d['player2'] ?? '') : '';
+        }
+        if ($sport === 'hockey') {
+            if ($logo1_url === '' || !filter_var($logo1_url, FILTER_VALIDATE_URL)) $logo1_url = nhlLogoUrl($d['player1'] ?? '');
+            if ($logo2_url === '' || !filter_var($logo2_url, FILTER_VALIDATE_URL)) $logo2_url = nhlLogoUrl($d['player2'] ?? '');
+        }
+        if ($sport === 'baseball') {
+            if ($logo1_url === '' || !filter_var($logo1_url, FILTER_VALIDATE_URL)) $logo1_url = mlbLogoUrl($d['player1'] ?? '');
+            if ($logo2_url === '' || !filter_var($logo2_url, FILTER_VALIDATE_URL)) $logo2_url = mlbLogoUrl($d['player2'] ?? '');
         }
     }
     if ($is_team_sport && $logo1_url !== '' && filter_var($logo1_url, FILTER_VALIDATE_URL)) {
@@ -838,6 +889,15 @@ CSS;
                 $logo2Url = nhlLogoUrl($team2Name);
             }
         }
+        $isBaseball = (strtolower($d['sport'] ?? '') === 'baseball');
+        if ($isBaseball) {
+            if ($logo1Url === '' || !filter_var($logo1Url, FILTER_VALIDATE_URL)) {
+                $logo1Url = mlbLogoUrl($team1Name);
+            }
+            if ($logo2Url === '' || !filter_var($logo2Url, FILTER_VALIDATE_URL)) {
+                $logo2Url = mlbLogoUrl($team2Name);
+            }
+        }
         if ($logo1Url !== '' && filter_var($logo1Url, FILTER_VALIDATE_URL)) {
             $ico1 = '<img src="' . htmlspecialchars(logoProxyUrl($logo1Url), ENT_QUOTES, 'UTF-8') . '" class="fun-team-logo" alt="">';
         } else {
@@ -1274,6 +1334,11 @@ CSS;
         if ($isHockey) {
             if ($logo1Url === '' || !filter_var($logo1Url, FILTER_VALIDATE_URL)) $logo1Url = nhlLogoUrl($team1Name);
             if ($logo2Url === '' || !filter_var($logo2Url, FILTER_VALIDATE_URL)) $logo2Url = nhlLogoUrl($team2Name);
+        }
+        $isBaseball = (strtolower($d['sport'] ?? '') === 'baseball');
+        if ($isBaseball) {
+            if ($logo1Url === '' || !filter_var($logo1Url, FILTER_VALIDATE_URL)) $logo1Url = mlbLogoUrl($team1Name);
+            if ($logo2Url === '' || !filter_var($logo2Url, FILTER_VALIDATE_URL)) $logo2Url = mlbLogoUrl($team2Name);
         }
         if ($logo1Url !== '' && filter_var($logo1Url, FILTER_VALIDATE_URL)) {
             $ico1 = '<img src="' . htmlspecialchars(logoProxyUrl($logo1Url), ENT_QUOTES, 'UTF-8') . '" class="sc-team-logo" alt="">';
