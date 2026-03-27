@@ -27,3 +27,4 @@ jobs:
             **/.git*/**
             **/node_modules/**
             includes/claude-config.local.php
+            config-keys.php

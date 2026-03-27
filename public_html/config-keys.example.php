@@ -2,9 +2,9 @@
 /**
  * CONFIG KEYS — StratEdge Pronos
  * ================================
- * Copie ce fichier en "config-keys.php" et remplis les clés.
- * Le fichier config-keys.php est ignoré par Git (sécurité).
- * Upload config-keys.php via FTP sur Hostinger dans public_html/
+ * Copie ce fichier en "config-keys.php" (à la racine de public_html/) et remplis les clés.
+ * Hors Git : le déploiement SSH (rsync) préserve ce fichier sur le serveur — il n’est pas écrasé ni supprimé.
+ * Première fois : envoie-le une fois (FTP/SSH), puis il reste en place.
  */
 
 define('ANTHROPIC_API_KEY', 'sk-ant-api03-REPLACE-ME');

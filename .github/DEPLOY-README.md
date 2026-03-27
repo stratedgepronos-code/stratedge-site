@@ -7,7 +7,10 @@
 1. **SSH activé**  
    hPanel → **Avancé** → **Accès SSH** → activer l’accès SSH.
 
-2. **Secrets GitHub** (déjà en place normalement)  
+2. **`config-keys.php` (clés API)**  
+   Fichier à la racine de `public_html/` sur le serveur, **hors Git**. Le workflow rsync le **laisse en place** (ne le supprime pas au deploy). Tu ne le remets qu’une fois ; copie depuis `config-keys.example.php` si besoin.
+
+3. **Secrets GitHub** (déjà en place normalement)  
    Repo → **Settings** → **Secrets and variables** → **Actions** :
    - `FTP_HOST` : `178.16.128.35` (ou l’IP/host SSH indiqué dans hPanel)
    - `FTP_USER` : `u527192911`
