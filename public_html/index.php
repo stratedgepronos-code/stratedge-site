@@ -52,8 +52,8 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       --glow-blue: 0 0 30px rgba(0,212,255,0.3);
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; overflow-x: hidden; overflow-y: visible; }
-    body { font-family: 'Rajdhani', sans-serif; background: var(--bg-dark); color: var(--text-primary); overflow-x: hidden; overflow-y: visible; line-height: 1.6; max-width: 100vw; }
+    html { scroll-behavior: smooth; overflow-x: hidden; }
+    body { font-family: 'Rajdhani', sans-serif; background: var(--bg-dark); color: var(--text-primary); overflow-x: hidden; line-height: 1.6; max-width: 100vw; }
     body::before { content: ''; position: fixed; inset: 0; background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E"); pointer-events: none; z-index: 9999; }
 
     /* NAVBAR */
@@ -1293,21 +1293,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     <div class="stake-visual">
       <img src="assets/images/stake bet.jpg" alt="Stake.bet">
     </div>
-  </div>
-</section>
-
-<!-- FOOTER CTA -->
-<div class="footer-cta fade-up">
-  <h2>Prêt à <span>battre les bookmakers</span> ?</h2>
-  <p>Rejoins les parieurs qui font confiance à la data, pas au hasard. Ton premier bet gagnant est à un clic.</p>
-  <div class="footer-cta-btns">
-    <a href="#pricing" class="btn-primary">Voir les formules ↓</a>
-    <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="btn-outline">Ouvrir un compte Stake.bet</a>
-  </div>
-  <div class="reviews-grid">
-    <div class="review-card fade-up"><div class="review-stars">★★★★★</div><p class="review-text">"Analyse sérieuse, bets rentables. J'ai récupéré mon abonnement dès le premier pari. Je reviens chaque week-end sans hésiter."</p><div class="review-author"><div class="review-avatar">T</div><div><div class="review-name">Thomas</div><div class="review-sub">Abonné Weekly</div></div></div></div>
-    <div class="review-card fade-up"><div class="review-stars">★★★★★</div><p class="review-text">"C'est simple, j'attends le weekly Stake, puis je prends mon abbo ! Les paris sont excellents, je suis dans le vert depuis que je suis leurs bets !"</p><div class="review-author"><div class="review-avatar">M</div><div><div class="review-name">Mehdi</div><div class="review-sub">Abonné Weekly</div></div></div></div>
-    <div class="review-card fade-up"><div class="review-stars">★★★★★</div><p class="review-text">"Dès que j'ai mon weekly ou le monthly, je viens récupérer mon abonnement ! Y'a du savoir-faire, ça se ressent directement !"</p><div class="review-author"><div class="review-avatar">A</div><div><div class="review-name">ArToM</div><div class="review-sub">Abonné Weekly</div></div></div></div>
   </div>
 </section>
 
