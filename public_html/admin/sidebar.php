@@ -282,6 +282,12 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
         </a>
       </div>
     </div>
+
+    <!-- Command Center -->
+    <a href="/panel-x9k3m/scanner.html" class="nav-item" target="_blank" style="color:#00d4ff;">
+      <span>⚡</span> Command Center
+      <span style="margin-left:auto;font-size:0.6rem;opacity:0.5;">↗</span>
+    </a>
   </nav>
 
   <div class="sidebar-footer">
