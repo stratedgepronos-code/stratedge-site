@@ -1,0 +1,677 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎰 Champions League des Slots</title>
+<link href="https://fonts.googleapis.com/css2?family=Passion+One:wght@400;700;900&family=Chakra+Petch:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0810;color:#e8e0d0;font-family:'Chakra Petch',sans-serif;min-height:100vh;overflow-x:hidden}
+::placeholder{color:rgba(212,175,55,0.25)}
+body::before{content:'';position:fixed;inset:0;z-index:0;opacity:0.03;pointer-events:none;background-image:repeating-linear-gradient(45deg,transparent,transparent 35px,rgba(212,175,55,0.5) 35px,rgba(212,175,55,0.5) 36px)}
+.page{position:relative;z-index:1;padding:12px 8px}
+
+/* TOPBAR */
+.topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:16px;flex-wrap:wrap}
+.psel{background:rgba(15,12,20,0.9);border:1px solid rgba(212,175,55,0.15);border-radius:14px;padding:14px 18px}
+.psel h3{font-family:'Passion One',sans-serif;font-size:12px;color:rgba(212,175,55,0.5);letter-spacing:3px;margin-bottom:8px}
+.pchecks{display:flex;gap:10px}
+.pck{display:flex;align-items:center;gap:6px;cursor:pointer;padding:5px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.1);font-family:'Passion One',sans-serif;font-size:13px;letter-spacing:1px;user-select:none;transition:all 0.2s}
+.pck.on{border-width:2px}
+.pdot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.hist{background:rgba(15,12,20,0.9);border:1px solid rgba(212,175,55,0.15);border-radius:14px;padding:14px 18px;min-width:240px;max-height:260px;overflow-y:auto}
+.hist h3{font-family:'Passion One',sans-serif;font-size:12px;color:rgba(212,175,55,0.5);letter-spacing:3px;margin-bottom:8px}
+.hempty{font-size:11px;color:rgba(212,175,55,0.2);font-style:italic}
+.hitem{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(212,175,55,0.06);font-size:12px}
+.hitem .hn{font-family:'Passion One',sans-serif;font-size:10px;color:rgba(212,175,55,0.3);width:18px}
+.hitem .hname{font-family:'Passion One',sans-serif;color:#d4af37;font-size:13px;flex:1}
+.hitem .hmulti{font-family:'Passion One',sans-serif;color:#00ff88;font-size:13px}
+.hitem .hcaller{font-size:10px;font-weight:700}
+.hclear{background:none;border:1px solid rgba(255,50,50,0.2);color:#ff5555;font-size:10px;padding:2px 8px;border-radius:8px;cursor:pointer;margin-top:6px;font-family:'Chakra Petch',sans-serif}
+
+/* HEADER */
+.hdr{text-align:center;margin-bottom:12px}
+.hdr .sub{font-family:'Passion One',sans-serif;font-size:11px;letter-spacing:6px;color:rgba(212,175,55,0.5);margin-bottom:2px}
+.hdr h1{font-family:'Passion One',sans-serif;font-size:clamp(24px,4vw,44px);font-weight:900;letter-spacing:3px;line-height:1;background:linear-gradient(135deg,#d4af37,#f5e6a3,#d4af37);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin:0 0 2px}
+.hdr h2{font-family:'Passion One',sans-serif;font-size:clamp(14px,2.5vw,22px);font-weight:400;color:#d4af37;letter-spacing:6px}
+
+/* ═══ BRACKET WORLD CUP LAYOUT — scale pour tenir dans l'écran ═══ */
+.bracket-viewport{width:100%;max-width:100%;overflow:hidden;display:flex;justify-content:center;align-items:flex-start;min-height:0}
+.bracket-wrap{display:flex;align-items:center;justify-content:center;gap:0;padding:8px 0;overflow:visible;min-height:560px;flex-shrink:0;transform-origin:top center;will-change:transform}
+.bcol{display:flex;flex-direction:column;justify-content:space-around;flex-shrink:0}
+.bcol-label{font-family:'Passion One',sans-serif;font-size:9px;letter-spacing:3px;color:rgba(212,175,55,0.35);text-align:center;margin-bottom:6px;white-space:nowrap}
+.bcol-label.fin{color:#d4af37;font-size:11px}
+
+/* Connectors */
+.bconn{width:10px;flex-shrink:0;align-self:stretch}
+
+/* CENTER LOGO */
+.center-col{display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0;padding:0 4px;min-width:88px}
+.logo-wrap{position:relative;width:78px;height:78px;margin-bottom:8px}
+.logo-svg{width:100%;height:100%;filter:drop-shadow(0 0 15px rgba(212,175,55,0.3))}
+.logo-glow{animation:logoGlow 3s ease-in-out infinite}
+@keyframes logoGlow{0%,100%{filter:drop-shadow(0 0 10px rgba(212,175,55,0.2))}50%{filter:drop-shadow(0 0 25px rgba(212,175,55,0.5))}}
+
+/* MATCH CARD — plus compact pour moins de scroll horizontal */
+.mc{background:rgba(15,12,20,0.85);border:1px solid rgba(212,175,55,0.12);border-radius:9px;padding:6px 7px 6px 14px;width:198px;position:relative;box-shadow:0 2px 10px rgba(0,0,0,0.4);transition:box-shadow 0.3s;margin:4px 0}
+.mc.hw{box-shadow:0 0 15px rgba(212,175,55,0.12)}
+.mlbl{position:absolute;top:-7px;left:50%;transform:translateX(-50%);font-family:'Passion One',sans-serif;font-size:8px;color:rgba(212,175,55,0.5);letter-spacing:1px;background:#0a0810;padding:1px 5px;border-radius:4px;border:1px solid rgba(212,175,55,0.1);white-space:nowrap}
+.minn{display:flex;flex-direction:column;gap:3px;margin-top:2px}
+.vs{text-align:center;font-family:'Passion One',sans-serif;font-size:8px;color:rgba(212,175,55,0.2);letter-spacing:2px;padding:0}
+
+/* SLOT ROW */
+.sr{display:flex;align-items:center;gap:4px;border-radius:6px;padding:5px 6px;border:1px solid rgba(212,175,55,0.12);background:rgba(0,0,0,0.25);transition:all 0.3s;position:relative}
+.sr.win{border-color:#d4af37;background:rgba(212,175,55,0.08);box-shadow:0 0 10px rgba(212,175,55,0.2)}
+.sr.lose{border-color:rgba(255,50,50,0.15);background:rgba(255,50,50,0.03);opacity:0.4}
+.ptag{font-family:'Passion One',sans-serif;font-size:7px;font-weight:700;letter-spacing:1px;writing-mode:vertical-rl;text-orientation:mixed;position:absolute;left:-11px;top:50%;transform:translateY(-50%) rotate(180deg);transition:color 0.3s}
+.emo{font-size:11px;flex-shrink:0}
+.ni{background:transparent;border:none;outline:none;color:#e8e0d0;font-family:'Chakra Petch',sans-serif;font-size:11px;font-weight:500;flex:1;min-width:0;width:100%}
+.sr.win .ni{color:#d4af37;font-weight:700}
+.mbox{display:flex;align-items:center;gap:2px;background:rgba(212,175,55,0.1);border-radius:4px;padding:2px 4px;flex-shrink:0}
+.mbox .xx{color:#d4af37;font-size:9px;font-family:'Passion One',sans-serif}
+.mi{background:transparent;border:none;outline:none;color:#d4af37;font-family:'Passion One',sans-serif;font-size:12px;font-weight:700;width:42px;text-align:right}
+.sr.win .mi{color:#00ff88}
+.crn{font-size:10px;flex-shrink:0;display:none}
+.sr.win .crn{display:inline}
+
+/* FINALE CARD */
+.mc.finale{width:216px;border-color:rgba(212,175,55,0.3);background:rgba(15,12,20,0.95)}
+.mc.finale .sr{padding:6px 7px}
+.mc.finale .ni{font-size:12px}
+.mc.finale .mi{font-size:14px}
+
+/* CHAMPION */
+.chb{text-align:center;padding:16px;max-width:400px;margin:0 auto;background:linear-gradient(135deg,rgba(212,175,55,0.1),rgba(212,175,55,0.02));border:2px solid rgba(212,175,55,0.4);border-radius:16px;animation:cpulse 2s ease infinite;display:none}
+.chb.show{display:block}
+@keyframes cpulse{0%,100%{box-shadow:0 0 20px rgba(212,175,55,0.1)}50%{box-shadow:0 0 40px rgba(212,175,55,0.25)}}
+
+/* WIN ANIMATION */
+.logo-wrap.winner .logo-svg{animation:logoSpin 1s ease-out forwards,logoGlowMax 1.5s ease-in-out infinite 1s}
+@keyframes logoSpin{0%{transform:scale(1) rotateY(0)}50%{transform:scale(1.3) rotateY(180deg)}100%{transform:scale(1.2) rotateY(360deg)}}
+@keyframes logoGlowMax{0%,100%{filter:drop-shadow(0 0 20px rgba(212,175,55,0.4)) drop-shadow(0 0 40px rgba(255,45,120,0.2))}50%{filter:drop-shadow(0 0 40px rgba(212,175,55,0.8)) drop-shadow(0 0 60px rgba(0,229,255,0.3))}}
+
+/* BUTTONS */
+.btns{text-align:center;margin-top:16px}
+.rbtn{background:rgba(255,50,50,0.1);border:1px solid rgba(255,50,50,0.3);color:#ff5555;font-family:'Passion One',sans-serif;font-size:12px;letter-spacing:2px;padding:7px 20px;border-radius:25px;cursor:pointer}
+.rbtn:hover{background:rgba(255,50,50,0.2)}
+.ft{text-align:center;margin-top:20px;padding:12px 0;border-top:1px solid rgba(212,175,55,0.08)}
+.ft p{font-family:'Passion One',sans-serif;font-size:10px;color:rgba(212,175,55,0.2);letter-spacing:3px}
+
+/* CONFETTI */
+.cfc{position:fixed;inset:0;z-index:100;pointer-events:none;overflow:hidden;display:none}
+.cfc.show{display:block}
+.cfp{position:absolute;top:-5%;animation:cfall linear forwards}
+@keyframes cfall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(110vh) rotate(720deg);opacity:0}}
+#pcv{position:fixed;inset:0;pointer-events:none;z-index:0}
+</style>
+</head>
+<body>
+<canvas id="pcv"></canvas>
+<div class="page">
+
+<div class="topbar">
+  <div class="psel">
+    <h3>JOUEURS</h3>
+    <div class="pchecks" id="pchecks"></div>
+  </div>
+  <div class="hist" id="histPanel">
+    <h3>🏆 PALMARÈS</h3>
+    <div id="histList"></div>
+  </div>
+</div>
+
+<div class="hdr">
+  <div class="sub">STAKE.BET · 0.40€ / SPIN</div>
+  <h1>🎰 CHAMPIONS LEAGUE DES SLOTS</h1>
+  <h2>BRACKET TOURNAMENT</h2>
+</div>
+
+<div class="bracket-viewport" id="bracketViewport"><div class="bracket-wrap" id="bracket"></div></div>
+
+<div class="chb" id="chb">
+  <div style="font-size:40px;margin-bottom:4px">🏆</div>
+  <div style="font-family:'Passion One',sans-serif;font-size:11px;color:rgba(212,175,55,0.6);letter-spacing:4px;margin-bottom:3px">CHAMPION</div>
+  <div id="cName" style="font-family:'Passion One',sans-serif;font-size:28px;background:linear-gradient(135deg,#d4af37,#f5e6a3,#d4af37);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:3px"></div>
+  <div id="cMulti" style="font-family:'Passion One',sans-serif;font-size:18px;color:#00ff88"></div>
+  <div id="cCaller" style="font-family:'Chakra Petch',sans-serif;font-size:12px;margin-top:4px;font-weight:700"></div>
+</div>
+
+<div class="btns"><button class="rbtn" onclick="doReset()">🔄 RESET TOURNOI</button></div>
+<div class="ft"><p>CHAMPIONS LEAGUE DES SLOTS · FOR FUN ONLY 🎲</p></div>
+</div>
+<div class="cfc" id="cfc"></div>
+
+<script>
+// ═══ PLAYERS ═══
+var ALLP=[
+  {id:'marc',name:'MARC',color:'#00e5ff'},
+  {id:'dilan',name:'DILAN',color:'#ff9500'},
+  {id:'alex',name:'ALEX',color:'#ff2d78'}
+];
+var active=['marc','alex'];
+function pById(id){for(var i=0;i<ALLP.length;i++)if(ALLP[i].id===id)return ALLP[i];return ALLP[0];}
+
+// ═══ LOGO SVG ═══
+var LOGO_SVG = '<svg class="logo-svg logo-glow" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">'
++'<defs><linearGradient id="gd1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#d4af37"/><stop offset="50%" stop-color="#f5e6a3"/><stop offset="100%" stop-color="#d4af37"/></linearGradient>'
++'<linearGradient id="gd2" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ff2d78"/><stop offset="100%" stop-color="#00e5ff"/></linearGradient></defs>'
+// Trophy cup
++'<path d="M35 28h30v8c0 12-6 22-15 26-9-4-15-14-15-26v-8z" fill="url(#gd1)" stroke="#b8941f" stroke-width="1"/>'
+// Trophy handles
++'<path d="M35 32c-8 0-14 4-14 10s4 10 10 10" fill="none" stroke="url(#gd1)" stroke-width="2.5" stroke-linecap="round"/>'
++'<path d="M65 32c8 0 14 4 14 10s-4 10-10 10" fill="none" stroke="url(#gd1)" stroke-width="2.5" stroke-linecap="round"/>'
+// Trophy stem
++'<rect x="46" y="60" width="8" height="10" rx="1" fill="url(#gd1)"/>'
+// Trophy base
++'<rect x="36" y="68" width="28" height="6" rx="3" fill="url(#gd1)" stroke="#b8941f" stroke-width="0.5"/>'
+// Star on trophy
++'<polygon points="50,32 52,38 58,38 53,42 55,48 50,44 45,48 47,42 42,38 48,38" fill="#0a0810" opacity="0.6"/>'
+// Slot reels at bottom
++'<rect x="28" y="78" width="44" height="14" rx="4" fill="#0a0810" stroke="url(#gd2)" stroke-width="1"/>'
++'<text x="50" y="88" text-anchor="middle" font-family="Passion One,sans-serif" font-size="8" font-weight="900" fill="url(#gd2)">🎰 SLOTS</text>'
+// Crown on top
++'<polygon points="42,24 46,28 50,22 54,28 58,24 56,28 44,28" fill="url(#gd1)" opacity="0.8"/>'
++'<circle cx="42" cy="23" r="1.5" fill="#ff2d78"/><circle cx="50" cy="21" r="1.5" fill="#00e5ff"/><circle cx="58" cy="23" r="1.5" fill="#ff9500"/>'
++'</svg>';
+
+// ═══ BRACKET STRUCTURE (2 players) ═══
+// Left: r16(0-3) → qf(0-1) → sf(0)
+// Right: r16(4-7) → qf(2-3) → sf(1)
+// Center: finale
+
+var data={};
+
+function initData(){
+  data={};
+  // Huitièmes (8 matchs), Quarts (4), Demis (2), Finale (1)
+  var keys=['r16','qf','sf','fi'];
+  var counts=[8,4,2,1];
+  keys.forEach(function(k,ri){
+    data[k]=[];
+    for(var mi=0;mi<counts[ri];mi++){
+      var slots=[];
+      for(var si=0;si<2;si++){
+        slots.push({name:'',multi:'',playerId:ri===0?active[si]:''});
+      }
+      data[k].push(slots);
+    }
+  });
+}
+
+// ═══ PLAYER SELECTOR ═══
+function buildPSel(){
+  var box=document.getElementById('pchecks');box.innerHTML='';
+  ALLP.forEach(function(p){
+    var on=active.indexOf(p.id)>=0;
+    var el=document.createElement('div');
+    el.className='pck'+(on?' on':'');
+    if(on)el.style.borderColor=p.color;else el.style.borderColor='rgba(255,255,255,0.1)';
+    el.innerHTML='<span class="pdot" style="background:'+p.color+';box-shadow:0 0 8px '+p.color+'"></span>'+p.name;
+    el.onclick=function(){togP(p.id);};
+    box.appendChild(el);
+  });
+}
+function togP(id){
+  var i=active.indexOf(id);
+  if(i>=0){if(active.length<=2)return;active.splice(i,1);}
+  else{if(active.length>=3)return;active.push(id);}
+  buildPSel();buildBracket();
+  setTimeout(syncSave, 100);
+}
+
+// ═══ BRACKET — adapter la largeur à l'écran (scale, pas de scroll horizontal) ═══
+var bracketFitTimer=null;
+function scheduleBracketFit(){
+  requestAnimationFrame(function(){requestAnimationFrame(scaleBracketToFit);});
+}
+function scaleBracketToFit(){
+  var outer=document.getElementById('bracketViewport');
+  var inner=document.getElementById('bracket');
+  if(!outer||!inner)return;
+  inner.style.transform='';
+  outer.style.minHeight='';
+  if(!inner.querySelector('.bcol')){outer.style.height='';return;}
+  var w=inner.scrollWidth;
+  if(w<20)return;
+  var avail=Math.max(240,outer.getBoundingClientRect().width-6);
+  var s=avail/w;
+  if(s>1.42)s=1.42;
+  if(s<0.22)s=0.22;
+  inner.style.transform='scale('+s+')';
+  inner.style.transformOrigin='top center';
+  var h=inner.scrollHeight;
+  outer.style.height=Math.ceil(h*s+8)+'px';
+}
+
+// ═══ BUILD BRACKET — WORLD CUP STYLE ═══
+function buildBracket(){
+  initData();
+  var bk=document.getElementById('bracket');bk.innerHTML='';
+  document.getElementById('chb').classList.remove('show');
+  var lw=document.getElementById('logo-wrap-main');if(lw)lw.classList.remove('winner');
+
+  if(active.length===3){build3P(bk);scheduleBracketFit();return;}
+
+  // 2 PLAYERS: Left side → Center ← Right side
+  // Left: R16(0-3) → QF(0-1) → SF(0)
+  // Right: R16(4-7) → QF(2-3) → SF(1)
+  // Center: Finale
+
+  var gaps={r16:6,qf:54,sf:160,fi:0};
+
+  // LEFT HUITIÈMES
+  bk.appendChild(mkCol('HUITIÈMES','r16',[0,1,2,3],gaps.r16,false));
+  bk.appendChild(mkConn());
+  // LEFT QUARTS
+  bk.appendChild(mkCol('QUARTS','qf',[0,1],gaps.qf,false));
+  bk.appendChild(mkConn());
+  // LEFT DEMI
+  bk.appendChild(mkCol('DEMIS','sf',[0],gaps.sf,false));
+  bk.appendChild(mkConn());
+
+  // CENTER — LOGO + FINALE
+  var center=document.createElement('div');center.className='center-col';
+  var logoW=document.createElement('div');logoW.className='logo-wrap';logoW.id='logo-wrap-main';
+  logoW.innerHTML=LOGO_SVG;
+  center.appendChild(logoW);
+  // Finale label
+  var fl=document.createElement('div');fl.className='bcol-label fin';fl.textContent='🏆 FINALE';
+  center.appendChild(fl);
+  // Finale match
+  center.appendChild(mkMatch('fi',0,3,true));
+  bk.appendChild(center);
+
+  // RIGHT DEMI
+  bk.appendChild(mkConn());
+  bk.appendChild(mkCol('DEMIS','sf',[1],gaps.sf,true));
+  bk.appendChild(mkConn());
+  // RIGHT QUARTS
+  bk.appendChild(mkCol('QUARTS','qf',[2,3],gaps.qf,true));
+  bk.appendChild(mkConn());
+  // RIGHT HUITIÈMES
+  bk.appendChild(mkCol('HUITIÈMES','r16',[4,5,6,7],gaps.r16,true));
+  scheduleBracketFit();
+}
+
+function mkCol(label,rk,indices,gap,isRight){
+  var col=document.createElement('div');col.className='bcol';
+  var lb=document.createElement('div');lb.className='bcol-label';lb.textContent=label;
+  col.appendChild(lb);
+  var wrap=document.createElement('div');wrap.style.display='flex';wrap.style.flexDirection='column';wrap.style.justifyContent='space-around';wrap.style.gap=gap+'px';wrap.style.flex='1';
+  indices.forEach(function(mi){
+    var ri=rk==='r16'?0:rk==='qf'?1:rk==='sf'?2:3;
+    wrap.appendChild(mkMatch(rk,mi,ri,false));
+  });
+  col.appendChild(wrap);
+  return col;
+}
+
+function mkConn(){
+  var c=document.createElement('div');c.className='bconn';
+  c.style.background='linear-gradient(180deg,transparent 20%,rgba(212,175,55,0.08) 50%,transparent 80%)';
+  return c;
+}
+
+function mkMatch(rk,mi,ri,isFinale){
+  var np=active.length;
+  var card=document.createElement('div');card.className='mc'+(isFinale?' finale':'');card.id='mc-'+rk+'-'+mi;
+  var lbl=document.createElement('div');lbl.className='mlbl';
+  lbl.textContent=isFinale?'GRANDE FINALE':'M'+(mi+1);
+  card.appendChild(lbl);
+  var inn=document.createElement('div');inn.className='minn';
+  for(var si=0;si<np;si++){
+    if(si>0){var v=document.createElement('div');v.className='vs';v.textContent='— VS —';inn.appendChild(v);}
+    inn.appendChild(mkSlot(rk,mi,si,ri));
+  }
+  card.appendChild(inn);
+  return card;
+}
+
+function mkSlot(rk,mi,si,ri){
+  var d=data[rk][mi][si];
+  var pl=d.playerId?pById(d.playerId):null;
+  var isR1=ri===0;
+  var row=document.createElement('div');row.className='sr';row.id='sr-'+rk+'-'+mi+'-'+si;
+  var tag=document.createElement('div');tag.className='ptag';tag.id='pt-'+rk+'-'+mi+'-'+si;
+  if(pl){tag.textContent=pl.name;tag.style.color=pl.color;}
+  else{tag.textContent='?';tag.style.color='rgba(212,175,55,0.15)';}
+  row.appendChild(tag);
+  var emo=document.createElement('span');emo.className='emo';emo.textContent='🎰';row.appendChild(emo);
+  var ni=document.createElement('input');ni.type='text';ni.className='ni';ni.id='ni-'+rk+'-'+mi+'-'+si;
+  ni.placeholder=isR1?'Slot...':'En attente...';ni.readOnly=!isR1;ni.oninput=doEval;row.appendChild(ni);
+  var mb=document.createElement('div');mb.className='mbox';
+  var xx=document.createElement('span');xx.className='xx';xx.textContent='×';mb.appendChild(xx);
+  var minp=document.createElement('input');minp.type='text';minp.className='mi';minp.id='mi-'+rk+'-'+mi+'-'+si;
+  minp.placeholder='0.00';minp.oninput=doEval;mb.appendChild(minp);row.appendChild(mb);
+  var crn=document.createElement('span');crn.className='crn';crn.textContent='👑';row.appendChild(crn);
+  return row;
+}
+
+// ═══ 3 PLAYERS — simpler layout (9→3→1) ═══
+function build3P(bk){
+  // Left: r1(0-4) → r2(0-1)
+  // Right: r1(5-8) → r2(2)
+  // Center: finale
+  // For 3p we use different round keys
+  data={};
+  data['r1']=[];for(var i=0;i<9;i++){var s=[];for(var j=0;j<3;j++)s.push({name:'',multi:'',playerId:active[j]});data['r1'].push(s);}
+  data['r2']=[];for(var i=0;i<3;i++){var s=[];for(var j=0;j<3;j++)s.push({name:'',multi:'',playerId:''});data['r2'].push(s);}
+  data['fi']=[];var sf=[];for(var j=0;j<3;j++)sf.push({name:'',multi:'',playerId:''});data['fi'].push(sf);
+
+  // Left
+  bk.appendChild(mkCol3('PHASE 1','r1',[0,1,2,3,4],4));
+  bk.appendChild(mkConn());
+  bk.appendChild(mkCol3('PHASE 2','r2',[0,1],60));
+  bk.appendChild(mkConn());
+
+  // Center
+  var center=document.createElement('div');center.className='center-col';
+  var logoW=document.createElement('div');logoW.className='logo-wrap';logoW.id='logo-wrap-main';
+  logoW.innerHTML=LOGO_SVG;center.appendChild(logoW);
+  var fl=document.createElement('div');fl.className='bcol-label fin';fl.textContent='🏆 FINALE';center.appendChild(fl);
+  center.appendChild(mkMatch3('fi',0,2,true));
+  bk.appendChild(center);
+
+  bk.appendChild(mkConn());
+  bk.appendChild(mkCol3('PHASE 2','r2',[2],60));
+  bk.appendChild(mkConn());
+  bk.appendChild(mkCol3('PHASE 1','r1',[5,6,7,8],4));
+}
+function mkCol3(label,rk,indices,gap){
+  var col=document.createElement('div');col.className='bcol';
+  var lb=document.createElement('div');lb.className='bcol-label';lb.textContent=label;col.appendChild(lb);
+  var wrap=document.createElement('div');wrap.style.display='flex';wrap.style.flexDirection='column';wrap.style.justifyContent='space-around';wrap.style.gap=gap+'px';wrap.style.flex='1';
+  var ri=rk==='r1'?0:rk==='r2'?1:2;
+  indices.forEach(function(mi){wrap.appendChild(mkMatch3(rk,mi,ri,rk==='fi'));});
+  col.appendChild(wrap);return col;
+}
+function mkMatch3(rk,mi,ri,isFinale){
+  var np=3;
+  var card=document.createElement('div');card.className='mc'+(isFinale?' finale':'');card.id='mc-'+rk+'-'+mi;
+  var lbl=document.createElement('div');lbl.className='mlbl';
+  lbl.textContent=isFinale?'GRANDE FINALE':'M'+(mi+1);card.appendChild(lbl);
+  var inn=document.createElement('div');inn.className='minn';
+  for(var si=0;si<np;si++){
+    if(si>0){var v=document.createElement('div');v.className='vs';v.textContent='— VS —';inn.appendChild(v);}
+    inn.appendChild(mkSlot(rk,mi,si,ri));
+  }
+  card.appendChild(inn);return card;
+}
+
+// ═══ EVALUATE ═══
+function doEval(){
+  var np=active.length;
+  var rounds,feedMap;
+  if(np===2){
+    rounds=[{k:'r16',n:8},{k:'qf',n:4},{k:'sf',n:2},{k:'fi',n:1}];
+    // feedMap: which match in next round does winner go to
+    // r16 match i → qf match floor(i/2), slot i%2
+    // qf match i → sf match floor(i/2), slot i%2
+    // sf match i → fi match 0, slot i
+  } else {
+    rounds=[{k:'r1',n:9},{k:'r2',n:3},{k:'fi',n:1}];
+  }
+
+  for(var ri=0;ri<rounds.length;ri++){
+    var rd=rounds[ri];
+    for(var mi=0;mi<rd.n;mi++){
+      // Read inputs
+      for(var si=0;si<np;si++){
+        var niEl=document.getElementById('ni-'+rd.k+'-'+mi+'-'+si);
+        var miEl=document.getElementById('mi-'+rd.k+'-'+mi+'-'+si);
+        if(niEl)data[rd.k][mi][si].name=niEl.value;
+        if(miEl)data[rd.k][mi][si].multi=miEl.value;
+      }
+      // Find winner
+      var allFilled=true,maxVal=0,winSi=-1;
+      for(var si=0;si<np;si++){
+        var v=parseFloat(data[rd.k][mi][si].multi)||0;
+        if(v<=0)allFilled=false;
+        if(v>maxVal){maxVal=v;winSi=si;}
+      }
+      if(!allFilled)winSi=-1;
+      // Update CSS
+      for(var si=0;si<np;si++){
+        var row=document.getElementById('sr-'+rd.k+'-'+mi+'-'+si);
+        if(!row)continue;row.classList.remove('win','lose');
+        if(winSi>=0){if(si===winSi)row.classList.add('win');else row.classList.add('lose');}
+      }
+      var card=document.getElementById('mc-'+rd.k+'-'+mi);
+      if(card){if(winSi>=0)card.classList.add('hw');else card.classList.remove('hw');}
+
+      // Propagate to next round
+      if(ri<rounds.length-1){
+        var nextRd=rounds[ri+1];
+        var nextMi=Math.floor(mi/np);
+        var nextSi=mi%np;
+        if(nextMi>=nextRd.n)continue;
+        if(nextSi>=np)continue;
+        var nextNi=document.getElementById('ni-'+nextRd.k+'-'+nextMi+'-'+nextSi);
+        var nextMiEl=document.getElementById('mi-'+nextRd.k+'-'+nextMi+'-'+nextSi);
+        var nextTag=document.getElementById('pt-'+nextRd.k+'-'+nextMi+'-'+nextSi);
+        if(winSi>=0){
+          var wd=data[rd.k][mi][winSi];
+          var wp=wd.playerId?pById(wd.playerId):null;
+          if(nextNi&&nextNi.value!==wd.name){nextNi.value=wd.name;data[nextRd.k][nextMi][nextSi].name=wd.name;if(nextMiEl){nextMiEl.value='';data[nextRd.k][nextMi][nextSi].multi='';}}
+          data[nextRd.k][nextMi][nextSi].playerId=wd.playerId;
+          if(nextTag&&wp){nextTag.textContent=wp.name;nextTag.style.color=wp.color;}
+        } else {
+          if(nextNi&&nextNi.value!==''){nextNi.value='';data[nextRd.k][nextMi][nextSi].name='';if(nextMiEl){nextMiEl.value='';data[nextRd.k][nextMi][nextSi].multi='';}}
+          data[nextRd.k][nextMi][nextSi].playerId='';
+          if(nextTag){nextTag.textContent='?';nextTag.style.color='rgba(212,175,55,0.15)';}
+        }
+      }
+      // Champion
+      if(ri===rounds.length-1&&winSi>=0){
+        var wd2=data[rd.k][mi][winSi];
+        var wp2=wd2.playerId?pById(wd2.playerId):null;
+        showChamp(wd2.name,wd2.multi,wp2);
+      } else if(ri===rounds.length-1&&winSi<0){
+        document.getElementById('chb').classList.remove('show');
+        var lw=document.getElementById('logo-wrap-main');if(lw)lw.classList.remove('winner');
+      }
+    }
+  }
+}
+
+// ═══ CHAMPION ═══
+var lastChampN='';
+function showChamp(name,multi,player){
+  document.getElementById('cName').textContent=name;
+  document.getElementById('cMulti').textContent='×'+multi;
+  var cc=document.getElementById('cCaller');
+  if(player){cc.textContent='Callé par '+player.name;cc.style.color=player.color;}
+  var box=document.getElementById('chb');
+  var lw=document.getElementById('logo-wrap-main');
+  if(!box.classList.contains('show')){
+    box.classList.add('show');
+    if(lw)lw.classList.add('winner');
+    fireConfetti();
+    if(name!==lastChampN){saveHist(name,multi,player?player.name:'?');lastChampN=name;}
+  }
+}
+
+// ═══ HISTORY (server PHP) ═══
+var HIST_URL='slot-history.php';
+var histCache=[];
+function loadHist(){
+  fetch(HIST_URL).then(function(r){return r.json();}).then(function(d){histCache=d||[];renderHist();}).catch(function(){histCache=[];renderHist();});
+}
+function saveHist(name,multi,caller){
+  if(histCache.length>0&&histCache[0].name===name&&histCache[0].multi===multi)return;
+  fetch(HIST_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,multi:multi,caller:caller})}).then(function(){loadHist();}).catch(function(){});
+}
+function renderHist(){
+  var h=histCache,box=document.getElementById('histList');
+  if(h.length===0){box.innerHTML='<div class="hempty">Aucun champion couronné</div>';return;}
+  var s='';
+  h.forEach(function(it,i){
+    var clr='#d4af37';ALLP.forEach(function(p){if(p.name===it.caller)clr=p.color;});
+    s+='<div class="hitem"><span class="hn">#'+(i+1)+'</span><span class="hname">'+it.name+'</span><span class="hmulti">×'+it.multi+'</span><span class="hcaller" style="color:'+clr+'">'+it.caller+'</span></div>';
+  });
+  s+='<button class="hclear" onclick="clearHist()">Effacer le palmarès</button>';
+  box.innerHTML=s;
+}
+function clearHist(){if(!confirm('Effacer tout le palmarès ?'))return;fetch(HIST_URL,{method:'DELETE'}).then(function(){histCache=[];renderHist();}).catch(function(){});}
+
+// ═══ RESET ═══
+function doReset(){
+  if(!confirm('Reset le tournoi en cours ?'))return;
+  lastChampN='';document.getElementById('chb').classList.remove('show');
+  var lw=document.getElementById('logo-wrap-main');if(lw)lw.classList.remove('winner');
+  buildBracket();
+  // Sync l'état vide vers le serveur
+  setTimeout(syncSave, 100);
+}
+
+// ═══ CONFETTI ═══
+function fireConfetti(){
+  var c=document.getElementById('cfc');c.innerHTML='';c.classList.add('show');
+  var cols=['#d4af37','#f5e6a3','#00e5ff','#ff2d78','#00ff88','#ff9500'];
+  for(var i=0;i<100;i++){
+    var p=document.createElement('div');p.className='cfp';
+    var sz=Math.random()*10+4;
+    p.style.cssText='left:'+Math.random()*100+'%;width:'+sz+'px;height:'+sz+'px;background:'+cols[Math.floor(Math.random()*cols.length)]+';border-radius:'+(Math.random()>0.5?'50%':'2px')+';animation-duration:'+(Math.random()*2.5+2)+'s;animation-delay:'+(Math.random()*0.8)+'s;opacity:'+(Math.random()*0.8+0.2);
+    c.appendChild(p);
+  }
+  setTimeout(function(){c.classList.remove('show');},6000);
+}
+
+// ═══ PARTICLES ═══
+(function(){
+  var cv=document.getElementById('pcv'),ctx=cv.getContext('2d');
+  var w=cv.width=window.innerWidth,h=cv.height=window.innerHeight;
+  var pts=[];for(var i=0;i<35;i++)pts.push({x:Math.random()*w,y:Math.random()*h,s:Math.random()*2+0.5,v:Math.random()*0.3+0.1,o:Math.random()*0.3+0.05,d:Math.random()*0.4-0.2});
+  function draw(){ctx.clearRect(0,0,w,h);pts.forEach(function(p){ctx.beginPath();ctx.arc(p.x,p.y,p.s,0,Math.PI*2);ctx.fillStyle='rgba(212,175,55,'+p.o+')';ctx.fill();p.y-=p.v;p.x+=p.d;if(p.y<-10){p.y=h+10;p.x=Math.random()*w;}});requestAnimationFrame(draw);}
+  draw();window.addEventListener('resize',function(){w=cv.width=window.innerWidth;h=cv.height=window.innerHeight;});
+})();
+
+// ═══ REAL-TIME SYNC ═══
+var SYNC_URL = 'slot-sync.php';
+var lastSyncTs = 0;
+var syncTimer = null;
+var iAmTyping = false;
+var typingTimeout = null;
+
+// Sauvegarder l'état complet du bracket vers le serveur
+function syncSave(){
+  var inputs = {};
+  // Parcourir tous les inputs ni-* et mi-*
+  document.querySelectorAll('input[id^="ni-"], input[id^="mi-"]').forEach(function(el){
+    if(el.value !== '') inputs[el.id] = el.value;
+  });
+  // Sauvegarder aussi les player tags
+  var tags = {};
+  document.querySelectorAll('[id^="pt-"]').forEach(function(el){
+    tags[el.id] = {text: el.textContent, color: el.style.color};
+  });
+  var payload = {
+    inputs: inputs,
+    tags: tags,
+    players: active
+  };
+  fetch(SYNC_URL, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(payload)
+  }).then(function(r){ return r.json(); }).then(function(d){
+    if(d.ts) lastSyncTs = d.ts;
+  }).catch(function(){});
+}
+
+// Charger l'état depuis le serveur
+function syncLoad(){
+  fetch(SYNC_URL + '?_=' + Date.now()).then(function(r){ return r.json(); }).then(function(d){
+    if(!d || !d.ts || d.ts <= lastSyncTs) return; // Pas de changement
+    lastSyncTs = d.ts;
+
+    // Identifier l'élément actif (ne pas écraser ce que l'utilisateur tape)
+    var focusId = document.activeElement ? document.activeElement.id : '';
+
+    // Appliquer les joueurs si différents
+    if(d.players && JSON.stringify(d.players) !== JSON.stringify(active)){
+      active = d.players.slice();
+      buildPSel();
+      buildBracket();
+    }
+
+    // Appliquer les inputs
+    if(d.inputs){
+      var changed = false;
+      Object.keys(d.inputs).forEach(function(id){
+        var el = document.getElementById(id);
+        if(el && el.id !== focusId && el.value !== d.inputs[id]){
+          el.value = d.inputs[id];
+          changed = true;
+        }
+      });
+      // Vider les inputs qui ne sont plus dans le state
+      document.querySelectorAll('input[id^="ni-"], input[id^="mi-"]').forEach(function(el){
+        if(!d.inputs[el.id] && el.value !== '' && el.id !== focusId){
+          el.value = '';
+          changed = true;
+        }
+      });
+      if(changed) doEval();
+    }
+
+    // Appliquer les tags joueurs
+    if(d.tags){
+      Object.keys(d.tags).forEach(function(id){
+        var el = document.getElementById(id);
+        if(el){
+          el.textContent = d.tags[id].text;
+          el.style.color = d.tags[id].color;
+        }
+      });
+    }
+  }).catch(function(){});
+}
+
+// Déclencher la sauvegarde après chaque frappe (debounce 300ms)
+var origDoEval = doEval;
+doEval = function(){
+  origDoEval();
+  // Marquer qu'on tape
+  iAmTyping = true;
+  clearTimeout(typingTimeout);
+  typingTimeout = setTimeout(function(){
+    iAmTyping = false;
+    syncSave(); // Sauvegarder 300ms après la dernière frappe
+  }, 300);
+};
+
+// Polling : vérifier les changements toutes les 2 secondes
+function startSync(){
+  syncLoad(); // Charger l'état initial
+  syncTimer = setInterval(function(){
+    if(!iAmTyping) syncLoad(); // Ne pas charger pendant qu'on tape
+  }, 2000);
+}
+
+// Indicateur de connexion live
+(function(){
+  var dot = document.createElement('div');
+  dot.id = 'live-dot';
+  dot.style.cssText = 'position:fixed;bottom:12px;right:12px;z-index:50;display:flex;align-items:center;gap:6px;background:rgba(15,12,20,0.9);border:1px solid rgba(0,255,136,0.2);padding:5px 12px;border-radius:20px;font-family:Passion One,sans-serif;font-size:10px;color:rgba(0,255,136,0.6);letter-spacing:2px';
+  dot.innerHTML = '<span style="width:6px;height:6px;border-radius:50%;background:#00ff88;box-shadow:0 0 6px #00ff88;animation:blink 2s infinite"></span> LIVE SYNC';
+  document.body.appendChild(dot);
+  var st = document.createElement('style');
+  st.textContent = '@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}';
+  document.head.appendChild(st);
+})();
+
+window.addEventListener('resize',function(){
+  clearTimeout(bracketFitTimer);
+  bracketFitTimer=setTimeout(scaleBracketToFit,100);
+});
+
+// ═══ INIT ═══
+buildPSel();
+buildBracket();
+loadHist();
+startSync();
+</script>
+</body>
+</html>

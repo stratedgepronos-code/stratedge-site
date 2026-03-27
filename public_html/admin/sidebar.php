@@ -1,7 +1,7 @@
 <?php
 // ── Sidebar partagée — inclure en haut de chaque page admin ──
 // Usage : require_once __DIR__ . '/sidebar.php';
-// Avant d'inclure, définir : $pageActive = 'index' | 'poster-bet' | 'membres' | 'messages' | 'tickets' | 'historique'
+// Avant d'inclure, définir : $pageActive = 'index' | 'poster-bet' | 'giveaway' | 'membres' | 'messages' | 'tickets' | 'historique' | …
 
 // Toutes les requêtes en try/catch pour éviter crash si colonne/table manquante
 $nbTicketsOpen = 0; $nbMsgNonLus = 0; $nbBetsHistorique = 0; $nbChatNonLus = 0; $nbInboxNonLus = 0;
@@ -184,7 +184,13 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
       <span>📊</span> Tableau de bord
     </a>
 
-    <?php $bettingOpen = in_array($pageActive, ['poster-bet','creer-card','edit-bet-image','historique','prono-commu-admin','montante-tennis']); ?>
+    <?php
+    $bettingOpenPages = ['poster-bet','creer-card','edit-bet-image','prono-commu-admin','montante-tennis','ht-tracker'];
+    if (function_exists('isSuperAdmin') && isSuperAdmin()) {
+        $bettingOpenPages[] = 'historique';
+    }
+    $bettingOpen = in_array($pageActive, $bettingOpenPages, true);
+    ?>
     <div class="nav-group <?= $bettingOpen ? 'open' : '' ?>" data-group="betting">
       <button type="button" class="nav-group-toggle" onclick="toggleNavGroup(this)">
         <span>📌</span> Betting
@@ -198,10 +204,13 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
         <a href="montante-tennis.php" <?= ($pageActive==='montante-tennis') ?'class="active"':'' ?>><span>🎾</span> Montante Tennis</a>
         <?php endif; ?>
         <a href="edit-bet-image.php" <?= ($pageActive==='edit-bet-image') ?'class="active"':'' ?>><span>🖼️</span> Modifier image bet</a>
+        <a href="ht-tracker.php" <?= ($pageActive==='ht-tracker') ?'class="active"':'' ?> style="<?= ($pageActive==='ht-tracker') ? '' : 'color:rgba(0,212,255,0.85);' ?>"><span>🎯</span> Bet Mi-Temps</a>
+        <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
         <a href="historique.php" <?= ($pageActive==='historique') ?'class="active"':'' ?>>
           <span>📂</span> Historique
           <?php if ($nbBetsHistorique > 0): ?><span class="badge-count"><?= $nbBetsHistorique ?></span><?php endif; ?>
         </a>
+        <?php endif; ?>
       </div>
     </div>
 
@@ -223,6 +232,10 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 
     <a href="code-promo.php" <?= ($pageActive==='code-promo') ?'class="active"':'' ?>>
       <span>🎟️</span> Code promo
+    </a>
+
+    <a href="giveaway.php" <?= ($pageActive==='giveaway') ?'class="active"':'' ?> style="<?= ($pageActive==='giveaway') ? '' : 'color:rgba(255,45,120,0.92);' ?>">
+      <span>🎁</span> GiveAway
     </a>
 
     <?php if (isSuperAdmin()): ?>
@@ -269,6 +282,13 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
         </a>
       </div>
     </div>
+
+    <!-- Command Center -->
+    <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
+    <a href="scanner.php" class="nav-item <?= ($pageActive==='scanner') ?'active':'' ?>" style="color:#00d4ff;">
+      <span>⚡</span> Command Center
+    </a>
+    <?php endif; ?>
   </nav>
 
   <div class="sidebar-footer">
@@ -283,7 +303,9 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 <nav class="admin-mob-tabs">
   <a href="index.php" class="<?= ($pageActive==='index') ? 'active' : '' ?>"><span class="ico">📊</span><span>Dashboard</span></a>
   <a href="poster-bet.php" class="<?= ($pageActive==='poster-bet') ? 'active' : '' ?>"><span class="ico">📸</span><span>Poster</span></a>
+  <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
   <a href="historique.php" class="<?= ($pageActive==='historique') ? 'active' : '' ?>"><span class="ico">📂</span><span>Historique</span></a>
+  <?php endif; ?>
   <a href="messages.php" class="<?= ($pageActive==='messages') ? 'active' : '' ?>"><span class="ico">💬</span><span>Messages</span></a>
   <a href="tickets.php" class="<?= ($pageActive==='tickets') ? 'active' : '' ?>"><span class="ico">🎫</span><span>SAV</span></a>
 </nav>

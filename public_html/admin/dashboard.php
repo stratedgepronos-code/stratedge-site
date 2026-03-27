@@ -182,7 +182,11 @@ $statutColors = ['actif' => 'rgba(255,45,120,0.1)', 'expiré' => 'rgba(255,45,12
   <div class="nav-inner">
     <a href="/" class="logo"><img src="assets/images/logo site.png" alt="StratEdge"></a>
     <div class="nav-right">
+      <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
       <a href="historique.php">Historique</a>
+      <?php else: ?>
+      <a href="../historique.php">Historique</a>
+      <?php endif; ?>
       <a href="/#stake">Stake.bet</a>
       <a href="bets.php">📊 Les Bets</a>
       <a href="/#pricing" style="background:linear-gradient(135deg,var(--neon-green),var(--neon-green-dim));color:#fff;padding:0.4rem 1rem;border-radius:6px;font-weight:700;">Souscrire</a>

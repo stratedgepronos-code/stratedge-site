@@ -229,61 +229,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 if ($nbPostes > 0) {
                     try {
-                    // ── DEBUG NOTIFICATIONS ──
-                    $notifLog = date('Y-m-d H:i:s') . " | nbPostes=" . $nbPostes
-                        . " | lastCategorie=" . ($lastCategorie ?? 'NON_DEFINI')
-                        . " | lastType=" . $lastType
-                        . " | lastTitre=" . $lastTitre . "\n";
+                    require_once __DIR__ . '/../includes/notif-queue.php';
+                    $batch = notifQueueEnqueueNouveauBet($db, $lastCategorie ?? 'multi', $lastType, $lastTitre);
+                    $stc = $db->prepare('SELECT COUNT(*) FROM notif_queue WHERE batch_id = ?');
+                    $stc->execute([$batch]);
+                    $nbQueued = (int)$stc->fetchColumn();
 
-                    // Tous les abonnés actifs (hors admin) reçoivent push + email nouveau bet
-                    $stmtAb = $db->prepare("
-                        SELECT DISTINCT m.id, m.email, m.nom, COALESCE(a.type, 'daily') as type_abo
-                        FROM membres m
-                        JOIN abonnements a ON a.membre_id = m.id AND a.actif = 1
-                        WHERE m.email != ?
-                    ");
-                    $stmtAb->execute([ADMIN_EMAIL]);
-                    $abonnesActifs = $stmtAb->fetchAll(PDO::FETCH_ASSOC);
+                    $notifLog = date('Y-m-d H:i:s') . " | batch={$batch} | queued={$nbQueued} | cat=" . ($lastCategorie ?? '') . " | type={$lastType}\n";
 
-                    $notifLog .= "  → Abonnés trouvés : " . count($abonnesActifs) . "\n";
-                    foreach ($abonnesActifs as $idx => $ab) {
-                        $notifLog .= "  → [{$idx}] id=" . $ab['id'] . " " . $ab['email'] . " (" . $ab['nom'] . ") type=" . $ab['type_abo'] . "\n";
-                    }
-
-                    $emailsEnvoyes = 0;
-                    $emailsEchecs  = 0;
-                    $pushEnvoyes   = 0;
-
-                    // Construire le label push
-                    $typeLabels = ['safe'=>'🛡️ Safe','fun'=>'🎯 Fun','live'=>'⚡ Live','safe,fun'=>'🛡️+🎯 Safe+Fun','safe,live'=>'🛡️+⚡ Safe+Live'];
-                    $pushLabel  = $typeLabels[$lastType] ?? $lastType;
-                    $pushTitle  = '🔥 Nouveau bet disponible !';
-                    $pushBody   = $pushLabel . ($lastTitre ? ' — ' . $lastTitre : '') . ' vient d\'être posté';
-
-                    foreach ($abonnesActifs as $ab) {
-                        // Email
-                        $result = emailNouveauBet($ab['email'], $ab['nom'], $lastType, $lastTitre);
-                        if ($result) {
-                            $emailsEnvoyes++;
-                        } else {
-                            $emailsEchecs++;
-                            $notifLog .= "  ⚠️ ECHEC mail() pour " . $ab['email'] . "\n";
-                        }
-
-                        // Push ciblé par membre (comme broadcast.php qui fonctionne)
-                        if (!empty($ab['id'])) {
-                            try {
-                                envoyerPush((int)$ab['id'], $pushTitle, $pushBody, '/bets.php', 'nouveau-bet');
-                                $pushEnvoyes++;
-                            } catch (Throwable $e) {
-                                $notifLog .= "  ⚠️ ECHEC push pour id=" . $ab['id'] . " : " . $e->getMessage() . "\n";
-                            }
+                    $emailsOk = 0;
+                    $emailsFail = 0;
+                    $pushOk = 0;
+                    $pushNone = 0;
+                    $procTotal = 0;
+                    for ($r = 0; $r < 40; $r++) {
+                        $st = notifQueueProcessBatch($db, 100);
+                        $procTotal += $st['processed'];
+                        $emailsOk += $st['emails_ok'];
+                        $emailsFail += $st['emails_fail'];
+                        $pushOk += $st['push_ok'];
+                        $pushNone += $st['push_none'];
+                        if ($st['processed'] === 0) {
+                            break;
                         }
                     }
-                    $notifLog .= "  → Emails: " . $emailsEnvoyes . " envoyés, " . $emailsEchecs . " échecs\n";
-                    $notifLog .= "  → Push: " . $pushEnvoyes . " envoyés (ciblés par membre)\n";
-
-                    // Sauvegarder le log
+                    $reste = notifQueuePendingCount($db);
+                    $notifLog .= "  → Traités cette passe: {$procTotal} | emails OK={$emailsOk} fail={$emailsFail} | push OK={$pushOk} sans_sub={$pushNone} | reste_file={$reste}\n";
+                    if ($reste > 0) {
+                        $notifLog .= "  → CRON: cron/process-notif-queue.php?token=... pour vider la file\n";
+                    }
                     file_put_contents(__DIR__ . '/../notif_debug.log', $notifLog, FILE_APPEND);
 
                     if ($expireDaily) {
@@ -346,32 +320,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $resCode = $resMap[$resultat] ?? $resultat;
                     $titreResult = ($bet && isset($bet['titre'])) ? $bet['titre'] : 'Bet StratEdge';
 
-                    // ── Push + Email résultat (ne pas faire échouer la page) ──
+                    // ── Push + Email résultat (file d’attente : pas de timeout + super admin inclus) ──
                     try {
-                        // Requête compatible : pas de référence à accepte_emails (colonne potentiellement absente)
-                        $stmtAbo = $db->prepare("
-                            SELECT DISTINCT m.id, m.email, m.nom, a.type as type_abo
-                            FROM membres m JOIN abonnements a ON a.membre_id = m.id
-                            WHERE a.actif = 1 AND m.email != ?
-                        ");
-                        $stmtAbo->execute([ADMIN_EMAIL]);
-                        $abonnesResult = $stmtAbo->fetchAll(PDO::FETCH_ASSOC);
-
-                        error_log('[poster-bet] set_resultat notif: ' . count($abonnesResult) . ' abonnés trouvés pour résultat');
-
-                        foreach ($abonnesResult as $ab) {
-                            try {
-                                emailResultatBet($ab['email'], $ab['nom'], $titreResult, $resCode, $ab['type_abo'] ?? '');
-                            } catch (Throwable $e) {
-                                error_log('[poster-bet] emailResultatBet: ' . $e->getMessage());
+                        require_once __DIR__ . '/../includes/notif-queue.php';
+                        resultatQueueEnqueue($db, $titreResult, $resCode);
+                        $pendingR = resultatQueuePendingCount($db);
+                        $totalR = 0;
+                        for ($ri = 0; $ri < 45; $ri++) {
+                            $stR = resultatQueueProcessBatch($db, 90);
+                            $totalR += $stR['processed'];
+                            if ($stR['processed'] === 0) {
+                                break;
                             }
-                            if (!empty($ab['id'])) {
-                                try {
-                                    pushResultatBet((int)$ab['id'], $ab['type_abo'] ?? '', $titreResult, $resCode);
-                                } catch (Throwable $e) {
-                                    error_log('[poster-bet] pushResultatBet: ' . $e->getMessage());
-                                }
-                            }
+                        }
+                        $leftR = resultatQueuePendingCount($db);
+                        @file_put_contents(__DIR__ . '/../notif_debug.log', date('c') . " resultat_queue emails_ok={$totalR} pending_end={$leftR} titre=" . mb_substr($titreResult, 0, 80) . "\n", FILE_APPEND | LOCK_EX);
+                        if ($leftR > 0) {
+                            error_log('[poster-bet] set_resultat file résultat reste=' . $leftR . ' — lancer cron process-notif-queue.php');
                         }
                     } catch (Throwable $e) {
                         error_log('[poster-bet] set_resultat push/email: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());

@@ -20,8 +20,12 @@ error_log
 .env
 .env.*
 *.env
+# Clés API (racine public_html) — jamais versionné ; préservé sur le serveur au deploy (rsync -P)
+public_html/config-keys.php
+config-keys.php
 public_html/includes/smtp-config.php
 public_html/includes/football_data_config.php
+public_html/includes/claude-config.local.php
 
 # Cache
 __pycache__/
@@ -33,3 +37,7 @@ vendor/
 
 # Uploads : NE PAS versionner (images uploadées en prod, supprimées à chaque deploy sinon)
 public_html/uploads/
+
+# Slot bracket — données générées sur le serveur
+public_html/slot-history.json
+public_html/slot-state.json

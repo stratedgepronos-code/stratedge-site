@@ -38,6 +38,9 @@ jobs:
             --exclude='*.sql' \
             --exclude='node_modules/' \
             --exclude='tests/' \
+            --filter 'P public_html/includes/claude-config.local.php' \
+            --filter 'P public_html/includes/smtp-config.php' \
+            --filter 'P public_html/includes/football_data_config.php' \
             -e "ssh -o StrictHostKeyChecking=no -p $SSH_PORT" \
             ./ \
             $SSH_USER:$WEBROOT/

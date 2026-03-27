@@ -19,8 +19,10 @@
 <div class="mobile-menu" id="mobileMenu">
   <a href="https://x.com/strat_edge_" target="_blank" rel="noopener noreferrer">𝕏 Suivre sur X</a>
   <a href="/dashboard.php">📊 Dashboard</a>
+  <a href="/dashboard.php?tab=profil">👤 Mon Profil</a>
   <a href="/bets.php">🔥 Les Bets</a>
   <a href="/historique.php">📋 Historique</a>
+  <a href="/giveaway.php">🎁 GiveAway</a>
   <a href="/prono-commu.php">⚽ Prono commu</a>
   <a href="/montante-tennis.php">🎾 Montante Tennis</a>
   <a href="/souscrire.php">💳 Souscrire</a>
@@ -29,8 +31,10 @@
   <a href="/logout.php">🚪 Déconnexion</a>
 </div>
 <div class="mob-tabs">
-  <a class="s-link <?= $currentPage==='dashboard'?'active':'' ?>" href="/dashboard.php"><span class="ico">📊</span> Dashboard</a>
+  <a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')!=='profil'?'active':'' ?>" href="/dashboard.php"><span class="ico">📊</span> Dashboard</a>
+  <a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')==='profil'?'active':'' ?>" href="/dashboard.php?tab=profil"><span class="ico">👤</span> Profil</a>
   <a class="s-link <?= $currentPage==='bets'?'active':'' ?>" href="/bets.php"><span class="ico">🔥</span> Bets</a>
+  <a class="s-link <?= ($currentPage??'')==='giveaway'?'active':'' ?>" href="/giveaway.php"><span class="ico">🎁</span> GiveAway</a>
   <a class="s-link <?= $currentPage==='pronocommu'?'active':'' ?>" href="/prono-commu.php"><span class="ico">⚽</span> Prono commu</a>
   <a class="s-link <?= ($currentPage??'')==='montante'?'active':'' ?>" href="/montante-tennis.php"><span class="ico">🎾</span> Montante</a>
   <a class="s-link <?= $currentPage==='sav'?'active':'' ?>" href="/sav.php"><span class="ico">🎫</span> SAV</a>
@@ -49,6 +53,7 @@
     <div class="side-sep"></div>
     <a class="s-link <?= $currentPage==='bets'?'active':'' ?>" href="/bets.php"><span class="ico">🔥</span> Les Bets</a>
     <a class="s-link <?= $currentPage==='historique'?'active':'' ?>" href="/historique.php"><span class="ico">📋</span> Historique</a>
+    <a class="s-link <?= ($currentPage??'')==='giveaway'?'active':'' ?>" href="/giveaway.php"><span class="ico">🎁</span> GiveAway</a>
     <a class="s-link <?= $currentPage==='pronocommu'?'active':'' ?>" href="/prono-commu.php"><span class="ico">⚽</span> Prono de la commu</a>
     <a class="s-link <?= ($currentPage??'')==='montante'?'active':'' ?>" href="/montante-tennis.php"><span class="ico">🎾</span> Montante Tennis</a>
     <a class="s-link <?= $currentPage==='sav'?'active':'' ?>" href="/sav.php"><span class="ico">🎫</span> SAV</a>

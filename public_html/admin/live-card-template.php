@@ -101,7 +101,7 @@ function _curlFetch($url, $ua = '') {
 function logoProxyUrl($url) {
     if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) return '';
     $host = parse_url($url, PHP_URL_HOST);
-    $proxyHosts = ['upload.wikimedia.org', 'commons.wikimedia.org', 'en.wikipedia.org', 'a.espncdn.com'];
+    $proxyHosts = ['upload.wikimedia.org', 'commons.wikimedia.org', 'en.wikipedia.org', 'a.espncdn.com', 'media.api-sports.io', 'cdn.nba.com'];
     if (in_array($host, $proxyHosts, true)) {
         $base = 'https://stratedgepronos.fr';
         $u = str_replace(['+', '/'], ['-', '_'], base64_encode($url));
@@ -179,6 +179,49 @@ function nhlLogoUrl($teamName) {
 }
 
 // ────────────────────────────────────────────────────────────
+// MLB : nom d'équipe → URL logo ESPN (scoreboard 500px)
+// ────────────────────────────────────────────────────────────
+function mlbLogoUrl($teamName) {
+    $name = strtolower(trim(preg_replace('/[^a-z0-9\s]/i', '', $teamName)));
+    $map = [
+        'arizona' => 'ari', 'diamondbacks' => 'ari', 'dbacks' => 'ari',
+        'atlanta' => 'atl', 'braves' => 'atl',
+        'baltimore' => 'bal', 'orioles' => 'bal',
+        'boston' => 'bos', 'red sox' => 'bos',
+        'chicago cubs' => 'chc', 'cubs' => 'chc',
+        'chicago white sox' => 'chw', 'white sox' => 'chw',
+        'cincinnati' => 'cin', 'reds' => 'cin',
+        'cleveland' => 'cle', 'guardians' => 'cle',
+        'colorado' => 'col', 'rockies' => 'col',
+        'detroit' => 'det', 'tigers' => 'det',
+        'houston' => 'hou', 'astros' => 'hou',
+        'kansas city' => 'kc', 'royals' => 'kc',
+        'los angeles angels' => 'laa', 'angels' => 'laa',
+        'los angeles dodgers' => 'lad', 'dodgers' => 'lad',
+        'miami' => 'mia', 'marlins' => 'mia',
+        'milwaukee' => 'mil', 'brewers' => 'mil',
+        'minnesota' => 'min', 'twins' => 'min',
+        'new york mets' => 'nym', 'mets' => 'nym',
+        'new york yankees' => 'nyy', 'yankees' => 'nyy',
+        'oakland' => 'oak', 'athletics' => 'oak',
+        'philadelphia' => 'phi', 'phillies' => 'phi',
+        'pittsburgh' => 'pit', 'pirates' => 'pit',
+        'san diego' => 'sd', 'padres' => 'sd',
+        'san francisco' => 'sf', 'giants' => 'sf',
+        'seattle' => 'sea', 'mariners' => 'sea',
+        'st louis' => 'stl', 'cardinals' => 'stl',
+        'tampa bay' => 'tb', 'rays' => 'tb',
+        'texas' => 'tex', 'rangers' => 'tex',
+        'toronto' => 'tor', 'blue jays' => 'tor',
+        'washington' => 'wsh', 'nationals' => 'wsh',
+    ];
+    foreach ($map as $key => $abbrev) {
+        if (strpos($name, $key) !== false) return 'https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/scoreboard/' . $abbrev . '.png';
+    }
+    return '';
+}
+
+// ────────────────────────────────────────────────────────────
 // SPORT CONFIG — couleurs, mascotte, badge
 // ────────────────────────────────────────────────────────────
 function sportConfig($sport) {
@@ -222,11 +265,12 @@ function sportConfig($sport) {
         'baseball' => ['⚾','Baseball','Baseball Pro'],
     ];
     $s = $map[$sport] ?? ['⚽','Football','Football Pro'];
+    $mascotteFile = ($sport === 'baseball') ? 'mascotte-mlb.png' : 'mascotte.png';
     return [
         'emoji'        => $s[0],
         'label'        => $s[1],
         'pack'         => $s[2],
-        'mascotte_url'   => 'https://stratedgepronos.fr/assets/images/mascotte.png',
+        'mascotte_url'   => 'https://stratedgepronos.fr/assets/images/' . $mascotteFile,
         // Autres sports : même rendu que tennis — pleine hauteur, transparent derrière le texte
         'mascotte_style' => "opacity:0.45; background:none !important; height:100%; width:auto; object-fit:contain;",
         'mascotte_locked'=> "opacity:0.25; background:none !important; height:100%; width:auto; object-fit:contain;",
@@ -267,13 +311,21 @@ function generateLiveCards($d) {
     $flag2  = flagImg($d['flag2'] ?? '');
     $logo1_url = trim($d['team1_logo'] ?? '');
     $logo2_url = trim($d['team2_logo'] ?? '');
-    $is_team_sport = in_array($sport, ['football', 'basket', 'hockey']);
+    $is_team_sport = in_array($sport, ['football', 'basket', 'hockey', 'baseball']);
     if ($is_team_sport) {
         if ($logo1_url === '' || !filter_var($logo1_url, FILTER_VALIDATE_URL)) {
             $logo1_url = function_exists('stratedge_fetch_team_logo_url') ? stratedge_fetch_team_logo_url($d['player1'] ?? '') : '';
         }
         if ($logo2_url === '' || !filter_var($logo2_url, FILTER_VALIDATE_URL)) {
             $logo2_url = function_exists('stratedge_fetch_team_logo_url') ? stratedge_fetch_team_logo_url($d['player2'] ?? '') : '';
+        }
+        if ($sport === 'hockey') {
+            if ($logo1_url === '' || !filter_var($logo1_url, FILTER_VALIDATE_URL)) $logo1_url = nhlLogoUrl($d['player1'] ?? '');
+            if ($logo2_url === '' || !filter_var($logo2_url, FILTER_VALIDATE_URL)) $logo2_url = nhlLogoUrl($d['player2'] ?? '');
+        }
+        if ($sport === 'baseball') {
+            if ($logo1_url === '' || !filter_var($logo1_url, FILTER_VALIDATE_URL)) $logo1_url = mlbLogoUrl($d['player1'] ?? '');
+            if ($logo2_url === '' || !filter_var($logo2_url, FILTER_VALIDATE_URL)) $logo2_url = mlbLogoUrl($d['player2'] ?? '');
         }
     }
     if ($is_team_sport && $logo1_url !== '' && filter_var($logo1_url, FILTER_VALIDATE_URL)) {
@@ -638,10 +690,16 @@ HTML;
 //  ]
 // ════════════════════════════════════════════════════════════
 function generateFunCards($d) {
-    $isTennis    = (strtolower($d['sport'] ?? '') === 'tennis');
-    $mascotteUrl = $isTennis
-        ? 'https://stratedgepronos.fr/assets/images/mascotte-tennis.png'
-        : 'https://stratedgepronos.fr/assets/images/mascotte-fun.png';
+    $sport       = strtolower(trim($d['sport'] ?? 'football'));
+    $isTennis    = ($sport === 'tennis');
+    $isBaseball  = ($sport === 'baseball');
+    if ($isTennis) {
+        $mascotteUrl = 'https://stratedgepronos.fr/assets/images/mascotte-tennis.png';
+    } elseif ($isBaseball) {
+        $mascotteUrl = 'https://stratedgepronos.fr/assets/images/mascotte-mlb.png';
+    } else {
+        $mascotteUrl = 'https://stratedgepronos.fr/assets/images/mascotte-fun.png';
+    }
     $logo        = 'https://stratedgepronos.fr/assets/images/logo_site_transparent.png';
 
     $date    = htmlspecialchars($d['date_fr']    ?? '', ENT_QUOTES, 'UTF-8');
@@ -692,11 +750,16 @@ body { background:#0a0a0a; margin:0; padding:0; width:1080px; min-width:1080px; 
 .mascotte-watermark {
   position:absolute; inset:0;
   display:flex; align-items:center; justify-content:center;
-  z-index:0; pointer-events:none;
+  z-index:1; pointer-events:none;
 }
 .mascotte-watermark img {
-  height:100%; width:auto; object-fit:contain;
+  height:100%; width:auto; max-height:100%; object-fit:contain;
   opacity:0.12;
+  background:none !important;
+}
+.card-wrapper.fun-sport-baseball .mascotte-watermark img {
+  opacity:0.26;
+  filter:brightness(1.1);
 }
 
 .card-body { position:relative; z-index:2; padding:26px 32px 22px; display:flex; flex-direction:column; gap:12px; }
@@ -838,6 +901,15 @@ CSS;
                 $logo2Url = nhlLogoUrl($team2Name);
             }
         }
+        $isBaseball = (strtolower($d['sport'] ?? '') === 'baseball');
+        if ($isBaseball) {
+            if ($logo1Url === '' || !filter_var($logo1Url, FILTER_VALIDATE_URL)) {
+                $logo1Url = mlbLogoUrl($team1Name);
+            }
+            if ($logo2Url === '' || !filter_var($logo2Url, FILTER_VALIDATE_URL)) {
+                $logo2Url = mlbLogoUrl($team2Name);
+            }
+        }
         if ($logo1Url !== '' && filter_var($logo1Url, FILTER_VALIDATE_URL)) {
             $ico1 = '<img src="' . htmlspecialchars(logoProxyUrl($logo1Url), ENT_QUOTES, 'UTF-8') . '" class="fun-team-logo" alt="">';
         } else {
@@ -925,6 +997,10 @@ HTML;
     }
 
     $wrapperClass = $isTennis ? 'card-wrapper tennis-fun' : 'card-wrapper';
+    if ($isBaseball) {
+        $wrapperClass .= ' fun-sport-baseball';
+    }
+    $funMascotteLockedOp = $isBaseball ? '0.14' : '0.06';
     $funBadgeText = $isTennis ? '🎾 Fun Bet Tennis' : '⚡ Fun Bet';
     $sectionTitle = $isTennis ? '🎾 Sélection multi-paris Tennis' : '⚡ Sélection multi-paris';
 
@@ -997,7 +1073,7 @@ HTML;
   <div class='border-glow'></div>
   <div class='card'>
     <div class='mascotte-watermark'>
-      <img src='{$mascotteUrl}' alt='' style='opacity:0.06'>
+      <img src='{$mascotteUrl}' alt='' style='opacity:{$funMascotteLockedOp}'>
     </div>
     <div class='card-body'>
       <div class='card-header'>
@@ -1064,10 +1140,16 @@ HTML;
 //  ]
 // ════════════════════════════════════════════════════════════
 function generateSafeCombiCards($d) {
-    $isTennis    = (strtolower($d['sport'] ?? '') === 'tennis');
-    $mascotteUrl = $isTennis
-        ? 'https://stratedgepronos.fr/assets/images/mascotte-tennis.png'
-        : 'https://stratedgepronos.fr/assets/images/mascotte-rose.png';
+    $sport       = strtolower(trim($d['sport'] ?? 'football'));
+    $isTennis    = ($sport === 'tennis');
+    $isBaseball  = ($sport === 'baseball');
+    if ($isTennis) {
+        $mascotteUrl = 'https://stratedgepronos.fr/assets/images/mascotte-tennis.png';
+    } elseif ($isBaseball) {
+        $mascotteUrl = 'https://stratedgepronos.fr/assets/images/mascotte-mlb.png';
+    } else {
+        $mascotteUrl = 'https://stratedgepronos.fr/assets/images/mascotte-rose.png';
+    }
     $logo        = 'https://stratedgepronos.fr/assets/images/logo_site_transparent.png';
 
     $date    = htmlspecialchars($d['date_fr']    ?? '', ENT_QUOTES, 'UTF-8');
@@ -1129,9 +1211,25 @@ body { background:#0a0a0a; margin:0; padding:0; width:1440px; min-width:1440px; 
 .sc-mascotte {
   position:absolute; inset:0;
   display:flex; align-items:center; justify-content:center;
-  z-index:0; pointer-events:none;
+  z-index:1; pointer-events:none;
 }
-.sc-mascotte img { height:100%; width:auto; object-fit:contain; opacity:0.10; }
+/* Watermark lisible sur fond sombre (Fun combi ~0.12 ; MLB souvent plus sombre → renfort ci-dessous) */
+.sc-mascotte img {
+  height:100%; width:auto; max-height:100%; object-fit:contain;
+  opacity:0.18;
+  background:none !important;
+}
+.sc-wrapper.sc-sport-baseball .sc-mascotte img {
+  opacity:0.32;
+  filter:brightness(1.12);
+}
+.sc-wrapper.sc-variant-locked .sc-mascotte img {
+  opacity:0.10;
+}
+.sc-wrapper.sc-sport-baseball.sc-variant-locked .sc-mascotte img {
+  opacity:0.18;
+  filter:brightness(1.08);
+}
 
 .sc-body { position:relative; z-index:2; padding:32px 40px 28px; display:flex; flex-direction:column; gap:14px; }
 
@@ -1275,6 +1373,11 @@ CSS;
             if ($logo1Url === '' || !filter_var($logo1Url, FILTER_VALIDATE_URL)) $logo1Url = nhlLogoUrl($team1Name);
             if ($logo2Url === '' || !filter_var($logo2Url, FILTER_VALIDATE_URL)) $logo2Url = nhlLogoUrl($team2Name);
         }
+        $isBaseball = (strtolower($d['sport'] ?? '') === 'baseball');
+        if ($isBaseball) {
+            if ($logo1Url === '' || !filter_var($logo1Url, FILTER_VALIDATE_URL)) $logo1Url = mlbLogoUrl($team1Name);
+            if ($logo2Url === '' || !filter_var($logo2Url, FILTER_VALIDATE_URL)) $logo2Url = mlbLogoUrl($team2Name);
+        }
         if ($logo1Url !== '' && filter_var($logo1Url, FILTER_VALIDATE_URL)) {
             $ico1 = '<img src="' . htmlspecialchars(logoProxyUrl($logo1Url), ENT_QUOTES, 'UTF-8') . '" class="sc-team-logo" alt="">';
         } else {
@@ -1370,7 +1473,9 @@ HTML;
 HTML;
     }
 
-    $wrapperClass = 'sc-wrapper' . ($wrapperExtra ? " $wrapperExtra" : '');
+    $sportClass   = $isBaseball ? ' sc-sport-baseball' : '';
+    $wrapperClass = 'sc-wrapper sc-variant-normal' . ($wrapperExtra ? " $wrapperExtra" : '') . $sportClass;
+    $wrapperClassLocked = 'sc-wrapper sc-variant-locked' . ($wrapperExtra ? " $wrapperExtra" : '') . $sportClass;
     $badgeText    = $isTennis ? '🎾🛡️ Safe Combiné Tennis' : '🛡️ Safe Combiné';
     $sectionTitle = $isTennis ? '🎾 Sélection multi-bets Safe Tennis' : '🛡️ Sélection multi-bets Safe';
 
@@ -1435,11 +1540,11 @@ HTML;
 <style>{$css}</style>
 </head>
 <body>
-<div class='{$wrapperClass}'>
+<div class='{$wrapperClassLocked}'>
   <div class='sc-border-glow'></div>
   <div class='sc-card'>
     <div class='sc-mascotte'>
-      <img src='{$mascotteUrl}' alt='' style='opacity:0.05'>
+      <img src='{$mascotteUrl}' alt=''>
     </div>
     <div class='sc-body'>
       <div class='sc-header'>

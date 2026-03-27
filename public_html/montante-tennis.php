@@ -230,6 +230,17 @@ table.mt-table{width:100%;border-collapse:collapse;}
 .archive-card.open .archive-detail{max-height:2000px;}
 .archive-toggle{font-size:0.75rem;color:var(--txt3);margin-top:0.5rem;text-align:center;}
 
+/* Sur mobile : montante en cours ou message "aucune montante" en premier */
+@media(max-width:768px){
+  .mt-mobile-flex{display:flex;flex-direction:column;}
+  .mt-mobile-flex .mt-empty,
+  .mt-mobile-flex .mt-current{order:-2;}
+  .mt-mobile-flex .mt-promo-visual{order:-1;}
+  .mt-mobile-flex .stake-promo-row{order:0;}
+  .mt-mobile-flex .mt-stats{order:1;}
+  .mt-mobile-flex .mt-progress{order:2;}
+  .mt-mobile-flex .mt-table-wrap{order:3;}
+}
 @media(max-width:768px){
   .mt-hero{margin:-1rem -0.8rem 1.5rem;padding:1.5rem 0.8rem 1.2rem;}
   .mt-title{font-size:1.2rem;}
@@ -264,6 +275,7 @@ table.mt-table{width:100%;border-collapse:collapse;}
   <?php endif; ?>
 </div>
 
+<div class="mt-mobile-flex">
 <!-- Visuel pleine largeur -->
 <div class="mt-promo-visual">
   <div class="mt-promo-visual-inner">
@@ -398,6 +410,7 @@ table.mt-table{width:100%;border-collapse:collapse;}
 </div>
 
 <?php endif; ?>
+</div>
 
 <?php if (!empty($archivesData)): ?>
 <div class="mt-archives">

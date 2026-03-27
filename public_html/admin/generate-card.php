@@ -5,18 +5,84 @@
 // FUN  = template PHP fixe + Claude enrichit (JSON) ← NOUVEAU V12
 // SAFE = Claude génère le HTML complet              ← inchangé
 // ============================================================
+// Diagnostic : GET ?_ping=1 → réponse JSON sans auth (vérifier que le script est bien exécuté)
+if (!empty($_GET['_ping'])) {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['ok' => true, 'php' => PHP_VERSION, 'dir' => __DIR__]);
+    exit;
+}
+
+error_reporting(E_ALL);
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+// Éviter tout output avant notre JSON (warnings, etc.)
+set_error_handler(function($severity, $message, $file, $line) {
+    @file_put_contents(__DIR__ . '/debug-card.log',
+        '[' . date('H:i:s') . '] PHP ' . $severity . ': ' . $message . ' in ' . $file . ':' . $line . "\n", FILE_APPEND);
+    return true; // supprime l'affichage par défaut
+});
+ob_start();
+
+register_shutdown_function(function() {
+    $err = error_get_last();
+    if ($err && in_array($err['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])) {
+        while (ob_get_level()) { @ob_end_clean(); }
+        if (!headers_sent()) {
+            http_response_code(500);
+            header('Content-Type: application/json; charset=utf-8');
+        }
+        echo json_encode([
+            'error' => 'PHP Fatal: ' . $err['message'],
+            'file'  => basename($err['file']),
+            'line'  => $err['line'],
+        ]);
+        @file_put_contents(__DIR__ . '/debug-card.log',
+            '[' . date('H:i:s') . '] FATAL SHUTDOWN: ' . $err['message'] . ' in ' . $err['file'] . ':' . $err['line'] . "\n",
+            FILE_APPEND);
+    }
+});
 
 @set_time_limit(300);
 @ini_set('max_execution_time', '300');
 @ini_set('memory_limit', '512M');
 
-require_once __DIR__ . '/../includes/auth.php';
-requireAdmin();
+function sendJsonError($message, $code = 500, $extra = []) {
+    if (ob_get_level()) ob_clean();
+    if (!headers_sent()) {
+        http_response_code($code);
+        header('Content-Type: application/json; charset=utf-8');
+    }
+    echo json_encode(array_merge(['error' => $message], $extra));
+    exit;
+}
 
-if (!defined('ABSPATH')) { define('ABSPATH', true); }
-require_once __DIR__ . '/../includes/claude-config.php';
-require_once __DIR__ . '/../includes/logo-fallback.php';
+try {
+    $base = dirname(__DIR__);
+    $authFile = $base . '/includes/auth.php';
+    if (!is_readable($authFile)) {
+        sendJsonError('Fichier auth introuvable.', 500, ['path' => $authFile, 'base' => $base]);
+    }
+    require_once $authFile;
+    requireAdmin();
+    if (!defined('ABSPATH')) { define('ABSPATH', true); }
+    $claudeFile = $base . '/includes/claude-config.php';
+    $logoFile   = $base . '/includes/logo-fallback.php';
+    if (!is_readable($claudeFile)) {
+        sendJsonError('Fichier claude-config introuvable.', 500, ['path' => $claudeFile]);
+    }
+    require_once $claudeFile;
+    if (!defined('CLAUDE_API_KEY') || trim((string)CLAUDE_API_KEY) === '') {
+        sendJsonError('Clé API Claude manquante ou vide. Vérifie includes/claude-config.php (CLAUDE_API_KEY).', 500);
+    }
+    if (!is_readable($logoFile)) {
+        sendJsonError('Fichier logo-fallback introuvable.', 500, ['path' => $logoFile]);
+    }
+    require_once $logoFile;
+} catch (Throwable $e) {
+    sendJsonError('Chargement : ' . $e->getMessage(), 500, ['file' => basename($e->getFile()), 'line' => $e->getLine()]);
+}
 
+ob_clean();
 header('Content-Type: application/json; charset=utf-8');
 
 function debugLog($msg) {
@@ -104,7 +170,16 @@ if (!$data) {
 $sport   = $data['sport']    ?? '';
 $typeBet = $data['type_bet'] ?? 'Safe';
 
+// Diagnostic POST : type_bet=_ping → 200 OK sans appeler Claude (vérifie auth + config)
+if ($typeBet === '_ping') {
+    debugLog("POST _ping OK");
+    echo json_encode(['success' => true, 'message' => 'pong', 'php' => PHP_VERSION]);
+    exit;
+}
+
 debugLog("Sport: $sport | Type: $typeBet | Model: " . CLAUDE_MODEL);
+
+try {
 
 // ═══════════════════════════════════════════════════════════
 // MODE LIVE — Template PHP fixe + Claude enrichit les données
@@ -128,26 +203,26 @@ if ($typeBet === 'Live') {
         $prono = $data['prono'] ?? '';
         $cote  = $data['cote']  ?? '1.50';
 
-        // Date et heure fiables : serveur Europe/Paris ou champs envoyés par le formulaire
+        // Heure par défaut (secours) : serveur Europe/Paris ou champs formulaire
         $tz = new DateTimeZone('Europe/Paris');
         $now = new DateTime('now', $tz);
         if (!empty($data['date_fr']) && !empty($data['time_fr'])) {
-            $date_fr = trim($data['date_fr']);
-            $time_fr = preg_replace('/[^0-9:]/', '', trim($data['time_fr']));
-            if (strlen($time_fr) < 4) $time_fr = $now->format('H:i');
+            $default_date_fr = trim($data['date_fr']);
+            $default_time_fr = preg_replace('/[^0-9:]/', '', trim($data['time_fr']));
+            if (strlen($default_time_fr) < 4) $default_time_fr = $now->format('H:i');
         } else {
             if (class_exists('IntlDateFormatter')) {
                 $formatter = new IntlDateFormatter('fr_FR', IntlDateFormatter::FULL, IntlDateFormatter::NONE, 'Europe/Paris', IntlDateFormatter::GREGORIAN);
-                $date_fr = ucfirst($formatter->format($now));
+                $default_date_fr = ucfirst($formatter->format($now));
             } else {
                 $jours = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
                 $mois = ['','janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
-                $date_fr = $jours[(int)$now->format('w')] . ' ' . $now->format('d') . ' ' . $mois[(int)$now->format('n')] . ' ' . $now->format('Y');
+                $default_date_fr = $jours[(int)$now->format('w')] . ' ' . $now->format('d') . ' ' . $mois[(int)$now->format('n')] . ' ' . $now->format('Y');
             }
-            $time_fr = $now->format('H:i');
+            $default_time_fr = $now->format('H:i');
         }
 
-        $userMsg = "Sport : $sport\nMatch : $match\nPronostic : $prono\nCote : $cote\n\nDate et heure à utiliser telles quelles : date_fr = \"$date_fr\" , time_fr = \"$time_fr\" (fuseau Europe/Paris).";
+        $userMsg = "Sport : $sport\nMatch : $match\nPronostic : $prono\nCote : $cote\n\nTu DOIS renvoyer date_fr et time_fr correspondant à l'heure RÉELLE du match (coup d'envoi), fuseau Europe/Paris. Si tu ne peux pas la déduire, utilise ces valeurs par défaut (secours) : date_fr = \"$default_date_fr\" , time_fr = \"$default_time_fr\".";
         debugLog("LIVE — Enrichissement via Claude...");
 
         $result = callClaude(CLAUDE_LIVE_ENRICH_PROMPT, $userMsg, 1000);
@@ -174,9 +249,15 @@ if ($typeBet === 'Live') {
             ];
         }
 
-        // Toujours utiliser nos date/heure (pas celles de Claude)
-        $enriched['date_fr'] = $date_fr;
-        $enriched['time_fr'] = $time_fr;
+        // Toujours utiliser l'heure renvoyée par Claude (l'IA s'en charge) ; secours uniquement si vide
+        if (empty($enriched['date_fr']) || empty($enriched['time_fr'])) {
+            $enriched['date_fr'] = $default_date_fr;
+            $enriched['time_fr'] = $default_time_fr;
+        } else {
+            $enriched['date_fr'] = trim($enriched['date_fr']);
+            $enriched['time_fr'] = preg_replace('/[^0-9:]/', '', trim($enriched['time_fr']));
+            if (strlen($enriched['time_fr']) < 4) $enriched['time_fr'] = $default_time_fr;
+        }
 
         $coteFloat  = floatval($cote);
         $confidence = ($coteFloat > 0) ? min(95, max(30, round(115 / $coteFloat))) : 60;
@@ -252,6 +333,8 @@ if ($typeBet === 'Fun') {
         echo json_encode(['error' => 'Claude n\'a pas pu analyser les paris. Vérifiez le format saisi.']);
         exit;
     }
+
+    // Date/heure = toujours celles renvoyées par l'IA (pas de saisie admin)
 
     // Recalcul cote totale côté PHP (sécurité si Claude se trompe)
     $coteTotale = 1.0;
@@ -337,6 +420,8 @@ if ($typeBet === 'Safe Combiné') {
         $coteTotale = $enriched['cote_totale'];
     }
 
+    // Date/heure = toujours celles renvoyées par l'IA (pas de saisie admin)
+
     $confGlobale = intval($enriched['confidence_globale'] ?? 65);
 
     try {
@@ -364,7 +449,9 @@ if ($typeBet === 'Safe Combiné') {
 // MODE SAFE — Claude génère le HTML complet (inchangé)
 // ═══════════════════════════════════════════════════════════
 $systemPrompt = CLAUDE_CARD_PROMPT;
-$dateInfo = "Nous sommes le " . date('d/m/Y') . " (saison " . date('Y') . "/" . (date('Y')+1) . " en football, saison " . date('Y') . " en tennis). Heure = fuseau Europe/Paris.\n\n";
+$tz_safe = new DateTimeZone('Europe/Paris');
+$now_safe = new DateTime('now', $tz_safe);
+$dateInfo = "Nous sommes le " . $now_safe->format('d/m/Y') . " à " . $now_safe->format('H:i') . " heure de Paris (saison " . date('Y') . "/" . (date('Y')+1) . " en football, saison " . date('Y') . " en tennis, saison MLB " . date('Y') . "). Heure = fuseau Europe/Paris OBLIGATOIRE. Pour le baseball MLB : convertis TOUJOURS l'heure américaine (ET) en heure de Paris (Paris = ET + 6h en été). Ex : 19h05 ET = 01h05 Paris (lendemain).\n\n";
 
 $betData = json_encode([
     'sport'    => $sport,
@@ -407,3 +494,7 @@ if (!$cards || !isset($cards['html_normal']) || !isset($cards['html_locked'])) {
 
 debugLog("SAFE OK! 1440px");
 echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Safe', 'card_width' => 1440]);
+} catch (Throwable $e) {
+    debugLog("FATAL: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
+    sendJsonError('Erreur serveur : ' . $e->getMessage(), 500, ['file' => basename($e->getFile()), 'line' => $e->getLine()]);
+}

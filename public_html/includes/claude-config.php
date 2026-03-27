@@ -13,7 +13,15 @@
 
 if (!defined('ABSPATH')) { define('ABSPATH', true); }
 
-define('CLAUDE_API_KEY', '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');
+// Clé API UNIQUEMENT dans claude-config.local.php (gitignored) → jamais écrasée par git pull
+$__claude_local = __DIR__ . '/claude-config.local.php';
+if (is_file($__claude_local)) {
+    require_once $__claude_local;
+}
+if (!defined('CLAUDE_API_KEY')) {
+    $k = getenv('CLAUDE_API_KEY');
+    define('CLAUDE_API_KEY', (is_string($k) && $k !== '') ? $k : '');
+}
 
 define('CLAUDE_MODEL', 'claude-sonnet-4-6');
 
@@ -23,30 +31,33 @@ define('CLAUDE_THINKING_ENABLED', false);
 // ⚡ LIVE — Enrichissement uniquement (JSON, pas de HTML)
 // ============================================================
 define('CLAUDE_LIVE_ENRICH_PROMPT', <<<'PROMPT'
-Tu reçois les infos d'un match (sport, match, pronostic, cote) et une date/heure fournies. Tu réponds UNIQUEMENT par un objet JSON valide, sans aucun texte avant ou après, sans backticks.
+Tu reçois les infos d'un match (sport, match, pronostic, cote). Tu réponds UNIQUEMENT par un objet JSON valide, sans aucun texte avant ou après, sans backticks.
+
+⚠️ HEURE DU MATCH — PRIORITÉ ABSOLUE — TOUJOURS EN HEURE DE PARIS (Europe/Paris)
+- date_fr et time_fr doivent correspondre à l'heure RÉELLE du match (coup d'envoi ou début), fuseau Europe/Paris (UTC+1 en hiver, UTC+2 en été).
+- Tu DOIS rechercher ou déduire cette heure à partir de ta connaissance des calendriers : journées de championnat (Ligue 1, Liga, Premier League, etc.), phases de poules C1/Ligue Europa, calendrier NHL, MLB, ATP/WTA, etc. Horaires typiques : Ligue 1 21h ou 17h/15h le dimanche ; C1 21h ; NHL souvent 01h00 ou 02h00 Paris ; tennis selon tournoi.
+- ⚠️ BASEBALL MLB — CONVERSION OBLIGATOIRE : les matchs MLB sont aux USA. Tu DOIS convertir l'heure locale US (Eastern Time ET) en heure de Paris. Décalage : Paris = ET + 6h (en été). Exemples : 19h05 ET = 01h05 Paris (lendemain) ; 13h10 ET = 19h10 Paris ; 16h10 ET = 22h10 Paris ; 20h10 ET = 02h10 Paris (lendemain). NE JAMAIS mettre l'heure américaine directement !
+- Si le message contient "date_fr" et "time_fr" explicites avec la mention "secours" ou "par défaut", utilise-les UNIQUEMENT si tu ne peux pas déduire l'heure réelle du match. Dès que tu connais le créneau du match (ex: "dimanche 21h Ligue 1"), renvoie cette date/heure réelle.
+- Format date_fr : en français (ex: "Dimanche 2 Mars 2026"). Format time_fr : HH:MM (ex: "21:00").
+
 Clés obligatoires :
-- date_fr : recopie EXACTEMENT la valeur "date_fr" donnée dans le message (date du match).
-- time_fr : recopie EXACTEMENT la valeur "time_fr" donnée dans le message (heure du match).
+- date_fr : date réelle du match (voir règle ci-dessus).
+- time_fr : heure réelle de coup d'envoi / début (voir règle ci-dessus).
 - player1 : nom du premier joueur/équipe (ex: "Garin C.")
 - player2 : nom du second (ex: "Baez S.")
-- flag1 : emoji drapeau pays du joueur 1 (ex: "🇨🇱")
-- flag2 : emoji drapeau pays du joueur 2 (ex: "🇦🇷")
-- competition : compétition + surface si pertinent (ex: "ATP 250 - Buenos Aires - Terre battue")
-- prono_joueur : 1 ou 2 selon le pronostic. Si le pronostic indique que le joueur 1 gagne (ou équipe 1), mets 1. Si le joueur 2 gagne, mets 2. Sinon 1.
+- flag1, flag2 : emoji drapeau pays
+- competition : compétition + surface si pertinent
+- prono_joueur : 1 ou 2 selon le pronostic
 
-⚠️ LOGOS OBLIGATOIRES pour football, basket (NBA), hockey et MLS :
-- team1_logo et team2_logo : URLs DIRECTES vers le logo PNG de chaque équipe. Tu DOIS fournir un logo pour chaque équipe, ne JAMAIS laisser vide.
-- FOOTBALL : utiliser API-Football https://media.api-sports.io/football/teams/{id}.png
-  IDs connus : Real Madrid=541, Barcelona=529, PSG=85, Man City=50, Liverpool=40, Bayern=157, Juventus=496, Inter=505, Milan=489, Benfica=211, Porto=212, Marseille=81, Lyon=80, Monaco=91, Lille=79, Arsenal=42, Chelsea=49, Man United=33, Tottenham=47, Napoli=492, Roma=497, Lazio=487, Dortmund=165, Atletico=530, Sevilla=536, Ajax=194, Celtic=247, Rangers=257, Sporting=228, Galatasaray=645, Fenerbahce=611, Boca Juniors=451, River Plate=455
-- MLS : utiliser https://images.mlssoccer.com/image/private/t_q-best/v1/assets/logos/teams/{slug}.png ou API-Football. Exemples IDs API-Football MLS : Atlanta United=1604, Austin FC=10261, Charlotte FC=15769, Chicago Fire=1605, Cincinnati=7395, Colorado=1606, Columbus=1607, Dallas=1609, DC United=1610, Galaxy=1601, Houston=1611, Inter Miami=9568, LAFC=1600, Minnesota United=1614, Montreal=1613, Nashville=7393, New England=1616, NYC FC=1604, NY Red Bulls=1602, Orlando City=1598, Philadelphia=1599, Portland=1617, Salt Lake=1603, San Jose=1596, Seattle=1595, St. Louis=15768, Toronto=1597, Vancouver=1615
-- BASKET NBA : https://cdn.nba.com/logos/nba/{nba_team_id}/primary/L/logo.svg (IDs : Lakers=1610612747, Warriors=1610612744, Celtics=1610612738, Nets=1610612751, Knicks=1610612752, Bucks=1610612749, Heat=1610612748, etc.)
-- HOCKEY NHL : ESPN CDN https://a.espncdn.com/combiner/i?img=/i/teamlogos/nhl/500/scoreboard/{abbrev}.png avec abbrev en minuscules (ana, bos, buf, car, cbj, cgy, chi, col, dal, det, edm, fla, la, min, mtl, nj, nsh, nyi, nyr, ott, phi, pit, sea, sjs, stl, tb, tor, utah, vgk, wsh, wpg)
-- Si tu ne connais pas l'ID exact, cherche dans ta mémoire le bon ID. En DERNIER recours seulement, mets "".
+⚠️ LOGOS OBLIGATOIRES pour football, basket (NBA), hockey (NHL), baseball (MLB) :
+- team1_logo et team2_logo : URLs DIRECTES vers le logo.
+  FOOTBALL : https://media.api-sports.io/football/teams/{id}.png (PSG=85, Marseille=81, etc.).
+  NHL : https://a.espncdn.com/combiner/i?img=/i/teamlogos/nhl/500/scoreboard/{abbrev}.png (ana, bos, buf, etc.).
+  MLB : https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/scoreboard/{abbrev}.png (ari, atl, bal, bos, chc, chw, cin, cle, col, det, hou, kc, laa, lad, mia, mil, min, nym, nyy, oak, phi, pit, sd, sf, sea, stl, tb, tex, tor, wsh).
+  NBA : cdn.nba.com.
+  En dernier recours seulement, mets "".
 
-Ne modifie jamais date_fr ni time_fr : utilise uniquement les valeurs fournies dans le message.
-Exemple tennis : {"date_fr":"...","time_fr":"15:30","player1":"Garin C.","player2":"Baez S.","flag1":"🇨🇱","flag2":"🇦🇷","competition":"...","prono_joueur":1}
-Exemple foot : {"date_fr":"...","time_fr":"20:00","player1":"PSG","player2":"Marseille","flag1":"🇫🇷","flag2":"🇫🇷","competition":"Ligue 1","prono_joueur":1,"team1_logo":"https://media.api-sports.io/football/teams/85.png","team2_logo":"https://media.api-sports.io/football/teams/81.png"}
-Exemple MLS : {"date_fr":"...","time_fr":"23:01","player1":"Vancouver Whitecaps","player2":"Minnesota United","flag1":"🇨🇦","flag2":"🇺🇸","competition":"MLS","prono_joueur":1,"team1_logo":"https://media.api-sports.io/football/teams/1615.png","team2_logo":"https://media.api-sports.io/football/teams/1614.png"}
+Exemple foot : {"date_fr":"Dimanche 2 Mars 2026","time_fr":"21:00","player1":"PSG","player2":"Marseille","flag1":"🇫🇷","flag2":"🇫🇷","competition":"Ligue 1","prono_joueur":1,"team1_logo":"https://media.api-sports.io/football/teams/85.png","team2_logo":"https://media.api-sports.io/football/teams/81.png"}
 PROMPT
 );
 
@@ -89,15 +100,17 @@ Structure de sortie OBLIGATOIRE :
 }
 
 Règles :
-- date_fr = date du PREMIER match (le plus tôt), en toutes lettres en français
-- time_fr = heure du PREMIER match, fuseau Europe/Paris obligatoire
+- date_fr = date du PREMIER match (le plus tôt), en toutes lettres en français.
+- time_fr = heure du PREMIER match (coup d'envoi réel), fuseau Europe/Paris obligatoire (UTC+1 hiver, UTC+2 été).
+- ⚠️ BASEBALL MLB — CONVERSION OBLIGATOIRE : les matchs MLB sont aux USA. Convertis TOUJOURS l'heure locale US (Eastern Time ET) en heure de Paris. Décalage : Paris = ET + 6h (en été). Ex : 19h05 ET = 01h05 Paris (lendemain) ; 13h10 ET = 19h10 Paris. NE JAMAIS mettre l'heure américaine !
 - bets = tableau ordonné de tous les paris. Chaque entrée OBLIGATOIRE :
   - match : nom des équipes (ex: "Équipe A vs Équipe B")
-  - heure : heure de DÉBUT du match, fuseau Europe/Paris (format HH:MM ou H:MM). Tu dois la déduire ou l'estimer si elle n'est pas fournie (ex: soirée Ligue Europa souvent 18:45 ou 21:00).
+  - heure : heure RÉELLE de coup d'envoi (début du match), fuseau Europe/Paris, format HH:MM. Tu DOIS la rechercher ou la déduire : utilise ta connaissance des calendriers (Ligue 1, C1, Ligue Europa, NHL, MLB, etc.). Ex: Ligue 1 souvent 21h ou 17h ; C1/Europa 18:45 ou 21:00 ; NHL 01:00 ou 02:00 Paris ; MLB 23h30-02h00 Paris (matchs soir US), 19h-22h Paris (matchs après-midi US). Ne mets pas une heure au hasard.
   - flag1, flag2 : emoji drapeau pays équipe 1 et 2
-  - team1_logo, team2_logo : pour le FOOTBALL et le HOCKEY NHL, fournis une URL directe vers le logo de chaque équipe.
+  - team1_logo, team2_logo : pour le FOOTBALL, HOCKEY NHL et BASEBALL MLB, fournis une URL directe vers le logo de chaque équipe.
     FOOTBALL : API-Football https://media.api-sports.io/football/teams/{id}.png ou FotMob, ou "".
-    HOCKEY NHL : ESPN CDN https://a.espncdn.com/combiner/i?img=/i/teamlogos/nhl/500/scoreboard/{abbrev}.png avec abbrev en minuscules (ana, bos, buf, car, cbj, cgy, chi, col, dal, det, edm, fla, la, min, mtl, nj, nsh, nyi, nyr, ott, phi, pit, sea, sjs, stl, tb, tor, utah, vgk, wsh, wpg). Si tu ne trouves pas, mets "".
+    HOCKEY NHL : ESPN CDN https://a.espncdn.com/combiner/i?img=/i/teamlogos/nhl/500/scoreboard/{abbrev}.png avec abbrev en minuscules (ana, bos, buf, car, cbj, cgy, chi, col, dal, det, edm, fla, la, min, mtl, nj, nsh, nyi, nyr, ott, phi, pit, sea, sjs, stl, tb, tor, utah, vgk, wsh, wpg).
+    BASEBALL MLB : ESPN CDN https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/scoreboard/{abbrev}.png (ari, atl, bal, bos, chc, chw, cin, cle, col, det, hou, kc, laa, lad, mia, mil, min, nym, nyy, oak, phi, pit, sd, sf, sea, stl, tb, tex, tor, wsh). Si tu ne trouves pas, mets "".
   - prono, cote : texte du pari et cote exacte fournie
 - cote_totale = produit de toutes les cotes individuelles, arrondi à 2 décimales
 - confidence = indice de confiance global estimé entre 40 et 85
@@ -138,13 +151,14 @@ Structure de sortie OBLIGATOIRE :
 }
 
 Règles :
-- date_fr = date du PREMIER match (le plus tôt), en toutes lettres en français
-- time_fr = heure du PREMIER match, fuseau Europe/Paris obligatoire
+- date_fr = date du PREMIER match (le plus tôt), en toutes lettres en français.
+- time_fr = heure du PREMIER match (coup d'envoi réel), fuseau Europe/Paris obligatoire (UTC+1 hiver, UTC+2 été).
+- ⚠️ BASEBALL MLB — CONVERSION OBLIGATOIRE : convertis TOUJOURS l'heure US (ET) en heure de Paris. Paris = ET + 6h (été). Ex : 19h ET = 01h Paris (lendemain). NE JAMAIS mettre l'heure US directement !
 - bets = tableau ordonné de tous les paris. Chaque entrée OBLIGATOIRE :
   - match : nom des équipes/joueurs (ex: "Équipe A vs Équipe B")
-  - heure : heure de DÉBUT du match, fuseau Europe/Paris (format HH:MM)
+  - heure : heure RÉELLE de coup d'envoi (début du match), fuseau Europe/Paris, format HH:MM. Tu DOIS la rechercher ou la déduire (calendriers Ligue 1, C1, Europa, NHL, MLB, tennis). Ex: Ligue 1 21h ; C1 21h ou 18:45 ; NHL 01:00 ou 02:00 Paris ; MLB 23h30-02h00 Paris (matchs soir US), 19h-22h Paris (matchs après-midi US).
   - flag1, flag2 : emoji drapeau pays équipe/joueur 1 et 2
-  - team1_logo, team2_logo : pour le FOOTBALL, fournis une URL vers le logo (API-Football https://media.api-sports.io/football/teams/{id}.png). Pour le HOCKEY NHL : ESPN CDN. Sinon "".
+  - team1_logo, team2_logo : pour le FOOTBALL, fournis une URL vers le logo (API-Football https://media.api-sports.io/football/teams/{id}.png). Pour le HOCKEY NHL : ESPN CDN. Pour le BASEBALL MLB : ESPN CDN https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/scoreboard/{abbrev}.png (ari, atl, bal, bos, chc, chw, cin, cle, col, det, hou, kc, laa, lad, mia, mil, min, nym, nyy, oak, phi, pit, sd, sf, sea, stl, tb, tex, tor, wsh). Sinon "".
   - prono : texte du pronostic exact
   - cote : cote exacte fournie par l'admin
   - confidence : indice de confiance INDIVIDUEL pour CE bet (40-92). Évalue selon : forme, H2H, contexte, stats récentes.
@@ -219,18 +233,20 @@ Logos clubs/joueurs — ⚠️ IMPORTANT : ajouter les logos à côté des noms 
   Toujours mettre le drapeau à côté du nom dans la match card ET dans les titres des colonnes Stats.
 - BASKET NBA : https://cdn.nba.com/logos/nba/{nba_team_id}/primary/L/logo.svg
 - HOCKEY NHL : drapeau emoji ou texte abrégé
+- BASEBALL MLB : ESPN CDN https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/scoreboard/{abbrev}.png (ari, atl, bal, bos, chc, chw, cin, cle, col, det, hou, kc, laa, lad, mia, mil, min, nym, nyy, oak, phi, pit, sd, sf, sea, stl, tb, tex, tor, wsh). Toutes les équipes MLB sont américaines, drapeau 🇺🇸 (sauf Toronto 🇨🇦).
 
-Mascotte WATERMARK — ⚠️ OBLIGATOIRE, doit occuper toute la hauteur de la card en arrière-plan :
-HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div principale de la card) :
+Mascotte WATERMARK — ⚠️⚠️ OBLIGATOIRE POUR TOUS LES SPORTS (y compris baseball, football, basket, hockey), doit occuper toute la hauteur de la card en arrière-plan transparent :
+HTML EXACT pour la mascotte (à placer IMMÉDIATEMENT après l'ouverture de la div principale de la card, AVANT tout contenu) :
 - TENNIS : <img src='https://stratedgepronos.fr/assets/images/mascotte-tennis.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
-- Autres sports : <img src='https://stratedgepronos.fr/assets/images/mascotte.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
+- FOOTBALL / BASKET / HOCKEY et tout autre sport : <img src='https://stratedgepronos.fr/assets/images/mascotte.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
+- BASEBALL (MLB) : <img src='https://stratedgepronos.fr/assets/images/mascotte-mlb.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
 - Card locked : même chose mais opacity:0.25
-⚠️ mascotte.png = pleine hauteur, transparente derrière le texte (même rendu que tennis). z-index:1, contenu en z-index:2.
+⚠️ NE JAMAIS OUBLIER la mascotte ! La div principale DOIT avoir position:relative et le contenu z-index:2. mascotte.png = pleine hauteur, transparente derrière le texte. Si tu oublies la mascotte, la card sera rejetée.
 
 ---
 
 🏷️ BADGE SPORT (coin haut droit, Orbitron 16px bold, padding:10px 20px, border-radius:20px)
-🎾 TENNIS → #00FF88 | ⚽ FOOTBALL → #FF2D78 | 🏀 BASKET → #FFA500 | 🏒 HOCKEY → #00D4FF
+🎾 TENNIS → #00FF88 | ⚽ FOOTBALL → #FF2D78 | 🏀 BASKET → #FFA500 | 🏒 HOCKEY → #00D4FF | ⚾ BASEBALL → #FF2D78
 
 ---
 
@@ -244,7 +260,7 @@ HTML EXACT pour la mascotte (à placer juste après l'ouverture de la div princi
 - Drapeaux : la card est exportée en JPG via html2canvas. Utiliser OBLIGATOIREMENT <img src='https://flagcdn.com/w40/{code}.png'> — JAMAIS d'emoji (rendu cassé dans html2canvas), JAMAIS de code texte "CH"/"FR".
 - ⚠️ NE PAS afficher de logo tournoi/compétition. Uniquement le NOM de la compétition en texte (ex: "ATP 250 — Buenos Aires — Terre battue", "Ligue 1", "Champions League").
 - Bande promo : pour la card Safe TENNIS uniquement, ajouter la petite pub comme sur Fun/Live tennis, AVANT la ligne gradient (la barre rose→bleu reste le dernier élément) : rectangle vert néon avec "🎾 SAFE TENNIS — PACK ATP / WTA", "Inclus dans le Pack Tennis Pro", tag "🎾 Tennis Weekly — 15€/sem", "Abonne-toi au Pack Tennis" et bouton rose "🎾 Je m'abonne". Sur la card normale ET sur la card locked (même bloc visible). Voir §11 pour le HTML et CSS exacts.
-- Bande promo (foot, basket, hockey) : pour la card Safe FOOTBALL, BASKET ou HOCKEY, ajouter la bande promo en rose néon AVANT la ligne gradient (la barre rose→bleu reste le dernier élément) : offres Daily 4,50€, Week-End 10€, Weekly 20€, VIP MAX 50€/mois, bouton "Je m'abonne" rose. Sur la card normale ET locked. Voir §12 pour le HTML et CSS exacts (classe promo-banner-multi, couleur #FF2D78).
+- Bande promo (foot, basket, hockey, baseball) : pour la card Safe FOOTBALL, BASKET, HOCKEY ou BASEBALL, ajouter la bande promo en rose néon AVANT la ligne gradient (la barre rose→bleu reste le dernier élément) : offres Daily 4,50€, Week-End 10€, Weekly 20€, VIP MAX 50€/mois, bouton "Je m'abonne" rose. Sur la card normale ET locked. Voir §12 pour le HTML et CSS exacts (classe promo-banner-multi, couleur #FF2D78).
 - ⚠️ NE PAS modifier les polices : garder Orbitron et Rajdhani telles quelles dans tout le HTML. Aucun changement de font-family.
 
 ---

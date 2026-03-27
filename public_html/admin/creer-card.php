@@ -215,6 +215,7 @@ $isAdminTennis = isAdminTennis();
           <option value="football">⚽ Foot</option>
           <option value="basket">🏀 NBA</option>
           <option value="hockey">🏒 NHL</option>
+          <option value="baseball">⚾ MLB</option>
           <?php elseif ($isAdminTennis): ?>
           <option value="tennis" selected>🎾 Tennis</option>
           <?php else: ?>
@@ -222,6 +223,7 @@ $isAdminTennis = isAdminTennis();
           <option value="football">⚽ Football</option>
           <option value="basket">🏀 Basket</option>
           <option value="hockey">🏒 Hockey</option>
+          <option value="baseball">⚾ Baseball (MLB)</option>
           <?php endif; ?>
         </select>
       </div>
@@ -582,15 +584,20 @@ async function generateCard() {
 
     let data;
     const text = await resp.text();
+    console.log('[generate-card] HTTP', resp.status, '| Réponse (' + text.length + ' car.):', text.substring(0, 500));
     try {
       data = JSON.parse(text);
     } catch (_) {
-      showError('❌ Le serveur a renvoyé une erreur (HTTP ' + resp.status + '). Réponse non-JSON : ' + escHtml(text.substring(0, 200)));
+      showError('❌ Le serveur a renvoyé une erreur (HTTP ' + resp.status + '). Réponse non-JSON : ' + escHtml(text.substring(0, 300)) + (text.length > 300 ? '…' : ''));
       return;
     }
 
     if (!resp.ok || data.error) {
-      showError('❌ ' + (data.error || 'Erreur inconnue.') + (data.raw ? '<br><small style="opacity:0.6">' + escHtml(data.raw) + '</small>' : ''));
+      let msg = '❌ ' + (data.error || 'Erreur inconnue.');
+      if (data.file || data.line) msg += '<br><small style="opacity:0.7">' + (data.file || '') + (data.line ? ':' + data.line : '') + '</small>';
+      if (data.raw) msg += '<br><small style="opacity:0.6">' + escHtml(data.raw) + '</small>';
+      if (data.path) msg += '<br><small style="opacity:0.6">path: ' + escHtml(String(data.path)) + '</small>';
+      showError(msg);
       return;
     }
 

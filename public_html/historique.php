@@ -12,51 +12,100 @@ $bets = $db->query("
     ORDER BY date_resultat DESC, date_post DESC
 ")->fetchAll();
 
+$filtreSection = $_GET['section'] ?? 'tous';
+if ($filtreSection === 'tennis_safe' || $filtreSection === 'tennis_live') {
+    $filtreSection = 'tennis_safe_live';
+}
+$filtre = $_GET['filtre'] ?? 'tous';
+
 // Sections : sport + type (tennis, foot, hockey, basket × safe, fun, live)
-$sportOrder = ['tennis' => 0, 'football' => 1, 'hockey' => 2, 'basket' => 3];
+$sportOrder = ['tennis' => 0, 'football' => 1, 'hockey' => 2, 'basket' => 3, 'baseball' => 4];
 $typeOrder  = ['safe' => 0, 'fun' => 1, 'live' => 2];
 $sectionLabels = [
+    'tennis_safe_live' => '🎾 Tennis Safe & Live',
     'tennis_safe'   => '🎾 Tennis Safe',   'tennis_fun'   => '🎾 Tennis Fun',   'tennis_live'   => '🎾 Tennis Live',
     'football_safe' => '⚽ Foot Safe',     'football_fun' => '⚽ Foot Fun',     'football_live' => '⚽ Foot Live',
     'hockey_safe'   => '🏒 Hockey Safe',   'hockey_fun'   => '🏒 Hockey Fun',   'hockey_live'   => '🏒 Hockey Live',
     'basket_safe'   => '🏀 Basket Safe',   'basket_fun'   => '🏀 Basket Fun',   'basket_live'   => '🏀 Basket Live',
+    'baseball_safe' => '⚾ Baseball Safe', 'baseball_fun' => '⚾ Baseball Fun', 'baseball_live' => '⚾ Baseball Live',
 ];
+
+// 3 catégories principales + sous-catégories
+$categoriesConfig = [
+    'multisport' => [
+        'label'   => 'Multisports',
+        'sections' => ['football_safe', 'football_live', 'hockey_safe', 'hockey_live', 'basket_safe', 'basket_live', 'baseball_safe', 'baseball_live'],
+    ],
+    'tennis' => [
+        'label'   => 'Tennis',
+        'sections' => ['tennis_safe_live', 'tennis_fun'],
+    ],
+    'fun' => [
+        'label'   => 'Fun',
+        'sections' => ['football_fun', 'hockey_fun', 'basket_fun', 'baseball_fun'],
+    ],
+];
+
+/** Page historique publique : toutes les catégories visibles pour membres et non-membres (pas de filtre par rôle admin). */
+$visibleCategoryKeys = ['multisport', 'tennis', 'fun'];
+
 function betSectionKey($b) {
     $sport = $b['sport'] ?? null;
     if ($sport === null || $sport === '') $sport = (($b['categorie'] ?? 'multi') === 'tennis') ? 'tennis' : 'football';
     $sport = strtolower(trim($sport));
-    if (!in_array($sport, ['tennis','football','basket','hockey'], true)) $sport = 'football';
+    if (!in_array($sport, ['tennis','football','basket','hockey','baseball'], true)) $sport = 'football';
     $type = $b['type'] ?? 'safe';
     if (strpos($type, 'live') !== false) $t = 'live'; elseif (strpos($type, 'fun') !== false) $t = 'fun'; else $t = 'safe';
     return $sport . '_' . $t;
 }
+
 $sectionsBets = [];
 foreach ($bets as $b) {
     $key = betSectionKey($b);
     if (!isset($sectionsBets[$key])) $sectionsBets[$key] = [];
     $sectionsBets[$key][] = $b;
 }
+// Tennis : un seul signet Safe + Live (tickets et stats fusionnés)
+$sectionsBets['tennis_safe_live'] = array_merge($sectionsBets['tennis_safe'] ?? [], $sectionsBets['tennis_live'] ?? []);
+usort($sectionsBets['tennis_safe_live'], static function ($a, $b) {
+    $da = strtotime($a['date_resultat'] ?? $a['date_post'] ?? '1970-01-01');
+    $db = strtotime($b['date_resultat'] ?? $b['date_post'] ?? '1970-01-01');
+    return $db <=> $da;
+});
+
 function sectionStats($arr) {
     $g = count(array_filter($arr, fn($b) => $b['resultat'] === 'gagne'));
     $p = count(array_filter($arr, fn($b) => $b['resultat'] === 'perdu'));
     $a = count(array_filter($arr, fn($b) => $b['resultat'] === 'annule'));
     $total = count($arr);
     $taux = ($g + $p) > 0 ? round($g / ($g + $p) * 100) : null;
-    return ['gagnes' => $g, 'perdus' => $p, 'annules' => $a, 'total' => $total, 'taux' => $taux];
+    $cotes = array_filter(array_map(function($b) { $c = (float)str_replace(',', '.', $b['cote'] ?? 0); return $c > 0 ? $c : null; }, $arr));
+    $coteMoy = count($cotes) > 0 ? round(array_sum($cotes) / count($cotes), 2) : null;
+    return ['gagnes' => $g, 'perdus' => $p, 'annules' => $a, 'total' => $total, 'taux' => $taux, 'cote_moyenne' => $coteMoy];
 }
 $sectionStats = [];
 foreach ($sectionsBets as $key => $arr) {
     $sectionStats[$key] = sectionStats($arr);
 }
 
-$stats = $db->query("
-    SELECT 
-        SUM(resultat='gagne')  as gagnes,
-        SUM(resultat='perdu')  as perdus,
-        SUM(resultat='annule') as annules,
-        COUNT(*) as total
-    FROM bets WHERE resultat != 'en_cours'
-")->fetch();
+// Stats par catégorie (multisport, tennis, fun) pour cote moyenne et totaux
+$categoryStats = [];
+foreach ($categoriesConfig as $catKey => $config) {
+    $betsCat = [];
+    foreach ($config['sections'] as $sk) {
+        if (isset($sectionsBets[$sk])) $betsCat = array_merge($betsCat, $sectionsBets[$sk]);
+    }
+    $categoryStats[$catKey] = sectionStats($betsCat);
+}
+
+$stats = [
+    'gagnes'  => count(array_filter($bets, fn($b) => $b['resultat'] === 'gagne')),
+    'perdus'  => count(array_filter($bets, fn($b) => $b['resultat'] === 'perdu')),
+    'annules' => count(array_filter($bets, fn($b) => $b['resultat'] === 'annule')),
+    'total'   => count($bets),
+];
+$cotesGlob = array_filter(array_map(function($b) { $c = (float)str_replace(',', '.', $b['cote'] ?? 0); return $c > 0 ? $c : null; }, $bets));
+$stats['cote_moyenne'] = count($cotesGlob) > 0 ? round(array_sum($cotesGlob) / count($cotesGlob), 2) : null;
 
 $typeLabels = ['safe'=>'🛡️ Safe','fun'=>'🎯 Fun','live'=>'⚡ Live','safe,fun'=>'Safe+Fun','safe,live'=>'Safe+Live'];
 $typeColors = ['safe'=>'#00d4ff','fun'=>'#a855f7','live'=>'#ff2d78'];
@@ -67,12 +116,29 @@ $resultatConfig = [
     'annule' => ['label'=>'Annule', 'color'=>'#f59e0b', 'bg'=>'rgba(245,158,11,0.12)', 'border'=>'rgba(245,158,11,0.35)', 'icon'=>'↺',  'overlay'=>'rgba(245,158,11,0.1)', 'band'=>'linear-gradient(to bottom,#f59e0b,#d97706)'],
 ];
 
-$filtreSection = $_GET['section'] ?? 'tous';
-$filtre = $_GET['filtre'] ?? 'tous';
+// Catégorie courante pour afficher la ligne sous-catégories (multisport, tennis ou fun)
+$currentCategorie = null;
+if (isset($categoriesConfig[$filtreSection])) {
+    $currentCategorie = $filtreSection;
+} else {
+    foreach ($categoriesConfig as $catKey => $config) {
+        if (in_array($filtreSection, $config['sections'], true)) {
+            $currentCategorie = $catKey;
+            break;
+        }
+    }
+}
 
 if ($filtreSection !== 'tous' && isset($sectionsBets[$filtreSection])) {
     $betsFiltres = $sectionsBets[$filtreSection];
     $statsAffichage = $sectionStats[$filtreSection];
+    $tauxReussite = $statsAffichage['taux'];
+} elseif ($filtreSection !== 'tous' && isset($categoriesConfig[$filtreSection])) {
+    $betsFiltres = [];
+    foreach ($categoriesConfig[$filtreSection]['sections'] as $sk) {
+        if (isset($sectionsBets[$sk])) $betsFiltres = array_merge($betsFiltres, $sectionsBets[$sk]);
+    }
+    $statsAffichage = $categoryStats[$filtreSection] ?? $stats;
     $tauxReussite = $statsAffichage['taux'];
 } else {
     $betsFiltres = $bets;
@@ -162,6 +228,105 @@ if ($filtre !== 'tous') {
 $betsFiltres = array_values($betsFiltres);
 $betsPerPage = 18;
 $totalBets = count($betsFiltres);
+
+$chartBets = $betsPourChart;
+
+$parMois = [];
+foreach ($chartBets as $b) {
+    $d = $b['date_resultat'] ?? $b['date_post'] ?? null;
+    if (!$d) {
+        continue;
+    }
+    $moisKey = date('Y-m', strtotime($d));
+    if (!isset($parMois[$moisKey])) {
+        $parMois[$moisKey] = ['g' => 0, 'p' => 0, 'a' => 0];
+    }
+    if ($b['resultat'] === 'gagne') {
+        $parMois[$moisKey]['g']++;
+    } elseif ($b['resultat'] === 'perdu') {
+        $parMois[$moisKey]['p']++;
+    } elseif ($b['resultat'] === 'annule') {
+        $parMois[$moisKey]['a']++;
+    }
+}
+ksort($parMois);
+$chartMoisLabels = array_keys($parMois);
+$chartMoisG = array_column(array_values($parMois), 'g');
+$chartMoisP = array_column(array_values($parMois), 'p');
+$chartMoisA = array_column(array_values($parMois), 'a');
+$moisFr = ['01' => 'Jan', '02' => 'Fév', '03' => 'Mar', '04' => 'Avr', '05' => 'Mai', '06' => 'Juin', '07' => 'Juil', '08' => 'Aoû', '09' => 'Sep', '10' => 'Oct', '11' => 'Nov', '12' => 'Déc'];
+$chartMoisLabelsFr = array_map(static function ($k) use ($moisFr) {
+    $parts = explode('-', $k);
+    return ($moisFr[$parts[1] ?? ''] ?? ($parts[1] ?? '')) . ' ' . substr($parts[0] ?? '', 2);
+}, $chartMoisLabels);
+
+$chartWinrateLabels = [];
+$chartWinrateData = [];
+$cumG = 0;
+$cumP = 0;
+$chartBetsSorted = $chartBets;
+usort($chartBetsSorted, static function ($a, $b) {
+    $da = $a['date_resultat'] ?? $a['date_post'] ?? '2000-01-01';
+    $db = $b['date_resultat'] ?? $b['date_post'] ?? '2000-01-01';
+    return strcmp($da, $db);
+});
+$step = max(1, (int) floor(count($chartBetsSorted) / 30));
+foreach ($chartBetsSorted as $i => $b) {
+    if ($b['resultat'] === 'gagne') {
+        $cumG++;
+    } elseif ($b['resultat'] === 'perdu') {
+        $cumP++;
+    }
+    if (($i % $step === 0 || $i === count($chartBetsSorted) - 1) && ($cumG + $cumP) > 0) {
+        $d = $b['date_resultat'] ?? $b['date_post'] ?? '';
+        $chartWinrateLabels[] = $d ? date('d/m', strtotime($d)) : '#' . ($i + 1);
+        $chartWinrateData[] = round($cumG / ($cumG + $cumP) * 100, 1);
+    }
+}
+
+$currentStreak = 0;
+$currentStreakType = '';
+$bestStreak = 0;
+$tempStreak = 0;
+$cotesGagneesChart = [];
+foreach ($chartBetsSorted as $b) {
+    if ($b['resultat'] === 'gagne') {
+        $tempStreak++;
+        if ($tempStreak > $bestStreak) {
+            $bestStreak = $tempStreak;
+        }
+        $coteVal = (float) str_replace(',', '.', (string) ($b['cote'] ?? 0));
+        if ($coteVal > 0) {
+            $cotesGagneesChart[] = $coteVal;
+        }
+    } elseif ($b['resultat'] === 'perdu') {
+        $tempStreak = 0;
+    }
+}
+$reversed = array_reverse($chartBetsSorted);
+foreach ($reversed as $b) {
+    if ($b['resultat'] === 'gagne') {
+        $currentStreak++;
+        $currentStreakType = 'W';
+    } elseif ($b['resultat'] === 'perdu') {
+        if ($currentStreakType === '') {
+            $currentStreak = 1;
+            $currentStreakType = 'L';
+        }
+        break;
+    } else {
+        continue;
+    }
+    if ($currentStreakType === 'W') {
+        continue;
+    }
+    break;
+}
+$chartCoteMoyGagnes = count($cotesGagneesChart) > 0 ? round(array_sum($cotesGagneesChart) / count($cotesGagneesChart), 2) : 0;
+// Afficher la zone graphiques dès qu’il y a au moins 1 bet dans le périmètre (évite masquage avec 1–2 paris)
+$hasChartData = count($chartBets) >= 1;
+$hasWinrateSeries = count($chartWinrateLabels) >= 1;
+$hasMoisSeries = count($chartMoisLabels) > 0;
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -240,6 +405,8 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
 .filters-label{font-family:'Orbitron',sans-serif;font-size:0.68rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--txt3,#8a9bb0);margin-bottom:0.5rem;}
 .filters{display:flex;gap:0.5rem;flex-wrap:wrap;}
 .filters+.filters-label{margin-top:1rem;}
+.filters-categories .filters-label{font-size:0.72rem;letter-spacing:2.5px;color:#c8d4e0;}
+.filters-categories .filter-pill{font-size:0.95rem;font-weight:700;padding:0.62rem 1.2rem;border-width:1.5px;}
 .filter-pill{padding:0.5rem 1.1rem;border-radius:50px;font-family:'Rajdhani',sans-serif;font-size:0.88rem;font-weight:600;border:1px solid rgba(255,255,255,0.1);color:var(--txt3,#8a9bb0);cursor:pointer;transition:all .25s;text-decoration:none;background:transparent;display:inline-flex;align-items:center;gap:0.4rem;}
 .filter-pill:hover{border-color:rgba(255,255,255,0.25);color:var(--txt,#f0f4f8);}
 .filter-pill.active{color:#fff;border-color:transparent;box-shadow:0 0 20px rgba(255,45,120,0.15);}
@@ -252,6 +419,23 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
 .filter-pill.active.f-fun{background:rgba(168,85,247,0.15);border-color:rgba(168,85,247,0.4);color:#a855f7;}
 .filter-count{font-family:'Space Mono',monospace;font-size:0.68rem;padding:0.1rem 0.4rem;border-radius:50px;background:rgba(255,255,255,0.08);}
 .filter-pill.active .filter-count{background:rgba(255,255,255,0.15);}
+
+/* ═══ Graphiques Chart.js ═══ */
+.charts-band{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-bottom:2rem;}
+.chart-card{background:var(--card,#111827);border:1px solid var(--border,rgba(255,45,120,0.15));border-radius:14px;padding:1.2rem 1.4rem;position:relative;overflow:hidden;}
+.chart-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,#ff2d78,#00d4ff);opacity:0.5;}
+.chart-card-title{font-family:'Orbitron',sans-serif;font-size:0.65rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--txt3,#8a9bb0);margin-bottom:0.8rem;display:flex;align-items:center;gap:0.5rem;}
+.chart-box{position:relative;height:220px;min-height:200px;}
+.chart-box canvas{width:100%!important;height:100%!important;display:block;}
+.chart-fallback{font-size:0.9rem;color:var(--txt3,#8a9bb0);padding:1.5rem;text-align:center;line-height:1.5;}
+.stats-band{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:2rem;}
+.stat-box{background:var(--card,#111827);border:1px solid var(--border,rgba(255,45,120,0.15));border-radius:12px;padding:1rem 1.2rem;text-align:center;position:relative;overflow:hidden;}
+.stat-box::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;opacity:0.4;}
+.stat-box.streak::before{background:#ff2d78;}
+.stat-box.best::before{background:#d4af37;}
+.stat-box.cote::before{background:#00d4ff;}
+.stat-box-value{font-family:'Orbitron',sans-serif;font-size:1.6rem;font-weight:900;line-height:1.2;}
+.stat-box-label{font-size:0.7rem;color:var(--txt3,#8a9bb0);text-transform:uppercase;letter-spacing:1px;margin-top:0.3rem;}
 
 /* ═══ Cards historique — grille 3 colonnes ═══ */
 .hist-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(340px,100%),1fr));gap:1.2rem;}
@@ -459,6 +643,15 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
           <div class="mini-stat-lbl">Annules</div>
         </div>
       </div>
+      <?php $coteMoy = $statsAffichage['cote_moyenne'] ?? null; if ($coteMoy !== null): ?>
+      <div class="mini-stat" style="border-color:rgba(255,45,120,0.25);">
+        <span class="mini-stat-icon">📈</span>
+        <div>
+          <div class="mini-stat-val" style="color:#ff2d78"><?= number_format($coteMoy, 2, ',', ' ') ?></div>
+          <div class="mini-stat-lbl">Cote moy.</div>
+        </div>
+      </div>
+      <?php endif; ?>
     </div>
   </div>
 
@@ -475,28 +668,41 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
   </div>
   <?php endif; ?>
 
-  <!-- Filtre par section (taux de reussite par section) -->
+  <!-- Filtres : Multisports → Tennis → Fun (public : tous les visiteurs voient les mêmes données) -->
   <div class="filters-section">
-    <div class="filters-label">Section (taux de reussite)</div>
-    <div class="filters">
+    <div class="filters-label">Catégorie</div>
+    <div class="filters filters-categories">
       <?php $baseQuery = ($filtre !== 'tous' ? '&filtre='.$filtre : ''); ?>
       <a href="?section=tous<?= $baseQuery ?>" class="filter-pill f-tous <?= $filtreSection==='tous'?'active':'' ?>">Tous <span class="filter-count"><?= $stats['total'] ?? 0 ?></span></a>
-      <?php
-        $orderSections = ['tennis_safe','tennis_fun','tennis_live','football_safe','football_fun','football_live','hockey_safe','hockey_fun','hockey_live','basket_safe','basket_fun','basket_live'];
-        foreach ($orderSections as $sk):
-          if (!isset($sectionStats[$sk])) continue;
-          $st = $sectionStats[$sk];
-          $tauxStr = $st['taux'] !== null ? $st['taux'].'%' : '—';
+      <?php foreach ($visibleCategoryKeys as $catKey):
+        $config = $categoriesConfig[$catKey];
+        $stCat = $categoryStats[$catKey] ?? ['total' => 0, 'taux' => null];
+        $tauxStr = $stCat['taux'] !== null ? $stCat['taux'].'%' : '—';
+        $coteStr = isset($stCat['cote_moyenne']) && $stCat['cote_moyenne'] !== null ? ' · ' . number_format($stCat['cote_moyenne'], 2, ',', ' ') : '';
       ?>
-      <a href="?section=<?= urlencode($sk) ?><?= $baseQuery ?>" class="filter-pill <?= $filtreSection===$sk?'active':'' ?>"><?= $sectionLabels[$sk] ?? $sk ?> <span class="filter-count"><?= $st['total'] ?> · <?= $tauxStr ?></span></a>
+      <a href="?section=<?= urlencode($catKey) ?><?= $baseQuery ?>" class="filter-pill <?= $filtreSection===$catKey?'active':'' ?>"><?= htmlspecialchars($config['label']) ?> <span class="filter-count"><?= $stCat['total'] ?> · <?= $tauxStr ?><?= $coteStr ?></span></a>
       <?php endforeach; ?>
     </div>
-    <div class="filters-label" style="margin-top:0.8rem;">Resultat</div>
+    <?php if ($currentCategorie !== null): ?>
+    <div class="filters-label" style="margin-top:0.8rem;">Sous-catégorie — <?= $categoriesConfig[$currentCategorie]['label'] ?></div>
+    <div class="filters">
+      <a href="?section=<?= urlencode($currentCategorie) ?><?= $baseQuery ?>" class="filter-pill f-tous <?= $filtreSection === $currentCategorie ? 'active' : '' ?>">Toutes</a>
+      <?php foreach ($categoriesConfig[$currentCategorie]['sections'] as $sk):
+        if (!isset($sectionStats[$sk])) continue;
+        $st = $sectionStats[$sk];
+        $tauxStr = $st['taux'] !== null ? $st['taux'].'%' : '—';
+        $coteStr = isset($st['cote_moyenne']) && $st['cote_moyenne'] !== null ? ' · ' . number_format($st['cote_moyenne'], 2, ',', ' ') : '';
+      ?>
+      <a href="?section=<?= urlencode($sk) ?><?= $baseQuery ?>" class="filter-pill <?= $filtreSection === $sk ? 'active' : '' ?>"><?= $sectionLabels[$sk] ?? $sk ?> <span class="filter-count"><?= $st['total'] ?> · <?= $tauxStr ?><?= $coteStr ?></span></a>
+      <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+    <div class="filters-label" style="margin-top:0.8rem;">Résultat</div>
     <div class="filters">
       <a href="?section=<?= urlencode($filtreSection) ?>&filtre=tous" class="filter-pill f-tous <?= $filtre==='tous'?'active':'' ?>">Tous</a>
-      <a href="?section=<?= urlencode($filtreSection) ?>&filtre=gagne" class="filter-pill f-gagne <?= $filtre==='gagne'?'active':'' ?>">✅ Gagnes</a>
+      <a href="?section=<?= urlencode($filtreSection) ?>&filtre=gagne" class="filter-pill f-gagne <?= $filtre==='gagne'?'active':'' ?>">✅ Gagnés</a>
       <a href="?section=<?= urlencode($filtreSection) ?>&filtre=perdu" class="filter-pill f-perdu <?= $filtre==='perdu'?'active':'' ?>">❌ Perdus</a>
-      <a href="?section=<?= urlencode($filtreSection) ?>&filtre=annule" class="filter-pill f-annule <?= $filtre==='annule'?'active':'' ?>">↺ Annules</a>
+      <a href="?section=<?= urlencode($filtreSection) ?>&filtre=annule" class="filter-pill f-annule <?= $filtre==='annule'?'active':'' ?>">↺ Annulés</a>
     </div>
   </div>
 

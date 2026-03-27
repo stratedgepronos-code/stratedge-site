@@ -139,7 +139,7 @@ function envoyerEmailViaSmtp(string $to, string $subject, string $rawMessage, ?s
 /** Envoi email en texte brut (utilise SMTP si configuré, sinon mail()) — pour crypto, IPN, etc. */
 function envoyerEmailTexte(string $to, string $sujet, string $corpsTexte, ?string &$lastError = null): bool {
     $from    = 'noreply@stratedgepronos.fr';
-    $messageId = '<' . date('YmdHis') . '.' . bin2hex(random_bytes(6)) . '@stratedgepronos.fr>';
+    $messageId = '<msg-' . bin2hex(random_bytes(12)) . '-' . getmypid() . '@stratedgepronos.fr>';
     $date      = date('r');
     $subjectEnc = '=?UTF-8?B?' . base64_encode($sujet) . '?=';
     $headers  = "MIME-Version: 1.0\r\n";
@@ -174,7 +174,7 @@ function envoyerEmail(string $to, string $sujet, string $htmlBody, ?string &$las
     $from    = 'noreply@stratedgepronos.fr';
     $fromNom = 'StratEdge Pronos';
 
-    $messageId = '<' . date('YmdHis') . '.' . bin2hex(random_bytes(6)) . '@stratedgepronos.fr>';
+    $messageId = '<msg-' . bin2hex(random_bytes(12)) . '-' . getmypid() . '@stratedgepronos.fr>';
     $date      = date('r');
 
     $unsubUrl  = getUnsubscribeUrl($to);
@@ -223,27 +223,27 @@ function emailTemplate(string $titre, string $contenu, ?string $emailForUnsubscr
     $footerDesabonnement = '';
     if ($emailForUnsubscribe !== null && $emailForUnsubscribe !== '') {
         $urlDesabo = getUnsubscribeUrl($emailForUnsubscribe);
-        $footerDesabonnement = '<div style="margin-top:12px;"><a href="' . htmlspecialchars($urlDesabo) . '" style="color:#e8ecf0;font-size:12px;text-decoration:underline;">Se desabonner des notifications par email</a></div>';
+        $footerDesabonnement = '<div style="margin-top:12px;"><a href="' . htmlspecialchars($urlDesabo) . '" style="color:#ffffff;font-size:12px;text-decoration:underline;">Se desabonner des notifications par email</a></div>';
     }
     return '<!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>' . htmlspecialchars($titre) . '</title>
+<title>StratEdge</title>
 </head>
-<body style="margin:0;padding:0;background:#0a0e17;font-family:Arial,sans-serif;">
-<table width="100%" cellpadding="0" cellspacing="0" style="background:#0a0e17;padding:40px 20px;">
+<body style="margin:0;padding:0;background:#ffffff;font-family:Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f7;padding:40px 20px;">
   <tr><td align="center">
     <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;">
 
       <!-- Header -->
       <tr>
-        <td style="background:#140a14;border-radius:16px 16px 0 0;padding:30px;text-align:center;border-bottom:3px solid #ff2d78;">
+        <td style="background:#0a0e17;border-radius:16px 16px 0 0;padding:30px;text-align:center;border-bottom:3px solid #ff2d78;">
           <div style="font-size:24px;font-weight:900;color:#ff2d78;letter-spacing:2px;font-family:Arial,sans-serif;">
             STRATEDGE PRONOS
           </div>
-          <div style="color:#e8ecf0;font-size:14px;margin-top:5px;letter-spacing:1px;">
+          <div style="color:#ffffff;font-size:14px;margin-top:5px;letter-spacing:1px;">
             Ta strategie. Notre Edge. Leur defaite.
           </div>
         </td>
@@ -251,12 +251,12 @@ function emailTemplate(string $titre, string $contenu, ?string $emailForUnsubscr
 
       <!-- Content -->
       <tr>
-        <td style="background:#111827;padding:35px 40px;border-radius:0 0 16px 16px;">
+        <td style="background:#0a0e17;padding:35px 40px;border-radius:0 0 16px 16px;">
           ' . $contenu . '
           
           <!-- Footer -->
-          <div style="margin-top:30px;padding-top:20px;border-top:1px solid #1e293b;text-align:center;">
-            <p style="color:#e8ecf0;font-size:12px;margin:0;">
+          <div style="margin-top:30px;padding-top:20px;border-top:1px solid #2a3040;text-align:center;">
+            <p style="color:#ffffff;font-size:12px;margin:0;">
               &copy; 2025 StratEdge Pronos - Tous droits reserves<br>
               Les paris sportifs comportent des risques. Jouez de maniere responsable. Interdit aux -18 ans.
             </p>
@@ -278,27 +278,27 @@ function emailTemplate(string $titre, string $contenu, ?string $emailForUnsubscr
 // ── Email 1 : Bienvenue après inscription ─────────────────
 function emailBienvenue(string $email, string $nom, string $password = ''): bool { // $password conservé pour rétrocompatibilité mais NON utilisé
     $contenu = '
-        <h2 style="color:#f0f4f8;font-size:22px;margin:0 0 10px;">Bienvenue ' . htmlspecialchars($nom) . ' ! 🎉</h2>
-        <p style="color:#e0e5eb;font-size:15px;line-height:1.7;margin:0 0 25px;">
+        <h2 style="color:#ffffff;font-size:22px;margin:0 0 10px;">Bienvenue ' . htmlspecialchars($nom) . ' ! 🎉</h2>
+        <p style="color:#ffffff;font-size:15px;line-height:1.7;margin:0 0 25px;">
             Votre compte StratEdge Pronos a été créé avec succès. Conservez précieusement vos identifiants de connexion :
         </p>
 
         <!-- Identifiants -->
-        <div style="background:#1f1520;border:1px solid #4a1a2d;border-radius:12px;padding:20px 25px;margin-bottom:25px;">
-            <p style="color:#e8ecf0;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 15px;">🔐 Vos identifiants</p>
+        <div style="background:#1a1a2e;border:1px solid #333355;border-radius:12px;padding:20px 25px;margin-bottom:25px;">
+            <p style="color:#ffffff;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 15px;">🔐 Vos identifiants</p>
             <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td style="color:#e8ecf0;font-size:14px;padding:6px 0;width:140px;">Adresse email :</td>
-                    <td style="color:#f0f4f8;font-size:14px;font-weight:bold;">' . htmlspecialchars($email) . '</td>
+                    <td style="color:#ffffff;font-size:14px;padding:6px 0;width:140px;">Adresse email :</td>
+                    <td style="color:#ffffff;font-size:14px;font-weight:bold;">' . htmlspecialchars($email) . '</td>
                 </tr>
                 <tr>
-                    <td style="color:#e8ecf0;font-size:14px;padding:6px 0;">Mot de passe :</td>
+                    <td style="color:#ffffff;font-size:14px;padding:6px 0;">Mot de passe :</td>
                     <td style="color:#ff2d78;font-size:14px;font-weight:bold;font-family:monospace;">Celui que vous avez choisi à l\'inscription</td>
                 </tr>
             </table>
         </div>
 
-        <p style="color:#e0e5eb;font-size:14px;line-height:1.7;margin:0 0 25px;">
+        <p style="color:#ffffff;font-size:14px;line-height:1.7;margin:0 0 25px;">
             Pour accéder aux bets, souscrivez à l\'une de nos formules depuis votre espace membre.
         </p>
 
@@ -311,19 +311,19 @@ function emailBienvenue(string $email, string $nom, string $password = ''): bool
         </div>
 
         <!-- Formules -->
-        <div style="background:#1a2030;border-radius:10px;padding:15px 20px;margin-top:20px;">
-            <p style="color:#e8ecf0;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 12px;">💡 Nos formules</p>
+        <div style="background:#1a1a2e;border-radius:10px;padding:15px 20px;margin-top:20px;">
+            <p style="color:#ffffff;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 12px;">💡 Nos formules</p>
             <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td style="color:#e0e5eb;font-size:14px;padding:4px 0;">⚡ Daily — Prochain bet</td>
+                    <td style="color:#ffffff;font-size:14px;padding:4px 0;">⚡ Daily — Prochain bet</td>
                     <td style="color:#ff2d78;font-weight:bold;font-size:14px;text-align:right;">4,50€</td>
                 </tr>
                 <tr>
-                    <td style="color:#e0e5eb;font-size:14px;padding:4px 0;">📅 Week-End — Vendredi au dimanche</td>
+                    <td style="color:#ffffff;font-size:14px;padding:4px 0;">📅 Week-End — Vendredi au dimanche</td>
                     <td style="color:#ff2d78;font-weight:bold;font-size:14px;text-align:right;">10€</td>
                 </tr>
                 <tr>
-                    <td style="color:#e0e5eb;font-size:14px;padding:4px 0;">🏆 Weekly — 7 jours glissants</td>
+                    <td style="color:#ffffff;font-size:14px;padding:4px 0;">🏆 Weekly — 7 jours glissants</td>
                     <td style="color:#ff2d78;font-weight:bold;font-size:14px;text-align:right;">20€</td>
                 </tr>
             </table>
@@ -350,6 +350,13 @@ function emailConfirmationAbonnement(string $email, string $nom, string $type): 
             'contenu'    => 'Accès aux bets Safe & Fun + envoi des bets LIVE par SMS',
             'conditions' => 'Votre accès est valable pour le week-end en cours (vendredi 00h00 → dimanche 23h59), peu importe l\'heure d\'achat. Aucune reconduction automatique.',
         ],
+        'weekend_fun' => [
+            'label'      => '📅 Week-End + Fun bets',
+            'montant'    => '20€',
+            'duree'      => 'Du vendredi 00h00 au dimanche 23h59',
+            'contenu'    => 'Accès bets Safe & Fun (formule avec supplément) + bets LIVE',
+            'conditions' => 'Votre accès est valable pour le week-end en cours (vendredi 00h00 → dimanche 23h59). Aucune reconduction automatique.',
+        ],
         'weekly' => [
             'label'      => '🏆 Weekly — 7 jours',
             'montant'    => '20€',
@@ -363,35 +370,35 @@ function emailConfirmationAbonnement(string $email, string $nom, string $type): 
     $dateAchat = date('d/m/Y à H:i');
 
     $contenu = '
-        <h2 style="color:#f0f4f8;font-size:22px;margin:0 0 10px;">Abonnement confirmé ! ✅</h2>
-        <p style="color:#e0e5eb;font-size:15px;line-height:1.7;margin:0 0 25px;">
-            Bonjour <strong style="color:#f0f4f8;">' . htmlspecialchars($nom) . '</strong>,<br>
+        <h2 style="color:#ffffff;font-size:22px;margin:0 0 10px;">Abonnement confirmé ! ✅</h2>
+        <p style="color:#ffffff;font-size:15px;line-height:1.7;margin:0 0 25px;">
+            Bonjour <strong style="color:#ffffff;">' . htmlspecialchars($nom) . '</strong>,<br>
             Votre paiement a été validé. Votre accès aux bets StratEdge est maintenant actif.
         </p>
 
         <!-- Récapitulatif abonnement -->
-        <div style="background:#1f1520;border:1px solid #4a1a2d;border-radius:12px;padding:20px 25px;margin-bottom:25px;">
-            <p style="color:#e8ecf0;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 15px;">📋 Récapitulatif de votre abonnement</p>
+        <div style="background:#1a1a2e;border:1px solid #333355;border-radius:12px;padding:20px 25px;margin-bottom:25px;">
+            <p style="color:#ffffff;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 15px;">📋 Récapitulatif de votre abonnement</p>
             <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td style="color:#e8ecf0;font-size:14px;padding:6px 0;width:160px;">Formule :</td>
+                    <td style="color:#ffffff;font-size:14px;padding:6px 0;width:160px;">Formule :</td>
                     <td style="color:#ff2d78;font-size:15px;font-weight:bold;">' . $info['label'] . '</td>
                 </tr>
                 <tr>
-                    <td style="color:#e8ecf0;font-size:14px;padding:6px 0;">Montant payé :</td>
-                    <td style="color:#f0f4f8;font-size:14px;font-weight:bold;">' . $info['montant'] . '</td>
+                    <td style="color:#ffffff;font-size:14px;padding:6px 0;">Montant payé :</td>
+                    <td style="color:#ffffff;font-size:14px;font-weight:bold;">' . $info['montant'] . '</td>
                 </tr>
                 <tr>
-                    <td style="color:#e8ecf0;font-size:14px;padding:6px 0;">Date d\'achat :</td>
-                    <td style="color:#f0f4f8;font-size:14px;">' . $dateAchat . '</td>
+                    <td style="color:#ffffff;font-size:14px;padding:6px 0;">Date d\'achat :</td>
+                    <td style="color:#ffffff;font-size:14px;">' . $dateAchat . '</td>
                 </tr>
                 <tr>
-                    <td style="color:#e8ecf0;font-size:14px;padding:6px 0;">Durée :</td>
-                    <td style="color:#f0f4f8;font-size:14px;">' . $info['duree'] . '</td>
+                    <td style="color:#ffffff;font-size:14px;padding:6px 0;">Durée :</td>
+                    <td style="color:#ffffff;font-size:14px;">' . $info['duree'] . '</td>
                 </tr>
                 <tr>
-                    <td style="color:#e8ecf0;font-size:14px;padding:6px 0;">Accès inclus :</td>
-                    <td style="color:#f0f4f8;font-size:14px;">' . $info['contenu'] . '</td>
+                    <td style="color:#ffffff;font-size:14px;padding:6px 0;">Accès inclus :</td>
+                    <td style="color:#ffffff;font-size:14px;">' . $info['contenu'] . '</td>
                 </tr>
             </table>
         </div>
@@ -405,9 +412,9 @@ function emailConfirmationAbonnement(string $email, string $nom, string $type): 
         </div>
 
         <!-- Conditions -->
-        <div style="background:#1a2030;border:1px solid #2a3045;border-radius:10px;padding:15px 20px;margin-top:20px;">
-            <p style="color:#e8ecf0;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 8px;">📌 Conditions d\'utilisation</p>
-            <p style="color:#e8ecf0;font-size:13px;line-height:1.6;margin:0;">
+        <div style="background:#1a1a2e;border:1px solid #333355;border-radius:10px;padding:15px 20px;margin-top:20px;">
+            <p style="color:#ffffff;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 8px;">📌 Conditions d\'utilisation</p>
+            <p style="color:#ffffff;font-size:13px;line-height:1.6;margin:0;">
                 ' . $info['conditions'] . '<br><br>
                 En cas de problème, contactez le support via votre espace membre ou à 
                 <a href="mailto:stratedgepronos@gmail.com" style="color:#ff2d78;">stratedgepronos@gmail.com</a>.
@@ -424,20 +431,20 @@ function emailNouveauBet(string $email, string $nom, string $typeBet, string $ti
     $titreLine  = $titrebet ? '<strong style="color:#ff2d78;">' . htmlspecialchars($titrebet) . '</strong>' : 'une nouvelle analyse';
 
     $contenu = '
-        <h2 style="color:#f0f4f8;font-size:22px;margin:0 0 10px;">🔥 Nouveau bet disponible !</h2>
-        <p style="color:#e0e5eb;font-size:15px;line-height:1.7;margin:0 0 20px;">
-            Bonjour <strong style="color:#f0f4f8;">' . htmlspecialchars($nom) . '</strong>,<br>
+        <h2 style="color:#ffffff;font-size:22px;margin:0 0 10px;">🔥 Nouveau bet disponible !</h2>
+        <p style="color:#ffffff;font-size:15px;line-height:1.7;margin:0 0 20px;">
+            Bonjour <strong style="color:#ffffff;">' . htmlspecialchars($nom) . '</strong>,<br>
             Un nouveau bet vient d\'être posté sur StratEdge Pronos. Connecte-toi maintenant pour y accéder !
         </p>
-        <div style="background:#211520;border:1px solid #551d30;border-radius:12px;padding:20px 25px;margin-bottom:25px;">
-            <p style="color:#e8ecf0;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 12px;">📊 Détails du bet</p>
+        <div style="background:#1a1a2e;border:1px solid #333355;border-radius:12px;padding:20px 25px;margin-bottom:25px;">
+            <p style="color:#ffffff;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 12px;">📊 Détails du bet</p>
             <table width="100%" cellpadding="0" cellspacing="0">
-                <tr><td style="color:#e8ecf0;font-size:14px;padding:5px 0;width:120px;">Analyse :</td>
-                    <td style="color:#f0f4f8;font-size:14px;">' . $titreLine . '</td></tr>
-                <tr><td style="color:#e8ecf0;font-size:14px;padding:5px 0;">Type :</td>
+                <tr><td style="color:#ffffff;font-size:14px;padding:5px 0;width:120px;">Analyse :</td>
+                    <td style="color:#ffffff;font-size:14px;">' . $titreLine . '</td></tr>
+                <tr><td style="color:#ffffff;font-size:14px;padding:5px 0;">Type :</td>
                     <td style="color:#ff2d78;font-size:14px;font-weight:bold;">' . $typeLabel . '</td></tr>
-                <tr><td style="color:#e8ecf0;font-size:14px;padding:5px 0;">Posté le :</td>
-                    <td style="color:#f0f4f8;font-size:14px;">' . date('d/m/Y à H:i') . '</td></tr>
+                <tr><td style="color:#ffffff;font-size:14px;padding:5px 0;">Posté le :</td>
+                    <td style="color:#ffffff;font-size:14px;">' . date('d/m/Y à H:i') . '</td></tr>
             </table>
         </div>
         <div style="text-align:center;margin:25px 0;">
@@ -446,7 +453,7 @@ function emailNouveauBet(string $email, string $nom, string $typeBet, string $ti
                 🔥 Voir le bet maintenant →
             </a>
         </div>
-        <p style="color:#e8ecf0;font-size:13px;text-align:center;line-height:1.6;">
+        <p style="color:#ffffff;font-size:13px;text-align:center;line-height:1.6;">
             Votre abonnement est actif — profitez-en !<br>
             <a href="https://stratedgepronos.fr/bets.php" style="color:#ff2d78;">stratedgepronos.fr/bets.php</a>
         </p>';
@@ -460,25 +467,25 @@ function emailAbonnementExpire(string $email, string $nom, string $type): bool {
     $typeLabel  = $typeLabels[$type] ?? $type;
 
     $contenu = '
-        <h2 style="color:#f0f4f8;font-size:22px;margin:0 0 10px;">⏰ Votre abonnement est terminé</h2>
-        <p style="color:#e0e5eb;font-size:15px;line-height:1.7;margin:0 0 20px;">
-            Bonjour <strong style="color:#f0f4f8;">' . htmlspecialchars($nom) . '</strong>,<br>
+        <h2 style="color:#ffffff;font-size:22px;margin:0 0 10px;">⏰ Votre abonnement est terminé</h2>
+        <p style="color:#ffffff;font-size:15px;line-height:1.7;margin:0 0 20px;">
+            Bonjour <strong style="color:#ffffff;">' . htmlspecialchars($nom) . '</strong>,<br>
             Votre abonnement <strong style="color:#ff2d78;">' . $typeLabel . '</strong> a expiré.
             Les prochains bets seront de nouveau verrouillés pour vous.
         </p>
-        <div style="background:#1a2030;border:1px solid #2a3045;border-radius:12px;padding:20px 25px;margin-bottom:25px;">
-            <p style="color:#e8ecf0;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 15px;">🔓 Revenez avec nos formules</p>
+        <div style="background:#1a1a2e;border:1px solid #333355;border-radius:12px;padding:20px 25px;margin-bottom:25px;">
+            <p style="color:#ffffff;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 15px;">🔓 Revenez avec nos formules</p>
             <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td style="color:#e0e5eb;font-size:14px;padding:6px 0;">⚡ Daily — Prochain bet</td>
+                    <td style="color:#ffffff;font-size:14px;padding:6px 0;">⚡ Daily — Prochain bet</td>
                     <td style="color:#ff2d78;font-weight:bold;font-size:14px;text-align:right;">4,50€</td>
                 </tr>
                 <tr>
-                    <td style="color:#e0e5eb;font-size:14px;padding:6px 0;">📅 Week-End — Ven → Dim</td>
+                    <td style="color:#ffffff;font-size:14px;padding:6px 0;">📅 Week-End — Ven → Dim</td>
                     <td style="color:#ff2d78;font-weight:bold;font-size:14px;text-align:right;">10€</td>
                 </tr>
                 <tr>
-                    <td style="color:#e0e5eb;font-size:14px;padding:6px 0;">🏆 Weekly — 7 jours</td>
+                    <td style="color:#ffffff;font-size:14px;padding:6px 0;">🏆 Weekly — 7 jours</td>
                     <td style="color:#ff2d78;font-weight:bold;font-size:14px;text-align:right;">20€</td>
                 </tr>
             </table>
@@ -489,8 +496,8 @@ function emailAbonnementExpire(string $email, string $nom, string $type): bool {
                 🔒 Me réabonner maintenant →
             </a>
         </div>
-        <div style="background:#1d1218;border-radius:10px;padding:15px;text-align:center;">
-            <p style="color:#e8ecf0;font-size:13px;margin:0;">
+        <div style="background:#1a1a2e;border-radius:10px;padding:15px;text-align:center;">
+            <p style="color:#ffffff;font-size:13px;margin:0;">
                 Ne ratez pas les prochaines analyses — les bets sont réguliers et exclusifs.<br>
                 <strong style="color:#ff2d78;">Rejoignez les gagnants sur StratEdge Pronos.</strong>
             </p>
@@ -509,14 +516,14 @@ function emailResultatBet(string $email, string $nom, string $titre, string $res
     $color  = $colors[$resultat] ?? '#8a9bb0';
 
     $contenu = '
-        <h2 style="color:#f0f4f8;font-size:22px;margin:0 0 10px;">' . $icon . ' Résultat du bet</h2>
-        <p style="color:#e0e5eb;font-size:15px;line-height:1.7;margin:0 0 20px;">
-            Bonjour <strong style="color:#f0f4f8;">' . htmlspecialchars($nom) . '</strong>,<br>
+        <h2 style="color:#ffffff;font-size:22px;margin:0 0 10px;">' . $icon . ' Résultat du bet</h2>
+        <p style="color:#ffffff;font-size:15px;line-height:1.7;margin:0 0 20px;">
+            Bonjour <strong style="color:#ffffff;">' . htmlspecialchars($nom) . '</strong>,<br>
             Le résultat de l\'analyse suivante vient d\'être publié :
         </p>
-        <div style="background:#1a2030;border:1px solid #2a3045;border-radius:12px;padding:20px 25px;margin-bottom:25px;text-align:center;">
-            <p style="color:#e8ecf0;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin:0 0 10px;">Analyse</p>
-            <p style="color:#f0f4f8;font-size:18px;font-weight:700;margin:0 0 15px;">' . htmlspecialchars($titre ?: 'Bet StratEdge') . '</p>
+        <div style="background:#1a1a2e;border:1px solid #333355;border-radius:12px;padding:20px 25px;margin-bottom:25px;text-align:center;">
+            <p style="color:#ffffff;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin:0 0 10px;">Analyse</p>
+            <p style="color:#ffffff;font-size:18px;font-weight:700;margin:0 0 15px;">' . htmlspecialchars($titre ?: 'Bet StratEdge') . '</p>
             <span style="background:' . $color . '22;border:2px solid ' . $color . ';color:' . $color . ';border-radius:8px;padding:8px 24px;font-family:monospace;font-size:1.3rem;font-weight:900;letter-spacing:3px;">' . $icon . ' ' . $label . '</span>
         </div>
         <div style="text-align:center;margin:25px 0;">
@@ -532,18 +539,18 @@ function emailResultatBet(string $email, string $nom, string $titre, string $res
 // ── Email 6 : Réponse ticket SAV ──────────────────────────
 function emailReponseTicket(string $email, string $nom, string $sujet, string $reponse): bool {
     $contenu = '
-        <h2 style="color:#f0f4f8;font-size:22px;margin:0 0 10px;">🎫 Réponse à ton ticket</h2>
-        <p style="color:#e0e5eb;font-size:15px;line-height:1.7;margin:0 0 20px;">
-            Bonjour <strong style="color:#f0f4f8;">' . htmlspecialchars($nom) . '</strong>,<br>
+        <h2 style="color:#ffffff;font-size:22px;margin:0 0 10px;">🎫 Réponse à ton ticket</h2>
+        <p style="color:#ffffff;font-size:15px;line-height:1.7;margin:0 0 20px;">
+            Bonjour <strong style="color:#ffffff;">' . htmlspecialchars($nom) . '</strong>,<br>
             L\'équipe StratEdge a répondu à ton ticket :
         </p>
-        <div style="background:#1a2030;border:1px solid #2a3045;border-radius:12px;padding:15px 20px;margin-bottom:10px;">
-            <p style="color:#e8ecf0;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 6px;">Sujet</p>
+        <div style="background:#1a1a2e;border:1px solid #333355;border-radius:12px;padding:15px 20px;margin-bottom:10px;">
+            <p style="color:#ffffff;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 6px;">Sujet</p>
             <p style="color:#fff;font-weight:700;margin:0;">' . htmlspecialchars($sujet) . '</p>
         </div>
-        <div style="background:#152520;border-left:3px solid #00d46a;border-radius:0 10px 10px 0;padding:15px 20px;margin-bottom:25px;">
-            <p style="color:#e8ecf0;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 8px;">Réponse</p>
-            <p style="color:#e2e8f0;font-size:14px;line-height:1.7;margin:0;">' . nl2br(htmlspecialchars($reponse)) . '</p>
+        <div style="background:#1a1a2e;border-left:3px solid #00d46a;border-radius:0 10px 10px 0;padding:15px 20px;margin-bottom:25px;">
+            <p style="color:#ffffff;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 8px;">Réponse</p>
+            <p style="color:#ffffff;font-size:14px;line-height:1.7;margin:0;">' . nl2br(htmlspecialchars($reponse)) . '</p>
         </div>
         <div style="text-align:center;">
             <a href="https://stratedgepronos.fr/sav.php"
@@ -558,12 +565,12 @@ function emailReponseTicket(string $email, string $nom, string $sujet, string $r
 // ── Email 7 : Nouveau message chat ────────────────────────
 function emailNouveauMessageChat(string $email, string $nom, string $contenuMsg): bool {
     $contenu = '
-        <h2 style="color:#f0f4f8;font-size:22px;margin:0 0 10px;">💬 Nouveau message</h2>
-        <p style="color:#e0e5eb;font-size:15px;line-height:1.7;margin:0 0 20px;">
-            Bonjour <strong style="color:#f0f4f8;">' . htmlspecialchars($nom) . '</strong>,<br>
+        <h2 style="color:#ffffff;font-size:22px;margin:0 0 10px;">💬 Nouveau message</h2>
+        <p style="color:#ffffff;font-size:15px;line-height:1.7;margin:0 0 20px;">
+            Bonjour <strong style="color:#ffffff;">' . htmlspecialchars($nom) . '</strong>,<br>
             L\'équipe StratEdge t\'a envoyé un message :
         </p>
-        <div style="background:#152520;border-left:3px solid #00d46a;border-radius:0 10px 10px 0;padding:15px 20px;margin-bottom:25px;">
+        <div style="background:#1a1a2e;border-left:3px solid #00d46a;border-radius:0 10px 10px 0;padding:15px 20px;margin-bottom:25px;">
             ' . nl2br(htmlspecialchars($contenuMsg)) . '
         </div>
         <div style="text-align:center;">
@@ -582,12 +589,12 @@ function emailResetPassword(string $email, string $nom, string $token): bool {
     $lien = SITE_URL . '/reset-password.php?token=' . urlencode($token);
 
     $contenu = '
-        <h2 style="color:#f0f4f8;font-size:22px;margin:0 0 10px;">🔑 Mot de passe</h2>
-        <p style="color:#e0e5eb;font-size:15px;line-height:1.7;margin:0 0 20px;">
-            Bonjour <strong style="color:#f0f4f8;">' . htmlspecialchars($nom) . '</strong>,<br>
+        <h2 style="color:#ffffff;font-size:22px;margin:0 0 10px;">🔑 Mot de passe</h2>
+        <p style="color:#ffffff;font-size:15px;line-height:1.7;margin:0 0 20px;">
+            Bonjour <strong style="color:#ffffff;">' . htmlspecialchars($nom) . '</strong>,<br>
             Une demande de modification de mot de passe a bien été enregistrée sur ton compte StratEdge Pronos.
         </p>
-        <p style="color:#e0e5eb;font-size:15px;line-height:1.7;margin:0 0 25px;">
+        <p style="color:#ffffff;font-size:15px;line-height:1.7;margin:0 0 25px;">
             Clique sur le bouton ci-dessous pour choisir un nouveau mot de passe :
         </p>
         <div style="text-align:center;margin:25px 0;">
@@ -596,13 +603,13 @@ function emailResetPassword(string $email, string $nom, string $token): bool {
                 Modifier mon mot de passe
             </a>
         </div>
-        <div style="background:#1f1520;border:1px solid #4a1a2d;border-radius:12px;padding:20px 25px;margin-bottom:20px;">
-            <p style="color:#e8ecf0;font-size:13px;margin:0 0 8px;">⏳ <strong style="color:#f0f4f8;">Ce lien expire dans 30 minutes.</strong></p>
-            <p style="color:#e8ecf0;font-size:13px;margin:0;">
+        <div style="background:#1a1a2e;border:1px solid #333355;border-radius:12px;padding:20px 25px;margin-bottom:20px;">
+            <p style="color:#ffffff;font-size:13px;margin:0 0 8px;">⏳ <strong style="color:#ffffff;">Ce lien expire dans 30 minutes.</strong></p>
+            <p style="color:#ffffff;font-size:13px;margin:0;">
                 Si tu n\'as pas fait cette demande, ignore simplement cet email. Ton compte reste en toute sécurité.
             </p>
         </div>
-        <p style="color:#e8ecf0;font-size:13px;margin:0;">
+        <p style="color:#ffffff;font-size:13px;margin:0;">
             Lien direct : <a href="' . htmlspecialchars($lien) . '" style="color:#ff2d78;word-break:break-all;">' . htmlspecialchars($lien) . '</a>
         </p>';
 
@@ -613,25 +620,25 @@ function emailResetPassword(string $email, string $nom, string $token): bool {
 function emailChangementEmail(string $ancienEmail, string $nom, string $nouvelEmail): bool {
 
     $contenu = '
-        <h2 style="color:#f0f4f8;font-size:22px;margin:0 0 10px;">📧 Changement d\'adresse email</h2>
-        <p style="color:#e0e5eb;font-size:15px;line-height:1.7;margin:0 0 20px;">
-            Bonjour <strong style="color:#f0f4f8;">' . htmlspecialchars($nom) . '</strong>,<br>
+        <h2 style="color:#ffffff;font-size:22px;margin:0 0 10px;">📧 Changement d\'adresse email</h2>
+        <p style="color:#ffffff;font-size:15px;line-height:1.7;margin:0 0 20px;">
+            Bonjour <strong style="color:#ffffff;">' . htmlspecialchars($nom) . '</strong>,<br>
             Ton adresse email a bien été modifiée sur StratEdge Pronos.
         </p>
-        <div style="background:#1f1520;border:1px solid #4a1a2d;border-radius:12px;padding:20px 25px;margin-bottom:25px;">
-            <p style="color:#e8ecf0;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 15px;">📋 Modification</p>
+        <div style="background:#1a1a2e;border:1px solid #333355;border-radius:12px;padding:20px 25px;margin-bottom:25px;">
+            <p style="color:#ffffff;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 15px;">📋 Modification</p>
             <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td style="color:#e8ecf0;font-size:14px;padding:6px 0;width:160px;">Ancienne adresse :</td>
-                    <td style="color:#f0f4f8;font-size:14px;font-weight:bold;">' . htmlspecialchars($ancienEmail) . '</td>
+                    <td style="color:#ffffff;font-size:14px;padding:6px 0;width:160px;">Ancienne adresse :</td>
+                    <td style="color:#ffffff;font-size:14px;font-weight:bold;">' . htmlspecialchars($ancienEmail) . '</td>
                 </tr>
                 <tr>
-                    <td style="color:#e8ecf0;font-size:14px;padding:6px 0;">Nouvelle adresse :</td>
+                    <td style="color:#ffffff;font-size:14px;padding:6px 0;">Nouvelle adresse :</td>
                     <td style="color:#ff2d78;font-size:14px;font-weight:bold;">' . htmlspecialchars($nouvelEmail) . '</td>
                 </tr>
             </table>
         </div>
-        <p style="color:#e0e5eb;font-size:14px;line-height:1.7;margin:0 0 25px;">
+        <p style="color:#ffffff;font-size:14px;line-height:1.7;margin:0 0 25px;">
             Si tu es bien l\'auteur de cette modification, aucune action n\'est requise.<br>
             Si ce changement ne vient pas de toi, contacte le support via le SAV.
         </p>
@@ -649,19 +656,19 @@ function emailChangementEmail(string $ancienEmail, string $nom, string $nouvelEm
 function emailAnniversaireCodePromo(string $email, string $nom, string $codePromo): bool {
     $lienOffres = (defined('SITE_URL') ? rtrim(SITE_URL, '/') : 'https://stratedgepronos.fr') . '/offres.php';
     $contenu = '
-        <h2 style="color:#f0f4f8;font-size:22px;margin:0 0 10px;">🎂 Joyeux anniversaire !</h2>
-        <p style="color:#e0e5eb;font-size:15px;line-height:1.7;margin:0 0 20px;">
-            Bonjour <strong style="color:#f0f4f8;">' . htmlspecialchars($nom) . '</strong>,<br>
+        <h2 style="color:#ffffff;font-size:22px;margin:0 0 10px;">🎂 Joyeux anniversaire !</h2>
+        <p style="color:#ffffff;font-size:15px;line-height:1.7;margin:0 0 20px;">
+            Bonjour <strong style="color:#ffffff;">' . htmlspecialchars($nom) . '</strong>,<br>
             Toute l\'équipe StratEdge te souhaite un très bon anniversaire. 🎉
         </p>
-        <div style="background:#211520;border:1px solid #551d30;border-radius:12px;padding:22px 25px;margin-bottom:25px;">
-            <p style="color:#e8ecf0;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 12px;">🎁 Ton code promo anniversaire</p>
-            <p style="color:#f0f4f8;font-size:18px;font-weight:700;margin:0 0 8px;letter-spacing:1px;">' . htmlspecialchars($codePromo) . '</p>
-            <p style="color:#e8ecf0;font-size:14px;margin:0 0 12px;">
-                • <strong style="color:#f0f4f8;">-50%</strong> sur les formules Tennis, Daily, Weekly et Week-end<br>
-                • <strong style="color:#f0f4f8;">-25%</strong> sur l\'offre VIP Max
+        <div style="background:#1a1a2e;border:1px solid #333355;border-radius:12px;padding:22px 25px;margin-bottom:25px;">
+            <p style="color:#ffffff;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin:0 0 12px;">🎁 Ton code promo anniversaire</p>
+            <p style="color:#ffffff;font-size:18px;font-weight:700;margin:0 0 8px;letter-spacing:1px;">' . htmlspecialchars($codePromo) . '</p>
+            <p style="color:#ffffff;font-size:14px;margin:0 0 12px;">
+                • <strong style="color:#ffffff;">-50%</strong> sur les formules Tennis, Daily, Weekly et Week-end<br>
+                • <strong style="color:#ffffff;">-25%</strong> sur l\'offre VIP Max
             </p>
-            <p style="color:#e8ecf0;font-size:13px;margin:0;">Valable <strong>une seule fois</strong> cette année. Saisis ce code sur la page de paiement de l\'offre choisie.</p>
+            <p style="color:#ffffff;font-size:13px;margin:0;">Valable <strong>une seule fois</strong> cette année. Saisis ce code sur la page de paiement de l\'offre choisie.</p>
         </div>
         <div style="text-align:center;margin:25px 0;">
             <a href="' . htmlspecialchars($lienOffres) . '"
@@ -669,7 +676,7 @@ function emailAnniversaireCodePromo(string $email, string $nom, string $codeProm
                 Voir les offres →
             </a>
         </div>
-        <p style="color:#e8ecf0;font-size:13px;margin:20px 0 0;">À très vite sur StratEdge Pronos ! ⚡</p>';
+        <p style="color:#ffffff;font-size:13px;margin:20px 0 0;">À très vite sur StratEdge Pronos ! ⚡</p>';
 
     return envoyerEmail($email, '🎂 Joyeux anniversaire — Ton code promo StratEdge', emailTemplate('Anniversaire', $contenu, $email));
 }
@@ -678,9 +685,9 @@ function emailAnniversaireCodePromo(string $email, string $nom, string $codeProm
 function emailMontanteDemarrage(string $email, string $nom, array $config): bool {
     $montant = number_format((float)($config['bankroll_initial'] ?? 100), 2, ',', ' ');
     $contenu = '
-        <h2 style="color:#f0f4f8;font-size:22px;margin:0 0 10px;">🎾 Nouvelle Montante Tennis</h2>
-        <p style="color:#e0e5eb;font-size:15px;line-height:1.7;margin:0 0 20px;">
-            Bonjour <strong style="color:#f0f4f8;">' . htmlspecialchars($nom) . '</strong>,<br>
+        <h2 style="color:#ffffff;font-size:22px;margin:0 0 10px;">🎾 Nouvelle Montante Tennis</h2>
+        <p style="color:#ffffff;font-size:15px;line-height:1.7;margin:0 0 20px;">
+            Bonjour <strong style="color:#ffffff;">' . htmlspecialchars($nom) . '</strong>,<br>
             Une nouvelle montante Tennis vient de démarrer sur StratEdge. Montant visé : <strong style="color:#00d46a;">' . $montant . ' €</strong>.
         </p>
         <div style="text-align:center;margin:25px 0;">
@@ -697,9 +704,9 @@ function emailMontanteNouvelleEtape(string $email, string $nom, array $step, arr
     $match = htmlspecialchars($step['match_desc'] ?? 'Nouveau prono');
     $stepNum = (int)($step['step_number'] ?? 1);
     $contenu = '
-        <h2 style="color:#f0f4f8;font-size:22px;margin:0 0 10px;">⚡ Step ' . $stepNum . ' — Montante Tennis</h2>
-        <p style="color:#e0e5eb;font-size:15px;line-height:1.7;margin:0 0 20px;">
-            Bonjour <strong style="color:#f0f4f8;">' . htmlspecialchars($nom) . '</strong>,<br>
+        <h2 style="color:#ffffff;font-size:22px;margin:0 0 10px;">⚡ Step ' . $stepNum . ' — Montante Tennis</h2>
+        <p style="color:#ffffff;font-size:15px;line-height:1.7;margin:0 0 20px;">
+            Bonjour <strong style="color:#ffffff;">' . htmlspecialchars($nom) . '</strong>,<br>
             Nouvelle étape : <strong style="color:#00d4ff;">' . $match . '</strong>
         </p>
         <div style="text-align:center;margin:25px 0;">
@@ -720,9 +727,9 @@ function emailMontanteResultat(string $email, string $nom, array $step, array $c
     $match = htmlspecialchars($step['match_desc'] ?? 'Prono');
     $stepNum = (int)($step['step_number'] ?? 0);
     $contenu = '
-        <h2 style="color:#f0f4f8;font-size:22px;margin:0 0 10px;">' . $icon . ' Step ' . $stepNum . ' — ' . $label . '</h2>
-        <p style="color:#e0e5eb;font-size:15px;line-height:1.7;margin:0 0 20px;">
-            Bonjour <strong style="color:#f0f4f8;">' . htmlspecialchars($nom) . '</strong>,<br>
+        <h2 style="color:#ffffff;font-size:22px;margin:0 0 10px;">' . $icon . ' Step ' . $stepNum . ' — ' . $label . '</h2>
+        <p style="color:#ffffff;font-size:15px;line-height:1.7;margin:0 0 20px;">
+            Bonjour <strong style="color:#ffffff;">' . htmlspecialchars($nom) . '</strong>,<br>
             Résultat de l\'étape : <strong>' . $match . '</strong> → ' . $icon . ' ' . $label . '
         </p>
         <div style="text-align:center;margin:25px 0;">

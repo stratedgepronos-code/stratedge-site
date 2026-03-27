@@ -1,9 +1,17 @@
 <?php
 require_once __DIR__ . '/gate.php';
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/stratedge-bet-categories.php';
 require_once __DIR__ . '/includes/visiteurs-log.php';
 $membre = isLoggedIn() ? getMembre() : null;
 log_visite();
+
+$cotesMoyennesAccueil = ['multisport' => null, 'tennis' => null, 'fun' => null];
+try {
+    $cotesMoyennesAccueil = stratedge_cotes_moyennes_par_categorie();
+} catch (Throwable $e) {
+    /* BDD indisponible : placeholders — */
+}
 
 // ── Places fondateur VIP Max ──────────────────────────────
 $fondateurPlaces  = 0;
@@ -79,10 +87,45 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .hero-slogan { font-family: 'Rajdhani', sans-serif; font-size: clamp(1.3rem, 2.2vw, 1.8rem); font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--text-secondary); margin-bottom: 1.5rem; border-left: 3px solid var(--neon-green); padding-left: 1rem; }
     .hero-slogan span { color: var(--neon-green); font-weight: 700; }
     .hero-desc { font-size: 1.25rem; color: var(--text-secondary); margin-bottom: 2rem; max-width: 580px; line-height: 1.7; }
-    .hero-stats { display: flex; gap: 3rem; margin-bottom: 2rem; }
+    .hero-stats { display: flex; gap: 3rem; margin-bottom: 2rem; align-items: flex-start; }
     .stat { text-align: center; }
     .stat-value { font-family: 'Orbitron', sans-serif; font-size: 2.5rem; font-weight: 900; color: var(--neon-green); }
     .stat-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .stat-cotes-hero {
+      text-align: left;
+      min-width: min(100%, 220px);
+      padding: 0.35rem 0.5rem 0;
+      border-left: 2px solid rgba(255,45,120,0.35);
+      padding-left: 1rem;
+    }
+    .stat-cotes-hero .stat-label { text-align: left; margin-bottom: 0.5rem; line-height: 1.3; }
+    .stat-cotes-rows {
+      display: grid;
+      grid-template-columns: max-content minmax(3.5em, max-content);
+      column-gap: 1rem;
+      row-gap: 0.35rem;
+      align-items: baseline;
+      width: max-content;
+      max-width: 100%;
+    }
+    .stat-cote-line { display: contents; }
+    .stat-cote-name {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: none;
+      letter-spacing: 0;
+    }
+    .stat-cote-val {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: var(--neon-green);
+      line-height: 1;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: "tnum" 1;
+    }
     .hero-btns { display: flex; gap: 1rem; }
     /* Mascotte responsive : largeur max 1100px, fixée en bas du block */
     .hero-visual { position: absolute; bottom: 0; top: auto; right: 2%; left: auto; transform-origin: bottom right; z-index: 2; pointer-events: none; width: min(1100px, min(42vw, 80vh)); max-width: 100%; max-height: 100%; display: flex; align-items: flex-end; }
@@ -147,6 +190,29 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .feature-icon { width: 50px; height: 50px; border-radius: 12px; background: rgba(255,45,120,0.1); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin-bottom: 1.2rem; }
     .feature-card h3 { font-family: 'Orbitron', sans-serif; font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; color: var(--text-primary); }
     .feature-card p { color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; }
+    .feature-card--giveaway { padding-top: 2.35rem; }
+    .feature-coming-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 2;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.55rem;
+      font-weight: 800;
+      letter-spacing: 1.1px;
+      text-transform: uppercase;
+      color: #fff;
+      background: linear-gradient(135deg, #a855f7, #ff2d78);
+      padding: 0.4rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.2);
+      box-shadow: 0 0 0 0 rgba(168,85,247,0.55);
+      animation: featureSeptPulse 2.2s ease-in-out infinite;
+    }
+    @keyframes featureSeptPulse {
+      0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255,45,120,0.45); }
+      50% { transform: scale(1.06); box-shadow: 0 0 18px 6px rgba(168,85,247,0.4); }
+    }
 
     /* HOW IT WORKS */
     #how { background: var(--bg-dark); }
@@ -417,18 +483,15 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     @media (prefers-reduced-motion: reduce) {
       .btn-stake,
       .tennis-btn-stake { animation: none !important; }
+      .offer-gw-shimmer { animation: none !important; }
+      .offer-gw-banner:hover { transform: none; }
     }
-    .stake-offer { padding: 0.5rem 0; text-align: left; margin-top: 1rem; }
-    .stake-offer strong { color: var(--neon-blue); font-family: 'Orbitron', sans-serif; font-size: 0.9rem; }
+    #stake .stake-offer { padding: 0.5rem 0; text-align: left; margin-top: 1rem; }
+    #stake .stake-offer strong { color: var(--neon-blue); font-family: 'Orbitron', sans-serif; font-size: 0.9rem; }
     .stake-visual { text-align: center; }
     .stake-visual img { width: 100%; max-width: 400px; border-radius: 16px; }
 
     /* FOOTER */
-    .footer-cta { background: linear-gradient(135deg, rgba(255,45,120,0.08), rgba(0,212,255,0.05)); border-top: 1px solid rgba(255,45,120,0.15); border-bottom: 1px solid rgba(255,255,255,0.03); padding: 4rem 2rem; text-align: center; }
-    .footer-cta h2 { font-family: 'Orbitron', sans-serif; font-size: clamp(1.5rem, 3vw, 2.2rem); font-weight: 900; color: var(--text-primary); margin-bottom: 1rem; }
-    .footer-cta h2 span { color: var(--neon-green); }
-    .footer-cta p { color: var(--text-muted); max-width: 550px; margin: 0 auto 2rem; font-size: 0.95rem; line-height: 1.6; }
-    .footer-cta-btns { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
     footer { background: #050810; padding: 0; }
     .footer-main { max-width: 1200px; margin: 0 auto; padding: 4rem 2rem 3rem; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem; }
     .footer-brand p { color: var(--text-muted); font-size: 0.85rem; line-height: 1.7; margin-top: 1rem; max-width: 300px; }
@@ -608,6 +671,9 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .hero-inner { padding: 80px 1.2rem 2.5rem; }
       .hero-text { text-align: center; max-width: 100%; }
       .hero-stats { justify-content: center; gap: 1.2rem; flex-wrap: wrap; }
+      .stat-cotes-hero { text-align: center; border-left: none; padding-left: 0; margin: 0 auto; min-width: auto; max-width: 320px; }
+      .stat-cotes-hero .stat-label { text-align: center; }
+      .stat-cotes-rows { margin-inline: auto; }
       .hero-btns { justify-content: center; flex-wrap: wrap; }
       .hero-visual { display: none; }
       .hero-glow, .hero-glow-2, .hero-glow-mascot { display: none; }
@@ -633,6 +699,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .hero-desc { font-size: 0.9rem; }
       .hero-stats { flex-wrap: wrap; gap: 0.7rem; justify-content: center; }
       .stat { min-width: 85px; text-align: center; }
+      .stat-cote-val { font-size: 1.15rem; }
       .stat-value { font-size: 1.5rem; }
       .stat-label { font-size: 0.65rem; }
       .hero-btns { flex-direction: column; width: 100%; gap: 0.7rem; }
@@ -658,11 +725,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .footer-main { grid-template-columns: 1fr; gap: 1.5rem; }
       .footer-bottom { flex-direction: column; text-align: center; gap: 0.6rem; }
       .footer-legal { flex-wrap: wrap; justify-content: center; gap: 0.8rem; font-size:0.78rem; }
-      .footer-cta{padding:2rem 1rem;}
-      .footer-cta h2 { font-size: 1.2rem; }
-      .footer-cta p{font-size:0.88rem;}
-      .footer-cta-btns { flex-direction: column; align-items: center; }
-      .footer-cta-btns a { width: 100%; text-align: center; justify-content: center; min-height:48px; }
       .stake-banner { padding: 1.3rem 0.8rem; border-radius: 14px; }
       .stake-content h3 { font-size: 1.2rem; }
       .stake-content p{font-size:0.88rem;}
@@ -685,6 +747,10 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .giveaway-badge .gw-main { font-size: 0.62rem; }
       .giveaway-badge .gw-date { font-size: 0.55rem; }
       .crypto-btn { font-size: 0.75rem; padding: 10px 14px; min-height:44px; }
+      .stake-btn { font-size: 0.7rem; padding: 10px 14px; min-height:44px; }
+      .offer-gw-n { font-size: 1.35rem; }
+      .offer-gw-inner { padding: 0.6rem 0.85rem; gap: 0.55rem; }
+      .offer-gw-icon { font-size: 1.2rem; }
       .discount-badge{font-size:0.6rem;}
     }
     @media (max-width: 380px) {
@@ -702,8 +768,8 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       .btn-primary { padding: 0.75rem 1.2rem; font-size: 0.92rem; }
       .btn-outline { padding: 0.75rem 1.2rem; font-size: 0.88rem; }
       .feature-card{padding:1rem;}
+      .feature-coming-badge { font-size: 0.48rem; padding: 0.32rem 0.55rem; right: 8px; top: 8px; }
       .review-card{padding:1rem;}
-      .footer-cta h2{font-size:1.05rem;}
     }
     @media (min-width: 1600px) {
       .hero-visual { width: min(900px, min(35vw, 70vh)); }
@@ -729,7 +795,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       <li><a href="#stake">Stake.bet</a></li>
       <li><a href="bets.php">📊 Les Bets</a></li>
       <?php if (isLoggedIn()): ?>
-        <li><a href="register.php" class="nav-cta">S'inscrire</a></li>
         <?php if (isAdmin()): ?>
           <li><a href="panel-x9k3m/index.php" style="background:rgba(255,193,7,0.15);border:1px solid rgba(255,193,7,0.3);color:#ffc107;padding:0.5rem 1.2rem;border-radius:6px;font-weight:700;">⚙️ Panel</a></li>
         <?php endif; ?>
@@ -823,8 +888,14 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       <p class="hero-desc">Fort de 11 ans d'expérience, StratEdge analyse, croise et compare toutes les statistiques des grands championnats. xG, Poisson, Value — tout est analysé pour ne laisser aucune chance aux bookmakers.</p>
       <div class="hero-stats">
         <div class="stat"><div class="stat-value">11+</div><div class="stat-label">Ans d'XP</div></div>
-        <div class="stat"><div class="stat-value">1.93</div><div class="stat-label">Cote moyenne</div></div>
-        <div class="stat"><div class="stat-value">4.8</div><div class="stat-label">/5 ★</div></div>
+        <div class="stat stat-cotes-hero">
+          <div class="stat-label">Cotes moyennes<br><span style="font-size:0.65rem;opacity:0.85;font-weight:500;">(historique des bets)</span></div>
+          <div class="stat-cotes-rows">
+            <div class="stat-cote-line"><span class="stat-cote-name">Multisports</span><span class="stat-cote-val"><?= $cotesMoyennesAccueil['multisport'] !== null ? htmlspecialchars(number_format($cotesMoyennesAccueil['multisport'], 2, '.', '')) : '—' ?></span></div>
+            <div class="stat-cote-line"><span class="stat-cote-name">Tennis</span><span class="stat-cote-val"><?= $cotesMoyennesAccueil['tennis'] !== null ? htmlspecialchars(number_format($cotesMoyennesAccueil['tennis'], 2, '.', '')) : '—' ?></span></div>
+            <div class="stat-cote-line"><span class="stat-cote-name">Fun</span><span class="stat-cote-val"><?= $cotesMoyennesAccueil['fun'] !== null ? htmlspecialchars(number_format($cotesMoyennesAccueil['fun'], 2, '.', '')) : '—' ?></span></div>
+          </div>
+        </div>
       </div>
       <div class="hero-btns">
         <a href="#pricing" class="btn-primary">Voir les formules ↓</a>
@@ -858,9 +929,14 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     <div class="feature-card fade-up"><div class="feature-icon">📊</div><h3>Analyse Data</h3><p>Croisement de xG, modèle de Poisson, value bets… Chaque pronostic est le fruit d'une analyse statistique rigoureuse, pas d'un feeling.</p></div>
     <div class="feature-card fade-up"><div class="feature-icon">📱</div><h3>Paiement par SMS · Crypto · Paysafecard</h3><p>Payez par SMS (Daily), carte bancaire, PayPal ou <strong>Paysafecard</strong> via StarPass. Simple, rapide, sécurisé.</p></div>
     <div class="feature-card fade-up"><div class="feature-icon">⚡</div><h3>Bets LIVE par mail &amp; Push</h3><p>Recevez les pronos LIVE directement par email et notification push. Le LIVE offre les meilleures cotes et moins d'aléatoire.</p></div>
-    <div class="feature-card fade-up"><div class="feature-icon">🎯</div><h3>Cotes 1.93+</h3><p>On ne joue pas en dessous de 1.93. Des cotes élevées pour un ratio risque/gain optimal sur chaque bet.</p></div>
+    <div class="feature-card fade-up"><div class="feature-icon">🎯</div><h3>Cotes moyennes par univers</h3><p>Multisports, Tennis et Fun : les moyennes affichées en page d’accueil sont calculées à partir de l’<a href="historique.php" style="color:var(--neon-green);">historique des bets</a> (même logique que la page historique).</p></div>
     <div class="feature-card fade-up"><div class="feature-icon">🏆</div><h3>11 ans d'expérience</h3><p>Des hauts, des bas, puis la maîtrise. Gestion de bankroll, contrôle des émotions, stratégies éprouvées sur la durée.</p></div>
-    <div class="feature-card fade-up"><div class="feature-icon">🎁</div><h3>Cadeaux mensuels</h3><p>Chaque mois, un tirage au sort parmi les abonnés : séjour, places de parc, argent sur Stake.bet… On récompense la fidélité.</p></div>
+    <div class="feature-card fade-up feature-card--giveaway">
+      <span class="feature-coming-badge" title="Programme cadeaux">À partir de septembre</span>
+      <div class="feature-icon">🎁</div>
+      <h3>Cadeaux mensuels</h3>
+      <p>Chaque mois, un tirage au sort parmi les abonnés : séjour, places de parc, argent sur Stake.bet… On récompense la fidélité.</p>
+    </div>
   </div>
 </section>
 
@@ -887,6 +963,10 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     <p class="section-subtitle fade-up">Sans engagement. Payez uniquement ce dont vous avez besoin.</p>
   </div>
   <div class="pricing-grid">
+    <?php
+    /* Points GiveAway affichés sur l’accueil (par formule) — hors tennis */
+    $gwHomePts = ['daily' => 4, 'weekend' => 10, 'weekly' => 20, 'vip_max' => 50];
+    ?>
 
     <!-- DAILY -->
     <div class="price-card fade-up">
@@ -899,6 +979,17 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       </div>
       <div class="price-amount"><span class="currency">€</span>4,50</div>
       <div class="price-period">/ prochain bet</div>
+      <div class="offer-gw-banner offer-gw--daily" role="group" aria-label="GiveAway mensuel, 4 points par achat">
+        <span class="offer-gw-inner">
+          <span class="offer-gw-shimmer" aria-hidden="true"></span>
+          <span class="offer-gw-icon">🎁</span>
+          <span class="offer-gw-copy">
+            <span class="offer-gw-label">GiveAway mensuel</span>
+            <span class="offer-gw-ptsline"><strong class="offer-gw-n"><?= (int)$gwHomePts['daily'] ?></strong><span class="offer-gw-unit">pts</span><span class="offer-gw-hint">par achat</span></span>
+            <span class="offer-gw-ribbon">Tirage &amp; roue chaque mois</span>
+          </span>
+        </span>
+      </div>
       <ul class="price-features">
         <li>Accès au prochain bet "Safe"</li>
         <li>Accès au prochain bet "Live"</li>
@@ -940,6 +1031,17 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       </div>
       <div class="price-amount"><span class="currency">€</span>10</div>
       <div class="price-period">/ souscription (ven → dim)</div>
+      <div class="offer-gw-banner offer-gw--weekend" role="group" aria-label="GiveAway mensuel, 10 points par achat">
+        <span class="offer-gw-inner">
+          <span class="offer-gw-shimmer" aria-hidden="true"></span>
+          <span class="offer-gw-icon">🎁</span>
+          <span class="offer-gw-copy">
+            <span class="offer-gw-label">GiveAway mensuel</span>
+            <span class="offer-gw-ptsline"><strong class="offer-gw-n"><?= (int)$gwHomePts['weekend'] ?></strong><span class="offer-gw-unit">pts</span><span class="offer-gw-hint">par achat</span></span>
+            <span class="offer-gw-ribbon">Tirage &amp; roue chaque mois</span>
+          </span>
+        </span>
+      </div>
       <ul class="price-features">
         <li><div style="display:block;"><span style="white-space:nowrap;">Accès bets "Safe" &amp; "Fun"</span><br><span class="fun-supplement">Fun bets avec supplément</span></div></li>
         <li>Du vendredi au dimanche</li>
@@ -980,6 +1082,17 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       </div>
       <div class="price-amount"><span class="currency">€</span>20</div>
       <div class="price-period">/ semaine (7 jours glissants)</div>
+      <div class="offer-gw-banner offer-gw--weekly" role="group" aria-label="GiveAway mensuel, 20 points par achat">
+        <span class="offer-gw-inner">
+          <span class="offer-gw-shimmer" aria-hidden="true"></span>
+          <span class="offer-gw-icon">🎁</span>
+          <span class="offer-gw-copy">
+            <span class="offer-gw-label">GiveAway mensuel</span>
+            <span class="offer-gw-ptsline"><strong class="offer-gw-n"><?= (int)$gwHomePts['weekly'] ?></strong><span class="offer-gw-unit">pts</span><span class="offer-gw-hint">par achat</span></span>
+            <span class="offer-gw-ribbon">Tirage &amp; roue chaque mois</span>
+          </span>
+        </span>
+      </div>
       <ul class="price-features">
         <li>Accès bets "Safe" &amp; "Fun"</li>
         <li>Abonnement 1 semaine complète</li>
@@ -1051,6 +1164,17 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         </div>
         <div class="vip-price-num"><span class="currency">€</span>50</div>
         <div class="vip-price-dur">/ mois (30 jours)</div>
+        <div class="offer-gw-banner offer-gw--vip" role="group" aria-label="GiveAway mensuel, 50 points par achat">
+          <span class="offer-gw-inner">
+            <span class="offer-gw-shimmer" aria-hidden="true"></span>
+            <span class="offer-gw-icon">🎁</span>
+            <span class="offer-gw-copy">
+              <span class="offer-gw-label">GiveAway mensuel</span>
+              <span class="offer-gw-ptsline"><strong class="offer-gw-n"><?= (int)$gwHomePts['vip_max'] ?></strong><span class="offer-gw-unit">pts</span><span class="offer-gw-hint">par achat</span></span>
+              <span class="offer-gw-ribbon">Tirage &amp; roue chaque mois</span>
+            </span>
+          </span>
+        </div>
         <ul class="vip-features">
           <li>Tous les bets Multi-sport</li>
           <li>Tennis ATP &amp; WTA exclusif</li>
@@ -1147,19 +1271,6 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
 
 </section>
 
-<!-- REVIEWS -->
-<section id="reviews">
-  <div style="max-width:1200px; margin:0 auto;">
-    <div class="section-tag fade-up">Témoignages</div>
-    <h2 class="section-title fade-up">Ce qu'ils en <span style="color:var(--neon-green)">disent</span></h2>
-  </div>
-  <div class="reviews-grid">
-    <div class="review-card fade-up"><div class="review-stars">★★★★★</div><p class="review-text">"Analyse sérieuse, bets rentables. J'ai récupéré mon abonnement dès le premier pari. Je reviens chaque week-end sans hésiter."</p><div class="review-author"><div class="review-avatar">T</div><div><div class="review-name">Thomas</div><div class="review-sub">Abonné Weekly</div></div></div></div>
-    <div class="review-card fade-up"><div class="review-stars">★★★★★</div><p class="review-text">"C'est simple, j'attends le weekly Stake, puis je prends mon abbo ! Les paris sont excellents, je suis dans le vert depuis que je suis leurs bets !"</p><div class="review-author"><div class="review-avatar">M</div><div><div class="review-name">Mehdi</div><div class="review-sub">Abonné Weekly</div></div></div></div>
-    <div class="review-card fade-up"><div class="review-stars">★★★★★</div><p class="review-text">"Dès que j'ai mon weekly ou le monthly, je viens récupérer mon abonnement ! Y'a du savoir-faire, ça se ressent directement !"</p><div class="review-author"><div class="review-avatar">A</div><div><div class="review-name">ArToM</div><div class="review-sub">Abonné Weekly</div></div></div></div>
-  </div>
-</section>
-
 <!-- STAKE -->
 <section id="stake">
   <div style="max-width:1200px; margin:0 auto;">
@@ -1193,7 +1304,12 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     <a href="#pricing" class="btn-primary">Voir les formules ↓</a>
     <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="btn-outline">Ouvrir un compte Stake.bet</a>
   </div>
-</div>
+  <div class="reviews-grid">
+    <div class="review-card fade-up"><div class="review-stars">★★★★★</div><p class="review-text">"Analyse sérieuse, bets rentables. J'ai récupéré mon abonnement dès le premier pari. Je reviens chaque week-end sans hésiter."</p><div class="review-author"><div class="review-avatar">T</div><div><div class="review-name">Thomas</div><div class="review-sub">Abonné Weekly</div></div></div></div>
+    <div class="review-card fade-up"><div class="review-stars">★★★★★</div><p class="review-text">"C'est simple, j'attends le weekly Stake, puis je prends mon abbo ! Les paris sont excellents, je suis dans le vert depuis que je suis leurs bets !"</p><div class="review-author"><div class="review-avatar">M</div><div><div class="review-name">Mehdi</div><div class="review-sub">Abonné Weekly</div></div></div></div>
+    <div class="review-card fade-up"><div class="review-stars">★★★★★</div><p class="review-text">"Dès que j'ai mon weekly ou le monthly, je viens récupérer mon abonnement ! Y'a du savoir-faire, ça se ressent directement !"</p><div class="review-author"><div class="review-avatar">A</div><div><div class="review-name">ArToM</div><div class="review-sub">Abonné Weekly</div></div></div></div>
+  </div>
+</section>
 
 <!-- FOOTER -->
 <?php require_once __DIR__ . '/includes/footer-main.php'; ?>

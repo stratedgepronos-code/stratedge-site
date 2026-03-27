@@ -241,7 +241,13 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
 .btn-delete:hover{background:rgba(255,68,68,0.25);}
 .montante-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.06);}
 .montante-row:last-child{border-bottom:none;}
+/* Calendrier : styles de secours si le fichier /assets/ ne charge pas (FTP) */
+.strateedge-date-wrap{position:relative;width:100%;min-height:42px;}
+.strateedge-date-wrap .cal-icon{position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);line-height:0;color:#ff2d78;}
+.strateedge-date-wrap .cal-icon svg{display:block;width:20px!important;height:20px!important;max-width:20px;max-height:20px;}
+.strateedge-date-wrap .cal-popover:not(.is-open):empty{display:none;}
 </style>
+<link href="/assets/css/calendar-strateedge.css" rel="stylesheet">
 </head>
 <body>
 
@@ -256,7 +262,7 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
 
   <!-- Créer ou gérer la montante -->
   <div class="card">
-    <h2>🏗️ <?= $config ? 'Montante en cours' : 'Créer une montante' ?></h2>
+    <h2>🎾 <?= $config ? 'Montante en cours' : 'Créer une montante' ?></h2>
     <?php if ($config): ?>
     <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
       <strong style="font-size:1.1rem;"><?= clean($config['nom']) ?></strong>
@@ -286,7 +292,14 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
           <div class="form-group"><label>Nom</label><input type="text" name="nom" value="Montante Tennis" required></div>
           <div class="form-group"><label>Montant visé (€)</label><input type="number" name="bankroll_initial" value="100" step="0.01" min="1" required></div>
           <div class="form-group"><label>Mise de départ (€)</label><input type="number" name="mise_depart" value="10" step="0.01" min="0.5" required></div>
-          <div class="form-group"><label>Date début</label><input type="date" name="date_debut" value="<?= date('Y-m-d') ?>"></div>
+          <div class="form-group"><label>Date début</label>
+            <div class="strateedge-date-wrap">
+              <input type="text" class="strateedge-date-display" placeholder="jj/mm/aaaa" readonly>
+              <input type="hidden" name="date_debut" value="<?= date('Y-m-d') ?>">
+              <span class="cal-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" focusable="false"><path fill="#ff2d78" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg></span>
+              <div class="cal-popover" role="dialog" aria-label="Choisir une date"></div>
+            </div>
+          </div>
           <div class="form-group"><button type="submit" class="btn btn-green">Créer</button></div>
         </div>
       </form>
@@ -306,7 +319,14 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
         <div class="form-group"><label>Compétition</label><input type="text" name="competition" placeholder="Ex: Roland-Garros"></div>
         <div class="form-group"><label>Cote</label><input type="number" name="cote" step="0.01" min="1.01" value="1.50" required></div>
         <div class="form-group"><label>Mise (€)</label><input type="number" name="mise" step="0.01" min="0.5" value="<?= number_format((float)$config['mise_depart'], 2, '.', '') ?>" required></div>
-        <div class="form-group"><label>Date du match</label><input type="date" name="date_match"></div>
+        <div class="form-group"><label>Date du match</label>
+          <div class="strateedge-date-wrap">
+            <input type="text" class="strateedge-date-display" placeholder="jj/mm/aaaa" readonly>
+            <input type="hidden" name="date_match" value="">
+            <span class="cal-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" focusable="false"><path fill="#ff2d78" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg></span>
+            <div class="cal-popover" role="dialog" aria-label="Choisir une date"></div>
+          </div>
+        </div>
         <div class="form-group"><label>Heure</label><input type="text" name="heure" placeholder="15:00"></div>
       </div>
       <div class="form-group" style="margin-top:1rem;">
@@ -343,7 +363,14 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
           <div class="form-group"><label>Compétition</label><input type="text" name="competition" value="<?= htmlspecialchars($editStepRow['competition'] ?? '') ?>"></div>
           <div class="form-group"><label>Cote</label><input type="number" name="cote" step="0.01" min="1.01" value="<?= number_format((float)$editStepRow['cote'], 2, '.', '') ?>" required></div>
           <div class="form-group"><label>Mise (€)</label><input type="number" name="mise" step="0.01" min="0.5" value="<?= number_format((float)$editStepRow['mise'], 2, '.', '') ?>" required></div>
-          <div class="form-group"><label>Date du match</label><input type="date" name="date_match" value="<?= $editStepRow['date_match'] ? htmlspecialchars($editStepRow['date_match']) : '' ?>"></div>
+          <div class="form-group"><label>Date du match</label>
+            <div class="strateedge-date-wrap">
+              <input type="text" class="strateedge-date-display" placeholder="jj/mm/aaaa" readonly>
+              <input type="hidden" name="date_match" value="<?= $editStepRow['date_match'] ? htmlspecialchars($editStepRow['date_match']) : '' ?>">
+              <span class="cal-icon" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" focusable="false"><path fill="#ff2d78" d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11zM9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2z"/></svg></span>
+              <div class="cal-popover" role="dialog" aria-label="Choisir une date"></div>
+            </div>
+          </div>
           <div class="form-group"><label>Heure</label><input type="text" name="heure" placeholder="15:00" value="<?= htmlspecialchars($editStepRow['heure'] ?? '') ?>"></div>
         </div>
         <div class="form-group" style="margin-top:0.8rem;">
@@ -433,5 +460,6 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
   <?php endif; ?>
 </div>
 
+<script src="/assets/js/calendar-strateedge.js" defer></script>
 </body>
 </html>
