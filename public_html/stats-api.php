@@ -24,7 +24,9 @@
 // ============================================
 // CONFIG
 // ============================================
-$FOOTYSTATS_KEY = "1631907a095ad0953000398757257d07713f977696d039fca8a854b8f0be8ca5";
+$configFile = __DIR__ . '/config-keys.php';
+if (file_exists($configFile)) { require_once $configFile; }
+$FOOTYSTATS_KEY = defined('FOOTYSTATS_API_KEY') ? FOOTYSTATS_API_KEY : "1631907a095ad0953000398757257d07713f977696d039fca8a854b8f0be8ca5";
 $AUTH_TOKEN = "stratedge2026";
 $BASE_URL = "https://api.footystats.org";
 

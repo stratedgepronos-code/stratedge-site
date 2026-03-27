@@ -24,7 +24,9 @@
 // ============================================
 // CONFIG
 // ============================================
-$ODDS_API_KEY = "2203e181d78187eafad87ae8f436ad53";
+$configFile = __DIR__ . '/config-keys.php';
+if (file_exists($configFile)) { require_once $configFile; }
+$ODDS_API_KEY = defined('ODDS_API_KEY') ? ODDS_API_KEY : "2203e181d78187eafad87ae8f436ad53";
 $AUTH_TOKEN = "stratedge2026"; // token simple pour auth
 $BASE_URL = "https://api.the-odds-api.com/v4";
 

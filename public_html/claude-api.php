@@ -18,11 +18,34 @@
  */
 
 // ============================================
-// CONFIG
+// CONFIG — Les clés sont dans config-keys.php (hors Git)
 // ============================================
-$ANTHROPIC_KEY = "REPLACE_WITH_YOUR_KEY"; // Clé API Anthropic
-$FOOTYSTATS_KEY = "1631907a095ad0953000398757257d07713f977696d039fca8a854b8f0be8ca5";
-$ODDS_API_KEY = "2203e181d78187eafad87ae8f436ad53";
+$configFile = __DIR__ . '/config-keys.php';
+if (file_exists($configFile)) {
+    require_once $configFile;
+} else {
+    // Fallback: vérifier si les constantes existent
+    if (!defined('ANTHROPIC_API_KEY')) {
+        echo json_encode([
+            "error" => "Fichier config-keys.php manquant",
+            "instructions" => [
+                "1. Crée le fichier config-keys.php dans public_html/",
+                "2. Contenu :",
+                "   <?php",
+                "   define('ANTHROPIC_API_KEY', 'sk-ant-api03-...');",
+                "   define('FOOTYSTATS_API_KEY', 'ta-cle-footystats');",
+                "   define('ODDS_API_KEY', 'ta-cle-odds-api');",
+                "   ?>",
+                "3. Upload via FTP sur Hostinger"
+            ]
+        ]);
+        exit;
+    }
+}
+
+$ANTHROPIC_KEY = defined('ANTHROPIC_API_KEY') ? ANTHROPIC_API_KEY : "REPLACE_WITH_YOUR_KEY";
+$FOOTYSTATS_KEY = defined('FOOTYSTATS_API_KEY') ? FOOTYSTATS_API_KEY : "1631907a095ad0953000398757257d07713f977696d039fca8a854b8f0be8ca5";
+$ODDS_API_KEY = defined('ODDS_API_KEY') ? ODDS_API_KEY : "2203e181d78187eafad87ae8f436ad53";
 $AUTH_TOKEN = "stratedge2026";
 $MODEL = "claude-opus-4-6"; // Opus = meilleure analyse, raisonnement complexe
 

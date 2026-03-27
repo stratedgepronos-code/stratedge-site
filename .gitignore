@@ -18,6 +18,7 @@ error_log
 
 # Secrets / env
 .env
+config-keys.php
 .env.*
 *.env
 public_html/includes/smtp-config.php
