@@ -181,35 +181,48 @@ switch ($action) {
 // HELPERS
 // ============================================
 function fetchApi($url) {
-    $opts = [
-        "http" => [
-            "method" => "GET",
-            "timeout" => 15,
-            "header" => "Accept: application/json\r\n"
-        ]
-    ];
-    $context = stream_context_create($opts);
-    $response = @file_get_contents($url, false, $context);
+    // Use cURL (Hostinger blocks file_get_contents for external URLs)
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $url,
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT => 15,
+        CURLOPT_HTTPHEADER => ['Accept: application/json'],
+        CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_HEADER => true,
+    ]);
+    
+    $response = curl_exec($ch);
     
     if ($response === false) {
-        return ["error" => "Impossible de contacter The Odds API"];
+        $err = curl_error($ch);
+        curl_close($ch);
+        return ["error" => "cURL error: $err"];
     }
     
-    // Extraire les headers de quota
+    $headerSize = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
+    $headers = substr($response, 0, $headerSize);
+    $body = substr($response, $headerSize);
+    
+    // Parse quota headers
     global $quotaHeaders;
     $quotaHeaders = [];
-    if (isset($http_response_header)) {
-        foreach ($http_response_header as $h) {
-            if (stripos($h, 'x-requests-remaining') !== false) {
-                $quotaHeaders['remaining'] = trim(explode(':', $h, 2)[1] ?? '');
-            }
-            if (stripos($h, 'x-requests-used') !== false) {
-                $quotaHeaders['used'] = trim(explode(':', $h, 2)[1] ?? '');
-            }
+    foreach (explode("\r\n", $headers) as $h) {
+        if (stripos($h, 'x-requests-remaining') !== false) {
+            $quotaHeaders['remaining'] = trim(explode(':', $h, 2)[1] ?? '');
+        }
+        if (stripos($h, 'x-requests-used') !== false) {
+            $quotaHeaders['used'] = trim(explode(':', $h, 2)[1] ?? '');
         }
     }
     
-    return json_decode($response, true);
+    curl_close($ch);
+    
+    $decoded = json_decode($body, true);
+    if ($decoded === null) {
+        return ["error" => "Invalid JSON response", "raw" => substr($body, 0, 200)];
+    }
+    return $decoded;
 }
 
 function outputJson($data) {
