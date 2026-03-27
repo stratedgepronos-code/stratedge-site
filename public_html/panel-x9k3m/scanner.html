@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚡ StratEdge Scanner - Admin</title>
+<meta name="robots" content="noindex, nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --pink: #ff2d78;
+  --cyan: #00d4ff;
+  --green: #00ff88;
+  --gold: #ffd700;
+  --bg: #0a0a1a;
+  --card: #111118;
+  --border: #222;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: linear-gradient(135deg, var(--bg) 0%, #0d1117 50%, #1a0a2e 100%);
+  color: #e0e0e0;
+  font-family: 'Rajdhani', sans-serif;
+  min-height: 100vh;
+  padding: 16px;
+}
+h1 {
+  font-family: 'Orbitron', monospace;
+  font-size: clamp(18px, 4vw, 28px);
+  background: linear-gradient(90deg, var(--pink), var(--cyan));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-align: center;
+}
+.subtitle { text-align: center; font-size: 11px; color: #666; margin: 4px 0 16px; }
+.header { border-bottom: 2px solid; border-image: linear-gradient(90deg, var(--pink), var(--cyan)) 1; padding-bottom: 12px; margin-bottom: 16px; }
+
+/* LEAGUES */
+.leagues { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 16px; }
+.league-btn {
+  padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--card); color: #888; font-size: 12px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+}
+.league-btn.active { border-color: var(--cyan); background: rgba(0,212,255,0.1); color: var(--cyan); }
+.league-btn.t1 { border-color: var(--cyan); }
+.league-btn.t15 { border-color: var(--gold); }
+.league-btn.t2 { border-color: var(--pink); }
+
+/* SCAN BUTTON */
+.scan-btn {
+  display: block; margin: 0 auto 16px; padding: 12px 40px; border-radius: 8px; border: none;
+  background: linear-gradient(90deg, var(--pink), var(--cyan));
+  color: #fff; font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 700;
+  cursor: pointer; letter-spacing: 1px; transition: transform 0.1s;
+}
+.scan-btn:hover { transform: scale(1.05); }
+.scan-btn:disabled { opacity: 0.5; cursor: wait; }
+
+/* MATCH LIST */
+.match-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 16px; margin-bottom: 8px; cursor: pointer;
+  display: flex; justify-content: space-between; align-items: center;
+  transition: border-color 0.2s;
+}
+.match-card:hover { border-color: var(--pink); }
+.match-teams { font-weight: 700; color: #fff; }
+.match-vs { color: var(--pink); margin: 0 8px; }
+.match-date { font-size: 11px; color: #888; }
+
+/* ODDS GRID */
+.odds-section { background: #0d0d1d; border-radius: 10px; padding: 12px; border: 1px solid var(--border); margin-bottom: 12px; }
+.odds-section.highlight { border-color: var(--pink); }
+.odds-title { color: var(--pink); font-family: 'Orbitron', monospace; font-size: 12px; margin-bottom: 8px; }
+.odds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.odds-item {
+  background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 10px; text-align: center;
+}
+.odds-label { font-size: 11px; color: #ccc; margin-bottom: 2px; font-weight: 600; }
+.odds-price { font-size: 22px; font-weight: 700; }
+.odds-price.value { color: var(--green); }
+.odds-price.ok { color: var(--cyan); }
+.odds-price.low { color: var(--gold); }
+.odds-meta { font-size: 10px; color: #888; }
+
+/* BACK BUTTON */
+.back-btn {
+  background: none; border: 1px solid var(--pink); color: var(--pink);
+  border-radius: 6px; padding: 6px 16px; cursor: pointer; margin-bottom: 12px; font-size: 12px;
+}
+
+/* TABS */
+.tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+.tab-btn {
+  flex: 1; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--border);
+  background: var(--bg); color: #888; font-weight: 700; font-size: 13px; cursor: pointer;
+}
+.tab-btn.active { border-color: var(--cyan); background: rgba(0,212,255,0.07); color: var(--cyan); }
+
+/* STATUS */
+.status { text-align: center; padding: 20px; color: var(--cyan); }
+.error { background: rgba(255,45,120,0.1); border: 1px solid var(--pink); border-radius: 8px; padding: 12px; text-align: center; color: var(--pink); margin-bottom: 12px; }
+.info-box { background: rgba(255,45,120,0.05); border: 1px solid var(--pink); border-radius: 8px; padding: 16px; text-align: center; margin-top: 8px; }
+.info-box .title { color: var(--pink); font-weight: 700; margin-bottom: 4px; }
+.info-box .desc { font-size: 12px; color: #888; }
+
+/* FOOTER */
+.footer { text-align: center; margin-top: 32px; padding: 12px 0; border-top: 1px solid var(--border); font-size: 10px; color: #555; }
+
+/* CLAUDE URL BOX */
+.claude-box {
+  background: rgba(0,212,255,0.05); border: 1px solid var(--cyan); border-radius: 8px;
+  padding: 12px; margin-bottom: 16px;
+}
+.claude-box code {
+  background: #000; color: var(--green); padding: 4px 8px; border-radius: 4px;
+  font-size: 11px; display: block; margin-top: 6px; word-break: break-all;
+  user-select: all; cursor: pointer;
+}
+.claude-box .label { font-size: 12px; color: var(--cyan); font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚡ STRATEDGE ODDS SCANNER</h1>
+  <div class="subtitle">PROMPT v7.1 · Admin Panel · The Odds API</div>
+</div>
+
+<!-- CLAUDE URLS -->
+<div class="claude-box">
+  <div class="label">🤖 URLs pour Claude (web_fetch) :</div>
+  <code id="urlScan">Loading...</code>
+  <div style="font-size:10px; color:#666; margin-top:4px;">
+    Copie cette URL et donne-la à Claude pour qu'il scanne les cotes automatiquement.
+    Remplace <b>soccer_epl</b> par la ligue voulue.
+  </div>
+</div>
+
+<!-- LEAGUE SELECTOR -->
+<div class="leagues" id="leagueSelector"></div>
+
+<!-- SCAN BUTTON -->
+<button class="scan-btn" id="scanBtn" onclick="scanLeague()">🔍 SCANNER</button>
+
+<!-- QUOTA -->
+<div id="quota" style="text-align:center; font-size:11px; color:#666; margin-bottom:12px;"></div>
+
+<!-- ERROR -->
+<div id="errorBox" class="error" style="display:none;"></div>
+
+<!-- LOADING -->
+<div id="loading" class="status" style="display:none;">⏳ Scan en cours...</div>
+
+<!-- EVENTS LIST -->
+<div id="eventsList"></div>
+
+<!-- MATCH DETAIL -->
+<div id="matchDetail" style="display:none;"></div>
+
+<div class="footer">
+  StratEdge Pronos · PROMPT BETTING v7.1 · Powered by The Odds API<br>
+  ⚠️ Props SOT = books US/UK · BTTS/Team Totals = books EU
+</div>
+
+<script>
+const PROXY = window.location.origin + '/odds-api.php';
+const TOKEN = 'stratedge2026';
+
+const LEAGUES = [
+  { key: "soccer_epl", label: "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", tier: "t1" },
+  { key: "soccer_spain_la_liga", label: "🇪🇸 La Liga", tier: "t1" },
+  { key: "soccer_italy_serie_a", label: "🇮🇹 Serie A", tier: "t1" },
+  { key: "soccer_germany_bundesliga", label: "🇩🇪 Bundesliga", tier: "t1" },
+  { key: "soccer_france_ligue_one", label: "🇫🇷 Ligue 1", tier: "t1" },
+  { key: "soccer_uefa_champs_league", label: "🏆 CL", tier: "t1" },
+  { key: "soccer_uefa_europa_league", label: "🏆 EL", tier: "t1" },
+  { key: "soccer_netherlands_eredivisie", label: "🇳🇱 Eredivisie", tier: "t15" },
+  { key: "soccer_brazil_serie_a", label: "🇧🇷 Brasileirão", tier: "t15" },
+  { key: "soccer_belgium_first_div", label: "🇧🇪 Belgian Pro", tier: "t15" },
+  { key: "soccer_usa_mls", label: "🇺🇸 MLS", tier: "t15" },
+  { key: "soccer_mexico_ligamx", label: "🇲🇽 Liga MX", tier: "t2" },
+];
+
+let currentLeague = LEAGUES[0].key;
+let eventsData = [];
+
+// Init
+function init() {
+  const baseUrl = window.location.origin + `/odds-api.php?token=${TOKEN}&action=scan&league=soccer_epl`;
+  document.getElementById('urlScan').textContent = baseUrl;
+  
+  const sel = document.getElementById('leagueSelector');
+  LEAGUES.forEach(l => {
+    const btn = document.createElement('button');
+    btn.className = `league-btn ${l.tier} ${l.key === currentLeague ? 'active' : ''}`;
+    btn.textContent = l.label;
+    btn.onclick = () => {
+      currentLeague = l.key;
+      document.querySelectorAll('.league-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // Update Claude URL
+      document.getElementById('urlScan').textContent = 
+        window.location.origin + `/odds-api.php?token=${TOKEN}&action=scan&league=${l.key}`;
+    };
+    sel.appendChild(btn);
+  });
+}
+
+async function apiCall(action, params = {}) {
+  const url = new URL(PROXY);
+  url.searchParams.set('token', TOKEN);
+  url.searchParams.set('action', action);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Erreur ${res.status}`);
+  return res.json();
+}
+
+async function scanLeague() {
+  const btn = document.getElementById('scanBtn');
+  const loading = document.getElementById('loading');
+  const errorBox = document.getElementById('errorBox');
+  const list = document.getElementById('eventsList');
+  const detail = document.getElementById('matchDetail');
+  
+  btn.disabled = true;
+  loading.style.display = 'block';
+  errorBox.style.display = 'none';
+  list.innerHTML = '';
+  detail.style.display = 'none';
+  
+  try {
+    const data = await apiCall('scan', { league: currentLeague });
+    
+    if (data.error) {
+      errorBox.textContent = '❌ ' + data.error;
+      errorBox.style.display = 'block';
+      loading.style.display = 'none';
+      btn.disabled = false;
+      return;
+    }
+
+    eventsData = data.matches || data;
+    
+    if (Array.isArray(eventsData) && eventsData.length === 0) {
+      list.innerHTML = '<div class="status">Aucun match à venir pour cette ligue</div>';
+    } else if (data.matches) {
+      // scan mode - matches with odds
+      renderScanResults(data);
+    } else {
+      // events mode - just list
+      renderEventsList(eventsData);
+    }
+  } catch (e) {
+    errorBox.textContent = '❌ ' + e.message;
+    errorBox.style.display = 'block';
+  }
+  
+  loading.style.display = 'none';
+  btn.disabled = false;
+}
+
+function renderScanResults(data) {
+  const list = document.getElementById('eventsList');
+  const q = document.getElementById('quota');
+  q.textContent = `Scanné: ${data.matches_count} matchs · ${data.scanned_at}`;
+  
+  let html = `<h3 style="color:var(--cyan); font-family:'Orbitron',monospace; font-size:14px; margin-bottom:8px;">
+    📅 ${data.matches_count} MATCHS — ${currentLeague.replace('soccer_','').toUpperCase()}</h3>`;
+  
+  data.matches.forEach(m => {
+    const kickoff = new Date(m.kickoff).toLocaleDateString('fr-FR', {
+      weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'
+    });
+    
+    // Extract key odds
+    let h2hStr = '';
+    if (m.odds && m.odds.h2h) {
+      const entries = Object.entries(m.odds.h2h);
+      h2hStr = entries.map(([name, o]) => `${name}: <b>${o.price.toFixed(2)}</b>`).join(' · ');
+    }
+    
+    let totalsStr = '';
+    if (m.odds && m.odds.totals) {
+      const entries = Object.entries(m.odds.totals);
+      totalsStr = entries.map(([name, o]) => `${name}: <b>${o.price.toFixed(2)}</b>`).join(' · ');
+    }
+    
+    html += `
+    <div class="match-card" onclick="openMatch('${m.id}', '${m.home}', '${m.away}')">
+      <div>
+        <div><span class="match-teams">${m.home}</span><span class="match-vs">vs</span><span class="match-teams">${m.away}</span></div>
+        <div style="font-size:11px; color:#aaa; margin-top:4px;">${h2hStr}</div>
+        <div style="font-size:11px; color:#888; margin-top:2px;">${totalsStr}</div>
+      </div>
+      <div>
+        <div class="match-date">${kickoff}</div>
+        <div style="font-size:10px; color:var(--cyan); text-align:right;">Détails →</div>
+      </div>
+    </div>`;
+  });
+  
+  list.innerHTML = html;
+}
+
+function renderEventsList(events) {
+  const list = document.getElementById('eventsList');
+  let html = '';
+  events.forEach(ev => {
+    const kickoff = new Date(ev.commence_time).toLocaleDateString('fr-FR', {
+      weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'
+    });
+    html += `
+    <div class="match-card" onclick="openMatch('${ev.id}', '${ev.home_team}', '${ev.away_team}')">
+      <div>
+        <span class="match-teams">${ev.home_team}</span>
+        <span class="match-vs">vs</span>
+        <span class="match-teams">${ev.away_team}</span>
+      </div>
+      <div class="match-date">${kickoff}</div>
+    </div>`;
+  });
+  list.innerHTML = html;
+}
+
+async function openMatch(eventId, home, away) {
+  const list = document.getElementById('eventsList');
+  const detail = document.getElementById('matchDetail');
+  const loading = document.getElementById('loading');
+  
+  list.style.display = 'none';
+  detail.style.display = 'block';
+  loading.style.display = 'block';
+  
+  let html = `
+  <button class="back-btn" onclick="closeMatch()">← Retour</button>
+  <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px; text-align:center;">
+    <div style="font-family:'Orbitron',monospace; font-size:clamp(16px,3vw,22px); color:#fff;">
+      ${home} <span style="color:var(--pink);">vs</span> ${away}
+    </div>
+  </div>`;
+
+  try {
+    // Fetch match odds
+    const odds = await apiCall('odds', { league: currentLeague, event: eventId });
+    html += renderOddsDetail(odds, 'Marchés Match');
+    
+    // Fetch props
+    const props = await apiCall('props', { league: currentLeague, event: eventId });
+    html += renderOddsDetail(props, 'Props Joueur & Extra', true);
+    
+  } catch (e) {
+    html += `<div class="error">❌ ${e.message}</div>`;
+  }
+  
+  // Claude URL for this specific match
+  html += `
+  <div class="claude-box" style="margin-top:16px;">
+    <div class="label">🤖 URL Claude pour CE match :</div>
+    <code>${window.location.origin}/odds-api.php?token=${TOKEN}&action=props&league=${currentLeague}&event=${eventId}</code>
+  </div>`;
+  
+  loading.style.display = 'none';
+  detail.innerHTML = html;
+}
+
+function renderOddsDetail(data, title, isProps = false) {
+  if (!data || !data.bookmakers || data.bookmakers.length === 0) {
+    if (isProps) {
+      return `<div class="info-box">
+        <div class="title">⚠️ Pas de props disponibles</div>
+        <div class="desc">Les props SOT sont dispo via les books US/UK. Essaie PL ou Liga.</div>
+      </div>`;
+    }
+    return `<div class="error">Pas de cotes disponibles</div>`;
+  }
+  
+  // Extract best odds per market per outcome
+  const markets = {};
+  for (const bk of data.bookmakers) {
+    for (const mkt of bk.markets || []) {
+      if (!markets[mkt.key]) markets[mkt.key] = {};
+      for (const oc of mkt.outcomes) {
+        const label = oc.description 
+          ? `${oc.name} ${oc.description} ${oc.point != null ? oc.point : ''}`
+          : `${oc.name} ${oc.point != null ? oc.point : ''}`;
+        const key = label.trim();
+        if (!markets[mkt.key][key] || oc.price > markets[mkt.key][key].price) {
+          markets[mkt.key][key] = { price: oc.price, bookmaker: bk.title, label: key };
+        }
+      }
+    }
+  }
+  
+  const LABELS = {
+    h2h: '1X2 / Moneyline', totals: 'Over / Under', spreads: 'Handicap',
+    btts: 'BTTS (Les 2 marquent)', double_chance: 'Double Chance',
+    team_totals: 'Buts par Équipe',
+    player_shots_on_target: '🎯 TIRS CADRÉS JOUEUR (SOT)',
+    player_goal_scorer_anytime: '⚽ BUTEUR À TOUT MOMENT'
+  };
+  
+  let html = '';
+  for (const [mktKey, outcomes] of Object.entries(markets)) {
+    const isPlayer = mktKey.includes('player');
+    const entries = Object.values(outcomes).sort((a, b) => a.price - b.price);
+    
+    html += `<div class="odds-section ${isPlayer ? 'highlight' : ''}">
+      <div class="odds-title">${LABELS[mktKey] || mktKey}</div>
+      <div class="odds-grid">`;
+    
+    entries.forEach(o => {
+      const implied = (100 / o.price).toFixed(1);
+      const cls = o.price >= 2.0 ? 'value' : o.price >= 1.4 ? 'ok' : 'low';
+      html += `
+      <div class="odds-item">
+        <div class="odds-label">${o.label}</div>
+        <div class="odds-price ${cls}">${o.price.toFixed(2)}</div>
+        <div class="odds-meta">implied ${implied}% · ${o.bookmaker}</div>
+      </div>`;
+    });
+    
+    html += '</div></div>';
+  }
+  
+  return html;
+}
+
+function closeMatch() {
+  document.getElementById('eventsList').style.display = 'block';
+  document.getElementById('matchDetail').style.display = 'none';
+}
+
+init();
+</script>
+</body>
+</html>
