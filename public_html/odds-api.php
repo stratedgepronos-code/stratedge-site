@@ -56,6 +56,26 @@ $league = $_GET['league'] ?? 'soccer_epl';
 $eventId = $_GET['event'] ?? '';
 $regions = $_GET['regions'] ?? 'eu,uk';
 
+/**
+ * Liste d’événements The Odds API (tableau d’objets avec id), pas une erreur JSON.
+ */
+function oddsApi_isEventList($data): bool {
+    if (!is_array($data)) {
+        return false;
+    }
+    if ($data === []) {
+        return true;
+    }
+    if (array_key_exists('message', $data) || array_key_exists('error_code', $data)) {
+        return false;
+    }
+    if (array_key_exists('error', $data) && array_key_exists('raw', $data)) {
+        return false;
+    }
+    $first = reset($data);
+    return is_array($first) && isset($first['id']);
+}
+
 switch ($action) {
 
     case 'sports':
@@ -97,73 +117,97 @@ switch ($action) {
         break;
 
     case 'scan':
-        // Mode scan complet : récupère events + odds de chaque match
-        $eventsUrl = "$BASE_URL/sports/$league/events?apiKey=$ODDS_API_KEY";
-        $events = fetchApi($eventsUrl);
-        
-        if (!is_array($events) || count($events) === 0) {
-            outputJson(["error" => "Aucun match trouvé pour $league", "events" => []]);
-            break;
-        }
+        // Mode scan complet : events + odds (avec garde-fous si l’API renvoie une erreur JSON)
+        try {
+            $eventsUrl = "$BASE_URL/sports/$league/events?apiKey=$ODDS_API_KEY";
+            $events = fetchApi($eventsUrl);
 
-        // Récupérer les odds globales (tous les matchs en un call)
-        $markets = $_GET['markets'] ?? 'h2h,totals';
-        $oddsUrl = "$BASE_URL/sports/$league/odds?apiKey=$ODDS_API_KEY&regions=$regions&markets=$markets&oddsFormat=decimal";
-        $oddsData = fetchApi($oddsUrl);
-
-        // Construire le résultat enrichi
-        $result = [
-            "league" => $league,
-            "scanned_at" => date("Y-m-d H:i:s T"),
-            "matches_count" => count($events),
-            "matches" => []
-        ];
-
-        // Mapper les odds par event ID
-        $oddsMap = [];
-        if (is_array($oddsData)) {
-            foreach ($oddsData as $match) {
-                $oddsMap[$match['id']] = $match;
+            if (!oddsApi_isEventList($events)) {
+                $errMsg = is_array($events) && isset($events['error'])
+                    ? (string)$events['error']
+                    : (is_array($events) && isset($events['message']) ? (string)$events['message'] : 'Réponse API events invalide');
+                http_response_code(502);
+                outputJson([
+                    "error" => "Impossible de lister les matchs pour cette ligue.",
+                    "detail" => $errMsg,
+                    "league" => $league,
+                    "hint" => "Vérifie ODDS_API_KEY dans config-keys.php (racine public_html), le quota The Odds API, et la clé de ligue (ex. soccer_epl).",
+                ]);
+                break;
             }
-        }
 
-        foreach (array_slice($events, 0, 15) as $ev) {
-            $matchData = [
-                "id" => $ev['id'],
-                "home" => $ev['home_team'],
-                "away" => $ev['away_team'],
-                "kickoff" => $ev['commence_time'],
-                "odds" => []
-            ];
+            $markets = $_GET['markets'] ?? 'h2h,totals';
+            $oddsUrl = "$BASE_URL/sports/$league/odds?apiKey=$ODDS_API_KEY&regions=$regions&markets=$markets&oddsFormat=decimal";
+            $oddsData = fetchApi($oddsUrl);
 
-            if (isset($oddsMap[$ev['id']])) {
-                $matchOdds = $oddsMap[$ev['id']];
-                foreach ($matchOdds['bookmakers'] ?? [] as $bk) {
-                    foreach ($bk['markets'] ?? [] as $mkt) {
-                        foreach ($mkt['outcomes'] ?? [] as $oc) {
-                            $key = $mkt['key'];
-                            $label = $oc['name'] . (isset($oc['point']) ? " " . $oc['point'] : "");
-                            if (!isset($matchData['odds'][$key])) {
-                                $matchData['odds'][$key] = [];
-                            }
-                            // Garder la meilleure cote par outcome
-                            if (!isset($matchData['odds'][$key][$label]) || 
-                                $oc['price'] > $matchData['odds'][$key][$label]['price']) {
-                                $matchData['odds'][$key][$label] = [
-                                    "price" => $oc['price'],
-                                    "bookmaker" => $bk['title'],
-                                    "implied_pct" => round(100 / $oc['price'], 1)
-                                ];
-                            }
-                        }
+            $oddsMap = [];
+            if (oddsApi_isEventList($oddsData)) {
+                foreach ($oddsData as $match) {
+                    if (isset($match['id'])) {
+                        $oddsMap[$match['id']] = $match;
                     }
                 }
             }
 
-            $result['matches'][] = $matchData;
-        }
+            $result = [
+                "league" => $league,
+                "scanned_at" => date('Y-m-d H:i:s') . ' ' . date_default_timezone_get(),
+                "matches_count" => count($events),
+                "matches" => [],
+            ];
 
-        outputJson($result);
+            foreach (array_slice($events, 0, 15, true) as $ev) {
+                if (!is_array($ev) || !isset($ev['id'])) {
+                    continue;
+                }
+                $matchData = [
+                    "id" => $ev['id'],
+                    "home" => $ev['home_team'] ?? '',
+                    "away" => $ev['away_team'] ?? '',
+                    "kickoff" => $ev['commence_time'] ?? '',
+                    "odds" => [],
+                ];
+
+                if (isset($oddsMap[$ev['id']])) {
+                    $matchOdds = $oddsMap[$ev['id']];
+                    foreach ($matchOdds['bookmakers'] ?? [] as $bk) {
+                        foreach ($bk['markets'] ?? [] as $mkt) {
+                            foreach ($mkt['outcomes'] ?? [] as $oc) {
+                                $key = $mkt['key'] ?? 'unknown';
+                                $price = (float)($oc['price'] ?? 0);
+                                if ($price <= 0) {
+                                    continue;
+                                }
+                                $label = ($oc['name'] ?? '') . (isset($oc['point']) ? ' ' . $oc['point'] : '');
+                                if (!isset($matchData['odds'][$key])) {
+                                    $matchData['odds'][$key] = [];
+                                }
+                                if (!isset($matchData['odds'][$key][$label]) ||
+                                    $price > (float)($matchData['odds'][$key][$label]['price'] ?? 0)) {
+                                    $matchData['odds'][$key][$label] = [
+                                        "price" => $price,
+                                        "bookmaker" => $bk['title'] ?? '',
+                                        "implied_pct" => round(100 / $price, 1),
+                                    ];
+                                }
+                            }
+                        }
+                    }
+                }
+
+                $result['matches'][] = $matchData;
+            }
+
+            outputJson($result);
+        } catch (Throwable $e) {
+            http_response_code(500);
+            outputJson([
+                "error" => "Erreur interne scan",
+                "detail" => $e->getMessage(),
+                "file" => basename($e->getFile()),
+                "line" => $e->getLine(),
+            ]);
+        }
         break;
 
     default:
