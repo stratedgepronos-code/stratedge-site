@@ -81,7 +81,7 @@ h1 { font-family: 'Orbitron', monospace; font-size: clamp(16px, 3.5vw, 26px); ba
 <div id="panel-ai" class="panel">
   <div class="claude-box">
     <div class="label">🧠 Auto-Analyse StratEdge (PROMPT v7.1 + data auto)</div>
-    <div class="hint" style="margin-bottom:8px;">Claude analyse automatiquement avec les stats FootyStats + cotes The Odds API. Chaque analyse coûte ~$0.01</div>
+    <div class="hint" style="margin-bottom:8px;">Claude Opus 4.6 analyse avec les stats FootyStats + cotes The Odds API. Chaque analyse coûte ~$0.20</div>
     <div style="display:flex;flex-direction:column;gap:8px;">
       <div style="display:flex;gap:6px;">
         <select id="aiLeague" style="flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:#0a0a1a;color:#fff;font-size:12px;">
@@ -254,7 +254,7 @@ async function runAutoAnalysis(){
   const away=document.getElementById('aiAway').value.trim();
   if(!home||!away){showError('Remplis les deux équipes');return;}
   const btn=document.getElementById('aiBtn');btn.disabled=true;btn.textContent='🧠 Analyse en cours...';
-  clearError();document.getElementById('aiResult').innerHTML='<div class="status">⏳ Claude analyse avec PROMPT v7.1...<br><span style="font-size:11px;color:#888;">Collecte FootyStats + Odds API + analyse (~15-30 sec)</span></div>';
+  clearError();document.getElementById('aiResult').innerHTML='<div class="status">⏳ Claude Opus 4.6 analyse avec PROMPT v7.1...<br><span style="font-size:11px;color:#888;">Collecte FootyStats + Odds API + analyse (~20-45 sec)</span></div>';
   try{
     const r=await fetch(O+'/claude-api.php?token='+TOKEN+'&action=analyze&league='+league+'&home='+encodeURIComponent(home)+'&away='+encodeURIComponent(away));
     const d=await r.json();

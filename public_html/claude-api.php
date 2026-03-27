@@ -24,7 +24,7 @@ $ANTHROPIC_KEY = "REPLACE_WITH_YOUR_KEY"; // Clé API Anthropic
 $FOOTYSTATS_KEY = "1631907a095ad0953000398757257d07713f977696d039fca8a854b8f0be8ca5";
 $ODDS_API_KEY = "2203e181d78187eafad87ae8f436ad53";
 $AUTH_TOKEN = "stratedge2026";
-$MODEL = "claude-sonnet-4-6"; // Sonnet = pas cher + rapide
+$MODEL = "claude-opus-4-6"; // Opus = meilleure analyse, raisonnement complexe
 
 // ============================================
 // HEADERS
@@ -294,8 +294,8 @@ function extractBestOdds($data) {
 }
 
 function estimateCost($usage) {
-    $input = ($usage['input_tokens'] ?? 0) / 1000000 * 3; // Sonnet input: $3/MTok
-    $output = ($usage['output_tokens'] ?? 0) / 1000000 * 15; // Sonnet output: $15/MTok
+    $input = ($usage['input_tokens'] ?? 0) / 1000000 * 15; // Opus input: $15/MTok
+    $output = ($usage['output_tokens'] ?? 0) / 1000000 * 75; // Opus output: $75/MTok
     return '$' . number_format($input + $output, 4);
 }
 
