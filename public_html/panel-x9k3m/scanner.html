@@ -50,7 +50,8 @@ h1 { font-family: 'Orbitron', monospace; font-size: clamp(16px, 3.5vw, 26px); ba
 <div class="nav">
   <button class="nav-btn active" onclick="switchPanel('odds',this)">📊 Odds</button>
   <button class="nav-btn" onclick="switchPanel('stats',this)">📈 Stats</button>
-  <button class="nav-btn" onclick="switchPanel('claude',this)">🤖 URLs Claude</button>
+  <button class="nav-btn" onclick="switchPanel('ai',this)">🧠 Auto-Analyse</button>
+  <button class="nav-btn" onclick="switchPanel('claude',this)">🤖 URLs</button>
 </div>
 <div id="errorBox" class="error" style="display:none;"></div>
 <div id="loading" class="status" style="display:none;">⏳ Chargement...</div>
@@ -74,6 +75,44 @@ h1 { font-family: 'Orbitron', monospace; font-size: clamp(16px, 3.5vw, 26px); ba
     </div>
   </div>
   <div id="statsResults"></div>
+</div>
+
+<!-- AI PANEL -->
+<div id="panel-ai" class="panel">
+  <div class="claude-box">
+    <div class="label">🧠 Auto-Analyse StratEdge (PROMPT v7.1 + data auto)</div>
+    <div class="hint" style="margin-bottom:8px;">Claude analyse automatiquement avec les stats FootyStats + cotes The Odds API. Chaque analyse coûte ~$0.01</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div style="display:flex;gap:6px;">
+        <select id="aiLeague" style="flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:#0a0a1a;color:#fff;font-size:12px;">
+          <option value="soccer_epl">🏴 Premier League</option>
+          <option value="soccer_spain_la_liga">🇪🇸 La Liga</option>
+          <option value="soccer_italy_serie_a">🇮🇹 Serie A</option>
+          <option value="soccer_germany_bundesliga">🇩🇪 Bundesliga</option>
+          <option value="soccer_france_ligue_one">🇫🇷 Ligue 1</option>
+          <option value="soccer_uefa_champs_league">🏆 Champions League</option>
+          <option value="soccer_netherlands_eredivisie">🇳🇱 Eredivisie</option>
+          <option value="soccer_brazil_campeonato">🇧🇷 Brasileirão</option>
+          <option value="soccer_usa_mls">🇺🇸 MLS</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:6px;">
+        <input id="aiHome" type="text" placeholder="Équipe domicile (ex: Arsenal)" style="flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:#0a0a1a;color:#fff;font-size:12px;">
+        <span style="color:var(--pink);align-self:center;font-weight:700;">vs</span>
+        <input id="aiAway" type="text" placeholder="Équipe extérieur (ex: Chelsea)" style="flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:#0a0a1a;color:#fff;font-size:12px;">
+      </div>
+      <button onclick="runAutoAnalysis()" id="aiBtn" class="scan-btn" style="margin:0;">🧠 LANCER L'ANALYSE</button>
+    </div>
+  </div>
+  <div class="claude-box" style="border-color:rgba(255,45,120,0.3);">
+    <div class="label" style="color:var(--pink);">💬 Question libre</div>
+    <div class="hint" style="margin-bottom:6px;">Pose n'importe quelle question betting à Claude (avec le PROMPT v7.1 intégré)</div>
+    <div style="display:flex;gap:6px;">
+      <input id="aiQuestion" type="text" placeholder="Ex: Quels sont les meilleurs Over 2.5 de ce week-end en Serie A ?" style="flex:1;padding:8px;border-radius:6px;border:1px solid var(--border);background:#0a0a1a;color:#fff;font-size:12px;">
+      <button onclick="runFreeQuestion()" style="padding:8px 16px;border-radius:6px;border:none;background:var(--pink);color:#fff;font-weight:700;cursor:pointer;">💬</button>
+    </div>
+  </div>
+  <div id="aiResult"></div>
 </div>
 
 <!-- CLAUDE PANEL -->
@@ -206,6 +245,54 @@ async function searchTeam(){
   }catch(e){showError(e.message);}showLoading(false);
 }
 document.getElementById('searchInput')?.addEventListener('keydown',e=>{if(e.key==='Enter')searchTeam();});
+document.getElementById('aiQuestion')?.addEventListener('keydown',e=>{if(e.key==='Enter')runFreeQuestion();});
+
+// AI AUTO-ANALYSIS
+async function runAutoAnalysis(){
+  const league=document.getElementById('aiLeague').value;
+  const home=document.getElementById('aiHome').value.trim();
+  const away=document.getElementById('aiAway').value.trim();
+  if(!home||!away){showError('Remplis les deux équipes');return;}
+  const btn=document.getElementById('aiBtn');btn.disabled=true;btn.textContent='🧠 Analyse en cours...';
+  clearError();document.getElementById('aiResult').innerHTML='<div class="status">⏳ Claude analyse avec PROMPT v7.1...<br><span style="font-size:11px;color:#888;">Collecte FootyStats + Odds API + analyse (~15-30 sec)</span></div>';
+  try{
+    const r=await fetch(O+'/claude-api.php?token='+TOKEN+'&action=analyze&league='+league+'&home='+encodeURIComponent(home)+'&away='+encodeURIComponent(away));
+    const d=await r.json();
+    if(d.error){showError(d.error+(d.instructions?'\n'+d.instructions.join('\n'):''));document.getElementById('aiResult').innerHTML='';btn.disabled=false;btn.textContent='🧠 LANCER L\'ANALYSE';return;}
+    renderAnalysis(d);
+  }catch(e){showError(e.message);document.getElementById('aiResult').innerHTML='';}
+  btn.disabled=false;btn.textContent='🧠 LANCER L\'ANALYSE';
+}
+
+async function runFreeQuestion(){
+  const q=document.getElementById('aiQuestion').value.trim();
+  if(!q)return;clearError();
+  document.getElementById('aiResult').innerHTML='<div class="status">⏳ Claude réfléchit...</div>';
+  try{
+    const r=await fetch(O+'/claude-api.php?token='+TOKEN+'&action=ask&q='+encodeURIComponent(q));
+    const d=await r.json();
+    if(d.error){showError(d.error);document.getElementById('aiResult').innerHTML='';return;}
+    renderAnalysis(d);
+  }catch(e){showError(e.message);document.getElementById('aiResult').innerHTML='';}
+}
+
+function renderAnalysis(d){
+  const analysis=(d.analysis||'Pas de réponse').replace(/\n/g,'<br>').replace(/\*\*(.*?)\*\*/g,'<b>$1</b>').replace(/#{1,3}\s?(.*?)(<br>)/g,'<div class="section-title">$1</div>');
+  const sources=d.data_sources||{};
+  const tokens=d.tokens_used||{};
+  let srcBadges='';
+  if(sources.footystats)srcBadges+='<span class="badge" style="background:rgba(0,255,136,0.15);color:var(--green);">📈 FootyStats ✓</span> ';
+  if(sources.odds_api)srcBadges+='<span class="badge" style="background:rgba(0,212,255,0.15);color:var(--cyan);">📊 Odds API ✓</span> ';
+  if(!sources.footystats&&!sources.odds_api)srcBadges+='<span class="badge" style="background:rgba(255,215,0,0.15);color:var(--gold);">⚠️ Analyse sans data externe</span>';
+  document.getElementById('aiResult').innerHTML=`
+    <div style="margin-top:12px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div>${srcBadges}</div>
+        <div style="font-size:10px;color:#666;">${tokens.input||0}+${tokens.output||0} tokens · ${tokens.cost_estimate||'~$0.01'}</div>
+      </div>
+      <div style="font-size:13px;line-height:1.6;color:#ddd;">${analysis}</div>
+    </div>`;
+}
 </script>
 </body>
 </html>
