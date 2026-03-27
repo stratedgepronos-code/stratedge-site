@@ -1,7 +1,4 @@
 <?php
-error_reporting(E_ALL);
-ini_set('display_errors', '1');
-
 require_once __DIR__ . '/../includes/auth.php';
 requireSuperAdmin();
 $pageActive = 'scanner';
@@ -18,9 +15,8 @@ $db = getDB();
 </head>
 <body>
 <?php require_once __DIR__ . '/sidebar.php'; ?>
-<div class="main" style="padding:1.5rem;">
+<div class="main" style="padding:1.5rem;background:#0a0a1a !important;min-height:100vh;">
   <h1 style="font-family:'Orbitron',monospace;color:#00d4ff;margin-bottom:1rem;">Command Center</h1>
-  <p style="color:#aaa;">Si tu vois ce texte, le PHP fonctionne. Le JS va se charger en dessous.</p>
 
   <div id="app" style="margin-top:1rem;background:#111;border:1px solid #333;border-radius:12px;padding:16px;color:#e0e0e0;font-family:'Rajdhani',sans-serif;">
     <p>Chargement du Command Center...</p>
