@@ -3,439 +3,209 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>⚡ StratEdge Scanner - Admin</title>
+<title>⚡ StratEdge Command Center</title>
 <meta name="robots" content="noindex, nofollow">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
-:root {
-  --pink: #ff2d78;
-  --cyan: #00d4ff;
-  --green: #00ff88;
-  --gold: #ffd700;
-  --bg: #0a0a1a;
-  --card: #111118;
-  --border: #222;
-}
+:root { --pink: #ff2d78; --cyan: #00d4ff; --green: #00ff88; --gold: #ffd700; --bg: #0a0a1a; --card: #111118; --border: #222; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-  background: linear-gradient(135deg, var(--bg) 0%, #0d1117 50%, #1a0a2e 100%);
-  color: #e0e0e0;
-  font-family: 'Rajdhani', sans-serif;
-  min-height: 100vh;
-  padding: 16px;
-}
-h1 {
-  font-family: 'Orbitron', monospace;
-  font-size: clamp(18px, 4vw, 28px);
-  background: linear-gradient(90deg, var(--pink), var(--cyan));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  text-align: center;
-}
-.subtitle { text-align: center; font-size: 11px; color: #666; margin: 4px 0 16px; }
-.header { border-bottom: 2px solid; border-image: linear-gradient(90deg, var(--pink), var(--cyan)) 1; padding-bottom: 12px; margin-bottom: 16px; }
-
-/* LEAGUES */
-.leagues { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 16px; }
-.league-btn {
-  padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border);
-  background: var(--card); color: #888; font-size: 12px; font-weight: 600;
-  cursor: pointer; transition: all 0.2s;
-}
+body { background: linear-gradient(135deg, var(--bg) 0%, #0d1117 50%, #1a0a2e 100%); color: #e0e0e0; font-family: 'Rajdhani', sans-serif; min-height: 100vh; padding: 12px; }
+.header { border-bottom: 2px solid; border-image: linear-gradient(90deg, var(--pink), var(--cyan)) 1; padding-bottom: 10px; margin-bottom: 12px; text-align: center; }
+h1 { font-family: 'Orbitron', monospace; font-size: clamp(16px, 3.5vw, 26px); background: linear-gradient(90deg, var(--pink), var(--cyan)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.subtitle { font-size: 11px; color: #666; margin-top: 2px; }
+.nav { display: flex; gap: 6px; margin-bottom: 12px; }
+.nav-btn { flex: 1; padding: 10px 8px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: #888; font-weight: 700; font-size: 12px; cursor: pointer; text-align: center; }
+.nav-btn.active { border-color: var(--cyan); background: rgba(0,212,255,0.08); color: var(--cyan); }
+.panel { display: none; } .panel.active { display: block; }
+.leagues { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-bottom: 12px; }
+.league-btn { padding: 5px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--card); color: #888; font-size: 11px; font-weight: 600; cursor: pointer; }
 .league-btn.active { border-color: var(--cyan); background: rgba(0,212,255,0.1); color: var(--cyan); }
-.league-btn.t1 { border-color: var(--cyan); }
-.league-btn.t15 { border-color: var(--gold); }
-.league-btn.t2 { border-color: var(--pink); }
-
-/* SCAN BUTTON */
-.scan-btn {
-  display: block; margin: 0 auto 16px; padding: 12px 40px; border-radius: 8px; border: none;
-  background: linear-gradient(90deg, var(--pink), var(--cyan));
-  color: #fff; font-family: 'Orbitron', monospace; font-size: 14px; font-weight: 700;
-  cursor: pointer; letter-spacing: 1px; transition: transform 0.1s;
-}
-.scan-btn:hover { transform: scale(1.05); }
-.scan-btn:disabled { opacity: 0.5; cursor: wait; }
-
-/* MATCH LIST */
-.match-card {
-  background: var(--card); border: 1px solid var(--border); border-radius: 8px;
-  padding: 12px 16px; margin-bottom: 8px; cursor: pointer;
-  display: flex; justify-content: space-between; align-items: center;
-  transition: border-color 0.2s;
-}
+.scan-btn { display: block; margin: 0 auto 12px; padding: 10px 32px; border-radius: 8px; border: none; background: linear-gradient(90deg, var(--pink), var(--cyan)); color: #fff; font-family: 'Orbitron', monospace; font-size: 13px; font-weight: 700; cursor: pointer; }
+.scan-btn:disabled { opacity: 0.5; }
+.match-card { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; margin-bottom: 6px; cursor: pointer; }
 .match-card:hover { border-color: var(--pink); }
-.match-teams { font-weight: 700; color: #fff; }
-.match-vs { color: var(--pink); margin: 0 8px; }
-.match-date { font-size: 11px; color: #888; }
-
-/* ODDS GRID */
-.odds-section { background: #0d0d1d; border-radius: 10px; padding: 12px; border: 1px solid var(--border); margin-bottom: 12px; }
-.odds-section.highlight { border-color: var(--pink); }
-.odds-title { color: var(--pink); font-family: 'Orbitron', monospace; font-size: 12px; margin-bottom: 8px; }
-.odds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
-.odds-item {
-  background: var(--card); border: 1px solid var(--border); border-radius: 8px;
-  padding: 8px 10px; text-align: center;
-}
-.odds-label { font-size: 11px; color: #ccc; margin-bottom: 2px; font-weight: 600; }
-.odds-price { font-size: 22px; font-weight: 700; }
-.odds-price.value { color: var(--green); }
-.odds-price.ok { color: var(--cyan); }
-.odds-price.low { color: var(--gold); }
-.odds-meta { font-size: 10px; color: #888; }
-
-/* BACK BUTTON */
-.back-btn {
-  background: none; border: 1px solid var(--pink); color: var(--pink);
-  border-radius: 6px; padding: 6px 16px; cursor: pointer; margin-bottom: 12px; font-size: 12px;
-}
-
-/* TABS */
-.tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-.tab-btn {
-  flex: 1; padding: 10px 16px; border-radius: 8px; border: 1px solid var(--border);
-  background: var(--bg); color: #888; font-weight: 700; font-size: 13px; cursor: pointer;
-}
-.tab-btn.active { border-color: var(--cyan); background: rgba(0,212,255,0.07); color: var(--cyan); }
-
-/* STATUS */
-.status { text-align: center; padding: 20px; color: var(--cyan); }
-.error { background: rgba(255,45,120,0.1); border: 1px solid var(--pink); border-radius: 8px; padding: 12px; text-align: center; color: var(--pink); margin-bottom: 12px; }
-.info-box { background: rgba(255,45,120,0.05); border: 1px solid var(--pink); border-radius: 8px; padding: 16px; text-align: center; margin-top: 8px; }
-.info-box .title { color: var(--pink); font-weight: 700; margin-bottom: 4px; }
-.info-box .desc { font-size: 12px; color: #888; }
-
-/* FOOTER */
-.footer { text-align: center; margin-top: 32px; padding: 12px 0; border-top: 1px solid var(--border); font-size: 10px; color: #555; }
-
-/* CLAUDE URL BOX */
-.claude-box {
-  background: rgba(0,212,255,0.05); border: 1px solid var(--cyan); border-radius: 8px;
-  padding: 12px; margin-bottom: 16px;
-}
-.claude-box code {
-  background: #000; color: var(--green); padding: 4px 8px; border-radius: 4px;
-  font-size: 11px; display: block; margin-top: 6px; word-break: break-all;
-  user-select: all; cursor: pointer;
-}
-.claude-box .label { font-size: 12px; color: var(--cyan); font-weight: 600; }
+.match-teams { font-weight: 700; color: #fff; font-size: 14px; }
+.match-vs { color: var(--pink); margin: 0 6px; font-size: 12px; }
+.match-meta { font-size: 11px; color: #888; margin-top: 3px; }
+.match-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 4px; margin-top: 6px; }
+.stat-badge { background: #0d0d2a; border: 1px solid #1a1a3a; border-radius: 4px; padding: 3px 6px; text-align: center; font-size: 10px; }
+.stat-label { color: #888; display: block; } .stat-val { color: var(--cyan); font-weight: 700; font-size: 13px; }
+.stat-val.hot { color: var(--green); } .stat-val.cold { color: var(--pink); }
+.odds-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 6px; margin-top: 8px; }
+.odds-item { background: var(--card); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; text-align: center; }
+.odds-label { font-size: 10px; color: #aaa; } .odds-price { font-size: 18px; font-weight: 700; color: var(--cyan); } .odds-bk { font-size: 9px; color: #666; }
+.claude-box { background: rgba(0,212,255,0.04); border: 1px solid rgba(0,212,255,0.3); border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+.claude-box .label { font-size: 11px; color: var(--cyan); font-weight: 600; margin-bottom: 4px; }
+.claude-box code { background: #000; color: var(--green); padding: 3px 6px; border-radius: 4px; font-size: 10px; display: block; margin-top: 3px; word-break: break-all; user-select: all; cursor: pointer; }
+.claude-box .hint { font-size: 9px; color: #555; margin-top: 3px; }
+.status { text-align: center; padding: 16px; color: var(--cyan); font-size: 13px; }
+.error { background: rgba(255,45,120,0.1); border: 1px solid var(--pink); border-radius: 8px; padding: 10px; text-align: center; color: var(--pink); margin-bottom: 8px; font-size: 12px; }
+.section-title { color: var(--pink); font-family: 'Orbitron', monospace; font-size: 12px; margin: 12px 0 6px; }
+.back-btn { background: none; border: 1px solid var(--pink); color: var(--pink); border-radius: 6px; padding: 5px 14px; cursor: pointer; font-size: 11px; margin-bottom: 10px; }
+.footer { text-align: center; margin-top: 24px; padding: 10px 0; border-top: 1px solid var(--border); font-size: 9px; color: #444; }
 </style>
 </head>
 <body>
+<div class="header"><h1>⚡ STRATEDGE COMMAND CENTER</h1><div class="subtitle">PROMPT v7.1 · 49 règles · Odds API + FootyStats API</div></div>
+<div class="nav">
+  <button class="nav-btn active" onclick="switchPanel('odds',this)">📊 Odds</button>
+  <button class="nav-btn" onclick="switchPanel('stats',this)">📈 Stats</button>
+  <button class="nav-btn" onclick="switchPanel('claude',this)">🤖 URLs Claude</button>
+</div>
+<div id="errorBox" class="error" style="display:none;"></div>
+<div id="loading" class="status" style="display:none;">⏳ Chargement...</div>
 
-<div class="header">
-  <h1>⚡ STRATEDGE ODDS SCANNER</h1>
-  <div class="subtitle">PROMPT v7.1 · Admin Panel · The Odds API</div>
+<!-- ODDS PANEL -->
+<div id="panel-odds" class="panel active">
+  <div class="leagues" id="oddsLeagues"></div>
+  <button class="scan-btn" onclick="scanOdds()">🔍 SCANNER COTES</button>
+  <div id="oddsQuota" style="text-align:center;font-size:10px;color:#555;margin-bottom:8px;"></div>
+  <div id="oddsResults"></div>
+  <div id="oddsDetail" style="display:none;"></div>
 </div>
 
-<!-- CLAUDE URLS -->
-<div class="claude-box">
-  <div class="label">🤖 URLs pour Claude (web_fetch) :</div>
-  <code id="urlScan">Loading...</code>
-  <div style="font-size:10px; color:#666; margin-top:4px;">
-    Copie cette URL et donne-la à Claude pour qu'il scanne les cotes automatiquement.
-    Remplace <b>soccer_epl</b> par la ligue voulue.
+<!-- STATS PANEL -->
+<div id="panel-stats" class="panel">
+  <button class="scan-btn" onclick="fetchTodayStats()">📅 MATCHS DU JOUR</button>
+  <div class="claude-box"><div class="label">Rechercher une équipe</div>
+    <div style="display:flex;gap:6px;margin-top:4px;">
+      <input id="searchInput" type="text" placeholder="Ex: Arsenal, Bayern..." style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:#0a0a1a;color:#fff;font-size:12px;">
+      <button onclick="searchTeam()" style="padding:6px 14px;border-radius:6px;border:none;background:var(--pink);color:#fff;font-weight:700;cursor:pointer;">🔍</button>
+    </div>
+  </div>
+  <div id="statsResults"></div>
+</div>
+
+<!-- CLAUDE PANEL -->
+<div id="panel-claude" class="panel">
+  <div class="section-title">📊 ODDS API</div>
+  <div class="claude-box"><div class="label">Scanner une ligue</div><code id="urlOddsScan"></code><div class="hint">Remplace soccer_epl par la ligue voulue · Actions: sports, events, odds, props, scan</div></div>
+  <div class="claude-box"><div class="label">Props joueur d'un match</div><code id="urlOddsProps"></code></div>
+  <div class="section-title">📈 FOOTYSTATS API</div>
+  <div class="claude-box"><div class="label">Matchs du jour</div><code id="urlStatsToday"></code><div class="hint">Ajoute &date=2026-04-05 pour une date spécifique</div></div>
+  <div class="claude-box"><div class="label">Chercher une équipe</div><code id="urlStatsSearch"></code></div>
+  <div class="claude-box"><div class="label">Stats équipe</div><code id="urlStatsTeam"></code></div>
+  <div class="claude-box"><div class="label">H2H</div><code id="urlStatsH2H"></code></div>
+  <div class="claude-box"><div class="label">Ligues actives</div><code id="urlStatsLeagues"></code></div>
+  <div class="section-title">🗝️ CLÉS DE LIGUE</div>
+  <div style="font-size:11px;color:#aaa;columns:2;column-gap:12px;line-height:1.8;">
+    🏴 PL → <b>soccer_epl</b><br>🇪🇸 Liga → <b>soccer_spain_la_liga</b><br>🇮🇹 Serie A → <b>soccer_italy_serie_a</b><br>
+    🇩🇪 Buli → <b>soccer_germany_bundesliga</b><br>🇫🇷 L1 → <b>soccer_france_ligue_one</b><br>🏆 CL → <b>soccer_uefa_champs_league</b><br>
+    🇳🇱 Ered → <b>soccer_netherlands_eredivisie</b><br>🇧🇷 Bra → <b>soccer_brazil_campeonato</b><br>🇧🇪 Bel → <b>soccer_belgium_first_div</b><br>
+    🇺🇸 MLS → <b>soccer_usa_mls</b><br>🇲🇽 MX → <b>soccer_mexico_ligamx</b><br>🌍 CDM → <b>soccer_fifa_world_cup_qualifiers_europe</b>
   </div>
 </div>
 
-<!-- LEAGUE SELECTOR -->
-<div class="leagues" id="leagueSelector"></div>
-
-<!-- SCAN BUTTON -->
-<button class="scan-btn" id="scanBtn" onclick="scanLeague()">🔍 SCANNER</button>
-
-<!-- QUOTA -->
-<div id="quota" style="text-align:center; font-size:11px; color:#666; margin-bottom:12px;"></div>
-
-<!-- ERROR -->
-<div id="errorBox" class="error" style="display:none;"></div>
-
-<!-- LOADING -->
-<div id="loading" class="status" style="display:none;">⏳ Scan en cours...</div>
-
-<!-- EVENTS LIST -->
-<div id="eventsList"></div>
-
-<!-- MATCH DETAIL -->
-<div id="matchDetail" style="display:none;"></div>
-
-<div class="footer">
-  StratEdge Pronos · PROMPT BETTING v7.1 · Powered by The Odds API<br>
-  ⚠️ Props SOT = books US/UK · BTTS/Team Totals = books EU
-</div>
+<div class="footer">StratEdge Pronos · PROMPT v7.1 · Odds API + FootyStats API · ⚠️ Ne jamais partager ces URLs</div>
 
 <script>
-const PROXY = window.location.origin + '/odds-api.php';
+const O = window.location.origin;
 const TOKEN = 'stratedge2026';
-
 const LEAGUES = [
-  { key: "soccer_epl", label: "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", tier: "t1" },
-  { key: "soccer_spain_la_liga", label: "🇪🇸 La Liga", tier: "t1" },
-  { key: "soccer_italy_serie_a", label: "🇮🇹 Serie A", tier: "t1" },
-  { key: "soccer_germany_bundesliga", label: "🇩🇪 Bundesliga", tier: "t1" },
-  { key: "soccer_france_ligue_one", label: "🇫🇷 Ligue 1", tier: "t1" },
-  { key: "soccer_uefa_champs_league", label: "🏆 CL", tier: "t1" },
-  { key: "soccer_uefa_europa_league", label: "🏆 EL", tier: "t1" },
-  { key: "soccer_netherlands_eredivisie", label: "🇳🇱 Eredivisie", tier: "t15" },
-  { key: "soccer_brazil_serie_a", label: "🇧🇷 Brasileirão", tier: "t15" },
-  { key: "soccer_belgium_first_div", label: "🇧🇪 Belgian Pro", tier: "t15" },
-  { key: "soccer_usa_mls", label: "🇺🇸 MLS", tier: "t15" },
-  { key: "soccer_mexico_ligamx", label: "🇲🇽 Liga MX", tier: "t2" },
+  {key:"soccer_epl",label:"🏴󠁧󠁢󠁥󠁮󠁧󠁿 PL"},{key:"soccer_spain_la_liga",label:"🇪🇸 Liga"},{key:"soccer_italy_serie_a",label:"🇮🇹 Serie A"},
+  {key:"soccer_germany_bundesliga",label:"🇩🇪 Buli"},{key:"soccer_france_ligue_one",label:"🇫🇷 L1"},
+  {key:"soccer_uefa_champs_league",label:"🏆 CL"},{key:"soccer_uefa_europa_league",label:"🏆 EL"},
+  {key:"soccer_fifa_world_cup_qualifiers_europe",label:"🌍 CDM"},{key:"soccer_netherlands_eredivisie",label:"🇳🇱 Ered"},
+  {key:"soccer_brazil_campeonato",label:"🇧🇷 Bra"},{key:"soccer_belgium_first_div",label:"🇧🇪 Bel"},
+  {key:"soccer_usa_mls",label:"🇺🇸 MLS"},{key:"soccer_mexico_ligamx",label:"🇲🇽 MX"}
 ];
+let curLeague = LEAGUES[0].key;
 
-let currentLeague = LEAGUES[0].key;
-let eventsData = [];
+function switchPanel(p, btn) {
+  document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('active'));
+  document.getElementById('panel-'+p).classList.add('active');
+  btn.classList.add('active');
+}
 
-// Init
-function init() {
-  const baseUrl = window.location.origin + `/odds-api.php?token=${TOKEN}&action=scan&league=soccer_epl`;
-  document.getElementById('urlScan').textContent = baseUrl;
-  
-  const sel = document.getElementById('leagueSelector');
-  LEAGUES.forEach(l => {
-    const btn = document.createElement('button');
-    btn.className = `league-btn ${l.tier} ${l.key === currentLeague ? 'active' : ''}`;
-    btn.textContent = l.label;
-    btn.onclick = () => {
-      currentLeague = l.key;
-      document.querySelectorAll('.league-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      // Update Claude URL
-      document.getElementById('urlScan').textContent = 
-        window.location.origin + `/odds-api.php?token=${TOKEN}&action=scan&league=${l.key}`;
-    };
-    sel.appendChild(btn);
+// Init leagues
+(function(){
+  const el=document.getElementById('oddsLeagues');
+  LEAGUES.forEach(l=>{
+    const b=document.createElement('button');b.className='league-btn'+(l.key===curLeague?' active':'');b.textContent=l.label;
+    b.onclick=()=>{curLeague=l.key;el.querySelectorAll('.league-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');};
+    el.appendChild(b);
   });
+  // Claude URLs
+  document.getElementById('urlOddsScan').textContent=O+'/odds-api.php?token='+TOKEN+'&action=scan&league=soccer_epl';
+  document.getElementById('urlOddsProps').textContent=O+'/odds-api.php?token='+TOKEN+'&action=props&league=soccer_epl&event=EVENT_ID';
+  document.getElementById('urlStatsToday').textContent=O+'/stats-api.php?token='+TOKEN+'&action=today';
+  document.getElementById('urlStatsSearch').textContent=O+'/stats-api.php?token='+TOKEN+'&action=search&q=arsenal';
+  document.getElementById('urlStatsTeam').textContent=O+'/stats-api.php?token='+TOKEN+'&action=team&id=TEAM_ID';
+  document.getElementById('urlStatsH2H').textContent=O+'/stats-api.php?token='+TOKEN+'&action=h2h&home=ID1&away=ID2';
+  document.getElementById('urlStatsLeagues').textContent=O+'/stats-api.php?token='+TOKEN+'&action=leagues';
+})();
+
+async function apiFetch(base,params){
+  const u=new URL(base,O);u.searchParams.set('token',TOKEN);
+  Object.entries(params).forEach(([k,v])=>u.searchParams.set(k,v));
+  const r=await fetch(u);if(!r.ok)throw new Error('HTTP '+r.status);return r.json();
 }
+function showLoading(v){document.getElementById('loading').style.display=v?'block':'none';}
+function showError(m){const e=document.getElementById('errorBox');e.textContent='❌ '+m;e.style.display='block';}
+function clearError(){document.getElementById('errorBox').style.display='none';}
 
-async function apiCall(action, params = {}) {
-  const url = new URL(PROXY);
-  url.searchParams.set('token', TOKEN);
-  url.searchParams.set('action', action);
-  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-  
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Erreur ${res.status}`);
-  return res.json();
-}
-
-async function scanLeague() {
-  const btn = document.getElementById('scanBtn');
-  const loading = document.getElementById('loading');
-  const errorBox = document.getElementById('errorBox');
-  const list = document.getElementById('eventsList');
-  const detail = document.getElementById('matchDetail');
-  
-  btn.disabled = true;
-  loading.style.display = 'block';
-  errorBox.style.display = 'none';
-  list.innerHTML = '';
-  detail.style.display = 'none';
-  
-  try {
-    const data = await apiCall('scan', { league: currentLeague });
-    
-    if (data.error) {
-      errorBox.textContent = '❌ ' + data.error;
-      errorBox.style.display = 'block';
-      loading.style.display = 'none';
-      btn.disabled = false;
-      return;
-    }
-
-    eventsData = data.matches || data;
-    
-    if (Array.isArray(eventsData) && eventsData.length === 0) {
-      list.innerHTML = '<div class="status">Aucun match à venir pour cette ligue</div>';
-    } else if (data.matches) {
-      // scan mode - matches with odds
-      renderScanResults(data);
-    } else {
-      // events mode - just list
-      renderEventsList(eventsData);
-    }
-  } catch (e) {
-    errorBox.textContent = '❌ ' + e.message;
-    errorBox.style.display = 'block';
-  }
-  
-  loading.style.display = 'none';
-  btn.disabled = false;
-}
-
-function renderScanResults(data) {
-  const list = document.getElementById('eventsList');
-  const q = document.getElementById('quota');
-  q.textContent = `Scanné: ${data.matches_count} matchs · ${data.scanned_at}`;
-  
-  let html = `<h3 style="color:var(--cyan); font-family:'Orbitron',monospace; font-size:14px; margin-bottom:8px;">
-    📅 ${data.matches_count} MATCHS — ${currentLeague.replace('soccer_','').toUpperCase()}</h3>`;
-  
-  data.matches.forEach(m => {
-    const kickoff = new Date(m.kickoff).toLocaleDateString('fr-FR', {
-      weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'
+// ODDS
+async function scanOdds(){
+  showLoading(true);clearError();document.getElementById('oddsResults').innerHTML='';document.getElementById('oddsDetail').style.display='none';
+  try{
+    const d=await apiFetch('/odds-api.php',{action:'scan',league:curLeague});
+    if(d.error)throw new Error(d.error);
+    const mm=d.matches||d;if(!mm||!mm.length){document.getElementById('oddsResults').innerHTML='<div class="status">Aucun match</div>';showLoading(false);return;}
+    document.getElementById('oddsQuota').textContent=(d.matches_count||mm.length)+' matchs · '+(d.scanned_at||'');
+    let h='';(d.matches||mm).forEach(m=>{
+      const k=m.kickoff?new Date(m.kickoff).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+      let os='';if(m.odds&&m.odds.h2h)os=Object.entries(m.odds.h2h).map(([n,o])=>n+': <b>'+o.price.toFixed(2)+'</b>').join(' · ');
+      const hn=(m.home||'').replace(/'/g,"\\'"), an=(m.away||'').replace(/'/g,"\\'");
+      h+='<div class="match-card" onclick="openOdds(\''+m.id+"','"+hn+"','"+an+"')\"><div><span class=\"match-teams\">"+m.home+'</span><span class="match-vs">vs</span><span class="match-teams">'+m.away+'</span></div><div class="match-meta">'+k+(os?' · '+os:'')+'</div></div>';
     });
-    
-    // Extract key odds
-    let h2hStr = '';
-    if (m.odds && m.odds.h2h) {
-      const entries = Object.entries(m.odds.h2h);
-      h2hStr = entries.map(([name, o]) => `${name}: <b>${o.price.toFixed(2)}</b>`).join(' · ');
-    }
-    
-    let totalsStr = '';
-    if (m.odds && m.odds.totals) {
-      const entries = Object.entries(m.odds.totals);
-      totalsStr = entries.map(([name, o]) => `${name}: <b>${o.price.toFixed(2)}</b>`).join(' · ');
-    }
-    
-    html += `
-    <div class="match-card" onclick="openMatch('${m.id}', '${m.home}', '${m.away}')">
-      <div>
-        <div><span class="match-teams">${m.home}</span><span class="match-vs">vs</span><span class="match-teams">${m.away}</span></div>
-        <div style="font-size:11px; color:#aaa; margin-top:4px;">${h2hStr}</div>
-        <div style="font-size:11px; color:#888; margin-top:2px;">${totalsStr}</div>
-      </div>
-      <div>
-        <div class="match-date">${kickoff}</div>
-        <div style="font-size:10px; color:var(--cyan); text-align:right;">Détails →</div>
-      </div>
-    </div>`;
-  });
-  
-  list.innerHTML = html;
+    document.getElementById('oddsResults').innerHTML=h;
+  }catch(e){showError(e.message);}showLoading(false);
 }
-
-function renderEventsList(events) {
-  const list = document.getElementById('eventsList');
-  let html = '';
-  events.forEach(ev => {
-    const kickoff = new Date(ev.commence_time).toLocaleDateString('fr-FR', {
-      weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'
-    });
-    html += `
-    <div class="match-card" onclick="openMatch('${ev.id}', '${ev.home_team}', '${ev.away_team}')">
-      <div>
-        <span class="match-teams">${ev.home_team}</span>
-        <span class="match-vs">vs</span>
-        <span class="match-teams">${ev.away_team}</span>
-      </div>
-      <div class="match-date">${kickoff}</div>
-    </div>`;
-  });
-  list.innerHTML = html;
+async function openOdds(id,home,away){
+  document.getElementById('oddsResults').style.display='none';const d=document.getElementById('oddsDetail');d.style.display='block';showLoading(true);
+  let h='<button class="back-btn" onclick="closeOdds()">← Retour</button><div class="match-card"><span class="match-teams">'+home+'</span><span class="match-vs">vs</span><span class="match-teams">'+away+'</span></div>';
+  try{
+    const odds=await apiFetch('/odds-api.php',{action:'odds',league:curLeague,event:id});h+=renderMkts(odds);
+    const props=await apiFetch('/odds-api.php',{action:'props',league:curLeague,event:id});h+=renderMkts(props,true);
+  }catch(e){h+='<div class="error">'+e.message+'</div>';}
+  h+='<div class="claude-box" style="margin-top:10px"><div class="label">🤖 URL Claude</div><code>'+O+'/odds-api.php?token='+TOKEN+'&action=props&league='+curLeague+'&event='+id+'</code></div>';
+  d.innerHTML=h;showLoading(false);
 }
-
-async function openMatch(eventId, home, away) {
-  const list = document.getElementById('eventsList');
-  const detail = document.getElementById('matchDetail');
-  const loading = document.getElementById('loading');
-  
-  list.style.display = 'none';
-  detail.style.display = 'block';
-  loading.style.display = 'block';
-  
-  let html = `
-  <button class="back-btn" onclick="closeMatch()">← Retour</button>
-  <div style="background:var(--card); border:1px solid var(--border); border-radius:12px; padding:16px; margin-bottom:16px; text-align:center;">
-    <div style="font-family:'Orbitron',monospace; font-size:clamp(16px,3vw,22px); color:#fff;">
-      ${home} <span style="color:var(--pink);">vs</span> ${away}
-    </div>
-  </div>`;
-
-  try {
-    // Fetch match odds
-    const odds = await apiCall('odds', { league: currentLeague, event: eventId });
-    html += renderOddsDetail(odds, 'Marchés Match');
-    
-    // Fetch props
-    const props = await apiCall('props', { league: currentLeague, event: eventId });
-    html += renderOddsDetail(props, 'Props Joueur & Extra', true);
-    
-  } catch (e) {
-    html += `<div class="error">❌ ${e.message}</div>`;
-  }
-  
-  // Claude URL for this specific match
-  html += `
-  <div class="claude-box" style="margin-top:16px;">
-    <div class="label">🤖 URL Claude pour CE match :</div>
-    <code>${window.location.origin}/odds-api.php?token=${TOKEN}&action=props&league=${currentLeague}&event=${eventId}</code>
-  </div>`;
-  
-  loading.style.display = 'none';
-  detail.innerHTML = html;
+function renderMkts(data,isP){
+  if(!data?.bookmakers?.length)return isP?'<div class="match-meta" style="margin-top:8px">Pas de props dispo</div>':'';
+  const M={};for(const bk of data.bookmakers)for(const mk of bk.markets||[])
+    {if(!M[mk.key])M[mk.key]={};for(const oc of mk.outcomes){const l=((oc.description?oc.name+' '+oc.description+' ':oc.name+' ')+(oc.point!=null?oc.point:'')).trim();
+    if(!M[mk.key][l]||oc.price>M[mk.key][l].price)M[mk.key][l]={price:oc.price,bk:bk.title};}}
+  const L={h2h:'1X2',totals:'Over/Under',spreads:'Handicap',btts:'BTTS',double_chance:'DC',team_totals:'Buts/Équipe',player_shots_on_target:'🎯 TIRS CADRÉS',player_goal_scorer_anytime:'⚽ BUTEUR'};
+  let h='';for(const[mk,ocs]of Object.entries(M)){h+='<div class="section-title">'+(L[mk]||mk)+'</div><div class="odds-grid">';
+    Object.entries(ocs).sort((a,b)=>a[1].price-b[1].price).forEach(([l,o])=>{h+='<div class="odds-item"><div class="odds-label">'+l+'</div><div class="odds-price">'+o.price.toFixed(2)+'</div><div class="odds-bk">'+o.bk+'</div></div>';});h+='</div>';}return h;
 }
+function closeOdds(){document.getElementById('oddsDetail').style.display='none';document.getElementById('oddsResults').style.display='block';}
 
-function renderOddsDetail(data, title, isProps = false) {
-  if (!data || !data.bookmakers || data.bookmakers.length === 0) {
-    if (isProps) {
-      return `<div class="info-box">
-        <div class="title">⚠️ Pas de props disponibles</div>
-        <div class="desc">Les props SOT sont dispo via les books US/UK. Essaie PL ou Liga.</div>
-      </div>`;
-    }
-    return `<div class="error">Pas de cotes disponibles</div>`;
-  }
-  
-  // Extract best odds per market per outcome
-  const markets = {};
-  for (const bk of data.bookmakers) {
-    for (const mkt of bk.markets || []) {
-      if (!markets[mkt.key]) markets[mkt.key] = {};
-      for (const oc of mkt.outcomes) {
-        const label = oc.description 
-          ? `${oc.name} ${oc.description} ${oc.point != null ? oc.point : ''}`
-          : `${oc.name} ${oc.point != null ? oc.point : ''}`;
-        const key = label.trim();
-        if (!markets[mkt.key][key] || oc.price > markets[mkt.key][key].price) {
-          markets[mkt.key][key] = { price: oc.price, bookmaker: bk.title, label: key };
-        }
-      }
-    }
-  }
-  
-  const LABELS = {
-    h2h: '1X2 / Moneyline', totals: 'Over / Under', spreads: 'Handicap',
-    btts: 'BTTS (Les 2 marquent)', double_chance: 'Double Chance',
-    team_totals: 'Buts par Équipe',
-    player_shots_on_target: '🎯 TIRS CADRÉS JOUEUR (SOT)',
-    player_goal_scorer_anytime: '⚽ BUTEUR À TOUT MOMENT'
-  };
-  
-  let html = '';
-  for (const [mktKey, outcomes] of Object.entries(markets)) {
-    const isPlayer = mktKey.includes('player');
-    const entries = Object.values(outcomes).sort((a, b) => a.price - b.price);
-    
-    html += `<div class="odds-section ${isPlayer ? 'highlight' : ''}">
-      <div class="odds-title">${LABELS[mktKey] || mktKey}</div>
-      <div class="odds-grid">`;
-    
-    entries.forEach(o => {
-      const implied = (100 / o.price).toFixed(1);
-      const cls = o.price >= 2.0 ? 'value' : o.price >= 1.4 ? 'ok' : 'low';
-      html += `
-      <div class="odds-item">
-        <div class="odds-label">${o.label}</div>
-        <div class="odds-price ${cls}">${o.price.toFixed(2)}</div>
-        <div class="odds-meta">implied ${implied}% · ${o.bookmaker}</div>
-      </div>`;
-    });
-    
-    html += '</div></div>';
-  }
-  
-  return html;
+// STATS
+async function fetchTodayStats(){
+  showLoading(true);clearError();document.getElementById('statsResults').innerHTML='';
+  try{const d=await apiFetch('/stats-api.php',{action:'today'});if(d.error)throw new Error(d.error);
+    const mm=d.matches||[];if(!mm.length){document.getElementById('statsResults').innerHTML='<div class="status">Aucun match</div>';showLoading(false);return;}
+    let h='<div class="section-title">📅 '+d.matches_count+' matchs — '+d.date+'</div>';
+    mm.forEach(m=>{const s=m.stats||{};let st='';
+      [[' O2.5',s.over25_potential],[' BTTS',s.btts_potential],[' O1.5',s.over15_potential],[' xG H',s.home_xg],[' xG A',s.away_xg]].forEach(([l,v])=>{
+        if(v!=null)st+='<div class="stat-badge"><span class="stat-label">'+l+'</span><span class="stat-val'+(v>=60?' hot':v<35?' cold':'')+'">'+v+'</span></div>';});
+      h+='<div class="match-card"><div><span class="match-teams">'+(m.home||'?')+'</span><span class="match-vs">vs</span><span class="match-teams">'+(m.away||'?')+'</span></div><div class="match-meta">'+(m.date||'')+' · '+(m.league||'')+'</div>'+(st?'<div class="match-stats">'+st+'</div>':'')+'</div>';
+    });document.getElementById('statsResults').innerHTML=h;
+  }catch(e){showError(e.message);}showLoading(false);
 }
-
-function closeMatch() {
-  document.getElementById('eventsList').style.display = 'block';
-  document.getElementById('matchDetail').style.display = 'none';
+async function searchTeam(){
+  const q=document.getElementById('searchInput').value.trim();if(!q)return;showLoading(true);clearError();
+  try{const d=await apiFetch('/stats-api.php',{action:'search',q:q});if(d.error)throw new Error(d.error);
+    const t=d.data||d;if(!t?.length){document.getElementById('statsResults').innerHTML='<div class="status">Rien trouvé</div>';showLoading(false);return;}
+    let h='<div class="section-title">Résultats</div>';(Array.isArray(t)?t:[t]).slice(0,10).forEach(x=>{
+      h+='<div class="match-card"><span class="match-teams">'+(x.name||x.team_name||'?')+'</span><span class="match-meta"> · ID:'+(x.id||x.team_id)+' · '+(x.country||'')+'</span></div>';});
+    document.getElementById('statsResults').innerHTML=h;
+  }catch(e){showError(e.message);}showLoading(false);
 }
-
-init();
+document.getElementById('searchInput')?.addEventListener('keydown',e=>{if(e.key==='Enter')searchTeam();});
 </script>
 </body>
 </html>
