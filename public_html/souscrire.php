@@ -126,81 +126,81 @@ try { $fondateurPlaces = (int)$db->query("SELECT COUNT(*) FROM vip_max_fondateur
 
   <!-- MULTISPORTS -->
   <div class="tip-card tip-card--multi fade-up" style="animation:fU .6s ease .1s both">
-    <?php if(array_intersect(['daily','weekend','weekly'],$typesActifs)):?><div class="tip-active">\u2713 ACTIF</div><?php endif;?>
+    <?php if(array_intersect(['daily','weekend','weekly'],$typesActifs)):?><div class="tip-active">✓ ACTIF</div><?php endif;?>
     <div class="tip-inner">
-      <div class="tip-badge">\U0001f3c6 Tipster principal</div>
+      <div class="tip-badge">🏆 Tipster principal</div>
       <div class="tip-mascot"><video autoplay loop muted playsinline><source src="/assets/images/DOIGT.mp4" type="video/mp4"></video></div>
       <div class="tip-name">Multisports</div>
-      <div class="tip-sub">Safe \u00b7 Fun \u00b7 LIVE \u00b7 Montante</div>
-      <div class="tip-sports"><span class="tip-sport-tag">\u26bd Foot</span><span class="tip-sport-tag">\U0001f3c0 NBA</span><span class="tip-sport-tag">\U0001f3d2 NHL</span><span class="tip-sport-tag">\u26be MLB</span><span class="tip-sport-tag">\U0001f3be Tennis</span></div>
+      <div class="tip-sub">Safe · Fun · LIVE · Montante</div>
+      <div class="tip-sports"><span class="tip-sport-tag">⚽ Foot</span><span class="tip-sport-tag">🏀 NBA</span><span class="tip-sport-tag">🏒 NHL</span><span class="tip-sport-tag">⚾ MLB</span><span class="tip-sport-tag">🎾 Tennis</span></div>
       <ul class="tip-features"><li>Bets Safe &amp; Fun quotidiens</li><li>Bets LIVE par mail &amp; Push</li><li>1 montante par mois</li><li>Analyses data &amp; xG</li></ul>
       <div class="tip-sep"></div>
-      <div class="tip-pricing-hint">\u00e0 partir de <strong>4,50\u20ac</strong></div>
-      <a href="/offres-multisports.php" class="tip-cta">\U0001f4ca Voir les offres</a>
-      <div class="tip-gw"><span>\U0001f381</span> <span class="tip-gw-txt">\u00c9ligible au GiveAway mensuel</span></div>
-      <div class="tip-free-badge"><div class="tip-free-badge-txt">\U0001f193 3 paris gratuits / semaine</div><div class="tip-free-badge-sub">\u00ab Pari de la commu \u00bb</div></div>
-      <div class="tip-stake"><a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="tip-stake-btn">\U0001f3b0 S\u2019inscrire sur Stake</a><div class="tip-stake-note">1 mois VIP MAX offert</div></div>
+      <div class="tip-pricing-hint">à partir de <strong>4,50€</strong></div>
+      <a href="/offres-multisports.php" class="tip-cta">📊 Voir les offres</a>
+      <div class="tip-gw"><span>🎁</span> <span class="tip-gw-txt">Éligible au GiveAway mensuel</span></div>
+      <div class="tip-free-badge"><div class="tip-free-badge-txt">🆓 3 paris gratuits / semaine</div><div class="tip-free-badge-sub">« Pari de la commu »</div></div>
+      <div class="tip-stake"><a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="tip-stake-btn">🎰 S’inscrire sur Stake</a><div class="tip-stake-note">1 mois VIP MAX offert</div></div>
     </div>
   </div>
 
   <!-- TENNIS -->
   <div class="tip-card tip-card--tennis fade-up" style="animation:fU .6s ease .2s both">
-    <?php if(in_array('tennis',$typesActifs)):?><div class="tip-active">\u2713 ACTIF</div><?php endif;?>
+    <?php if(in_array('tennis',$typesActifs)):?><div class="tip-active">✓ ACTIF</div><?php endif;?>
     <div class="tip-inner">
-      <div class="tip-badge">\U0001f3be Sp\u00e9cialiste</div>
+      <div class="tip-badge">🎾 Spécialiste</div>
       <div class="tip-mascot"><video autoplay loop muted playsinline><source src="/assets/images/mascotte_tennis.mp4" type="video/mp4"></video></div>
       <div class="tip-name">Tennis</div>
-      <div class="tip-sub">ATP \u00b7 WTA \u00b7 Grand Chelem</div>
-      <div class="tip-sports"><span class="tip-sport-tag">\U0001f3be ATP</span><span class="tip-sport-tag">\U0001f3be WTA</span></div>
-      <ul class="tip-features"><li>Analyses ATP &amp; WTA exclusives</li><li>Bets Safe &amp; Fun Tennis</li><li>7 jours d\u2019acc\u00e8s complet</li><li>Notifications Push &amp; Email</li></ul>
+      <div class="tip-sub">ATP · WTA · Grand Chelem</div>
+      <div class="tip-sports"><span class="tip-sport-tag">🎾 ATP</span><span class="tip-sport-tag">🎾 WTA</span></div>
+      <ul class="tip-features"><li>Analyses ATP &amp; WTA exclusives</li><li>Bets Safe &amp; Fun Tennis</li><li>7 jours d’accès complet</li><li>Notifications Push &amp; Email</li></ul>
       <div class="tip-sep"></div>
-      <div class="tip-price-row"><div class="tip-price"><span class="cur">\u20ac</span>15</div></div>
+      <div class="tip-price-row"><div class="tip-price"><span class="cur">€</span>15</div></div>
       <div class="tip-period">/ semaine (7 jours)</div>
-      <?php if(in_array('tennis',$typesActifs)):?><div class="tip-cta" style="opacity:.4;pointer-events:none;text-align:center">\u2713 Abonnement actif</div>
-      <?php else:?><a href="offre-tennis.php" class="tip-cta">\U0001f4b3 Payer \u2014 15\u20ac</a><?php endif;?>
-      <a href="offre-tennis.php#crypto" class="tip-cta-outline">\u20bf Payer en Crypto</a>
-      <div class="tip-stake"><a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="tip-stake-btn">\U0001f381 S\u2019inscrire sur Stake</a><div class="tip-stake-note">1 mois VIP MAX offert</div></div>
+      <?php if(in_array('tennis',$typesActifs)):?><div class="tip-cta" style="opacity:.4;pointer-events:none;text-align:center">✓ Abonnement actif</div>
+      <?php else:?><a href="offre-tennis.php" class="tip-cta">💳 Payer — 15€</a><?php endif;?>
+      <a href="offre-tennis.php#crypto" class="tip-cta-outline">₿ Payer en Crypto</a>
+      <div class="tip-stake"><a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="tip-stake-btn">🎁 S’inscrire sur Stake</a><div class="tip-stake-note">1 mois VIP MAX offert</div></div>
     </div>
   </div>
 
   <!-- FUN ONLY -->
   <div class="tip-card tip-card--fun fade-up" style="animation:fU .6s ease .3s both">
-    <?php if(in_array('fun',$typesActifs)):?><div class="tip-active">\u2713 ACTIF</div><?php endif;?>
+    <?php if(in_array('fun',$typesActifs)):?><div class="tip-active">✓ ACTIF</div><?php endif;?>
     <div class="tip-inner">
-      <div class="tip-badge">\U0001f3b2 Grosses cotes</div>
+      <div class="tip-badge">🎲 Grosses cotes</div>
       <div class="tip-mascot"><video autoplay loop muted playsinline><source src="/assets/images/mascotte-fun.mp4" type="video/mp4"></video></div>
       <div class="tip-name">Fun Only</div>
-      <div class="tip-sub">Week-end \u00b7 Champions League</div>
-      <div class="tip-sports"><span class="tip-sport-tag">\u26bd Foot WE</span><span class="tip-sport-tag">\U0001f3c6 Ligue des Champions</span></div>
-      <ul class="tip-features"><li>Combin\u00e9s grosses cotes</li><li>Sp\u00e9cial week-end &amp; soir\u00e9es C1</li><li>Bets Fun \u00e0 forte value</li><li>Notifications Push &amp; Email</li></ul>
+      <div class="tip-sub">Week-end · Champions League</div>
+      <div class="tip-sports"><span class="tip-sport-tag">⚽ Foot WE</span><span class="tip-sport-tag">🏆 Ligue des Champions</span></div>
+      <ul class="tip-features"><li>Combinés grosses cotes</li><li>Spécial week-end &amp; soirées C1</li><li>Bets Fun à forte value</li><li>Notifications Push &amp; Email</li></ul>
       <div class="tip-sep"></div>
-      <div class="tip-price-row"><div class="tip-price"><span class="cur">\u20ac</span>10</div></div>
-      <div class="tip-period">/ week-end (ven\u2192dim)</div>
-      <?php if(in_array('fun',$typesActifs)):?><div class="tip-cta" style="opacity:.4;pointer-events:none;text-align:center">\u2713 Abonnement actif</div>
-      <?php else:?><a href="offre-fun.php" class="tip-cta">\U0001f4b3 Payer \u2014 10\u20ac</a><?php endif;?>
-      <a href="offre-fun.php#crypto" class="tip-cta-outline">\u20bf Payer en Crypto</a>
-      <div class="tip-stake"><a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="tip-stake-btn">\U0001f3b0 S\u2019inscrire sur Stake</a><div class="tip-stake-note">1 mois VIP MAX offert</div></div>
+      <div class="tip-price-row"><div class="tip-price"><span class="cur">€</span>10</div></div>
+      <div class="tip-period">/ week-end (ven→dim)</div>
+      <?php if(in_array('fun',$typesActifs)):?><div class="tip-cta" style="opacity:.4;pointer-events:none;text-align:center">✓ Abonnement actif</div>
+      <?php else:?><a href="offre-fun.php" class="tip-cta">💳 Payer — 10€</a><?php endif;?>
+      <a href="offre-fun.php#crypto" class="tip-cta-outline">₿ Payer en Crypto</a>
+      <div class="tip-stake"><a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="tip-stake-btn">🎰 S’inscrire sur Stake</a><div class="tip-stake-note">1 mois VIP MAX offert</div></div>
     </div>
   </div>
 
   <!-- VIP MAX -->
   <div class="tip-card tip-card--vip fade-up" style="animation:fU .6s ease .4s both">
-    <?php if(in_array('vip_max',$typesActifs)):?><div class="tip-active">\u2713 ACTIF</div><?php endif;?>
+    <?php if(in_array('vip_max',$typesActifs)):?><div class="tip-active">✓ ACTIF</div><?php endif;?>
     <div class="tip-inner">
-      <div class="tip-badge">\U0001f451 Acc\u00e8s Total</div>
+      <div class="tip-badge">👑 Accès Total</div>
       <div class="tip-mascot" style="border-color:rgba(245,200,66,0.35);box-shadow:0 0 30px rgba(245,200,66,0.2)"><video autoplay loop muted playsinline><source src="/assets/images/vip_max.mp4" type="video/mp4"></video></div>
       <div class="tip-name" style="background:linear-gradient(135deg,#f5c842,#fffbe6,#e8a020);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">VIP MAX</div>
-      <div class="tip-sub">Tous les tipsters r\u00e9unis</div>
-      <div class="tip-sports"><span class="tip-sport-tag" style="color:#f5c842;border-color:rgba(245,200,66,0.2)">\U0001f3c6 Multi</span><span class="tip-sport-tag" style="color:#f5c842;border-color:rgba(245,200,66,0.2)">\U0001f3be Tennis</span><span class="tip-sport-tag" style="color:#f5c842;border-color:rgba(245,200,66,0.2)">\U0001f3b2 Fun</span></div>
-      <ul class="tip-features" style="--tc:#f5c842"><li>TOUT : Safe + Fun + LIVE + Tennis</li><li>Acc\u00e8s aux 3 tipsters</li><li>Montantes incluses</li><li>30 jours illimit\u00e9s</li></ul>
+      <div class="tip-sub">Tous les tipsters réunis</div>
+      <div class="tip-sports"><span class="tip-sport-tag" style="color:#f5c842;border-color:rgba(245,200,66,0.2)">🏆 Multi</span><span class="tip-sport-tag" style="color:#f5c842;border-color:rgba(245,200,66,0.2)">🎾 Tennis</span><span class="tip-sport-tag" style="color:#f5c842;border-color:rgba(245,200,66,0.2)">🎲 Fun</span></div>
+      <ul class="tip-features" style="--tc:#f5c842"><li>TOUT : Safe + Fun + LIVE + Tennis</li><li>Accès aux 3 tipsters</li><li>Montantes incluses</li><li>30 jours illimités</li></ul>
       <div class="tip-sep"></div>
-      <div class="tip-price-row"><div class="tip-price" style="color:#f5c842"><span class="cur">\u20ac</span>50</div></div>
+      <div class="tip-price-row"><div class="tip-price" style="color:#f5c842"><span class="cur">€</span>50</div></div>
       <div class="tip-period">/ mois (30 jours)</div>
-      <?php if(in_array('vip_max',$typesActifs)):?><div class="tip-cta" style="opacity:.4;pointer-events:none;text-align:center;background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6,#e8a020);color:#050810">\u2713 Abonnement actif</div>
-      <?php else:?><a href="offre.php?type=vip_max" class="tip-cta" style="background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6,#e8a020);color:#050810">\U0001f4b3 Payer \u2014 50\u20ac</a><?php endif;?>
-      <a href="offre.php?type=vip_max#crypto" class="tip-cta-outline" style="color:#f5c842;border-color:rgba(245,200,66,0.3)">\u20bf Payer en Crypto</a>
-      <div class="tip-gw"><span>\U0001f381</span> <span class="tip-gw-txt">\u00c9ligible au GiveAway mensuel</span></div>
-      <div class="tip-stake"><a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="tip-stake-btn">\U0001f3b0 S\u2019inscrire sur Stake</a><div class="tip-stake-note">1 mois VIP MAX offert</div></div>
+      <?php if(in_array('vip_max',$typesActifs)):?><div class="tip-cta" style="opacity:.4;pointer-events:none;text-align:center;background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6,#e8a020);color:#050810">✓ Abonnement actif</div>
+      <?php else:?><a href="offre.php?type=vip_max" class="tip-cta" style="background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6,#e8a020);color:#050810">💳 Payer — 50€</a><?php endif;?>
+      <a href="offre.php?type=vip_max#crypto" class="tip-cta-outline" style="color:#f5c842;border-color:rgba(245,200,66,0.3)">₿ Payer en Crypto</a>
+      <div class="tip-gw"><span>🎁</span> <span class="tip-gw-txt">Éligible au GiveAway mensuel</span></div>
+      <div class="tip-stake"><a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="tip-stake-btn">🎰 S’inscrire sur Stake</a><div class="tip-stake-note">1 mois VIP MAX offert</div></div>
     </div>
   </div>
 
