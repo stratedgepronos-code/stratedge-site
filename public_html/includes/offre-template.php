@@ -1853,7 +1853,7 @@ $gwBannerMod = [
       <!-- StarPass -->
       <div class="payment-block payment-block--starpass">
         <?php if ($type === 'daily'): ?>
-          <div class="block-title">💳 Paysafecard · Internet+ mobile · CB · SMS</div>
+          <div class="block-title">💳 Paysafecard · CB · SMS</div>
           <div class="block-desc">Paiement sécurisé via <strong style="color:var(--color)">StarPass</strong> — uniquement ces moyens sur l’offre Daily</div>
         <?php else: ?>
           <div class="block-title">💳 CB · PayPal · Paysafecard · Internet+</div>
@@ -1904,15 +1904,16 @@ $gwBannerMod = [
             function getButtonText(li) {
               return (li.textContent || '').replace(/\s+/g, ' ').trim().toLowerCase();
             }
-            /** Daily : uniquement Paysafecard, Internet+ mobile, carte bancaire, SMS (pas PayPal, pas banque en ligne, pas onglet Autres solutions) */
+            /** Daily : uniquement Paysafecard, carte bancaire, SMS (pas PayPal, pas banque en ligne, pas Facturation mobile, pas Internet+, pas onglet Autres solutions) */
             function isAllowedDailyAccessTab(li) {
               var t = getButtonText(li);
               if (/autres\s*solutions|other\s*solutions|banque\s*en\s*ligne|online\s*banking/.test(t)) return false;
               if (/paypal/.test(t)) return false;
+              if (/facturation\s*mobile|mobile\s*billing/i.test(t)) return false;
+              if (/internet\s*\+|internet\+/i.test(t)) return false;
               if (/paysafe|pay\s*safe/.test(t)) return true;
-              if (/internet\s*\+\s*mobile|internet\+\s*mobile|^internet\+$/i.test(t.trim())) return true;
               if (/carte\s*bancaire|credit\s*card|debit\s*card|bank\s*card|\bcb\b|card\s*payment|visa|mastercard/.test(t)) return true;
-              if (/^sms\b|envoyer\s*un\s*sms|premium\s*sms|text\s*message|facturation\s*mobile|mobile\s*billing/.test(t)) return true;
+              if (/^sms\b|envoyer\s*un\s*sms|premium\s*sms|text\s*message/.test(t)) return true;
               return false;
             }
             function shouldHideByLabel(li) {
