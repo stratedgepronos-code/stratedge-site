@@ -141,7 +141,7 @@ if ($envWeeklyFunIdd !== false && trim($envWeeklyFunIdd) !== '') {
 
 $o      = $offres[$type];
 $membre = getMembre();
-$hasFunOption         = in_array($type, ['weekend', 'weekly']);
+$hasFunOption         = ($type === 'weekly');
 $funIdd               = $hasFunOption ? trim((string)($o['idd_with_fun'] ?? '')) : '';
 $funStarPassOk        = $funIdd !== '';
 $starpassDatasInitial = $membre['id'] . ':' . $type;
@@ -1867,10 +1867,9 @@ $gwBannerMod = [
     <!-- ── COLONNE PAIEMENT ── -->
     <div class="payment-col">
 
-      <!-- StarPass + Crypto = 2 colonnes côte à côte -->
+      <?php if ($type === 'daily'): ?>
+      <!-- StarPass (Daily SMS uniquement) -->
       <div class="payment-methods-row">
-
-      <!-- StarPass -->
       <div class="payment-block payment-block--starpass">
         <?php if ($type === 'daily'): ?>
           <div class="block-title">💳 Paysafecard · CB · SMS</div>
@@ -2447,5 +2446,50 @@ function copyText(id) {
   }
 })();
 </script>
+<?php if ($type !== 'daily'): ?>
+<script>
+// ── Stripe CB ────────────────────────────────────────────────
+async function payerStripe() {
+  const btn = document.getElementById('btnStripe');
+  btn.disabled = true;
+  btn.textContent = '⏳ Redirection…';
+  try {
+    const resp = await fetch('/stripe-create.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'offre=<?= urlencode($type) ?>',
+    });
+    const data = await resp.json();
+    if (data.error) { alert('Erreur : ' + data.error); btn.disabled = false; btn.textContent = '💳 Payer par carte bancaire'; return; }
+    window.location.href = data.url;
+  } catch (e) {
+    alert('Erreur de connexion. Réessayez.');
+    btn.disabled = false;
+    btn.textContent = '💳 Payer par carte bancaire';
+  }
+}
+
+// ── Paysafecard ──────────────────────────────────────────────
+async function payerPaysafe() {
+  const btn = document.getElementById('btnPaysafe');
+  btn.disabled = true;
+  btn.textContent = '⏳ Redirection…';
+  try {
+    const resp = await fetch('/paysafe-create.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'offre=<?= urlencode($type) ?>',
+    });
+    const data = await resp.json();
+    if (data.error) { alert('Erreur : ' + data.error); btn.disabled = false; btn.textContent = '🏪 Payer par Paysafecard'; return; }
+    window.location.href = data.url;
+  } catch (e) {
+    alert('Erreur de connexion. Réessayez.');
+    btn.disabled = false;
+    btn.textContent = '🏪 Payer par Paysafecard';
+  }
+}
+</script>
+<?php endif; ?>
 </body>
 </html>
