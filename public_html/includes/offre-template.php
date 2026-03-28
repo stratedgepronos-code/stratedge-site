@@ -56,10 +56,17 @@ $offres = [
         'subtitle'   => '7 Jours Complets',
         'emoji'      => '🏆',
         'prix'       => '20',
+        'prix_fun'   => '30',
         'idd'        => '446905',
+        'idd_with_fun' => '',
         'idp'        => '263723',
         'duree'      => '7 jours glissants à partir de l\'achat',
-        'avantages'  => ['Accès TOUS les bets Safe & Fun', 'Bets LIVE par mail &amp; Push', 'Foot, NBA, Hockey…', 'Sans engagement'],
+        'avantages'  => [
+            '<div class="avantage-safe-fun-block"><span class="av-safe-line">Accès TOUS les bets « Safe »</span><br><span class="fun-supplement-pulse">Fun bets avec supplément (+10€ si option cochée)</span></div>',
+            'Bets LIVE par mail &amp; Push',
+            'Foot, NBA, Hockey…',
+            'Sans engagement',
+        ],
         'color'      => '#a855f7',
         'glow'       => 'rgba(168,85,247,0.18)',
         'gradient'   => 'linear-gradient(135deg,#a855f7,#7c3aed)',
@@ -110,11 +117,16 @@ $envWeekendFunIdd = getenv('STARPASS_WEEKEND_FUN_IDD');
 if ($envWeekendFunIdd !== false && trim($envWeekendFunIdd) !== '') {
     $offres['weekend']['idd_with_fun'] = trim($envWeekendFunIdd);
 }
+$envWeeklyFunIdd = getenv('STARPASS_WEEKLY_FUN_IDD');
+if ($envWeeklyFunIdd !== false && trim($envWeeklyFunIdd) !== '') {
+    $offres['weekly']['idd_with_fun'] = trim($envWeeklyFunIdd);
+}
 
 $o      = $offres[$type];
 $membre = getMembre();
-$weekendFunIdd        = ($type === 'weekend') ? trim((string)($o['idd_with_fun'] ?? '')) : '';
-$weekendFunStarPassOk = $weekendFunIdd !== '';
+$hasFunOption         = in_array($type, ['weekend', 'weekly']);
+$funIdd               = $hasFunOption ? trim((string)($o['idd_with_fun'] ?? '')) : '';
+$funStarPassOk        = $funIdd !== '';
 $starpassDatasInitial = $membre['id'] . ':' . $type;
 $gwPtsPack   = (int)(GIVEAWAY_POINTS[$type] ?? 0);
 $gwShowBadge = $gwPtsPack > 0;
@@ -1801,7 +1813,7 @@ $gwBannerMod = [
             </video>
           </div>
           <div class="offre-prix">
-            <span class="cur">€</span><span class="num" id="offrePrixNum"<?= $type === 'weekend' ? ' data-prix-base="' . htmlspecialchars($o['prix'], ENT_QUOTES, 'UTF-8') . '" data-prix-fun="' . htmlspecialchars($o['prix_fun'] ?? '20', ENT_QUOTES, 'UTF-8') . '"' : '' ?>><?= $o['prix'] ?></span>
+            <span class="cur">€</span><span class="num" id="offrePrixNum"<?= $hasFunOption ? ' data-prix-base="' . htmlspecialchars($o['prix'], ENT_QUOTES, 'UTF-8') . '" data-prix-fun="' . htmlspecialchars($o['prix_fun'] ?? '', ENT_QUOTES, 'UTF-8') . '"' : '' ?>><?= $o['prix'] ?></span>
           </div>
           <div class="offre-duree"><?= $o['duree'] ?></div>
           <?php if ($gwShowBadge && $gwBannerMod !== ''): ?>
@@ -1863,21 +1875,25 @@ $gwBannerMod = [
         $offerPriceNum = (float)str_replace(',', '.', $o['prix']);
         $spWrapClass = 'sp-wrap' . ($type === 'daily' ? ' sp-wrap--daily' : '');
         $spWrapAttrs = 'class="' . htmlspecialchars($spWrapClass, ENT_QUOTES, 'UTF-8') . '" id="spWrapRoot" data-offer-price="' . $offerPriceNum . '" data-offer-type="' . htmlspecialchars($type, ENT_QUOTES, 'UTF-8') . '"';
-        if ($type === 'weekend') {
-            $spWrapAttrs .= ' data-idd-base="' . (int)$o['idd'] . '" data-idd-fun="' . ($weekendFunStarPassOk ? (int)$weekendFunIdd : 0) . '"';
+        if ($hasFunOption) {
+            $spWrapAttrs .= ' data-idd-base="' . (int)$o['idd'] . '" data-idd-fun="' . ($funStarPassOk ? (int)$funIdd : 0) . '"';
             $spWrapAttrs .= ' data-prix-base="' . htmlspecialchars($o['prix'], ENT_QUOTES, 'UTF-8') . '"';
-            $spWrapAttrs .= ' data-prix-fun="' . htmlspecialchars($o['prix_fun'] ?? '20', ENT_QUOTES, 'UTF-8') . '"';
+            $spWrapAttrs .= ' data-prix-fun="' . htmlspecialchars($o['prix_fun'] ?? '', ENT_QUOTES, 'UTF-8') . '"';
         }
         ?>
         <div <?= $spWrapAttrs ?>>
-          <?php if ($type === 'weekend'): ?>
+          <?php if ($hasFunOption): ?>
           <div class="weekend-fun-opt">
-            <label class="weekend-fun-label" for="chkWeekendFun">
-              <input type="checkbox" id="chkWeekendFun" name="weekend_fun" value="1" <?= $weekendFunStarPassOk ? '' : 'disabled' ?>>
+            <label class="weekend-fun-label" for="chkFunOption">
+              <input type="checkbox" id="chkFunOption" name="option_fun" value="1" <?= $funStarPassOk ? '' : 'disabled' ?>>
+              <?php if ($type === 'weekend'): ?>
               <span><strong>Option Fun bets (+10€)</strong> — accès <strong>Safe</strong> + <strong>Fun</strong> jusqu’au dimanche 23h59 (StarPass à 20€).</span>
+              <?php else: ?>
+              <span><strong>Option Fun bets (+10€)</strong> — accès <strong>Safe</strong> + <strong>Fun</strong> pendant 7 jours (StarPass à 30€).</span>
+              <?php endif; ?>
             </label>
-            <?php if (!$weekendFunStarPassOk): ?>
-            <p class="weekend-fun-warn">Pour activer l’option : renseigne <code>idd_with_fun</code> dans ce fichier (code StarPass à <strong>20€</strong>) ou la variable d’environnement <code>STARPASS_WEEKEND_FUN_IDD</code> sur le serveur.</p>
+            <?php if (!$funStarPassOk): ?>
+            <p class="weekend-fun-warn">Pour activer l’option : renseigne <code>idd_with_fun</code> dans ce fichier ou la variable d’environnement <code>STARPASS_<?= strtoupper($type) ?>_FUN_IDD</code> sur le serveur.</p>
             <?php endif; ?>
           </div>
           <?php endif; ?>
@@ -2055,16 +2071,16 @@ $gwBannerMod = [
               setTimeout(waitForStarPass, 80);
             }
 
-            function syncWeekendFunUi() {
-              if (packType !== 'weekend' || !spRoot) return;
-              var chk = document.getElementById('chkWeekendFun');
+            function syncFunUi() {
+              if ((packType !== 'weekend' && packType !== 'weekly') || !spRoot) return;
+              var chk = document.getElementById('chkFunOption');
               var iddFun = parseInt(spRoot.getAttribute('data-idd-fun') || '0', 10);
               var iddBase = parseInt(spRoot.getAttribute('data-idd-base') || '0', 10);
               var funOn = chk && chk.checked && iddFun > 0;
               var idd = funOn ? iddFun : iddBase;
-              var datasType = funOn ? 'weekend_fun' : 'weekend';
-              var pb = spRoot.getAttribute('data-prix-base') || '10';
-              var pf = spRoot.getAttribute('data-prix-fun') || '20';
+              var datasType = funOn ? packType + '_fun' : packType;
+              var pb = spRoot.getAttribute('data-prix-base') || '';
+              var pf = spRoot.getAttribute('data-prix-fun') || '';
               var pr = funOn ? pf : pb;
               spRoot.setAttribute('data-offer-price', String(pr).replace(',', '.'));
               var elN = document.getElementById('offrePrixNum');
@@ -2074,9 +2090,9 @@ $gwBannerMod = [
               mountStarPassWidget(idd, datasType);
             }
 
-            if (packType === 'weekend') {
-              var chkW = document.getElementById('chkWeekendFun');
-              if (chkW && !chkW.disabled) chkW.addEventListener('change', syncWeekendFunUi);
+            if (packType === 'weekend' || packType === 'weekly') {
+              var chkF = document.getElementById('chkFunOption');
+              if (chkF && !chkF.disabled) chkF.addEventListener('change', syncFunUi);
             }
 
             if (document.readyState === 'loading') {
@@ -2266,7 +2282,7 @@ async function genererAdresse() {
   btn.disabled = true;
   btn.textContent = '⏳ Génération en cours…';
 
-  const chkFun = document.getElementById('chkWeekendFun');
+  const chkFun = document.getElementById('chkFunOption');
   const optFun = (chkFun && chkFun.checked && !chkFun.disabled) ? '&option_fun=1' : '';
 
   try {
