@@ -108,7 +108,7 @@ try { $fondateurPlaces = (int)$db->query("SELECT COUNT(*) FROM vip_max_fondateur
 <?php
 $cards = [
   ['type'=>'daily','tier'=>'Entrée','name'=>'Daily','video'=>'/assets/images/DOIGT.mp4','price'=>'4,50','period'=>'/ prochain bet','color'=>'#ff2d78','dim'=>'#d6245f','glow'=>'rgba(255,45,120,0.20)','grad'=>'linear-gradient(135deg,#ff2d78,#d6245f)','featured'=>false,'features'=>['Accès au prochain bet Safe','Accès au prochain bet Live','Idéal pour tester','Paiement par SMS'],'link'=>'offre-daily.php','btn'=>'📱 Payer — 4,50€','info'=>'SMS · CB · Paysafecard'],
-  ['type'=>'weekend','tier'=>'Populaire','name'=>'Week-End','video'=>'/assets/images/air.mp4','price'=>'10','period'=>'/ week-end (ven→dim)','color'=>'#00d4ff','dim'=>'#0099cc','glow'=>'rgba(0,212,255,0.20)','grad'=>'linear-gradient(135deg,#00d4ff,#0099cc)','featured'=>true,'features'=>['Bets Safe tout le week-end','Option Fun bets (+10€)','Bets LIVE par mail & Push','Sans engagement'],'link'=>'offre-weekend.php','btn'=>'💳 Payer — 10€','info'=>'CB · Paysafecard · Crypto'],
+  ['type'=>'weekend','tier'=>'Populaire','name'=>'Week-End','video'=>'/assets/images/air.mp4','price'=>'10','period'=>'/ week-end (ven→dim)','color'=>'#00d4ff','dim'=>'#0099cc','glow'=>'rgba(0,212,255,0.20)','grad'=>'linear-gradient(135deg,#00d4ff,#0099cc)','featured'=>true,'features'=>['Bets Safe &amp; Fun inclus','Bets LIVE par mail &amp; Push','Tous les matchs du week-end','Sans engagement'],'link'=>'offre-weekend.php','btn'=>'💳 Payer — 10€','info'=>'CB · Paysafecard · Crypto'],
   ['type'=>'weekly','tier'=>'Best value','name'=>'Weekly','video'=>'/assets/images/SAM.mp4','price'=>'20','period'=>'/ semaine (7 jours)','color'=>'#a855f7','dim'=>'#7c3aed','glow'=>'rgba(168,85,247,0.20)','grad'=>'linear-gradient(135deg,#a855f7,#7c3aed)','featured'=>false,'features'=>['TOUS les bets Safe & Fun','Bets LIVE par mail & Push','1 montante par mois','Foot, NBA, Hockey…'],'link'=>'offre-weekly.php','btn'=>'💳 Payer — 20€','info'=>'CB · Paysafecard · Crypto'],
 ];
 foreach($cards as $c):
@@ -160,23 +160,6 @@ foreach($cards as $c):
     </div>
   </div>
 </div>
-</div>
-<div class="vip-section">
-  <div class="vip-card fade-up">
-    <?php if(in_array('vip_max',$typesActifs)):?><div class="active-tag">✓ ACTIF</div><?php endif;?>
-    <div class="vip-tier">Accès Total</div>
-    <div style="display:flex;flex-direction:column;align-items:center;line-height:1.1;margin-bottom:.5rem">
-      <span class="vip-logo-vip">VIP</span><span class="vip-logo-max">MAX</span>
-    </div>
-    <div style="font-size:.78rem;color:rgba(245,200,66,0.4);margin-bottom:1rem;">Tous les tipsters réunis</div>
-    <div class="vip-mascot"><video autoplay loop muted playsinline><source src="/assets/images/vip_max.mp4" type="video/mp4"></video></div>
-    <div class="vip-price"><span class="cur">€</span>50</div>
-    <div class="vip-period">/ mois (30 jours)</div>
-    <ul class="vip-features"><li>Multisports + Tennis + Fun</li><li>Bets LIVE & montantes inclus</li><li>Accès illimité 30 jours</li><li>Priorité support</li></ul>
-    <div class="vip-divider"></div>
-    <?php if(in_array('vip_max',$typesActifs)):?><div class="vip-btn" style="opacity:.4;pointer-events:none">✓ Abonnement actif</div>
-    <?php else:?><a href="offre.php?type=vip_max" class="vip-btn">💳 Payer — 50€</a><div class="sep-or" style="color:rgba(245,200,66,0.3)">— ou —</div><a href="offre.php?type=vip_max#crypto" class="btn-crypto vip-crypto">₿ Payer en Crypto</a><?php endif;?>
-  </div>
 </div>
 
 <div class="guarantee"><div class="guarantee-title">🛡️ Sans engagement</div><p class="guarantee-text">Toutes nos formules sont sans abonnement récurrent. Tu payes une fois, tu profites.</p></div>

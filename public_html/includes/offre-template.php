@@ -370,7 +370,7 @@ $gwBannerMod = [
     }
     .offer-gw-banner:hover.offer-gw--vip { box-shadow: 0 14px 40px rgba(245, 200, 66, 0.22); }
 
-    .avantage-safe-fun-block { line-height: 1.45; }
+            'Accès bets Safe & Fun inclus',
     .avantage-safe-fun-block .av-safe-line { font-weight: 700; color: var(--txt); }
     .fun-supplement-pulse {
       display: inline-block;
@@ -520,6 +520,29 @@ $gwBannerMod = [
     }
     .membre-chip .dot { width:7px; height:7px; border-radius:50%; background:#00c864; flex-shrink:0; }
     .membre-chip strong { color:var(--txt2); }
+
+
+    /* ── Payment layout grid ── */
+    .payment-col--daily,
+    .payment-col--standard {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(1rem, 2vw, 1.5rem);
+      align-items: start;
+    }
+    .payment-col--daily .payment-block--starpass { grid-column: 1; grid-row: 1; }
+    .payment-col--daily .payment-crypto-wrap { grid-column: 2; grid-row: 1; }
+    .payment-col--daily .payment-block--stripe { grid-column: 1; grid-row: 2; }
+    .payment-col--daily .payment-block--paysafe { grid-column: 2; grid-row: 2; }
+
+    .payment-col--standard .payment-block--stripe { grid-column: 1; grid-row: 1; }
+    .payment-col--standard .payment-block--paysafe { grid-column: 2; grid-row: 1; }
+    .payment-col--standard .payment-crypto-wrap { grid-column: 1; grid-row: 2; }
+    .payment-col--standard .payment-extras-col { grid-column: 2; grid-row: 2; }
+
+    .payment-crypto-wrap > .payment-block { margin-bottom: 0; }
+    .payment-extras-col { display: flex; flex-direction: column; gap: 1rem; }
+    .payment-extras-col > * { margin-bottom: 0; }
 
     /* ── PAIEMENT ── */
     .payment-col {
@@ -1707,8 +1730,8 @@ $gwBannerMod = [
     }
 
     @media (max-width:1040px) {
-      .payment-methods-row {
-        grid-template-columns: 1fr;
+      .payment-methods-row { grid-template-columns: 1fr; }
+      .payment-col--daily, .payment-col--standard { grid-template-columns: 1fr;
         gap: 1.25rem;
       }
     }
@@ -1865,19 +1888,13 @@ $gwBannerMod = [
     </div>
 
     <!-- ── COLONNE PAIEMENT ── -->
-    <div class="payment-col">
+    <div class="payment-col payment-col--<?= $type === 'daily' ? 'daily' : 'standard' ?>">
 
       <?php if ($type === 'daily'): ?>
       <!-- StarPass (Daily SMS uniquement) -->
-      <div class="payment-methods-row">
       <div class="payment-block payment-block--starpass">
-        <?php if ($type === 'daily'): ?>
-          <div class="block-title">💳 Paysafecard · CB · SMS</div>
-          <div class="block-desc">Paiement sécurisé via <strong style="color:var(--color)">StarPass</strong> — uniquement ces moyens sur l’offre Daily</div>
-        <?php else: ?>
-          <div class="block-title">💳 CB · PayPal · Paysafecard · Internet+</div>
-          <div class="block-desc">Paiement sécurisé via <strong style="color:var(--color)">StarPass</strong> — carte bancaire, PayPal, Paysafecard ou Internet+</div>
-        <?php endif; ?>
+          <div class="block-title">📱 Paiement par SMS</div>
+          <div class="block-desc">Paiement rapide par <strong style="color:var(--color)">SMS</strong> — 4,50€ débités sur ta facture mobile</div>
         <?php
         $offerPriceNum = (float)str_replace(',', '.', $o['prix']);
         $spWrapClass = 'sp-wrap' . ($type === 'daily' ? ' sp-wrap--daily' : '');
@@ -1930,13 +1947,8 @@ $gwBannerMod = [
             /** Daily : uniquement Paysafecard, carte bancaire, SMS (pas PayPal, pas banque en ligne, pas Facturation mobile, pas Internet+, pas onglet Autres solutions) */
             function isAllowedDailyAccessTab(li) {
               var t = getButtonText(li);
-              if (/autres\s*solutions|other\s*solutions|banque\s*en\s*ligne|online\s*banking/.test(t)) return false;
-              if (/paypal/.test(t)) return false;
-              if (/facturation\s*mobile|mobile\s*billing/i.test(t)) return false;
-              if (/internet\s*\+|internet\+/i.test(t)) return false;
-              if (/paysafe|pay\s*safe/.test(t)) return true;
-              if (/carte\s*bancaire|credit\s*card|debit\s*card|bank\s*card|\bcb\b|card\s*payment|visa|mastercard/.test(t)) return true;
-              if (/^sms\b|envoyer\s*un\s*sms|premium\s*sms|text\s*message/.test(t)) return true;
+              // Daily: uniquement SMS
+              if (/^sms\b|envoyer\s*un\s*sms|premium\s*sms|text\s*message/i.test(t)) return true;
               return false;
             }
             function shouldHideByLabel(li) {
@@ -2119,12 +2131,9 @@ $gwBannerMod = [
           <p><strong>⚠️ Important :</strong> Après paiement StarPass, vous serez automatiquement redirigé vers votre espace membre. Si ce n'est pas le cas, contactez le support depuis votre dashboard.</p>
         </div>
       </div>
-      </div><!-- /.payment-methods-row daily -->
       <?php endif; /* daily starpass */ ?>
 
-      <?php if ($type !== 'daily'): ?>
-      <!-- Stripe + Paysafecard (non-Daily) -->
-      <div class="payment-methods-row">
+      <!-- Stripe CB + Paysafecard (tous les packs) -->
       <div class="payment-block payment-block--stripe">
         <div class="block-title">💳 Carte bancaire</div>
         <div class="block-desc">Paiement sécurisé par <strong style="color:var(--color)">Stripe</strong> — Visa, Mastercard, CB</div>
@@ -2147,10 +2156,9 @@ $gwBannerMod = [
         <button id="btnPaysafe" onclick="payerPaysafe()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:0.95rem 1.2rem;background:linear-gradient(135deg,#00b9f5,#0079c1);color:#fff;font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border:none;border-radius:10px;cursor:pointer;transition:all 0.25s;box-shadow:0 6px 18px rgba(0,185,245,0.3);">🏪 Payer par Paysafecard</button>
         <p style="font-size:0.65rem;color:var(--txt3);text-align:center;margin-top:0.5rem;">Code 16 chiffres · Bureau de tabac</p>
       </div>
-      <?php endif; /* non-daily */ ?>
 
       <!-- Crypto (tous les packs) -->
-      <div class="payment-crypto-column">
+      <div class="payment-crypto-wrap">
       <div class="payment-block" id="crypto">
         <div class="block-title">₿ Crypto-monnaie</div>
         <div class="block-desc">Choisissez votre crypto, générez une adresse unique et payez — activation automatique en quelques minutes</div>
@@ -2254,8 +2262,9 @@ $gwBannerMod = [
           <span class="sec-badge">⚡ Sans intervention manuelle</span>
           <span class="sec-badge">🛡️ 0.5% de frais seulement</span>
         </div>
-      </div>
+      </div><!-- /.payment-crypto-wrap -->
 
+      <div class="payment-extras-col">
       <?php if ($type !== 'tennis'): ?>
       <div class="payment-block stake-pay-block">
         <div class="stake-wrap">
@@ -2294,7 +2303,7 @@ $gwBannerMod = [
       </div>
       <?php endif; ?>
 
-      </div><!-- /.payment-crypto-column -->
+      </div><!-- /.payment-extras-col -->
 
     </div>
   </div>
@@ -2474,7 +2483,6 @@ function copyText(id) {
   }
 })();
 </script>
-<?php if ($type !== 'daily'): ?>
 <script>
 // ── Stripe CB ────────────────────────────────────────────────
 async function payerStripe() {
@@ -2518,6 +2526,5 @@ async function payerPaysafe() {
   }
 }
 </script>
-<?php endif; ?>
 </body>
 </html>
