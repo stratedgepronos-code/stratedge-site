@@ -1216,8 +1216,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
           <span class="tip-sport-tag">🏀 NBA</span>
           <span class="tip-sport-tag">🏒 NHL</span>
           <span class="tip-sport-tag">⚾ MLB</span>
-          <span class="tip-sport-tag">🎾 Tennis</span>
-        </div>
+                  </div>
 
         <ul class="tip-features">
           <li>Bets Safe &amp; Fun quotidiens</li>

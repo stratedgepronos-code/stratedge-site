@@ -100,7 +100,6 @@ try { $fondateurPlaces = (int)$db->query("SELECT COUNT(*) FROM vip_max_fondateur
     <span class="sub-hero-sport">🏀 NBA</span>
     <span class="sub-hero-sport">🏒 NHL</span>
     <span class="sub-hero-sport">⚾ MLB</span>
-    <span class="sub-hero-sport">🎾 Tennis</span>
   </div>
 </div>
 

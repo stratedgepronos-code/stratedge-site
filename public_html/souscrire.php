@@ -132,7 +132,7 @@ try { $fondateurPlaces = (int)$db->query("SELECT COUNT(*) FROM vip_max_fondateur
       <div class="tip-mascot"><video autoplay loop muted playsinline><source src="/assets/images/DOIGT.mp4" type="video/mp4"></video></div>
       <div class="tip-name">Multisports</div>
       <div class="tip-sub">Safe · Fun · LIVE · Montante</div>
-      <div class="tip-sports"><span class="tip-sport-tag">⚽ Foot</span><span class="tip-sport-tag">🏀 NBA</span><span class="tip-sport-tag">🏒 NHL</span><span class="tip-sport-tag">⚾ MLB</span><span class="tip-sport-tag">🎾 Tennis</span></div>
+      <div class="tip-sports"><span class="tip-sport-tag">⚽ Foot</span><span class="tip-sport-tag">🏀 NBA</span><span class="tip-sport-tag">🏒 NHL</span><span class="tip-sport-tag">⚾ MLB</span></div>
       <ul class="tip-features"><li>Bets Safe &amp; Fun quotidiens</li><li>Bets LIVE par mail &amp; Push</li><li>1 montante par mois</li><li>Analyses data &amp; xG</li></ul>
       <div class="tip-sep"></div>
       <div class="tip-pricing-hint">à partir de <strong>4,50€</strong></div>
