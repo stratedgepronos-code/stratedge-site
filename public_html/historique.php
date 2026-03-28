@@ -229,7 +229,7 @@ $betsFiltres = array_values($betsFiltres);
 $betsPerPage = 18;
 $totalBets = count($betsFiltres);
 
-$chartBets = $betsPourChart;
+$chartBets = $chartBets; // recalcul charts (section bets, avant filtre résultat)
 
 $parMois = [];
 foreach ($chartBets as $b) {
