@@ -210,7 +210,7 @@ try { $fondateurPlaces = (int)$db->query("SELECT COUNT(*) FROM vip_max_fondateur
 <div class="faq-section"><div class="faq-title">Questions fréquentes</div><div class="faq-grid">
 <div class="faq-item"><div class="faq-q">Comment je reçois les bets ?</div><div class="faq-a">Dès ton abonnement activé, les bets apparaissent sur ton dashboard. Tu reçois aussi l'annonce par email et notification push.</div></div>
 <div class="faq-item"><div class="faq-q">Puis-je cumuler les formules ?</div><div class="faq-a">Oui ! Par exemple, tu peux avoir un Weekly + un Tennis Weekly actifs en même temps.</div></div>
-<div class="faq-item"><div class="faq-q">Comment payer ?</div><div class="faq-a">SMS (Daily), carte bancaire via Stripe, Paysafecard en bureau de tabac, ou crypto.</div></div>
+<div class="faq-item"><div class="faq-q">Comment payer ?</div><div class="faq-a">SMS (Daily), carte bancaire via Stripe, Paysafecard, ou crypto.</div></div>
 <div class="faq-item"><div class="faq-q">Qu'est-ce que le VIP MAX ?</div><div class="faq-a">Le VIP MAX inclut TOUS les bets (multi-sport + tennis + fun + live) pendant 30 jours.</div></div>
 </div></div>
 </div>

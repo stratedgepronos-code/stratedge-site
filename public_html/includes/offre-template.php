@@ -38,7 +38,7 @@ $offres = [
         'idp'        => '263723',
         'duree'      => 'Du vendredi 00h00 au dimanche 23h59',
         'avantages'  => [
-            '<div class="avantage-safe-fun-block"><span class="av-safe-line">Accès bets « Safe »</span><br><span class="fun-supplement-pulse">Fun bets avec supplément (+10€ si option cochée)</span></div>',
+            'Accès aux bets Safe &amp; Fun',
             'Bets LIVE par mail &amp; Push',
             'Tous les matchs du week-end',
             'Sans engagement',
@@ -62,7 +62,7 @@ $offres = [
         'idp'        => '263723',
         'duree'      => '7 jours glissants à partir de l\'achat',
         'avantages'  => [
-            '<div class="avantage-safe-fun-block"><span class="av-safe-line">Accès TOUS les bets « Safe »</span><br><span class="fun-supplement-pulse">Fun bets avec supplément (+10€ si option cochée)</span></div>',
+            'Accès à TOUS les bets Safe &amp; Fun',
             'Bets LIVE par mail &amp; Push',
             'Foot, NBA, Hockey…',
             'Sans engagement',
@@ -370,7 +370,7 @@ $gwBannerMod = [
     }
     .offer-gw-banner:hover.offer-gw--vip { box-shadow: 0 14px 40px rgba(245, 200, 66, 0.22); }
 
-            'Accès bets Safe & Fun inclus',
+            'Accès aux bets Safe &amp; Fun',
     .avantage-safe-fun-block .av-safe-line { font-weight: 700; color: var(--txt); }
     .fun-supplement-pulse {
       display: inline-block;
@@ -534,6 +534,7 @@ $gwBannerMod = [
     .payment-col--daily .payment-crypto-wrap { grid-column: 2; grid-row: 1; }
     .payment-col--daily .payment-block--stripe { grid-column: 1; grid-row: 2; }
     .payment-col--daily .payment-block--paysafe { grid-column: 2; grid-row: 2; }
+    .payment-col--daily .payment-extras-col { grid-column: 1 / -1; grid-row: 3; }
 
     .payment-col--standard .payment-block--stripe { grid-column: 1; grid-row: 1; }
     .payment-col--standard .payment-block--paysafe { grid-column: 2; grid-row: 1; }
@@ -2148,13 +2149,13 @@ $gwBannerMod = [
       </div>
       <div class="payment-block payment-block--paysafe">
         <div class="block-title">🏪 Paysafecard</div>
-        <div class="block-desc">Payez avec un code acheté en <strong style="color:var(--color)">bureau de tabac</strong></div>
+        <div class="block-desc">Payez avec un code <strong style="color:var(--color)">Paysafecard</strong> — simple et sécurisé</div>
         <div style="text-align:center;padding:1rem 0;">
           <div style="font-size:0.7rem;color:var(--txt3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:0.3rem;">Montant à payer</div>
           <div id="pscPriceDisplay" style="font-family:'Orbitron',sans-serif;font-size:1.8rem;font-weight:900;color:var(--color);"><?= htmlspecialchars($o['prix']) ?> €</div>
         </div>
         <button id="btnPaysafe" onclick="payerPaysafe()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:0.95rem 1.2rem;background:linear-gradient(135deg,#00b9f5,#0079c1);color:#fff;font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border:none;border-radius:10px;cursor:pointer;transition:all 0.25s;box-shadow:0 6px 18px rgba(0,185,245,0.3);">🏪 Payer par Paysafecard</button>
-        <p style="font-size:0.65rem;color:var(--txt3);text-align:center;margin-top:0.5rem;">Code 16 chiffres · Bureau de tabac</p>
+        <p style="font-size:0.65rem;color:var(--txt3);text-align:center;margin-top:0.5rem;">Code 16 chiffres · Paysafecard</p>
       </div>
 
       <!-- Crypto (tous les packs) -->
