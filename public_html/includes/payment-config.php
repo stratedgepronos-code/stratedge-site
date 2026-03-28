@@ -4,29 +4,88 @@
 // includes/payment-config.php
 // ============================================================
 
-// ── STRIPE ──────────────────────────────────────────────────
-// Dashboard: https://dashboard.stripe.com
-// 1. Crée un compte sur stripe.com
-// 2. Active ton compte (vérification identité)
-// 3. Récupère tes clés dans Developers → API keys
-// 4. Configure le webhook dans Developers → Webhooks
-//    URL: https://stratedgepronos.fr/stripe-webhook.php
-//    Events: checkout.session.completed
+// ── STRIPE (3 comptes — 1 par tipster) ──────────────────────
+//
+// Compte 1: MULTISPORTS (daily, weekend, weekly, vip_max)
+//   Webhook URL: https://stratedgepronos.fr/stripe-webhook.php
+//   Event: checkout.session.completed
+//
+// Compte 2: TENNIS
+//   Webhook URL: https://stratedgepronos.fr/stripe-webhook.php
+//   Event: checkout.session.completed
+//
+// Compte 3: FUN ONLY
+//   Webhook URL: https://stratedgepronos.fr/stripe-webhook.php
+//   Event: checkout.session.completed
 
-define('STRIPE_SECRET_KEY',      getenv('STRIPE_SECRET_KEY')      ?: '');
-define('STRIPE_PUBLISHABLE_KEY', getenv('STRIPE_PUBLISHABLE_KEY') ?: '');
-define('STRIPE_WEBHOOK_SECRET',  getenv('STRIPE_WEBHOOK_SECRET')  ?: '');
+define('STRIPE_ACCOUNTS', [
+    'multi' => [
+        'secret'      => getenv('STRIPE_MULTI_SK')    ?: '',
+        'publishable' => getenv('STRIPE_MULTI_PK')    ?: '',
+        'webhook'     => getenv('STRIPE_MULTI_WHSEC') ?: '',
+    ],
+    'tennis' => [
+        'secret'      => getenv('STRIPE_TENNIS_SK')    ?: '',
+        'publishable' => getenv('STRIPE_TENNIS_PK')    ?: '',
+        'webhook'     => getenv('STRIPE_TENNIS_WHSEC') ?: '',
+    ],
+    'fun' => [
+        'secret'      => getenv('STRIPE_FUN_SK')    ?: '',
+        'publishable' => getenv('STRIPE_FUN_PK')    ?: '',
+        'webhook'     => getenv('STRIPE_FUN_WHSEC') ?: '',
+    ],
+]);
+
+// Routing : quel type d'offre va vers quel compte Stripe
+define('STRIPE_ROUTING', [
+    'daily'        => 'multi',
+    'weekend'      => 'multi',
+    'weekend_fun'  => 'multi',
+    'weekly'       => 'multi',
+    'weekly_fun'   => 'multi',
+    'vip_max'      => 'multi',
+    'tennis'       => 'tennis',
+    'fun'          => 'fun',
+]);
+
+/**
+ * Retourne les cles Stripe du bon compte selon le type d'offre.
+ */
+function getStripeAccount(string $offerType): array {
+    $accountKey = STRIPE_ROUTING[$offerType] ?? 'multi';
+    return STRIPE_ACCOUNTS[$accountKey];
+}
+
+/**
+ * Verifie la signature webhook contre les 3 comptes.
+ * Retourne le compte qui match ou null.
+ */
+function matchStripeWebhook(string $signature, string $payload): ?array {
+    $elements = [];
+    foreach (explode(',', $signature) as $part) {
+        $kv = explode('=', $part, 2);
+        if (count($kv) === 2) $elements[trim($kv[0])] = trim($kv[1]);
+    }
+    $timestamp = $elements['t'] ?? '';
+    $sig = $elements['v1'] ?? '';
+    if (!$timestamp || !$sig) return null;
+    if (abs(time() - (int)$timestamp) > 300) return null;
+
+    $signedPayload = $timestamp . '.' . $payload;
+
+    foreach (STRIPE_ACCOUNTS as $accountKey => $keys) {
+        if (empty($keys['webhook'])) continue;
+        $expected = hash_hmac('sha256', $signedPayload, $keys['webhook']);
+        if (hash_equals($expected, $sig)) {
+            return ['account' => $accountKey, 'keys' => $keys];
+        }
+    }
+    return null;
+}
 
 // ── PAYSAFECARD ─────────────────────────────────────────────
-// Dashboard: https://merchant.paysafecard.com
-// 1. Crée un compte marchand sur paysafecard.com/business
-// 2. Demande l'accès API (validation ~48h)
-// 3. Récupère ton API Key dans le dashboard marchand
-// Test: https://apitest.paysafecard.com/v1/payments
-// Prod: https://api.paysafecard.com/v1/payments
-
 define('PAYSAFE_API_KEY',  getenv('PAYSAFE_API_KEY')  ?: '');
-define('PAYSAFE_ENV',      getenv('PAYSAFE_ENV')      ?: 'TEST'); // TEST ou PROD
+define('PAYSAFE_ENV',      getenv('PAYSAFE_ENV')      ?: 'TEST');
 
 function paysafeBaseUrl(): string {
     return PAYSAFE_ENV === 'PROD'
@@ -37,8 +96,8 @@ function paysafeBaseUrl(): string {
 // ── COMMUN ──────────────────────────────────────────────────
 define('SITE_BASE_URL', 'https://stratedgepronos.fr');
 
-// Montants par offre
 define('PAYMENT_AMOUNTS', [
+    'daily'        => 4.50,
     'weekend'      => 10.00,
     'weekend_fun'  => 20.00,
     'weekly'       => 20.00,
@@ -48,8 +107,8 @@ define('PAYMENT_AMOUNTS', [
     'fun'          => 10.00,
 ]);
 
-// Libellés pour Stripe/Paysafe
 define('PAYMENT_LABELS', [
+    'daily'        => 'StratEdge — Daily',
     'weekend'      => 'StratEdge — Pack Week-End',
     'weekend_fun'  => 'StratEdge — Pack Week-End + Fun',
     'weekly'       => 'StratEdge — Pack Weekly',

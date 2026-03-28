@@ -27,37 +27,17 @@ if (empty($payload)) {
     exit;
 }
 
-// ── Vérifier la signature Stripe ─────────────────────────────
-$elements = [];
-foreach (explode(',', $sigHeader) as $part) {
-    [$key, $val] = explode('=', $part, 2);
-    $elements[trim($key)] = trim($val);
-}
+// ── Vérifier la signature contre les 3 comptes Stripe ────────
+$matchedAccount = matchStripeWebhook($sigHeader, $payload);
 
-$timestamp = $elements['t'] ?? '';
-$signature = $elements['v1'] ?? '';
-
-if (!$timestamp || !$signature) {
+if (!$matchedAccount) {
     http_response_code(400);
-    stripeLog('ERREUR: signature manquante');
+    stripeLog('ERREUR: signature invalide (aucun des 3 comptes ne match)');
     exit;
 }
 
-$signedPayload = $timestamp . '.' . $payload;
-$expectedSig = hash_hmac('sha256', $signedPayload, STRIPE_WEBHOOK_SECRET);
-
-if (!hash_equals($expectedSig, $signature)) {
-    http_response_code(400);
-    stripeLog('ERREUR: signature invalide');
-    exit;
-}
-
-// ── Tolérance timestamp (5 min) ──────────────────────────────
-if (abs(time() - (int)$timestamp) > 300) {
-    http_response_code(400);
-    stripeLog('ERREUR: timestamp trop ancien');
-    exit;
-}
+$stripeAccountName = $matchedAccount['account'];
+stripeLog("Signature OK → compte: $stripeAccountName");
 
 // ── Parser l'événement ───────────────────────────────────────
 $event = json_decode($payload, true);
@@ -113,7 +93,7 @@ try {
 
 // ── Activer l'abonnement ─────────────────────────────────────
 if (activerAbonnement($membreId, $typeActivation)) {
-    stripeLog("✅ Abonnement activé: membre #$membreId → $typeActivation ({$amount}€) [order: $orderId]");
+    stripeLog("✅ Abonnement activé: membre #$membreId → $typeActivation ({$amount}€) [order: $orderId] [compte: $stripeAccountName]");
 
     // Sauvegarder en BDD
     try {
@@ -124,6 +104,7 @@ if (activerAbonnement($membreId, $typeActivation)) {
             stripe_session_id VARCHAR(120) NOT NULL,
             order_id VARCHAR(80) NOT NULL,
             montant_eur DECIMAL(8,2) NOT NULL,
+            stripe_account VARCHAR(20) DEFAULT 'multi',
             statut VARCHAR(20) DEFAULT 'validé',
             date_paiement DATETIME DEFAULT CURRENT_TIMESTAMP,
             KEY idx_session (stripe_session_id),
@@ -131,9 +112,9 @@ if (activerAbonnement($membreId, $typeActivation)) {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
         $stmt = $db->prepare("INSERT INTO stripe_payments
-            (membre_id, offre, stripe_session_id, order_id, montant_eur, statut)
-            VALUES (?, ?, ?, ?, ?, 'validé')");
-        $stmt->execute([$membreId, $type, $session['id'], $orderId, $amount]);
+            (membre_id, offre, stripe_session_id, order_id, montant_eur, stripe_account, statut)
+            VALUES (?, ?, ?, ?, ?, ?, 'validé')");
+        $stmt->execute([$membreId, $type, $session['id'], $orderId, $amount, $stripeAccountName]);
     } catch (Throwable $e) {
         stripeLog('WARN: sauvegarde BDD échouée: ' . $e->getMessage());
     }

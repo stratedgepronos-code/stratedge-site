@@ -31,6 +31,19 @@ $amount   = PAYMENT_AMOUNTS[$effectiveType];
 $label    = PAYMENT_LABELS[$effectiveType] ?? 'StratEdge Pronos';
 $orderId  = 'SE_' . $membre['id'] . '_' . $effectiveType . '_' . time();
 
+// ── Routing vers le bon compte Stripe ─────────────────────────
+$stripeAccount = getStripeAccount($effectiveType);
+$stripeKey     = $stripeAccount['secret'];
+$accountName   = STRIPE_ROUTING[$effectiveType] ?? 'multi';
+
+if (empty($stripeKey)) {
+    @file_put_contents(__DIR__ . '/logs/stripe-log.txt',
+        date('Y-m-d H:i:s') . " | CREATE ERROR | compte=$accountName | clé API vide\n", FILE_APPEND);
+    http_response_code(500);
+    echo json_encode(['error' => 'Paiement CB non configuré pour cette offre']);
+    exit;
+}
+
 // ── Appel API Stripe Checkout ────────────────────────────────
 $payload = [
     'payment_method_types[]' => 'card',
@@ -46,6 +59,7 @@ $payload = [
     'metadata[membre_id]'    => $membre['id'],
     'metadata[type]'         => $effectiveType,
     'metadata[order_id]'     => $orderId,
+    'metadata[stripe_account]' => $accountName,
 ];
 
 $ch = curl_init('https://api.stripe.com/v1/checkout/sessions');
@@ -54,7 +68,7 @@ curl_setopt_array($ch, [
     CURLOPT_POSTFIELDS     => http_build_query($payload),
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_HTTPHEADER     => [
-        'Authorization: Bearer ' . STRIPE_SECRET_KEY,
+        'Authorization: Bearer ' . $stripeKey,
     ],
     CURLOPT_TIMEOUT        => 15,
 ]);
@@ -69,7 +83,7 @@ if ($httpCode >= 400 || !isset($data['url'])) {
     $errMsg = $data['error']['message'] ?? 'Erreur Stripe inconnue';
     // Log
     @file_put_contents(__DIR__ . '/logs/stripe-log.txt',
-        date('Y-m-d H:i:s') . " | CREATE ERROR | $orderId | HTTP $httpCode | $errMsg\n", FILE_APPEND);
+        date('Y-m-d H:i:s') . " | CREATE ERROR | compte=$accountName | $orderId | HTTP $httpCode | $errMsg\n", FILE_APPEND);
     http_response_code(500);
     echo json_encode(['error' => $errMsg]);
     exit;
@@ -77,7 +91,7 @@ if ($httpCode >= 400 || !isset($data['url'])) {
 
 // Log succès
 @file_put_contents(__DIR__ . '/logs/stripe-log.txt',
-    date('Y-m-d H:i:s') . " | CREATE OK | $orderId | session=" . $data['id'] . " | {$amount}€\n", FILE_APPEND);
+    date('Y-m-d H:i:s') . " | CREATE OK | compte=$accountName | $orderId | session=" . $data['id'] . " | {$amount}€\n", FILE_APPEND);
 
 echo json_encode([
     'url'        => $data['url'],
