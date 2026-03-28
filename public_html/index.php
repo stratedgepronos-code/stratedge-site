@@ -1316,10 +1316,17 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
 
         <div class="tip-sep"></div>
 
-        <div class="tip-pricing-hint">à partir de <strong>4,50€</strong></div>
+        <div class="tip-price-row">
+          <div class="tip-price"><span class="cur">€</span>10</div>
+        </div>
+        <div class="tip-period">/ week-end (ven→dim)</div>
 
-        <a href="/offres-fun.php" class="tip-cta">🎲 Voir les offres</a>
-        <a href="/offres-fun.php#crypto" class="tip-cta-outline">₿ Payer en Crypto</a>
+        <?php if (isLoggedIn()): ?>
+          <a href="offre-fun.php" class="tip-cta">💳 Payer — 10€</a>
+        <?php else: ?>
+          <a href="login.php?redirect=offre-fun.php" class="tip-cta">🔒 Se connecter pour payer</a>
+        <?php endif; ?>
+        <a href="offre-fun.php#crypto" class="tip-cta-outline">₿ Payer en Crypto</a>
 
         <div class="tip-stake">
           <div class="tip-stake-label">Bonus Partenaire</div>

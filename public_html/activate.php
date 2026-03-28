@@ -33,7 +33,7 @@ $membreId   = (int)($parts[0] ?? 0);
 $type       = $parts[1] ?? '';
 
 // Vérifications de base
-$typesValides = ['daily', 'weekend', 'weekend_fun', 'weekly', 'tennis', 'vip_max', 'rasstoss'];
+$typesValides = ['daily', 'weekend', 'weekend_fun', 'weekly', 'weekly_fun', 'tennis', 'vip_max', 'fun', 'rasstoss'];
 if ($membreId <= 0 || !in_array($type, $typesValides)) {
     @file_put_contents($logFile, "  → ERREUR: membreId=$membreId type=$type invalide\n", FILE_APPEND);
     header('Location: /dashboard.php?error=activation');

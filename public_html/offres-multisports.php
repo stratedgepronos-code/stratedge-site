@@ -32,7 +32,7 @@ try { $fondateurPlaces = (int)$db->query("SELECT COUNT(*) FROM vip_max_fondateur
 .sub-hero-desc{color:#8a9bb0;font-size:1rem;max-width:550px;margin:0 auto;line-height:1.6}
 .sub-hero-sports{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin-top:1rem}
 .sub-hero-sport{font-size:.75rem;font-weight:700;padding:.3rem .7rem;border-radius:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#b0bec9}
-.plans-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.3rem;position:relative;z-index:2;animation:fU .7s ease .1s both}
+.plans-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.3rem;position:relative;z-index:2;animation:fU .7s ease .1s both}
 .plan-card{background:linear-gradient(165deg,#0c1018,#111827 60%,#0d1220);border:1px solid rgba(255,255,255,0.06);border-radius:20px;overflow:hidden;position:relative;transition:transform .35s,box-shadow .35s,border-color .35s;display:flex;flex-direction:column}
 .plan-card:hover{transform:translateY(-6px);border-color:var(--cc);box-shadow:0 20px 60px -15px var(--cg)}
 .plan-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--cgrad);z-index:4}
@@ -70,10 +70,16 @@ try { $fondateurPlaces = (int)$db->query("SELECT COUNT(*) FROM vip_max_fondateur
 .vip-divider{width:100%;height:1px;background:rgba(245,200,66,0.12);margin:1rem 0}
 .vip-btn{display:block;width:100%;padding:.8rem;background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6,#e8a020);color:#050810;border:none;border-radius:8px;font-family:'Orbitron',sans-serif;font-size:.75rem;font-weight:900;text-transform:uppercase;letter-spacing:1.5px;cursor:pointer;text-decoration:none;transition:all .3s;text-align:center;box-shadow:0 4px 20px rgba(245,200,66,0.25)}.vip-btn:hover{box-shadow:0 8px 30px rgba(245,200,66,0.5);transform:translateY(-2px)}
 .vip-crypto{background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6,#e8a020)!important;color:#050810!important;box-shadow:0 4px 20px rgba(245,200,66,0.25)!important}
+.plan-gw{margin-top:.6rem;padding:.45rem .65rem;border-radius:8px;border:1px solid transparent;text-align:center;background:linear-gradient(135deg,#111827,#111827) padding-box,linear-gradient(135deg,#ff2d78,#a855f7,#00d4ff) border-box;animation:giveawayPulse 3s ease-in-out infinite}
+.plan-gw-txt{font-family:'Orbitron',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:1px;background:linear-gradient(135deg,#ff2d78,#a855f7,#00d4ff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+@keyframes giveawayPulse{0%,100%{box-shadow:0 0 8px rgba(255,45,120,0.06)}50%{box-shadow:0 0 18px rgba(255,45,120,0.12)}}
+.plan-stake{margin-top:.5rem;text-align:center}
+.plan-stake-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;padding:.6rem .8rem;background:linear-gradient(135deg,#00d4ff,#0089ff);color:#fff;font-family:'Orbitron',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;border:1px solid rgba(0,212,255,0.35);border-radius:8px;cursor:pointer;text-decoration:none;transition:all .25s;box-shadow:0 4px 14px rgba(0,166,255,0.2)}.plan-stake-btn:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,166,255,0.35)}
+.plan-stake-note{font-size:.65rem;color:rgba(0,212,255,0.6);margin-top:.3rem}
 .back-link{display:inline-flex;align-items:center;gap:.4rem;font-size:.82rem;color:#8a9bb0;text-decoration:none;margin-bottom:1.5rem;transition:color .2s}.back-link:hover{color:#ff2d78}
 .guarantee{text-align:center;margin-top:2rem;padding:1.5rem;background:linear-gradient(135deg,rgba(255,45,120,0.03),rgba(0,212,255,0.03));border:1px solid rgba(255,255,255,0.05);border-radius:16px;position:relative;z-index:2}.guarantee-title{font-family:'Orbitron',sans-serif;font-size:.75rem;letter-spacing:2px;text-transform:uppercase;color:#b0bec9;margin-bottom:.3rem}.guarantee-text{color:#8a9bb0;font-size:.85rem;max-width:500px;margin:0 auto}
 @keyframes fU{from{opacity:0;transform:translateY(25px)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:900px){.plans-grid{grid-template-columns:1fr}}
+@media(max-width:1100px){.plans-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.plans-grid{grid-template-columns:1fr}}
 .wrap{max-width:1100px;margin:0 auto;width:100%}
 </style>
 </head>
@@ -124,12 +130,37 @@ foreach($cards as $c):
       <?php else:?><a href="<?=$c['link']?>" class="plan-btn"><?=$c['btn']?></a><div class="sep-or">— ou —</div><a href="<?=$c['link']?>#crypto" class="btn-crypto">₿ Payer en Crypto</a><?php endif;?>
       <div class="plan-pay-info"><?=$c['info']?></div>
     </div>
+    <div class="plan-gw">
+      <span>🎁</span> <span class="plan-gw-txt">Éligible au GiveAway mensuel</span>
+    </div>
+    <div class="plan-stake">
+      <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="plan-stake-btn">🎰 S’inscrire sur Stake</a>
+      <div class="plan-stake-note">1 mois VIP MAX offert</div>
+    </div>
   </div>
 </div>
 <?php endforeach;?>
-</div>
 
-<!-- VIP MAX -->
+<!-- VIP MAX in grid -->
+<div class="plan-card fade-up" style="--cc:#f5c842;--cc-dim:#e8a020;--cg:rgba(245,200,66,0.20);--cgrad:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6,#e8a020);border-color:rgba(245,200,66,0.2);box-shadow:0 0 30px rgba(245,200,66,0.06)">
+  <?php if(in_array('vip_max',$typesActifs)):?><div class="active-tag">✓ ACTIF</div><?php endif;?>
+  <div class="plan-inner">
+    <div class="plan-mascot" style="border-color:rgba(245,200,66,0.35);box-shadow:0 0 25px rgba(245,200,66,0.2)"><video autoplay loop muted playsinline><source src="/assets/images/vip_max.mp4" type="video/mp4"></video></div>
+    <div class="plan-tier" style="color:#f5c842">👑 Accès Total</div>
+    <div class="plan-name" style="background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6,#e8a020);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">VIP MAX</div>
+    <div class="plan-price-row"><span class="plan-price" style="background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6,#e8a020);-webkit-background-clip:text;-webkit-text-fill-color:transparent;"><span class="cur">€</span>50</span></div>
+    <div class="plan-period">/ mois (30 jours)</div>
+    <ul class="plan-features" style="--cc:#f5c842"><li>Tous les tipsters réunis</li><li>Multisports + Tennis + Fun</li><li>Bets LIVE &amp; montantes inclus</li><li>30 jours illimités</li></ul>
+    <div class="plan-divider" style="background:rgba(245,200,66,0.12)"></div>
+    <div class="plan-pay" style="border-color:rgba(245,200,66,0.15);background:rgba(245,200,66,0.03)">
+      <div class="plan-pay-label" style="color:#f5c842">💳 Payer maintenant</div>
+      <?php if(in_array('vip_max',$typesActifs)):?><div class="plan-btn disabled">✓ Abonnement actif</div>
+      <?php else:?><a href="offre.php?type=vip_max" class="plan-btn" style="background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6,#e8a020);color:#050810;">💳 Payer — 50€</a><div class="sep-or" style="color:rgba(245,200,66,0.3)">— ou —</div><a href="offre.php?type=vip_max#crypto" class="btn-crypto" style="background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6,#e8a020)!important;color:#050810!important;">₿ Payer en Crypto</a><?php endif;?>
+      <div class="plan-pay-info" style="color:rgba(245,200,66,0.3)">CB · Paysafecard · Crypto</div>
+    </div>
+  </div>
+</div>
+</div>
 <div class="vip-section">
   <div class="vip-card fade-up">
     <?php if(in_array('vip_max',$typesActifs)):?><div class="active-tag">✓ ACTIF</div><?php endif;?>

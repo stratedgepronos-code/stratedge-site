@@ -109,6 +109,23 @@ $offres = [
         'badge'      => 'VIP MAX',
         'tag'        => 'Accès Total',
     ],
+    'fun' => [
+        'titre'      => 'Fun Only',
+        'subtitle'   => 'Grosses Cotes',
+        'emoji'      => '🎲',
+        'prix'       => '10',
+        'idd'        => '',
+        'idp'        => '',
+        'duree'      => 'Du vendredi 00h00 au dimanche 23h59',
+        'avantages'  => ['Combinés grosses cotes week-end', 'Soirées Champions League', 'Bets Fun à forte value', 'Notifications Push & Email'],
+        'color'      => '#a855f7',
+        'glow'       => 'rgba(168,85,247,0.18)',
+        'gradient'   => 'linear-gradient(135deg,#a855f7,#ff6b2b)',
+        'video'      => 'assets/images/mascotte-fun.mp4',
+        'activate'   => 'activate.php?type=fun',
+        'badge'      => '🎲 FUN',
+        'tag'        => 'Grosses cotes',
+    ],
 ];
 
 if (!isset($offres[$type])) { header('Location: /souscrire.php'); exit; }

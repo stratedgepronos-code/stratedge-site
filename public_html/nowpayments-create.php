@@ -32,7 +32,7 @@ $type  = trim($_POST['offre']   ?? '');
 
 $validCoins  = array_keys(NP_CRYPTO_MAP);
 $validTypes  = ['daily', 'weekend', 'weekly', 'tennis', 'vip_max'];
-$montants    = ['daily' => 4.50, 'weekend' => 10.00, 'weekly' => 20.00, 'tennis' => 15.00, 'vip_max' => 50.00];
+$montants    = ['daily' => 4.50, 'weekend' => 10.00, 'weekly' => 20.00, 'tennis' => 15.00, 'vip_max' => 50.00, 'fun' => 10.00];
 
 if (!in_array($coin, $validCoins) || !in_array($type, $validTypes)) {
     http_response_code(400);
