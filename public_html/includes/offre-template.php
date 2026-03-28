@@ -1850,15 +1850,6 @@ $gwBannerMod = [
     <!-- ── COLONNE PAIEMENT ── -->
     <div class="payment-col">
 
-      <?php if ($type !== 'tennis'): ?>
-      <div class="stake-block">
-        <div class="stake-block-title">Bonus Partenaire Stake</div>
-        <div class="stake-block-desc">Crée ton compte Stake avec notre lien partenaire et débloque un bonus exclusif StratEdge.</div>
-        <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake-offer">🎰 S'inscrire sur Stake · Lien bonus</a>
-        <div class="stake-block-note">Lien bonus officiel · 1 mois VIP Max offert via ce lien</div>
-      </div>
-      <?php endif; ?>
-
       <!-- StarPass + Crypto = 2 colonnes côte à côte -->
       <div class="payment-methods-row">
 
@@ -2087,6 +2078,11 @@ $gwBannerMod = [
               var elA = document.getElementById('spPayAmount');
               if (elN) elN.textContent = pr;
               if (elA) elA.textContent = pr;
+              // Sync crypto price display
+              var elC = document.getElementById('cryptoPriceDisplay');
+              if (elC) elC.textContent = pr;
+              var elFn = document.getElementById('cryptoFunNote');
+              if (elFn) elFn.style.display = funOn ? 'block' : 'none';
               mountStarPassWidget(idd, datasType);
             }
 
@@ -2112,6 +2108,17 @@ $gwBannerMod = [
       <div class="payment-block" id="crypto">
         <div class="block-title">₿ Crypto-monnaie</div>
         <div class="block-desc">Choisissez votre crypto, générez une adresse unique et payez — activation automatique en quelques minutes</div>
+
+        <!-- Montant à payer -->
+        <div id="cryptoAmountBanner" style="margin-bottom:1rem;padding:0.8rem 1rem;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;text-align:center;">
+          <div style="font-size:0.7rem;color:var(--txt3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:0.25rem;">Montant à payer</div>
+          <div style="font-family:'Orbitron',sans-serif;font-size:1.6rem;font-weight:900;color:var(--color);">
+            <span id="cryptoPriceDisplay"><?= htmlspecialchars($o['prix']) ?></span> €
+          </div>
+          <?php if ($hasFunOption): ?>
+          <div id="cryptoFunNote" style="font-size:0.72rem;color:var(--txt3);margin-top:0.2rem;display:none;">Inclut l’option Fun bets (+10€)</div>
+          <?php endif; ?>
+        </div>
 
         <!-- Étape 1 : Choix de la crypto -->
         <div id="np-step1">

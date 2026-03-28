@@ -41,7 +41,7 @@ if (!in_array($coin, $validCoins) || !in_array($type, $validTypes)) {
 }
 
 $prix_base    = $montants[$type];
-$optionFun    = ($type === 'weekend' && !empty($_POST['option_fun']) && $_POST['option_fun'] === '1');
+$optionFun    = (in_array($type, ['weekend', 'weekly']) && !empty($_POST['option_fun']) && $_POST['option_fun'] === '1');
 if ($optionFun) {
     $prix_base += 10.00;
 }
@@ -64,8 +64,8 @@ if ($promo['code_promo_id']) {
 $np_currency   = NP_CRYPTO_MAP[$coin];
 
 // ── order_id unique : permet de retrouver membre + offre dans l'IPN ──
-// Format : SE_{membre_id}_{type}_{timestamp} (weekend_fun = pack week-end +10€ Fun)
-$orderType = ($optionFun && $type === 'weekend') ? 'weekend_fun' : $type;
+// Format : SE_{membre_id}_{type}_{timestamp} (weekend_fun / weekly_fun = pack +10€ Fun)
+$orderType = $optionFun ? $type . '_fun' : $type;
 $order_id  = 'SE_' . $membre['id'] . '_' . $orderType . '_' . time();
 
 // ── Appel API NOWPayments ──────────────────────────────────
