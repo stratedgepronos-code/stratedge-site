@@ -34,7 +34,7 @@ $offres = [
         'prix_fun'   => '20',
         /* Code StarPass distinct à 20€ (Safe + Fun) — ou variable d’env STARPASS_WEEKEND_FUN_IDD */
         'idd'        => '446904',
-        'idd_with_fun' => '',
+        'idd_with_fun' => '446929',
         'idp'        => '263723',
         'duree'      => 'Du vendredi 00h00 au dimanche 23h59',
         'avantages'  => [
@@ -58,7 +58,7 @@ $offres = [
         'prix'       => '20',
         'prix_fun'   => '30',
         'idd'        => '446905',
-        'idd_with_fun' => '446929',
+        'idd_with_fun' => '',
         'idp'        => '263723',
         'duree'      => '7 jours glissants à partir de l\'achat',
         'avantages'  => [
