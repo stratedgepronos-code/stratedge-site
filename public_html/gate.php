@@ -417,7 +417,7 @@ html,body{height:100%;overflow:hidden;font-family:"Rajdhani",sans-serif;backgrou
         </div>
       </div>
 
-      <p class="launch-date">🚀 Lancement le <strong style="color:var(--pink)">31 Mars 2026</strong> — Restez connectés.</p>
+      <p class="launch-date">🚀 Lancement le <strong style="color:var(--pink)">14 Avril 2026</strong> — Restez connectés.</p>
 
       <div class="stats">
         <div class="stat"><div class="dot" style="background:var(--pink)"></div>Analyse IA + Expertise humaine</div>
@@ -693,11 +693,11 @@ html,body{height:100%;overflow:hidden;font-family:"Rajdhani",sans-serif;backgrou
 })();
 
 /* ══════════════════════════════════════
-   COUNTDOWN — 31 Mars 2026 00:00:00 Paris
+   COUNTDOWN — 14 Avril 2026 00:00:00 Paris
 ══════════════════════════════════════ */
 (function(){
-  /* Date cible : 31 Mars 2026 à minuit heure de Paris */
-  var target = new Date('2026-03-31T00:00:00+02:00').getTime();
+  /* Date cible : 14 Avril 2026 à minuit heure de Paris */
+  var target = new Date('2026-04-14T00:00:00+02:00').getTime();
 
   var els = {
     d: document.getElementById('cd-days'),
