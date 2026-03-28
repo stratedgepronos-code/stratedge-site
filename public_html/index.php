@@ -1285,7 +1285,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <div class="tip-stake">
           <div class="tip-stake-label">Bonus Partenaire</div>
           <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="tip-stake-btn">🎁 S'inscrire sur Stake</a>
-          <div class="tip-stake-note">1 mois StratEdge offert</div>
+          <div class="tip-stake-note">1 mois <svg class="tip-vip-crown" viewBox="0 0 44 44" fill="none"><defs><linearGradient id="tvc4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#tvc4)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#tvc4)"/><circle cx="6" cy="17" r="3" fill="url(#tvc4)"/><circle cx="22" cy="9" r="3.5" fill="url(#tvc4)"/><circle cx="38" cy="17" r="3" fill="url(#tvc4)"/></svg> <span style="font-family:Orbitron,sans-serif;font-size:.5rem;font-weight:900;background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">VIP MAX</span> offert</div>
         </div>
       </div>
     </div>
@@ -1319,15 +1319,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <div class="tip-pricing-hint">à partir de <strong>4,50€</strong></div>
 
         <a href="/offres-fun.php" class="tip-cta">🎲 Voir les offres</a>
-
-        <div class="tip-free-badge">
-          <div class="tip-free-badge-txt">🆓 3 paris gratuits / semaine</div>
-          <div class="tip-free-badge-sub">« Pari de la commu » · sur simple inscription</div>
-        </div>
-
-        <div class="tip-gw">
-          <span>🎁</span> <span class="tip-gw-txt">Éligible au GiveAway mensuel</span>
-        </div>
+        <a href="/offres-fun.php#crypto" class="tip-cta-outline">₿ Payer en Crypto</a>
 
         <div class="tip-stake">
           <div class="tip-stake-label">Bonus Partenaire</div>
