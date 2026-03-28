@@ -955,321 +955,443 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
   </div>
 </section>
 
-<!-- PRICING -->
+<!-- NOS TIPSTERS -->
+<!-- ============================================================
+     STRATEDGE — SECTION TIPSTERS (remplace l'ancienne section #pricing)
+     Colle ce bloc dans index.php à la place de tout le contenu
+     entre <section id="pricing"> et </section> (inclus)
+     ============================================================ -->
+
+<style>
+/* ═══ TIPSTER CARDS ═══ */
+.tipster-grid {
+  max-width: 1300px; margin: 2.5rem auto 0;
+  display: grid; grid-template-columns: repeat(4, 1fr);
+  gap: 1.3rem; align-items: stretch;
+}
+.tip-card {
+  background: linear-gradient(165deg, #0c1018, #111827 60%, #0d1220);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 22px; overflow: hidden; position: relative;
+  transition: transform .35s, box-shadow .35s, border-color .35s;
+  display: flex; flex-direction: column;
+}
+.tip-card:hover {
+  transform: translateY(-6px);
+  border-color: var(--tc);
+  box-shadow: 0 20px 60px -15px var(--tg);
+}
+.tip-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--tgrad); z-index: 4;
+}
+.tip-card::after {
+  content: ''; position: absolute; top: -80px; right: -80px;
+  width: 200px; height: 200px;
+  background: radial-gradient(circle, var(--tg) 0%, transparent 70%);
+  border-radius: 50%; opacity: 0; transition: opacity .4s; pointer-events: none;
+}
+.tip-card:hover::after { opacity: 1; }
+
+/* Variantes couleurs */
+.tip-card--multi  { --tc: #ff2d78; --tg: rgba(255,45,120,0.15); --tgrad: linear-gradient(90deg,#ff2d78,#00d4ff); }
+.tip-card--tennis { --tc: #00d46a; --tg: rgba(0,212,106,0.15); --tgrad: linear-gradient(90deg,#00d46a,#00a852); }
+.tip-card--fun    { --tc: #a855f7; --tg: rgba(168,85,247,0.15); --tgrad: linear-gradient(90deg,#a855f7,#ff6b2b); }
+.tip-card--vip    { --tc: #f5c842; --tg: rgba(245,200,66,0.15); --tgrad: linear-gradient(90deg,#c8960c,#f5c842,#fffbe6,#e8a020); }
+
+.tip-card--vip {
+  border-color: rgba(245,200,66,0.2);
+  box-shadow: 0 0 30px rgba(245,200,66,0.06);
+}
+
+/* Inner */
+.tip-inner { padding: 1.8rem 1.5rem 1.4rem; display: flex; flex-direction: column; flex: 1; }
+.tip-card--vip .tip-inner { padding-top: 1.5rem; }
+
+/* Badge */
+.tip-badge {
+  display: inline-flex; align-items: center; gap: .4rem;
+  font-family: 'Space Mono', monospace; font-size: .55rem;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--tc); background: color-mix(in srgb, var(--tc) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--tc) 25%, transparent);
+  padding: .3rem .8rem; border-radius: 20px;
+  margin-bottom: .8rem; align-self: flex-start;
+}
+
+/* Mascot */
+.tip-mascot {
+  width: 110px; height: 110px; margin: 0 auto 1rem;
+  border-radius: 50%; overflow: hidden;
+  background: rgba(255,255,255,0.03);
+  border: 2px solid color-mix(in srgb, var(--tc) 40%, transparent);
+  box-shadow: 0 0 25px var(--tg);
+}
+.tip-mascot video { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+
+/* Name */
+.tip-name {
+  font-family: 'Orbitron', sans-serif; font-size: 1.2rem; font-weight: 900;
+  text-align: center; margin-bottom: .2rem; color: #fff;
+}
+.tip-sub {
+  font-size: .78rem; color: var(--txt3, #8a9bb0);
+  text-align: center; margin-bottom: .8rem;
+}
+
+/* Sport tags */
+.tip-sports {
+  display: flex; flex-wrap: wrap; gap: .35rem;
+  justify-content: center; margin-bottom: 1rem;
+}
+.tip-sport-tag {
+  font-size: .62rem; font-weight: 700; letter-spacing: .5px;
+  padding: .2rem .5rem; border-radius: 5px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--txt2, #b0bec9);
+}
+
+/* Features */
+.tip-features {
+  list-style: none; padding: 0; margin: 0 0 1rem;
+  flex: 1;
+}
+.tip-features li {
+  padding: .35rem 0; color: var(--txt2, #b0bec9); font-size: .85rem;
+  display: flex; align-items: center; gap: .5rem;
+}
+.tip-features li::before {
+  content: '✓'; color: var(--tc); font-weight: 700; flex-shrink: 0; font-size: .75rem;
+}
+
+/* Separator */
+.tip-sep {
+  width: 100%; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent);
+  margin: .3rem 0 .8rem;
+}
+
+/* Price preview (for Tennis/VIP) */
+.tip-price-row { display: flex; align-items: baseline; justify-content: center; gap: .15rem; margin-bottom: .3rem; }
+.tip-price { font-family: 'Orbitron', sans-serif; font-size: 2.2rem; font-weight: 900; color: var(--tc); line-height: 1; }
+.tip-price .cur { font-size: 1rem; vertical-align: super; }
+.tip-period { font-size: .78rem; color: var(--txt3); text-align: center; margin-bottom: .8rem; }
+
+/* Pricing hint (for Multisports/Fun) */
+.tip-pricing-hint {
+  text-align: center; font-size: .78rem; color: var(--txt3);
+  margin-bottom: .8rem;
+}
+.tip-pricing-hint strong { color: var(--tc); font-family: 'Orbitron', sans-serif; font-size: .85rem; }
+
+/* Buttons */
+.tip-cta {
+  display: block; width: 100%; padding: .85rem;
+  background: linear-gradient(135deg, var(--tc), color-mix(in srgb, var(--tc) 70%, #000));
+  color: #fff; border: none; border-radius: 10px;
+  font-family: 'Orbitron', sans-serif; font-size: .72rem; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  text-decoration: none; text-align: center; cursor: pointer;
+  transition: all .3s; box-shadow: 0 6px 18px var(--tg);
+}
+.tip-cta:hover { transform: translateY(-2px); box-shadow: 0 10px 30px var(--tg); }
+
+.tip-cta-outline {
+  display: block; width: 100%; padding: .7rem;
+  background: transparent; color: var(--tc);
+  border: 1px solid color-mix(in srgb, var(--tc) 35%, transparent);
+  border-radius: 10px;
+  font-family: 'Orbitron', sans-serif; font-size: .65rem; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  text-decoration: none; text-align: center; cursor: pointer;
+  transition: all .3s; margin-top: .5rem;
+}
+.tip-cta-outline:hover {
+  background: color-mix(in srgb, var(--tc) 8%, transparent);
+  border-color: var(--tc);
+}
+
+/* Stake mini block */
+.tip-stake {
+  margin-top: .7rem; text-align: center;
+}
+.tip-stake-label {
+  font-family: 'Space Mono', monospace; font-size: .55rem;
+  letter-spacing: 2px; color: var(--txt3, #8a9bb0);
+  text-transform: uppercase; margin-bottom: .35rem;
+}
+.tip-stake-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  width: 100%; padding: .7rem .8rem;
+  background: linear-gradient(135deg, #00d4ff, #0089ff);
+  color: #fff; font-family: 'Orbitron', sans-serif; font-size: .62rem; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+  border: 1px solid rgba(0,212,255,0.35); border-radius: 8px;
+  cursor: pointer; text-decoration: none; transition: all .25s;
+  box-shadow: 0 4px 14px rgba(0,166,255,0.2);
+}
+.tip-stake-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(0,166,255,0.35); }
+.tip-stake-note {
+  display: flex; align-items: center; justify-content: center; gap: .3rem;
+  font-size: .68rem; color: rgba(0,212,255,0.7); margin-top: .3rem;
+}
+
+/* GiveAway badge (compact) */
+.tip-gw {
+  margin-top: .6rem; padding: .45rem .65rem; border-radius: 8px;
+  border: 1px solid transparent; text-align: center;
+  background: linear-gradient(135deg, #111827, #111827) padding-box,
+              linear-gradient(135deg, #ff2d78, #a855f7, #00d4ff) border-box;
+  animation: giveawayPulse 3s ease-in-out infinite;
+}
+.tip-card--vip .tip-gw {
+  background: linear-gradient(160deg, #111208, #0d1220, #100e05) padding-box,
+              linear-gradient(135deg, #f5c842, #e8a020, #c8960c) border-box;
+  animation-name: giveawayPulseGold;
+}
+.tip-gw-txt {
+  font-family: 'Orbitron', sans-serif; font-size: .6rem; font-weight: 700; letter-spacing: 1px;
+  background: linear-gradient(135deg, #ff2d78, #a855f7, #00d4ff);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.tip-card--vip .tip-gw-txt {
+  background: linear-gradient(135deg, #f5c842, #fffbe6, #e8a020);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+
+/* Commu free badge */
+.tip-free-badge {
+  margin-top: .5rem; padding: .5rem .7rem; border-radius: 8px;
+  background: rgba(0,200,100,0.06);
+  border: 1px solid rgba(0,200,100,0.2);
+  text-align: center;
+}
+.tip-free-badge-txt {
+  font-family: 'Orbitron', sans-serif; font-size: .58rem; font-weight: 700;
+  letter-spacing: 1px; color: #00c864;
+}
+.tip-free-badge-sub {
+  font-size: .68rem; color: var(--txt3); margin-top: .15rem;
+}
+
+/* VIP crown inline */
+.tip-vip-crown { display: inline-block; width: 14px; height: 14px; vertical-align: middle; }
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 1100px) {
+  .tipster-grid { grid-template-columns: repeat(2, 1fr); max-width: 800px; }
+}
+@media (max-width: 600px) {
+  .tipster-grid { grid-template-columns: 1fr; max-width: 420px; }
+  .tip-inner { padding: 1.4rem 1.2rem 1.2rem; }
+  .tip-mascot { width: 90px; height: 90px; }
+  .tip-name { font-size: 1.05rem; }
+}
+</style>
+
 <section id="pricing">
   <div style="max-width:1200px; margin:0 auto;">
-    <div class="section-tag fade-up">Tarifs</div>
-    <h2 class="section-title fade-up">Choisissez votre <span style="color:var(--neon-green)">formule</span></h2>
-    <p class="section-subtitle fade-up">Sans engagement. Payez uniquement ce dont vous avez besoin.</p>
+    <div class="section-tag fade-up">Nos Tipsters</div>
+    <h2 class="section-title fade-up">Choisis ton <span style="color:var(--neon-green)">Tipster</span></h2>
+    <p class="section-subtitle fade-up">3 spécialistes · chacun son style · sans engagement.</p>
   </div>
-  <div class="pricing-grid">
-    <?php
-    /* Points GiveAway affichés sur l’accueil (par formule) — hors tennis */
-    $gwHomePts = ['daily' => 4, 'weekend' => 10, 'weekly' => 20, 'vip_max' => 50];
-    ?>
 
-    <!-- DAILY -->
-    <div class="price-card fade-up">
-      <div class="price-tier">Plan Cool</div>
-      <div class="price-name">Daily</div>
-      <div class="price-mascot">
-        <video autoplay loop muted playsinline>
-          <source src="assets/images/DOIGT.mp4" type="video/mp4">
-        </video>
-      </div>
-      <div class="price-amount"><span class="currency">€</span>4,50</div>
-      <div class="price-period">/ prochain bet</div>
-      <div class="offer-gw-banner offer-gw--daily" role="group" aria-label="GiveAway mensuel, 4 points par achat">
-        <span class="offer-gw-inner">
-          <span class="offer-gw-shimmer" aria-hidden="true"></span>
-          <span class="offer-gw-icon">🎁</span>
-          <span class="offer-gw-copy">
-            <span class="offer-gw-label">GiveAway mensuel</span>
-            <span class="offer-gw-ptsline"><strong class="offer-gw-n"><?= (int)$gwHomePts['daily'] ?></strong><span class="offer-gw-unit">pts</span><span class="offer-gw-hint">par achat</span></span>
-            <span class="offer-gw-ribbon">Tirage &amp; roue chaque mois</span>
-          </span>
-        </span>
-      </div>
-      <ul class="price-features">
-        <li>Accès au prochain bet "Safe"</li>
-        <li>Accès au prochain bet "Live"</li>
-        <li>Idéal pour maîtriser son budget</li>
-        <li>Idéal pour débuter</li>
-      </ul>
-      <div class="price-divider"></div>
-      <div class="starpass-zone">
-        <p class="starpass-label">📱 Payer maintenant</p>
-        <p>SMS, appel, carte bancaire ou <strong>Paysafecard</strong> :</p>
-        <?php if (isLoggedIn()): ?>
-          <a href="offre-daily.php" class="starpass-btn">📱 Payer par SMS — 4,50€</a>
-        <?php else: ?>
-          <a href="login.php?redirect=offre-daily.php" class="starpass-btn">🔒 Se connecter pour payer</a>
-        <?php endif; ?>
-        <div class="giveaway-badge">
-          <div class="gw-main"><span class="gw-emoji">🎁</span> <span class="gw-txt">Éligible au GiveAway mensuel !</span></div>
-          <div class="gw-date">À partir de Septembre</div>
+  <div class="tipster-grid">
+
+    <!-- ══════ TIPSTER MULTISPORTS ══════ -->
+    <div class="tip-card tip-card--multi fade-up">
+      <div class="tip-inner">
+        <div class="tip-badge">🏆 Tipster principal</div>
+        <div class="tip-mascot">
+          <video autoplay loop muted playsinline>
+            <source src="assets/images/DOIGT.mp4" type="video/mp4">
+          </video>
         </div>
-        <div class="crypto-separator">— ou —</div>
-        <a href="offre-daily.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
-        <div class="stake-wrap">
-          <div class="stake-sep">Bonus Partenaire</div>
-          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
-          <div class="stake-offer">1 mois <span class="vip-mini"><svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="vm1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#vm1)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#vm1)"/><circle cx="6" cy="17" r="3" fill="url(#vm1)"/><circle cx="22" cy="9" r="3.5" fill="url(#vm1)"/><circle cx="38" cy="17" r="3" fill="url(#vm1)"/></svg><span style="display:flex;flex-direction:column;align-items:center;line-height:1;"><span class="vip-mini-txt vip-mini-vip">VIP</span><span class="vip-mini-txt vip-mini-max">MAX</span></span></span> offert via ce lien</div>
+        <div class="tip-name">Multisports</div>
+        <div class="tip-sub">Safe · Fun · LIVE · Montante</div>
+
+        <div class="tip-sports">
+          <span class="tip-sport-tag">⚽ Foot</span>
+          <span class="tip-sport-tag">🏀 NBA</span>
+          <span class="tip-sport-tag">🏒 NHL</span>
+          <span class="tip-sport-tag">⚾ MLB</span>
+          <span class="tip-sport-tag">🎾 Tennis</span>
+        </div>
+
+        <ul class="tip-features">
+          <li>Bets Safe &amp; Fun quotidiens</li>
+          <li>Bets LIVE par mail &amp; Push</li>
+          <li>1 montante par mois</li>
+          <li>Analyses data &amp; xG</li>
+        </ul>
+
+        <div class="tip-sep"></div>
+
+        <div class="tip-pricing-hint">à partir de <strong>4,50€</strong></div>
+
+        <a href="/offres-multisports.php" class="tip-cta">📊 Voir les offres</a>
+
+        <div class="tip-gw">
+          <span>🎁</span> <span class="tip-gw-txt">Éligible au GiveAway mensuel</span>
+        </div>
+
+        <div class="tip-stake">
+          <div class="tip-stake-label">Bonus Partenaire</div>
+          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="tip-stake-btn">🎰 S'inscrire sur Stake</a>
+          <div class="tip-stake-note">1 mois <svg class="tip-vip-crown" viewBox="0 0 44 44" fill="none"><defs><linearGradient id="tvc1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#tvc1)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#tvc1)"/><circle cx="6" cy="17" r="3" fill="url(#tvc1)"/><circle cx="22" cy="9" r="3.5" fill="url(#tvc1)"/><circle cx="38" cy="17" r="3" fill="url(#tvc1)"/></svg> <span style="font-family:Orbitron,sans-serif;font-size:.5rem;font-weight:900;background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">VIP MAX</span> offert</div>
         </div>
       </div>
     </div>
 
-    <!-- WEEK-END (featured) -->
-    <div class="price-card featured fade-up">
-      <div class="discount-badge">-10% JEU.</div>
-      <div class="price-tier">Recommandé</div>
-      <div class="price-name">Week-End</div>
-      <div class="price-mascot">
-        <video autoplay loop muted playsinline>
-          <source src="assets/images/air.mp4" type="video/mp4">
-        </video>
-      </div>
-      <div class="price-amount"><span class="currency">€</span>10</div>
-      <div class="price-period">/ souscription (ven → dim)</div>
-      <div class="offer-gw-banner offer-gw--weekend" role="group" aria-label="GiveAway mensuel, 10 points par achat">
-        <span class="offer-gw-inner">
-          <span class="offer-gw-shimmer" aria-hidden="true"></span>
-          <span class="offer-gw-icon">🎁</span>
-          <span class="offer-gw-copy">
-            <span class="offer-gw-label">GiveAway mensuel</span>
-            <span class="offer-gw-ptsline"><strong class="offer-gw-n"><?= (int)$gwHomePts['weekend'] ?></strong><span class="offer-gw-unit">pts</span><span class="offer-gw-hint">par achat</span></span>
-            <span class="offer-gw-ribbon">Tirage &amp; roue chaque mois</span>
-          </span>
-        </span>
-      </div>
-      <ul class="price-features">
-        <li><div style="display:block;"><span style="white-space:nowrap;">Accès bets "Safe" &amp; "Fun"</span><br><span class="fun-supplement">Fun bets avec supplément</span></div></li>
-        <li>Du vendredi au dimanche</li>
-        <li>Bets LIVE par mail &amp; notification Push</li>
-        <li>Idéal pour les matchs du week-end</li>
-      </ul>
-      <div class="price-divider"></div>
-      <div class="starpass-zone">
-        <p class="starpass-label">💳 Payer maintenant</p>
-        <p>Carte bancaire, PayPal, Paysafecard ou Internet+ :</p>
-        <?php if (isLoggedIn()): ?>
-          <a href="offre-weekend.php" class="starpass-btn">💳 Payer — 10€</a>
-        <?php else: ?>
-          <a href="login.php?redirect=offre-weekend.php" class="starpass-btn">🔒 Se connecter pour payer</a>
-        <?php endif; ?>
-        <div class="giveaway-badge">
-          <div class="gw-main"><span class="gw-emoji">🎁</span> <span class="gw-txt">Éligible au GiveAway mensuel !</span></div>
-          <div class="gw-date">À partir de Septembre</div>
+    <!-- ══════ TIPSTER TENNIS ══════ -->
+    <div class="tip-card tip-card--tennis fade-up">
+      <div class="tip-inner">
+        <div class="tip-badge">🎾 Spécialiste</div>
+        <div class="tip-mascot">
+          <video autoplay loop muted playsinline>
+            <source src="assets/images/mascotte_tennis.mp4" type="video/mp4">
+          </video>
         </div>
-        <div class="crypto-separator">— ou —</div>
-        <a href="offre-weekend.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
-        <div class="stake-wrap">
-          <div class="stake-sep">Bonus Partenaire</div>
-          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
-          <div class="stake-offer">1 mois <span class="vip-mini"><svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="vm2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#vm2)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#vm2)"/><circle cx="6" cy="17" r="3" fill="url(#vm2)"/><circle cx="22" cy="9" r="3.5" fill="url(#vm2)"/><circle cx="38" cy="17" r="3" fill="url(#vm2)"/></svg><span style="display:flex;flex-direction:column;align-items:center;line-height:1;"><span class="vip-mini-txt vip-mini-vip">VIP</span><span class="vip-mini-txt vip-mini-max">MAX</span></span></span> offert via ce lien</div>
+        <div class="tip-name">Tennis</div>
+        <div class="tip-sub">ATP · WTA · Grand Chelem</div>
+
+        <div class="tip-sports">
+          <span class="tip-sport-tag">🎾 ATP</span>
+          <span class="tip-sport-tag">🎾 WTA</span>
+        </div>
+
+        <ul class="tip-features">
+          <li>Analyses ATP &amp; WTA exclusives</li>
+          <li>Bets Safe &amp; Fun Tennis</li>
+          <li>7 jours d'accès complet</li>
+          <li>Notifications Push &amp; Email</li>
+        </ul>
+
+        <div class="tip-sep"></div>
+
+        <div class="tip-price-row">
+          <div class="tip-price"><span class="cur">€</span>15</div>
+        </div>
+        <div class="tip-period">/ semaine (7 jours)</div>
+
+        <?php if (isLoggedIn()): ?>
+          <a href="offre-tennis.php" class="tip-cta">💳 Payer — 15€</a>
+        <?php else: ?>
+          <a href="login.php?redirect=offre-tennis.php" class="tip-cta">🔒 Se connecter pour payer</a>
+        <?php endif; ?>
+        <a href="offre-tennis.php#crypto" class="tip-cta-outline">₿ Payer en Crypto</a>
+
+        <div class="tip-stake">
+          <div class="tip-stake-label">Bonus Partenaire</div>
+          <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="tip-stake-btn">🎁 S'inscrire sur Stake</a>
+          <div class="tip-stake-note">1 mois StratEdge offert</div>
         </div>
       </div>
     </div>
 
-    <!-- WEEKLY -->
-    <div class="price-card fade-up">
-      <div class="price-tier">Pro</div>
-      <div class="price-name">Weekly</div>
-      <div class="price-mascot">
-        <video autoplay loop muted playsinline>
-          <source src="assets/images/SAM.mp4" type="video/mp4">
-        </video>
-      </div>
-      <div class="price-amount"><span class="currency">€</span>20</div>
-      <div class="price-period">/ semaine (7 jours glissants)</div>
-      <div class="offer-gw-banner offer-gw--weekly" role="group" aria-label="GiveAway mensuel, 20 points par achat">
-        <span class="offer-gw-inner">
-          <span class="offer-gw-shimmer" aria-hidden="true"></span>
-          <span class="offer-gw-icon">🎁</span>
-          <span class="offer-gw-copy">
-            <span class="offer-gw-label">GiveAway mensuel</span>
-            <span class="offer-gw-ptsline"><strong class="offer-gw-n"><?= (int)$gwHomePts['weekly'] ?></strong><span class="offer-gw-unit">pts</span><span class="offer-gw-hint">par achat</span></span>
-            <span class="offer-gw-ribbon">Tirage &amp; roue chaque mois</span>
-          </span>
-        </span>
-      </div>
-      <ul class="price-features">
-        <li>Accès bets "Safe" &amp; "Fun"</li>
-        <li>Abonnement 1 semaine complète</li>
-        <li>Bets LIVE par mail &amp; notification Push</li>
-        <li>Tous sports : Foot, NBA, Hockey…</li>
-      </ul>
-      <div class="price-divider"></div>
-      <div class="starpass-zone">
-        <p class="starpass-label">💳 Payer maintenant</p>
-        <p>Carte bancaire, PayPal, Paysafecard ou Internet+ :</p>
-        <?php if (isLoggedIn()): ?>
-          <a href="offre-weekly.php" class="starpass-btn">💳 Payer — 20€</a>
-        <?php else: ?>
-          <a href="login.php?redirect=offre-weekly.php" class="starpass-btn">🔒 Se connecter pour payer</a>
-        <?php endif; ?>
-        <div class="giveaway-badge">
-          <div class="gw-main"><span class="gw-emoji">🎁</span> <span class="gw-txt">Éligible au GiveAway mensuel !</span></div>
-          <div class="gw-date">À partir de Septembre</div>
+    <!-- ══════ TIPSTER FUN ONLY ══════ -->
+    <div class="tip-card tip-card--fun fade-up">
+      <div class="tip-inner">
+        <div class="tip-badge">🎲 Grosses cotes</div>
+        <div class="tip-mascot">
+          <video autoplay loop muted playsinline>
+            <source src="assets/images/mascotte-fun.mp4" type="video/mp4">
+          </video>
         </div>
-        <div class="crypto-separator">— ou —</div>
-        <a href="offre-weekly.php#crypto" class="crypto-btn">₿ Payer en Crypto</a>
-        <div class="stake-wrap">
-          <div class="stake-sep">Bonus Partenaire</div>
-          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
-          <div class="stake-offer">1 mois <span class="vip-mini"><svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="vm3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#vm3)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#vm3)"/><circle cx="6" cy="17" r="3" fill="url(#vm3)"/><circle cx="22" cy="9" r="3.5" fill="url(#vm3)"/><circle cx="38" cy="17" r="3" fill="url(#vm3)"/></svg><span style="display:flex;flex-direction:column;align-items:center;line-height:1;"><span class="vip-mini-txt vip-mini-vip">VIP</span><span class="vip-mini-txt vip-mini-max">MAX</span></span></span> offert via ce lien</div>
+        <div class="tip-name">Fun Only</div>
+        <div class="tip-sub">Week-end · Champions League</div>
+
+        <div class="tip-sports">
+          <span class="tip-sport-tag">⚽ Foot WE</span>
+          <span class="tip-sport-tag">🏆 Ligue des Champions</span>
+        </div>
+
+        <ul class="tip-features">
+          <li>Combinés grosses cotes</li>
+          <li>Spécial week-end &amp; soirées C1</li>
+          <li>Bets Fun à forte value</li>
+          <li>Notifications Push &amp; Email</li>
+        </ul>
+
+        <div class="tip-sep"></div>
+
+        <div class="tip-pricing-hint">à partir de <strong>4,50€</strong></div>
+
+        <a href="/offres-fun.php" class="tip-cta">🎲 Voir les offres</a>
+
+        <div class="tip-free-badge">
+          <div class="tip-free-badge-txt">🆓 3 paris gratuits / semaine</div>
+          <div class="tip-free-badge-sub">« Pari de la commu » · sur simple inscription</div>
+        </div>
+
+        <div class="tip-gw">
+          <span>🎁</span> <span class="tip-gw-txt">Éligible au GiveAway mensuel</span>
+        </div>
+
+        <div class="tip-stake">
+          <div class="tip-stake-label">Bonus Partenaire</div>
+          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="tip-stake-btn">🎰 S'inscrire sur Stake</a>
+          <div class="tip-stake-note">1 mois <svg class="tip-vip-crown" viewBox="0 0 44 44" fill="none"><defs><linearGradient id="tvc2" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#tvc2)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#tvc2)"/><circle cx="6" cy="17" r="3" fill="url(#tvc2)"/><circle cx="22" cy="9" r="3.5" fill="url(#tvc2)"/><circle cx="38" cy="17" r="3" fill="url(#tvc2)"/></svg> <span style="font-family:Orbitron,sans-serif;font-size:.5rem;font-weight:900;background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">VIP MAX</span> offert</div>
         </div>
       </div>
     </div>
 
-    <!-- VIP MAX -->
-    <div class="price-card-vip fade-up" id="vipMaxCard">
-      <svg class="vip-card-svg" id="vipMaxSvg" xmlns="http://www.w3.org/2000/svg" overflow="visible"></svg>
-      <div class="vip-card-inner">
-        <div class="vip-tier">Accès Total</div>
-        <div class="vip-logo-wrap">
-          <div class="vip-crown-icon">
-            <svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="vg1" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%"   stop-color="#c8960c"/>
-                  <stop offset="40%"  stop-color="#f5c842"/>
-                  <stop offset="65%"  stop-color="#fffbe6"/>
-                  <stop offset="100%" stop-color="#e8a020"/>
-                </linearGradient>
-                <radialGradient id="vg2" cx="50%" cy="50%" r="50%">
-                  <stop offset="0%"   stop-color="#fffbe6"/>
-                  <stop offset="60%"  stop-color="#f5c842"/>
-                  <stop offset="100%" stop-color="#c8960c"/>
-                </radialGradient>
-              </defs>
-              <rect x="6" y="30" width="32" height="6" rx="3" fill="url(#vg1)"/>
-              <path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#vg1)"/>
-              <circle cx="6"  cy="17" r="3"   fill="url(#vg1)"/>
-              <circle cx="22" cy="9"  r="3.5" fill="url(#vg2)"/>
-              <circle cx="38" cy="17" r="3"   fill="url(#vg1)"/>
-              <polygon points="22,14 25,20 22,23 19,20" fill="url(#vg2)" opacity="0.9"/>
-            </svg>
-          </div>
-          <div class="vip-logo-texts">
-            <span class="vip-logo-vip">VIP</span>
-            <span class="vip-logo-max">MAX</span>
-          </div>
-        </div>
-        <div class="vip-sub-label">Tous sports inclus</div>
-        <div class="vip-mascot">
+    <!-- ══════ VIP MAX ══════ -->
+    <div class="tip-card tip-card--vip fade-up">
+      <div class="tip-inner">
+        <div class="tip-badge">👑 Accès Total</div>
+        <div class="tip-mascot" style="border-color:rgba(245,200,66,0.35);box-shadow:0 0 30px rgba(245,200,66,0.2);">
           <video autoplay loop muted playsinline>
             <source src="assets/images/vip_max.mp4" type="video/mp4">
           </video>
         </div>
-        <div class="vip-price-num"><span class="currency">€</span>50</div>
-        <div class="vip-price-dur">/ mois (30 jours)</div>
-        <div class="offer-gw-banner offer-gw--vip" role="group" aria-label="GiveAway mensuel, 50 points par achat">
-          <span class="offer-gw-inner">
-            <span class="offer-gw-shimmer" aria-hidden="true"></span>
-            <span class="offer-gw-icon">🎁</span>
-            <span class="offer-gw-copy">
-              <span class="offer-gw-label">GiveAway mensuel</span>
-              <span class="offer-gw-ptsline"><strong class="offer-gw-n"><?= (int)$gwHomePts['vip_max'] ?></strong><span class="offer-gw-unit">pts</span><span class="offer-gw-hint">par achat</span></span>
-              <span class="offer-gw-ribbon">Tirage &amp; roue chaque mois</span>
-            </span>
-          </span>
+        <div class="tip-name" style="background:linear-gradient(135deg,#f5c842,#fffbe6,#e8a020);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">VIP MAX</div>
+        <div class="tip-sub">Tous les tipsters réunis</div>
+
+        <div class="tip-sports">
+          <span class="tip-sport-tag" style="color:#f5c842;border-color:rgba(245,200,66,0.2);">🏆 Multisports</span>
+          <span class="tip-sport-tag" style="color:#f5c842;border-color:rgba(245,200,66,0.2);">🎾 Tennis</span>
+          <span class="tip-sport-tag" style="color:#f5c842;border-color:rgba(245,200,66,0.2);">🎲 Fun</span>
         </div>
-        <ul class="vip-features">
-          <li>Tous les bets Multi-sport</li>
-          <li>Tennis ATP &amp; WTA exclusif</li>
-          <li>Bets LIVE &amp; Fun bets inclus</li>
-          <li>Accès illimité 30 jours</li>
+
+        <ul class="tip-features">
+          <li>TOUT : Safe + Fun + LIVE + Tennis</li>
+          <li>Accès aux 3 tipsters</li>
+          <li>Montantes incluses</li>
+          <li>30 jours illimités</li>
         </ul>
 
-        <?php if ($fondateurActif): ?>
-        <div class="fondateur-strip">
-          <div>
-            <div class="fondateur-strip-left">👑 OFFRE FONDATEUR — 15% DE RÉDUCTION</div>
-            <div class="fondateur-strip-jauge">
-              <div class="fondateur-strip-fill" style="width:<?= ($fondateurPlaces / 10) * 100 ?>%"></div>
-            </div>
-          </div>
-          <div class="fondateur-strip-right">🔥 <?= $fondateurRestant ?>/10</div>
+        <div class="tip-sep"></div>
+
+        <div class="tip-price-row">
+          <div class="tip-price" style="color:#f5c842;"><span class="cur">€</span>50</div>
         </div>
-        <?php elseif ($fondateurPlaces >= 10): ?>
-        <div class="fondateur-complet">✅ OFFRE FONDATEUR COMPLÈTE · TARIF NORMAL</div>
-        <?php endif; ?>
+        <div class="tip-period">/ mois (30 jours)</div>
 
-        <div class="vip-divider"></div>
-        <div class="vip-zone">
-          <p class="vip-label">💳 Payer maintenant</p>
-          <p style="font-size:0.85rem;color:rgba(245,200,66,0.4);margin-bottom:0.75rem;">Carte bancaire, PayPal, Paysafecard ou Internet+ :</p>
-          <?php if (isLoggedIn()): ?>
-            <a href="offre.php?type=vip_max" class="vip-btn">💳 Payer — 50€</a>
-          <?php else: ?>
-            <a href="login.php?redirect=offre.php?type=vip_max" class="vip-btn">🔒 Se connecter pour payer</a>
-          <?php endif; ?>
-          <div class="giveaway-badge">
-            <div class="gw-main"><span class="gw-emoji">🎁</span> <span class="gw-txt">Éligible au GiveAway mensuel !</span></div>
-            <div class="gw-date">À partir de Septembre</div>
-          </div>
-          <div class="crypto-separator" style="color:rgba(245,200,66,0.2);">— ou —</div>
-          <a href="offre.php?type=vip_max#crypto" class="crypto-btn vip-crypto-btn">₿ Payer en Crypto</a>
-          <div class="stake-wrap">
-            <div class="stake-sep" style="color:rgba(245,200,66,0.3);">Bonus Partenaire</div>
-            <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="stake-btn">🎰 S'inscrire sur Stake · Lien bonus</a>
-            <div class="stake-offer">1 mois <span class="vip-mini"><svg viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="vm4" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#vm4)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#vm4)"/><circle cx="6" cy="17" r="3" fill="url(#vm4)"/><circle cx="22" cy="9" r="3.5" fill="url(#vm4)"/><circle cx="38" cy="17" r="3" fill="url(#vm4)"/></svg><span style="display:flex;flex-direction:column;align-items:center;line-height:1;"><span class="vip-mini-txt vip-mini-vip">VIP</span><span class="vip-mini-txt vip-mini-max">MAX</span></span></span> offert via ce lien</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div><!-- /.pricing-grid -->
-
-  <!-- ── Card Tennis Pleine Largeur ── -->
-  <div class="tennis-wrapper fade-up">
-    <div class="price-card-tennis">
-      <div class="tennis-badge">🎾 NOUVEAU — BET TENNIS</div>
-
-      <!-- Mascotte -->
-      <div class="tennis-mascot">
-        <video autoplay loop muted playsinline>
-          <source src="assets/images/mascotte_tennis.mp4" type="video/mp4">
-        </video>
-      </div>
-
-      <!-- Infos -->
-      <div class="tennis-info">
-        <div class="tennis-tag">Spécialité Tennis</div>
-        <div class="tennis-title">🎾 Tennis Weekly</div>
-        <div class="tennis-price-row">
-          <div class="tennis-price"><sup>€</sup>15</div>
-          <div class="tennis-period">/ semaine</div>
-        </div>
-        <ul class="tennis-features">
-          <li>Analyses ATP &amp; WTA en exclusivité</li>
-          <li>Bets Safe &amp; Fun Tennis</li>
-          <li>7 jours d'accès complet</li>
-          <li>Notifications Push &amp; Email</li>
-          <li>Taux de réussite suivi en live</li>
-        </ul>
-      </div>
-
-      <!-- Paiement -->
-      <div class="tennis-payment">
-        <div class="tennis-label">💳 Payer maintenant</div>
         <?php if (isLoggedIn()): ?>
-          <a href="offre-tennis.php" class="tennis-btn">💳 Payer — 15€</a>
+          <a href="offre.php?type=vip_max" class="tip-cta" style="background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6,#e8a020);color:#050810;">💳 Payer — 50€</a>
         <?php else: ?>
-          <a href="login.php?redirect=offre-tennis.php" class="tennis-btn">🔒 Se connecter pour payer</a>
+          <a href="login.php?redirect=offre.php?type=vip_max" class="tip-cta" style="background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6,#e8a020);color:#050810;">🔒 Se connecter pour payer</a>
         <?php endif; ?>
-        <div class="tennis-sep">— ou —</div>
-        <a href="offre-tennis.php#crypto" class="tennis-btn-crypto">₿ Payer en Crypto</a>
-        <div class="tennis-stake-sep">BONUS PARTENAIRE</div>
-        <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="tennis-btn-stake">🎁 S'inscrire sur Stake · Lien bonus</a>
-        <div class="tennis-stake-note">1 mois StratEdge offert via ce lien</div>
+        <a href="offre.php?type=vip_max#crypto" class="tip-cta-outline" style="color:#f5c842;border-color:rgba(245,200,66,0.3);">₿ Payer en Crypto</a>
+
+        <div class="tip-gw">
+          <span>🎁</span> <span class="tip-gw-txt">Éligible au GiveAway mensuel</span>
+        </div>
+
+        <div class="tip-stake">
+          <div class="tip-stake-label">Bonus Partenaire</div>
+          <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="tip-stake-btn">🎰 S'inscrire sur Stake</a>
+          <div class="tip-stake-note">1 mois <svg class="tip-vip-crown" viewBox="0 0 44 44" fill="none"><defs><linearGradient id="tvc3" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#c8960c"/><stop offset="40%" stop-color="#f5c842"/><stop offset="65%" stop-color="#fffbe6"/><stop offset="100%" stop-color="#e8a020"/></linearGradient></defs><rect x="6" y="30" width="32" height="6" rx="3" fill="url(#tvc3)"/><path d="M6 30 L6 18 L14 24 L22 10 L30 24 L38 18 L38 30 Z" fill="url(#tvc3)"/><circle cx="6" cy="17" r="3" fill="url(#tvc3)"/><circle cx="22" cy="9" r="3.5" fill="url(#tvc3)"/><circle cx="38" cy="17" r="3" fill="url(#tvc3)"/></svg> <span style="font-family:Orbitron,sans-serif;font-size:.5rem;font-weight:900;background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">VIP MAX</span> offert</div>
+        </div>
       </div>
-
     </div>
-  </div>
 
+  </div><!-- /.tipster-grid -->
 </section>
+
+
 
 <!-- STAKE -->
 <section id="stake">
