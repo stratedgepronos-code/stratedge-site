@@ -2263,6 +2263,7 @@ $gwBannerMod = [
           <span class="sec-badge">⚡ Sans intervention manuelle</span>
           <span class="sec-badge">🛡️ 0.5% de frais seulement</span>
         </div>
+      </div>
       </div><!-- /.payment-crypto-wrap -->
 
       <div class="payment-extras-col">
