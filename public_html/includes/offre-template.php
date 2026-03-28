@@ -2119,7 +2119,37 @@ $gwBannerMod = [
           <p><strong>⚠️ Important :</strong> Après paiement StarPass, vous serez automatiquement redirigé vers votre espace membre. Si ce n'est pas le cas, contactez le support depuis votre dashboard.</p>
         </div>
       </div>
+      </div><!-- /.payment-methods-row daily -->
+      <?php endif; /* daily starpass */ ?>
 
+      <?php if ($type !== 'daily'): ?>
+      <!-- Stripe + Paysafecard (non-Daily) -->
+      <div class="payment-methods-row">
+      <div class="payment-block payment-block--stripe">
+        <div class="block-title">💳 Carte bancaire</div>
+        <div class="block-desc">Paiement sécurisé par <strong style="color:var(--color)">Stripe</strong> — Visa, Mastercard, CB</div>
+        <div style="text-align:center;padding:1rem 0;">
+          <div style="font-size:0.7rem;color:var(--txt3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:0.3rem;">Montant à payer</div>
+          <div id="stripePriceDisplay" style="font-family:'Orbitron',sans-serif;font-size:1.8rem;font-weight:900;color:var(--color);"><?= htmlspecialchars($o['prix']) ?> €</div>
+        </div>
+        <button id="btnStripe" onclick="payerStripe()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:0.95rem 1.2rem;background:linear-gradient(135deg,#635bff,#4f46e5);color:#fff;font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border:none;border-radius:10px;cursor:pointer;transition:all 0.25s;box-shadow:0 6px 18px rgba(99,91,255,0.3);">💳 Payer par carte bancaire</button>
+        <div style="display:flex;align-items:center;justify-content:center;gap:0.5rem;margin-top:0.6rem;opacity:0.4;">
+          <span style="font-size:0.6rem;color:var(--txt3);">Visa · Mastercard · CB — Sécurisé par Stripe</span>
+        </div>
+      </div>
+      <div class="payment-block payment-block--paysafe">
+        <div class="block-title">🏪 Paysafecard</div>
+        <div class="block-desc">Payez avec un code acheté en <strong style="color:var(--color)">bureau de tabac</strong></div>
+        <div style="text-align:center;padding:1rem 0;">
+          <div style="font-size:0.7rem;color:var(--txt3);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:0.3rem;">Montant à payer</div>
+          <div id="pscPriceDisplay" style="font-family:'Orbitron',sans-serif;font-size:1.8rem;font-weight:900;color:var(--color);"><?= htmlspecialchars($o['prix']) ?> €</div>
+        </div>
+        <button id="btnPaysafe" onclick="payerPaysafe()" style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:0.95rem 1.2rem;background:linear-gradient(135deg,#00b9f5,#0079c1);color:#fff;font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;border:none;border-radius:10px;cursor:pointer;transition:all 0.25s;box-shadow:0 6px 18px rgba(0,185,245,0.3);">🏪 Payer par Paysafecard</button>
+        <p style="font-size:0.65rem;color:var(--txt3);text-align:center;margin-top:0.5rem;">Code 16 chiffres · Bureau de tabac</p>
+      </div>
+      <?php endif; /* non-daily */ ?>
+
+      <!-- Crypto (tous les packs) -->
       <div class="payment-crypto-column">
       <div class="payment-block" id="crypto">
         <div class="block-title">₿ Crypto-monnaie</div>
@@ -2265,8 +2295,6 @@ $gwBannerMod = [
       <?php endif; ?>
 
       </div><!-- /.payment-crypto-column -->
-
-      </div><!-- /.payment-methods-row -->
 
     </div>
   </div>
