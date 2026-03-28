@@ -1236,6 +1236,11 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
           <span>🎁</span> <span class="tip-gw-txt">Éligible au GiveAway mensuel</span>
         </div>
 
+        <div class="tip-free-badge">
+          <div class="tip-free-badge-txt">🆓 3 paris gratuits / semaine</div>
+          <div class="tip-free-badge-sub">« Pari de la commu » · sur simple inscription</div>
+        </div>
+
         <div class="tip-stake">
           <div class="tip-stake-label">Bonus Partenaire</div>
           <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="tip-stake-btn">🎰 S'inscrire sur Stake</a>

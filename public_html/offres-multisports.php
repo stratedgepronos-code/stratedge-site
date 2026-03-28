@@ -158,6 +158,13 @@ foreach($cards as $c):
       <?php else:?><a href="offre.php?type=vip_max" class="plan-btn" style="background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6,#e8a020);color:#050810;">💳 Payer — 50€</a><div class="sep-or" style="color:rgba(245,200,66,0.3)">— ou —</div><a href="offre.php?type=vip_max#crypto" class="btn-crypto" style="background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6,#e8a020)!important;color:#050810!important;">₿ Payer en Crypto</a><?php endif;?>
       <div class="plan-pay-info" style="color:rgba(245,200,66,0.3)">CB · Paysafecard · Crypto</div>
     </div>
+    <div class="plan-gw" style="background:linear-gradient(160deg,#111208,#0d1220,#100e05) padding-box,linear-gradient(135deg,#f5c842,#e8a020,#c8960c) border-box;">
+      <span>🎁</span> <span class="plan-gw-txt" style="background:linear-gradient(135deg,#f5c842,#fffbe6,#e8a020);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Éligible au GiveAway mensuel</span>
+    </div>
+    <div class="plan-stake">
+      <a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="plan-stake-btn">🎰 S'inscrire sur Stake</a>
+      <div class="plan-stake-note">1 mois VIP MAX offert</div>
+    </div>
   </div>
 </div>
 </div>
