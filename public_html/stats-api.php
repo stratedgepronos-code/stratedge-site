@@ -18,7 +18,7 @@
  *   ?action=leagues                              → liste des ligues dispo
  *   ?action=search&q=arsenal                     → chercher une équipe
  * 
- * AUTH : token stratedge2026
+ * AUTH : token défini dans config-keys.php (variable AUTH_TOKEN)
  */
 
 // ============================================
@@ -26,24 +26,30 @@
 // ============================================
 $configFile = __DIR__ . '/config-keys.php';
 if (file_exists($configFile)) { require_once $configFile; }
-$FOOTYSTATS_KEY = defined('FOOTYSTATS_API_KEY') ? FOOTYSTATS_API_KEY : "1631907a095ad0953000398757257d07713f977696d039fca8a854b8f0be8ca5";
-$AUTH_TOKEN = "stratedge2026";
+
+if (!defined('FOOTYSTATS_API_KEY') || !defined('AUTH_TOKEN')) {
+    http_response_code(503);
+    echo json_encode(["error" => "Configuration serveur manquante. Contactez l'administrateur."]);
+    exit;
+}
+$FOOTYSTATS_KEY = FOOTYSTATS_API_KEY;
+$AUTH_TOKEN     = AUTH_TOKEN;
 $BASE_URL = "https://api.footystats.org";
 
 // ============================================
 // HEADERS
 // ============================================
 header("Content-Type: application/json; charset=utf-8");
-header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Origin: https://stratedgepronos.fr");
 header("Cache-Control: public, max-age=600"); // cache 10 min
 
 // ============================================
 // AUTH CHECK
 // ============================================
 $token = $_GET['token'] ?? $_SERVER['HTTP_X_STRATEDGE_TOKEN'] ?? '';
-if ($token !== $AUTH_TOKEN) {
+if (!hash_equals($AUTH_TOKEN, $token)) {
     http_response_code(403);
-    echo json_encode(["error" => "Token invalide. Ajoute ?token=stratedge2026"]);
+    echo json_encode(["error" => "Accès non autorisé."]);
     exit;
 }
 

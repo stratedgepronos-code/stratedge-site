@@ -5,7 +5,7 @@
 // Stocke le palmarès dans un fichier JSON sur le serveur
 // ============================================================
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Origin: https://stratedgepronos.fr');
 header('Access-Control-Allow-Methods: GET, POST, DELETE');
 
 $file = __DIR__ . '/slot-history.json';

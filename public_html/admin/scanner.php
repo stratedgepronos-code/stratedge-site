@@ -3,6 +3,11 @@ require_once __DIR__ . '/../includes/auth.php';
 requireSuperAdmin();
 $pageActive = 'scanner';
 $db = getDB();
+
+// Charger le token depuis config-keys.php pour l'injecter dans le JS
+$configFile = __DIR__ . '/../config-keys.php';
+if (file_exists($configFile)) { require_once $configFile; }
+$jsToken = defined('AUTH_TOKEN') ? AUTH_TOKEN : '';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -28,6 +33,10 @@ $db = getDB();
     <p>Chargement du Command Center...</p>
   </div>
 
+  <script>
+    // Token injecté côté serveur — jamais stocké en dur dans scanner-app.js
+    window.STRATEDGE_TOKEN = <?= json_encode($jsToken) ?>;
+  </script>
   <script src="scanner-app.js"></script>
 </div>
 </body>

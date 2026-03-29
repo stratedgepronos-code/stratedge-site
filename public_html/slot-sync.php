@@ -5,7 +5,7 @@
 // Sauvegarde et charge l'état du bracket en temps réel
 // ============================================================
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Origin: https://stratedgepronos.fr');
 header('Access-Control-Allow-Methods: GET, POST');
 header('Access-Control-Allow-Headers: Content-Type');
 

@@ -11,10 +11,10 @@
  * URL : https://stratedgepronos.fr/claude-api.php
  * 
  * USAGE :
- *   POST ?token=stratedge2026
+ *   POST ?token=YOUR_AUTH_TOKEN
  *   Body JSON: { "league": "soccer_epl", "home": "Arsenal", "away": "Chelsea" }
  *   
- *   ou GET ?token=stratedge2026&action=analyze&league=soccer_epl&home=Arsenal&away=Chelsea
+ *   ou GET ?token=YOUR_AUTH_TOKEN&action=analyze&league=soccer_epl&home=Arsenal&away=Chelsea
  */
 
 // ============================================
@@ -43,17 +43,23 @@ if (file_exists($configFile)) {
     }
 }
 
-$ANTHROPIC_KEY = defined('ANTHROPIC_API_KEY') ? ANTHROPIC_API_KEY : "REPLACE_WITH_YOUR_KEY";
-$FOOTYSTATS_KEY = defined('FOOTYSTATS_API_KEY') ? FOOTYSTATS_API_KEY : "1631907a095ad0953000398757257d07713f977696d039fca8a854b8f0be8ca5";
-$ODDS_API_KEY = defined('ODDS_API_KEY') ? ODDS_API_KEY : "2203e181d78187eafad87ae8f436ad53";
-$AUTH_TOKEN = "stratedge2026";
+$ANTHROPIC_KEY  = defined('ANTHROPIC_API_KEY')   ? ANTHROPIC_API_KEY  : null;
+$FOOTYSTATS_KEY = defined('FOOTYSTATS_API_KEY')  ? FOOTYSTATS_API_KEY : null;
+$ODDS_API_KEY   = defined('ODDS_API_KEY')        ? ODDS_API_KEY       : null;
+$AUTH_TOKEN     = defined('AUTH_TOKEN')          ? AUTH_TOKEN         : null;
 $MODEL = "claude-opus-4-6"; // Opus = meilleure analyse, raisonnement complexe
+
+if (!$ANTHROPIC_KEY || !$AUTH_TOKEN) {
+    http_response_code(503);
+    echo json_encode(["error" => "Configuration serveur manquante. Contactez l'administrateur."]);
+    exit;
+}
 
 // ============================================
 // HEADERS
 // ============================================
 header("Content-Type: application/json; charset=utf-8");
-header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Origin: https://stratedgepronos.fr");
 header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
 header("Access-Control-Allow-Headers: Content-Type, X-StratEdge-Token");
 
@@ -63,26 +69,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') { exit; }
 // AUTH
 // ============================================
 $token = $_GET['token'] ?? $_POST['token'] ?? $_SERVER['HTTP_X_STRATEDGE_TOKEN'] ?? '';
-if ($token !== $AUTH_TOKEN) {
+if (!hash_equals($AUTH_TOKEN, $token)) {
     http_response_code(403);
-    echo json_encode(["error" => "Token invalide"]);
+    echo json_encode(["error" => "Accès non autorisé."]);
     exit;
 }
 
 // ============================================
 // CHECK API KEY
 // ============================================
-if ($ANTHROPIC_KEY === "REPLACE_WITH_YOUR_KEY") {
-    echo json_encode([
-        "error" => "Clé API Anthropic non configurée",
-        "instructions" => [
-            "1. Va sur console.anthropic.com",
-            "2. Crée un compte ou connecte-toi",
-            "3. Settings → API Keys → Create Key",
-            "4. Copie la clé (sk-ant-...)",
-            "5. Modifie claude-api.php ligne 25 : remplace REPLACE_WITH_YOUR_KEY par ta clé"
-        ]
-    ]);
+if (!$ANTHROPIC_KEY) {
+    http_response_code(503);
+    echo json_encode(["error" => "Clé API non configurée. Contactez l'administrateur."]);
     exit;
 }
 
@@ -103,8 +101,8 @@ $question = $_GET['q'] ?? $input['q'] ?? '';
 if ($action === 'analyze' && !$home && !$away && !$eventId) {
     echo json_encode([
         "error" => "Paramètres requis : home + away (noms d'équipe) ou event (ID match)",
-        "exemple_get" => "?token=stratedge2026&action=analyze&league=soccer_epl&home=Arsenal&away=Chelsea",
-        "exemple_custom" => "?token=stratedge2026&action=ask&q=Analyse tous les matchs de Serie A ce week-end"
+        "exemple_get" => "?token=YOUR_AUTH_TOKEN&action=analyze&league=soccer_epl&home=Arsenal&away=Chelsea",
+        "exemple_custom" => "?token=YOUR_AUTH_TOKEN&action=ask&q=Analyse tous les matchs de Serie A ce week-end"
     ]);
     exit;
 }

@@ -1,7 +1,7 @@
 // StratEdge Command Center v1.0
 (function(){
   var O = window.location.origin;
-  var T = 'stratedge2026';
+  var T = window.STRATEDGE_TOKEN || ''; // injecté par scanner.php via PHP — jamais en dur ici
   var cL = 'soccer_epl';
 
   var LEAGUES = [
