@@ -10,8 +10,16 @@ $db = getDB();
 $adminRole = getAdminRole();
 $isAdminFunSport = isAdminFunSport();
 $isAdminTennis = isAdminTennis();
-/** Préfixe URL des scripts admin (ex. /panel-x9k3m) pour fetch() fiables */
-$seAdminFetchPrefix = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
+/**
+ * Préfixe URL pour fetch() : doit correspondre à l’URL vue par le navigateur (ex. /panel-x9k3m).
+ * Si on utilise SCRIPT_NAME seul, Apache peut exposer /admin/… → fetch vers /admin/*.php = 403 (admin/.htaccess).
+ */
+$__uriPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+$__uriPath = str_replace('\\', '/', $__uriPath);
+$seAdminFetchPrefix = rtrim(dirname($__uriPath !== '' ? $__uriPath : (str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '/'))), '/');
+if ($seAdminFetchPrefix === '/admin' || preg_match('#/admin$#', $seAdminFetchPrefix)) {
+    $seAdminFetchPrefix = preg_replace('#/admin$#', '/panel-x9k3m', $seAdminFetchPrefix);
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
