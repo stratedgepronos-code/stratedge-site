@@ -8,6 +8,9 @@
  * - Accessible par Claude via web_fetch
  * 
  * URL : https://stratedgepronos.fr/stats-api.php
+ *
+ * Cache BDD (même clé FOOTYSTATS) : plugin plugins/football_footystats/
+ *   + cron/sync-footystats-cache.php — tables fd_fy_*
  * 
  * USAGE :
  *   ?action=today                                → matchs du jour avec stats

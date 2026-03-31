@@ -23,7 +23,7 @@ error_log
 public_html/includes/smtp-config.php
 public_html/includes/football_data_config.php
 public_html/includes/claude-config.local.php
-public_html/plugins/football_sportmonks/local_config.php
+public_html/plugins/football_footystats/local_config.php
 
 # Cache
 __pycache__/

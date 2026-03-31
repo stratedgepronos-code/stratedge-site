@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * StratEdge : BDD via includes/db.php (getDB), ou local_config.php / FD_DB_*.
+ * StratEdge : BDD via includes/db.php (getDB), ou local_config / FD_DB_*.
  *
  * @return PDO
  */
@@ -11,18 +11,18 @@ if (is_readable($local)) {
     require $local;
 }
 
-if (!isset($GLOBALS['fd_pdo']) || !($GLOBALS['fd_pdo'] instanceof PDO)) {
+if (!isset($GLOBALS['fd_fy_pdo']) || !($GLOBALS['fd_fy_pdo'] instanceof PDO)) {
     $publicHtml = dirname(__DIR__, 3);
     $dbFile = $publicHtml . '/includes/db.php';
     if (is_readable($dbFile)) {
         require_once $dbFile;
         if (function_exists('getDB')) {
-            $GLOBALS['fd_pdo'] = getDB();
+            $GLOBALS['fd_fy_pdo'] = getDB();
         }
     }
 }
 
-if (!isset($GLOBALS['fd_pdo']) || !($GLOBALS['fd_pdo'] instanceof PDO)) {
+if (!isset($GLOBALS['fd_fy_pdo']) || !($GLOBALS['fd_fy_pdo'] instanceof PDO)) {
     $host = getenv('FD_DB_HOST') ?: 'localhost';
     $name = getenv('FD_DB_NAME') ?: '';
     $user = getenv('FD_DB_USER') ?: '';
@@ -33,7 +33,7 @@ if (!isset($GLOBALS['fd_pdo']) || !($GLOBALS['fd_pdo'] instanceof PDO)) {
         }
         exit(1);
     }
-    $GLOBALS['fd_pdo'] = new PDO(
+    $GLOBALS['fd_fy_pdo'] = new PDO(
         'mysql:host=' . $host . ';dbname=' . $name . ';charset=utf8mb4',
         $user,
         $pass,
@@ -41,4 +41,4 @@ if (!isset($GLOBALS['fd_pdo']) || !($GLOBALS['fd_pdo'] instanceof PDO)) {
     );
 }
 
-return $GLOBALS['fd_pdo'];
+return $GLOBALS['fd_fy_pdo'];

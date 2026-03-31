@@ -1,21 +1,17 @@
 <?php
 /**
- * CRON SportMonks — import matchs vers les tables fd_sm_*.
+ * CRON — remplit le cache FootyStats (fd_fy_*).
  *
- * Appel HTTP (éviter les timeouts longs : plage courte, ou plusieurs crons) :
- *   wget -q -O - "https://stratedgepronos.fr/cron/sync-sportmonks-fixtures.php?token=VOTRE_AUTH_TOKEN&from=2026-03-20&to=2026-03-27"
+ *   wget -q -O - "https://stratedgepronos.fr/cron/sync-footystats-cache.php?token=AUTH_TOKEN"
  *
  * Paramètres :
- *   token (requis) = AUTH_TOKEN (config-keys.php), même valeur que stats-api
- *   from, to       = YYYY-MM-DD (défaut : J-3 .. J+14)
- *   enrich=1       = lineups/events/stats (beaucoup d’appels API)
- *
- * Une fois : créer les tables avec
- *   php public_html/plugins/football_sportmonks/bootstrap_tables.php
+ *   from, to   YYYY-MM-DD (défaut : J-2 .. J+10)
+ *   enrich=1   appelle /matches pour chaque match (coûteux)
+ *   leagues=1  met à jour league-list
  */
 declare(strict_types=1);
 
-set_time_limit(300);
+set_time_limit(600);
 
 $keysFile = __DIR__ . '/../config-keys.php';
 if (!is_readable($keysFile)) {
@@ -41,10 +37,10 @@ if ($token === '' || !is_string($token) || !hash_equals(AUTH_TOKEN, $token)) {
     exit;
 }
 
-if (!defined('SPORTMONKS_API_TOKEN') || SPORTMONKS_API_TOKEN === '') {
+if (!defined('FOOTYSTATS_API_KEY') || FOOTYSTATS_API_KEY === '' || FOOTYSTATS_API_KEY === 'REPLACE-ME') {
     http_response_code(503);
     header('Content-Type: text/plain; charset=utf-8');
-    echo 'SPORTMONKS_API_TOKEN manquant dans config-keys.php';
+    echo 'FOOTYSTATS_API_KEY manquant';
     exit;
 }
 
@@ -53,34 +49,37 @@ header('Content-Type: application/json; charset=utf-8');
 $from = $_GET['from'] ?? '';
 $to = $_GET['to'] ?? '';
 if (!is_string($from) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $from)) {
-    $from = gmdate('Y-m-d', strtotime('-3 days'));
+    $from = gmdate('Y-m-d', strtotime('-2 days'));
 }
 if (!is_string($to) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $to)) {
-    $to = gmdate('Y-m-d', strtotime('+14 days'));
+    $to = gmdate('Y-m-d', strtotime('+10 days'));
 }
 
 $enrich = isset($_GET['enrich']) && ($_GET['enrich'] === '1' || $_GET['enrich'] === 'true');
+$leagues = isset($_GET['leagues']) && ($_GET['leagues'] === '1' || $_GET['leagues'] === 'true');
 
-$plugin = __DIR__ . '/../plugins/football_sportmonks';
-require_once $plugin . '/lib/SportmonksClient.php';
-require_once $plugin . '/lib/FootballDataStore.php';
-require_once $plugin . '/lib/SyncFixturesRunner.php';
+$plugin = __DIR__ . '/../plugins/football_footystats';
+require_once $plugin . '/lib/FootyStatsClient.php';
+require_once $plugin . '/lib/FootyStatsStore.php';
+require_once $plugin . '/lib/SyncFootyStatsRunner.php';
 require_once __DIR__ . '/../includes/db.php';
 
 try {
     $pdo = getDB();
-    $client = SportmonksClient::fromEnv();
-    $store = new FootballDataStore($pdo);
-    $runner = new SyncFixturesRunner($pdo, $client, $store);
-    $result = $runner->run($from, $to, $enrich, null);
+    $client = FootyStatsClient::fromEnv();
+    $store = new FootyStatsStore($pdo);
+    $runner = new SyncFootyStatsRunner($pdo, $client, $store);
+    $r = $runner->syncDateRange($from, $to, $enrich, $leagues, null);
     echo json_encode([
         'ok' => true,
         'from' => $from,
         'to' => $to,
         'enrich' => $enrich,
-        'total' => $result['total'],
-        'message' => $result['message'],
-        'enrich_errors_count' => count($result['errors']),
+        'leagues' => $leagues,
+        'matches_upserted' => $r['matches_upserted'],
+        'dates' => $r['dates'],
+        'message' => $r['message'],
+        'enrich_errors' => $r['enrich_errors'],
     ], JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
     http_response_code(500);

@@ -11,12 +11,9 @@ define('ANTHROPIC_API_KEY', 'sk-ant-api03-REPLACE-ME');
 define('FOOTYSTATS_API_KEY', 'REPLACE-ME');
 define('ODDS_API_KEY', 'REPLACE-ME');
 
-/** SportMonks (plugin public_html/plugins/football_sportmonks/) — sync + BDD fd_sm_* */
-define('SPORTMONKS_API_TOKEN', '');
-
 /**
- * Optionnel : token dédié pour plugins/football_sportmonks/football_internal_api.php
- * Si vide, c’est AUTH_TOKEN qui est utilisé (comme stats-api.php).
+ * Optionnel : token dédié pour plugins/football_footystats/footystats_internal_api.php
+ * Si vide → AUTH_TOKEN (comme stats-api.php).
  */
 define('FOOTBALL_CONTEXT_TOKEN', '');
 
