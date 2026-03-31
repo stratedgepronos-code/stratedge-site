@@ -10,6 +10,8 @@ $db = getDB();
 $adminRole = getAdminRole();
 $isAdminFunSport = isAdminFunSport();
 $isAdminTennis = isAdminTennis();
+/** Préfixe URL des scripts admin (ex. /panel-x9k3m) pour fetch() fiables */
+$seAdminFetchPrefix = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'] ?? '/')), '/');
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -403,6 +405,15 @@ $isAdminTennis = isAdminTennis();
 </div>
 
 <script>
+// Préfixe dossier courant (évite fetch vers la mauvaise URL si chemin atypique)
+const SE_ADMIN_FETCH_PREFIX = <?php echo json_encode($seAdminFetchPrefix, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+function adminFetchUrl(name) {
+  const rel = String(name || '').replace(/^\//, '');
+  const base = (typeof SE_ADMIN_FETCH_PREFIX === 'string') ? SE_ADMIN_FETCH_PREFIX.replace(/\/$/, '') : '';
+  if (base && base !== '.') return base + '/' + rel;
+  return rel;
+}
+
 // ── Polices embarquées (same-origin) : évite CSP connect-src sans fonts.googleapis.com ──
 let _fontsBase64Css;
 
@@ -413,7 +424,7 @@ let _fontsBase64Css;
 async function loadFontsAsBase64() {
   if (_fontsBase64Css !== undefined) return _fontsBase64Css;
   try {
-    const resp = await fetch('card-fonts-css.php', { credentials: 'same-origin' });
+    const resp = await fetch(adminFetchUrl('card-fonts-css.php'), { credentials: 'same-origin' });
     if (!resp.ok) {
       console.warn('card-fonts-css.php HTTP', resp.status);
       _fontsBase64Css = '';
@@ -561,11 +572,12 @@ async function generateCard() {
   try {
     const controller = new AbortController();
     const fetchTimeout = setTimeout(() => controller.abort(), 240000);
-    const resp = await fetch('generate-card.php', {
+    const resp = await fetch(adminFetchUrl('generate-card.php'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
-      signal: controller.signal
+      signal: controller.signal,
+      credentials: 'same-origin'
     });
     clearTimeout(fetchTimeout);
 
@@ -651,9 +663,11 @@ async function injectAndWait(iframeId, html) {
   // Aucune requête réseau depuis l'iframe → zéro CORS.
   const fontsCss = await loadFontsAsBase64();
   if (fontsCss) {
-    // Injecter les @font-face en base64 dans le <style> (disponibles immédiatement, pas de CORS)
-    html = html.replace('</style>', fontsCss + '\n</style>');
-    // Retirer le <link> Google Fonts pour éviter double chargement et échec CORS dans l'iframe
+    if (html.indexOf('</style>') !== -1) {
+      html = html.replace('</style>', fontsCss + '\n</style>');
+    } else if (html.indexOf('</head>') !== -1) {
+      html = html.replace('</head>', '<style type="text/css">' + fontsCss + '</style>\n</head>');
+    }
     html = html.replace(/<link[^>]*href=["']?https?:\/\/fonts\.googleapis\.com[^>]*>/gi, '');
   }
 
@@ -842,7 +856,7 @@ async function posterBetFromCard() {
     form.append('analyse_html', analyseHtml);
     form.append('cote', cote);
 
-    const resp = await fetch('poster-bet-from-card.php', { method: 'POST', body: form });
+    const resp = await fetch(adminFetchUrl('poster-bet-from-card.php'), { method: 'POST', body: form, credentials: 'same-origin' });
     const text = await resp.text();
     let data = {};
     try { data = JSON.parse(text); } catch (_) {}

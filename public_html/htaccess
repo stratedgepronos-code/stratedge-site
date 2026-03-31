@@ -28,7 +28,8 @@ RewriteRule ^panel-x9k3m/(.*)$ admin/$1 [L]
     Header always set Referrer-Policy "strict-origin-when-cross-origin"
     Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
     Header always set Permissions-Policy "geolocation=(), microphone=(), camera=()"
-    Header always set Content-Security-Policy "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://script.starpass.fr https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://api.anthropic.com; frame-src https://script.starpass.fr;"
+    # connect-src : data + blob (cards / html2canvas), APIs + Google si besoin — aligné sur .htaccess
+    Header always set Content-Security-Policy "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://fonts.googleapis.com https://script.starpass.fr https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https:; connect-src 'self' data: blob: https://fonts.googleapis.com https://fonts.gstatic.com https://api.the-odds-api.com https://api.footystats.org https://api.anthropic.com; frame-src https://script.starpass.fr;"
     # Supprimer header serveur révélant la version PHP
     Header always unset X-Powered-By
     Header always unset Server
