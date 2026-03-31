@@ -594,6 +594,10 @@ async function generateCard() {
 
     if (!resp.ok || data.error) {
       let msg = '❌ ' + (data.error || 'Erreur inconnue.');
+      if (data.error_code === 'claude_overloaded' || resp.status === 529 || /overloaded|529/i.test(String(data.detail || ''))) {
+        msg = '⏳ <strong>Claude est saturé</strong> (erreur côté Anthropic, pas un souci de clé API manquante). Réessaie dans 1 à 2 minutes.';
+        if (data.detail) msg += '<br><small style="opacity:0.65">' + escHtml(String(data.detail).substring(0, 200)) + '</small>';
+      }
       if (data.file || data.line) msg += '<br><small style="opacity:0.7">' + (data.file || '') + (data.line ? ':' + data.line : '') + '</small>';
       if (data.raw) msg += '<br><small style="opacity:0.6">' + escHtml(data.raw) + '</small>';
       if (data.path) msg += '<br><small style="opacity:0.6">path: ' + escHtml(String(data.path)) + '</small>';

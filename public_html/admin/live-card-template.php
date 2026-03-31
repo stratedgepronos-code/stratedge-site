@@ -391,9 +391,10 @@ body { background:#0a0a0a; margin:0; padding:0; width:1080px; font-family:'Orbit
   box-shadow:{$sc['badge_shadow']}; text-shadow:{$sc['badge_tshadow']};
 }
 
-.datetime-block { text-align:center; padding:3px 0; }
+.datetime-block { text-align:center; padding:3px 0 6px; }
 .datetime-day { font-family:'Orbitron',sans-serif; font-size:21px; font-weight:600; color:rgba(255,255,255,0.55); text-transform:uppercase; letter-spacing:3px; margin-bottom:3px; }
 .datetime-time { font-family:'Orbitron',sans-serif; font-size:54px; font-weight:900; letter-spacing:4px; line-height:1; color:{$sc['time_color']}; text-shadow:{$sc['time_shadow']}; }
+.datetime-sub { font-size:12px; color:rgba(255,255,255,0.35); font-family:'Orbitron',sans-serif; font-weight:600; letter-spacing:2px; text-transform:uppercase; margin-top:4px; }
 
 .match-block { background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:14px; padding:14px 22px; position:relative; }
 .match-left-bar { position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(to bottom,#ff2d7a,#00e5ff); border-radius:4px 0 0 4px; }
@@ -555,13 +556,14 @@ TEAMSPORT;
       <img src='{$sc['mascotte_url']}' alt='' style='{$sc['mascotte_style']}'>
     </div>
     <div class='card-body'>
-      <div class='card-header'>
-        <img src='{$logo}' class='logo-img' alt='StratEdge'>
-        <div class='sport-badge'>{$sc['emoji']} {$sc['label']}</div>
-      </div>
       <div class='datetime-block'>
         <div class='datetime-day'>{$date}</div>
         <div class='datetime-time'>{$time}</div>
+        <div class='datetime-sub'>coup d'envoi · heure Paris</div>
+      </div>
+      <div class='card-header'>
+        <img src='{$logo}' class='logo-img' alt='StratEdge'>
+        <div class='sport-badge'>{$sc['emoji']} {$sc['label']}</div>
       </div>
       <div class='match-block'>
         <div class='match-left-bar'></div>
@@ -622,13 +624,14 @@ HTML;
       <img src='{$sc['mascotte_url']}' alt='' style='{$sc['mascotte_locked']}'>
     </div>
     <div class='card-body'>
-      <div class='card-header'>
-        <img src='{$logo}' class='logo-img' alt='StratEdge'>
-        <div class='sport-badge'>{$sc['emoji']} {$sc['label']}</div>
-      </div>
       <div class='datetime-block'>
         <div class='datetime-day'>{$date}</div>
         <div class='datetime-time'>{$time}</div>
+        <div class='datetime-sub'>coup d'envoi · heure Paris</div>
+      </div>
+      <div class='card-header'>
+        <img src='{$logo}' class='logo-img' alt='StratEdge'>
+        <div class='sport-badge'>{$sc['emoji']} {$sc['label']}</div>
       </div>
       <div class='match-block'>
         <div class='match-left-bar'></div>
@@ -1021,14 +1024,14 @@ HTML;
       <img src='{$mascotteUrl}' alt=''>
     </div>
     <div class='card-body'>
-      <div class='card-header'>
-        <img src='{$logo}' class='logo-img' alt='StratEdge'>
-        <div class='funbet-badge'>{$funBadgeText}</div>
-      </div>
       <div class='datetime-block'>
         <div class='datetime-day'>{$date}</div>
         <div class='datetime-time'>{$time}</div>
-        <div class='datetime-sub'>heure du 1er match</div>
+        <div class='datetime-sub'>1er match · heure Paris</div>
+      </div>
+      <div class='card-header'>
+        <img src='{$logo}' class='logo-img' alt='StratEdge'>
+        <div class='funbet-badge'>{$funBadgeText}</div>
       </div>
       <div class='section-title'>
         <span class='section-title-text'>{$sectionTitle}</span>
@@ -1076,14 +1079,14 @@ HTML;
       <img src='{$mascotteUrl}' alt='' style='opacity:{$funMascotteLockedOp}'>
     </div>
     <div class='card-body'>
-      <div class='card-header'>
-        <img src='{$logo}' class='logo-img' alt='StratEdge'>
-        <div class='funbet-badge'>{$funBadgeText}</div>
-      </div>
       <div class='datetime-block'>
         <div class='datetime-day'>{$date}</div>
         <div class='datetime-time'>{$time}</div>
-        <div class='datetime-sub'>heure du 1er match</div>
+        <div class='datetime-sub'>1er match · heure Paris</div>
+      </div>
+      <div class='card-header'>
+        <img src='{$logo}' class='logo-img' alt='StratEdge'>
+        <div class='funbet-badge'>{$funBadgeText}</div>
       </div>
       <div class='section-title'>
         <span class='section-title-text'>{$sectionTitle}</span>
@@ -1494,14 +1497,14 @@ HTML;
       <img src='{$mascotteUrl}' alt=''>
     </div>
     <div class='sc-body'>
-      <div class='sc-header'>
-        <img src='{$logo}' class='sc-logo' alt='StratEdge'>
-        <div class='sc-badge'>{$badgeText}</div>
-      </div>
       <div class='sc-datetime'>
         <div class='sc-date-day'>{$date}</div>
         <div class='sc-date-time'>{$time}</div>
-        <div class='sc-date-sub'>heure du 1er match</div>
+        <div class='sc-date-sub'>1er match · heure Paris</div>
+      </div>
+      <div class='sc-header'>
+        <img src='{$logo}' class='sc-logo' alt='StratEdge'>
+        <div class='sc-badge'>{$badgeText}</div>
       </div>
       <div class='sc-section-title'>
         <span class='sc-section-text'>{$sectionTitle}</span>
@@ -1547,14 +1550,14 @@ HTML;
       <img src='{$mascotteUrl}' alt=''>
     </div>
     <div class='sc-body'>
-      <div class='sc-header'>
-        <img src='{$logo}' class='sc-logo' alt='StratEdge'>
-        <div class='sc-badge'>{$badgeText}</div>
-      </div>
       <div class='sc-datetime'>
         <div class='sc-date-day'>{$date}</div>
         <div class='sc-date-time'>{$time}</div>
-        <div class='sc-date-sub'>heure du 1er match</div>
+        <div class='sc-date-sub'>1er match · heure Paris</div>
+      </div>
+      <div class='sc-header'>
+        <img src='{$logo}' class='sc-logo' alt='StratEdge'>
+        <div class='sc-badge'>{$badgeText}</div>
       </div>
       <div class='sc-section-title'>
         <span class='sc-section-text'>{$sectionTitle}</span>
