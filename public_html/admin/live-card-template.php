@@ -1,6 +1,7 @@
 <?php
 // ============================================================
-// STRATEDGE — live-card-template.php V12
+// STRATEDGE — live-card-template.php V13
+// V13 : Fun card — promo 10€/sem + grosses cotes, lisibilité paris/confiance, mascotte tennis à jour
 // V12 : ajout generateSafeCombiCards() — Safe Combiné (multi-bets Safe)
 // V11 : Fun card tennis — mascotte-tennis, thème vert néon quand sport=tennis
 // V10 : résolution cartes 1080px (Live + Fun)
@@ -787,26 +788,26 @@ body { background:#0a0a0a; margin:0; padding:0; width:1080px; min-width:1080px; 
 .section-title-text { font-family:'Orbitron',sans-serif; font-size:12px; font-weight:700; color:rgba(255,45,122,0.6); text-transform:uppercase; letter-spacing:2.5px; white-space:nowrap; }
 .section-title-line { flex:1; height:1px; background:linear-gradient(to right,rgba(255,45,122,0.3),transparent); }
 
-/* LIGNES DE PARIS */
-.bets-container { display:flex; flex-direction:column; gap:8px; }
-.bet-line { background:rgba(255,255,255,0.025); border:1px solid rgba(255,255,255,0.055); border-radius:10px; padding:11px 14px 11px 18px; position:relative; display:flex; flex-direction:column; gap:4px; }
+/* LIGNES DE PARIS — lisibilité : contrastes + air */
+.bets-container { display:flex; flex-direction:column; gap:14px; }
+.bet-line { background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:14px 16px 14px 20px; position:relative; display:flex; flex-direction:column; gap:8px; }
 .bet-left-bar { position:absolute; left:0; top:0; bottom:0; width:4px; border-radius:4px 0 0 4px; }
-.bet-top-row { display:flex; align-items:center; justify-content:space-between; }
-.bet-num-match { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-.bet-num { font-family:'Orbitron',sans-serif; font-size:15px; color:rgba(255,140,200,0.6); }
-.bet-match { font-family:'Orbitron',sans-serif; font-size:17px; color:rgba(255,255,255,0.5); letter-spacing:0.5px; font-weight:600; }
-.bet-heure { font-family:'Orbitron',sans-serif; font-size:14px; color:rgba(255,45,122,0.85); font-weight:700; margin-left:6px; white-space:nowrap; }
+.bet-top-row { display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
+.bet-num-match { display:flex; align-items:center; gap:10px; flex-wrap:wrap; line-height:1.4; }
+.bet-num { font-family:'Orbitron',sans-serif; font-size:15px; color:rgba(255,140,200,0.75); flex-shrink:0; }
+.bet-match { font-family:'Orbitron',sans-serif; font-size:16px; color:rgba(255,255,255,0.9); letter-spacing:0.3px; font-weight:600; line-height:1.35; }
+.bet-heure { font-family:'Orbitron',sans-serif; font-size:13px; color:rgba(255,45,122,0.95); font-weight:700; margin-left:4px; white-space:nowrap; flex-shrink:0; }
 .bet-line .fun-team-logo { height:24px; width:auto; max-width:32px; object-fit:contain; vertical-align:middle; }
-.bet-cote-pill { background:#FF2D78; border:1px solid rgba(255,255,255,0.2); border-radius:8px; padding:6px 13px; font-family:'Orbitron',sans-serif; font-size:20px; font-weight:700; color:#fff; }
-.bet-prono { font-family:'Orbitron',sans-serif; font-size:17px; font-weight:700; color:rgba(255,255,255,0.9); }
+.bet-cote-pill { background:#FF2D78; border:1px solid rgba(255,255,255,0.2); border-radius:8px; padding:8px 14px; font-family:'Orbitron',sans-serif; font-size:19px; font-weight:700; color:#fff; flex-shrink:0; }
+.bet-prono { font-family:'Orbitron',sans-serif; font-size:16px; font-weight:700; color:rgba(255,255,255,0.96); line-height:1.5; padding-top:2px; letter-spacing:0.2px; }
 
-/* CONFIANCE */
-.confidence-col { display:flex; flex-direction:column; gap:5px; }
-.conf-header { display:flex; justify-content:space-between; align-items:center; }
-.conf-label { font-family:'Orbitron',sans-serif; font-size:14px; color:rgba(255,255,255,0.28); text-transform:uppercase; letter-spacing:2px; font-weight:700; }
-.conf-score { font-family:'Orbitron',sans-serif; font-size:21px; font-weight:900; color:#ff2d7a; text-shadow:0 0 8px rgba(255,45,122,0.3); }
-.conf-bar-bg { height:8px; background:rgba(255,255,255,0.05); border-radius:4px; overflow:hidden; }
-.conf-bar-fill { height:100%; width:{$conf}%; background:linear-gradient(to right,#ff2d7a,#c850c0,#ff8c42); border-radius:4px; animation:barPulse 2s ease-in-out infinite; }
+/* CONFIANCE — décollée du bloc paris */
+.confidence-col { display:flex; flex-direction:column; gap:10px; margin-top:10px; padding-top:16px; border-top:1px solid rgba(255,255,255,0.06); }
+.conf-header { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:2px; }
+.conf-label { font-family:'Orbitron',sans-serif; font-size:12px; color:rgba(255,255,255,0.5); text-transform:uppercase; letter-spacing:1.8px; font-weight:700; line-height:1.3; }
+.conf-score { font-family:'Orbitron',sans-serif; font-size:22px; font-weight:900; color:#ff2d7a; text-shadow:0 0 8px rgba(255,45,122,0.3); flex-shrink:0; }
+.conf-bar-bg { height:12px; background:rgba(255,255,255,0.08); border-radius:6px; overflow:hidden; margin-top:4px; }
+.conf-bar-fill { height:100%; width:{$conf}%; background:linear-gradient(to right,#ff2d7a,#c850c0,#ff8c42); border-radius:6px; animation:barPulse 2s ease-in-out infinite; }
 @keyframes barPulse { 0%,100%{opacity:0.85} 50%{opacity:1} }
 
 /* COTE TOTALE */
@@ -821,7 +822,7 @@ body { background:#0a0a0a; margin:0; padding:0; width:1080px; min-width:1080px; 
 /* PROMO — Option Sport Daily, Week-end, Weekly (fonts forcées pour lisibilité) */
 .promo-banner { background:rgba(14,22,14,0.95); border:1px solid rgba(57,255,20,0.18); border-radius:14px; padding:14px 18px; position:relative; display:flex; align-items:center; justify-content:space-between; gap:14px; }
 .promo-left-bar { position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(to bottom,#39ff14,#00e5ff); border-radius:4px 0 0 4px; }
-.promo-text-block { flex:1; padding-left:10px; display:flex; flex-direction:column; gap:5px; }
+.promo-text-block { flex:1; padding-left:10px; display:flex; flex-direction:column; gap:8px; }
 .promo-eyebrow { font-family:'Orbitron',sans-serif !important; font-size:13px !important; color:#39ff14; text-transform:uppercase; letter-spacing:2px; font-weight:700; }
 .promo-main { font-family:'Orbitron',sans-serif !important; font-size:22px !important; font-weight:700; letter-spacing:0.8px; color:#fff; line-height:1.25; min-height:1.25em; }
 .promo-main-hl { color:#ff2d7a; font-family:inherit !important; }
@@ -848,8 +849,11 @@ body { background:#0a0a0a; margin:0; padding:0; width:1080px; min-width:1080px; 
 .card-wrapper.tennis-fun .datetime-time { color:#39ff14; text-shadow:0 0 25px rgba(57,255,20,0.5); }
 .card-wrapper.tennis-fun .section-title-text { color:rgba(57,255,20,0.8); }
 .card-wrapper.tennis-fun .section-title-line { background:linear-gradient(to right,rgba(57,255,20,0.35),transparent); }
-.card-wrapper.tennis-fun .bet-num { color:rgba(144,255,128,0.7); }
-.card-wrapper.tennis-fun .bet-heure { color:rgba(57,255,20,0.9); }
+.card-wrapper.tennis-fun .bet-num { color:rgba(144,255,128,0.85); }
+.card-wrapper.tennis-fun .bet-match { color:rgba(255,255,255,0.92); }
+.card-wrapper.tennis-fun .bet-heure { color:rgba(57,255,20,0.95); }
+.card-wrapper.tennis-fun .bet-prono { color:rgba(255,255,255,0.97); }
+.card-wrapper.tennis-fun .conf-label { color:rgba(255,255,255,0.52); }
 .card-wrapper.tennis-fun .bet-cote-pill { background:#FF2D78; border-color:rgba(255,255,255,0.2); color:#fff; }
 .card-wrapper.tennis-fun .conf-score { color:#39ff14; text-shadow:0 0 8px rgba(57,255,20,0.35); }
 .card-wrapper.tennis-fun .conf-bar-fill { background:linear-gradient(to right,#39ff14,#00d46a,#00c896); }
@@ -964,12 +968,13 @@ HTML;
   <div class='promo-banner'>
     <div class='promo-left-bar'></div>
     <div class='promo-text-block'>
-      <div class='promo-eyebrow'>🎾 FUN BET TENNIS — COMBINÉ ATP / WTA</div>
-      <div class='promo-main'>Inclus dans le <span class='promo-main-hl'>Pack Tennis Pro</span></div>
+      <div class='promo-eyebrow'>🎾 FUN BET TENNIS — GROSSES COTES</div>
+      <div class='promo-main'><span class='promo-main-hl'>10€ / semaine</span> — combinés ATP / WTA</div>
+      <div class='promo-main' style='font-size:16px;margin-top:6px;line-height:1.5;font-weight:600;'>Uniquement des <span class='promo-main-hl'>grosses cotes</span> · Fun réservé aux gros potentiels</div>
       <div class='promo-packs'>
-        <span class='pack-tag pack-tag-max'>🎾 Tennis Weekly — 15€/sem</span>
+        <span class='pack-tag pack-tag-max'>🎾 Fun Tennis — 10€/sem</span>
       </div>
-      <div class='promo-price'>Abonne-toi au <span>Pack Tennis</span></div>
+      <div class='promo-price'>S’abonner sur <span>stratedgepronos.fr</span></div>
     </div>
     <div class='promo-right'>
       <div class='promo-cta'>🎾 Je m'abonne</div>
@@ -981,13 +986,13 @@ HTML;
   <div class='promo-banner'>
     <div class='promo-left-bar'></div>
     <div class='promo-text-block'>
-      <div class='promo-eyebrow'>🎯 Option Fun Bet</div>
-      <div class='promo-main'>En option dans l'offre <span class='promo-main-hl'>Week-end (+10€)</span></div>
-      <div class='promo-main' style='font-size:17px;margin-top:2px;'>Inclus dans l'offre <span class='promo-main-hl'>VIP MAX</span></div>
+      <div class='promo-eyebrow'>⚡ FUN BET — 100 % GROSSES COTES</div>
+      <div class='promo-main'><span class='promo-main-hl'>10€ / semaine</span> — comme nos autres offres</div>
+      <div class='promo-main' style='font-size:16px;margin-top:6px;line-height:1.5;font-weight:600;'>Pas du safe : que des <span class='promo-main-hl'>grosses cotes</span> · combinés à fort potentiel</div>
       <div class='promo-packs'>
-        <span class='pack-tag'>📅 Week-end +10€</span>
-        <span class='pack-tag pack-tag-max'>👑 Inclus MAX</span>
+        <span class='pack-tag pack-tag-max'>⚡ Fun Bet — 10€/sem</span>
       </div>
+      <div class='promo-price'>S’abonner sur <span>stratedgepronos.fr</span></div>
     </div>
     <div class='promo-right'>
       <div class='promo-cta'>⚡ Je m'abonne</div>
