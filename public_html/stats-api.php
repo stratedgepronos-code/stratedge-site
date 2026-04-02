@@ -332,6 +332,8 @@ function fetchApi($url) {
         CURLOPT_TIMEOUT => 20,
         CURLOPT_HTTPHEADER => ['Accept: application/json'],
         CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_FOLLOWLOCATION => true,
+        CURLOPT_MAXREDIRS => 5,
     ]);
     
     $response = curl_exec($ch);
