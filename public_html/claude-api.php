@@ -86,7 +86,7 @@ if ($action === 'analyze') {
 
     // A. Stats compact FootyStats
     if ($home || $away) {
-        $params = "action=compact&token={$AUTH_TOKEN}&date={$date}";
+        $params = "action=compact&token=stratedge2026&date={$date}";
         if ($home) $params .= "&home=" . urlencode($home);
         if ($away) $params .= "&away=" . urlencode($away);
 
@@ -101,17 +101,17 @@ if ($action === 'analyze') {
 
             // B. Stats saisonnières des deux équipes (si IDs disponibles)
             if (!empty($compactData['home_id'])) {
-                $td = fetchUrl("{$baseUrl}/stats-api.php?action=team_stats&token={$AUTH_TOKEN}&id={$compactData['home_id']}");
+                $td = fetchUrl("{$baseUrl}/stats-api.php?action=team_stats&token=stratedge2026&id={$compactData['home_id']}");
                 if ($td && isset($td['compact_text'])) $contextParts[] = $td['compact_text'];
             }
             if (!empty($compactData['away_id'])) {
-                $td = fetchUrl("{$baseUrl}/stats-api.php?action=team_stats&token={$AUTH_TOKEN}&id={$compactData['away_id']}");
+                $td = fetchUrl("{$baseUrl}/stats-api.php?action=team_stats&token=stratedge2026&id={$compactData['away_id']}");
                 if ($td && isset($td['compact_text'])) $contextParts[] = $td['compact_text'];
             }
 
             // C. H2H si IDs dispo
             if (!empty($compactData['home_id']) && !empty($compactData['away_id'])) {
-                $h2h = fetchUrl("{$baseUrl}/stats-api.php?action=h2h&token={$AUTH_TOKEN}&home={$compactData['home_id']}&away={$compactData['away_id']}");
+                $h2h = fetchUrl("{$baseUrl}/stats-api.php?action=h2h&token=stratedge2026&home={$compactData['home_id']}&away={$compactData['away_id']}");
                 if ($h2h && !isset($h2h['error'])) {
                     $contextParts[] = "[H2H_DATA]\n" . formatH2H($h2h, $home, $away) . "\n[/H2H_DATA]";
                 }
@@ -120,7 +120,7 @@ if ($action === 'analyze') {
         } else {
             // Fallback : recherche team par nom
             if ($home) {
-                $td = fetchUrl("{$baseUrl}/stats-api.php?action=search&token={$AUTH_TOKEN}&q=" . urlencode($home));
+                $td = fetchUrl("{$baseUrl}/stats-api.php?action=search&token=stratedge2026&q=" . urlencode($home));
                 if ($td && isset($td['data'][0])) {
                     $contextParts[] = "[TEAM_SEARCH: {$home}]\n" . json_encode($td['data'][0], JSON_UNESCAPED_UNICODE) . "\n[/TEAM_SEARCH]";
                 }
