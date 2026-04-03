@@ -18,7 +18,7 @@
  *   ?action=scan&league=soccer_epl          → TOUT d'un coup (events + odds de chaque match)
  * 
  * AUTH : token simple pour éviter l'abus public
- *   ?token=stratedge2026 (ou header X-StratEdge-Token)
+ *   ?token=YOUR_AUTH_TOKEN (ou header X-StratEdge-Token)
  */
 
 // ============================================
@@ -26,15 +26,22 @@
 // ============================================
 $configFile = __DIR__ . '/config-keys.php';
 if (file_exists($configFile)) { require_once $configFile; }
-$ODDS_API_KEY = defined('ODDS_API_KEY') ? ODDS_API_KEY : "2203e181d78187eafad87ae8f436ad53";
-$AUTH_TOKEN = "stratedge2026"; // token simple pour auth
+
+// Sécurité : toutes les clés DOIVENT venir de config-keys.php — jamais de fallback en dur
+if (!defined('ODDS_API_KEY') || !defined('AUTH_TOKEN')) {
+    http_response_code(503);
+    echo json_encode(["error" => "Configuration serveur manquante. Contactez l'administrateur."]);
+    exit;
+}
+$ODDS_API_KEY = ODDS_API_KEY;
+$AUTH_TOKEN   = AUTH_TOKEN;
 $BASE_URL = "https://api.the-odds-api.com/v4";
 
 // ============================================
 // CORS + HEADERS
 // ============================================
 header("Content-Type: application/json; charset=utf-8");
-header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Origin: https://stratedgepronos.fr");
 header("Access-Control-Allow-Headers: X-StratEdge-Token");
 header("Cache-Control: public, max-age=300"); // cache 5 min
 
@@ -42,9 +49,9 @@ header("Cache-Control: public, max-age=300"); // cache 5 min
 // AUTH CHECK
 // ============================================
 $token = $_GET['token'] ?? $_SERVER['HTTP_X_STRATEDGE_TOKEN'] ?? '';
-if ($token !== $AUTH_TOKEN) {
+if (!hash_equals($AUTH_TOKEN, $token)) {
     http_response_code(403);
-    echo json_encode(["error" => "Token invalide. Ajoute ?token=stratedge2026"]);
+    echo json_encode(["error" => "Accès non autorisé."]);
     exit;
 }
 

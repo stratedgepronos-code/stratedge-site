@@ -34,9 +34,12 @@ define('CLAUDE_LIVE_ENRICH_PROMPT', <<<'PROMPT'
 Tu reçois les infos d'un match (sport, match, pronostic, cote). Tu réponds UNIQUEMENT par un objet JSON valide, sans aucun texte avant ou après, sans backticks.
 
 ⚠️ HEURE DU MATCH — PRIORITÉ ABSOLUE — TOUJOURS EN HEURE DE PARIS (Europe/Paris)
-- date_fr et time_fr doivent correspondre à l'heure RÉELLE du match (coup d'envoi ou début), fuseau Europe/Paris (UTC+1 en hiver, UTC+2 en été).
-- Tu DOIS rechercher ou déduire cette heure à partir de ta connaissance des calendriers : journées de championnat (Ligue 1, Liga, Premier League, etc.), phases de poules C1/Ligue Europa, calendrier NHL, MLB, ATP/WTA, etc. Horaires typiques : Ligue 1 21h ou 17h/15h le dimanche ; C1 21h ; NHL souvent 01h00 ou 02h00 Paris ; tennis selon tournoi.
-- ⚠️ BASEBALL MLB — CONVERSION OBLIGATOIRE : les matchs MLB sont aux USA. Tu DOIS convertir l'heure locale US (Eastern Time ET) en heure de Paris. Décalage : Paris = ET + 6h (en été). Exemples : 19h05 ET = 01h05 Paris (lendemain) ; 13h10 ET = 19h10 Paris ; 16h10 ET = 22h10 Paris ; 20h10 ET = 02h10 Paris (lendemain). NE JAMAIS mettre l'heure américaine directement !
+- date_fr et time_fr = heure RÉELLE du coup d'envoi / début, exprimée pour un abonné en France (Europe/Paris, UTC+1 hiver / UTC+2 été).
+- Tu DOIS rechercher ou déduire cette heure (calendriers Ligue 1, Liga, PL, C1, Europa, NHL, MLB, ATP/WTA…). Horaires types : Ligue 1 21h ou 17h/15h dimanche ; C1 21h ; NHL souvent 01h–03h Paris ; tennis selon tournoi.
+- ⚠️ MATCHS AUX ÉTATS-UNIS (OBLIGATOIRE) : MLB, NBA, NFL, MLS, NCAA, NHL à domicile US, tennis US (Indian Wells, US Open sessions US, Miami jour…). Tu DOIS convertir l'heure locale américaine (souvent Eastern ET, parfois Pacific PT côte ouest) vers Paris. NE JAMAIS renvoyer l'heure « telle qu'annoncée aux USA » sans conversion.
+- MLB / soirée US : souvent entre 01h et 04h heure de Paris, parfois lendemain ; vérifie le passage minuit (date_fr = jour du coup d'envoi à Paris).
+- Rappel décalage indicatif été : Paris ≈ ET + 6h (ex. 19h05 ET → 01h05 Paris lendemain ; 13h10 ET → 19h10 Paris).
+- ⚠️ BASEBALL MLB : même règle — jamais l'heure US brute dans time_fr.
 - Si le message contient "date_fr" et "time_fr" explicites avec la mention "secours" ou "par défaut", utilise-les UNIQUEMENT si tu ne peux pas déduire l'heure réelle du match. Dès que tu connais le créneau du match (ex: "dimanche 21h Ligue 1"), renvoie cette date/heure réelle.
 - Format date_fr : en français (ex: "Dimanche 2 Mars 2026"). Format time_fr : HH:MM (ex: "21:00").
 
@@ -100,10 +103,10 @@ Structure de sortie OBLIGATOIRE :
 }
 
 Règles :
-- date_fr = date du PREMIER match (le plus tôt), en toutes lettres en français.
-- time_fr = heure du PREMIER match (coup d'envoi réel), fuseau Europe/Paris obligatoire (UTC+1 hiver, UTC+2 été).
-- ⚠️ BASEBALL MLB — CONVERSION OBLIGATOIRE : les matchs MLB sont aux USA. Convertis TOUJOURS l'heure locale US (Eastern Time ET) en heure de Paris. Décalage : Paris = ET + 6h (en été). Ex : 19h05 ET = 01h05 Paris (lendemain) ; 13h10 ET = 19h10 Paris. NE JAMAIS mettre l'heure américaine !
-- bets = tableau ordonné de tous les paris. Chaque entrée OBLIGATOIRE :
+- date_fr = date du PREMIER match (le plus tôt chronologiquement), en toutes lettres en français.
+- time_fr = heure du PREMIER match (coup d'envoi), TOUJOURS en heure de Paris (fuseau Europe/Paris). C'est l'heure qui doit apparaître en GRAND en haut de la card : cohérente avec le match qui commence le plus tôt dans la liste.
+- ⚠️ ÉTATS-UNIS (MLB, NBA, NFL, MLS, NHL domicile US, tennis US…) : convertir ET ou PT vers Paris. Jamais l'heure US non convertie. Soir US → souvent nuit ou lendemain matin à Paris.
+- bets = tableau ordonné par ordre CHRONOLOGIQUE de coup d'envoi (le 1er match à jouer en premier dans le tableau). Chaque entrée OBLIGATOIRE :
   - match : nom des équipes (ex: "Équipe A vs Équipe B")
   - heure : heure RÉELLE de coup d'envoi (début du match), fuseau Europe/Paris, format HH:MM. Tu DOIS la rechercher ou la déduire : utilise ta connaissance des calendriers (Ligue 1, C1, Ligue Europa, NHL, MLB, etc.). Ex: Ligue 1 souvent 21h ou 17h ; C1/Europa 18:45 ou 21:00 ; NHL 01:00 ou 02:00 Paris ; MLB 23h30-02h00 Paris (matchs soir US), 19h-22h Paris (matchs après-midi US). Ne mets pas une heure au hasard.
   - flag1, flag2 : emoji drapeau pays équipe 1 et 2
@@ -151,10 +154,10 @@ Structure de sortie OBLIGATOIRE :
 }
 
 Règles :
-- date_fr = date du PREMIER match (le plus tôt), en toutes lettres en français.
-- time_fr = heure du PREMIER match (coup d'envoi réel), fuseau Europe/Paris obligatoire (UTC+1 hiver, UTC+2 été).
-- ⚠️ BASEBALL MLB — CONVERSION OBLIGATOIRE : convertis TOUJOURS l'heure US (ET) en heure de Paris. Paris = ET + 6h (été). Ex : 19h ET = 01h Paris (lendemain). NE JAMAIS mettre l'heure US directement !
-- bets = tableau ordonné de tous les paris. Chaque entrée OBLIGATOIRE :
+- date_fr = date du PREMIER match (le plus tôt chronologiquement), en toutes lettres en français.
+- time_fr = heure du PREMIER match (coup d'envoi), TOUJOURS heure de Paris ; c'est l'heure affichée en grand en tête de card, alignée sur le match qui commence le plus tôt.
+- ⚠️ ÉTATS-UNIS (MLB, NBA, NFL, MLS, NHL US, tennis US…) : convertir ET/PT vers Paris. Jamais l'heure américaine brute.
+- bets = tableau ordonné par ordre CHRONOLOGIQUE de coup d'envoi (1er match en premier). Chaque entrée OBLIGATOIRE :
   - match : nom des équipes/joueurs (ex: "Équipe A vs Équipe B")
   - heure : heure RÉELLE de coup d'envoi (début du match), fuseau Europe/Paris, format HH:MM. Tu DOIS la rechercher ou la déduire (calendriers Ligue 1, C1, Europa, NHL, MLB, tennis). Ex: Ligue 1 21h ; C1 21h ou 18:45 ; NHL 01:00 ou 02:00 Paris ; MLB 23h30-02h00 Paris (matchs soir US), 19h-22h Paris (matchs après-midi US).
   - flag1, flag2 : emoji drapeau pays équipe/joueur 1 et 2
@@ -274,7 +277,7 @@ HTML EXACT pour la mascotte (à placer IMMÉDIATEMENT après l'ouverture de la d
    - Badge sport
 3. Barre compétition (margin:0 28px; padding:12px 20px; background:rgba(0,212,255,0.04); border:1px solid rgba(0,212,255,0.08); border-radius:10px; display:flex; justify-content:space-between; align-items:center) :
    - Gauche : Compétition + surface/round si pertinent (Orbitron 14px cyan uppercase) — TEXTE UNIQUEMENT, pas d'image
-   - Droite : Date + heure FRANÇAISE (Orbitron 14px)
+   - Droite : Date + heure FRANÇAISE (Orbitron 14px) — heure de Paris, y compris pour matchs aux USA (convertir ET/PT)
 4. Match card (margin:20px 28px; padding:28px; border:1px solid rgba(255,45,120,0.12); border-radius:14px) :
    - ⚠️ OBLIGATOIRE sur les DEUX cards (normale ET locked) : afficher les drapeaux (tennis) ou logos équipes (foot/basket/hockey) à côté des noms. Ne jamais les omettre sur la card locked.
    - Noms joueurs/équipes (Orbitron 28px 700) avec <img> logo du club (height:34px) OU pour tennis : <img src='https://flagcdn.com/w40/{code}.png' style='height:24px;border-radius:2px;vertical-align:middle;margin-right:6px'> à côté du nom.
@@ -382,7 +385,7 @@ La card locked DOIT CACHER le contenu premium. Structure identique à la card no
 
 1. SORTIE = JSON pur : {"html_normal":"...","html_locked":"..."}. Rien d'autre.
 2. HTML : apostrophes UNIQUEMENT dans les attributs. JAMAIS de guillemets doubles.
-3. Heure = fuseau Europe/Paris. JAMAIS l'heure locale du match.
+3. Heure = fuseau Europe/Paris. JAMAIS l'heure locale du pays du match sans conversion (USA : MLB/NBA/NFL/MLS/NHL/tennis US → convertir ET/PT vers Paris).
 4. Tout en français.
 5. Chaque HTML est COMPLET et AUTONOME (<!DOCTYPE html>, <style> avec @import fonts, etc.).
 6. Le glow extérieur est TOUJOURS en z-index:-1 avec isolation:isolate sur la card.

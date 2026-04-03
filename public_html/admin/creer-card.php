@@ -10,6 +10,16 @@ $db = getDB();
 $adminRole = getAdminRole();
 $isAdminFunSport = isAdminFunSport();
 $isAdminTennis = isAdminTennis();
+/**
+ * Préfixe URL pour fetch() : doit correspondre à l’URL vue par le navigateur (ex. /panel-x9k3m).
+ * Si on utilise SCRIPT_NAME seul, Apache peut exposer /admin/… → fetch vers /admin/*.php = 403 (admin/.htaccess).
+ */
+$__uriPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+$__uriPath = str_replace('\\', '/', $__uriPath);
+$seAdminFetchPrefix = rtrim(dirname($__uriPath !== '' ? $__uriPath : (str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '/'))), '/');
+if ($seAdminFetchPrefix === '/admin' || preg_match('#/admin$#', $seAdminFetchPrefix)) {
+    $seAdminFetchPrefix = preg_replace('#/admin$#', '/panel-x9k3m', $seAdminFetchPrefix);
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -403,70 +413,66 @@ $isAdminTennis = isAdminTennis();
 </div>
 
 <script>
-// ── Cache des fonts en base64 (chargées une fois) ────────────
-let _fontsBase64Css = null;
+// Préfixe dossier courant (évite fetch vers la mauvaise URL si chemin atypique)
+const SE_ADMIN_FETCH_PREFIX = <?php echo json_encode($seAdminFetchPrefix, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT); ?>;
+function adminFetchUrl(name) {
+  const rel = String(name || '').replace(/^\//, '');
+  const base = (typeof SE_ADMIN_FETCH_PREFIX === 'string') ? SE_ADMIN_FETCH_PREFIX.replace(/\/$/, '') : '';
+  if (base && base !== '.') return base + '/' + rel;
+  return rel;
+}
 
-// Télécharge les fonts Google côté navigateur → base64
-// Le navigateur parent peut accéder à fonts.gstatic.com sans problème CORS
-// (Access-Control-Allow-Origin: * sur les fichiers woff2)
+// ── Polices embarquées (same-origin) : évite CSP connect-src sans fonts.googleapis.com ──
+let _fontsBase64Css;
+
+/**
+ * Récupère le CSS @font-face en base64 via le serveur (card-fonts-css.php).
+ * Ne dépend pas d'un fetch vers Google depuis le navigateur.
+ */
 async function loadFontsAsBase64() {
-  if (_fontsBase64Css) return _fontsBase64Css; // cache
-
-  const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36';
-
-  // Étape 1 : récupérer le CSS Google Fonts pour avoir les URLs woff2
-  // Inclure tous les poids utilisés dans les cards (Bebas Neue, Rajdhani 400-700, Orbitron 700/900)
-  const apiUrl = 'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Orbitron:wght@700;900&family=Rajdhani:wght@400;500;600;700&display=swap';
-  let googleCss = '';
+  if (_fontsBase64Css !== undefined) return _fontsBase64Css;
   try {
-    const resp = await fetch(apiUrl, {
-      headers: { 'User-Agent': UA }
-    });
-    googleCss = await resp.text();
-  } catch(e) {
-    console.warn('Impossible de charger Google Fonts CSS:', e);
-    return '';
-  }
-
-  // Étape 2 : extraire toutes les URLs woff2
-  const woff2Regex = /url\((https:\/\/fonts\.gstatic\.com[^)]+\.woff2)\)/g;
-  const urls = [];
-  let m;
-  while ((m = woff2Regex.exec(googleCss)) !== null) {
-    urls.push(m[1]);
-  }
-
-  // Étape 3 : extraire les @font-face complets du CSS Google Fonts
-  // et remplacer chaque url(https://...) par une data URI base64
-  let enrichedCss = googleCss;
-
-  await Promise.all(urls.map(async (url) => {
-    try {
-      const resp = await fetch(url, { mode: 'cors' });
-      const buf  = await resp.arrayBuffer();
-      // Convertir ArrayBuffer → base64
-      const bytes = new Uint8Array(buf);
-      let binary  = '';
-      for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-      const b64 = btoa(binary);
-      enrichedCss = enrichedCss.split(url).join('data:font/woff2;base64,' + b64);
-    } catch(e) {
-      console.warn('Impossible de télécharger font:', url, e);
+    const resp = await fetch(adminFetchUrl('card-fonts-css.php'), { credentials: 'same-origin' });
+    if (!resp.ok) {
+      console.warn('card-fonts-css.php HTTP', resp.status);
+      _fontsBase64Css = '';
+      return _fontsBase64Css;
     }
-  }));
-
-  // Étape 4 : garder uniquement les @font-face (pas les unicode-range commentaires)
-  const faceBlocks = [];
-  const faceRegex  = /@font-face\s*\{[^}]+\}/g;
-  let fm;
-  while ((fm = faceRegex.exec(enrichedCss)) !== null) {
-    // Ne garder que les blocs avec base64 (les autres n'ont pas été convertis)
-    if (fm[0].includes('base64')) faceBlocks.push(fm[0]);
+    const text = await resp.text();
+    _fontsBase64Css = (text && text.trim()) ? text : '';
+    if (_fontsBase64Css.length) {
+      console.log('Polices card (serveur):', _fontsBase64Css.length, 'car.');
+    }
+    return _fontsBase64Css;
+  } catch (e) {
+    console.warn('Polices card indisponibles:', e);
+    _fontsBase64Css = '';
+    return _fontsBase64Css;
   }
+}
 
-  _fontsBase64Css = faceBlocks.join('\n');
-  console.log('✅ Fonts chargées en base64:', faceBlocks.length, 'variantes');
-  return _fontsBase64Css;
+/** data: / blob: → Blob sans fetch() (contourne connect-src sans data:) */
+function dataUrlToBlob(dataUrl) {
+  if (typeof dataUrl !== 'string') throw new Error('URL image invalide');
+  const i = dataUrl.indexOf(',');
+  if (i === -1) throw new Error('URL image invalide');
+  const meta = dataUrl.substring(0, i);
+  const b64 = dataUrl.substring(i + 1).replace(/\s/g, '');
+  const mimeMatch = meta.match(/data:([^;]+)/);
+  const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+  const binary = atob(b64);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let j = 0; j < len; j++) bytes[j] = binary.charCodeAt(j);
+  return new Blob([bytes], { type: mime });
+}
+
+async function jpegUrlToBlob(url) {
+  if (typeof url === 'string' && url.indexOf('data:') === 0) {
+    return dataUrlToBlob(url);
+  }
+  const r = await fetch(url);
+  return r.blob();
 }
 
 // ── Variables globales ──────────────────────────────────────
@@ -574,11 +580,12 @@ async function generateCard() {
   try {
     const controller = new AbortController();
     const fetchTimeout = setTimeout(() => controller.abort(), 240000);
-    const resp = await fetch('generate-card.php', {
+    const resp = await fetch(adminFetchUrl('generate-card.php'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
-      signal: controller.signal
+      signal: controller.signal,
+      credentials: 'same-origin'
     });
     clearTimeout(fetchTimeout);
 
@@ -594,6 +601,10 @@ async function generateCard() {
 
     if (!resp.ok || data.error) {
       let msg = '❌ ' + (data.error || 'Erreur inconnue.');
+      if (data.error_code === 'claude_overloaded' || resp.status === 529 || /overloaded|529/i.test(String(data.detail || ''))) {
+        msg = '⏳ <strong>Claude est saturé</strong> (erreur côté Anthropic, pas un souci de clé API manquante). Réessaie dans 1 à 2 minutes.';
+        if (data.detail) msg += '<br><small style="opacity:0.65">' + escHtml(String(data.detail).substring(0, 200)) + '</small>';
+      }
       if (data.file || data.line) msg += '<br><small style="opacity:0.7">' + (data.file || '') + (data.line ? ':' + data.line : '') + '</small>';
       if (data.raw) msg += '<br><small style="opacity:0.6">' + escHtml(data.raw) + '</small>';
       if (data.path) msg += '<br><small style="opacity:0.6">path: ' + escHtml(String(data.path)) + '</small>';
@@ -660,9 +671,11 @@ async function injectAndWait(iframeId, html) {
   // Aucune requête réseau depuis l'iframe → zéro CORS.
   const fontsCss = await loadFontsAsBase64();
   if (fontsCss) {
-    // Injecter les @font-face en base64 dans le <style> (disponibles immédiatement, pas de CORS)
-    html = html.replace('</style>', fontsCss + '\n</style>');
-    // Retirer le <link> Google Fonts pour éviter double chargement et échec CORS dans l'iframe
+    if (html.indexOf('</style>') !== -1) {
+      html = html.replace('</style>', fontsCss + '\n</style>');
+    } else if (html.indexOf('</head>') !== -1) {
+      html = html.replace('</head>', '<style type="text/css">' + fontsCss + '</style>\n</head>');
+    }
     html = html.replace(/<link[^>]*href=["']?https?:\/\/fonts\.googleapis\.com[^>]*>/gi, '');
   }
 
@@ -836,8 +849,8 @@ async function posterBetFromCard() {
   const csrf = document.getElementById('csrf_token') ? document.getElementById('csrf_token').value : '';
 
   try {
-    const blobNormal = await (await fetch(jpegNormalUrl)).blob();
-    const blobLocked = await (await fetch(jpegLockedUrl)).blob();
+    const blobNormal = await jpegUrlToBlob(jpegNormalUrl);
+    const blobLocked = await jpegUrlToBlob(jpegLockedUrl);
     const form = new FormData();
     form.append('csrf_token', csrf);
     form.append('action', 'post_from_card');
@@ -851,7 +864,7 @@ async function posterBetFromCard() {
     form.append('analyse_html', analyseHtml);
     form.append('cote', cote);
 
-    const resp = await fetch('poster-bet-from-card.php', { method: 'POST', body: form });
+    const resp = await fetch(adminFetchUrl('poster-bet-from-card.php'), { method: 'POST', body: form, credentials: 'same-origin' });
     const text = await resp.text();
     let data = {};
     try { data = JSON.parse(text); } catch (_) {}

@@ -89,21 +89,58 @@ function debugLog($msg) {
     @file_put_contents(__DIR__ . '/debug-card.log', '[' . date('H:i:s') . '] ' . $msg . "\n", FILE_APPEND);
 }
 
-// ── Appel Claude générique ──────────────────────────────────
-function callClaude($systemPrompt, $userMsg, $maxTokens = 1000, $useThinking = false) {
+// ── Tri des paris par heure (HH:MM) pour afficher le 1er match en tête + cohérence time_fr ──
+function sortBetsByKickoffTime(array $bets): array {
+    $indexed = [];
+    foreach ($bets as $i => $bet) {
+        if (!is_array($bet)) {
+            continue;
+        }
+        $h = preg_replace('/[^0-9:]/', '', trim((string)($bet['heure'] ?? $bet['time'] ?? '')));
+        if (strlen($h) >= 4) {
+            $parts = explode(':', $h, 2);
+            $hh = str_pad((string)(int)($parts[0] ?? 0), 2, '0', STR_PAD_LEFT);
+            $mm = str_pad((string)(int)($parts[1] ?? 0), 2, '0', STR_PAD_LEFT);
+            $sortKey = $hh . $mm;
+        } else {
+            $sortKey = '99:99';
+        }
+        $indexed[] = ['k' => $sortKey, 'i' => $i, 'b' => $bet];
+    }
+    usort($indexed, function ($a, $b) {
+        $c = strcmp($a['k'], $b['k']);
+        return $c !== 0 ? $c : ($a['i'] <=> $b['i']);
+    });
+    return array_map(function ($row) {
+        return $row['b'];
+    }, $indexed);
+}
+
+function syncGlobalTimeFromFirstBet(array $enriched): array {
+    $bets = $enriched['bets'] ?? [];
+    if (!is_array($bets) || $bets === []) {
+        return $enriched;
+    }
+    $first = $bets[0];
+    $h = preg_replace('/[^0-9:]/', '', trim((string)($first['heure'] ?? $first['time'] ?? '')));
+    if (strlen($h) >= 4) {
+        $enriched['time_fr'] = $h;
+    }
+    return $enriched;
+}
+
+// ── Appel Claude (une tentative) ────────────────────────────
+function callClaudeOnce($systemPrompt, $userMsg, $maxTokens, $thinkingActive) {
     $body = [
         'model'      => CLAUDE_MODEL,
         'max_tokens' => $maxTokens,
         'system'     => $systemPrompt,
         'messages'   => [['role' => 'user', 'content' => $userMsg]],
     ];
-    $thinkingActive = $useThinking && defined('CLAUDE_THINKING_ENABLED') && CLAUDE_THINKING_ENABLED && $maxTokens > 2048;
     if ($thinkingActive) {
         $body['thinking'] = ['type' => 'enabled', 'budget_tokens' => 4096];
     }
     $payload = json_encode($body, JSON_UNESCAPED_UNICODE);
-
-    debugLog("API call — model:" . CLAUDE_MODEL . " max_tokens:$maxTokens thinking:" . ($thinkingActive ? 'ON(4096)' : 'OFF') . " payload_size:" . strlen($payload));
 
     $ch = curl_init('https://api.anthropic.com/v1/messages');
     $timeout = $thinkingActive ? 180 : 120;
@@ -123,24 +160,93 @@ function callClaude($systemPrompt, $userMsg, $maxTokens = 1000, $useThinking = f
     $t0 = microtime(true);
     $response  = curl_exec($ch);
     $elapsed   = round(microtime(true) - $t0, 1);
-    $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $httpCode  = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $curlError = curl_error($ch);
     curl_close($ch);
 
     debugLog("API response — HTTP:$httpCode duration:{$elapsed}s response_size:" . strlen($response ?: ''));
 
-    if ($curlError) return ['error' => 'Erreur réseau (' . $elapsed . 's) : ' . $curlError];
+    if ($curlError) {
+        return ['error' => 'Erreur réseau (' . $elapsed . 's) : ' . $curlError, '_http' => 0];
+    }
     if ($httpCode !== 200) {
         $err = json_decode($response, true);
-        return ['error' => "Erreur API Claude ($httpCode, {$elapsed}s) : " . ($err['error']['message'] ?? substr($response, 0, 300))];
+        $apiMsg = $err['error']['message'] ?? substr((string) $response, 0, 300);
+        $apiType = $err['error']['type'] ?? '';
+        return [
+            'error'  => "Erreur API Claude ($httpCode, {$elapsed}s) : " . $apiMsg,
+            '_http'  => $httpCode,
+            '_atype' => $apiType,
+        ];
     }
 
     $resp = json_decode($response, true);
     $text = '';
     foreach (($resp['content'] ?? []) as $block) {
-        if (($block['type'] ?? '') === 'text') $text .= $block['text'];
+        if (($block['type'] ?? '') === 'text') {
+            $text .= $block['text'];
+        }
     }
-    return ['text' => $text];
+    return ['text' => $text, '_http' => 200];
+}
+
+function claudeErrorIsRetryable(array $result): bool {
+    $http = (int) ($result['_http'] ?? 0);
+    if (in_array($http, [429, 503, 529], true)) {
+        return true;
+    }
+    $atype = (string) ($result['_atype'] ?? '');
+    if ($atype === 'overloaded_error' || stripos($atype, 'overloaded') !== false) {
+        return true;
+    }
+    $msg = (string) ($result['error'] ?? '');
+    return stripos($msg, 'Overloaded') !== false || stripos($msg, 'surcharg') !== false;
+}
+
+function emitClaudeFailureJson(array $result): void {
+    $msg = (string) ($result['error'] ?? 'Erreur API Claude.');
+    $http = (int) ($result['_http'] ?? 500);
+    $overload = claudeErrorIsRetryable($result);
+    if ($overload) {
+        http_response_code(503);
+        echo json_encode([
+            'error'      => 'Claude (Anthropic) est momentanément saturé. Ce n’est pas un problème de clé API : réessaie dans 1 à 2 minutes.',
+            'error_code' => 'claude_overloaded',
+            'detail'     => $msg,
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    http_response_code(500);
+    echo json_encode(['error' => $msg], JSON_UNESCAPED_UNICODE);
+    exit;
+}
+
+// ── Appel Claude générique (retries si surcharge / rate limit) ─
+function callClaude($systemPrompt, $userMsg, $maxTokens = 1000, $useThinking = false) {
+    $thinkingActive = $useThinking && defined('CLAUDE_THINKING_ENABLED') && CLAUDE_THINKING_ENABLED && $maxTokens > 2048;
+    $maxAttempts    = 4;
+    $last           = null;
+
+    for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+        debugLog("API call attempt $attempt/$maxAttempts — model:" . CLAUDE_MODEL . " max_tokens:$maxTokens thinking:" . ($thinkingActive ? 'ON(4096)' : 'OFF'));
+        $last = callClaudeOnce($systemPrompt, $userMsg, $maxTokens, $thinkingActive);
+        if (!isset($last['error'])) {
+            unset($last['_http'], $last['_atype']);
+            return $last;
+        }
+        if (!claudeErrorIsRetryable($last) || $attempt >= $maxAttempts) {
+            break;
+        }
+        $sleep = min(20, (int) pow(2, $attempt));
+        debugLog("API retry in {$sleep}s (HTTP " . ($last['_http'] ?? '?') . ')');
+        sleep($sleep);
+    }
+
+    return [
+        'error'  => $last['error'] ?? 'Erreur API Claude.',
+        '_http'  => $last['_http'] ?? 500,
+        '_atype' => $last['_atype'] ?? '',
+    ];
 }
 
 // ── Parser JSON Claude (retire backticks, extrait {...}) ─────
@@ -222,15 +328,16 @@ if ($typeBet === 'Live') {
             $default_time_fr = $now->format('H:i');
         }
 
-        $userMsg = "Sport : $sport\nMatch : $match\nPronostic : $prono\nCote : $cote\n\nTu DOIS renvoyer date_fr et time_fr correspondant à l'heure RÉELLE du match (coup d'envoi), fuseau Europe/Paris. Si tu ne peux pas la déduire, utilise ces valeurs par défaut (secours) : date_fr = \"$default_date_fr\" , time_fr = \"$default_time_fr\".";
+        $userMsg = "Sport : $sport\nMatch : $match\nPronostic : $prono\nCote : $cote\n\nTu DOIS renvoyer date_fr et time_fr correspondant à l'heure RÉELLE du match (coup d'envoi), TOUJOURS convertie en fuseau Europe/Paris (heure française affichée aux abonnés).\n"
+            . "Si le match se joue aux États-Unis (MLB, NBA, NFL, MLS, NCAA, NHL à domicile US, tennis à Indian Wells / US Open session US, etc.) : convertis l’heure locale US (souvent Eastern Time ET, parfois PT pour côte ouest) vers Paris. Ne jamais afficher l’heure « américaine » telle quelle.\n"
+            . "Rappels utiles : MLB/NBA soir US → souvent nuit ou lendemain matin à Paris ; vérifier si le match passe minuit heure de Paris (date_fr = jour du coup d’envoi à Paris).\n"
+            . "Si tu ne peux pas la déduire, utilise ces valeurs par défaut (secours) : date_fr = \"$default_date_fr\" , time_fr = \"$default_time_fr\".";
         debugLog("LIVE — Enrichissement via Claude...");
 
         $result = callClaude(CLAUDE_LIVE_ENRICH_PROMPT, $userMsg, 1000);
         if (isset($result['error'])) {
             debugLog("LIVE ENRICH ERROR: " . $result['error']);
-            http_response_code(500);
-            echo json_encode(['error' => $result['error']]);
-            exit;
+            emitClaudeFailureJson($result);
         }
 
         debugLog("LIVE enrich text: " . $result['text']);
@@ -312,15 +419,13 @@ if ($typeBet === 'Fun') {
         exit;
     }
 
-    $userMsg = "Sport : $sport\nDate du jour : " . date('d/m/Y') . "\nHeure = fuseau Europe/Paris\n\nListe des paris combinés :\n" . $rawBet;
+    $userMsg = "Sport : $sport\nDate du jour : " . date('d/m/Y') . "\nToutes les heures = Europe/Paris (heure française). Matchs aux USA : convertir ET/PT vers Paris, ne pas laisser d'heure US brute.\n\nListe des paris combinés :\n" . $rawBet;
     debugLog("FUN — Enrichissement via Claude...");
 
     $result = callClaude(CLAUDE_FUN_ENRICH_PROMPT, $userMsg, 2000);
     if (isset($result['error'])) {
         debugLog("FUN ENRICH ERROR: " . $result['error']);
-        http_response_code(500);
-        echo json_encode(['error' => $result['error']]);
-        exit;
+        emitClaudeFailureJson($result);
     }
 
     debugLog("FUN enrich text: " . $result['text']);
@@ -334,7 +439,8 @@ if ($typeBet === 'Fun') {
         exit;
     }
 
-    // Date/heure = toujours celles renvoyées par l'IA (pas de saisie admin)
+    $enriched['bets'] = sortBetsByKickoffTime($enriched['bets']);
+    $enriched = syncGlobalTimeFromFirstBet($enriched);
 
     // Recalcul cote totale côté PHP (sécurité si Claude se trompe)
     $coteTotale = 1.0;
@@ -389,15 +495,13 @@ if ($typeBet === 'Safe Combiné') {
         exit;
     }
 
-    $userMsg = "Sport : $sport\nDate du jour : " . date('d/m/Y') . "\nHeure = fuseau Europe/Paris\n\nListe des paris Safe à combiner :\n" . $rawBet;
+    $userMsg = "Sport : $sport\nDate du jour : " . date('d/m/Y') . "\nToutes les heures = Europe/Paris. Matchs US : convertir vers Paris (ET/PT).\n\nListe des paris Safe à combiner :\n" . $rawBet;
     debugLog("SAFE_COMBI — Enrichissement via Claude...");
 
     $result = callClaude(CLAUDE_SAFE_COMBI_ENRICH_PROMPT, $userMsg, 2500);
     if (isset($result['error'])) {
         debugLog("SAFE_COMBI ENRICH ERROR: " . $result['error']);
-        http_response_code(500);
-        echo json_encode(['error' => $result['error']]);
-        exit;
+        emitClaudeFailureJson($result);
     }
 
     debugLog("SAFE_COMBI enrich text: " . $result['text']);
@@ -411,6 +515,9 @@ if ($typeBet === 'Safe Combiné') {
         exit;
     }
 
+    $enriched['bets'] = sortBetsByKickoffTime($enriched['bets']);
+    $enriched = syncGlobalTimeFromFirstBet($enriched);
+
     $coteTotale = 1.0;
     foreach ($enriched['bets'] as $bet) {
         $coteTotale *= floatval($bet['cote'] ?? 1.0);
@@ -419,8 +526,6 @@ if ($typeBet === 'Safe Combiné') {
     if (isset($enriched['cote_totale']) && abs(floatval($enriched['cote_totale']) - floatval($coteTotale)) < 0.15) {
         $coteTotale = $enriched['cote_totale'];
     }
-
-    // Date/heure = toujours celles renvoyées par l'IA (pas de saisie admin)
 
     $confGlobale = intval($enriched['confidence_globale'] ?? 65);
 
@@ -451,7 +556,10 @@ if ($typeBet === 'Safe Combiné') {
 $systemPrompt = CLAUDE_CARD_PROMPT;
 $tz_safe = new DateTimeZone('Europe/Paris');
 $now_safe = new DateTime('now', $tz_safe);
-$dateInfo = "Nous sommes le " . $now_safe->format('d/m/Y') . " à " . $now_safe->format('H:i') . " heure de Paris (saison " . date('Y') . "/" . (date('Y')+1) . " en football, saison " . date('Y') . " en tennis, saison MLB " . date('Y') . "). Heure = fuseau Europe/Paris OBLIGATOIRE. Pour le baseball MLB : convertis TOUJOURS l'heure américaine (ET) en heure de Paris (Paris = ET + 6h en été). Ex : 19h05 ET = 01h05 Paris (lendemain).\n\n";
+$dateInfo = "Nous sommes le " . $now_safe->format('d/m/Y') . " à " . $now_safe->format('H:i') . " heure de Paris (saison " . date('Y') . "/" . (date('Y')+1) . " en football, saison " . date('Y') . " en tennis, saison MLB " . date('Y') . ").\n"
+    . "⚠️ Toutes les heures affichées sur la card (barre compétition, match) = Europe/Paris UNIQUEMENT.\n"
+    . "Matchs aux USA (MLB, NBA, NFL, MLS, NHL à domicile US, tennis US…) : convertir l’heure locale US (ET ou PT) vers Paris. Ne jamais laisser une heure « US » non convertie. MLB soir US → souvent nuit / lendemain matin à Paris.\n"
+    . "Ex. MLB ET été : 19h05 ET ≈ 01h05 Paris lendemain.\n\n";
 
 $betData = json_encode([
     'sport'    => $sport,
@@ -468,9 +576,7 @@ $result = callClaude($systemPrompt, $userMessage, 16000, true);
 
 if (isset($result['error'])) {
     debugLog("SAFE ERROR: " . $result['error']);
-    http_response_code(500);
-    echo json_encode(['error' => $result['error']]);
-    exit;
+    emitClaudeFailureJson($result);
 }
 
 $content = $result['text'];

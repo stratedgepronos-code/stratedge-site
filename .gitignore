@@ -20,12 +20,10 @@ error_log
 .env
 .env.*
 *.env
-# Clés API (racine public_html) — jamais versionné ; préservé sur le serveur au deploy (rsync -P)
-public_html/config-keys.php
-config-keys.php
 public_html/includes/smtp-config.php
 public_html/includes/football_data_config.php
 public_html/includes/claude-config.local.php
+public_html/plugins/football_footystats/local_config.php
 
 # Cache
 __pycache__/

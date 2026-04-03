@@ -10,4 +10,15 @@
 define('ANTHROPIC_API_KEY', 'sk-ant-api03-REPLACE-ME');
 define('FOOTYSTATS_API_KEY', 'REPLACE-ME');
 define('ODDS_API_KEY', 'REPLACE-ME');
+
+/**
+ * Optionnel : token dédié pour plugins/football_footystats/footystats_internal_api.php
+ * Si vide → AUTH_TOKEN (comme stats-api.php).
+ */
+define('FOOTBALL_CONTEXT_TOKEN', '');
+
+// Token d'authentification pour les endpoints publics (odds-api, stats-api, claude-api)
+// Génère un token fort : python3 -c "import secrets; print(secrets.token_hex(24))"
+// NE JAMAIS mettre le même token que dans scanner-app.js ou le code source
+define('AUTH_TOKEN', 'REPLACE-ME-STRONG-TOKEN');
 ?>
