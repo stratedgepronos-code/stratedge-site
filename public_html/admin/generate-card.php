@@ -3,7 +3,7 @@
 // STRATEDGE — generate-card.php V12
 // LIVE = template PHP fixe + Claude enrichit (JSON) ← inchangé
 // FUN  = template PHP fixe + Claude enrichit (JSON) ← NOUVEAU V12
-// SAFE = Claude génère le HTML complet              ← inchangé
+// SAFE = Template PHP compact + Claude enrichit (JSON)  ← V2
 // ============================================================
 // Diagnostic : GET ?_ping=1 → réponse JSON sans auth (vérifier que le script est bien exécuté)
 if (!empty($_GET['_ping'])) {
@@ -551,55 +551,81 @@ if ($typeBet === 'Safe Combiné') {
 }
 
 // ═══════════════════════════════════════════════════════════
-// MODE SAFE — Claude génère le HTML complet (inchangé)
+// MODE SAFE — Template PHP + Claude enrichit (V2 compact)
 // ═══════════════════════════════════════════════════════════
-$systemPrompt = CLAUDE_CARD_PROMPT;
-$tz_safe = new DateTimeZone('Europe/Paris');
-$now_safe = new DateTime('now', $tz_safe);
-$dateInfo = "Nous sommes le " . $now_safe->format('d/m/Y') . " à " . $now_safe->format('H:i') . " heure de Paris (saison " . date('Y') . "/" . (date('Y')+1) . " en football, saison " . date('Y') . " en tennis, saison MLB " . date('Y') . ").\n"
-    . "⚠️ Toutes les heures affichées sur la card (barre compétition, match) = Europe/Paris UNIQUEMENT.\n"
-    . "Matchs aux USA (MLB, NBA, NFL, MLS, NHL à domicile US, tennis US…) : convertir l’heure locale US (ET ou PT) vers Paris. Ne jamais laisser une heure « US » non convertie. MLB soir US → souvent nuit / lendemain matin à Paris.\n"
-    . "Ex. MLB ET été : 19h05 ET ≈ 01h05 Paris lendemain.\n\n";
-
-$betData = json_encode([
-    'sport'    => $sport,
-    'match'    => $data['match'] ?? '',
-    'type_bet' => 'Safe',
-    'prono'    => $data['prono'] ?? '',
-    'cote'     => $data['cote']  ?? '',
-], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-
-$userMessage = $dateInfo . "Utilise les stats de carrière ET les stats de la saison en cours. Ne mets pas de stats futures ou inventées.\n\nGénère une card de bet StratEdge avec ces données :\n\n" . $betData;
-
-debugLog("SAFE — Appel Claude HTML...");
-$result = callClaude($systemPrompt, $userMessage, 16000, true);
-
-if (isset($result['error'])) {
-    debugLog("SAFE ERROR: " . $result['error']);
-    emitClaudeFailureJson($result);
-}
-
-$content = $result['text'];
-$content = preg_replace('/^```(?:json)?\s*/m', '', $content);
-$content = preg_replace('/\s*```$/m', '', $content);
-$content = trim($content);
-$content = preg_replace('/[\x00-\x1F\x7F]/u', ' ', $content);
-
-$cards = json_decode($content, true);
-if (!$cards || !isset($cards['html_normal'])) {
-    $f = strpos($content, '{'); $l = strrpos($content, '}');
-    if ($f !== false && $l > $f) $cards = json_decode(substr($content, $f, $l - $f + 1), true);
-}
-
-if (!$cards || !isset($cards['html_normal']) || !isset($cards['html_locked'])) {
-    debugLog("SAFE ECHEC JSON: " . json_last_error_msg());
+try {
+    require_once __DIR__ . '/live-card-template.php';
+} catch (Throwable $e) {
+    debugLog("SAFE V2 require ERROR: " . $e->getMessage());
     http_response_code(500);
-    echo json_encode(['error' => 'Format JSON invalide. Réessayez.', 'raw' => substr($content, 0, 500)]);
+    echo json_encode(['error' => 'Chargement template : ' . $e->getMessage()]);
     exit;
 }
 
-debugLog("SAFE OK! 1440px");
-echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Safe', 'card_width' => 1440]);
+$rawMatch = $data['match'] ?? '';
+$rawProno = $data['prono'] ?? '';
+$rawCote  = $data['cote']  ?? '';
+
+if (empty($rawMatch) || empty($rawProno)) {
+    http_response_code(400);
+    echo json_encode(['error' => 'Match et pronostic requis.']);
+    exit;
+}
+
+$tz_safe = new DateTimeZone('Europe/Paris');
+$now_safe = new DateTime('now', $tz_safe);
+$dateInfo = "Nous sommes le " . $now_safe->format('d/m/Y') . " à " . $now_safe->format('H:i') . " heure de Paris.\n"
+    . "⚠️ Toutes les heures = Europe/Paris. Matchs US → convertir ET/PT vers Paris.\n\n";
+
+$userMsg = $dateInfo . "Sport : $sport\nMatch : $rawMatch\nPronostic : $rawProno\nCote : $rawCote";
+
+debugLog("SAFE V2 — Enrichissement via Claude...");
+$result = callClaude(CLAUDE_SAFE_ENRICH_PROMPT, $userMsg, 2000, false);
+
+if (isset($result['error'])) {
+    debugLog("SAFE V2 ERROR: " . $result['error']);
+    emitClaudeFailureJson($result);
+}
+
+debugLog("SAFE V2 enrich text: " . $result['text']);
+$enriched = parseClaudeJson($result['text']);
+debugLog("SAFE V2 Enriched: " . json_encode($enriched));
+
+if (!$enriched || empty($enriched['match'])) {
+    debugLog("SAFE V2 WARN: enrichissement échoué");
+    http_response_code(500);
+    echo json_encode(['error' => "Claude n'a pas pu analyser le match. Vérifiez le format."]);
+    exit;
+}
+
+try {
+    $cards = generateSafeCards([
+        'sport'       => $sport,
+        'date_fr'     => $enriched['date_fr']     ?? date('d/m/Y'),
+        'time_fr'     => $enriched['time_fr']     ?? date('H:i'),
+        'match'       => $enriched['match']       ?? $rawMatch,
+        'heure'       => $enriched['heure']       ?? $enriched['time_fr'] ?? '',
+        'competition' => $enriched['competition'] ?? '',
+        'flag1'       => $enriched['flag1']       ?? '',
+        'flag2'       => $enriched['flag2']       ?? '',
+        'team1_logo'  => $enriched['team1_logo']  ?? '',
+        'team2_logo'  => $enriched['team2_logo']  ?? '',
+        'prono'       => $enriched['prono']       ?? $rawProno,
+        'cote'        => $enriched['cote']        ?? $rawCote,
+        'confidence'  => intval($enriched['confidence'] ?? 65),
+        'value_pct'   => floatval($enriched['value_pct'] ?? 0),
+        'analyse'     => $enriched['analyse']     ?? '',
+    ]);
+} catch (Throwable $e) {
+    debugLog("SAFE V2 generateSafeCards ERROR: " . $e->getMessage());
+    http_response_code(500);
+    echo json_encode(['error' => 'Erreur génération card : ' . $e->getMessage()]);
+    exit;
+}
+
+debugLog("SAFE V2 OK! 1080px compact");
+echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Safe', 'card_width' => 1080]);
+
 } catch (Throwable $e) {
     debugLog("FATAL: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
     sendJsonError('Erreur serveur : ' . $e->getMessage(), 500, ['file' => basename($e->getFile()), 'line' => $e->getLine()]);

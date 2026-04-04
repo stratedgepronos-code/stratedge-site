@@ -1597,3 +1597,376 @@ HTML;
 
     return ['html_normal' => $html_normal, 'html_locked' => $html_locked];
 }
+
+// ============================================================
+// 🛡️ SAFE SINGLE — Card compacte format "carte bancaire"
+// V1 : même style que Fun, adapté pour un seul bet Safe
+// ============================================================
+function generateSafeCards($d) {
+    $sport       = strtolower(trim($d['sport'] ?? 'football'));
+    $isTennis    = ($sport === 'tennis');
+    $isBaseball  = ($sport === 'baseball');
+    $isFun       = false; // Safe = pas fun
+
+    if ($isTennis) {
+        $mascotteUrl = 'https://stratedgepronos.fr/assets/images/mascotte-tennis.png';
+    } elseif ($isBaseball) {
+        $mascotteUrl = 'https://stratedgepronos.fr/assets/images/mascotte-mlb.png';
+    } else {
+        $mascotteUrl = 'https://stratedgepronos.fr/assets/images/mascotte.png';
+    }
+    $logo = 'https://stratedgepronos.fr/assets/images/logo_site_transparent.png';
+
+    $date        = htmlspecialchars($d['date_fr']     ?? '', ENT_QUOTES, 'UTF-8');
+    $time        = htmlspecialchars($d['time_fr']     ?? '00:00', ENT_QUOTES, 'UTF-8');
+    $match       = htmlspecialchars($d['match']       ?? '', ENT_QUOTES, 'UTF-8');
+    $heure       = htmlspecialchars($d['heure']       ?? $d['time_fr'] ?? '', ENT_QUOTES, 'UTF-8');
+    $competition = htmlspecialchars($d['competition'] ?? '', ENT_QUOTES, 'UTF-8');
+    $flag1       = $d['flag1'] ?? '';
+    $flag2       = $d['flag2'] ?? '';
+    $logo1       = htmlspecialchars($d['team1_logo']  ?? '', ENT_QUOTES, 'UTF-8');
+    $logo2       = htmlspecialchars($d['team2_logo']  ?? '', ENT_QUOTES, 'UTF-8');
+    $prono       = htmlspecialchars($d['prono']       ?? '', ENT_QUOTES, 'UTF-8');
+    $cote        = htmlspecialchars($d['cote']        ?? '1.00', ENT_QUOTES, 'UTF-8');
+    $conf        = intval($d['confidence'] ?? 65);
+    $valuePct    = floatval($d['value_pct'] ?? 0);
+    $analyse     = htmlspecialchars($d['analyse']     ?? '', ENT_QUOTES, 'UTF-8');
+
+    // Sport badge
+    $sportEmojis = ['football'=>'⚽','tennis'=>'🎾','basket'=>'🏀','hockey'=>'🏒','baseball'=>'⚾'];
+    $sportLabels = ['football'=>'FOOTBALL','tennis'=>'TENNIS','basket'=>'BASKET','hockey'=>'HOCKEY','baseball'=>'BASEBALL'];
+    $sportEmoji  = $sportEmojis[$sport] ?? '⚽';
+    $sportLabel  = $sportLabels[$sport] ?? strtoupper($sport);
+
+    // Couleurs
+    if ($isTennis) {
+        $accentMain  = '#39ff14';
+        $accentSec   = '#00d46a';
+        $confBarGrad = 'linear-gradient(to right,#39ff14,#00d46a,#00c896)';
+        $badgeBg     = 'rgba(57,255,20,0.12)';
+        $badgeBorder = 'rgba(57,255,20,0.5)';
+        $badgeColor  = '#39ff14';
+        $footerGrad  = 'linear-gradient(to right,#39ff14,#00d46a,#00c896)';
+        $promoClass  = 'promo-tennis';
+    } else {
+        $accentMain  = '#ff2d7a';
+        $accentSec   = '#c850c0';
+        $confBarGrad = 'linear-gradient(to right,#ff2d7a,#c850c0,#ff8c42)';
+        $badgeBg     = 'rgba(255,45,122,0.1)';
+        $badgeBorder = 'rgba(255,45,122,0.45)';
+        $badgeColor  = '#ff2d7a';
+        $footerGrad  = 'linear-gradient(to right,#ff2d7a,#c850c0,#4158d0)';
+        $promoClass  = 'promo-multi';
+    }
+
+    // Team logos HTML
+    $logo1Html = $logo1 ? "<img src='{$logo1}' class='team-logo' onerror=\"this.style.display='none'\">" : "<span class='team-flag'>{$flag1}</span>";
+    $logo2Html = $logo2 ? "<img src='{$logo2}' class='team-logo' onerror=\"this.style.display='none'\">" : "<span class='team-flag'>{$flag2}</span>";
+
+    // Teams split
+    $teams = preg_split('/\s+vs\.?\s+/i', $match, 2);
+    $team1Name = htmlspecialchars(trim($teams[0] ?? ''), ENT_QUOTES, 'UTF-8');
+    $team2Name = htmlspecialchars(trim($teams[1] ?? ''), ENT_QUOTES, 'UTF-8');
+
+    // Value badge
+    $valueHtml = ($valuePct > 0) ? "<span class='value-badge'>VALUE +{$valuePct}%</span>" : '';
+
+    // Promo banner (same as SafeCombi)
+    if ($isTennis) {
+        $promoBlock = "<div class='promo-banner promo-tennis'><div class='promo-inner'><span class='promo-icon'>🎾</span><div class='promo-text'><span class='promo-title'>TENNIS PRO — PACK ATP / WTA</span><span class='promo-sub'>15€/sem · Analyses exclusives</span></div><span class='promo-btn'>Je m'abonne</span></div></div>";
+    } else {
+        $promoBlock = "<div class='promo-banner promo-multi'><div class='promo-inner'><span class='promo-icon'>🏆</span><div class='promo-text'><span class='promo-title'>STRATEDGE PRONOS</span><span class='promo-sub'>Daily 4,50€ · Week-End 10€ · Weekly 20€ · VIP MAX 50€/mois</span></div><span class='promo-btn'>Je m'abonne</span></div></div>";
+    }
+
+    $embeddedFonts = getLocalFontsCss();
+
+    $css = $embeddedFonts . "\n@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap');\n" . <<<CSS
+
+* { margin:0; padding:0; box-sizing:border-box; }
+html, body { max-width:1080px; overflow-x:hidden; }
+body { background:#0a0a0a; margin:0; padding:0; width:1080px; min-width:1080px; font-family:'Orbitron',sans-serif; }
+
+.safe-wrapper { position:relative; width:1080px; max-width:1080px; }
+.safe-glow {
+  position:absolute; inset:-2px; border-radius:24px;
+  background:linear-gradient(135deg,{$accentMain},{$accentSec},{$accentMain});
+  background-size:300% 300%; animation:safeGlow 4s ease infinite;
+  z-index:-1; filter:blur(10px); opacity:0.6;
+}
+@keyframes safeGlow { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
+
+.safe-card {
+  position:relative; z-index:1; width:1080px; background:#0e0b12;
+  border-radius:20px; overflow:hidden; display:flex; flex-direction:column;
+  border:1px solid rgba(255,45,122,0.08); isolation:isolate;
+}
+
+.safe-mascotte {
+  position:absolute; inset:0;
+  display:flex; align-items:center; justify-content:center;
+  z-index:1; pointer-events:none;
+}
+.safe-mascotte img {
+  height:100%; width:auto; max-height:100%; object-fit:contain;
+  opacity:0.12; background:none !important;
+}
+
+.safe-body { position:relative; z-index:2; padding:28px 36px 24px; display:flex; flex-direction:column; gap:14px; }
+
+/* HEADER */
+.safe-header { display:flex; align-items:center; justify-content:space-between; }
+.logo-img { height:40px; object-fit:contain; }
+.safe-badge {
+  display:flex; align-items:center; gap:8px;
+  background:{$badgeBg}; border:1.5px solid {$badgeBorder};
+  border-radius:22px; padding:6px 20px;
+  font-family:'Orbitron',sans-serif; font-size:17px; font-weight:900;
+  color:{$badgeColor}; letter-spacing:2px; text-transform:uppercase;
+  box-shadow:0 0 10px {$badgeBg}; text-shadow:0 0 8px {$badgeBg};
+}
+.sport-chip {
+  display:inline-flex; align-items:center; gap:5px;
+  background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+  border-radius:16px; padding:4px 14px;
+  font-family:'Rajdhani',sans-serif; font-size:13px; font-weight:700;
+  color:#fff; letter-spacing:1.5px;
+}
+
+/* DATE / HEURE */
+.safe-datetime { display:flex; align-items:center; gap:16px; }
+.safe-time {
+  font-family:'Orbitron',sans-serif; font-size:52px; font-weight:900;
+  color:#fff; line-height:1; letter-spacing:2px;
+}
+.safe-date-col { display:flex; flex-direction:column; }
+.safe-date {
+  font-family:'Rajdhani',sans-serif; font-size:18px; font-weight:600;
+  color:rgba(255,255,255,0.5); letter-spacing:1px;
+}
+.safe-competition {
+  font-family:'Rajdhani',sans-serif; font-size:15px; font-weight:600;
+  color:{$accentMain}; letter-spacing:1px; text-transform:uppercase;
+}
+
+/* MATCH */
+.safe-match {
+  display:flex; align-items:center; justify-content:center; gap:24px;
+  padding:20px 0; margin:4px 0;
+  background:rgba(255,255,255,0.02); border-radius:14px;
+  border:1px solid rgba(255,255,255,0.04);
+}
+.team-col { display:flex; flex-direction:column; align-items:center; gap:8px; min-width:180px; }
+.team-logo { height:64px; width:64px; object-fit:contain; filter:drop-shadow(0 0 8px rgba(255,255,255,0.15)); }
+.team-flag { font-size:48px; }
+.team-name {
+  font-family:'Rajdhani',sans-serif; font-size:18px; font-weight:700;
+  color:#fff; text-align:center; letter-spacing:0.5px; max-width:200px;
+}
+.vs-text {
+  font-family:'Orbitron',sans-serif; font-size:20px; font-weight:900;
+  color:rgba(255,255,255,0.2); letter-spacing:3px;
+}
+
+/* PRONO + COTE */
+.safe-prono-row {
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  padding:16px 20px; background:rgba(255,255,255,0.03);
+  border-radius:12px; border:1px solid rgba(255,255,255,0.06);
+}
+.prono-text {
+  font-family:'Rajdhani',sans-serif; font-size:22px; font-weight:700;
+  color:#fff; letter-spacing:0.5px; flex:1;
+}
+.cote-box {
+  display:flex; flex-direction:column; align-items:center;
+  background:rgba(255,255,255,0.06); border:1.5px solid {$accentMain};
+  border-radius:12px; padding:10px 24px; min-width:100px;
+}
+.cote-label {
+  font-family:'Rajdhani',sans-serif; font-size:11px; font-weight:600;
+  color:rgba(255,255,255,0.4); letter-spacing:2px; text-transform:uppercase;
+}
+.cote-val {
+  font-family:'Orbitron',sans-serif; font-size:32px; font-weight:900;
+  color:{$accentMain}; line-height:1;
+}
+.value-badge {
+  display:inline-block; margin-left:10px;
+  background:rgba(57,255,20,0.12); border:1px solid rgba(57,255,20,0.4);
+  border-radius:6px; padding:3px 10px;
+  font-family:'Orbitron',sans-serif; font-size:11px; font-weight:700;
+  color:#39ff14; letter-spacing:1px;
+}
+
+/* ANALYSE */
+.safe-analyse {
+  font-family:'Rajdhani',sans-serif; font-size:16px; font-weight:500;
+  color:rgba(255,255,255,0.55); line-height:1.5; padding:4px 4px;
+  font-style:italic;
+}
+
+/* CONFIDENCE */
+.safe-conf-row { display:flex; align-items:center; gap:16px; }
+.conf-label {
+  font-family:'Orbitron',sans-serif; font-size:11px; font-weight:700;
+  color:rgba(255,255,255,0.4); letter-spacing:2px; text-transform:uppercase;
+  white-space:nowrap;
+}
+.conf-bar-bg {
+  flex:1; height:14px; background:rgba(255,255,255,0.06);
+  border-radius:7px; overflow:hidden; position:relative;
+}
+.conf-bar-fill {
+  height:100%; border-radius:7px;
+  background:{$confBarGrad};
+  transition:width 0.6s;
+}
+.conf-val {
+  font-family:'Orbitron',sans-serif; font-size:18px; font-weight:900;
+  color:{$accentMain}; min-width:55px; text-align:right;
+}
+
+/* PROMO */
+.promo-banner {
+  margin-top:4px; padding:12px 20px; border-radius:12px;
+  display:flex; align-items:center;
+}
+.promo-tennis { background:linear-gradient(135deg,rgba(57,255,20,0.08),rgba(0,212,106,0.05)); border:1px solid rgba(57,255,20,0.2); }
+.promo-multi { background:linear-gradient(135deg,rgba(255,45,120,0.08),rgba(200,80,192,0.05)); border:1px solid rgba(255,45,120,0.2); }
+.promo-inner { display:flex; align-items:center; gap:14px; width:100%; }
+.promo-icon { font-size:24px; }
+.promo-text { flex:1; display:flex; flex-direction:column; }
+.promo-title { font-family:'Orbitron',sans-serif; font-size:12px; font-weight:900; color:#fff; letter-spacing:2px; }
+.promo-sub { font-family:'Rajdhani',sans-serif; font-size:13px; color:rgba(255,255,255,0.45); margin-top:2px; }
+.promo-btn {
+  font-family:'Orbitron',sans-serif; font-size:11px; font-weight:900;
+  color:#fff; background:{$accentMain}; border-radius:8px;
+  padding:8px 18px; letter-spacing:1.5px; text-transform:uppercase;
+  white-space:nowrap;
+}
+
+/* FOOTER */
+.safe-footer-grad { height:5px; background:{$footerGrad}; }
+
+/* LOCKED */
+.locked-overlay {
+  position:absolute; inset:0; z-index:10;
+  background:rgba(5,4,8,0.65); backdrop-filter:blur(6px);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+}
+.lock-icon { font-size:48px; }
+.lock-text {
+  font-family:'Orbitron',sans-serif; font-size:14px; font-weight:900;
+  color:{$accentMain}; letter-spacing:3px; text-transform:uppercase;
+  text-shadow:0 0 12px {$accentMain};
+}
+.lock-sub {
+  font-family:'Rajdhani',sans-serif; font-size:16px; font-weight:600;
+  color:rgba(255,255,255,0.5);
+}
+CSS;
+
+    // ── HTML NORMAL ──────────────────────────────────────────
+    $html_normal = <<<HTML
+<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'><meta name='viewport' content='width=1080'>
+<style>{$css}</style></head><body>
+<div class='safe-wrapper'>
+  <div class='safe-glow'></div>
+  <div class='safe-card'>
+    <div class='safe-mascotte'><img src='{$mascotteUrl}' alt=''></div>
+    <div class='safe-body'>
+      <div class='safe-header'>
+        <img src='{$logo}' class='logo-img' alt='StratEdge'>
+        <div style='display:flex;gap:10px;align-items:center;'>
+          <span class='sport-chip'>{$sportEmoji} {$sportLabel}</span>
+          <span class='safe-badge'>🛡️ SAFE BET</span>
+        </div>
+      </div>
+      <div class='safe-datetime'>
+        <span class='safe-time'>{$time}</span>
+        <div class='safe-date-col'>
+          <span class='safe-date'>{$date}</span>
+          <span class='safe-competition'>{$competition}</span>
+        </div>
+      </div>
+      <div class='safe-match'>
+        <div class='team-col'>{$logo1Html}<span class='team-name'>{$team1Name}</span></div>
+        <span class='vs-text'>VS</span>
+        <div class='team-col'>{$logo2Html}<span class='team-name'>{$team2Name}</span></div>
+      </div>
+      <div class='safe-prono-row'>
+        <span class='prono-text'>{$prono}{$valueHtml}</span>
+        <div class='cote-box'>
+          <span class='cote-label'>COTE</span>
+          <span class='cote-val'>{$cote}</span>
+        </div>
+      </div>
+      <div class='safe-analyse'>{$analyse}</div>
+      <div class='safe-conf-row'>
+        <span class='conf-label'>Confiance</span>
+        <div class='conf-bar-bg'><div class='conf-bar-fill' style='width:{$conf}%'></div></div>
+        <span class='conf-val'>{$conf}%</span>
+      </div>
+      {$promoBlock}
+    </div>
+    <div class='safe-footer-grad'></div>
+  </div>
+</div>
+</body></html>
+HTML;
+
+    // ── HTML LOCKED ──────────────────────────────────────────
+    $html_locked = <<<HTML
+<!DOCTYPE html><html lang='fr'><head><meta charset='UTF-8'><meta name='viewport' content='width=1080'>
+<style>{$css}</style></head><body>
+<div class='safe-wrapper'>
+  <div class='safe-glow'></div>
+  <div class='safe-card'>
+    <div class='safe-mascotte'><img src='{$mascotteUrl}' alt='' style='opacity:0.08'></div>
+    <div class='safe-body'>
+      <div class='safe-header'>
+        <img src='{$logo}' class='logo-img' alt='StratEdge'>
+        <div style='display:flex;gap:10px;align-items:center;'>
+          <span class='sport-chip'>{$sportEmoji} {$sportLabel}</span>
+          <span class='safe-badge'>🛡️ SAFE BET</span>
+        </div>
+      </div>
+      <div class='safe-datetime'>
+        <span class='safe-time'>{$time}</span>
+        <div class='safe-date-col'>
+          <span class='safe-date'>{$date}</span>
+          <span class='safe-competition'>{$competition}</span>
+        </div>
+      </div>
+      <div class='safe-match'>
+        <div class='team-col'>{$logo1Html}<span class='team-name'>{$team1Name}</span></div>
+        <span class='vs-text'>VS</span>
+        <div class='team-col'>{$logo2Html}<span class='team-name'>{$team2Name}</span></div>
+      </div>
+      <div class='safe-prono-row'>
+        <span class='prono-text'>🔒</span>
+        <div class='cote-box'>
+          <span class='cote-label'>COTE</span>
+          <span class='cote-val'>{$cote}</span>
+        </div>
+      </div>
+      <div class='safe-conf-row'>
+        <span class='conf-label'>Confiance</span>
+        <div class='conf-bar-bg'><div class='conf-bar-fill' style='width:{$conf}%'></div></div>
+        <span class='conf-val'>{$conf}%</span>
+      </div>
+      <div class='locked-overlay'>
+        <span class='lock-icon'>🔒</span>
+        <span class='lock-text'>Prono verrouillé</span>
+        <span class='lock-sub'>Abonne-toi pour débloquer</span>
+      </div>
+      {$promoBlock}
+    </div>
+    <div class='safe-footer-grad'></div>
+  </div>
+</div>
+</body></html>
+HTML;
+
+    return ['html_normal' => $html_normal, 'html_locked' => $html_locked];
+}

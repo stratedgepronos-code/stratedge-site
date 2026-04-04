@@ -175,7 +175,56 @@ PROMPT
 );
 
 // ============================================================
-// 🛡️ PROMPT SAFE (inchangé)
+// 🛡️ SAFE SINGLE — Enrichissement JSON (comme Fun/Live)
+// L'admin saisit : sport + match + prono + cote
+// Claude retourne les données structurées pour le template PHP
+// ============================================================
+define('CLAUDE_SAFE_ENRICH_PROMPT', <<<'PROMPT'
+Tu reçois le sport, le match, le pronostic et la cote d'un bet Safe. Tu réponds UNIQUEMENT par un objet JSON valide, sans aucun texte avant ou après, sans backticks.
+
+Structure de sortie OBLIGATOIRE :
+{
+  "date_fr": "Mercredi 26 Février 2026",
+  "time_fr": "20:45",
+  "match": "PSG vs Bayern Munich",
+  "heure": "21:00",
+  "competition": "Ligue des Champions",
+  "flag1": "🇫🇷",
+  "flag2": "🇩🇪",
+  "team1_logo": "https://...",
+  "team2_logo": "https://...",
+  "prono": "Victoire PSG + Plus de 1.5 buts",
+  "cote": "1.85",
+  "confidence": 78,
+  "value_pct": 8.2,
+  "analyse": "PSG invaincu à domicile, 12V consécutives au Parc. Bayern sans Müller et Sané. xG moyen PSG dom: 2.3."
+}
+
+Règles :
+- date_fr = date du match en toutes lettres en français
+- time_fr = heure du coup d'envoi, TOUJOURS heure de Paris (fuseau Europe/Paris)
+- ⚠️ ÉTATS-UNIS (MLB, NBA, NFL, MLS, NHL US, tennis US…) : convertir ET/PT vers Paris
+- match : nom des équipes/joueurs exactement comme fourni
+- heure : heure RÉELLE de coup d'envoi, Europe/Paris, format HH:MM
+- competition : nom de la compétition (Ligue 1, Premier League, Ligue des Champions, ATP, NHL, MLB...)
+- flag1, flag2 : emoji drapeau pays
+- team1_logo, team2_logo : URL directe vers le logo
+  FOOTBALL : API-Football https://media.api-sports.io/football/teams/{id}.png
+  HOCKEY NHL : ESPN CDN https://a.espncdn.com/combiner/i?img=/i/teamlogos/nhl/500/scoreboard/{abbrev}.png
+  BASEBALL MLB : ESPN CDN https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/scoreboard/{abbrev}.png
+  TENNIS : "" (pas de logo)
+  Si tu ne trouves pas, mets ""
+- prono : texte du pronostic exact (tel que fourni par l'admin)
+- cote : cote exacte fournie
+- confidence : indice de confiance (40-92). Évalue selon forme, H2H, contexte, stats
+- value_pct : estimation de la value en %. Formule : (probabilité estimée × cote - 1) × 100. Si négative, 0
+- analyse : 2-3 phrases courtes justifiant le pronostic (stats clés, forme, contexte, absences)
+- Toutes les heures en Europe/Paris. JSON pur uniquement.
+PROMPT
+);
+
+// ============================================================
+// 🛡️ PROMPT SAFE LEGACY (ancien format HTML complet — conservé comme backup)
 // ============================================================
 define('CLAUDE_CARD_PROMPT', <<<'PROMPT'
 Tu es le générateur de cards visuelles StratEdge V5. Tu reçois des données de bet en JSON et tu retournes EXCLUSIVEMENT un objet JSON avec deux cards HTML.
