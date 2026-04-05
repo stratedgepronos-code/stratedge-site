@@ -469,7 +469,8 @@ async function jpegUrlToBlob(url) {
 // ── Variables globales ──────────────────────────────────────
 let jpegNormalUrl = '';
 let jpegLockedUrl = '';
-let currentMatchName = '';
+let currentMatchName = '';  // for file downloads (underscored)
+let currentMatchTitle = ''; // for bet title (clean, with spaces)
 let currentType = 'Safe';
 let lastGeneratedHtml = ''; // HTML de la card (pour page bet / poster-bet)
 
@@ -520,6 +521,7 @@ async function generateCard() {
     payload.prono = prono;
     payload.cote  = cote;
     currentMatchName = match.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
+    currentMatchTitle = match;
 
   } else if (currentType === 'Live') {
     const match = document.getElementById('f-live-match').value.trim();
@@ -533,6 +535,7 @@ async function generateCard() {
     payload.prono = prono;
     payload.cote  = cote;
     currentMatchName = match.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '') + '_Live';
+    currentMatchTitle = match + ' (Live)';
 
   } else if (currentType === 'Fun') {
     const raw = document.getElementById('f-raw-fun').value.trim();
@@ -542,6 +545,7 @@ async function generateCard() {
     }
     payload.raw_bet = raw;
     currentMatchName = 'FunBet_Combine';
+    currentMatchTitle = 'Fun Bet Combiné';
 
   } else if (currentType === 'SafeCombi') {
     const raw = document.getElementById('f-raw-safecombi').value.trim();
@@ -552,6 +556,7 @@ async function generateCard() {
     payload.type_bet = 'Safe Combiné';
     payload.raw_bet = raw;
     currentMatchName = 'SafeCombi';
+    currentMatchTitle = 'Safe Combiné';
   }
 
   // Nettoyer les styles de card précédents injectés dans le head
@@ -818,8 +823,8 @@ async function posterBetFromCard() {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Envoi…'; }
   if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = 'Envoi du bet en cours…'; statusEl.style.color = 'var(--text-muted)'; }
 
-  // Titre = match name from card fields
-  const titre = currentMatchName || 'Bet StratEdge';
+  // Titre = match name clean (sans underscores)
+  const titre = currentMatchTitle || 'Bet StratEdge';
   const typeMap = { Safe: 'safe', Live: 'live', Fun: 'fun', SafeCombi: 'safe' };
   let type = typeMap[currentType] || 'safe';
   let sport = document.getElementById('f-sport') ? document.getElementById('f-sport').value : 'tennis';
