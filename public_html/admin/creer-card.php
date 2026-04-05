@@ -328,22 +328,13 @@ if ($seAdminFetchPrefix === '/admin' || preg_match('#/admin$#', $seAdminFetchPre
         </div>
       </div>
 
-      <!-- ══ Infos pour la page bet & enregistrement (optionnel) ══ -->
-      <div class="form-section-title">📄 Infos pour le bet (optionnel)</div>
+      <!-- ══ Analyse HTML (optionnel) ══ -->
+      <div class="form-section-title">📄 Analyse HTML (optionnel)</div>
       <div class="help-box">
-        Remplis ces champs pour pouvoir <strong>Poster le bet</strong> en un clic après génération (sans copier-coller le HTML).
+        Colle ici l'analyse HTML complète. Elle sera affichée sur la page du bet en dessous de la card.
       </div>
       <div class="field">
-        <label>Titre du bet</label>
-        <input type="text" id="f-titre-bet" placeholder="Ex: Djokovic vs Alcaraz — Victoire Djokovic">
-      </div>
-      <div class="field">
-        <label>Analyse HTML (page bet)</label>
-        <textarea id="f-analyse-html" rows="4" placeholder="Contenu HTML affiché sur la page du bet (analyse, stats…). Optionnel."></textarea>
-      </div>
-      <div class="field">
-        <label>Cote affichée</label>
-        <input type="number" id="f-cote-bet" step="0.01" min="1" placeholder="Ex: 1.85 (optionnel)">
+        <textarea id="f-analyse-html" rows="5" placeholder="Contenu HTML affiché sur la page du bet (analyse détaillée, stats, xG…). Optionnel."></textarea>
       </div>
 
       <button class="btn-generate" id="btn-generate" onclick="generateCard()">
@@ -638,16 +629,7 @@ async function generateCard() {
     dlL.href = jpegLockedUrl;
     dlL.download = currentMatchName + '_locked.jpg';
 
-    // Préremplir titre et cote pour "Poster le bet" si vides
-    const titreBet = document.getElementById('f-titre-bet');
-    const coteBet = document.getElementById('f-cote-bet');
-    if (titreBet && !titreBet.value.trim()) {
-      titreBet.value = currentMatchName || '';
-    }
-    if (coteBet && !coteBet.value.trim()) {
-      if (currentType === 'Safe') coteBet.value = document.getElementById('f-cote')?.value || '';
-      else if (currentType === 'Live') coteBet.value = document.getElementById('f-live-cote')?.value || '';
-    }
+    // Titre et cote déduits automatiquement des champs card (plus de champs doublons)
 
     setState('result');
 
@@ -836,14 +818,18 @@ async function posterBetFromCard() {
   if (btn) { btn.disabled = true; btn.textContent = '⏳ Envoi…'; }
   if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = 'Envoi du bet en cours…'; statusEl.style.color = 'var(--text-muted)'; }
 
-  const titre = (document.getElementById('f-titre-bet') && document.getElementById('f-titre-bet').value.trim()) || currentMatchName || 'Bet StratEdge';
+  // Titre = match name from card fields
+  const titre = currentMatchName || 'Bet StratEdge';
   const typeMap = { Safe: 'safe', Live: 'live', Fun: 'fun', SafeCombi: 'safe' };
   let type = typeMap[currentType] || 'safe';
   let sport = document.getElementById('f-sport') ? document.getElementById('f-sport').value : 'tennis';
   let categorie = sport === 'tennis' ? 'tennis' : 'multi';
   if (document.getElementById('force-fun-type')) { type = 'fun'; categorie = 'multi'; sport = document.getElementById('f-sport') ? document.getElementById('f-sport').value : 'football'; }
   const analyseHtml = (document.getElementById('f-analyse-html') && document.getElementById('f-analyse-html').value.trim()) || '';
-  let cote = (document.getElementById('f-cote-bet') && document.getElementById('f-cote-bet').value.trim()) || '';
+  // Cote = depuis le champ card correspondant
+  let cote = '';
+  if (currentType === 'Safe') cote = (document.getElementById('f-cote') && document.getElementById('f-cote').value) || '';
+  else if (currentType === 'Live') cote = (document.getElementById('f-live-cote') && document.getElementById('f-live-cote').value) || '';
   if (cote !== '' && !isNaN(parseFloat(cote))) cote = parseFloat(cote).toFixed(2);
   else cote = '';
   const csrf = document.getElementById('csrf_token') ? document.getElementById('csrf_token').value : '';
