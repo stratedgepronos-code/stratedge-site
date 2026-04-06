@@ -1659,9 +1659,11 @@ function generateSafeCards($d) {
         $promoClass  = 'promo-multi';
     }
 
-    // Team logos HTML
-    $logo1Html = $logo1 ? "<img src='{$logo1}' class='team-logo' onerror=\"this.style.display='none'\">" : "<span class='team-flag'>{$flag1}</span>";
-    $logo2Html = $logo2 ? "<img src='{$logo2}' class='team-logo' onerror=\"this.style.display='none'\">" : "<span class='team-flag'>{$flag2}</span>";
+    // Team logos HTML — use flagImg() for proper flag rendering
+    $flag1Img = flagImg($flag1);
+    $flag2Img = flagImg($flag2);
+    $logo1Html = ($logo1 && filter_var($logo1, FILTER_VALIDATE_URL)) ? "<img src='{$logo1}' class='team-logo' onerror=\"this.style.display='none'\">" : "<div class='flag-wrap'>{$flag1Img}</div>";
+    $logo2Html = ($logo2 && filter_var($logo2, FILTER_VALIDATE_URL)) ? "<img src='{$logo2}' class='team-logo' onerror=\"this.style.display='none'\">" : "<div class='flag-wrap'>{$flag2Img}</div>";
 
     // Teams split
     $teams = preg_split('/\s+vs\.?\s+/i', $match, 2);
@@ -1696,7 +1698,7 @@ body { background:#0a0a0a; margin:0; padding:0; width:1080px; min-width:1080px; 
 @keyframes safeGlow { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
 
 .safe-card {
-  position:relative; z-index:1; width:1080px; background:#0e0b12;
+  position:relative; z-index:1; width:1080px; background:#0a0a0a;
   border-radius:20px; overflow:hidden; display:flex; flex-direction:column;
   border:1px solid rgba(255,45,122,0.08); isolation:isolate;
 }
@@ -1750,21 +1752,24 @@ body { background:#0a0a0a; margin:0; padding:0; width:1080px; min-width:1080px; 
 
 /* MATCH */
 .safe-match {
-  display:flex; align-items:center; justify-content:center; gap:24px;
-  padding:20px 0; margin:4px 0;
-  background:rgba(255,255,255,0.02); border-radius:14px;
-  border:1px solid rgba(255,255,255,0.04);
+  display:flex; align-items:center; justify-content:center; gap:32px;
+  padding:24px 0; margin:4px 0;
+  background:transparent; border-radius:14px;
+  border:1px solid rgba(255,255,255,0.06);
 }
 .team-col { display:flex; flex-direction:column; align-items:center; gap:8px; min-width:180px; }
-.team-logo { height:64px; width:64px; object-fit:contain; filter:drop-shadow(0 0 8px rgba(255,255,255,0.15)); }
+.team-logo { height:72px; width:72px; object-fit:contain; filter:drop-shadow(0 0 8px rgba(255,255,255,0.15)); }
 .team-flag { font-size:48px; }
+.flag-wrap { display:flex; align-items:center; justify-content:center; }
+.flag-wrap img { height:48px !important; width:auto !important; border-radius:4px !important; filter:drop-shadow(0 0 6px rgba(255,255,255,0.2)); }
 .team-name {
-  font-family:'Rajdhani',sans-serif; font-size:18px; font-weight:700;
-  color:#fff; text-align:center; letter-spacing:0.5px; max-width:200px;
+  font-family:'Orbitron',sans-serif; font-size:24px; font-weight:900;
+  color:#fff; text-align:center; letter-spacing:1px; max-width:280px;
+  text-shadow:0 0 12px rgba(255,255,255,0.1);
 }
 .vs-text {
-  font-family:'Orbitron',sans-serif; font-size:20px; font-weight:900;
-  color:rgba(255,255,255,0.2); letter-spacing:3px;
+  font-family:'Bebas Neue',sans-serif; font-size:36px; font-weight:400;
+  color:rgba(255,255,255,0.15); letter-spacing:5px;
 }
 
 /* PRONO + COTE */
