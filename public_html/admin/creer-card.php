@@ -473,6 +473,7 @@ let currentMatchName = '';  // for file downloads (underscored)
 let currentMatchTitle = ''; // for bet title (clean, with spaces)
 let currentType = 'Safe';
 let lastGeneratedHtml = ''; // HTML de la card (pour page bet / poster-bet)
+let lastGeneratedCote = ''; // Cote retournée par generate-card (pour poster-bet)
 
 // Largeurs par type de card
 const CARD_WIDTHS = { Safe: 1080, Live: 720, Fun: 1080, SafeCombi: 1440 };
@@ -609,6 +610,7 @@ async function generateCard() {
     }
 
     lastGeneratedHtml = data.html_normal || '';
+    lastGeneratedCote = data.cote || '';
     // Utiliser la largeur retournée par le backend (au cas où)
     const w = data.card_width || cardW;
 
@@ -831,10 +833,11 @@ async function posterBetFromCard() {
   let categorie = sport === 'tennis' ? 'tennis' : 'multi';
   if (document.getElementById('force-fun-type')) { type = 'fun'; categorie = 'multi'; sport = document.getElementById('f-sport') ? document.getElementById('f-sport').value : 'football'; }
   const analyseHtml = (document.getElementById('f-analyse-html') && document.getElementById('f-analyse-html').value.trim()) || '';
-  // Cote = depuis le champ card correspondant
+  // Cote = champ card si dispo, sinon cote retournée par generate-card
   let cote = '';
   if (currentType === 'Safe') cote = (document.getElementById('f-cote') && document.getElementById('f-cote').value) || '';
   else if (currentType === 'Live') cote = (document.getElementById('f-live-cote') && document.getElementById('f-live-cote').value) || '';
+  if (!cote && lastGeneratedCote) cote = lastGeneratedCote;
   if (cote !== '' && !isNaN(parseFloat(cote))) cote = parseFloat(cote).toFixed(2);
   else cote = '';
   const csrf = document.getElementById('csrf_token') ? document.getElementById('csrf_token').value : '';
