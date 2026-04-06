@@ -147,80 +147,9 @@ if ($filtreSection !== 'tous' && isset($sectionsBets[$filtreSection])) {
         ? round($stats['gagnes'] / ($stats['gagnes'] + $stats['perdus']) * 100)
         : null;
 }
-// ═══ DONNÉES GRAPHIQUES (basées sur la section, AVANT filtre résultat) ═══
-$chartBets = $betsFiltres; // bets de la section sélectionnée, tous résultats
 
-// 1) Résultats par mois (barres empilées)
-$parMois = [];
-foreach ($chartBets as $b) {
-    $d = $b['date_resultat'] ?? $b['date_post'] ?? null;
-    if (!$d) continue;
-    $moisKey = date('Y-m', strtotime($d));
-    if (!isset($parMois[$moisKey])) $parMois[$moisKey] = ['g'=>0,'p'=>0,'a'=>0];
-    if ($b['resultat'] === 'gagne') $parMois[$moisKey]['g']++;
-    elseif ($b['resultat'] === 'perdu') $parMois[$moisKey]['p']++;
-    elseif ($b['resultat'] === 'annule') $parMois[$moisKey]['a']++;
-}
-ksort($parMois);
-$chartMoisLabels = array_keys($parMois);
-$chartMoisG = array_column(array_values($parMois), 'g');
-$chartMoisP = array_column(array_values($parMois), 'p');
-$chartMoisA = array_column(array_values($parMois), 'a');
-// Labels français
-$moisFr = ['01'=>'Jan','02'=>'Fév','03'=>'Mar','04'=>'Avr','05'=>'Mai','06'=>'Juin','07'=>'Juil','08'=>'Aoû','09'=>'Sep','10'=>'Oct','11'=>'Nov','12'=>'Déc'];
-$chartMoisLabelsFr = array_map(function($k) use ($moisFr) {
-    $parts = explode('-', $k);
-    return ($moisFr[$parts[1]] ?? $parts[1]) . ' ' . substr($parts[0], 2);
-}, $chartMoisLabels);
-
-// 2) Winrate cumulé dans le temps
-$chartWinrateLabels = [];
-$chartWinrateData = [];
-$cumG = 0; $cumP = 0;
-// Trier par date ASC
-$chartBetsSorted = $chartBets;
-usort($chartBetsSorted, function($a, $b) {
-    $da = $a['date_resultat'] ?? $a['date_post'] ?? '2000-01-01';
-    $db = $b['date_resultat'] ?? $b['date_post'] ?? '2000-01-01';
-    return strcmp($da, $db);
-});
-$step = max(1, floor(count($chartBetsSorted) / 30)); // max ~30 points
-foreach ($chartBetsSorted as $i => $b) {
-    if ($b['resultat'] === 'gagne') $cumG++;
-    elseif ($b['resultat'] === 'perdu') $cumP++;
-    if (($i % $step === 0 || $i === count($chartBetsSorted) - 1) && ($cumG + $cumP) > 0) {
-        $d = $b['date_resultat'] ?? $b['date_post'] ?? '';
-        $chartWinrateLabels[] = $d ? date('d/m', strtotime($d)) : '#'.($i+1);
-        $chartWinrateData[] = round($cumG / ($cumG + $cumP) * 100, 1);
-    }
-}
-
-// 3) Streak actuelle + meilleure streak + cote moyenne gagnés
-$currentStreak = 0; $currentStreakType = '';
-$bestStreak = 0; $tempStreak = 0;
-$cotesGagnees = [];
-foreach ($chartBetsSorted as $b) {
-    if ($b['resultat'] === 'gagne') {
-        $tempStreak++;
-        if ($tempStreak > $bestStreak) $bestStreak = $tempStreak;
-        $coteVal = floatval($b['cote'] ?? 0);
-        if ($coteVal > 0) $cotesGagnees[] = $coteVal;
-    } elseif ($b['resultat'] === 'perdu') {
-        $tempStreak = 0;
-    }
-}
-// Streak actuelle (depuis la fin)
-$reversed = array_reverse($chartBetsSorted);
-foreach ($reversed as $b) {
-    if ($b['resultat'] === 'gagne') { $currentStreak++; $currentStreakType = 'W'; }
-    elseif ($b['resultat'] === 'perdu') {
-        if ($currentStreakType === '') { $currentStreak = 1; $currentStreakType = 'L'; }
-        break;
-    } else { continue; } // skip annulé
-    if ($currentStreakType === 'W') continue; else break;
-}
-$coteMoy = count($cotesGagnees) > 0 ? round(array_sum($cotesGagnees) / count($cotesGagnees), 2) : 0;
-$hasChartData = count($chartBets) >= 3;
+// Sauvegarder les bets de la section AVANT le filtre résultat (pour les charts)
+$chartBets = $betsFiltres;
 
 if ($filtre !== 'tous') {
     $betsFiltres = array_filter($betsFiltres, fn($b) => $b['resultat'] === $filtre);
@@ -229,7 +158,6 @@ $betsFiltres = array_values($betsFiltres);
 $betsPerPage = 18;
 $totalBets = count($betsFiltres);
 
-$chartBets = $chartBets; // recalcul charts (section bets, avant filtre résultat)
 
 $parMois = [];
 foreach ($chartBets as $b) {
@@ -323,6 +251,7 @@ foreach ($reversed as $b) {
     break;
 }
 $chartCoteMoyGagnes = count($cotesGagneesChart) > 0 ? round(array_sum($cotesGagneesChart) / count($cotesGagneesChart), 2) : 0;
+$coteMoy = $chartCoteMoyGagnes; // utilisé dans l'affichage stats
 // Afficher la zone graphiques dès qu’il y a au moins 1 bet dans le périmètre (évite masquage avec 1–2 paris)
 $hasChartData = count($chartBets) >= 1;
 $hasWinrateSeries = count($chartWinrateLabels) >= 1;
