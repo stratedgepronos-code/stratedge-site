@@ -300,13 +300,13 @@ function generateLiveCards($d) {
     $sport  = strtolower(trim($d['sport'] ?? 'football'));
     $sc     = sportConfig($sport);
     $is_tennis = ($sport === 'tennis');
-    $date   = htmlspecialchars($d['date_fr']    ?? '', ENT_QUOTES, 'UTF-8');
-    $time   = htmlspecialchars($d['time_fr']    ?? '00:00', ENT_QUOTES, 'UTF-8');
-    $p1     = htmlspecialchars($d['player1']    ?? 'Joueur 1', ENT_QUOTES, 'UTF-8');
-    $p2     = htmlspecialchars($d['player2']    ?? 'Joueur 2', ENT_QUOTES, 'UTF-8');
-    $comp   = htmlspecialchars($d['competition']?? '', ENT_QUOTES, 'UTF-8');
-    $prono  = htmlspecialchars($d['prono']      ?? '', ENT_QUOTES, 'UTF-8');
-    $cote   = htmlspecialchars($d['cote']       ?? '1.50', ENT_QUOTES, 'UTF-8');
+    $date   = htmlspecialchars($d['date_fr']    ?? '', ENT_QUOTES, 'UTF-8', false);
+    $time   = htmlspecialchars($d['time_fr']    ?? '00:00', ENT_QUOTES, 'UTF-8', false);
+    $p1     = htmlspecialchars($d['player1']    ?? 'Joueur 1', ENT_QUOTES, 'UTF-8', false);
+    $p2     = htmlspecialchars($d['player2']    ?? 'Joueur 2', ENT_QUOTES, 'UTF-8', false);
+    $comp   = htmlspecialchars($d['competition']?? '', ENT_QUOTES, 'UTF-8', false);
+    $prono  = htmlspecialchars($d['prono']      ?? '', ENT_QUOTES, 'UTF-8', false);
+    $cote   = htmlspecialchars($d['cote']       ?? '1.50', ENT_QUOTES, 'UTF-8', false);
     $conf   = intval($d['confidence'] ?? 70);
     $flag1  = flagImg($d['flag1'] ?? '');
     $flag2  = flagImg($d['flag2'] ?? '');
@@ -330,12 +330,12 @@ function generateLiveCards($d) {
         }
     }
     if ($is_team_sport && $logo1_url !== '' && filter_var($logo1_url, FILTER_VALIDATE_URL)) {
-        $team1_display = '<img src="' . htmlspecialchars(logoProxyUrl($logo1_url), ENT_QUOTES, 'UTF-8') . '" class="team-logo" alt="">';
+        $team1_display = '<img src="' . htmlspecialchars(logoProxyUrl($logo1_url), ENT_QUOTES, 'UTF-8', false) . '" class="team-logo" alt="">';
     } else {
         $team1_display = $flag1;
     }
     if ($is_team_sport && $logo2_url !== '' && filter_var($logo2_url, FILTER_VALIDATE_URL)) {
-        $team2_display = '<img src="' . htmlspecialchars(logoProxyUrl($logo2_url), ENT_QUOTES, 'UTF-8') . '" class="team-logo" alt="">';
+        $team2_display = '<img src="' . htmlspecialchars(logoProxyUrl($logo2_url), ENT_QUOTES, 'UTF-8', false) . '" class="team-logo" alt="">';
     } else {
         $team2_display = $flag2;
     }
@@ -348,7 +348,7 @@ function generateLiveCards($d) {
     $css = $embeddedFonts . <<<CSS
 
 * { margin:0; padding:0; box-sizing:border-box; }
-body { background:#0a0a0a; margin:0; padding:0; width:1080px; font-family:'Orbitron',sans-serif; }
+html { background:#0a0a0a; } body { background:#0a0a0a; margin:0; padding:0; width:1080px; font-family:'Orbitron',sans-serif; }
 
 .card-wrapper { position:relative; width:1080px; }
 
@@ -703,9 +703,9 @@ function generateFunCards($d) {
     }
     $logo        = 'https://stratedgepronos.fr/assets/images/logo_site_transparent.png';
 
-    $date    = htmlspecialchars($d['date_fr']    ?? '', ENT_QUOTES, 'UTF-8');
-    $time    = htmlspecialchars($d['time_fr']    ?? '00:00', ENT_QUOTES, 'UTF-8');
-    $coteTot = htmlspecialchars($d['cote_totale']?? '1.00', ENT_QUOTES, 'UTF-8');
+    $date    = htmlspecialchars($d['date_fr']    ?? '', ENT_QUOTES, 'UTF-8', false);
+    $time    = htmlspecialchars($d['time_fr']    ?? '00:00', ENT_QUOTES, 'UTF-8', false);
+    $coteTot = htmlspecialchars($d['cote_totale']?? '1.00', ENT_QUOTES, 'UTF-8', false);
     $conf    = intval($d['confidence'] ?? 65);
     $bets    = $d['bets'] ?? [];
     $nbBets  = count($bets);
@@ -729,7 +729,7 @@ function generateFunCards($d) {
     $css = $embeddedFonts . "\n/* Fallback Google Fonts si embarquées absentes (iframe/srcdoc) */\n@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Bebas+Neue&display=swap');\n" . <<<CSS
 
 * { margin:0; padding:0; box-sizing:border-box; }
-html, body { max-width:1080px; overflow-x:hidden; }
+html { background:#0a0a0a; width:1080px; max-width:1080px; overflow-x:hidden; }
 body { background:#0a0a0a; margin:0; padding:0; width:1080px; min-width:1080px; font-family:'Orbitron',sans-serif; }
 
 .card-wrapper { position:relative; width:1080px; max-width:1080px; }
@@ -878,10 +878,10 @@ CSS;
     foreach ($bets as $i => $bet) {
         if (!is_array($bet)) continue;
         $num    = str_pad($i + 1, 2, '0', STR_PAD_LEFT);
-        $match  = htmlspecialchars($bet['match'] ?? '', ENT_QUOTES, 'UTF-8');
-        $prono  = htmlspecialchars($bet['prono'] ?? '', ENT_QUOTES, 'UTF-8');
-        $bcote  = htmlspecialchars($bet['cote']  ?? '1.00', ENT_QUOTES, 'UTF-8');
-        $heure  = htmlspecialchars($bet['heure'] ?? $bet['time'] ?? '', ENT_QUOTES, 'UTF-8');
+        $match  = htmlspecialchars($bet['match'] ?? '', ENT_QUOTES, 'UTF-8', false);
+        $prono  = htmlspecialchars($bet['prono'] ?? '', ENT_QUOTES, 'UTF-8', false);
+        $bcote  = htmlspecialchars($bet['cote']  ?? '1.00', ENT_QUOTES, 'UTF-8', false);
+        $heure  = htmlspecialchars($bet['heure'] ?? $bet['time'] ?? '', ENT_QUOTES, 'UTF-8', false);
         $heureSpan = $heure !== '' ? "<span class='bet-heure'>{$heure}</span>" : '';
 
         $logo1Url = trim((string)($bet['team1_logo'] ?? ''));
@@ -915,12 +915,12 @@ CSS;
             }
         }
         if ($logo1Url !== '' && filter_var($logo1Url, FILTER_VALIDATE_URL)) {
-            $ico1 = '<img src="' . htmlspecialchars(logoProxyUrl($logo1Url), ENT_QUOTES, 'UTF-8') . '" class="fun-team-logo" alt="">';
+            $ico1 = '<img src="' . htmlspecialchars(logoProxyUrl($logo1Url), ENT_QUOTES, 'UTF-8', false) . '" class="fun-team-logo" alt="">';
         } else {
             $ico1 = flagImg(is_string($bet['flag1'] ?? null) ? $bet['flag1'] : '');
         }
         if ($logo2Url !== '' && filter_var($logo2Url, FILTER_VALIDATE_URL)) {
-            $ico2 = '<img src="' . htmlspecialchars(logoProxyUrl($logo2Url), ENT_QUOTES, 'UTF-8') . '" class="fun-team-logo" alt="">';
+            $ico2 = '<img src="' . htmlspecialchars(logoProxyUrl($logo2Url), ENT_QUOTES, 'UTF-8', false) . '" class="fun-team-logo" alt="">';
         } else {
             $ico2 = flagImg(is_string($bet['flag2'] ?? null) ? $bet['flag2'] : '');
         }
@@ -1157,9 +1157,9 @@ function generateSafeCombiCards($d) {
     }
     $logo        = 'https://stratedgepronos.fr/assets/images/logo_site_transparent.png';
 
-    $date    = htmlspecialchars($d['date_fr']    ?? '', ENT_QUOTES, 'UTF-8');
-    $time    = htmlspecialchars($d['time_fr']    ?? '00:00', ENT_QUOTES, 'UTF-8');
-    $coteTot = htmlspecialchars($d['cote_totale']?? '1.00', ENT_QUOTES, 'UTF-8');
+    $date    = htmlspecialchars($d['date_fr']    ?? '', ENT_QUOTES, 'UTF-8', false);
+    $time    = htmlspecialchars($d['time_fr']    ?? '00:00', ENT_QUOTES, 'UTF-8', false);
+    $coteTot = htmlspecialchars($d['cote_totale']?? '1.00', ENT_QUOTES, 'UTF-8', false);
     $confGlob = intval($d['confidence_globale'] ?? 65);
     $bets    = $d['bets'] ?? [];
     $nbBets  = count($bets);
@@ -1195,7 +1195,7 @@ function generateSafeCombiCards($d) {
     $css = $embeddedFonts . "\n@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap');\n" . <<<CSS
 
 * { margin:0; padding:0; box-sizing:border-box; }
-html, body { max-width:1440px; overflow-x:hidden; }
+html { background:#0a0a0a; width:1440px; max-width:1440px; overflow-x:hidden; }
 body { background:#0a0a0a; margin:0; padding:0; width:1440px; min-width:1440px; font-family:'Orbitron',sans-serif; }
 
 .sc-wrapper { position:relative; width:1440px; max-width:1440px; }
@@ -1351,13 +1351,13 @@ CSS;
     foreach ($bets as $i => $bet) {
         if (!is_array($bet)) continue;
         $num    = str_pad($i + 1, 2, '0', STR_PAD_LEFT);
-        $match  = htmlspecialchars($bet['match'] ?? '', ENT_QUOTES, 'UTF-8');
-        $prono  = htmlspecialchars($bet['prono'] ?? '', ENT_QUOTES, 'UTF-8');
-        $bcote  = htmlspecialchars($bet['cote']  ?? '1.00', ENT_QUOTES, 'UTF-8');
-        $heure  = htmlspecialchars($bet['heure'] ?? '', ENT_QUOTES, 'UTF-8');
+        $match  = htmlspecialchars($bet['match'] ?? '', ENT_QUOTES, 'UTF-8', false);
+        $prono  = htmlspecialchars($bet['prono'] ?? '', ENT_QUOTES, 'UTF-8', false);
+        $bcote  = htmlspecialchars($bet['cote']  ?? '1.00', ENT_QUOTES, 'UTF-8', false);
+        $heure  = htmlspecialchars($bet['heure'] ?? '', ENT_QUOTES, 'UTF-8', false);
         $bconf  = intval($bet['confidence'] ?? 65);
         $valuePct = floatval($bet['value_pct'] ?? 0);
-        $analyse  = htmlspecialchars($bet['analyse'] ?? '', ENT_QUOTES, 'UTF-8');
+        $analyse  = htmlspecialchars($bet['analyse'] ?? '', ENT_QUOTES, 'UTF-8', false);
         $heureSpan = $heure !== '' ? "<span class='sc-bet-heure'>{$heure}</span>" : '';
         $valueTag  = ($valuePct > 0) ? "<span class='sc-value-tag'>VALUE +{$valuePct}%</span>" : '';
 
@@ -1384,12 +1384,12 @@ CSS;
             if ($logo2Url === '' || !filter_var($logo2Url, FILTER_VALIDATE_URL)) $logo2Url = mlbLogoUrl($team2Name);
         }
         if ($logo1Url !== '' && filter_var($logo1Url, FILTER_VALIDATE_URL)) {
-            $ico1 = '<img src="' . htmlspecialchars(logoProxyUrl($logo1Url), ENT_QUOTES, 'UTF-8') . '" class="sc-team-logo" alt="">';
+            $ico1 = '<img src="' . htmlspecialchars(logoProxyUrl($logo1Url), ENT_QUOTES, 'UTF-8', false) . '" class="sc-team-logo" alt="">';
         } else {
             $ico1 = flagImg(is_string($bet['flag1'] ?? null) ? $bet['flag1'] : '');
         }
         if ($logo2Url !== '' && filter_var($logo2Url, FILTER_VALIDATE_URL)) {
-            $ico2 = '<img src="' . htmlspecialchars(logoProxyUrl($logo2Url), ENT_QUOTES, 'UTF-8') . '" class="sc-team-logo" alt="">';
+            $ico2 = '<img src="' . htmlspecialchars(logoProxyUrl($logo2Url), ENT_QUOTES, 'UTF-8', false) . '" class="sc-team-logo" alt="">';
         } else {
             $ico2 = flagImg(is_string($bet['flag2'] ?? null) ? $bet['flag2'] : '');
         }
@@ -1617,20 +1617,20 @@ function generateSafeCards($d) {
     }
     $logo = 'https://stratedgepronos.fr/assets/images/logo_site_transparent.png';
 
-    $date        = htmlspecialchars($d['date_fr']     ?? '', ENT_QUOTES, 'UTF-8');
-    $time        = htmlspecialchars($d['time_fr']     ?? '00:00', ENT_QUOTES, 'UTF-8');
-    $match       = htmlspecialchars($d['match']       ?? '', ENT_QUOTES, 'UTF-8');
-    $heure       = htmlspecialchars($d['heure']       ?? $d['time_fr'] ?? '', ENT_QUOTES, 'UTF-8');
-    $competition = htmlspecialchars($d['competition'] ?? '', ENT_QUOTES, 'UTF-8');
+    $date        = htmlspecialchars($d['date_fr']     ?? '', ENT_QUOTES, 'UTF-8', false);
+    $time        = htmlspecialchars($d['time_fr']     ?? '00:00', ENT_QUOTES, 'UTF-8', false);
+    $match       = htmlspecialchars($d['match']       ?? '', ENT_QUOTES, 'UTF-8', false);
+    $heure       = htmlspecialchars($d['heure']       ?? $d['time_fr'] ?? '', ENT_QUOTES, 'UTF-8', false);
+    $competition = htmlspecialchars($d['competition'] ?? '', ENT_QUOTES, 'UTF-8', false);
     $flag1       = $d['flag1'] ?? '';
     $flag2       = $d['flag2'] ?? '';
-    $logo1       = htmlspecialchars($d['team1_logo']  ?? '', ENT_QUOTES, 'UTF-8');
-    $logo2       = htmlspecialchars($d['team2_logo']  ?? '', ENT_QUOTES, 'UTF-8');
-    $prono       = htmlspecialchars($d['prono']       ?? '', ENT_QUOTES, 'UTF-8');
-    $cote        = htmlspecialchars($d['cote']        ?? '1.00', ENT_QUOTES, 'UTF-8');
+    $logo1       = htmlspecialchars($d['team1_logo']  ?? '', ENT_QUOTES, 'UTF-8', false);
+    $logo2       = htmlspecialchars($d['team2_logo']  ?? '', ENT_QUOTES, 'UTF-8', false);
+    $prono       = htmlspecialchars($d['prono']       ?? '', ENT_QUOTES, 'UTF-8', false);
+    $cote        = htmlspecialchars($d['cote']        ?? '1.00', ENT_QUOTES, 'UTF-8', false);
     $conf        = intval($d['confidence'] ?? 65);
     $valuePct    = floatval($d['value_pct'] ?? 0);
-    $analyse     = htmlspecialchars($d['analyse']     ?? '', ENT_QUOTES, 'UTF-8');
+    $analyse     = htmlspecialchars($d['analyse']     ?? '', ENT_QUOTES, 'UTF-8', false);
 
     // Sport badge
     $sportEmojis = ['football'=>'⚽','tennis'=>'🎾','basket'=>'🏀','hockey'=>'🏒','baseball'=>'⚾'];
@@ -1665,8 +1665,8 @@ function generateSafeCards($d) {
 
     // Teams split
     $teams = preg_split('/\s+vs\.?\s+/i', $match, 2);
-    $team1Name = htmlspecialchars(trim($teams[0] ?? ''), ENT_QUOTES, 'UTF-8');
-    $team2Name = htmlspecialchars(trim($teams[1] ?? ''), ENT_QUOTES, 'UTF-8');
+    $team1Name = htmlspecialchars(trim($teams[0] ?? ''), ENT_QUOTES, 'UTF-8', false);
+    $team2Name = htmlspecialchars(trim($teams[1] ?? ''), ENT_QUOTES, 'UTF-8', false);
 
     // Value badge
     $valueHtml = ($valuePct > 0) ? "<span class='value-badge'>VALUE +{$valuePct}%</span>" : '';
@@ -1683,7 +1683,7 @@ function generateSafeCards($d) {
     $css = $embeddedFonts . "\n@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap');\n" . <<<CSS
 
 * { margin:0; padding:0; box-sizing:border-box; }
-html, body { max-width:1080px; overflow-x:hidden; }
+html { background:#0a0a0a; width:1080px; max-width:1080px; overflow-x:hidden; }
 body { background:#0a0a0a; margin:0; padding:0; width:1080px; min-width:1080px; font-family:'Orbitron',sans-serif; }
 
 .safe-wrapper { position:relative; width:1080px; max-width:1080px; }
