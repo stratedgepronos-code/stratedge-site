@@ -348,9 +348,10 @@ function generateLiveCards($d) {
     $css = $embeddedFonts . <<<CSS
 
 * { margin:0; padding:0; box-sizing:border-box; }
-html { background:#0a0a0a; } body { background:#0a0a0a; margin:0; padding:0; width:1080px; font-family:'Orbitron',sans-serif; }
+html { background:#0a0a0a !important; width:1080px; min-width:1080px; max-width:1080px; overflow-x:hidden; }
+body { background:#0a0a0a !important; margin:0; padding:0; width:1080px; min-width:1080px; max-width:1080px; font-family:'Orbitron',sans-serif; }
 
-.card-wrapper { position:relative; width:1080px; }
+.card-wrapper { position:relative; width:1080px; min-width:1080px; max-width:1080px; background:#0a0a0a; }
 
 /* Glow extérieur — z-index:-1 pour ne jamais créer de voile */
 .border-glow {
@@ -729,10 +730,10 @@ function generateFunCards($d) {
     $css = $embeddedFonts . "\n/* Fallback Google Fonts si embarquées absentes (iframe/srcdoc) */\n@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Bebas+Neue&display=swap');\n" . <<<CSS
 
 * { margin:0; padding:0; box-sizing:border-box; }
-html { background:#0a0a0a; width:1080px; max-width:1080px; overflow-x:hidden; }
-body { background:#0a0a0a; margin:0; padding:0; width:1080px; min-width:1080px; font-family:'Orbitron',sans-serif; }
+html { background:#0a0a0a !important; width:1080px; min-width:1080px; max-width:1080px; overflow-x:hidden; }
+body { background:#0a0a0a !important; margin:0; padding:0; width:1080px; min-width:1080px; max-width:1080px; font-family:'Orbitron',sans-serif; }
 
-.card-wrapper { position:relative; width:1080px; max-width:1080px; }
+.card-wrapper { position:relative; width:1080px; max-width:1080px; min-width:1080px; background:#0a0a0a; }
 .border-glow {
   position:absolute; inset:-2px; border-radius:24px;
   background:linear-gradient(135deg,#ff2d7a,#c850c0,#ff2d7a);
@@ -1195,10 +1196,10 @@ function generateSafeCombiCards($d) {
     $css = $embeddedFonts . "\n@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap');\n" . <<<CSS
 
 * { margin:0; padding:0; box-sizing:border-box; }
-html { background:#0a0a0a; width:1440px; max-width:1440px; overflow-x:hidden; }
-body { background:#0a0a0a; margin:0; padding:0; width:1440px; min-width:1440px; font-family:'Orbitron',sans-serif; }
+html { background:#0a0a0a !important; width:1440px; min-width:1440px; max-width:1440px; overflow-x:hidden; }
+body { background:#0a0a0a !important; margin:0; padding:0; width:1440px; min-width:1440px; max-width:1440px; font-family:'Orbitron',sans-serif; }
 
-.sc-wrapper { position:relative; width:1440px; max-width:1440px; }
+.sc-wrapper { position:relative; width:1440px; max-width:1440px; min-width:1440px; background:#0a0a0a; }
 .sc-border-glow {
   position:absolute; inset:-2px; border-radius:24px;
   background:linear-gradient(135deg,{$accentMain},{$accentSec},{$accentMain});
@@ -1685,10 +1686,10 @@ function generateSafeCards($d) {
     $css = $embeddedFonts . "\n@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Bebas+Neue&family=Rajdhani:wght@400;600;700&display=swap');\n" . <<<CSS
 
 * { margin:0; padding:0; box-sizing:border-box; }
-html { background:#0a0a0a; width:1080px; max-width:1080px; overflow-x:hidden; }
-body { background:#0a0a0a; margin:0; padding:0; width:1080px; min-width:1080px; font-family:'Orbitron',sans-serif; }
+html { background:#0a0a0a !important; width:1080px; min-width:1080px; max-width:1080px; overflow-x:hidden; }
+body { background:#0a0a0a !important; margin:0; padding:0; width:1080px; min-width:1080px; max-width:1080px; font-family:'Orbitron',sans-serif; }
 
-.safe-wrapper { position:relative; width:1080px; max-width:1080px; }
+.safe-wrapper { position:relative; width:1080px; max-width:1080px; min-width:1080px; background:#0a0a0a; }
 .safe-glow {
   position:absolute; inset:-2px; border-radius:24px;
   background:linear-gradient(135deg,{$accentMain},{$accentSec},{$accentMain});
