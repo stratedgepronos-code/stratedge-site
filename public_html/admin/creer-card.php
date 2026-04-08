@@ -726,7 +726,7 @@ async function captureIframeToJpeg(iframeId, cardWidth) {
   const canvas = await html2canvas(cardEl, {
     width:          cardWidth,
     height:         realHeight,
-    backgroundColor: null,
+    backgroundColor: '#0a0a0a',
     scale:           1,
     useCORS:         true,
     allowTaint:      true,
