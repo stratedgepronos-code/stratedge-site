@@ -314,19 +314,21 @@ function generateLiveCards($d) {
     $logo2_url = trim($d['team2_logo'] ?? '');
     $is_team_sport = in_array($sport, ['football', 'basket', 'hockey', 'baseball']);
     if ($is_team_sport) {
+        // PRIORITÉ : DB locale (écrase Claude si match trouvé, plus fiable)
+        if (function_exists('stratedge_fetch_team_logo_url')) {
+            $localLogo1 = stratedge_fetch_team_logo_url($d['player1'] ?? '', $sport);
+            $localLogo2 = stratedge_fetch_team_logo_url($d['player2'] ?? '', $sport);
+            if ($localLogo1 !== '') $logo1_url = $localLogo1;
+            if ($localLogo2 !== '') $logo2_url = $localLogo2;
+        }
+        // Fallback si rien trouvé
         if ($logo1_url === '' || !filter_var($logo1_url, FILTER_VALIDATE_URL)) {
-            $logo1_url = function_exists('stratedge_fetch_team_logo_url') ? stratedge_fetch_team_logo_url($d['player1'] ?? '') : '';
+            if ($sport === 'hockey') $logo1_url = nhlLogoUrl($d['player1'] ?? '');
+            elseif ($sport === 'baseball') $logo1_url = mlbLogoUrl($d['player1'] ?? '');
         }
         if ($logo2_url === '' || !filter_var($logo2_url, FILTER_VALIDATE_URL)) {
-            $logo2_url = function_exists('stratedge_fetch_team_logo_url') ? stratedge_fetch_team_logo_url($d['player2'] ?? '') : '';
-        }
-        if ($sport === 'hockey') {
-            if ($logo1_url === '' || !filter_var($logo1_url, FILTER_VALIDATE_URL)) $logo1_url = nhlLogoUrl($d['player1'] ?? '');
-            if ($logo2_url === '' || !filter_var($logo2_url, FILTER_VALIDATE_URL)) $logo2_url = nhlLogoUrl($d['player2'] ?? '');
-        }
-        if ($sport === 'baseball') {
-            if ($logo1_url === '' || !filter_var($logo1_url, FILTER_VALIDATE_URL)) $logo1_url = mlbLogoUrl($d['player1'] ?? '');
-            if ($logo2_url === '' || !filter_var($logo2_url, FILTER_VALIDATE_URL)) $logo2_url = mlbLogoUrl($d['player2'] ?? '');
+            if ($sport === 'hockey') $logo2_url = nhlLogoUrl($d['player2'] ?? '');
+            elseif ($sport === 'baseball') $logo2_url = mlbLogoUrl($d['player2'] ?? '');
         }
     }
     if ($is_team_sport && $logo1_url !== '' && filter_var($logo1_url, FILTER_VALIDATE_URL)) {
@@ -891,11 +893,17 @@ CSS;
         $matchParts = preg_split('/\s+vs\.?\s+/i', $matchRaw, 2);
         $team1Name = trim($matchParts[0] ?? '');
         $team2Name = trim($matchParts[1] ?? '');
-        if (($logo1Url === '' || !filter_var($logo1Url, FILTER_VALIDATE_URL)) && $team1Name !== '' && function_exists('stratedge_fetch_team_logo_url')) {
-            $logo1Url = stratedge_fetch_team_logo_url($team1Name);
-        }
-        if (($logo2Url === '' || !filter_var($logo2Url, FILTER_VALIDATE_URL)) && $team2Name !== '' && function_exists('stratedge_fetch_team_logo_url')) {
-            $logo2Url = stratedge_fetch_team_logo_url($team2Name);
+        // PRIORITÉ : DB locale (écrase Claude si match trouvé)
+        if (function_exists('stratedge_fetch_team_logo_url')) {
+            $sportForLogo = strtolower($d['sport'] ?? 'football');
+            if ($team1Name !== '') {
+                $localL1 = stratedge_fetch_team_logo_url($team1Name, $sportForLogo);
+                if ($localL1 !== '') $logo1Url = $localL1;
+            }
+            if ($team2Name !== '') {
+                $localL2 = stratedge_fetch_team_logo_url($team2Name, $sportForLogo);
+                if ($localL2 !== '') $logo2Url = $localL2;
+            }
         }
         $isHockey = (strtolower($d['sport'] ?? '') === 'hockey');
         if ($isHockey) {
@@ -1368,11 +1376,17 @@ CSS;
         $matchParts = preg_split('/\s+vs\.?\s+/i', $matchRaw, 2);
         $team1Name = trim($matchParts[0] ?? '');
         $team2Name = trim($matchParts[1] ?? '');
-        if (($logo1Url === '' || !filter_var($logo1Url, FILTER_VALIDATE_URL)) && $team1Name !== '' && function_exists('stratedge_fetch_team_logo_url')) {
-            $logo1Url = stratedge_fetch_team_logo_url($team1Name);
-        }
-        if (($logo2Url === '' || !filter_var($logo2Url, FILTER_VALIDATE_URL)) && $team2Name !== '' && function_exists('stratedge_fetch_team_logo_url')) {
-            $logo2Url = stratedge_fetch_team_logo_url($team2Name);
+        // PRIORITÉ : DB locale (écrase Claude si match trouvé)
+        if (function_exists('stratedge_fetch_team_logo_url')) {
+            $sportForLogo = strtolower($d['sport'] ?? 'football');
+            if ($team1Name !== '') {
+                $localL1 = stratedge_fetch_team_logo_url($team1Name, $sportForLogo);
+                if ($localL1 !== '') $logo1Url = $localL1;
+            }
+            if ($team2Name !== '') {
+                $localL2 = stratedge_fetch_team_logo_url($team2Name, $sportForLogo);
+                if ($localL2 !== '') $logo2Url = $localL2;
+            }
         }
         $isHockey = (strtolower($d['sport'] ?? '') === 'hockey');
         if ($isHockey) {
@@ -1658,6 +1672,24 @@ function generateSafeCards($d) {
         $badgeColor  = '#ff2d7a';
         $footerGrad  = 'linear-gradient(to right,#ff2d7a,#c850c0,#4158d0)';
         $promoClass  = 'promo-multi';
+    }
+
+    // Teams split (needed for logo DB lookup)
+    $teamsTmp = preg_split('/\s+vs\.?\s+/i', (string)($d['match'] ?? ''), 2);
+    $t1Raw = trim($teamsTmp[0] ?? '');
+    $t2Raw = trim($teamsTmp[1] ?? '');
+
+    // PRIORITÉ : DB locale (écrase Claude si match trouvé)
+    if (function_exists('stratedge_fetch_team_logo_url')) {
+        $sportForLogo = strtolower($d['sport'] ?? ($isTennis ? 'tennis' : 'football'));
+        if ($t1Raw !== '') {
+            $localL1 = stratedge_fetch_team_logo_url($t1Raw, $sportForLogo);
+            if ($localL1 !== '') $logo1 = $localL1;
+        }
+        if ($t2Raw !== '') {
+            $localL2 = stratedge_fetch_team_logo_url($t2Raw, $sportForLogo);
+            if ($localL2 !== '') $logo2 = $localL2;
+        }
     }
 
     // Team logos HTML — use flagImg() for proper flag rendering

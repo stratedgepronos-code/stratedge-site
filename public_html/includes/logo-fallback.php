@@ -11,6 +11,16 @@ function stratedge_fetch_team_logo_url($teamName, $sport = 'football') {
     $teamName = trim((string) $teamName);
     if ($teamName === '') return '';
 
+    // ═══════════════════════════════════════════════════════
+    // PRIORITÉ 1 : Base locale (instant, 100% fiable)
+    // ═══════════════════════════════════════════════════════
+    require_once __DIR__ . '/team-logos-db.php';
+    $local = stratedge_local_team_logo($teamName, $sport);
+    if ($local !== '') return $local;
+
+    // ═══════════════════════════════════════════════════════
+    // PRIORITÉ 2+ : APIs externes avec cache (cascade)
+    // ═══════════════════════════════════════════════════════
     $cacheDir = dirname(__DIR__) . '/assets/logos-cache';
     $key = md5(strtolower($teamName) . '_' . $sport);
     $cacheFile = $cacheDir . '/' . $key . '.url';
@@ -21,7 +31,7 @@ function stratedge_fetch_team_logo_url($teamName, $sport = 'football') {
         if ($url !== '' && filter_var($url, FILTER_VALIDATE_URL)) return $url;
     }
 
-    // Cascade de sources
+    // Cascade d'APIs
     $url = _stratedge_thesportsdb_logo($teamName, $sport);
     if ($url === '') $url = _stratedge_espn_logo($teamName, $sport);
     if ($url === '') $url = _stratedge_wikipedia_logo($teamName);
