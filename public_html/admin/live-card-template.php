@@ -365,7 +365,7 @@ body { background:#0a0a0a !important; margin:0; padding:0; width:1080px; min-wid
 @keyframes gradientShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
 
 .card {
-  position:relative; z-index:1; width:1080px; background:#0d0d0f;
+  position:relative; z-index:1; width:1080px; background:#0a0a0a;
   border-radius:16px; overflow:hidden; display:flex; flex-direction:column;
   border:1px solid rgba(255,255,255,0.05); isolation:isolate;
 }
@@ -456,7 +456,7 @@ CSS;
         $css .= <<<TENNIS
 
 /* Tennis Live — couleurs et offre alignées sur la maquette */
-.card-wrapper.tennis .card { background:#0d0d0f; border-color:rgba(57,255,20,0.2); }
+.card-wrapper.tennis .card { background:#0a0a0a; border-color:rgba(57,255,20,0.2); }
 .card-wrapper.tennis .mascotte-watermark { background:transparent !important; z-index:0; pointer-events:none; display:flex !important; align-items:center; justify-content:center; }
 .card-wrapper.tennis .mascotte-watermark img { background:none !important; box-shadow:none !important; max-height:100%; width:auto; object-fit:contain; }
 .card-wrapper.tennis .match-left-bar { background:linear-gradient(to bottom,#E7337B,#7D41E7); }
@@ -745,7 +745,7 @@ body { background:#0a0a0a !important; margin:0; padding:0; width:1080px; min-wid
 @keyframes gradientShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
 
 .card {
-  position:relative; z-index:1; width:1080px; max-width:1080px; background:#0e0b12;
+  position:relative; z-index:1; width:1080px; max-width:1080px; background:#0a0a0a;
   border-radius:20px; overflow:hidden; display:flex; flex-direction:column;
   border:1px solid rgba(255,45,122,0.1); isolation:isolate;
 }
@@ -1217,7 +1217,7 @@ body { background:#0a0a0a !important; margin:0; padding:0; width:1440px; min-wid
 @keyframes scGradShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
 
 .sc-card {
-  position:relative; z-index:1; width:1440px; max-width:1440px; background:#0e0b12;
+  position:relative; z-index:1; width:1440px; max-width:1440px; background:#0a0a0a;
   border-radius:20px; overflow:hidden; display:flex; flex-direction:column;
   border:1px solid rgba(255,45,122,0.08); isolation:isolate;
 }
