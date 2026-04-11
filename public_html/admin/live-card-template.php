@@ -102,7 +102,13 @@ function _curlFetch($url, $ua = '') {
 function logoProxyUrl($url) {
     if ($url === '' || !filter_var($url, FILTER_VALIDATE_URL)) return '';
     $host = parse_url($url, PHP_URL_HOST);
-    $proxyHosts = ['upload.wikimedia.org', 'commons.wikimedia.org', 'en.wikipedia.org', 'a.espncdn.com', 'media.api-sports.io', 'cdn.nba.com'];
+    // ESPN CDN et cdn.nba.com supportent CORS directement, pas besoin de proxy
+    $directHosts = ['a.espncdn.com', 'cdn.nba.com'];
+    if (in_array($host, $directHosts, true)) {
+        return $url;
+    }
+    // Wikipedia / api-sports ont besoin du proxy (CORS manquant)
+    $proxyHosts = ['upload.wikimedia.org', 'commons.wikimedia.org', 'en.wikipedia.org', 'media.api-sports.io', 'www.thesportsdb.com', 'thesportsdb.com'];
     if (in_array($host, $proxyHosts, true)) {
         $base = 'https://stratedgepronos.fr';
         $u = str_replace(['+', '/'], ['-', '_'], base64_encode($url));
