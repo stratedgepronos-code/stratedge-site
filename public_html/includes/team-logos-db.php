@@ -10,26 +10,38 @@ if (!function_exists('stratedge_local_team_logo')) {
 function stratedge_local_team_logo($teamName, $sport = 'football') {
     $name = strtolower(trim(preg_replace('/[^\w\s]/u', ' ', (string)$teamName)));
     $name = preg_replace('/\s+/', ' ', $name);
+    // Retire les suffixes/préfixes parasites
+    $stopwords = ['fc', 'sc', 'ac', 'as', 'cf', 'sco', 'fk', 'sk', 'aj', 'bk', 'le', 'la', 'les', 'de', 'du', 'stade', 'racing', 'club', 'football'];
+    $words = array_filter(explode(' ', $name), fn($w) => $w !== '' && !in_array($w, $stopwords));
+    $nameClean = implode(' ', $words);
 
     $db = stratedge_team_logos_db();
     $sportKey = strtolower($sport);
     $map = $db[$sportKey] ?? [];
 
-    // Match exact d'abord
+    // 1. Match exact (full)
     foreach ($map as $keys => $url) {
-        $aliases = explode('|', $keys);
-        foreach ($aliases as $alias) {
-            if ($name === trim($alias)) return $url;
+        foreach (explode('|', $keys) as $alias) {
+            if ($name === trim($alias) || $nameClean === trim($alias)) return $url;
         }
     }
 
-    // Match partiel (contient)
+    // 2. Match par mot (tous les mots de l'alias doivent être dans $name)
     foreach ($map as $keys => $url) {
-        $aliases = explode('|', $keys);
-        foreach ($aliases as $alias) {
+        foreach (explode('|', $keys) as $alias) {
             $alias = trim($alias);
-            if ($alias === '') continue;
-            if (strpos($name, $alias) !== false || strpos($alias, $name) !== false) return $url;
+            if ($alias === '' || strlen($alias) < 3) continue;
+            // L'alias doit matcher comme mot entier ou groupe de mots
+            if (preg_match('/\b' . preg_quote($alias, '/') . '\b/', $name)) return $url;
+        }
+    }
+
+    // 3. Match partiel strict (alias court contenu dans nom, longueur min 4)
+    foreach ($map as $keys => $url) {
+        foreach (explode('|', $keys) as $alias) {
+            $alias = trim($alias);
+            if (strlen($alias) < 4) continue;
+            if (strpos($name, $alias) !== false) return $url;
         }
     }
     return '';
@@ -46,23 +58,23 @@ function stratedge_team_logos_db() {
         'football' => [
             // ── LIGUE 1 (France) ──
             'psg|paris saint germain|paris sg|paris'                  => 'https://a.espncdn.com/i/teamlogos/soccer/500/160.png',
-            'marseille|om|olympique marseille'                        => 'https://a.espncdn.com/i/teamlogos/soccer/500/176.png',
-            'lyon|ol|olympique lyonnais'                              => 'https://a.espncdn.com/i/teamlogos/soccer/500/170.png',
-            'monaco|as monaco'                                        => 'https://a.espncdn.com/i/teamlogos/soccer/500/174.png',
-            'lille|losc'                                              => 'https://a.espncdn.com/i/teamlogos/soccer/500/166.png',
-            'rennes|stade rennais'                                    => 'https://a.espncdn.com/i/teamlogos/soccer/500/213.png',
-            'nice|ogc nice'                                           => 'https://a.espncdn.com/i/teamlogos/soccer/500/2664.png',
-            'nantes|fc nantes'                                        => 'https://a.espncdn.com/i/teamlogos/soccer/500/180.png',
-            'strasbourg|rc strasbourg'                                => 'https://a.espncdn.com/i/teamlogos/soccer/500/183.png',
-            'lens|rc lens'                                            => 'https://a.espncdn.com/i/teamlogos/soccer/500/164.png',
+            'marseille|om|olympique marseille|olympique de marseille'                        => 'https://a.espncdn.com/i/teamlogos/soccer/500/176.png',
+            'lyon|ol|olympique lyonnais|olympique lyon'                              => 'https://a.espncdn.com/i/teamlogos/soccer/500/170.png',
+            'monaco|as monaco|asm'                                        => 'https://a.espncdn.com/i/teamlogos/soccer/500/174.png',
+            'lille|losc|losc lille|lille osc'                                              => 'https://a.espncdn.com/i/teamlogos/soccer/500/166.png',
+            'rennes|stade rennais|rennais|stade rennais fc'                                    => 'https://a.espncdn.com/i/teamlogos/soccer/500/213.png',
+            'nice|ogc nice|ogcn'                                           => 'https://a.espncdn.com/i/teamlogos/soccer/500/2664.png',
+            'nantes|fc nantes|fcn'                                        => 'https://a.espncdn.com/i/teamlogos/soccer/500/180.png',
+            'strasbourg|rc strasbourg|racing strasbourg|rcsa'                                => 'https://a.espncdn.com/i/teamlogos/soccer/500/183.png',
+            'lens|rc lens|racing lens|rcl'                                            => 'https://a.espncdn.com/i/teamlogos/soccer/500/164.png',
             'montpellier'                                             => 'https://a.espncdn.com/i/teamlogos/soccer/500/178.png',
-            'reims|stade reims'                                       => 'https://a.espncdn.com/i/teamlogos/soccer/500/2656.png',
+            'reims|stade reims|stade de reims|sdr'                                       => 'https://a.espncdn.com/i/teamlogos/soccer/500/2656.png',
             'toulouse|tfc'                                            => 'https://a.espncdn.com/i/teamlogos/soccer/500/2649.png',
-            'brest|stade brestois'                                    => 'https://a.espncdn.com/i/teamlogos/soccer/500/2658.png',
-            'angers|sco'                                              => 'https://a.espncdn.com/i/teamlogos/soccer/500/2655.png',
-            'auxerre|aj auxerre'                                      => 'https://a.espncdn.com/i/teamlogos/soccer/500/162.png',
+            'brest|stade brestois|stade brestois 29'                                    => 'https://a.espncdn.com/i/teamlogos/soccer/500/2658.png',
+            'angers|angers sco|sco angers'                                              => 'https://a.espncdn.com/i/teamlogos/soccer/500/2655.png',
+            'auxerre|aj auxerre|aja'                                      => 'https://a.espncdn.com/i/teamlogos/soccer/500/162.png',
             'le havre'                                                => 'https://a.espncdn.com/i/teamlogos/soccer/500/2657.png',
-            'saint etienne|asse'                                      => 'https://a.espncdn.com/i/teamlogos/soccer/500/181.png',
+            'saint etienne|asse|as saint etienne|saint etienne asse'                                      => 'https://a.espncdn.com/i/teamlogos/soccer/500/181.png',
 
             // ── PREMIER LEAGUE (Angleterre) ──
             'manchester city|man city'                                => 'https://a.espncdn.com/i/teamlogos/soccer/500/382.png',
