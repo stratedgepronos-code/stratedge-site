@@ -1,4 +1,19 @@
 <?php
+
+// [STRATEDGE] Accepte URL externe OU chemin local /assets/...
+if (!function_exists('stratedge_is_valid_logo')) {
+    function stratedge_is_valid_logo($path) {
+        $path = trim((string)$path);
+        if ($path === '') return false;
+        if (filter_var($path, FILTER_VALIDATE_URL)) return true;
+        if ($path[0] === '/') {
+            $abs = $_SERVER['DOCUMENT_ROOT'] . $path;
+            if (is_file($abs) && filesize($abs) > 500) return true;
+        }
+        return false;
+    }
+}
+
 // ============================================================
 // STRATEDGE — live-card-template.php V13
 // V13 : Fun card — promo 10€/sem + grosses cotes, lisibilité paris/confiance, mascotte tennis à jour
@@ -337,13 +352,13 @@ function generateLiveCards($d) {
             elseif ($sport === 'baseball') $logo2_url = mlbLogoUrl($d['player2'] ?? '');
         }
     }
-    if ($is_team_sport && $logo1_url !== '' && filter_var($logo1_url, FILTER_VALIDATE_URL)) {
-        $team1_display = '<img src="' . htmlspecialchars(logoProxyUrl($logo1_url), ENT_QUOTES, 'UTF-8', false) . '" class="team-logo" alt="">';
+    if ($is_team_sport && stratedge_is_valid_logo($logo1_url)) {
+        $team1_display = '<img src="' . htmlspecialchars(str_starts_with($logo1_url,'/') ? 'https://stratedgepronos.fr'.$logo1_url : logoProxyUrl($logo1_url), ENT_QUOTES, 'UTF-8', false) . '" class="team-logo" alt="">';
     } else {
         $team1_display = $flag1;
     }
-    if ($is_team_sport && $logo2_url !== '' && filter_var($logo2_url, FILTER_VALIDATE_URL)) {
-        $team2_display = '<img src="' . htmlspecialchars(logoProxyUrl($logo2_url), ENT_QUOTES, 'UTF-8', false) . '" class="team-logo" alt="">';
+    if ($is_team_sport && stratedge_is_valid_logo($logo2_url)) {
+        $team2_display = '<img src="' . htmlspecialchars(str_starts_with($logo2_url,'/') ? 'https://stratedgepronos.fr'.$logo2_url : logoProxyUrl($logo2_url), ENT_QUOTES, 'UTF-8', false) . '" class="team-logo" alt="">';
     } else {
         $team2_display = $flag2;
     }
@@ -913,28 +928,28 @@ CSS;
         }
         $isHockey = (strtolower($d['sport'] ?? '') === 'hockey');
         if ($isHockey) {
-            if ($logo1Url === '' || !filter_var($logo1Url, FILTER_VALIDATE_URL)) {
+            if ($logo1Url === '' || !stratedge_is_valid_logo($logo1Url)) {
                 $logo1Url = nhlLogoUrl($team1Name);
             }
-            if ($logo2Url === '' || !filter_var($logo2Url, FILTER_VALIDATE_URL)) {
+            if ($logo2Url === '' || !stratedge_is_valid_logo($logo2Url)) {
                 $logo2Url = nhlLogoUrl($team2Name);
             }
         }
         $isBaseball = (strtolower($d['sport'] ?? '') === 'baseball');
         if ($isBaseball) {
-            if ($logo1Url === '' || !filter_var($logo1Url, FILTER_VALIDATE_URL)) {
+            if ($logo1Url === '' || !stratedge_is_valid_logo($logo1Url)) {
                 $logo1Url = mlbLogoUrl($team1Name);
             }
-            if ($logo2Url === '' || !filter_var($logo2Url, FILTER_VALIDATE_URL)) {
+            if ($logo2Url === '' || !stratedge_is_valid_logo($logo2Url)) {
                 $logo2Url = mlbLogoUrl($team2Name);
             }
         }
-        if ($logo1Url !== '' && filter_var($logo1Url, FILTER_VALIDATE_URL)) {
+        if ($logo1Url !== '' && stratedge_is_valid_logo($logo1Url)) {
             $ico1 = '<img src="' . htmlspecialchars(logoProxyUrl($logo1Url), ENT_QUOTES, 'UTF-8', false) . '" class="fun-team-logo" alt="">';
         } else {
             $ico1 = flagImg(is_string($bet['flag1'] ?? null) ? $bet['flag1'] : '');
         }
-        if ($logo2Url !== '' && filter_var($logo2Url, FILTER_VALIDATE_URL)) {
+        if ($logo2Url !== '' && stratedge_is_valid_logo($logo2Url)) {
             $ico2 = '<img src="' . htmlspecialchars(logoProxyUrl($logo2Url), ENT_QUOTES, 'UTF-8', false) . '" class="fun-team-logo" alt="">';
         } else {
             $ico2 = flagImg(is_string($bet['flag2'] ?? null) ? $bet['flag2'] : '');
@@ -1396,20 +1411,20 @@ CSS;
         }
         $isHockey = (strtolower($d['sport'] ?? '') === 'hockey');
         if ($isHockey) {
-            if ($logo1Url === '' || !filter_var($logo1Url, FILTER_VALIDATE_URL)) $logo1Url = nhlLogoUrl($team1Name);
-            if ($logo2Url === '' || !filter_var($logo2Url, FILTER_VALIDATE_URL)) $logo2Url = nhlLogoUrl($team2Name);
+            if ($logo1Url === '' || !stratedge_is_valid_logo($logo1Url)) $logo1Url = nhlLogoUrl($team1Name);
+            if ($logo2Url === '' || !stratedge_is_valid_logo($logo2Url)) $logo2Url = nhlLogoUrl($team2Name);
         }
         $isBaseball = (strtolower($d['sport'] ?? '') === 'baseball');
         if ($isBaseball) {
-            if ($logo1Url === '' || !filter_var($logo1Url, FILTER_VALIDATE_URL)) $logo1Url = mlbLogoUrl($team1Name);
-            if ($logo2Url === '' || !filter_var($logo2Url, FILTER_VALIDATE_URL)) $logo2Url = mlbLogoUrl($team2Name);
+            if ($logo1Url === '' || !stratedge_is_valid_logo($logo1Url)) $logo1Url = mlbLogoUrl($team1Name);
+            if ($logo2Url === '' || !stratedge_is_valid_logo($logo2Url)) $logo2Url = mlbLogoUrl($team2Name);
         }
-        if ($logo1Url !== '' && filter_var($logo1Url, FILTER_VALIDATE_URL)) {
+        if ($logo1Url !== '' && stratedge_is_valid_logo($logo1Url)) {
             $ico1 = '<img src="' . htmlspecialchars(logoProxyUrl($logo1Url), ENT_QUOTES, 'UTF-8', false) . '" class="sc-team-logo" alt="">';
         } else {
             $ico1 = flagImg(is_string($bet['flag1'] ?? null) ? $bet['flag1'] : '');
         }
-        if ($logo2Url !== '' && filter_var($logo2Url, FILTER_VALIDATE_URL)) {
+        if ($logo2Url !== '' && stratedge_is_valid_logo($logo2Url)) {
             $ico2 = '<img src="' . htmlspecialchars(logoProxyUrl($logo2Url), ENT_QUOTES, 'UTF-8', false) . '" class="sc-team-logo" alt="">';
         } else {
             $ico2 = flagImg(is_string($bet['flag2'] ?? null) ? $bet['flag2'] : '');
