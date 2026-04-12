@@ -32,7 +32,7 @@ try { $fondateurPlaces = (int)$db->query("SELECT COUNT(*) FROM vip_max_fondateur
 .sub-hero-desc{color:#8a9bb0;font-size:1rem;max-width:550px;margin:0 auto;line-height:1.6}
 .sub-hero-sports{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center;margin-top:1rem}
 .sub-hero-sport{font-size:.75rem;font-weight:700;padding:.3rem .7rem;border-radius:6px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#b0bec9}
-.plans-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.3rem;position:relative;z-index:2;animation:fU .7s ease .1s both}
+.plans-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.8rem;position:relative;z-index:2;animation:fU .7s ease .1s both;max-width:780px;margin:0 auto}
 .plan-card{background:linear-gradient(165deg,#0c1018,#111827 60%,#0d1220);border:1px solid rgba(255,255,255,0.06);border-radius:20px;overflow:hidden;position:relative;transition:transform .35s,box-shadow .35s,border-color .35s;display:flex;flex-direction:column}
 .plan-card:hover{transform:translateY(-6px);border-color:var(--cc);box-shadow:0 20px 60px -15px var(--cg)}
 .plan-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--cgrad);z-index:4}
@@ -79,7 +79,7 @@ try { $fondateurPlaces = (int)$db->query("SELECT COUNT(*) FROM vip_max_fondateur
 .back-link{display:inline-flex;align-items:center;gap:.4rem;font-size:.82rem;color:#8a9bb0;text-decoration:none;margin-bottom:1.5rem;transition:color .2s}.back-link:hover{color:#ff2d78}
 .guarantee{text-align:center;margin-top:2rem;padding:1.5rem;background:linear-gradient(135deg,rgba(255,45,120,0.03),rgba(0,212,255,0.03));border:1px solid rgba(255,255,255,0.05);border-radius:16px;position:relative;z-index:2}.guarantee-title{font-family:'Orbitron',sans-serif;font-size:.75rem;letter-spacing:2px;text-transform:uppercase;color:#b0bec9;margin-bottom:.3rem}.guarantee-text{color:#8a9bb0;font-size:.85rem;max-width:500px;margin:0 auto}
 @keyframes fU{from{opacity:0;transform:translateY(25px)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:1100px){.plans-grid{grid-template-columns:repeat(2,1fr)}}@media(max-width:600px){.plans-grid{grid-template-columns:1fr}}
+@media(max-width:700px){.plans-grid{grid-template-columns:1fr;max-width:420px}}
 .wrap{max-width:1100px;margin:0 auto;width:100%}
 </style>
 </head>
@@ -106,7 +106,7 @@ try { $fondateurPlaces = (int)$db->query("SELECT COUNT(*) FROM vip_max_fondateur
 <div class="plans-grid">
 <?php
 $cards = [
-  ['type'=>'daily','tier'=>'Entrée','name'=>'Daily','video'=>'/assets/images/DOIGT.mp4','price'=>'4,50','period'=>'dès — à partir de','color'=>'#ff2d78','dim'=>'#d6245f','glow'=>'rgba(255,45,120,0.20)','grad'=>'linear-gradient(135deg,#ff2d78,#d6245f)','featured'=>false,'features'=>['Achète à l\'unité ou en pack','Économie jusqu\'à -33%','Crédits utilisables à vie','Tous les bets Multisports'],'link'=>'packs-daily.php','btn'=>'📦 Voir les packs','info'=>'1 → 10 paris · Crédits à vie'],
+  ['type'=>'packs','tier'=>'À la carte','name'=>'Packs Paris','video'=>'/assets/images/DOIGT.mp4','price'=>'4,50','period'=>'à partir de','color'=>'#ff2d78','dim'=>'#d6245f','glow'=>'rgba(255,45,120,0.20)','grad'=>'linear-gradient(135deg,#ff2d78,#d6245f)','featured'=>false,'features'=>['Achète à l\'unité ou en pack','Économie jusqu\'à -33%','Crédits utilisables à vie','Tous les bets Multisports'],'link'=>'packs-daily.php','btn'=>'📦 Voir les packs','info'=>'1 → 10 paris · Crédits à vie'],
 ];
 foreach($cards as $c):
   $isActive = in_array($c['type'], $typesActifs);
