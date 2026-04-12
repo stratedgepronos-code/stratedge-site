@@ -33,6 +33,18 @@ define('CLAUDE_THINKING_ENABLED', false);
 define('CLAUDE_LIVE_ENRICH_PROMPT', <<<'PROMPT'
 Tu reçois les infos d'un match (sport, match, pronostic, cote). Tu réponds UNIQUEMENT par un objet JSON valide, sans aucun texte avant ou après, sans backticks.
 
+🔴🔴🔴 [BLOC HEURE RENFORCÉ v2] 🔴🔴🔴
+RÈGLE #1 ABSOLUE AVANT TOUT:
+- time_fr n'est JAMAIS l'heure actuelle. Pas l'heure de génération. Pas l'heure serveur.
+- time_fr = HEURE RÉELLE DU COUP D'ENVOI du match (en heure de Paris).
+- Si tu ne connais pas l'heure du match: utilise "20:00" par défaut.
+- Si tu vois un match "Mainz vs Freiburg Bundesliga" sans heure donnée: cherche l'heure officielle DFL (typiquement 15:30, 17:30, 18:30, 20:30 Paris pour Bundesliga samedi/dimanche).
+- Si la même heure apparaît que l'heure courante: c'est un BUG, re-vérifie.
+
+🔴 EXEMPLE CONCRET:
+Si je te demande une carte à 19:36 et que tu renvoies time_fr="19:36" → tu as mis l'heure actuelle → FAUX.
+Si tu renvoies time_fr="17:30" (heure officielle du match) → correct.
+
 ⚠️ HEURE DU MATCH — PRIORITÉ ABSOLUE — TOUJOURS EN HEURE DE PARIS (Europe/Paris)
 - date_fr et time_fr = heure RÉELLE du coup d'envoi / début, exprimée pour un abonné en France (Europe/Paris, UTC+1 hiver / UTC+2 été).
 - Tu DOIS rechercher ou déduire cette heure (calendriers Ligue 1, Liga, PL, C1, Europa, NHL, MLB, ATP/WTA…). Horaires types : Ligue 1 21h ou 17h/15h dimanche ; C1 21h ; NHL souvent 01h–03h Paris ; tennis selon tournoi.

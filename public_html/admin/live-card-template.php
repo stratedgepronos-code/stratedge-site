@@ -1716,8 +1716,10 @@ function generateSafeCards($d) {
     // Team logos HTML — use flagImg() for proper flag rendering
     $flag1Img = flagImg($flag1);
     $flag2Img = flagImg($flag2);
-    $logo1Html = ($logo1 && filter_var($logo1, FILTER_VALIDATE_URL)) ? "<img src='{$logo1}' class='team-logo' onerror=\"this.style.display='none'\">" : "<div class='flag-wrap'>{$flag1Img}</div>";
-    $logo2Html = ($logo2 && filter_var($logo2, FILTER_VALIDATE_URL)) ? "<img src='{$logo2}' class='team-logo' onerror=\"this.style.display='none'\">" : "<div class='flag-wrap'>{$flag2Img}</div>";
+    $logo1Src = stratedge_is_valid_logo($logo1) ? (str_starts_with($logo1,'/') ? 'https://stratedgepronos.fr'.$logo1 : $logo1) : '';
+    $logo2Src = stratedge_is_valid_logo($logo2) ? (str_starts_with($logo2,'/') ? 'https://stratedgepronos.fr'.$logo2 : $logo2) : '';
+    $logo1Html = $logo1Src ? "<img src='{$logo1Src}' class='team-logo' onerror=\"this.style.display='none'\">" : "<div class='flag-wrap'>{$flag1Img}</div>";
+    $logo2Html = $logo2Src ? "<img src='{$logo2Src}' class='team-logo' onerror=\"this.style.display='none'\">" : "<div class='flag-wrap'>{$flag2Img}</div>";
 
     // Teams split
     $teams = preg_split('/\s+vs\.?\s+/i', $match, 2);
