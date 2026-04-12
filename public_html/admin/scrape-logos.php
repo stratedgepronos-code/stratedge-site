@@ -47,12 +47,39 @@ header('Content-Type: text/plain; charset=utf-8');
 echo "=== STRATEDGE Logo Scraper ===\n\n";
 $ok=0; $ko=0; $mapping=['football'=>[],'basket'=>[],'hockey'=>[],'baseball'=>[]];
 
+// Limite de téléchargements par passage (pour éviter rate-limit TheSportsDB)
+$batchLimit = isset($_GET['limit']) ? max(1, min(50, (int)$_GET['limit'])) : 15;
+$startOffset = isset($_GET['offset']) ? max(0, (int)$_GET['offset']) : 0;
+$globalCount = 0;
+$downloaded = 0;
+$skipped = 0;
+
+// Charger mapping existant pour skip intelligent
+$existingMapping = [];
+$mapFile = $base . '/mapping.json';
+if (is_file($mapFile)) {
+    $existingMapping = json_decode(@file_get_contents($mapFile), true) ?: [];
+}
+$mapping = array_merge(['football'=>[],'basket'=>[],'hockey'=>[],'baseball'=>[]], $existingMapping);
+
 foreach ($TEAMS as $sport => $teams) {
     $dir = $base.'/'.$sport;
     @mkdir($dir, 0755, true);
     $expected = $filter[$sport];
     echo "\n--- $sport (".count($teams)." équipes) ---\n";
     foreach ($teams as $team) {
+        $globalCount++;
+        if ($globalCount <= $startOffset) continue;
+        if ($downloaded >= $batchLimit) break 2; // stop tout
+
+        $slug = slugify($team);
+        $existingFile = $dir.'/'.$slug.'.png';
+        if (is_file($existingFile) && filesize($existingFile) > 500) {
+            $mapping[$sport][$slug] = $team;
+            $skipped++;
+            continue;
+        }
+
         $url = 'https://www.thesportsdb.com/api/v1/json/123/searchteams.php?t='.urlencode($team);
         $json = fetch_url($url);
         if (!$json) { echo "✗ $team (no response)\n"; $ko++; continue; }
@@ -68,9 +95,9 @@ foreach ($TEAMS as $sport => $teams) {
         $slug = slugify($team);
         file_put_contents($dir.'/'.$slug.'.png', $img);
         $mapping[$sport][$slug] = $team;
+        $downloaded++;
         echo "✓ $slug.png ($team)\n";
-        $ok++;
-        usleep(250000); // 250ms politesse
+        usleep(1500000); // 1.5s anti rate-limit
     }
 }
 
