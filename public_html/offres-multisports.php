@@ -106,7 +106,7 @@ try { $fondateurPlaces = (int)$db->query("SELECT COUNT(*) FROM vip_max_fondateur
 <div class="plans-grid">
 <?php
 $cards = [
-  ['type'=>'packs','tier'=>'À la carte','name'=>'Packs Paris','video'=>'/assets/images/DOIGT.mp4','price'=>'4,50','period'=>'à partir de','color'=>'#ff2d78','dim'=>'#d6245f','glow'=>'rgba(255,45,120,0.20)','grad'=>'linear-gradient(135deg,#ff2d78,#d6245f)','featured'=>false,'features'=>['Achète à l\'unité ou en pack','Économie jusqu\'à -33%','Crédits utilisables à vie','Tous les bets Multisports'],'link'=>'packs-daily.php','btn'=>'📦 Voir les packs','info'=>'1 → 10 paris · Crédits à vie'],
+  ['type'=>'packs','tier'=>'À la carte','name'=>'Packs Paris','video'=>'/assets/images/DOIGT.mp4','price'=>'4,50','period'=>'à partir de','color'=>'#ff2d78','dim'=>'#d6245f','glow'=>'rgba(255,45,120,0.20)','grad'=>'linear-gradient(135deg,#ff2d78,#d6245f)','featured'=>false,'features'=>['Achète à l\'unité ou en pack','Économie jusqu\'à -33%','Crédits utilisables à vie','Tous les bets Multisports'],'link'=>'/packs-daily.php','btn'=>'📦 Voir les packs','info'=>'1 → 10 paris · Crédits à vie'],
 ];
 foreach($cards as $c):
   $isActive = in_array($c['type'], $typesActifs);
@@ -124,6 +124,7 @@ foreach($cards as $c):
     <div class="plan-pay">
       <div class="plan-pay-label">💳 Payer maintenant</div>
       <?php if($isActive):?><div class="plan-btn disabled">✓ Abonnement actif</div>
+      <?php elseif($c['type']==='packs'):?><a href="/packs-daily.php" class="plan-btn"><?=$c['btn']?></a>
       <?php else:?><a href="<?=$c['link']?>" class="plan-btn"><?=$c['btn']?></a><div class="sep-or">— ou —</div><a href="<?=$c['link']?>#crypto" class="btn-crypto">₿ Payer en Crypto</a><?php endif;?>
       <div class="plan-pay-info"><?=$c['info']?></div>
     </div>
