@@ -30,7 +30,7 @@ $payload = json_encode([
     'cancel_url'        => $siteUrl . '/packs-daily.php?err=cancelled',
 ]);
 
-$ch = curl_init('' . NP_API_BASE . '/invoice'');
+$ch = curl_init(NP_API_BASE . '/invoice');
 curl_setopt_array($ch, [
     CURLOPT_POST => true,
     CURLOPT_POSTFIELDS => $payload,
