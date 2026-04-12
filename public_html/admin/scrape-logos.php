@@ -2,8 +2,38 @@
 require_once __DIR__ . '/../includes/auth.php';
 requireAdmin();
 set_time_limit(600);
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
+
 $base = __DIR__ . '/../assets/logos';
-@mkdir($base, 0755, true);
+
+header('Content-Type: text/plain; charset=utf-8');
+echo "=== STRATEDGE Logo Scraper (Debug Mode) ===\n\n";
+
+// TEST 1: Dossier writable ?
+echo "[1] Création dossier $base\n";
+if (!is_dir($base)) {
+    if (!@mkdir($base, 0755, true)) {
+        echo "❌ IMPOSSIBLE DE CRÉER LE DOSSIER\n";
+        echo "   Vérifie les permissions du dossier parent: " . realpath(__DIR__ . '/..') . "/assets\n";
+        exit;
+    }
+    echo "   ✓ Créé\n";
+} else {
+    echo "   ✓ Existe déjà\n";
+}
+if (!is_writable($base)) {
+    echo "❌ DOSSIER NON WRITABLE\n"; exit;
+}
+echo "   ✓ Writable\n\n";
+
+// TEST 2: Écriture d'un fichier test
+$testFile = $base . '/test-write.txt';
+if (@file_put_contents($testFile, 'test') === false) {
+    echo "❌ ÉCHEC ÉCRITURE TEST\n"; exit;
+}
+@unlink($testFile);
+echo "[2] ✓ Écriture fichier OK\n\n";
 
 $TEAMS = [
     'football' => ['paris-saint-germain'=>160,'olympique-marseille'=>176,'olympique-lyonnais'=>170,'as-monaco'=>174,'lille-osc'=>166,'stade-rennais'=>213,'ogc-nice'=>2664,'fc-nantes'=>180,'rc-strasbourg'=>183,'rc-lens'=>164,'montpellier'=>178,'stade-reims'=>2656,'toulouse-fc'=>2649,'stade-brestois'=>2658,'angers-sco'=>2655,'aj-auxerre'=>162,'le-havre-ac'=>2657,'saint-etienne'=>181,'manchester-city'=>382,'manchester-united'=>360,'liverpool'=>364,'chelsea'=>363,'arsenal'=>359,'tottenham-hotspur'=>367,'newcastle-united'=>361,'aston-villa'=>362,'west-ham-united'=>371,'brighton'=>331,'brentford'=>337,'crystal-palace'=>384,'everton'=>368,'fulham'=>370,'wolverhampton'=>380,'nottingham-forest'=>393,'bournemouth'=>349,'leicester-city'=>375,'ipswich-town'=>373,'southampton'=>376,'sunderland'=>366,'leeds-united'=>357,'burnley'=>379,'sheffield-united'=>398,'sheffield-wednesday'=>397,'norwich-city'=>381,'west-bromwich-albion'=>383,'middlesbrough'=>369,'coventry-city'=>352,'preston-north-end'=>386,'cardiff-city'=>347,'swansea-city'=>318,'bristol-city'=>344,'hull-city'=>355,'watford'=>395,'blackburn-rovers'=>336,'queens-park-rangers'=>389,'millwall'=>378,'portsmouth'=>385,'derby-county'=>353,'luton-town'=>301,'real-madrid'=>86,'fc-barcelona'=>83,'atletico-madrid'=>1068,'athletic-bilbao'=>93,'real-sociedad'=>89,'villarreal'=>102,'real-betis'=>244,'sevilla'=>243,'valencia'=>94,'getafe'=>2922,'girona'=>9812,'celta-vigo'=>85,'osasuna'=>97,'rayo-vallecano'=>101,'mallorca'=>84,'alaves'=>96,'las-palmas'=>98,'leganes'=>17534,'espanyol'=>88,'inter-milan'=>110,'ac-milan'=>103,'juventus'=>111,'napoli'=>114,'as-roma'=>104,'lazio'=>105,'atalanta'=>108,'fiorentina'=>109,'bologna'=>107,'torino'=>586,'udinese'=>115,'genoa'=>2311,'empoli'=>117,'hellas-verona'=>598,'parma'=>130,'cagliari'=>2315,'lecce'=>2314,'monza'=>4001,'venezia'=>2727,'como'=>2316,'bayern-munich'=>132,'borussia-dortmund'=>124,'bayer-leverkusen'=>131,'rb-leipzig'=>11420,'stuttgart'=>134,'eintracht-frankfurt'=>125,'wolfsburg'=>138,'borussia-monchengladbach'=>123,'hoffenheim'=>7911,'freiburg'=>126,'werder-bremen'=>137,'augsburg'=>7912,'bochum'=>122,'heidenheim'=>14911,'st-pauli'=>133,'holstein-kiel'=>2719,'benfica'=>1929,'porto'=>2950,'sporting-cp'=>2930,'psv-eindhoven'=>148,'feyenoord'=>142,'celtic'=>256,'rangers'=>257,'shakhtar-donetsk'=>2317,'club-brugge'=>2292,'anderlecht'=>1329,'galatasaray'=>645,'fenerbahce'=>1466,'besiktas'=>1523,'olympiakos'=>1492,'paok'=>1509],
@@ -16,20 +46,23 @@ $LOCAL = ['football'=>'football','nba'=>'basket','nhl'=>'hockey','mlb'=>'basebal
 function fetch_url($u) {
     $ch = curl_init($u);
     curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_FOLLOWLOCATION=>true, CURLOPT_TIMEOUT=>15, CURLOPT_USERAGENT=>'Mozilla/5.0']);
-    $r = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
-    return ($code === 200 && $r && strlen($r) > 500) ? $r : null;
+    $r = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $err = curl_error($ch);
+    curl_close($ch);
+    return ['body'=>$r, 'code'=>$code, 'err'=>$err, 'size'=>strlen($r ?: '')];
 }
 
-header('Content-Type: text/plain; charset=utf-8');
-echo "=== STRATEDGE Logo Scraper (ESPN CDN) ===\n\n";
 $ok = 0; $ko = 0; $skipped = 0;
 $mapping = ['football'=>[], 'basket'=>[], 'hockey'=>[], 'baseball'=>[]];
+$firstErrors = [];
 
 foreach ($TEAMS as $sport => $teams) {
     $localSport = $LOCAL[$sport];
     $dir = $base . '/' . $localSport;
     @mkdir($dir, 0755, true);
     echo "\n--- $sport (" . count($teams) . " equipes) ---\n";
+    flush(); @ob_flush();
     foreach ($teams as $slug => $id) {
         $outFile = $dir . '/' . $slug . '.png';
         if (is_file($outFile) && filesize($outFile) > 500) {
@@ -40,18 +73,29 @@ foreach ($TEAMS as $sport => $teams) {
         $url = ($sport === 'football')
             ? "https://a.espncdn.com/i/teamlogos/soccer/500/{$id}.png"
             : "https://a.espncdn.com/i/teamlogos/{$sport}/500/{$id}.png";
-        $img = fetch_url($url);
-        if ($img) {
-            file_put_contents($outFile, $img);
-            $mapping[$localSport][$slug] = $slug;
-            echo "OK $slug.png\n";
-            $ok++;
+        $r = fetch_url($url);
+        if ($r['code'] === 200 && $r['size'] > 500) {
+            if (@file_put_contents($outFile, $r['body']) !== false) {
+                $mapping[$localSport][$slug] = $slug;
+                $ok++;
+                if ($ok <= 3) echo "OK $slug.png ({$r['size']} bytes)\n";
+            } else {
+                $ko++;
+                if (count($firstErrors) < 5) $firstErrors[] = "WRITE FAIL $slug → $outFile";
+            }
         } else {
-            echo "FAIL $slug (id=$id)\n";
             $ko++;
+            if (count($firstErrors) < 5) $firstErrors[] = "FETCH FAIL $slug → HTTP {$r['code']} size={$r['size']} err={$r['err']}";
         }
         usleep(100000);
     }
+    echo "Sport $sport: $ok OK total (+ $skipped skip), $ko ko\n";
+    flush(); @ob_flush();
 }
+
 file_put_contents($base . '/mapping.json', json_encode($mapping, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
 echo "\n=== DONE: $ok telecharges, $skipped deja la, $ko echecs ===\n";
+if (!empty($firstErrors)) {
+    echo "\n5 PREMIÈRES ERREURS DÉTAILLÉES:\n";
+    foreach ($firstErrors as $e) echo "  - $e\n";
+}
