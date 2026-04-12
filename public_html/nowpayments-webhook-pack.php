@@ -1,12 +1,13 @@
 <?php
 // STRATEDGE — Webhook NowPayments (IPN) pour packs de crédits
 require_once __DIR__ . '/includes/payment-config.php';
+require_once __DIR__ . '/includes/nowpayments-config.php';
 require_once __DIR__ . '/includes/credits-manager.php';
 
 $payload = @file_get_contents('php://input');
 $receivedSig = $_SERVER['HTTP_X_NOWPAYMENTS_SIG'] ?? '';
 
-$ipnSecret = defined('NOWPAYMENTS_IPN_SECRET') ? NOWPAYMENTS_IPN_SECRET : '';
+$ipnSecret = defined('NP_IPN_SECRET') ? NP_IPN_SECRET : '';
 if ($ipnSecret && $receivedSig) {
     $data = json_decode($payload, true);
     if (is_array($data)) {

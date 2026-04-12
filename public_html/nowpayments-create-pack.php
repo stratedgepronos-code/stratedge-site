@@ -2,6 +2,7 @@
 // STRATEDGE — Création invoice NowPayments pour pack crédits
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/payment-config.php';
+require_once __DIR__ . '/includes/nowpayments-config.php';
 require_once __DIR__ . '/includes/packs-config.php';
 requireLogin();
 
@@ -13,7 +14,7 @@ if (!$pack || !in_array('crypto', $pack['methodes'], true)) {
     header('Location: /packs-daily.php?err=invalid_pack'); exit;
 }
 
-$apiKey = defined('NOWPAYMENTS_API_KEY') ? NOWPAYMENTS_API_KEY : '';
+$apiKey = defined('NP_API_KEY') ? NP_API_KEY : '';
 if (!$apiKey) { header('Location: /packs-daily.php?err=crypto_not_ready'); exit; }
 
 $siteUrl = defined('SITE_URL') ? rtrim(SITE_URL, '/') : 'https://stratedgepronos.fr';
@@ -25,11 +26,11 @@ $payload = json_encode([
     'order_id'          => $orderId,
     'order_description' => 'StratEdge Pack ' . $pack['label'] . ' (' . $pack['nb'] . ' paris) - Crédits à vie',
     'ipn_callback_url'  => $siteUrl . '/nowpayments-webhook-pack.php',
-    'success_url'       => $siteUrl . '/packs-daily.php?crypto_ok=1',
+    'success_url'       => defined('NP_SUCCESS_URL') ? NP_SUCCESS_URL : $siteUrl . '/packs-daily.php?crypto_ok=1',
     'cancel_url'        => $siteUrl . '/packs-daily.php?err=cancelled',
 ]);
 
-$ch = curl_init('https://api.nowpayments.io/v1/invoice');
+$ch = curl_init('' . NP_API_BASE . '/invoice'');
 curl_setopt_array($ch, [
     CURLOPT_POST => true,
     CURLOPT_POSTFIELDS => $payload,
