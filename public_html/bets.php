@@ -4,6 +4,7 @@ $db = getDB();
 $membre = isLoggedIn() ? getMembre() : null;
 $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
 require_once __DIR__ . '/includes/bet-access.php';
+require_once __DIR__ . '/includes/credits-manager.php';
 $hasAccesGlobal = (isLoggedIn() && isAdmin()); // admin = accès total toujours
 $hasAcces = $hasAccesGlobal; // valeur par défaut, sera recalculée par bet
 $currentPage = 'bets';
@@ -276,7 +277,21 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
       $types = explode(',', $bet['type']);
       $mainType = trim($types[0]);
       $rawPath = !empty($bet['image_path']) ? $bet['image_path'] : ($bet['locked_image_path'] ?? '');
-      $hasAcces = $hasAccesGlobal || stratedge_bet_acces($bet, $membre);
+      // hasAcces: admin OU VIP MAX OU déjà débloqué (sans auto-consommer)
+      $hasAcces = $hasAccesGlobal;
+      if (!$hasAcces && $membre && isset($bet['id'])) {
+          $mid = (int)$membre['id'];
+          $bid = (int)$bet['id'];
+          if ($bet['categorie'] === 'tennis') {
+              $stmtTen = $db->prepare("SELECT 1 FROM abonnements WHERE membre_id=? AND type='tennis' AND actif=1 AND date_fin>NOW() LIMIT 1");
+              $stmtTen->execute([$mid]);
+              if ($stmtTen->fetchColumn()) $hasAcces = true;
+          } else {
+              $stmtV = $db->prepare("SELECT 1 FROM abonnements WHERE membre_id=? AND type='vip_max' AND actif=1 LIMIT 1");
+              $stmtV->execute([$mid]);
+              if ($stmtV->fetchColumn() || stratedge_credits_deja_consulte($mid, $bid)) $hasAcces = true;
+          }
+      }
       if (!empty($rawPath)) {
         $imgSrc = (strpos($rawPath, 'http') === 0) ? $rawPath : (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($rawPath,'/') : $rawPath);
       } else {
@@ -301,8 +316,15 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
         <?php if ($hasAcces): ?><div class="zoom-tip">Cliquer pour agrandir</div><?php endif; ?>
         <?php else: ?><div class="bet-no-img <?= !$hasAcces?'blur':'' ?>">📊</div><?php endif; ?>
         <?php if (!$hasAcces): ?>
-        <div class="lock-ov"><div class="lock-i">🔒</div><div class="lock-t">Contenu verrouille</div><div class="lock-s">Souscris pour acceder a l'analyse complete.</div>
+        <div class="lock-ov"><div class="lock-i">🔒</div><div class="lock-t">Contenu verrouille</div>
+          <?php if (isLoggedIn() && $bet['categorie']==='multi'): ?>
+          <div class="lock-s">Débloque ce bet avec 1 crédit</div>
+          <button type="button" class="lock-b unlock-btn" data-bet-id="<?= (int)$bet['id'] ?>" style="background:linear-gradient(135deg,#ff2d7a,#c850c0);border:none;cursor:pointer;color:#fff">🔓 Débloquer (1 crédit)</button>
+          <a href="/packs-daily.php" style="display:block;margin-top:.5rem;color:#00d4ff;font-size:.8rem;text-decoration:none">Pas de crédits ? Recharger</a>
+          <?php else: ?>
+          <div class="lock-s">Souscris pour acceder a l'analyse complete.</div>
           <a href="<?= isLoggedIn()?'/#pricing':'login.php' ?>" class="lock-b"><?= isLoggedIn()?'Voir les formules':'Se connecter' ?> →</a>
+          <?php endif; ?>
         </div>
         <?php endif; ?>
       </div>
@@ -366,5 +388,27 @@ document.addEventListener('keydown',function(e){if(e.key==='Escape')closeLB();})
 function toggleMenu(){document.getElementById('mobileMenu').classList.toggle('open');}
 </script>
 <?php require_once __DIR__ . '/includes/footer-main.php'; ?>
+
+<script>
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('.unlock-btn');
+  if (!btn) return;
+  e.preventDefault();
+  const betId = btn.dataset.betId;
+  if (!confirm('Débloquer ce bet consommera 1 crédit. Continuer ?')) return;
+  btn.disabled = true; btn.textContent = '⏳ Déblocage...';
+  try {
+    const fd = new FormData();
+    fd.append('bet_id', betId);
+    const r = await fetch('/api-unlock-bet.php', {method:'POST', body:fd, credentials:'same-origin'});
+    const data = await r.json();
+    if (data.ok) { location.reload(); }
+    else if (data.err === 'no_credits') {
+      alert('Tu n\'as plus de crédits ! Recharge un pack.');
+      location.href = '/packs-daily.php';
+    } else { alert('Erreur : ' + (data.err || 'inconnue')); btn.disabled = false; btn.textContent = '🔓 Débloquer (1 crédit)'; }
+  } catch (err) { alert('Erreur réseau'); btn.disabled = false; btn.textContent = '🔓 Débloquer (1 crédit)'; }
+});
+</script>
 </body>
 </html>
