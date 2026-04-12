@@ -343,11 +343,11 @@ function generateLiveCards($d) {
             if ($localLogo2 !== '') $logo2_url = $localLogo2;
         }
         // Fallback si rien trouvé
-        if ($logo1_url === '' || !filter_var($logo1_url, FILTER_VALIDATE_URL)) {
+        if (!stratedge_is_valid_logo($logo1_url)) {
             if ($sport === 'hockey') $logo1_url = nhlLogoUrl($d['player1'] ?? '');
             elseif ($sport === 'baseball') $logo1_url = mlbLogoUrl($d['player1'] ?? '');
         }
-        if ($logo2_url === '' || !filter_var($logo2_url, FILTER_VALIDATE_URL)) {
+        if (!stratedge_is_valid_logo($logo2_url)) {
             if ($sport === 'hockey') $logo2_url = nhlLogoUrl($d['player2'] ?? '');
             elseif ($sport === 'baseball') $logo2_url = mlbLogoUrl($d['player2'] ?? '');
         }
