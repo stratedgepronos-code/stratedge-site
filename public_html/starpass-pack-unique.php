@@ -24,7 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 }
-include __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/sidebar-css.php';
+<?php require_once __DIR__ . '/includes/sidebar.php'; ?>
 ?>
 <div style="max-width:500px;margin:3rem auto;padding:2rem;background:rgba(20,15,30,0.95);border:1px solid rgba(0,212,255,0.3);border-radius:16px;color:#fff;font-family:'Rajdhani',sans-serif">
   <h2 style="font-family:'Orbitron',sans-serif;color:#00d4ff;text-align:center">📱 Pack Unique par SMS</h2>
@@ -37,4 +38,4 @@ include __DIR__ . '/includes/header.php';
   </form>
   <p style="text-align:center;margin-top:1.5rem"><a href="/packs-daily.php" style="color:#00d4ff">← Retour aux packs</a></p>
 </div>
-<?php include __DIR__ . '/includes/footer.php'; ?>
+<?php require_once __DIR__ . '/includes/footer-main.php'; ?>

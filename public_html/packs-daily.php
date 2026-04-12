@@ -9,7 +9,8 @@ $avatarUrl = $membre ? getAvatarUrl($membre) : null;
 $solde = $membre ? stratedge_credits_solde((int)$membre['id']) : 0;
 $packs = stratedge_packs_config();
 
-include __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/sidebar-css.php';
+<?php require_once __DIR__ . '/includes/sidebar.php'; ?>
 ?>
 <style>
 .packs-wrap{max-width:1400px;margin:2rem auto;padding:0 1.5rem;color:#fff;font-family:'Rajdhani',sans-serif}
@@ -92,4 +93,4 @@ include __DIR__ . '/includes/header.php';
   </div>
 </div>
 
-<?php include __DIR__ . '/includes/footer.php'; ?>
+<?php require_once __DIR__ . '/includes/footer-main.php'; ?>
