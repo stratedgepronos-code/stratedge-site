@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/mailer.php';
+require_once __DIR__ . '/includes/credits-widget.php';
 requireLogin();
 
 $db = getDB();
@@ -242,6 +243,9 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
   <div class="st-card"><div class="lb">Statut</div><?php if ($abonnement): ?><div class="val" style="color:var(--pink)">Actif</div><div class="sub"><?= $typeLabels[$abonnement['type']] ?? $abonnement['type'] ?></div><?php else: ?><div class="val" style="color:var(--txt3)">Aucun</div><div class="sub">Pas d'abonnement</div><?php endif; ?></div>
   <div class="st-card"><div class="lb">Membre depuis</div><div class="val" style="font-size:1.15rem;"><?= date('d/m/Y', strtotime($membre['date_inscription'])) ?></div><div class="sub"><?= clean($membre['email']) ?></div></div>
   <div class="st-card"><div class="lb">Achats</div><div class="val"><?= count($historique) ?></div><div class="sub">abonnement<?= count($historique)>1?'s':'' ?></div></div>
+</div>
+<div class="sec"><h3><span class="dot"></span> 💎 Mes crédits paris</h3>
+<?= stratedge_render_credits_widget((int)$membre['id']) ?>
 </div>
 <div class="sec"><h3><span class="dot"></span> Abonnement actif</h3>
 <?php if ($abonnement): ?>

@@ -3,7 +3,9 @@ require_once __DIR__ . '/includes/auth.php';
 $db = getDB();
 $membre = isLoggedIn() ? getMembre() : null;
 $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
-$hasAcces = ($abonnement !== null) || (isLoggedIn() && isAdmin());
+require_once __DIR__ . '/includes/bet-access.php';
+$hasAccesGlobal = (isLoggedIn() && isAdmin()); // admin = accès total toujours
+$hasAcces = $hasAccesGlobal; // valeur par défaut, sera recalculée par bet
 $currentPage = 'bets';
 $avatarUrl = $membre ? getAvatarUrl($membre) : null;
 
@@ -274,6 +276,7 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
       $types = explode(',', $bet['type']);
       $mainType = trim($types[0]);
       $rawPath = !empty($bet['image_path']) ? $bet['image_path'] : ($bet['locked_image_path'] ?? '');
+      $hasAcces = $hasAccesGlobal || stratedge_bet_acces($bet, $membre);
       if (!empty($rawPath)) {
         $imgSrc = (strpos($rawPath, 'http') === 0) ? $rawPath : (defined('SITE_URL') ? rtrim(SITE_URL,'/').'/'.ltrim($rawPath,'/') : $rawPath);
       } else {
