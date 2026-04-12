@@ -163,27 +163,9 @@ function stratedge_team_logos_db() {
             'holstein kiel|kiel'                                      => 'https://a.espncdn.com/i/teamlogos/soccer/500/2719.png',
 
             // ── CHAMPIONSHIP (England 2nd tier) ──
-            'sunderland|sunderland afc|black cats'                    => 'https://a.espncdn.com/i/teamlogos/soccer/500/366.png',
+            'sunderland|sunderland afc|black cats'                    => 'https://a.espncdn.com/i/teamlogos/soccer/500/328.png',
             'leeds|leeds united'                                       => 'https://a.espncdn.com/i/teamlogos/soccer/500/357.png',
             'burnley|burnley fc'                                       => 'https://a.espncdn.com/i/teamlogos/soccer/500/379.png',
-            'sheffield united|sheffield utd'                           => 'https://a.espncdn.com/i/teamlogos/soccer/500/398.png',
-            'sheffield wednesday|wednesday|sheffield weds'             => 'https://a.espncdn.com/i/teamlogos/soccer/500/397.png',
-            'norwich|norwich city'                                     => 'https://a.espncdn.com/i/teamlogos/soccer/500/381.png',
-            'west brom|west bromwich|west bromwich albion|wba'         => 'https://a.espncdn.com/i/teamlogos/soccer/500/383.png',
-            'middlesbrough|boro'                                       => 'https://a.espncdn.com/i/teamlogos/soccer/500/369.png',
-            'coventry|coventry city'                                   => 'https://a.espncdn.com/i/teamlogos/soccer/500/352.png',
-            'preston|preston north end'                                => 'https://a.espncdn.com/i/teamlogos/soccer/500/386.png',
-            'cardiff|cardiff city'                                     => 'https://a.espncdn.com/i/teamlogos/soccer/500/347.png',
-            'swansea|swansea city'                                     => 'https://a.espncdn.com/i/teamlogos/soccer/500/318.png',
-            'bristol city'                                             => 'https://a.espncdn.com/i/teamlogos/soccer/500/344.png',
-            'hull|hull city'                                           => 'https://a.espncdn.com/i/teamlogos/soccer/500/355.png',
-            'watford'                                                  => 'https://a.espncdn.com/i/teamlogos/soccer/500/395.png',
-            'blackburn|blackburn rovers'                               => 'https://a.espncdn.com/i/teamlogos/soccer/500/336.png',
-            'qpr|queens park rangers'                                  => 'https://a.espncdn.com/i/teamlogos/soccer/500/389.png',
-            'stoke|stoke city'                                         => 'https://a.espncdn.com/i/teamlogos/soccer/500/336.png',
-            'millwall'                                                 => 'https://a.espncdn.com/i/teamlogos/soccer/500/378.png',
-            'portsmouth'                                               => 'https://a.espncdn.com/i/teamlogos/soccer/500/385.png',
-            'derby|derby county'                                       => 'https://a.espncdn.com/i/teamlogos/soccer/500/353.png',
 
             // ── AUTRES TOP CLUBS EUROPÉENS (C1) ──
             'benfica'                                                 => 'https://a.espncdn.com/i/teamlogos/soccer/500/1929.png',

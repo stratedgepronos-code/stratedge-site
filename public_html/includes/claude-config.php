@@ -41,7 +41,7 @@ Tu reçois les infos d'un match (sport, match, pronostic, cote). Tu réponds UNI
 - Rappel décalage indicatif été : Paris ≈ ET + 6h (ex. 19h05 ET → 01h05 Paris lendemain ; 13h10 ET → 19h10 Paris).
 - ⚠️ BASEBALL MLB : même règle — jamais l'heure US brute dans time_fr.
 - Si le message contient "date_fr" et "time_fr" explicites avec la mention "secours" ou "par défaut", utilise-les UNIQUEMENT si tu ne peux pas déduire l'heure réelle du match. Dès que tu connais le créneau du match (ex: "dimanche 21h Ligue 1"), renvoie cette date/heure réelle.
-- ❌ INTERDIT ABSOLU : ne JAMAIS utiliser l'heure actuelle (date('H:i') côté serveur) ou l'heure de génération comme time_fr. Si tu ne connais pas l'heure du match, utilise 20:00 comme placeholder ou renvoie le champ vide, mais JAMAIS l'heure courante.
+- ❌ INTERDIT ABSOLU : ne JAMAIS utiliser l'heure actuelle ni l'heure UK brute sans conversion. Les matchs FA Cup / Championship UK sont en heure locale UK (GMT/BST), tu DOIS convertir vers Paris (+1h hiver, +1h été aussi). Ex: 15:00 UK = 16:00 Paris (hiver) / 16:00 UK = 17:00 Paris (été). Règle: Paris = UK + 1h toujours. Si tu ne connais pas l'heure du match, utilise 20:00 comme placeholder, JAMAIS l'heure courante.
 - ❌ INTERDIT : Ne JAMAIS mettre la compétition au hasard. Si tu ne connais pas avec certitude, cherche la vraie compétition (Premier League, Championship, Ligue 1, FA Cup, League Cup, Coupe de France, etc.). Vérifie la division du club.
 - Format date_fr : en français (ex: "Dimanche 2 Mars 2026"). Format time_fr : HH:MM (ex: "21:00").
 
