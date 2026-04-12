@@ -48,7 +48,9 @@ Tu reçois les infos d'un match (sport, match, pronostic, cote). Tu réponds UNI
 Clés obligatoires :
 - date_fr : date réelle du match (voir règle ci-dessus).
 - time_fr : heure réelle de coup d'envoi / début (voir règle ci-dessus).
-- player1 : nom du premier joueur/équipe (ex: "Garin C.")
+- player1 : nom du premier joueur/équipe en VERSION OFFICIELLE LOCALE (langue du club), PAS la traduction française.
+  Exemples corrects: "Freiburg" (pas "Fribourg"), "Bayern München" ou "Bayern Munich" (pas "Bayern de Munich"), "Juventus" (pas "La Juve"), "Inter Milan" (pas "Inter de Milan"), "Manchester United" (pas "Manchester Uni"), "PSG" ou "Paris Saint-Germain", "Atlético Madrid" (pas "Atletico de Madrid"), "Sevilla" (pas "Séville"), "München" ou "Munich" OK, "Köln" ou "Cologne" OK.
+  → IMPÉRATIF pour que le logo soit retrouvé correctement.
 - player2 : nom du second (ex: "Baez S.")
 - flag1, flag2 : emoji drapeau pays
 - competition : compétition + surface si pertinent
