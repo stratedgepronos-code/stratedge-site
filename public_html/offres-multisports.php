@@ -106,9 +106,7 @@ try { $fondateurPlaces = (int)$db->query("SELECT COUNT(*) FROM vip_max_fondateur
 <div class="plans-grid">
 <?php
 $cards = [
-  ['type'=>'daily','tier'=>'Entrée','name'=>'Daily','video'=>'/assets/images/DOIGT.mp4','price'=>'4,50','period'=>'/ prochain bet','color'=>'#ff2d78','dim'=>'#d6245f','glow'=>'rgba(255,45,120,0.20)','grad'=>'linear-gradient(135deg,#ff2d78,#d6245f)','featured'=>false,'features'=>['Accès au prochain bet Safe','Accès au prochain bet Live','Idéal pour tester','Paiement par SMS'],'link'=>'offre-daily.php','btn'=>'📱 Payer — 4,50€','info'=>'SMS · CB · Paysafecard'],
-  ['type'=>'weekend','tier'=>'Populaire','name'=>'Week-End','video'=>'/assets/images/air.mp4','price'=>'10','period'=>'/ week-end (ven→dim)','color'=>'#00d4ff','dim'=>'#0099cc','glow'=>'rgba(0,212,255,0.20)','grad'=>'linear-gradient(135deg,#00d4ff,#0099cc)','featured'=>true,'features'=>['Bets Safe &amp; Fun inclus','Bets LIVE par mail &amp; Push','Tous les matchs du week-end','Sans engagement'],'link'=>'offre-weekend.php','btn'=>'💳 Payer — 10€','info'=>'CB · Paysafecard · Crypto'],
-  ['type'=>'weekly','tier'=>'Best value','name'=>'Weekly','video'=>'/assets/images/SAM.mp4','price'=>'20','period'=>'/ semaine (7 jours)','color'=>'#a855f7','dim'=>'#7c3aed','glow'=>'rgba(168,85,247,0.20)','grad'=>'linear-gradient(135deg,#a855f7,#7c3aed)','featured'=>false,'features'=>['TOUS les bets Safe & Fun','Bets LIVE par mail & Push','1 montante par mois','Foot, NBA, Hockey…'],'link'=>'offre-weekly.php','btn'=>'💳 Payer — 20€','info'=>'CB · Paysafecard · Crypto'],
+  ['type'=>'daily','tier'=>'Entrée','name'=>'Daily','video'=>'/assets/images/DOIGT.mp4','price'=>'4,50','period'=>'dès — à partir de','color'=>'#ff2d78','dim'=>'#d6245f','glow'=>'rgba(255,45,120,0.20)','grad'=>'linear-gradient(135deg,#ff2d78,#d6245f)','featured'=>false,'features'=>['Achète à l\'unité ou en pack','Économie jusqu\'à -33%','Crédits utilisables à vie','Tous les bets Multisports'],'link'=>'packs-daily.php','btn'=>'📦 Voir les packs','info'=>'1 → 10 paris · Crédits à vie'],
 ];
 foreach($cards as $c):
   $isActive = in_array($c['type'], $typesActifs);
