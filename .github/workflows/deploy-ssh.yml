@@ -31,6 +31,7 @@ jobs:
             echo "=== Tentative $i/$MAX ==="
             sshpass -p "${{ secrets.SSH_PASSWORD }}" rsync -avz --delete \
               --exclude='uploads/' \
+              --exclude='assets/logos/' \
               --filter 'P config-keys.php' \
               --filter 'P includes/smtp-config.php' \
               --filter 'P includes/football_data_config.php' \
