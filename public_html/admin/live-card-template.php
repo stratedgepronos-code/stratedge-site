@@ -945,12 +945,12 @@ CSS;
             }
         }
         if ($logo1Url !== '' && stratedge_is_valid_logo($logo1Url)) {
-            $ico1 = '<img src="' . htmlspecialchars(logoProxyUrl($logo1Url), ENT_QUOTES, 'UTF-8', false) . '" class="fun-team-logo" alt="">';
+            $ico1 = '<img src="' . htmlspecialchars((str_starts_with($logo1Url,'/') ? 'https://stratedgepronos.fr'.$logo1Url : logoProxyUrl($logo1Url)), ENT_QUOTES, 'UTF-8', false) . '" class="fun-team-logo" alt="">';
         } else {
             $ico1 = flagImg(is_string($bet['flag1'] ?? null) ? $bet['flag1'] : '');
         }
         if ($logo2Url !== '' && stratedge_is_valid_logo($logo2Url)) {
-            $ico2 = '<img src="' . htmlspecialchars(logoProxyUrl($logo2Url), ENT_QUOTES, 'UTF-8', false) . '" class="fun-team-logo" alt="">';
+            $ico2 = '<img src="' . htmlspecialchars((str_starts_with($logo2Url,'/') ? 'https://stratedgepronos.fr'.$logo2Url : logoProxyUrl($logo2Url)), ENT_QUOTES, 'UTF-8', false) . '" class="fun-team-logo" alt="">';
         } else {
             $ico2 = flagImg(is_string($bet['flag2'] ?? null) ? $bet['flag2'] : '');
         }
@@ -1420,12 +1420,12 @@ CSS;
             if ($logo2Url === '' || !stratedge_is_valid_logo($logo2Url)) $logo2Url = mlbLogoUrl($team2Name);
         }
         if ($logo1Url !== '' && stratedge_is_valid_logo($logo1Url)) {
-            $ico1 = '<img src="' . htmlspecialchars(logoProxyUrl($logo1Url), ENT_QUOTES, 'UTF-8', false) . '" class="sc-team-logo" alt="">';
+            $ico1 = '<img src="' . htmlspecialchars((str_starts_with($logo1Url,'/') ? 'https://stratedgepronos.fr'.$logo1Url : logoProxyUrl($logo1Url)), ENT_QUOTES, 'UTF-8', false) . '" class="sc-team-logo" alt="">';
         } else {
             $ico1 = flagImg(is_string($bet['flag1'] ?? null) ? $bet['flag1'] : '');
         }
         if ($logo2Url !== '' && stratedge_is_valid_logo($logo2Url)) {
-            $ico2 = '<img src="' . htmlspecialchars(logoProxyUrl($logo2Url), ENT_QUOTES, 'UTF-8', false) . '" class="sc-team-logo" alt="">';
+            $ico2 = '<img src="' . htmlspecialchars((str_starts_with($logo2Url,'/') ? 'https://stratedgepronos.fr'.$logo2Url : logoProxyUrl($logo2Url)), ENT_QUOTES, 'UTF-8', false) . '" class="sc-team-logo" alt="">';
         } else {
             $ico2 = flagImg(is_string($bet['flag2'] ?? null) ? $bet['flag2'] : '');
         }
