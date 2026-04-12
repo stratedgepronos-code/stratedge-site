@@ -1,106 +1,57 @@
 <?php
-// STRATEDGE — Scraper tous les logos d'équipes depuis TheSportsDB
-// Accès admin uniquement. Télécharge en /assets/logos/{sport}/{slug}.png
 require_once __DIR__ . '/../includes/auth.php';
 requireAdmin();
 set_time_limit(600);
-
 $base = __DIR__ . '/../assets/logos';
 @mkdir($base, 0755, true);
 
 $TEAMS = [
-    'football' => [
-        'Paris Saint-Germain','Olympique de Marseille','Olympique Lyonnais','AS Monaco','Lille OSC',
-        'Stade Rennais','OGC Nice','FC Nantes','RC Strasbourg','RC Lens','Montpellier HSC',
-        'Stade de Reims','Toulouse FC','Stade Brestois 29','Angers SCO','AJ Auxerre','Le Havre AC',
-        'Saint-Etienne','Manchester City','Manchester United','Liverpool','Chelsea','Arsenal',
-        'Tottenham Hotspur','Newcastle United','Aston Villa','West Ham United','Brighton & Hove Albion',
-        'Brentford','Crystal Palace','Everton','Fulham','Wolverhampton Wanderers','Nottingham Forest',
-        'AFC Bournemouth','Leicester City','Ipswich Town','Southampton','Sunderland','Leeds United',
-        'Burnley','Sheffield United','Sheffield Wednesday','Norwich City','West Bromwich Albion',
-        'Middlesbrough','Coventry City','Preston North End','Cardiff City','Swansea City',
-        'Bristol City','Hull City','Watford','Blackburn Rovers','Queens Park Rangers','Stoke City',
-        'Millwall','Portsmouth','Derby County','Luton Town','Plymouth Argyle','Oxford United',
-        'Real Madrid','FC Barcelona','Atletico Madrid','Athletic Bilbao','Real Sociedad','Villarreal CF',
-        'Real Betis','Sevilla FC','Valencia CF','Getafe CF','Girona FC','Celta Vigo','CA Osasuna',
-        'Rayo Vallecano','RCD Mallorca','Deportivo Alaves','UD Las Palmas','CD Leganes','RCD Espanyol',
-        'Real Valladolid','Inter Milan','AC Milan','Juventus','Napoli','AS Roma','Lazio','Atalanta',
-        'Fiorentina','Bologna','Torino','Udinese','Genoa','Empoli','Hellas Verona','Parma','Cagliari',
-        'Lecce','Monza','Venezia','Como','Bayern Munich','Borussia Dortmund','Bayer Leverkusen',
-        'RB Leipzig','VfB Stuttgart','Eintracht Frankfurt','VfL Wolfsburg','Borussia Monchengladbach',
-        'TSG Hoffenheim','SC Freiburg','Mainz 05','Werder Bremen','FC Augsburg','Union Berlin',
-        'VfL Bochum','Heidenheim','FC St. Pauli','Holstein Kiel','Benfica','FC Porto','Sporting CP',
-        'Ajax','PSV Eindhoven','Feyenoord','Celtic','Rangers','Shakhtar Donetsk','Club Brugge',
-        'Anderlecht','Galatasaray','Fenerbahce','Besiktas','Olympiakos','PAOK','Red Star Belgrade',
-        'Dinamo Zagreb','KRC Genk',
-    ],
-    'basket' => ['Atlanta Hawks','Boston Celtics','Brooklyn Nets','Charlotte Hornets','Chicago Bulls','Cleveland Cavaliers','Dallas Mavericks','Denver Nuggets','Detroit Pistons','Golden State Warriors','Houston Rockets','Indiana Pacers','Los Angeles Clippers','Los Angeles Lakers','Memphis Grizzlies','Miami Heat','Milwaukee Bucks','Minnesota Timberwolves','New Orleans Pelicans','New York Knicks','Oklahoma City Thunder','Orlando Magic','Philadelphia 76ers','Phoenix Suns','Portland Trail Blazers','Sacramento Kings','San Antonio Spurs','Toronto Raptors','Utah Jazz','Washington Wizards'],
-    'hockey' => ['Anaheim Ducks','Boston Bruins','Buffalo Sabres','Calgary Flames','Carolina Hurricanes','Chicago Blackhawks','Colorado Avalanche','Columbus Blue Jackets','Dallas Stars','Detroit Red Wings','Edmonton Oilers','Florida Panthers','Los Angeles Kings','Minnesota Wild','Montreal Canadiens','Nashville Predators','New Jersey Devils','New York Islanders','New York Rangers','Ottawa Senators','Philadelphia Flyers','Pittsburgh Penguins','San Jose Sharks','Seattle Kraken','St. Louis Blues','Tampa Bay Lightning','Toronto Maple Leafs','Utah Hockey Club','Vancouver Canucks','Vegas Golden Knights','Washington Capitals','Winnipeg Jets'],
-    'baseball' => ['Arizona Diamondbacks','Atlanta Braves','Baltimore Orioles','Boston Red Sox','Chicago Cubs','Chicago White Sox','Cincinnati Reds','Cleveland Guardians','Colorado Rockies','Detroit Tigers','Houston Astros','Kansas City Royals','Los Angeles Angels','Los Angeles Dodgers','Miami Marlins','Milwaukee Brewers','Minnesota Twins','New York Mets','New York Yankees','Oakland Athletics','Philadelphia Phillies','Pittsburgh Pirates','San Diego Padres','San Francisco Giants','Seattle Mariners','St. Louis Cardinals','Tampa Bay Rays','Texas Rangers','Toronto Blue Jays','Washington Nationals'],
+    'football' => ['paris-saint-germain'=>160,'olympique-marseille'=>176,'olympique-lyonnais'=>170,'as-monaco'=>174,'lille-osc'=>166,'stade-rennais'=>213,'ogc-nice'=>2664,'fc-nantes'=>180,'rc-strasbourg'=>183,'rc-lens'=>164,'montpellier'=>178,'stade-reims'=>2656,'toulouse-fc'=>2649,'stade-brestois'=>2658,'angers-sco'=>2655,'aj-auxerre'=>162,'le-havre-ac'=>2657,'saint-etienne'=>181,'manchester-city'=>382,'manchester-united'=>360,'liverpool'=>364,'chelsea'=>363,'arsenal'=>359,'tottenham-hotspur'=>367,'newcastle-united'=>361,'aston-villa'=>362,'west-ham-united'=>371,'brighton'=>331,'brentford'=>337,'crystal-palace'=>384,'everton'=>368,'fulham'=>370,'wolverhampton'=>380,'nottingham-forest'=>393,'bournemouth'=>349,'leicester-city'=>375,'ipswich-town'=>373,'southampton'=>376,'sunderland'=>366,'leeds-united'=>357,'burnley'=>379,'sheffield-united'=>398,'sheffield-wednesday'=>397,'norwich-city'=>381,'west-bromwich-albion'=>383,'middlesbrough'=>369,'coventry-city'=>352,'preston-north-end'=>386,'cardiff-city'=>347,'swansea-city'=>318,'bristol-city'=>344,'hull-city'=>355,'watford'=>395,'blackburn-rovers'=>336,'queens-park-rangers'=>389,'millwall'=>378,'portsmouth'=>385,'derby-county'=>353,'luton-town'=>301,'real-madrid'=>86,'fc-barcelona'=>83,'atletico-madrid'=>1068,'athletic-bilbao'=>93,'real-sociedad'=>89,'villarreal'=>102,'real-betis'=>244,'sevilla'=>243,'valencia'=>94,'getafe'=>2922,'girona'=>9812,'celta-vigo'=>85,'osasuna'=>97,'rayo-vallecano'=>101,'mallorca'=>84,'alaves'=>96,'las-palmas'=>98,'leganes'=>17534,'espanyol'=>88,'inter-milan'=>110,'ac-milan'=>103,'juventus'=>111,'napoli'=>114,'as-roma'=>104,'lazio'=>105,'atalanta'=>108,'fiorentina'=>109,'bologna'=>107,'torino'=>586,'udinese'=>115,'genoa'=>2311,'empoli'=>117,'hellas-verona'=>598,'parma'=>130,'cagliari'=>2315,'lecce'=>2314,'monza'=>4001,'venezia'=>2727,'como'=>2316,'bayern-munich'=>132,'borussia-dortmund'=>124,'bayer-leverkusen'=>131,'rb-leipzig'=>11420,'stuttgart'=>134,'eintracht-frankfurt'=>125,'wolfsburg'=>138,'borussia-monchengladbach'=>123,'hoffenheim'=>7911,'freiburg'=>126,'werder-bremen'=>137,'augsburg'=>7912,'bochum'=>122,'heidenheim'=>14911,'st-pauli'=>133,'holstein-kiel'=>2719,'benfica'=>1929,'porto'=>2950,'sporting-cp'=>2930,'psv-eindhoven'=>148,'feyenoord'=>142,'celtic'=>256,'rangers'=>257,'shakhtar-donetsk'=>2317,'club-brugge'=>2292,'anderlecht'=>1329,'galatasaray'=>645,'fenerbahce'=>1466,'besiktas'=>1523,'olympiakos'=>1492,'paok'=>1509],
+    'nba' => ['atlanta-hawks'=>'atl','boston-celtics'=>'bos','brooklyn-nets'=>'bkn','charlotte-hornets'=>'cha','chicago-bulls'=>'chi','cleveland-cavaliers'=>'cle','dallas-mavericks'=>'dal','denver-nuggets'=>'den','detroit-pistons'=>'det','golden-state-warriors'=>'gs','houston-rockets'=>'hou','indiana-pacers'=>'ind','la-clippers'=>'lac','los-angeles-lakers'=>'lal','memphis-grizzlies'=>'mem','miami-heat'=>'mia','milwaukee-bucks'=>'mil','minnesota-timberwolves'=>'min','new-orleans-pelicans'=>'no','new-york-knicks'=>'ny','oklahoma-city-thunder'=>'okc','orlando-magic'=>'orl','philadelphia-76ers'=>'phi','phoenix-suns'=>'phx','portland-trail-blazers'=>'por','sacramento-kings'=>'sac','san-antonio-spurs'=>'sa','toronto-raptors'=>'tor','utah-jazz'=>'utah','washington-wizards'=>'wsh'],
+    'nhl' => ['anaheim-ducks'=>'ana','boston-bruins'=>'bos','buffalo-sabres'=>'buf','calgary-flames'=>'cgy','carolina-hurricanes'=>'car','chicago-blackhawks'=>'chi','colorado-avalanche'=>'col','columbus-blue-jackets'=>'cbj','dallas-stars'=>'dal','detroit-red-wings'=>'det','edmonton-oilers'=>'edm','florida-panthers'=>'fla','los-angeles-kings'=>'la','minnesota-wild'=>'min','montreal-canadiens'=>'mtl','nashville-predators'=>'nsh','new-jersey-devils'=>'nj','new-york-islanders'=>'nyi','new-york-rangers'=>'nyr','ottawa-senators'=>'ott','philadelphia-flyers'=>'phi','pittsburgh-penguins'=>'pit','san-jose-sharks'=>'sj','seattle-kraken'=>'sea','st-louis-blues'=>'stl','tampa-bay-lightning'=>'tb','toronto-maple-leafs'=>'tor','utah-hockey-club'=>'utah','vancouver-canucks'=>'van','vegas-golden-knights'=>'vgs','washington-capitals'=>'wsh','winnipeg-jets'=>'wpg'],
+    'mlb' => ['arizona-diamondbacks'=>'ari','atlanta-braves'=>'atl','baltimore-orioles'=>'bal','boston-red-sox'=>'bos','chicago-cubs'=>'chc','chicago-white-sox'=>'chw','cincinnati-reds'=>'cin','cleveland-guardians'=>'cle','colorado-rockies'=>'col','detroit-tigers'=>'det','houston-astros'=>'hou','kansas-city-royals'=>'kc','los-angeles-angels'=>'laa','los-angeles-dodgers'=>'lad','miami-marlins'=>'mia','milwaukee-brewers'=>'mil','minnesota-twins'=>'min','new-york-mets'=>'nym','new-york-yankees'=>'nyy','oakland-athletics'=>'oak','philadelphia-phillies'=>'phi','pittsburgh-pirates'=>'pit','san-diego-padres'=>'sd','san-francisco-giants'=>'sf','seattle-mariners'=>'sea','st-louis-cardinals'=>'stl','tampa-bay-rays'=>'tb','texas-rangers'=>'tex','toronto-blue-jays'=>'tor','washington-nationals'=>'wsh'],
 ];
-$filter = ['football'=>'Soccer','basket'=>'Basketball','hockey'=>'Ice Hockey','baseball'=>'Baseball'];
+$LOCAL = ['football'=>'football','nba'=>'basket','nhl'=>'hockey','mlb'=>'baseball'];
 
-function slugify($n){$s=strtolower(trim($n));$s=preg_replace('/[^a-z0-9]+/','-',$s);return trim($s,'-');}
-function fetch_url($u){$ch=curl_init($u);curl_setopt_array($ch,[CURLOPT_RETURNTRANSFER=>true,CURLOPT_FOLLOWLOCATION=>true,CURLOPT_TIMEOUT=>15,CURLOPT_USERAGENT=>'StratEdgeBot/1.0']);$r=curl_exec($ch);curl_close($ch);return $r;}
+function fetch_url($u) {
+    $ch = curl_init($u);
+    curl_setopt_array($ch, [CURLOPT_RETURNTRANSFER=>true, CURLOPT_FOLLOWLOCATION=>true, CURLOPT_TIMEOUT=>15, CURLOPT_USERAGENT=>'Mozilla/5.0']);
+    $r = curl_exec($ch); $code = curl_getinfo($ch, CURLINFO_HTTP_CODE); curl_close($ch);
+    return ($code === 200 && $r && strlen($r) > 500) ? $r : null;
+}
 
 header('Content-Type: text/plain; charset=utf-8');
-echo "=== STRATEDGE Logo Scraper ===\n\n";
-$ok=0; $ko=0; $mapping=['football'=>[],'basket'=>[],'hockey'=>[],'baseball'=>[]];
-
-// Limite de téléchargements par passage (pour éviter rate-limit TheSportsDB)
-$batchLimit = isset($_GET['limit']) ? max(1, min(50, (int)$_GET['limit'])) : 15;
-$startOffset = isset($_GET['offset']) ? max(0, (int)$_GET['offset']) : 0;
-$globalCount = 0;
-$downloaded = 0;
-$skipped = 0;
-
-// Charger mapping existant pour skip intelligent
-$existingMapping = [];
-$mapFile = $base . '/mapping.json';
-if (is_file($mapFile)) {
-    $existingMapping = json_decode(@file_get_contents($mapFile), true) ?: [];
-}
-$mapping = array_merge(['football'=>[],'basket'=>[],'hockey'=>[],'baseball'=>[]], $existingMapping);
+echo "=== STRATEDGE Logo Scraper (ESPN CDN) ===\n\n";
+$ok = 0; $ko = 0; $skipped = 0;
+$mapping = ['football'=>[], 'basket'=>[], 'hockey'=>[], 'baseball'=>[]];
 
 foreach ($TEAMS as $sport => $teams) {
-    $dir = $base.'/'.$sport;
+    $localSport = $LOCAL[$sport];
+    $dir = $base . '/' . $localSport;
     @mkdir($dir, 0755, true);
-    $expected = $filter[$sport];
-    echo "\n--- $sport (".count($teams)." équipes) ---\n";
-    foreach ($teams as $team) {
-        $globalCount++;
-        if ($globalCount <= $startOffset) continue;
-        if ($downloaded >= $batchLimit) break 2; // stop tout
-
-        $slug = slugify($team);
-        $existingFile = $dir.'/'.$slug.'.png';
-        if (is_file($existingFile) && filesize($existingFile) > 500) {
-            $mapping[$sport][$slug] = $team;
+    echo "\n--- $sport (" . count($teams) . " equipes) ---\n";
+    foreach ($teams as $slug => $id) {
+        $outFile = $dir . '/' . $slug . '.png';
+        if (is_file($outFile) && filesize($outFile) > 500) {
+            $mapping[$localSport][$slug] = $slug;
             $skipped++;
             continue;
         }
-
-        $url = 'https://www.thesportsdb.com/api/v1/json/123/searchteams.php?t='.urlencode($team);
-        $json = fetch_url($url);
-        if (!$json) { echo "✗ $team (no response)\n"; $ko++; continue; }
-        $data = json_decode($json, true);
-        if (empty($data['teams'])) { echo "✗ $team (not found)\n"; $ko++; continue; }
-        $match = null;
-        foreach ($data['teams'] as $t) { if (($t['strSport']??'')===$expected) { $match=$t; break; } }
-        if (!$match) $match = $data['teams'][0];
-        $badge = $match['strBadge'] ?? $match['strTeamBadge'] ?? '';
-        if (!$badge) { echo "✗ $team (no badge)\n"; $ko++; continue; }
-        $img = fetch_url($badge);
-        if (!$img || strlen($img)<500) { echo "✗ $team (bad image)\n"; $ko++; continue; }
-        $slug = slugify($team);
-        file_put_contents($dir.'/'.$slug.'.png', $img);
-        $mapping[$sport][$slug] = $team;
-        $downloaded++;
-        echo "✓ $slug.png ($team)\n";
-        usleep(1500000); // 1.5s anti rate-limit
+        $url = ($sport === 'football')
+            ? "https://a.espncdn.com/i/teamlogos/soccer/500/{$id}.png"
+            : "https://a.espncdn.com/i/teamlogos/{$sport}/500/{$id}.png";
+        $img = fetch_url($url);
+        if ($img) {
+            file_put_contents($outFile, $img);
+            $mapping[$localSport][$slug] = $slug;
+            echo "OK $slug.png\n";
+            $ok++;
+        } else {
+            echo "FAIL $slug (id=$id)\n";
+            $ko++;
+        }
+        usleep(100000);
     }
 }
-
-file_put_contents($base.'/mapping.json', json_encode($mapping, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE));
-echo "\n=== DONE: $ok OK, $ko échecs ===\n";
-echo "Mapping: /assets/logos/mapping.json\n";
+file_put_contents($base . '/mapping.json', json_encode($mapping, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+echo "\n=== DONE: $ok telecharges, $skipped deja la, $ko echecs ===\n";
