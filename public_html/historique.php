@@ -8,8 +8,9 @@ require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/auth.php';
 
 $db = getDB();
-// Tous les bets dont le resultat est connu (pas seulement les actifs)
-$bets = $db->query("SELECT * FROM bets WHERE resultat IS NOT NULL AND resultat NOT IN ('en_cours','pending','') ORDER BY date_post DESC")->fetchAll();
+// Tous les bets sauf en_cours/pending (meme logique que admin/historique.php)
+// Inclut les bets avec resultat NULL/vide (en attente) ET les bets avec resultat connu
+$bets = $db->query("SELECT * FROM bets WHERE (resultat IS NULL OR resultat NOT IN ('en_cours','pending')) ORDER BY COALESCE(date_resultat, date_post) DESC")->fetchAll();
 
 // Calcul stats pour un set de bets
 function calcStats(array $arr): array {

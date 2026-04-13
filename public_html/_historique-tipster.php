@@ -46,13 +46,15 @@ $db = getDB();
 // MULTI  = categorie='multi' AND type NOT LIKE '%fun%' (les bets safe/live multi uniquement)
 // TENNIS = categorie='tennis' (tous types)
 // FUN    = categorie='multi' AND type LIKE '%fun%' (les bets fun postes par admin Fun ou superadmin)
-$resultFilter = "resultat IS NOT NULL AND resultat NOT IN ('en_cours','pending','')";
+// Inclut bets en attente (resultat NULL) ET bets avec resultat connu - exclu juste 'en_cours'/'pending'
+$resultFilter = "(resultat IS NULL OR resultat NOT IN ('en_cours','pending'))";
+$orderBy = "ORDER BY COALESCE(date_resultat, date_post) DESC";
 if ($tipsterFilter === 'multi') {
-    $bets = $db->query("SELECT * FROM bets WHERE $resultFilter AND categorie='multi' AND type NOT LIKE '%fun%' ORDER BY date_post DESC")->fetchAll();
+    $bets = $db->query("SELECT * FROM bets WHERE $resultFilter AND categorie='multi' AND type NOT LIKE '%fun%' $orderBy")->fetchAll();
 } elseif ($tipsterFilter === 'tennis') {
-    $bets = $db->query("SELECT * FROM bets WHERE $resultFilter AND categorie='tennis' ORDER BY date_post DESC")->fetchAll();
+    $bets = $db->query("SELECT * FROM bets WHERE $resultFilter AND categorie='tennis' $orderBy")->fetchAll();
 } elseif ($tipsterFilter === 'fun') {
-    $bets = $db->query("SELECT * FROM bets WHERE $resultFilter AND categorie='multi' AND type LIKE '%fun%' ORDER BY date_post DESC")->fetchAll();
+    $bets = $db->query("SELECT * FROM bets WHERE $resultFilter AND categorie='multi' AND type LIKE '%fun%' $orderBy")->fetchAll();
 } else {
     $bets = [];
 }
