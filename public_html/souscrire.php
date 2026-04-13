@@ -20,6 +20,15 @@ try { $fondateurPlaces = (int)$db->query("SELECT COUNT(*) FROM vip_max_fondateur
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Souscrire — StratEdge Pronos</title>
+<meta name="description" content="Découvre nos 3 tipsters : Multi, Tennis, Fun Week-End. Packs crédits à vie ou abonnements ponctuels selon tes besoins.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Souscrire à StratEdge Pronos — Multi, Tennis, Fun">
+<meta property="og:description" content="Découvre nos 3 tipsters : Multi, Tennis, Fun Week-End. Packs crédits à vie ou abonnements ponctuels selon tes besoins.">
+<meta property="og:url" content="https://stratedgepronos.fr/souscrire.php">
+<meta property="og:image" content="https://stratedgepronos.fr/assets/images/logo%20site.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://stratedgepronos.fr/souscrire.php">
+
 <link rel="icon" type="image/png" href="/assets/images/mascotte.png">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Bebas+Neue&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <?php require_once __DIR__ . '/includes/sidebar-css.php'; ?>

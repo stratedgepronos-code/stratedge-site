@@ -188,14 +188,14 @@ $statutColors = ['actif' => 'rgba(255,45,120,0.1)', 'expiré' => 'rgba(255,45,12
       <a href="../historique.php">Historique</a>
       <?php endif; ?>
       <a href="/#stake">Stake.bet</a>
-      <a href="bets.php">📊 Les Bets</a>
+      <a href="/bets.php">📊 Les Bets</a>
       <a href="/#pricing" style="background:linear-gradient(135deg,var(--neon-green),var(--neon-green-dim));color:#fff;padding:0.4rem 1rem;border-radius:6px;font-weight:700;">Souscrire</a>
       <?php if (isAdmin()): ?>
         <a href="panel-x9k3m/index.php" style="background:rgba(255,193,7,0.15);border:1px solid rgba(255,193,7,0.3);color:#ffc107;padding:0.4rem 1rem;border-radius:6px;font-weight:700;">⚙️ Panel</a>
       <?php endif; ?>
-      <a href="profil.php">👤 Mon Profil</a>
-      <a href="sav.php">🎫 SAV</a>
-      <a href="logout.php" class="nav-logout">Déconnexion</a>
+      <a href="/profil.php">👤 Mon Profil</a>
+      <a href="/sav.php">🎫 SAV</a>
+      <a href="/logout.php" class="nav-logout">Déconnexion</a>
     </div>
   </div>
 </nav>
@@ -251,7 +251,7 @@ $statutColors = ['actif' => 'rgba(255,45,120,0.1)', 'expiré' => 'rgba(255,45,12
             <?php endif; ?>
           </div>
         </div>
-        <a href="bets.php" class="btn-voir-bets">📊 Voir mes bets →</a>
+        <a href="/bets.php" class="btn-voir-bets">📊 Voir mes bets →</a>
       </div>
     <?php else: ?>
       <div class="no-abo">
@@ -331,7 +331,7 @@ $statutColors = ['actif' => 'rgba(255,45,120,0.1)', 'expiré' => 'rgba(255,45,12
   <div class="section-block">
     <h3><span class="dot"></span> Besoin d'aide ?</h3>
     <p style="color:var(--text-secondary); margin-bottom:1.5rem;">Pour un problème technique ou une réclamation, ouvrez un ticket SAV. Je traite chaque demande personnellement.</p>
-    <a href="sav.php" class="sav-btn">🎫 Ouvrir un ticket SAV</a>
+    <a href="/sav.php" class="sav-btn">🎫 Ouvrir un ticket SAV</a>
   </div>
 
 </div>

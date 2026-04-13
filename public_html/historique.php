@@ -167,6 +167,15 @@ $membre = isLoggedIn() ? getMembre() : null;
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Historique des Tipsters – StratEdge Pronos</title>
+<meta name="description" content="Stats complètes de nos 3 tipsters : win rate, ROI, cote moyenne, streak. Historique transparent de tous les paris.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Historique des tipsters — StratEdge Pronos">
+<meta property="og:description" content="Stats complètes de nos 3 tipsters : win rate, ROI, cote moyenne, streak. Historique transparent de tous les paris.">
+<meta property="og:url" content="https://stratedgepronos.fr/historique.php">
+<meta property="og:image" content="https://stratedgepronos.fr/assets/images/logo%20site.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://stratedgepronos.fr/historique.php">
+
 <link rel="icon" type="image/png" href="/assets/images/mascotte.png">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Bebas+Neue&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <?php require_once __DIR__ . '/includes/sidebar-css.php'; ?>

@@ -19,6 +19,15 @@ $aboActif = $stmt->fetch();
 <meta charset="UTF-8"><link rel="icon" type="image/png" href="/assets/images/mascotte.png">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Tennis Premium – StratEdge Pronos</title>
+<meta name="description" content="Abonnement Tennis Semaine 15€ — toutes les analyses ATP/WTA pendant 7 jours. Méthodologie BASELINE SYNDICATE v1.4.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Pack Tennis Premium 15€ — StratEdge Pronos">
+<meta property="og:description" content="Abonnement Tennis Semaine 15€ — toutes les analyses ATP/WTA pendant 7 jours. Méthodologie BASELINE SYNDICATE v1.4.">
+<meta property="og:url" content="https://stratedgepronos.fr/offre-tennis.php">
+<meta property="og:image" content="https://stratedgepronos.fr/assets/images/logo%20site.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://stratedgepronos.fr/offre-tennis.php">
+
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Bebas+Neue&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 <?php require_once __DIR__ . '/includes/sidebar-css.php'; ?>
 <style>

@@ -16,6 +16,15 @@ $packs = stratedge_packs_config();
 <meta charset="UTF-8"><link rel="icon" type="image/png" href="/assets/images/mascotte.png">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Crédits Paris – StratEdge Pronos</title>
+<meta name="description" content="Packs crédits paris à vie dès 4,50€ — foot, NBA, NHL, MLB. Achète à l'unité ou en pack, économie jusqu'à -33%.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Packs crédits Multisports — StratEdge Pronos">
+<meta property="og:description" content="Packs crédits paris à vie dès 4,50€ — foot, NBA, NHL, MLB. Achète à l'unité ou en pack, économie jusqu'à -33%.">
+<meta property="og:url" content="https://stratedgepronos.fr/packs-daily.php">
+<meta property="og:image" content="https://stratedgepronos.fr/assets/images/logo%20site.png">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="canonical" href="https://stratedgepronos.fr/packs-daily.php">
+
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#050810">
 <?php require_once __DIR__ . '/includes/sidebar-css.php'; ?>

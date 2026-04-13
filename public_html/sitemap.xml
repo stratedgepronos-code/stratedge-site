@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://stratedgepronos.fr/</loc><priority>1.0</priority></url>
+  <url><loc>https://stratedgepronos.fr/souscrire.php</loc><priority>0.9</priority></url>
+  <url><loc>https://stratedgepronos.fr/packs-daily.php</loc><priority>0.9</priority></url>
+  <url><loc>https://stratedgepronos.fr/offre-tennis.php</loc><priority>0.9</priority></url>
+  <url><loc>https://stratedgepronos.fr/offre-fun.php</loc><priority>0.9</priority></url>
+  <url><loc>https://stratedgepronos.fr/historique.php</loc><priority>0.8</priority></url>
+  <url><loc>https://stratedgepronos.fr/historique-multi.php</loc><priority>0.7</priority></url>
+  <url><loc>https://stratedgepronos.fr/historique-tennis.php</loc><priority>0.7</priority></url>
+  <url><loc>https://stratedgepronos.fr/historique-fun.php</loc><priority>0.7</priority></url>
+  <url><loc>https://stratedgepronos.fr/mentions-legales.php</loc><priority>0.3</priority></url>
+  <url><loc>https://stratedgepronos.fr/cgv.php</loc><priority>0.3</priority></url>
+</urlset>
