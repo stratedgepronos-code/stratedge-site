@@ -61,12 +61,14 @@ define('STRIPE_ACCOUNTS', [
 ]);
 
 // Routing : quel type d'offre va vers quel compte Stripe
+// Routing UNIQUEMENT pour les packs crédits (multi/tennis/fun)
+// Les anciens abos (daily/weekend/weekly/vip_max) ont été supprimés
+// au profit du système packs crédits universel.
 define('STRIPE_ROUTING', [
+    // Mappings backward-compat — au cas où d'anciens webhooks arrivent encore
     'daily'        => 'multi',
     'weekend'      => 'multi',
-    'weekend_fun'  => 'multi',
     'weekly'       => 'multi',
-    'weekly_fun'   => 'multi',
     'vip_max'      => 'multi',
     'tennis'       => 'tennis',
     'fun'          => 'fun',

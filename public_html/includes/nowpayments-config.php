@@ -31,7 +31,7 @@ define('NP_CRYPTO_MAP', [
 
 // URL de callback — page de succès visible par le client
 define('NP_SUCCESS_URL',  'https://stratedgepronos.fr/dashboard.php');
-define('NP_CANCEL_URL',   'https://stratedgepronos.fr/offre-daily.php');
+define('NP_CANCEL_URL',   'https://stratedgepronos.fr/packs-daily.php');
 
 // Durée de validité d'un paiement (en secondes) — 60 min par défaut
 define('NP_PAYMENT_TTL', 3600);
