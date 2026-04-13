@@ -189,6 +189,7 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
 
 .t-card{position:relative;background:rgba(8,8,18,.92);backdrop-filter:blur(10px);overflow:hidden;transition:all .4s cubic-bezier(.2,.9,.3,1.4);clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px));text-decoration:none;color:#fff;display:block;}
 .t-card:hover{transform:translateY(-8px) scale(1.01);}
+.t-card:hover .t-cta{background:var(--c1);color:#000;box-shadow:0 0 25px var(--c1);}
 .t-corners span{position:absolute;width:22px;height:22px;border:2px solid var(--c1);pointer-events:none;}
 .t-corners span:nth-child(1){top:6px;left:6px;border-right:none;border-bottom:none;}
 .t-corners span:nth-child(2){top:6px;right:24px;border-left:none;border-bottom:none;}
@@ -326,7 +327,7 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
       $wCount = count(array_filter($form, fn($f) => $f === 'w'));
       $lCount = count(array_filter($form, fn($f) => $f === 'l'));
     ?>
-    <a href="<?= $t['href'] ?>" class="t-card t-<?= $key ?>" style="--c1:<?= $t['c1'] ?>;--c2:<?= $t['c2'] ?>;">
+    <div class="t-card t-<?= $key ?>" style="--c1:<?= $t['c1'] ?>;--c2:<?= $t['c2'] ?>;">
       <div class="t-scan"></div>
       <div class="t-frame"></div>
       <div class="t-corners"><span></span><span></span><span></span><span></span></div>
@@ -398,7 +399,7 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
             $titre = $b['titre'] ?? 'Bet';
             $cote = $b['cote'] ?? '';
           ?>
-          <a href="<?= $t['href'] ?>" class="t-recent-thumb" style="text-decoration:none;color:inherit;">
+          <a href="<?= $t['href'] ?>#bet-<?= (int)$b['id'] ?>" class="t-recent-thumb" style="text-decoration:none;color:inherit;">
             <div class="t-recent-thumb-img"><img src="<?= htmlspecialchars($imgUrl) ?>" alt="bet" loading="lazy"></div>
             <div class="t-recent-thumb-info">
               <div class="t-recent-thumb-title"><?= htmlspecialchars($titre) ?></div>
@@ -424,12 +425,12 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
       </div>
 
       <div class="t-cta-zone">
-        <span class="t-cta">
+        <a href="<?= $t['href'] ?>" class="t-cta">
           <span class="t-cta-text">Analyser ce tipster</span>
           <span>→</span>
-        </span>
+        </a>
       </div>
-    </a>
+    </div>
     <?php endforeach; ?>
   </div>
 </div>

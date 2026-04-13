@@ -190,8 +190,37 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
 
 /* === Liste bets === */
 .bets-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem;}
-.bet-card{background:rgba(8,8,18,.85);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;transition:all .25s;}
-.bet-card:hover{transform:translateY(-3px);border-color:<?= $tConf['c1'] ?>;}
+.bet-card{background:rgba(8,8,18,.85);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;transition:all .25s;cursor:pointer;}
+.bet-card:hover{transform:translateY(-3px);border-color:<?= $tConf['c1'] ?>;box-shadow:0 8px 24px <?= $tConf['c1'] ?>20;}
+
+/* === Mois deroulants === */
+.month-block{margin-bottom:1rem;background:rgba(8,8,18,.6);border:1px solid rgba(255,255,255,.06);border-radius:12px;overflow:hidden;}
+.month-block[open]{border-color:<?= $tConf['c1'] ?>30;}
+.month-head{padding:1rem 1.4rem;cursor:pointer;display:flex;align-items:center;justify-content:space-between;list-style:none;font-family:'Orbitron',sans-serif;color:#fff;transition:background .2s;}
+.month-head::-webkit-details-marker{display:none;}
+.month-head:hover{background:rgba(255,255,255,.02);}
+.month-title{font-size:1rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:<?= $tConf['c1'] ?>;}
+.month-stats{display:flex;align-items:center;gap:1rem;font-family:'Share Tech Mono',monospace;font-size:.75rem;color:rgba(255,255,255,.6);letter-spacing:1px;text-transform:uppercase;}
+.month-count{padding:.3rem .6rem;background:rgba(255,255,255,.05);border-radius:6px;}
+.month-taux{padding:.3rem .6rem;background:<?= $tConf['c1'] ?>15;color:<?= $tConf['c1'] ?>;border-radius:6px;font-weight:700;}
+.month-arrow{font-size:1.1rem;color:<?= $tConf['c1'] ?>;transition:transform .25s;}
+.month-block[open] .month-arrow{transform:rotate(180deg);}
+.month-block .bets-grid{padding:1rem 1.4rem 1.4rem;}
+
+/* === Modal voir bet === */
+.bet-modal{display:none;position:fixed;inset:0;background:rgba(5,6,13,.92);z-index:9999;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(8px);}
+.bet-modal.open{display:flex;animation:modal-in .3s ease;}
+@keyframes modal-in{from{opacity:0;}to{opacity:1;}}
+.bet-modal-content{background:rgba(8,8,18,.98);border:2px solid <?= $tConf['c1'] ?>;border-radius:16px;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 20px 80px <?= $tConf['c1'] ?>40;}
+.bet-modal-close{position:absolute;top:1rem;right:1rem;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;font-size:1.5rem;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:2;transition:all .2s;}
+.bet-modal-close:hover{background:<?= $tConf['c1'] ?>;color:#000;}
+.bet-modal-content img{width:100%;display:block;border-radius:14px 14px 0 0;}
+.bet-modal-info{padding:1.5rem;}
+.bet-modal-title{font-family:'Orbitron',sans-serif;font-size:1.3rem;font-weight:900;color:#fff;letter-spacing:1px;margin-bottom:1rem;}
+.bet-modal-meta{display:flex;flex-wrap:wrap;gap:.6rem;}
+.bet-modal-meta span{padding:.4rem .8rem;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:6px;font-family:'Share Tech Mono',monospace;font-size:.75rem;color:rgba(255,255,255,.7);letter-spacing:1px;text-transform:uppercase;}
+.bet-modal-meta .cote{background:<?= $tConf['c1'] ?>15;color:<?= $tConf['c1'] ?>;border-color:<?= $tConf['c1'] ?>40;font-family:'Bebas Neue',cursive;font-size:1rem;letter-spacing:1px;}
+.bet-modal-meta .result{font-weight:700;}
 .bet-img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:#000;}
 .bet-card-body{padding:.9rem 1rem;}
 .bet-card-meta{display:flex;align-items:center;justify-content:space-between;gap:.5rem;font-family:'Share Tech Mono',monospace;font-size:.65rem;color:rgba(255,255,255,.45);letter-spacing:1px;text-transform:uppercase;margin-bottom:.5rem;}
@@ -327,46 +356,124 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
     </div>
   </div>
 
-  <!-- Liste bets -->
+  <!-- Liste bets groupés par mois -->
   <h2 class="section-title">Pronostics (<?= count($betsFiltres) ?>)</h2>
   <?php if (empty($betsFiltres)): ?>
     <div class="no-bets">Aucun pronostic ne correspond à ces filtres</div>
-  <?php else: ?>
-    <div class="bets-grid">
-      <?php foreach ($betsFiltres as $b):
-        $rConf = $resultatConfig[$b['resultat']] ?? null;
-        $type = $b['type'] ?? 'safe';
-        $typeKey = strpos($type, 'live') !== false ? 'live' : (strpos($type, 'fun') !== false ? 'fun' : 'safe');
-        $tColor = $typeColors[$typeKey] ?? '#888';
-        $sport = $b['sport'] ?? '';
-        $emoji = $sportEmojis[$sport] ?? '';
-        $img = !empty($b['image_path']) ? betImageUrl($b['image_path']) : '';
-        $cote = $b['cote'] ?? '';
-        $datePost = $b['date_post'] ?? '';
-        $dateAffichee = $datePost ? date('d/m/Y', strtotime($datePost)) : '';
-      ?>
-      <div class="bet-card">
-        <?php if ($img): ?><img class="bet-img" src="<?= htmlspecialchars($img) ?>" alt="bet" loading="lazy"><?php endif; ?>
-        <div class="bet-card-body">
-          <div class="bet-card-meta">
-            <span style="color:<?= $tColor ?>;"><?= $emoji ?> <?= strtoupper($typeKey) ?></span>
-            <span><?= htmlspecialchars($dateAffichee) ?></span>
-          </div>
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;">
-            <?php if ($rConf): ?>
-            <span class="bet-result" style="background:<?= $rConf['bg'] ?>;color:<?= $rConf['color'] ?>;border:1px solid <?= $rConf['color'] ?>40;">
-              <?= $rConf['icon'] ?> <?= $rConf['label'] ?>
-            </span>
-            <?php else: ?>
-            <span class="bet-result" style="background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);">⏳ En cours</span>
-            <?php endif; ?>
-            <?php if ($cote): ?><span class="bet-cote">@ <?= htmlspecialchars($cote) ?></span><?php endif; ?>
+  <?php else:
+    // Grouper par mois (YYYY-MM)
+    $betsByMonth = [];
+    setlocale(LC_TIME, 'fr_FR.UTF-8', 'fr_FR', 'French_France.1252');
+    $moisFr = [1=>'Janvier',2=>'Février',3=>'Mars',4=>'Avril',5=>'Mai',6=>'Juin',7=>'Juillet',8=>'Août',9=>'Septembre',10=>'Octobre',11=>'Novembre',12=>'Décembre'];
+    foreach ($betsFiltres as $b) {
+        $ts = strtotime($b['date_post'] ?? 'now');
+        $key = date('Y-m', $ts);
+        $betsByMonth[$key][] = $b;
+    }
+    krsort($betsByMonth); // mois récent en premier
+    $isFirst = true;
+    foreach ($betsByMonth as $monthKey => $monthBets):
+        $year = substr($monthKey, 0, 4);
+        $monthNum = (int)substr($monthKey, 5, 2);
+        $monthLabel = $moisFr[$monthNum] . ' ' . $year;
+        // Mini stats du mois
+        $monthG = count(array_filter($monthBets, fn($b) => $b['resultat']==='gagne'));
+        $monthP = count(array_filter($monthBets, fn($b) => $b['resultat']==='perdu'));
+        $monthTaux = ($monthG+$monthP) > 0 ? round($monthG/($monthG+$monthP)*100) : 0;
+  ?>
+    <details class="month-block" <?= $isFirst ? 'open' : '' ?>>
+      <summary class="month-head">
+        <span class="month-title"><?= htmlspecialchars($monthLabel) ?></span>
+        <span class="month-stats">
+          <span class="month-count"><?= count($monthBets) ?> paris</span>
+          <span class="month-taux"><?= $monthTaux ?>% win</span>
+          <span class="month-arrow">▾</span>
+        </span>
+      </summary>
+      <div class="bets-grid">
+        <?php foreach ($monthBets as $b):
+          $rConf = $resultatConfig[$b['resultat']] ?? null;
+          $type = $b['type'] ?? 'safe';
+          $typeKey = strpos($type, 'live') !== false ? 'live' : (strpos($type, 'fun') !== false ? 'fun' : 'safe');
+          $tColor = $typeColors[$typeKey] ?? '#888';
+          $sport = $b['sport'] ?? '';
+          $emoji = $sportEmojis[$sport] ?? '';
+          $img = !empty($b['image_path']) ? betImageUrl($b['image_path']) : '';
+          $cote = $b['cote'] ?? '';
+          $datePost = $b['date_post'] ?? '';
+          $dateAffichee = $datePost ? date('d/m/Y', strtotime($datePost)) : '';
+          $betId = (int)($b['id'] ?? 0);
+          $titre = $b['titre'] ?? 'Bet';
+        ?>
+        <div class="bet-card" id="bet-<?= $betId ?>" onclick="openBetModal(<?= $betId ?>)" data-bet-id="<?= $betId ?>" data-bet-title="<?= htmlspecialchars($titre, ENT_QUOTES) ?>" data-bet-img="<?= htmlspecialchars($img, ENT_QUOTES) ?>" data-bet-cote="<?= htmlspecialchars($cote, ENT_QUOTES) ?>" data-bet-resultat="<?= htmlspecialchars($b['resultat'] ?? '', ENT_QUOTES) ?>" data-bet-date="<?= htmlspecialchars($dateAffichee, ENT_QUOTES) ?>" data-bet-sport="<?= htmlspecialchars($sport, ENT_QUOTES) ?>" data-bet-type="<?= htmlspecialchars($typeKey, ENT_QUOTES) ?>">
+          <?php if ($img): ?><img class="bet-img" src="<?= htmlspecialchars($img) ?>" alt="bet" loading="lazy"><?php endif; ?>
+          <div class="bet-card-body">
+            <div class="bet-card-meta">
+              <span style="color:<?= $tColor ?>;"><?= $emoji ?> <?= strtoupper($typeKey) ?></span>
+              <span><?= htmlspecialchars($dateAffichee) ?></span>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:.5rem;">
+              <?php if ($rConf): ?>
+              <span class="bet-result" style="background:<?= $rConf['bg'] ?>;color:<?= $rConf['color'] ?>;border:1px solid <?= $rConf['color'] ?>40;">
+                <?= $rConf['icon'] ?> <?= $rConf['label'] ?>
+              </span>
+              <?php else: ?>
+              <span class="bet-result" style="background:rgba(255,255,255,.05);color:rgba(255,255,255,.5);">⏳ En cours</span>
+              <?php endif; ?>
+              <?php if ($cote): ?><span class="bet-cote">@ <?= htmlspecialchars($cote) ?></span><?php endif; ?>
+            </div>
           </div>
         </div>
+        <?php endforeach; ?>
       </div>
-      <?php endforeach; ?>
-    </div>
+    </details>
+  <?php $isFirst = false; endforeach; ?>
   <?php endif; ?>
+
+  <!-- Modal pour voir le bet en grand -->
+  <div id="bet-modal" class="bet-modal" onclick="if(event.target===this)closeBetModal()">
+    <div class="bet-modal-content">
+      <button class="bet-modal-close" onclick="closeBetModal()">×</button>
+      <img id="bet-modal-img" src="" alt="bet">
+      <div class="bet-modal-info">
+        <div class="bet-modal-title" id="bet-modal-title"></div>
+        <div class="bet-modal-meta" id="bet-modal-meta"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function openBetModal(betId) {
+      const el = document.getElementById('bet-' + betId);
+      if (!el) return;
+      document.getElementById('bet-modal-img').src = el.dataset.betImg || '';
+      document.getElementById('bet-modal-title').textContent = el.dataset.betTitle || 'Bet';
+      const sport = (el.dataset.betSport || '').toUpperCase();
+      const type = (el.dataset.betType || '').toUpperCase();
+      const cote = el.dataset.betCote ? '@' + el.dataset.betCote : '';
+      const date = el.dataset.betDate || '';
+      const resultMap = { gagne: '✅ GAGNÉ', perdu: '❌ PERDU', annule: '↺ ANNULÉ' };
+      const resultat = resultMap[el.dataset.betResultat] || '⏳ En cours';
+      document.getElementById('bet-modal-meta').innerHTML =
+        '<span>' + sport + ' · ' + type + '</span>' +
+        (cote ? '<span class="cote">' + cote + '</span>' : '') +
+        '<span>' + date + '</span>' +
+        '<span class="result">' + resultat + '</span>';
+      document.getElementById('bet-modal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeBetModal() {
+      document.getElementById('bet-modal').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+    // Si l'URL contient #bet-XX, ouvrir directement
+    if (window.location.hash.startsWith('#bet-')) {
+      const id = window.location.hash.replace('#bet-', '');
+      setTimeout(() => openBetModal(id), 200);
+    }
+    // Fermer avec Echap
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBetModal(); });
+  </script>
 </div>
 
 <?php @require_once __DIR__ . '/includes/footer-main.php'; ?>
