@@ -7,29 +7,48 @@ require_once __DIR__ . '/includes/mailer.php';
 $payload = @file_get_contents('php://input');
 $sigHeader = $_SERVER['HTTP_STRIPE_SIGNATURE'] ?? '';
 
-// Valide signature sur les 3 comptes Stripe (Multi/Tennis/Fun)
-$event = matchStripeWebhook($payload, $sigHeader);
-if (!$event) { http_response_code(400); echo 'Invalid signature'; exit; }
-
-if ($event['type'] !== 'checkout.session.completed') {
-    http_response_code(200); echo 'ignored'; exit;
+if (empty($payload) || empty($sigHeader)) {
+    http_response_code(400); echo 'Missing payload or signature'; exit;
 }
 
-$session = $event['data']['object'];
+// Valider signature sur les 3 comptes Stripe (Multi/Tennis/Fun)
+// Attention: ordre des args = (signature, payload)
+$matchResult = matchStripeWebhook($sigHeader, $payload);
+if (!$matchResult) {
+    http_response_code(400); echo 'Invalid signature'; exit;
+}
+
+// Parser le payload JSON (c'est l'event Stripe)
+$event = json_decode($payload, true);
+if (!$event || !isset($event['type'])) {
+    http_response_code(400); echo 'Invalid JSON'; exit;
+}
+
+if ($event['type'] !== 'checkout.session.completed') {
+    http_response_code(200); echo 'ignored (not checkout.session.completed)'; exit;
+}
+
+$session = $event['data']['object'] ?? [];
 $meta = $session['metadata'] ?? [];
 
 // Seulement les sessions de type pack_credits
 if (($meta['type'] ?? '') !== 'pack_credits') {
-    http_response_code(200); echo 'not a pack'; exit;
+    http_response_code(200); echo 'not a pack session'; exit;
 }
 
 $membreId = (int)($meta['membre_id'] ?? 0);
 $packKey  = $meta['pack_key'] ?? '';
 $txRef    = $session['payment_intent'] ?? $session['id'] ?? '';
 
+if ($membreId <= 0 || $packKey === '') {
+    error_log('[stripe-webhook-pack] Invalid metadata: ' . json_encode($meta));
+    http_response_code(400); echo 'Invalid metadata'; exit;
+}
+
 $packId = stratedge_credits_ajouter($membreId, $packKey, 'stripe', $txRef);
 
 if ($packId > 0) {
+    // Email de confirmation
     try {
         $db = getDB();
         $stmt = $db->prepare("SELECT email, nom FROM membres WHERE id = ?");
@@ -38,13 +57,21 @@ if ($packId > 0) {
         if ($m && function_exists('sendEmail')) {
             $pack = stratedge_pack_get($packKey);
             $solde = stratedge_credits_solde($membreId);
-            sendEmail($m['email'], '✅ Pack activé — ' . $pack['label'],
-                "Salut " . ($m['nom'] ?? '') . ",\n\nTon pack " . $pack['label'] . " (" . $pack['nb'] . " paris) est activé !\nTu as maintenant " . $solde . " crédits disponibles.\n\nDirection les bets : https://stratedgepronos.fr/bets.php\n\n— StratEdge"
+            sendEmail(
+                $m['email'],
+                '✅ Pack activé — ' . $pack['label'],
+                "Salut " . ($m['nom'] ?? '') . ",\n\n"
+                . "Ton pack " . $pack['label'] . " (" . $pack['nb'] . " analyses) est activé !\n"
+                . "Tu as maintenant " . $solde . " crédits disponibles.\n\n"
+                . "Direction les bets : https://stratedgepronos.fr/bets.php\n\n"
+                . "— StratEdge"
             );
         }
-    } catch (Throwable $e) { error_log('[stripe-webhook-pack] email: '.$e->getMessage()); }
+    } catch (Throwable $e) {
+        error_log('[stripe-webhook-pack] email error: ' . $e->getMessage());
+    }
     http_response_code(200); echo 'ok';
 } else {
-    error_log('[stripe-webhook-pack] Échec ajout crédit membre=' . $membreId . ' pack=' . $packKey);
-    http_response_code(500); echo 'add failed';
+    error_log("[stripe-webhook-pack] Échec ajout crédit membre=$membreId pack=$packKey");
+    http_response_code(500); echo 'credit add failed';
 }
