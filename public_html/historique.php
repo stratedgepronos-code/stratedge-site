@@ -77,14 +77,20 @@ function calcStats(array $arr): array {
     ];
 }
 
-// Filtrer par tipster (basé sur sport + categorie)
-$multiBets = array_filter($bets, fn($b) => ($b['categorie'] ?? 'multi') === 'multi');
-$tennisBets = array_filter($bets, fn($b) => ($b['categorie'] ?? '') === 'tennis');
-$funBets = array_filter($bets, fn($b) => ($b['categorie'] ?? '') === 'fun');
+// Filtrer par tipster:
+// - MULTI = categorie='multi' SAUF type='fun' (Fun part dans son tipster)
+// - TENNIS = categorie='tennis' (incl. tennis_fun)
+// - FUN = type='fun' (peu importe la categorie multi/tennis - sauf les tennis_fun qui restent dans Tennis)
+function _isFun($b) { return strpos($b['type'] ?? '', 'fun') !== false; }
+function _isTennis($b) { return ($b['categorie'] ?? '') === 'tennis'; }
+
+$multiBets = array_filter($bets, fn($b) => !_isTennis($b) && !_isFun($b));
+$tennisBets = array_filter($bets, fn($b) => _isTennis($b)); // inclut tennis_fun
+$funBets = array_filter($bets, fn($b) => !_isTennis($b) && _isFun($b)); // multi+fun uniquement
 
 // Récupérer les 3 derniers bets de chaque tipster (avec image valide)
 function lastBetsWithImg(array $arr, int $n = 3): array {
-    $withImg = array_filter($arr, fn($b) => !empty($b['image']));
+    $withImg = array_filter($arr, fn($b) => !empty($b['image_path']));
     return array_slice($withImg, 0, $n);
 }
 
@@ -252,11 +258,16 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
 .t-recent-zone{padding:0 1.4rem 1rem;}
 .t-recent-lbl{display:flex;justify-content:space-between;align-items:center;font-family:'Share Tech Mono',monospace;font-size:.6rem;color:rgba(255,255,255,.45);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:.5rem;}
 .t-recent-lbl span:last-child{color:var(--c1);font-weight:700;}
-.t-recent-thumbs{display:flex;gap:6px;}
-.t-recent-thumb{flex:1;aspect-ratio:1/1;border-radius:6px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,.08);transition:all .25s;background:#0a0a14;}
-.t-recent-thumb:hover{border-color:var(--c1);transform:scale(1.05);box-shadow:0 0 12px var(--c1);}
-.t-recent-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
-.t-recent-thumb-result{position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:900;font-family:'Orbitron',sans-serif;}
+.t-recent-thumbs{display:flex;flex-direction:column;gap:6px;}
+.t-recent-thumb{display:flex;align-items:stretch;gap:8px;border-radius:6px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,.08);transition:all .25s;background:rgba(255,255,255,.025);min-height:54px;}
+.t-recent-thumb:hover{border-color:var(--c1);transform:translateX(2px);box-shadow:0 0 12px var(--c1)20;}
+.t-recent-thumb-img{width:54px;height:54px;flex-shrink:0;background:#0a0a14;overflow:hidden;}
+.t-recent-thumb-img img{width:100%;height:100%;object-fit:cover;display:block;}
+.t-recent-thumb-info{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center;padding:.4rem .5rem .4rem 0;}
+.t-recent-thumb-title{font-family:'Orbitron',sans-serif;font-size:.7rem;font-weight:700;color:#fff;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:.2rem;}
+.t-recent-thumb-meta{display:flex;align-items:center;gap:.5rem;font-family:'Share Tech Mono',monospace;font-size:.6rem;color:rgba(255,255,255,.5);letter-spacing:1px;text-transform:uppercase;}
+.t-recent-thumb-cote{color:var(--c1);font-family:'Bebas Neue',cursive;font-size:.85rem;letter-spacing:.5px;}
+.t-recent-thumb-result{display:inline-flex;align-items:center;justify-content:center;padding:0 .5rem;height:18px;border-radius:9px;font-size:.6rem;font-weight:900;font-family:'Orbitron',sans-serif;letter-spacing:.5px;flex-shrink:0;align-self:center;margin-right:.5rem;}
 .t-recent-thumb-result.w{background:#39ff14;color:#000;box-shadow:0 0 6px rgba(57,255,20,.7);}
 .t-recent-thumb-result.l{background:#ff2d78;color:#fff;box-shadow:0 0 6px rgba(255,45,120,.6);}
 .t-recent-thumb-result.a{background:#f59e0b;color:#000;}
@@ -380,14 +391,24 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
         <div class="t-recent-thumbs">
           <?php
           $resultMap = ['gagne' => 'w', 'perdu' => 'l', 'annule' => 'a'];
-          $resultIcon = ['w' => '✓', 'l' => '✗', 'a' => '↺', 'n' => '?'];
+          $resultLabel = ['w' => 'WIN', 'l' => 'LOSS', 'a' => 'NUL', 'n' => '?'];
           foreach ($t['lastBets'] as $b):
             $rk = $resultMap[$b['resultat'] ?? ''] ?? 'n';
+            $imgUrl = betImageUrl($b['image_path']);
+            $titre = $b['titre'] ?? 'Bet';
+            $cote = $b['cote'] ?? '';
           ?>
-          <div class="t-recent-thumb">
-            <img src="<?= htmlspecialchars($b['image']) ?>" alt="bet" loading="lazy">
-            <div class="t-recent-thumb-result <?= $rk ?>"><?= $resultIcon[$rk] ?></div>
-          </div>
+          <a href="<?= $t['href'] ?>" class="t-recent-thumb" style="text-decoration:none;color:inherit;">
+            <div class="t-recent-thumb-img"><img src="<?= htmlspecialchars($imgUrl) ?>" alt="bet" loading="lazy"></div>
+            <div class="t-recent-thumb-info">
+              <div class="t-recent-thumb-title"><?= htmlspecialchars($titre) ?></div>
+              <div class="t-recent-thumb-meta">
+                <?php if ($cote): ?><span class="t-recent-thumb-cote">@<?= htmlspecialchars($cote) ?></span><?php endif; ?>
+                <?php if (!empty($b['date_post'])): ?><span><?= date('d/m', strtotime($b['date_post'])) ?></span><?php endif; ?>
+              </div>
+            </div>
+            <div class="t-recent-thumb-result <?= $rk ?>"><?= $resultLabel[$rk] ?></div>
+          </a>
           <?php endforeach; ?>
         </div>
       </div>

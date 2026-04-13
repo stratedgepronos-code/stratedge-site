@@ -42,12 +42,19 @@ $tConf = $tipsterConfig[$tipsterFilter];
 
 // Charger les bets filtrés par catégorie
 $db = getDB();
-// Inclut tous les bets historiques (gagnes/perdus/annules), pas seulement actifs
+// Logique tipster:
+// MULTI  = categorie='multi' AND type NOT LIKE '%fun%' (les bets safe/live multi uniquement)
+// TENNIS = categorie='tennis' (tous types)
+// FUN    = categorie='multi' AND type LIKE '%fun%' (les bets fun postes par admin Fun ou superadmin)
 $resultFilter = "resultat IS NOT NULL AND resultat NOT IN ('en_cours','pending','')";
-if ($tipsterFilter === 'fun') {
-    $bets = $db->query("SELECT * FROM bets WHERE $resultFilter AND categorie = 'fun' ORDER BY date_post DESC")->fetchAll();
+if ($tipsterFilter === 'multi') {
+    $bets = $db->query("SELECT * FROM bets WHERE $resultFilter AND categorie='multi' AND type NOT LIKE '%fun%' ORDER BY date_post DESC")->fetchAll();
+} elseif ($tipsterFilter === 'tennis') {
+    $bets = $db->query("SELECT * FROM bets WHERE $resultFilter AND categorie='tennis' ORDER BY date_post DESC")->fetchAll();
+} elseif ($tipsterFilter === 'fun') {
+    $bets = $db->query("SELECT * FROM bets WHERE $resultFilter AND categorie='multi' AND type LIKE '%fun%' ORDER BY date_post DESC")->fetchAll();
 } else {
-    $bets = $db->query("SELECT * FROM bets WHERE $resultFilter AND categorie = '" . $tipsterFilter . "' ORDER BY date_post DESC")->fetchAll();
+    $bets = [];
 }
 
 // === Filtres GET ===
@@ -333,7 +340,7 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
         $tColor = $typeColors[$typeKey] ?? '#888';
         $sport = $b['sport'] ?? '';
         $emoji = $sportEmojis[$sport] ?? '';
-        $img = $b['image'] ?? '';
+        $img = !empty($b['image_path']) ? betImageUrl($b['image_path']) : '';
         $cote = $b['cote'] ?? '';
         $datePost = $b['date_post'] ?? '';
         $dateAffichee = $datePost ? date('d/m/Y', strtotime($datePost)) : '';
