@@ -19,8 +19,18 @@
 //   Event: checkout.session.completed
 
 // Priorité 1: config-keys.php (option B, clés en dur hors Git)
-$configKeys = dirname(__DIR__) . '/config-keys.php';
-if (is_file($configKeys)) require_once $configKeys;
+// On teste plusieurs chemins car dirname peut varier selon le contexte d'appel
+$stratedge_config_paths = [
+    dirname(__DIR__) . '/config-keys.php',         // /public_html/config-keys.php
+    $_SERVER['DOCUMENT_ROOT'] . '/config-keys.php', // via DOCUMENT_ROOT
+    __DIR__ . '/../config-keys.php',                // chemin relatif
+];
+foreach ($stratedge_config_paths as $p) {
+    if (is_file($p)) {
+        require_once $p;
+        break;
+    }
+}
 
 // Helper: env var OU constante définie dans config-keys.php
 if (!function_exists('stratedge_key')) {
