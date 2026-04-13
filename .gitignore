@@ -39,3 +39,7 @@ public_html/uploads/
 # Slot bracket — données générées sur le serveur
 public_html/slot-history.json
 public_html/slot-state.json
+
+# Clés secrètes (hors Git)
+config-keys.php
+public_html/config-keys.php

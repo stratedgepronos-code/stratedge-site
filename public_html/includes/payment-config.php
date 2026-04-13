@@ -18,21 +18,35 @@
 //   Webhook URL: https://stratedgepronos.fr/stripe-webhook.php
 //   Event: checkout.session.completed
 
+// Priorité 1: config-keys.php (option B, clés en dur hors Git)
+$configKeys = dirname(__DIR__) . '/config-keys.php';
+if (is_file($configKeys)) require_once $configKeys;
+
+// Helper: env var OU constante définie dans config-keys.php
+if (!function_exists('stratedge_key')) {
+    function stratedge_key(string $name): string {
+        $v = getenv($name);
+        if ($v) return $v;
+        if (defined($name)) return constant($name);
+        return '';
+    }
+}
+
 define('STRIPE_ACCOUNTS', [
     'multi' => [
-        'secret'      => getenv('STRIPE_MULTI_SK')    ?: '',
-        'publishable' => getenv('STRIPE_MULTI_PK')    ?: '',
-        'webhook'     => getenv('STRIPE_MULTI_WHSEC') ?: '',
+        'secret'      => stratedge_key('STRIPE_MULTI_SK'),
+        'publishable' => stratedge_key('STRIPE_MULTI_PK'),
+        'webhook'     => stratedge_key('STRIPE_MULTI_WHSEC'),
     ],
     'tennis' => [
-        'secret'      => getenv('STRIPE_TENNIS_SK')    ?: '',
-        'publishable' => getenv('STRIPE_TENNIS_PK')    ?: '',
-        'webhook'     => getenv('STRIPE_TENNIS_WHSEC') ?: '',
+        'secret'      => stratedge_key('STRIPE_TENNIS_SK'),
+        'publishable' => stratedge_key('STRIPE_TENNIS_PK'),
+        'webhook'     => stratedge_key('STRIPE_TENNIS_WHSEC'),
     ],
     'fun' => [
-        'secret'      => getenv('STRIPE_FUN_SK')    ?: '',
-        'publishable' => getenv('STRIPE_FUN_PK')    ?: '',
-        'webhook'     => getenv('STRIPE_FUN_WHSEC') ?: '',
+        'secret'      => stratedge_key('STRIPE_FUN_SK'),
+        'publishable' => stratedge_key('STRIPE_FUN_PK'),
+        'webhook'     => stratedge_key('STRIPE_FUN_WHSEC'),
     ],
 ]);
 
