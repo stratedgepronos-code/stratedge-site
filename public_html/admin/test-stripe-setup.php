@@ -123,4 +123,59 @@ if ($code === 200 && !empty($data['url'])) {
     echo "   Réponse: " . substr($resp, 0, 500) . "\n";
 }
 
+
+
+// ════════════════════════════════════════════════════════════
+// TEST COMPTE TENNIS
+// ════════════════════════════════════════════════════════════
+echo "\n\n══════════════════════════════════════════════\n";
+echo "=== DIAGNOSTIC STRIPE TENNIS ===\n";
+echo "══════════════════════════════════════════════\n\n";
+
+$accT = getStripeAccount('tennis');
+$skT  = $accT['secret'] ?? '';
+
+echo "1. CLÉ TENNIS : " . ($skT ? '✅ chargée ('.substr($skT,0,12).'...)' : '❌ VIDE') . "\n";
+
+if ($skT) {
+    $mode = str_starts_with($skT, 'sk_live_') ? 'LIVE' : (str_starts_with($skT, 'sk_test_') ? 'TEST' : '?');
+    echo "2. MODE : " . $mode . "\n";
+
+    $ch = curl_init('https://api.stripe.com/v1/account');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $skT],
+        CURLOPT_TIMEOUT => 15,
+    ]);
+    $resp = curl_exec($ch);
+    $code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+
+    if ($code === 200) {
+        $data = json_decode($resp, true);
+        echo "3. API OK — Compte: " . ($data['id'] ?? '?') . " / Pays: " . ($data['country'] ?? '?') . "\n";
+        echo "   Paiements: " . (($data['charges_enabled'] ?? false) ? '✅' : '❌') . " / Payouts: " . (($data['payouts_enabled'] ?? false) ? '✅' : '❌') . "\n";
+    } else {
+        echo "3. API ❌ HTTP $code\n";
+    }
+
+    // Webhooks Tennis
+    echo "\n4. WEBHOOKS TENNIS:\n";
+    $ch = curl_init('https://api.stripe.com/v1/webhook_endpoints?limit=20');
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_HTTPHEADER => ['Authorization: Bearer ' . $skT],
+        CURLOPT_TIMEOUT => 15,
+    ]);
+    $data = json_decode(curl_exec($ch), true);
+    $hooks = $data['data'] ?? [];
+    if (empty($hooks)) {
+        echo "   ⚠ Aucun webhook configuré côté Tennis\n";
+    } else {
+        foreach ($hooks as $h) {
+            echo "   - " . ($h['url'] ?? '?') . "\n";
+        }
+    }
+}
+
 echo "\n=== FIN DIAGNOSTIC ===\n";

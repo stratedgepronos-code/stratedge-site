@@ -94,3 +94,13 @@ if (defined('STRIPE_MULTI_WHSEC')) {
 } else {
     echo "STRIPE_MULTI_WHSEC : ❌ NON DÉFINIE\n";
 }
+
+echo "\n--- Tennis ---\n";
+foreach (['STRIPE_TENNIS_SK', 'STRIPE_TENNIS_PK', 'STRIPE_TENNIS_WHSEC'] as $k) {
+    if (defined($k)) {
+        $v = constant($k);
+        echo "$k : ✅ définie (" . substr($v, 0, 12) . "... " . strlen($v) . "c)\n";
+    } else {
+        echo "$k : ❌ NON DÉFINIE\n";
+    }
+}
