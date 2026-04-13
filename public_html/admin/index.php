@@ -31,7 +31,7 @@ $nbAboMulti   = (int)$db->query("SELECT COUNT(*) FROM abonnements WHERE type!='t
 $revenuVipMax = (float)$db->query("SELECT SUM(montant) FROM abonnements WHERE type='vip_max'")->fetchColumn();
 $nbAboVipMax  = (int)$db->query("SELECT COUNT(*) FROM abonnements WHERE type='vip_max'")->fetchColumn();
 $shaymPart    = $revenuVipMax * 0.50;
-$shuriikPart  = $revenuVipMax * 0.30;
+$tennisPart  = $revenuVipMax * 0.30;
 $yaffaPart    = $revenuVipMax * 0.20;
 
 $revenuFun    = (float)$db->query("SELECT SUM(montant) FROM abonnements WHERE type='weekend_fun'")->fetchColumn();
@@ -260,7 +260,7 @@ $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m O
         <div class="vip-split-item">
           <div class="vip-split-pseudo">Shurik</div>
           <div class="vip-split-pct">30%</div>
-          <div class="vip-split-montant"><?= number_format($shuriikPart, 2) ?>€</div>
+          <div class="vip-split-montant"><?= number_format($tennisPart, 2) ?>€</div>
         </div>
         <div class="vip-split-item">
           <div class="vip-split-pseudo">Yaffa</div>
