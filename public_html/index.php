@@ -32,6 +32,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
   <link rel="icon" type="image/png" href="assets/images/mascotte.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>StratEdge Pronos – Ta stratégie. Notre Edge. Leur défaite.</title>
+<meta name="google-site-verification" content="IHz4FUCFXkOenciMKzmtQrh4DGornlOblhQO-E_vQTI" />
 <meta name="description" content="StratEdge Pronos — Analyses paris sportifs premium (foot, tennis, NBA, NHL, MLB). Packs crédits à partir de 4,50€. Méthodologie précise, stats transparentes.">
 <meta name="keywords" content="paris sportifs, pronostics, analyses foot, tennis, NBA, NHL, MLB, tipster, StratEdge">
 <meta property="og:type" content="website">
