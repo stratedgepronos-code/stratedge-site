@@ -42,11 +42,12 @@ $tConf = $tipsterConfig[$tipsterFilter];
 
 // Charger les bets filtrés par catégorie
 $db = getDB();
+// Inclut tous les bets historiques (gagnes/perdus/annules), pas seulement actifs
+$resultFilter = "resultat IS NOT NULL AND resultat NOT IN ('en_cours','pending','')";
 if ($tipsterFilter === 'fun') {
-    // Tipster Fun = catégorie 'fun' uniquement (admin Fun spécialisé)
-    $bets = $db->query("SELECT * FROM bets WHERE actif = 1 AND categorie = 'fun' ORDER BY date_post DESC")->fetchAll();
+    $bets = $db->query("SELECT * FROM bets WHERE $resultFilter AND categorie = 'fun' ORDER BY date_post DESC")->fetchAll();
 } else {
-    $bets = $db->query("SELECT * FROM bets WHERE actif = 1 AND categorie = '" . $tipsterFilter . "' ORDER BY date_post DESC")->fetchAll();
+    $bets = $db->query("SELECT * FROM bets WHERE $resultFilter AND categorie = '" . $tipsterFilter . "' ORDER BY date_post DESC")->fetchAll();
 }
 
 // === Filtres GET ===

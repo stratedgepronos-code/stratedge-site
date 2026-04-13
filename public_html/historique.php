@@ -8,7 +8,8 @@ require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/auth.php';
 
 $db = getDB();
-$bets = $db->query("SELECT * FROM bets WHERE actif = 1 ORDER BY date_post DESC")->fetchAll();
+// Tous les bets dont le resultat est connu (pas seulement les actifs)
+$bets = $db->query("SELECT * FROM bets WHERE resultat IS NOT NULL AND resultat NOT IN ('en_cours','pending','') ORDER BY date_post DESC")->fetchAll();
 
 // Calcul stats pour un set de bets
 function calcStats(array $arr): array {
