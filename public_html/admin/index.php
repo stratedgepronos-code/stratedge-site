@@ -19,23 +19,31 @@ try {
 }
 
 $nbMembres    = $db->query("SELECT COUNT(*) FROM membres WHERE email != 'stratedgepronos@gmail.com'")->fetchColumn();
-$nbAboActifs  = $db->query("SELECT COUNT(*) FROM abonnements WHERE actif=1 AND (type='daily' OR date_fin>NOW())")->fetchColumn();
+$nbAboActifs  = $db->query("SELECT COUNT(*) FROM abonnements WHERE actif=1 AND date_fin>NOW()")->fetchColumn();
 $nbBets       = $db->query("SELECT COUNT(*) FROM bets WHERE actif=1")->fetchColumn();
 $nbTickets    = $db->query("SELECT COUNT(*) FROM tickets WHERE statut != 'resolu'")->fetchColumn();
 $nbMessages   = $db->query("SELECT COUNT(*) FROM messages WHERE expediteur='membre' AND lu=0")->fetchColumn();
-$revenuTotal  = (float)$db->query("SELECT SUM(montant) FROM abonnements")->fetchColumn();
-$revenuTennis = (float)$db->query("SELECT SUM(montant) FROM abonnements WHERE type='tennis'")->fetchColumn();
-$nbAboTennis  = (int)$db->query("SELECT COUNT(*) FROM abonnements WHERE type='tennis'")->fetchColumn();
-$revenuMulti  = $revenuTotal - $revenuTennis;
-$nbAboMulti   = (int)$db->query("SELECT COUNT(*) FROM abonnements WHERE type!='tennis'")->fetchColumn();
-$revenuVipMax = (float)$db->query("SELECT SUM(montant) FROM abonnements WHERE type='vip_max'")->fetchColumn();
-$nbAboVipMax  = (int)$db->query("SELECT COUNT(*) FROM abonnements WHERE type='vip_max'")->fetchColumn();
-$shaymPart    = $revenuVipMax * 0.50;
-$tennisPart  = $revenuVipMax * 0.30;
-$yaffaPart    = $revenuVipMax * 0.20;
 
-$revenuFun    = (float)$db->query("SELECT SUM(montant) FROM abonnements WHERE type='weekend_fun'")->fetchColumn();
-$nbAboFun     = (int)$db->query("SELECT COUNT(*) FROM abonnements WHERE type='weekend_fun'")->fetchColumn();
+// === NOUVEAU MODELE 2026 ===
+// MULTI = packs credits (table credits_paris)
+// TENNIS = abo Semaine 15€ (table abonnements type='tennis')
+// FUN = abo Week-End 10€ (table abonnements type='fun')
+
+// Revenus MULTI (packs credits)
+try {
+    $revenuMulti = (float)$db->query("SELECT COALESCE(SUM(prix_paye),0) FROM credits_paris")->fetchColumn();
+    $nbAchatsMulti = (int)$db->query("SELECT COUNT(*) FROM credits_paris")->fetchColumn();
+} catch (Throwable $e) { $revenuMulti = 0; $nbAchatsMulti = 0; }
+
+// Revenus TENNIS (abo semaine 15€ ponctuel)
+$revenuTennis = (float)$db->query("SELECT COALESCE(SUM(montant),0) FROM abonnements WHERE type='tennis'")->fetchColumn();
+$nbAboTennis  = (int)$db->query("SELECT COUNT(*) FROM abonnements WHERE type='tennis'")->fetchColumn();
+
+// Revenus FUN (abo week-end 10€ ponctuel)
+$revenuFun = (float)$db->query("SELECT COALESCE(SUM(montant),0) FROM abonnements WHERE type='fun'")->fetchColumn();
+$nbAboFun  = (int)$db->query("SELECT COUNT(*) FROM abonnements WHERE type='fun'")->fetchColumn();
+
+$revenuTotal = $revenuMulti + $revenuTennis + $revenuFun;
 
 $derniersMembres = $db->query("SELECT * FROM membres WHERE email != 'stratedgepronos@gmail.com' ORDER BY date_inscription DESC LIMIT 5")->fetchAll();
 $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m ON t.membre_id=m.id WHERE t.statut!='resolu' ORDER BY t.date_creation DESC LIMIT 5")->fetchAll();
@@ -209,7 +217,7 @@ $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m O
       <div class="revenu-left">
         <div class="revenu-emoji">🎾</div>
         <div>
-          <div class="revenu-label">Revenus Tennis Weekly</div>
+          <div class="revenu-label">Revenus Tennis Semaine</div>
           <div class="revenu-value" style="color:#00d46a"><?= number_format($revenuTennis, 2) ?>€</div>
           <div class="revenu-sub"><?= $nbAboTennis ?> abonnement<?= $nbAboTennis>1?'s':'' ?> · 15€/sem</div>
         </div>
@@ -223,50 +231,14 @@ $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m O
       <div class="revenu-left">
         <div class="revenu-emoji">⚽🏀🏒</div>
         <div>
-          <div class="revenu-label">Revenus Multi-sport</div>
+          <div class="revenu-label">Revenus Multi Packs Crédits</div>
           <div class="revenu-value" style="color:#00d4ff"><?= number_format($revenuMulti, 2) ?>€</div>
-          <div class="revenu-sub"><?= $nbAboMulti ?> abonnement<?= $nbAboMulti>1?'s':'' ?> · Daily / W-E / Weekly</div>
+          <div class="revenu-sub"><?= $nbAchatsMulti ?> pack<?= $nbAchatsMulti>1?'s':'' ?> vendu<?= $nbAchatsMulti>1?'s':'' ?> · 4,50€ à 30€</div>
         </div>
       </div>
       <div>
         <div class="revenu-pct-label" style="color:#00d4ff">Part du total</div>
         <div class="revenu-pct-value" style="color:#00d4ff"><?= $revenuTotal>0 ? number_format(($revenuMulti/$revenuTotal)*100,1) : '0.0' ?>%</div>
-      </div>
-    </div>
-
-    <!-- VIP MAX -->
-    <div class="revenu-card vip" style="flex-direction:column;align-items:stretch;gap:0.5rem;">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
-        <div class="revenu-left">
-          <div class="revenu-emoji">👑</div>
-          <div>
-            <div class="revenu-label" style="color:rgba(245,200,66,0.55);">Revenus VIP Max</div>
-            <div class="revenu-value" style="background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;"><?= number_format($revenuVipMax, 2) ?>€</div>
-            <div class="revenu-sub"><?= $nbAboVipMax ?> abonnement<?= $nbAboVipMax>1?'s':'' ?> · 50€/mois</div>
-          </div>
-        </div>
-        <div>
-          <div class="revenu-pct-label" style="color:rgba(245,200,66,0.55);">Part du total</div>
-          <div class="revenu-pct-value" style="background:linear-gradient(135deg,#f5c842,#fffbe6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;"><?= $revenuTotal>0 ? number_format(($revenuVipMax/$revenuTotal)*100,1) : '0.0' ?>%</div>
-        </div>
-      </div>
-      <!-- Split Shaym / Shurik / Yaffa -->
-      <div class="vip-split">
-        <div class="vip-split-item">
-          <div class="vip-split-pseudo">Shaym</div>
-          <div class="vip-split-pct">50%</div>
-          <div class="vip-split-montant"><?= number_format($shaymPart, 2) ?>€</div>
-        </div>
-        <div class="vip-split-item">
-          <div class="vip-split-pseudo">Shurik</div>
-          <div class="vip-split-pct">30%</div>
-          <div class="vip-split-montant"><?= number_format($tennisPart, 2) ?>€</div>
-        </div>
-        <div class="vip-split-item">
-          <div class="vip-split-pseudo">Yaffa</div>
-          <div class="vip-split-pct">20%</div>
-          <div class="vip-split-montant"><?= number_format($yaffaPart, 2) ?>€</div>
-        </div>
       </div>
     </div>
 
@@ -277,9 +249,9 @@ $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m O
         <div class="revenu-left">
           <div class="revenu-emoji">🎯</div>
           <div>
-            <div class="revenu-label" style="color:rgba(168,85,247,0.7);">Revenus Fun Bets</div>
+            <div class="revenu-label" style="color:rgba(168,85,247,0.7);">Revenus Fun Week-End</div>
             <div class="revenu-value" style="color:#a855f7;"><?= number_format($revenuFun, 2) ?>€</div>
-            <div class="revenu-sub"><?= $nbAboFun ?> option<?= $nbAboFun>1?'s':'' ?> Fun souscrite<?= $nbAboFun>1?'s':'' ?> · +10€/W-E</div>
+            <div class="revenu-sub"><?= $nbAboFun ?> abonnement<?= $nbAboFun>1?'s':'' ?> · 10€/week-end</div>
           </div>
         </div>
         <div>

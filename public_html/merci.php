@@ -7,18 +7,27 @@ require_once __DIR__ . '/includes/auth.php';
 requireLogin();
 $membre = getMembre();
 
-$type = $_GET['type'] ?? 'daily';
+$type = $_GET['type'] ?? 'multi_pack';
 $packs = [
-  'daily'   => ['titre'=>'Daily','emoji'=>'⚡','color'=>'#ff2d78','glow'=>'rgba(255,45,120,0.18)','grad'=>'linear-gradient(135deg,#ff2d78,#c4185a)','video'=>'assets/images/DOIGT.mp4'],
-  'weekend' => ['titre'=>'Week-End','emoji'=>'📅','color'=>'#00d4ff','glow'=>'rgba(0,212,255,0.18)','grad'=>'linear-gradient(135deg,#00d4ff,#0099cc)','video'=>'assets/images/air.mp4'],
-  'weekly'  => ['titre'=>'Weekly','emoji'=>'🏆','color'=>'#a855f7','glow'=>'rgba(168,85,247,0.18)','grad'=>'linear-gradient(135deg,#a855f7,#7c3aed)','video'=>'assets/images/SAM.mp4'],
-  'tennis'  => ['titre'=>'Tennis Weekly','emoji'=>'🎾','color'=>'#00d46a','glow'=>'rgba(0,212,106,0.18)','grad'=>'linear-gradient(135deg,#00d46a,#00a852)','video'=>'assets/images/mascotte_tennis.mp4'],
-  'vip_max' => ['titre'=>'VIP MAX','emoji'=>'👑','color'=>'#f5c842','glow'=>'rgba(245,200,66,0.18)','grad'=>'linear-gradient(135deg,#c8960c,#f5c842,#fffbe6,#e8a020)','video'=>'assets/images/vip_max.mp4'],
+  // === NOUVEAU MODELE ===
+  'multi_pack'  => ['titre'=>'Pack Multi','emoji'=>'⚡','color'=>'#ff2d78','glow'=>'rgba(255,45,120,0.18)','grad'=>'linear-gradient(135deg,#ff2d78,#c4185a)','video'=>'assets/images/DOIGT.mp4'],
+  'unique'      => ['titre'=>'Pack Unique','emoji'=>'🎯','color'=>'#ff2d78','glow'=>'rgba(255,45,120,0.18)','grad'=>'linear-gradient(135deg,#ff2d78,#c4185a)','video'=>'assets/images/DOIGT.mp4'],
+  'duo'         => ['titre'=>'Pack Duo','emoji'=>'2️⃣','color'=>'#ff2d78','glow'=>'rgba(255,45,120,0.18)','grad'=>'linear-gradient(135deg,#ff2d78,#c4185a)','video'=>'assets/images/DOIGT.mp4'],
+  'trio'        => ['titre'=>'Pack Trio','emoji'=>'🔥','color'=>'#ff2d78','glow'=>'rgba(255,45,120,0.18)','grad'=>'linear-gradient(135deg,#ff2d78,#c4185a)','video'=>'assets/images/DOIGT.mp4'],
+  'quinte'      => ['titre'=>'Quinté','emoji'=>'💎','color'=>'#ff2d78','glow'=>'rgba(255,45,120,0.18)','grad'=>'linear-gradient(135deg,#ff2d78,#c4185a)','video'=>'assets/images/DOIGT.mp4'],
+  'semaine'     => ['titre'=>'Pack Semaine','emoji'=>'📅','color'=>'#ff2d78','glow'=>'rgba(255,45,120,0.18)','grad'=>'linear-gradient(135deg,#ff2d78,#c4185a)','video'=>'assets/images/DOIGT.mp4'],
+  'pack10'      => ['titre'=>'Pack 10','emoji'=>'🏆','color'=>'#ff2d78','glow'=>'rgba(255,45,120,0.18)','grad'=>'linear-gradient(135deg,#ff2d78,#c4185a)','video'=>'assets/images/DOIGT.mp4'],
+  'tennis'      => ['titre'=>'Tennis Semaine','emoji'=>'🎾','color'=>'#00d46a','glow'=>'rgba(0,212,106,0.18)','grad'=>'linear-gradient(135deg,#00d46a,#00a852)','video'=>'assets/images/mascotte_tennis.mp4'],
+  'fun'         => ['titre'=>'Fun Week-End','emoji'=>'🎲','color'=>'#a855f7','glow'=>'rgba(168,85,247,0.18)','grad'=>'linear-gradient(135deg,#a855f7,#ec4899)','video'=>'assets/images/mascotte-fun.mp4'],
+  // Backward-compat pour anciens liens/webhooks qui pourraient encore arriver
+  'daily'       => ['titre'=>'Daily','emoji'=>'⚡','color'=>'#ff2d78','glow'=>'rgba(255,45,120,0.18)','grad'=>'linear-gradient(135deg,#ff2d78,#c4185a)','video'=>'assets/images/DOIGT.mp4'],
+  'weekend'     => ['titre'=>'Week-End','emoji'=>'📅','color'=>'#00d4ff','glow'=>'rgba(0,212,255,0.18)','grad'=>'linear-gradient(135deg,#00d4ff,#0099cc)','video'=>'assets/images/air.mp4'],
+  'weekly'      => ['titre'=>'Weekly','emoji'=>'🏆','color'=>'#a855f7','glow'=>'rgba(168,85,247,0.18)','grad'=>'linear-gradient(135deg,#a855f7,#7c3aed)','video'=>'assets/images/SAM.mp4'],
 ];
-if (!isset($packs[$type])) $type = 'daily';
+if (!isset($packs[$type])) $type = 'multi_pack';
 $p = $packs[$type];
 $isDaily  = ($type === 'daily');
-$isVipMax = ($type === 'vip_max');
+$isVipMax = false; // VIP MAX n'existe plus
 ?>
 <!DOCTYPE html>
 <html lang="fr">
