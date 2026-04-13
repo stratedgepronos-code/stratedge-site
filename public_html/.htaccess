@@ -54,3 +54,13 @@ RewriteRule ^poster-bet\.php$ admin/poster-bet.php [L]
     Order allow,deny
     Deny from all
 </FilesMatch>
+
+# ─── Sécurité : bloquer accès direct aux fichiers sensibles ───
+<FilesMatch "\.(sql|log|env|md|json|lock|yml|yaml|gitignore|gitattributes)$">
+    Require all denied
+</FilesMatch>
+
+# Bloquer migrate*, test-*, debug-* (anciens scripts de dev)
+<FilesMatch "^(migrate|test-|debug-|tmp-|backup-).*\.php$">
+    Require all denied
+</FilesMatch>
