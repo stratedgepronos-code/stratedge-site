@@ -1326,11 +1326,11 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <div class="tip-period">/ week-end (ven→dim)</div>
 
         <?php if (isLoggedIn()): ?>
-          <a href="offre-fun.php" class="tip-cta">💳 Payer — 10€</a>
+          <a href="packs-fun.php" class="tip-cta">💳 Payer — 10€</a>
         <?php else: ?>
-          <a href="login.php?redirect=offre-fun.php" class="tip-cta">🔒 Se connecter pour payer</a>
+          <a href="login.php?redirect=packs-fun.php" class="tip-cta">🔒 Se connecter pour payer</a>
         <?php endif; ?>
-        <a href="offre-fun.php#crypto" class="tip-cta-outline">₿ Payer en Crypto</a>
+        <a href="packs-fun.php" class="tip-cta-outline">₿ Payer en Crypto</a>
 
         <div class="tip-stake">
           <div class="tip-stake-label">Bonus Partenaire</div>

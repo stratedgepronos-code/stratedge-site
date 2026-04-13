@@ -13,7 +13,8 @@ if (!$pack || !in_array('stripe', $pack['methodes'], true)) {
     header('Location: /packs-daily.php?err=invalid_pack'); exit;
 }
 
-$account = getStripeAccount('multi'); // routing Multisports
+$sportAccount = stratedge_pack_stripe_account($packKey); // multi/tennis/fun selon le pack
+$account = getStripeAccount($sportAccount);
 $stripeKey = $account['secret'] ?? '';
 if (!$stripeKey) { header('Location: /packs-daily.php?err=stripe_not_ready'); exit; }
 
