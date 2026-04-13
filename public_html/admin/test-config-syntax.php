@@ -69,6 +69,11 @@ if (function_exists('shell_exec')) {
     echo "shell_exec désactivé\n";
 }
 
+// Charger payment-config qui charge à son tour config-keys.php
+echo "\n=== CHARGEMENT payment-config.php ===\n";
+require_once __DIR__ . '/../includes/payment-config.php';
+echo "✅ payment-config.php chargé sans erreur\n";
+
 // Vérifier les constantes définies
 echo "\n=== CONSTANTES STRIPE DÉFINIES ===\n";
 if (defined('STRIPE_MULTI_SK')) {
