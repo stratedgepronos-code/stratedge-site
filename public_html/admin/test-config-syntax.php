@@ -104,3 +104,13 @@ foreach (['STRIPE_TENNIS_SK', 'STRIPE_TENNIS_PK', 'STRIPE_TENNIS_WHSEC'] as $k) 
         echo "$k : ❌ NON DÉFINIE\n";
     }
 }
+
+echo "\n--- Fun ---\n";
+foreach (['STRIPE_FUN_SK', 'STRIPE_FUN_PK', 'STRIPE_FUN_WHSEC'] as $k) {
+    if (defined($k)) {
+        $v = constant($k);
+        echo "$k : ✅ définie (" . substr($v, 0, 12) . "... " . strlen($v) . "c)\n";
+    } else {
+        echo "$k : ❌ NON DÉFINIE\n";
+    }
+}

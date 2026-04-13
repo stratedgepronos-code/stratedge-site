@@ -77,5 +77,6 @@ echo "=== DIAGNOSTIC STRIPE COMPLET ===\n";
 
 testStripeAccount('COMPTE MULTI (packs crédits)', 'multi');
 testStripeAccount('COMPTE TENNIS (abo 15€/sem)', 'tennis');
+testStripeAccount('COMPTE FUN ONLY', 'fun');
 
 echo "\n\n=== FIN ===\n";
