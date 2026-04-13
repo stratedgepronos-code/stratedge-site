@@ -14,7 +14,7 @@ if (!$pack || !in_array('stripe', $pack['methodes'], true)) {
 }
 
 $account = getStripeAccount('multi'); // routing Multisports
-$stripeKey = $account['secret_key'] ?? '';
+$stripeKey = $account['secret'] ?? '';
 if (!$stripeKey) { header('Location: /packs-daily.php?err=stripe_not_ready'); exit; }
 
 $amountCents = (int) round($pack['prix'] * 100);
