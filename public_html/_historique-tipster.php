@@ -162,8 +162,8 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
 .dd-svg{width:140px;height:140px;flex-shrink:0;}
 .dd-bg{stroke:rgba(255,255,255,.06);}
 .dd-fill{stroke:<?= $tConf['c1'] ?>;stroke-linecap:round;transform:rotate(-90deg);transform-origin:center;animation:draw-circle 1.6s cubic-bezier(.4,0,.2,1) forwards;stroke-dasharray:100;stroke-dashoffset:100;filter:drop-shadow(0 0 8px <?= $tConf['c1'] ?>);}
-.dd-center{font-family:'Orbitron',sans-serif;font-size:1.6rem;font-weight:900;fill:#fff;text-anchor:middle;dominant-baseline:central;}
-.dd-pct{font-family:'Share Tech Mono',monospace;font-size:.55rem;fill:<?= $tConf['c1'] ?>;text-anchor:middle;text-transform:uppercase;letter-spacing:2px;}
+.dd-center{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:900;fill:#fff;text-anchor:middle;dominant-baseline:central;}
+.dd-pct{font-family:'Share Tech Mono',monospace;font-size:2.5px;fill:<?= $tConf['c1'] ?>;text-anchor:middle;text-transform:uppercase;letter-spacing:0.5px;}
 .dd-info{flex:1;}
 .dd-info-row{display:flex;justify-content:space-between;padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.06);font-family:'Share Tech Mono',monospace;font-size:.8rem;color:rgba(255,255,255,.7);}
 .dd-info-row:last-child{border:none;}
@@ -230,8 +230,8 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
         <svg class="dd-svg" viewBox="0 0 36 36">
           <circle class="dd-bg" cx="18" cy="18" r="15.91" fill="transparent" stroke-width="3"/>
           <circle class="dd-fill" cx="18" cy="18" r="15.91" fill="transparent" stroke-width="3" pathLength="100" style="--off:<?= $donutOff ?>"/>
-          <text class="dd-center" x="18" y="17"><?= $stats['taux'] ?></text>
-          <text class="dd-pct" x="18" y="23">% WIN</text>
+          <text class="dd-center" x="18" y="15"><?= $stats['taux'] ?></text>
+          <text class="dd-pct" x="18" y="24">% WIN</text>
         </svg>
         <div class="dd-info">
           <div class="dd-info-row">Gagnés <b><?= $stats['g'] ?></b></div>

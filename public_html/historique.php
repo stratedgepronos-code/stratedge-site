@@ -220,8 +220,8 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
 .t-donut-svg{width:120px;height:120px;flex-shrink:0;animation:glow-ring 3s ease infinite;}
 .t-donut-bg{stroke:rgba(255,255,255,.06);}
 .t-donut-fill{stroke:var(--c1);stroke-linecap:round;transform:rotate(-90deg);transform-origin:center;animation:draw-circle 1.6s cubic-bezier(.4,0,.2,1) forwards;stroke-dasharray:100;stroke-dashoffset:100;}
-.t-donut-center{font-family:'Orbitron',sans-serif;font-size:1.4rem;font-weight:900;fill:#fff;text-anchor:middle;dominant-baseline:central;}
-.t-donut-pct{font-family:'Share Tech Mono',monospace;font-size:.55rem;fill:var(--c1);text-anchor:middle;text-transform:uppercase;letter-spacing:2px;}
+.t-donut-center{font-family:'Orbitron',sans-serif;font-size:8px;font-weight:900;fill:#fff;text-anchor:middle;dominant-baseline:central;}
+.t-donut-pct{font-family:'Share Tech Mono',monospace;font-size:2.5px;fill:var(--c1);text-anchor:middle;text-transform:uppercase;letter-spacing:0.5px;}
 .t-donut-info{flex:1;}
 .t-donut-info-row{display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem;font-size:.75rem;color:rgba(255,255,255,.7);font-family:'Share Tech Mono',monospace;text-transform:uppercase;letter-spacing:1px;}
 .t-donut-info-row .dot-w{width:8px;height:8px;border-radius:50%;background:var(--c1);box-shadow:0 0 6px var(--c1);}
@@ -339,8 +339,8 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
         <svg class="t-donut-svg" viewBox="0 0 36 36">
           <circle class="t-donut-bg" cx="18" cy="18" r="15.91" fill="transparent" stroke-width="3"/>
           <circle class="t-donut-fill" cx="18" cy="18" r="15.91" fill="transparent" stroke-width="3" pathLength="100" style="--off:<?= $donutOff ?>"/>
-          <text class="t-donut-center" x="18" y="17"><?= $winRate ?></text>
-          <text class="t-donut-pct" x="18" y="23">% WIN</text>
+          <text class="t-donut-center" x="18" y="15"><?= $winRate ?></text>
+          <text class="t-donut-pct" x="18" y="24">% WIN</text>
         </svg>
         <div class="t-donut-info">
           <div class="t-donut-info-row"><span class="dot-w"></span>Gagnés<span class="num"><?= $s['gagnes'] ?></span></div>
