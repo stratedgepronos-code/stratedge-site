@@ -534,16 +534,17 @@ TEAMSPORT;
         $wrapper_class .= ' team-sport';
     }
     if ($is_tennis) {
-        $promo_eyebrow = 'PACK TENNIS PREMIUM';
-        $promo_main   = '1 analyse Tennis premium - <span class="promo-main-hl">15€</span>';
-        $promo_sub    = "À vie · stratedgepronos.fr/packs-tennis";
-        $promo_cta_text = "ACHETER →";
+        $promo_eyebrow = 'TENNIS PREMIUM';
+        $promo_main   = 'Abonnement Semaine - <span class="promo-main-hl">15€</span>';
+        $promo_sub    = "À vie · stratedgepronos.fr/offre-tennis";
+        $promo_cta_text = "S'ABONNER →";
     } elseif ($is_team_sport) {
         // Rotation aléatoire entre 3 packs Multi pour varier la pub
         $promoVariants = [
             ['eyebrow'=>'PACK UNIQUE','main'=>'1 pari par SMS - <span class="promo-main-hl">4,50€ au 81004</span>','sub'=>'Crédit à vie · ou CB sur stratedgepronos.fr','cta'=>'Tape STAR'],
             ['eyebrow'=>'PACK TRIO 🔥','main'=>'3 paris à la carte - <span class="promo-main-hl">12€</span>','sub'=>'4€/pari · CB ou Crypto · stratedgepronos.fr/packs-daily','cta'=>'ACHETER →'],
             ['eyebrow'=>'PACK 10 🏆','main'=>'10 paris - <span class="promo-main-hl">30€</span>','sub'=>'Économie -33% · stratedgepronos.fr/packs-daily','cta'=>'ACHETER →'],
+            ['eyebrow'=>'FUN WEEK-END 🎲','main'=>'Tous les bets fun délire - <span class="promo-main-hl">10€</span>','sub'=>'Jusqu\'au dimanche soir · stratedgepronos.fr/offre-fun','cta'=>"S'ABONNER →"],
         ];
         $pv = $promoVariants[array_rand($promoVariants)];
         $promo_eyebrow = $pv['eyebrow'];
@@ -1009,7 +1010,7 @@ HTML;
       <div class='promo-main'><span class='promo-main-hl'>10€ / semaine</span> — combinés ATP / WTA</div>
       <div class='promo-main' style='font-size:16px;margin-top:6px;line-height:1.5;font-weight:600;'>Uniquement des <span class='promo-main-hl'>grosses cotes</span> · Fun réservé aux gros potentiels</div>
       <div class='promo-packs'>
-        <span class='pack-tag pack-tag-max'>🎾 Tennis Premium 15€ · /packs-tennis</span>
+        <span class='pack-tag pack-tag-max'>🎾 Tennis Semaine 15€ · /offre-tennis</span>
       </div>
       <div class='promo-price'>S’abonner sur <span>stratedgepronos.fr</span></div>
     </div>
@@ -1027,7 +1028,7 @@ HTML;
       <div class='promo-main'><span class='promo-main-hl'>10€ / semaine</span> — comme nos autres offres</div>
       <div class='promo-main' style='font-size:16px;margin-top:6px;line-height:1.5;font-weight:600;'>Pas du safe : que des <span class='promo-main-hl'>grosses cotes</span> · combinés à fort potentiel</div>
       <div class='promo-packs'>
-        <span class='pack-tag pack-tag-max'>⚡ Pack Multi dès 4,50€ · /packs-daily</span>
+        <span class='pack-tag pack-tag-max'>🎲 Fun Week-End 10€ · /offre-fun</span>
       </div>
       <div class='promo-price'>S’abonner sur <span>stratedgepronos.fr</span></div>
     </div>
@@ -1497,7 +1498,7 @@ HTML;
       <div class='sc-promo-eyebrow'>🎾 SAFE COMBINÉ TENNIS — SÉLECTION PREMIUM</div>
       <div class='sc-promo-main'>Inclus dans le <span class='sc-promo-hl'>Pack Tennis Pro</span></div>
       <div class='sc-promo-packs'>
-        <span class='sc-pack-tag sc-pack-max'>🎾 Pack Tennis 15€ · à vie · /packs-tennis</span>
+        <span class='sc-pack-tag sc-pack-max'>🎾 Tennis Semaine 15€ · /offre-tennis</span>
       </div>
     </div>
     <div class='sc-promo-cta'>🎾 Je m'abonne</div>
@@ -1738,13 +1739,14 @@ function generateSafeCards($d) {
 
     // Promo banner (same as SafeCombi)
     if ($isTennis) {
-        $promoBlock = "<div class='promo-banner promo-tennis'><div class='promo-inner'><span class='promo-icon'>🎾</span><div class='promo-text'><span class='promo-title'>PACK TENNIS PREMIUM</span><span class='promo-sub'>1 analyse à vie · 15€ · stratedgepronos.fr/packs-tennis</span></div><span class='promo-btn'>Acheter</span></div></div>";
+        $promoBlock = "<div class='promo-banner promo-tennis'><div class='promo-inner'><span class='promo-icon'>🎾</span><div class='promo-text'><span class='promo-title'>TENNIS PREMIUM</span><span class='promo-sub'>Abo Semaine 15€ · stratedgepronos.fr/offre-tennis</span></div><span class='promo-btn'>S'abonner</span></div></div>";
     } else {
         // Rotation aléatoire 3 packs Multi
         $multiPromos = [
             ['icon'=>'📱','title'=>'PACK UNIQUE — 4,50€ par SMS','sub'=>'Tape STAR au 81004 · 1 pari à vie · ou CB sur le site'],
             ['icon'=>'🔥','title'=>'PACK TRIO — 3 paris pour 12€','sub'=>'Soit 4€/pari · CB ou Crypto · /packs-daily'],
             ['icon'=>'🏆','title'=>'PACK 10 — 30€ (-33%)','sub'=>'10 paris à vie · 3€/pari · /packs-daily'],
+            ['icon'=>'🎲','title'=>'FUN WEEK-END — 10€ jusqu\'au dimanche','sub'=>'Bets fun délire · cotes folles · /offre-fun'],
         ];
         $mp = $multiPromos[array_rand($multiPromos)];
         $promoBlock = "<div class='promo-banner promo-multi'><div class='promo-inner'><span class='promo-icon'>{$mp['icon']}</span><div class='promo-text'><span class='promo-title'>{$mp['title']}</span><span class='promo-sub'>{$mp['sub']}</span></div><span class='promo-btn'>Acheter</span></div></div>";

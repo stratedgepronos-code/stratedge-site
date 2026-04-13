@@ -17,11 +17,9 @@ function stratedge_packs_all(): array {
         'semaine' => ['key'=>'semaine','sport'=>'multi','label'=>'Semaine','nb'=>7,'prix'=>23.00,'prix_unit'=>3.29,'economie'=>27,'badge'=>'','methodes'=>['stripe','crypto'],'sub'=>'1 pari / jour'],
         'pack10'  => ['key'=>'pack10','sport'=>'multi','label'=>'Pack 10','nb'=>10,'prix'=>30.00,'prix_unit'=>3.00,'economie'=>33,'badge'=>'🏆 Économie max','methodes'=>['stripe','crypto'],'sub'=>'Pour les pros'],
 
-        // ═══ TENNIS (1 pack unique) ═══
-        'tennis_unique' => ['key'=>'tennis_unique','sport'=>'tennis','label'=>'Tennis','nb'=>1,'prix'=>15.00,'prix_unit'=>15.00,'economie'=>0,'badge'=>'🎾','methodes'=>['stripe','crypto'],'sub'=>'1 analyse premium tennis'],
-
-        // ═══ FUN ONLY (1 pack unique) ═══
-        'fun_unique' => ['key'=>'fun_unique','sport'=>'fun','label'=>'Fun','nb'=>1,'prix'=>10.00,'prix_unit'=>10.00,'economie'=>0,'badge'=>'🎲','methodes'=>['stripe','crypto'],'sub'=>'1 bet Fun délirant'],
+        // Tennis et Fun ne sont plus des packs crédits, mais des abos:
+        // -> tennis = abo Semaine 15€ (offre-tennis.php)
+        // -> fun = abo Week-End 10€ (offre-fun.php)
     ];
 }
 

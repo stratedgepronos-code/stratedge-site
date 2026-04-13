@@ -347,7 +347,13 @@ function activerAbonnement(int $membreId, string $type): bool {
     } elseif ($type === 'vip_max') {
         $dateFin = date('Y-m-d H:i:s', strtotime('+30 days'));
     } elseif ($type === 'fun') {
-        $dateFin = date('Y-m-d H:i:s', strtotime('+7 days'));
+        // Fun = abo week-end (jusqu'au dimanche soir 23:59 Europe/Paris)
+        $now = new DateTime('now', new DateTimeZone('Europe/Paris'));
+        $sunday = clone $now;
+        $sunday->modify('Sunday this week');
+        $sunday->setTime(23, 59, 59);
+        if ($sunday < $now) $sunday->modify('+7 days');
+        $dateFin = $sunday->format('Y-m-d H:i:s');
     }
     if ($type === 'rasstoss') { $dateFin = '2090-01-01 00:00:00'; }
 

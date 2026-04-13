@@ -157,8 +157,8 @@ try { $fondateurPlaces = (int)$db->query("SELECT COUNT(*) FROM vip_max_fondateur
       <div class="tip-price-row"><div class="tip-price"><span class="cur">€</span>15</div></div>
       <div class="tip-period">/ semaine (7 jours)</div>
       <?php if(in_array('tennis',$typesActifs)):?><div class="tip-cta" style="opacity:.4;pointer-events:none;text-align:center">✓ Abonnement actif</div>
-      <?php else:?><a href="packs-tennis.php" class="tip-cta">💳 Payer — 15€</a><?php endif;?>
-      <a href="packs-tennis.php" class="tip-cta-outline">₿ Payer en Crypto</a>
+      <?php else:?><a href="offre-tennis.php" class="tip-cta">💳 Payer — 15€</a><?php endif;?>
+      <a href="offre-tennis.php" class="tip-cta-outline">₿ Payer en Crypto</a>
       <div class="tip-stake"><a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="tip-stake-btn">🎁 S’inscrire sur Stake</a><div class="tip-stake-note">1 mois VIP MAX offert</div></div>
     </div>
   </div>
@@ -177,8 +177,8 @@ try { $fondateurPlaces = (int)$db->query("SELECT COUNT(*) FROM vip_max_fondateur
       <div class="tip-price-row"><div class="tip-price"><span class="cur">€</span>10</div></div>
       <div class="tip-period">/ week-end (ven→dim)</div>
       <?php if(in_array('fun',$typesActifs)):?><div class="tip-cta" style="opacity:.4;pointer-events:none;text-align:center">✓ Abonnement actif</div>
-      <?php else:?><a href="packs-fun.php" class="tip-cta">💳 Payer — 10€</a><?php endif;?>
-      <a href="packs-fun.php" class="tip-cta-outline">₿ Payer en Crypto</a>
+      <?php else:?><a href="offre-fun.php" class="tip-cta">💳 Payer — 10€</a><?php endif;?>
+      <a href="offre-fun.php" class="tip-cta-outline">₿ Payer en Crypto</a>
       <div class="tip-stake"><a href="https://stake.bet/?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="tip-stake-btn">🎰 S’inscrire sur Stake</a><div class="tip-stake-note">1 mois VIP MAX offert</div></div>
     </div>
   </div>
