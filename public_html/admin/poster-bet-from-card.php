@@ -125,6 +125,17 @@ try {
     }
 }
 
+// Tag posted_by_role selon le role de l'admin qui poste (pour routage tipster cote membre)
+try {
+    $betId = $db->lastInsertId();
+    if ($betId) {
+        $roleToTag = 'superadmin'; // default
+        if ($adminRole === 'admin_tennis') $roleToTag = 'admin_tennis';
+        elseif ($adminRole === 'admin_fun' || $adminRole === 'admin_fun_sport') $roleToTag = 'admin_fun';
+        $db->prepare("UPDATE bets SET posted_by_role=? WHERE id=?")->execute([$roleToTag, $betId]);
+    }
+} catch (Throwable $e) { /* silencieux si colonne pas encore migrée */ }
+
 // Twitter (IFTTT) si configuré
 $twitterMsg = '';
 $twitterConfigFile = __DIR__ . '/../includes/twitter_keys.php';

@@ -167,6 +167,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 }
                             }
                         }
+
+                        // Tag posted_by_role selon le role admin (pour routage tipster cote membre)
+                        try {
+                            $betId = $db->lastInsertId();
+                            if ($betId) {
+                                $roleToTag = 'superadmin';
+                                if ($adminRole === 'admin_tennis') $roleToTag = 'admin_tennis';
+                                elseif ($adminRole === 'admin_fun' || $adminRole === 'admin_fun_sport') $roleToTag = 'admin_fun';
+                                $db->prepare("UPDATE bets SET posted_by_role=? WHERE id=?")->execute([$roleToTag, $betId]);
+                            }
+                        } catch (Throwable $eTag) { /* silencieux si colonne pas migree */ }
+
                         $nbPostes++;
 
                         // ── Tweet immédiat pour CETTE image ──

@@ -42,19 +42,33 @@ $tConf = $tipsterConfig[$tipsterFilter];
 
 // Charger les bets filtrés par catégorie
 $db = getDB();
-// Logique tipster:
-// MULTI  = categorie='multi' AND type NOT LIKE '%fun%' (les bets safe/live multi uniquement)
-// TENNIS = categorie='tennis' (tous types)
-// FUN    = categorie='multi' AND type LIKE '%fun%' (les bets fun postes par admin Fun ou superadmin)
-// Inclut bets en attente (resultat NULL) ET bets avec resultat connu - exclu juste 'en_cours'/'pending'
+// Logique tipster basee sur posted_by_role:
+// - MULTI  = posted_by_role='superadmin' (superadmin)
+// - TENNIS = posted_by_role='admin_tennis' (Shuriik) OU categorie='tennis' fallback vieux bets
+// - FUN    = posted_by_role='admin_fun' (Morrayaffa)
+// Inclut bets en attente (resultat NULL) et bets avec resultat connu
 $resultFilter = "(resultat IS NULL OR resultat NOT IN ('en_cours','pending'))";
 $orderBy = "ORDER BY COALESCE(date_resultat, date_post) DESC";
+
+// Helper: detecte tipster avec fallback sur categorie pour les bets pre-migration
 if ($tipsterFilter === 'multi') {
-    $bets = $db->query("SELECT * FROM bets WHERE $resultFilter AND categorie='multi' AND type NOT LIKE '%fun%' $orderBy")->fetchAll();
+    // superadmin OU pre-migration qui n'est pas tennis
+    $bets = $db->query("SELECT * FROM bets
+        WHERE $resultFilter
+        AND (posted_by_role='superadmin'
+             OR (posted_by_role IS NULL AND categorie!='tennis')
+             OR (posted_by_role='' AND categorie!='tennis'))
+        $orderBy")->fetchAll();
 } elseif ($tipsterFilter === 'tennis') {
-    $bets = $db->query("SELECT * FROM bets WHERE $resultFilter AND categorie='tennis' $orderBy")->fetchAll();
+    $bets = $db->query("SELECT * FROM bets
+        WHERE $resultFilter
+        AND (posted_by_role='admin_tennis' OR categorie='tennis')
+        $orderBy")->fetchAll();
 } elseif ($tipsterFilter === 'fun') {
-    $bets = $db->query("SELECT * FROM bets WHERE $resultFilter AND categorie='multi' AND type LIKE '%fun%' $orderBy")->fetchAll();
+    $bets = $db->query("SELECT * FROM bets
+        WHERE $resultFilter
+        AND posted_by_role='admin_fun'
+        $orderBy")->fetchAll();
 } else {
     $bets = [];
 }

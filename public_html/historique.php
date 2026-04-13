@@ -78,16 +78,23 @@ function calcStats(array $arr): array {
     ];
 }
 
-// Filtrer par tipster:
-// - MULTI = categorie='multi' SAUF type='fun' (Fun part dans son tipster)
-// - TENNIS = categorie='tennis' (incl. tennis_fun)
-// - FUN = type='fun' (peu importe la categorie multi/tennis - sauf les tennis_fun qui restent dans Tennis)
-function _isFun($b) { return strpos($b['type'] ?? '', 'fun') !== false; }
-function _isTennis($b) { return ($b['categorie'] ?? '') === 'tennis'; }
-
-$multiBets = array_filter($bets, fn($b) => !_isTennis($b) && !_isFun($b));
-$tennisBets = array_filter($bets, fn($b) => _isTennis($b)); // inclut tennis_fun
-$funBets = array_filter($bets, fn($b) => !_isTennis($b) && _isFun($b)); // multi+fun uniquement
+// Filtrer par tipster selon posted_by_role (colonne BDD):
+// - MULTI  = posted_by_role='superadmin' (Alex poste tous les bets Multi + Fun multisports)
+// - TENNIS = posted_by_role='admin_tennis' (Shuriik) OU categorie='tennis' (backward-compat)
+// - FUN    = posted_by_role='admin_fun' (Morrayaffa)
+// Fallback: si posted_by_role vide (vieux bets pre-migration), se baser sur categorie='tennis' ou defaut superadmin
+function _tipsterOf(array $b): string {
+    $role = $b['posted_by_role'] ?? '';
+    if ($role === 'admin_tennis') return 'tennis';
+    if ($role === 'admin_fun') return 'fun';
+    if ($role === 'superadmin') return 'multi';
+    // Fallback pour bets pre-migration (posted_by_role NULL/vide)
+    if (($b['categorie'] ?? '') === 'tennis') return 'tennis';
+    return 'multi';
+}
+$multiBets  = array_filter($bets, fn($b) => _tipsterOf($b) === 'multi');
+$tennisBets = array_filter($bets, fn($b) => _tipsterOf($b) === 'tennis');
+$funBets    = array_filter($bets, fn($b) => _tipsterOf($b) === 'fun');
 
 // Récupérer les 3 derniers bets de chaque tipster (avec image valide)
 function lastBetsWithImg(array $arr, int $n = 3): array {
