@@ -1280,11 +1280,11 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <div class="tip-period">/ semaine (7 jours)</div>
 
         <?php if (isLoggedIn()): ?>
-          <a href="offre-tennis.php" class="tip-cta">💳 Payer — 15€</a>
+          <a href="packs-tennis.php" class="tip-cta">💳 Payer — 15€</a>
         <?php else: ?>
-          <a href="login.php?redirect=offre-tennis.php" class="tip-cta">🔒 Se connecter pour payer</a>
+          <a href="login.php?redirect=packs-tennis.php" class="tip-cta">🔒 Se connecter pour payer</a>
         <?php endif; ?>
-        <a href="offre-tennis.php#crypto" class="tip-cta-outline">₿ Payer en Crypto</a>
+        <a href="packs-tennis.php" class="tip-cta-outline">₿ Payer en Crypto</a>
 
         <div class="tip-stake">
           <div class="tip-stake-label">Bonus Partenaire</div>

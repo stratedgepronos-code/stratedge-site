@@ -81,6 +81,12 @@ $multiBets = array_filter($bets, fn($b) => ($b['categorie'] ?? 'multi') === 'mul
 $tennisBets = array_filter($bets, fn($b) => ($b['categorie'] ?? '') === 'tennis');
 $funBets = array_filter($bets, fn($b) => ($b['categorie'] ?? '') === 'fun');
 
+// Récupérer les 3 derniers bets de chaque tipster (avec image valide)
+function lastBetsWithImg(array $arr, int $n = 3): array {
+    $withImg = array_filter($arr, fn($b) => !empty($b['image']));
+    return array_slice($withImg, 0, $n);
+}
+
 $tipsters = [
     'multi' => [
         'id'        => '001',
@@ -92,6 +98,7 @@ $tipsters = [
         'c2'        => '#c850c0',
         'href'      => '/historique-multi.php',
         'stats'     => calcStats($multiBets),
+        'lastBets'  => lastBetsWithImg($multiBets),
     ],
     'tennis' => [
         'id'        => '002',
@@ -103,6 +110,7 @@ $tipsters = [
         'c2'        => '#00d46a',
         'href'      => '/historique-tennis.php',
         'stats'     => calcStats($tennisBets),
+        'lastBets'  => lastBetsWithImg($tennisBets),
     ],
     'fun' => [
         'id'        => '003',
@@ -114,6 +122,7 @@ $tipsters = [
         'c2'        => '#ec4899',
         'href'      => '/historique-fun.php',
         'stats'     => calcStats($funBets),
+        'lastBets'  => lastBetsWithImg($funBets),
     ],
 ];
 
@@ -195,8 +204,8 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
 .t-tipster-id .dot{width:6px;height:6px;border-radius:50%;background:var(--c1);display:inline-block;margin-right:5px;animation:blink 1.4s infinite;box-shadow:0 0 8px var(--c1);}
 
 .t-mascotte-zone{display:flex;align-items:center;gap:1rem;margin-bottom:.5rem;}
-.t-mascot-frame{width:90px;height:100px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:linear-gradient(145deg,var(--c1)35,var(--c2)20);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;animation:pulse-glow 3s ease infinite;}
-.t-mascot-frame::before{content:'';position:absolute;inset:2px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);background:rgba(8,8,18,.95);}
+.t-mascot-frame{width:90px;height:90px;border-radius:14px;background:radial-gradient(circle at center,var(--c1)25,transparent 70%);display:flex;align-items:center;justify-content:center;flex-shrink:0;position:relative;animation:pulse-glow 3s ease infinite;}
+
 .t-mascot-img{position:relative;z-index:2;width:78px;height:88px;display:flex;align-items:center;justify-content:center;animation:float-mascot 3.5s ease-in-out infinite;filter:drop-shadow(0 0 12px var(--c1));}
 .t-mascot-img img{max-width:78px;max-height:88px;object-fit:contain;}
 .t-meta{flex:1;min-width:0;}
@@ -239,6 +248,18 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
 .t-progress-fill{height:100%;background:linear-gradient(90deg,var(--c1),var(--c2));border-radius:3px;animation:bar-fill 1.5s cubic-bezier(.4,0,.2,1) forwards;box-shadow:0 0 10px var(--c1);}
 
 .t-streak-zone{padding:0 1.4rem 1rem;}
+.t-recent-zone{padding:0 1.4rem 1rem;}
+.t-recent-lbl{display:flex;justify-content:space-between;align-items:center;font-family:'Share Tech Mono',monospace;font-size:.6rem;color:rgba(255,255,255,.45);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:.5rem;}
+.t-recent-lbl span:last-child{color:var(--c1);font-weight:700;}
+.t-recent-thumbs{display:flex;gap:6px;}
+.t-recent-thumb{flex:1;aspect-ratio:1/1;border-radius:6px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,.08);transition:all .25s;background:#0a0a14;}
+.t-recent-thumb:hover{border-color:var(--c1);transform:scale(1.05);box-shadow:0 0 12px var(--c1);}
+.t-recent-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.t-recent-thumb-result{position:absolute;top:4px;right:4px;width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:900;font-family:'Orbitron',sans-serif;}
+.t-recent-thumb-result.w{background:#39ff14;color:#000;box-shadow:0 0 6px rgba(57,255,20,.7);}
+.t-recent-thumb-result.l{background:#ff2d78;color:#fff;box-shadow:0 0 6px rgba(255,45,120,.6);}
+.t-recent-thumb-result.a{background:#f59e0b;color:#000;}
+.t-recent-thumb-result.n{background:rgba(255,255,255,.2);color:#fff;}
 .t-streak-lbl{display:flex;justify-content:space-between;align-items:center;font-family:'Share Tech Mono',monospace;font-size:.6rem;color:rgba(255,255,255,.45);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:.5rem;}
 .t-streak-lbl span:last-child{color:var(--c1);font-weight:700;}
 .t-streak-pills{display:flex;gap:4px;}
@@ -351,6 +372,25 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
         <div class="t-progress-lbl"><span>ROI Performance</span><span><?= $roiSign . $roiPct ?>%</span></div>
         <div class="t-progress-bar"><div class="t-progress-fill" style="--w:<?= $roiBarW ?>%;"></div></div>
       </div>
+
+      <?php if (!empty($t['lastBets'])): ?>
+      <div class="t-recent-zone">
+        <div class="t-recent-lbl"><span>Derniers pronos</span><span><?= count($t['lastBets']) ?></span></div>
+        <div class="t-recent-thumbs">
+          <?php
+          $resultMap = ['gagne' => 'w', 'perdu' => 'l', 'annule' => 'a'];
+          $resultIcon = ['w' => '✓', 'l' => '✗', 'a' => '↺', 'n' => '?'];
+          foreach ($t['lastBets'] as $b):
+            $rk = $resultMap[$b['resultat'] ?? ''] ?? 'n';
+          ?>
+          <div class="t-recent-thumb">
+            <img src="<?= htmlspecialchars($b['image']) ?>" alt="bet" loading="lazy">
+            <div class="t-recent-thumb-result <?= $rk ?>"><?= $resultIcon[$rk] ?></div>
+          </div>
+          <?php endforeach; ?>
+        </div>
+      </div>
+      <?php endif; ?>
 
       <div class="t-streak-zone">
         <div class="t-streak-lbl"><span>Form / 5 derniers</span><span>+<?= $wCount ?> / -<?= $lCount ?></span></div>
