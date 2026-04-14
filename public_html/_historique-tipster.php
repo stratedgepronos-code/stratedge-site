@@ -545,7 +545,7 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
       }
 
       try {
-        const r = await fetch('/admin/reassign-bet-tipster.php', {
+        const r = await fetch('/admin/move-pari-action.php', {
           method: 'POST',
           body: fd,
           credentials: 'same-origin',
