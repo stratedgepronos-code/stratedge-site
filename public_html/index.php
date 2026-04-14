@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/gate.php';
+// require_once __DIR__ . '/gate.php'; // GATE désactivé le 14/04/2026 — ouverture publique du site
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/stratedge-bet-categories.php';
 require_once __DIR__ . '/includes/visiteurs-log.php';
