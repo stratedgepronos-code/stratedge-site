@@ -183,7 +183,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         // ── Tweet immédiat pour CETTE image ──
                         if ($twitterActif) {
-                            $texte    = twitterPhrase($lastType, $lastTitre);
+                            // Determine role (variable existante en haut du handler) pour hashtags
+                            $roleForTweet = ($adminRole === 'admin_tennis') ? 'admin_tennis'
+                                          : (($adminRole === 'admin_fun' || $adminRole === 'admin_fun_sport') ? 'admin_fun' : 'superadmin');
+                            $texte    = twitterPhrase($lastType, $lastTitre, $roleForTweet);
                             $imageChoisie = $lastLockedPath ?: $lastImagePath;
                             $imageDir = (strpos($imageChoisie, 'locked') !== false) ? 'locked' : 'bets';
                             $imageUrl = 'https://stratedgepronos.fr/restore-image.php?dir=' . $imageDir . '&file=' . rawurlencode(basename($imageChoisie));

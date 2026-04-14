@@ -146,7 +146,10 @@ if (file_exists($twitterConfigFile)) {
         $imageChoisie = $lastLockedPath ?: $lastImagePath;
         $imageDir = (strpos($imageChoisie, 'locked') !== false) ? 'locked' : 'bets';
         $imageUrl = (defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/restore-image.php?dir=' . rawurlencode($imageDir) . '&file=' . rawurlencode(basename($imageChoisie));
-        $texte = twitterPhrase($type, $titre);
+        // Determine role pour hashtags (variable $adminRole existante en haut du fichier)
+        $roleForTweet = ($adminRole === 'admin_tennis') ? 'admin_tennis'
+                      : (($adminRole === 'admin_fun' || $adminRole === 'admin_fun_sport') ? 'admin_fun' : 'superadmin');
+        $texte = twitterPhrase($type, $titre, $roleForTweet);
         $webhookUrl = !empty($twitterConfig['webhook_url_image']) ? $twitterConfig['webhook_url_image'] : $twitterConfig['webhook_url'];
         $payload = json_encode([
             'value1' => $texte,

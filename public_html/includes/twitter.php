@@ -4,7 +4,24 @@
 // OAuth 1.0a — clés passées en paramètre (pas de define/constante)
 // ============================================================
 
-function twitterPhrase(string $type, string $titre = ''): string {
+/**
+ * Hashtags par role admin (collés a la fin du tweet de nouveau bet)
+ * Mapping aligne sur posted_by_role:
+ *  - superadmin (Alex / Multi)        -> #ParisSportifs #teamparieur
+ *  - admin_tennis (Shuriik)           -> #teamparieur #TennisBet
+ *  - admin_fun / admin_fun_sport      -> #teamparieur #ParisSportifs
+ */
+function hashtagsForRole(?string $role): string {
+    $map = [
+        'superadmin'      => '#ParisSportifs #teamparieur',
+        'admin_tennis'    => '#teamparieur #TennisBet',
+        'admin_fun'       => '#teamparieur #ParisSportifs',
+        'admin_fun_sport' => '#teamparieur #ParisSportifs',
+    ];
+    return $map[$role ?? 'superadmin'] ?? '#ParisSportifs #teamparieur';
+}
+
+function twitterPhrase(string $type, string $titre = '', ?string $adminRole = null): string {
     $types     = explode(',', $type);
     $principal = trim($types[0]);
     $phrases = [
@@ -25,6 +42,8 @@ function twitterPhrase(string $type, string $titre = ''): string {
     $pool   = $phrases[$principal] ?? $phrases['safe'];
     $phrase = $pool[array_rand($pool)];
     if ($titre) $phrase = "📌 " . $titre . "\n\n" . $phrase;
+    // Hashtags en fin de tweet (selon role admin qui a poste)
+    $phrase .= "\n\n" . hashtagsForRole($adminRole);
     return $phrase;
 }
 
