@@ -12,23 +12,37 @@
     </a>
     <a href="/souscrire.php" class="nav-btn">Souscrire</a>
     <?php if (isAdmin()): ?><a href="/panel-x9k3m/index.php" class="nav-admin">⚙️ Panel</a><?php endif; ?>
-    <a href="/logout.php" style="color:var(--txt3);">Déconnexion</a>
+    <?php if (!empty($membre)): ?>
+      <a href="/logout.php" style="color:var(--txt3);">Déconnexion</a>
+    <?php else: ?>
+      <a href="/login.php" style="color:var(--txt3);">Connexion</a>
+      <a href="/register.php" class="nav-btn" style="background:linear-gradient(135deg,#ff2d78,#c4185a);color:#fff;">S'inscrire</a>
+    <?php endif; ?>
   </div>
   <button class="hamburger" onclick="toggleMenu()"><span></span><span></span><span></span></button>
 </nav>
 <div class="mobile-menu" id="mobileMenu">
   <a href="https://x.com/strat_edge_" target="_blank" rel="noopener noreferrer">𝕏 Suivre sur X</a>
+  <?php if (!empty($membre)): ?>
   <a href="/dashboard.php">📊 Dashboard</a>
   <a href="/dashboard.php?tab=profil">👤 Mon Profil</a>
+  <?php endif; ?>
   <a href="/bets.php">🔥 Les Bets</a>
   <a href="/historique.php">📋 Historique</a>
   <a href="/giveaway.php">🎁 GiveAway</a>
   <a href="/prono-commu.php">⚽ Prono commu</a>
   <a href="/montante-tennis.php">🎾 Montante Tennis</a>
   <a href="/souscrire.php">💳 Souscrire</a>
+  <?php if (!empty($membre)): ?>
   <a href="/sav.php">🎫 SAV</a>
+  <?php endif; ?>
   <?php if (isAdmin()): ?><a href="/panel-x9k3m/index.php">⚙️ Panel</a><?php endif; ?>
-  <a href="/logout.php">🚪 Déconnexion</a>
+  <?php if (!empty($membre)): ?>
+    <a href="/logout.php">🚪 Déconnexion</a>
+  <?php else: ?>
+    <a href="/login.php">🔓 Connexion</a>
+    <a href="/register.php">✨ S'inscrire</a>
+  <?php endif; ?>
 </div>
 <div class="mob-tabs">
   <a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')!=='profil'?'active':'' ?>" href="/dashboard.php"><span class="ico">📊</span> Dashboard</a>
@@ -43,10 +57,20 @@
 <div class="mascotte-bg"><img src="/assets/images/mascotte.png" alt=""></div>
 <div class="app">
 <aside class="side">
+  <?php if (!empty($membre)): ?>
   <div class="side-user">
-    <div class="side-av"><?php if ($avatarUrl): ?><img src="<?= $avatarUrl ?>?v=<?= time() ?>" alt=""><?php else: ?><?= strtoupper(substr($membre['nom'],0,1)) ?><?php endif; ?></div>
+    <div class="side-av"><?php if (!empty($avatarUrl)): ?><img src="<?= $avatarUrl ?>?v=<?= time() ?>" alt=""><?php else: ?><?= strtoupper(substr($membre['nom'],0,1)) ?><?php endif; ?></div>
     <div><div class="side-name"><?= htmlspecialchars($membre['nom']) ?></div><div class="side-email"><?= htmlspecialchars($membre['email']) ?></div></div>
   </div>
+  <?php else: ?>
+  <div class="side-user side-user-guest">
+    <div class="side-av side-av-guest"></div>
+    <div class="side-guest-actions">
+      <a href="/login.php" class="side-guest-btn side-guest-btn-login">Se connecter</a>
+      <a href="/register.php" class="side-guest-btn side-guest-btn-register">S'inscrire</a>
+    </div>
+  </div>
+  <?php endif; ?>
   <div class="side-nav">
     <a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')!=='profil'?'active':'' ?>" href="/dashboard.php"><span class="ico">📊</span> Dashboard</a>
     <a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')==='profil'?'active':'' ?>" href="/dashboard.php?tab=profil"><span class="ico">👤</span> Mon Profil</a>
@@ -61,7 +85,9 @@
     <a class="s-link <?= ($currentPage??'')==='souscrire'?'active':'' ?>" href="/souscrire.php"><span class="ico">💳</span> Souscrire</a>
     <a class="s-link" href="https://x.com/strat_edge_" target="_blank" rel="noopener noreferrer"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg></span> Suivre sur X</a>
   </div>
+  <?php if (!empty($membre)): ?>
   <div class="side-foot"><a href="/logout.php">🚪 Déconnexion</a></div>
+  <?php endif; ?>
 </aside>
 <main class="content">
 <script>

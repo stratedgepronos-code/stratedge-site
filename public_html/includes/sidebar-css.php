@@ -34,6 +34,15 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--txt);min
 .side-av img{width:100%;height:100%;object-fit:cover;}
 .side-name{font-weight:700;font-size:1.15rem;line-height:1.2;}
 .side-email{font-size:0.82rem;color:var(--txt3);word-break:break-all;}
+/* Mode invité (non connecté) */
+.side-user-guest{padding:0 1rem 1.3rem;}
+.side-av-guest{background:linear-gradient(135deg,var(--pink),var(--blue));border:2px solid rgba(255,45,120,0.4);box-shadow:0 0 12px rgba(255,45,120,0.25);}
+.side-guest-actions{display:flex;flex-direction:column;gap:0.4rem;flex:1;}
+.side-guest-btn{display:block;text-align:center;padding:0.5rem 0.8rem;border-radius:8px;font-family:'Orbitron',sans-serif;font-size:0.7rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-decoration:none;transition:all 0.2s;}
+.side-guest-btn-login{background:rgba(255,255,255,0.05);color:var(--txt2);border:1px solid rgba(255,255,255,0.1);}
+.side-guest-btn-login:hover{background:rgba(255,255,255,0.1);color:#fff;border-color:rgba(255,255,255,0.25);}
+.side-guest-btn-register{background:linear-gradient(135deg,var(--pink),#c4185a);color:#fff;border:1px solid var(--pink);box-shadow:0 0 12px rgba(255,45,120,0.3);}
+.side-guest-btn-register:hover{box-shadow:0 0 18px rgba(255,45,120,0.55);transform:translateY(-1px);}
 .side-nav{flex:1;padding:0 0.7rem;}
 .s-link{display:flex;align-items:center;gap:0.9rem;padding:0.9rem 1.1rem;border-radius:10px;cursor:pointer;font-size:1.2rem;font-weight:600;color:var(--txt2);transition:all .2s;text-decoration:none;border:1px solid transparent;margin-bottom:0.35rem;min-height:46px;}
 .s-link:hover{background:rgba(255,255,255,0.04);color:var(--txt);}
