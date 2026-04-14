@@ -209,6 +209,12 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
 .bet-card{background:rgba(8,8,18,.85);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;transition:all .25s;cursor:pointer;}
 .bet-card:hover{transform:translateY(-3px);border-color:<?= $tConf['c1'] ?>;box-shadow:0 8px 24px <?= $tConf['c1'] ?>20;}
 
+/* === Barre admin: reassigner bet vers autre tipster (super admin uniquement) === */
+.admin-reassign{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin-top:.6rem;padding-top:.6rem;border-top:1px dashed rgba(255,255,255,.1);cursor:default;}
+.admin-reassign-lbl{font-family:'Share Tech Mono',monospace;font-size:.6rem;color:rgba(255,255,255,.4);letter-spacing:1px;text-transform:uppercase;}
+.admin-reassign-btn{padding:.25rem .6rem;background:rgba(255,255,255,.04);border:1px solid var(--btn-c, rgba(255,255,255,.15));color:var(--btn-c, #fff);border-radius:6px;font-family:'Orbitron',sans-serif;font-size:.6rem;font-weight:700;letter-spacing:.5px;text-transform:uppercase;cursor:pointer;transition:all .15s;}
+.admin-reassign-btn:hover{background:var(--btn-c);color:#000;box-shadow:0 0 8px var(--btn-c);}
+
 /* === Mois deroulants === */
 .month-block{margin-bottom:1rem;background:rgba(8,8,18,.6);border:1px solid rgba(255,255,255,.06);border-radius:12px;overflow:hidden;}
 .month-block[open]{border-color:<?= $tConf['c1'] ?>30;}
@@ -438,6 +444,24 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
               <?php endif; ?>
               <?php if ($cote): ?><span class="bet-cote">@ <?= htmlspecialchars($cote) ?></span><?php endif; ?>
             </div>
+            <?php if (isSuperAdmin()): ?>
+            <!-- BARRE ADMIN: reassigner le bet vers un autre tipster -->
+            <div class="admin-reassign" onclick="event.stopPropagation();">
+              <span class="admin-reassign-lbl">🔧 Bouger vers :</span>
+              <?php
+              // Boutons des autres tipsters (exclure le tipster courant)
+              $tipsterButtons = [
+                  'multi'  => ['role' => 'superadmin',   'label' => 'Multi',  'color' => '#ff2d7a'],
+                  'tennis' => ['role' => 'admin_tennis', 'label' => 'Tennis', 'color' => '#39ff14'],
+                  'fun'    => ['role' => 'admin_fun',    'label' => 'Fun',    'color' => '#a855f7'],
+              ];
+              foreach ($tipsterButtons as $tk => $tb):
+                  if ($tk === $tipsterFilter) continue; // skip courant
+              ?>
+                <button class="admin-reassign-btn" style="--btn-c:<?= $tb['color'] ?>;" onclick="reassignBet(event, <?= $betId ?>, '<?= $tb['role'] ?>', '<?= $tb['label'] ?>')"><?= $tb['label'] ?></button>
+              <?php endforeach; ?>
+            </div>
+            <?php endif; ?>
           </div>
         </div>
         <?php endforeach; ?>
@@ -457,6 +481,10 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
       </div>
     </div>
   </div>
+
+  <?php if (isSuperAdmin()): ?>
+  <input type="hidden" id="csrf-reassign" value="<?= htmlspecialchars(csrfToken()) ?>">
+  <?php endif; ?>
 
   <script>
     function openBetModal(betId) {
@@ -489,6 +517,47 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
     }
     // Fermer avec Echap
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBetModal(); });
+
+    // ─────────────────────────────────────────────────────────
+    // SUPER ADMIN: reassigner un bet vers un autre tipster
+    // ─────────────────────────────────────────────────────────
+    async function reassignBet(ev, betId, newRole, label) {
+      ev.stopPropagation();
+      ev.preventDefault();
+      if (!confirm("Bouger ce bet vers Stratedge " + label + " ?\nLes stats des 2 tipsters seront recalculees.")) return;
+
+      const csrfEl = document.getElementById('csrf-reassign');
+      const csrf = csrfEl ? csrfEl.value : '';
+      const fd = new FormData();
+      fd.append('csrf_token', csrf);
+      fd.append('bet_id', betId);
+      fd.append('new_role', newRole);
+
+      const card = document.getElementById('bet-' + betId);
+      if (card) {
+        card.style.opacity = '0.5';
+        card.style.pointerEvents = 'none';
+      }
+
+      try {
+        const r = await fetch('/admin/reassign-bet-tipster.php', {
+          method: 'POST',
+          body: fd,
+          credentials: 'same-origin',
+        });
+        const data = await r.json();
+        if (!data.success) {
+          alert('Erreur: ' + (data.error || 'Echec'));
+          if (card) { card.style.opacity = '1'; card.style.pointerEvents = ''; }
+          return;
+        }
+        // Recharger la page pour refresh stats + retirer le bet de la liste actuelle
+        window.location.reload();
+      } catch (e) {
+        alert('Erreur reseau: ' + e.message);
+        if (card) { card.style.opacity = '1'; card.style.pointerEvents = ''; }
+      }
+    }
   </script>
 </div>
 
