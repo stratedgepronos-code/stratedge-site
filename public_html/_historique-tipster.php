@@ -528,6 +528,11 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
 
       const csrfEl = document.getElementById('csrf-reassign');
       const csrf = csrfEl ? csrfEl.value : '';
+      if (!csrf) {
+        alert('Token CSRF manquant. Recharge la page.');
+        return;
+      }
+
       const fd = new FormData();
       fd.append('csrf_token', csrf);
       fd.append('bet_id', betId);
@@ -545,12 +550,26 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
           body: fd,
           credentials: 'same-origin',
         });
-        const data = await r.json();
-        if (!data.success) {
-          alert('Erreur: ' + (data.error || 'Echec'));
+
+        // Lire le texte brut d'abord pour pouvoir diagnostiquer si pas du JSON
+        const raw = await r.text();
+        let data;
+        try {
+          data = JSON.parse(raw);
+        } catch (parseErr) {
+          // Le serveur a renvoye du HTML (page d'erreur, redirect vers login, etc.)
+          console.error('Reponse non-JSON:', raw.substring(0, 500));
+          alert('Erreur serveur (HTTP ' + r.status + ').\n\nRéponse non-JSON reçue. Probablement:\n- Session expirée → reconnecte-toi\n- Erreur PHP serveur (regarde les logs)\n\nDébut de la réponse:\n' + raw.substring(0, 200));
           if (card) { card.style.opacity = '1'; card.style.pointerEvents = ''; }
           return;
         }
+
+        if (!data.success) {
+          alert('Erreur: ' + (data.error || 'Echec inconnu'));
+          if (card) { card.style.opacity = '1'; card.style.pointerEvents = ''; }
+          return;
+        }
+
         // Recharger la page pour refresh stats + retirer le bet de la liste actuelle
         window.location.reload();
       } catch (e) {
