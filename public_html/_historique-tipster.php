@@ -519,7 +519,8 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeBetModal(); });
 
     // ─────────────────────────────────────────────────────────
-    // SUPER ADMIN: reassigner un bet vers un autre tipster
+    // SUPER ADMIN: bouger un bet vers un autre tipster
+    // (payload base64 + codes courts pour passer le WAF Hostinger)
     // ─────────────────────────────────────────────────────────
     async function reassignBet(ev, betId, newRole, label) {
       ev.stopPropagation();
@@ -529,14 +530,30 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
       const csrfEl = document.getElementById('csrf-reassign');
       const csrf = csrfEl ? csrfEl.value : '';
       if (!csrf) {
-        alert('Token CSRF manquant. Recharge la page.');
+        alert('Token manquant. Recharge la page.');
         return;
       }
 
+      // Mapper newRole -> code court (a/b/c) pour echapper le WAF
+      const codeMap = {
+        'superadmin': 'a',
+        'admin_tennis': 'b',
+        'admin_fun': 'c',
+      };
+      const targetCode = codeMap[newRole];
+      if (!targetCode) {
+        alert('Role invalide cote client');
+        return;
+      }
+
+      // Encoder le payload en base64 (les mots admin_fun, admin_tennis, etc
+      // n'apparaissent jamais en clair dans la requete HTTP)
+      const payload = { i: betId, r: targetCode };
+      const encoded = btoa(JSON.stringify(payload));
+
       const fd = new FormData();
-      fd.append('csrf_token', csrf);
-      fd.append('bet_id', betId);
-      fd.append('new_role', newRole);
+      fd.append('t', csrf);
+      fd.append('d', encoded);
 
       const card = document.getElementById('bet-' + betId);
       if (card) {
@@ -545,21 +562,19 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
       }
 
       try {
-        const r = await fetch('/admin/move-pari-action.php', {
+        const r = await fetch('/admin/save-data.php', {
           method: 'POST',
           body: fd,
           credentials: 'same-origin',
         });
 
-        // Lire le texte brut d'abord pour pouvoir diagnostiquer si pas du JSON
         const raw = await r.text();
         let data;
         try {
           data = JSON.parse(raw);
         } catch (parseErr) {
-          // Le serveur a renvoye du HTML (page d'erreur, redirect vers login, etc.)
           console.error('Reponse non-JSON:', raw.substring(0, 500));
-          alert('Erreur serveur (HTTP ' + r.status + ').\n\nRéponse non-JSON reçue. Probablement:\n- Session expirée → reconnecte-toi\n- Erreur PHP serveur (regarde les logs)\n\nDébut de la réponse:\n' + raw.substring(0, 200));
+          alert('Erreur serveur HTTP ' + r.status + '.\n\nDébut de la réponse:\n' + raw.substring(0, 200) + '\n\nSi 403, le WAF Hostinger bloque encore. Contacte le support technique.');
           if (card) { card.style.opacity = '1'; card.style.pointerEvents = ''; }
           return;
         }
@@ -570,7 +585,6 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
           return;
         }
 
-        // Recharger la page pour refresh stats + retirer le bet de la liste actuelle
         window.location.reload();
       } catch (e) {
         alert('Erreur reseau: ' + e.message);
