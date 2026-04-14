@@ -230,8 +230,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 // ── Tweet résultat via IFTTT / Make (même webhook que les nouveaux bets) ──
+                // Note: on NE tweete PAS les bets perdus (évite sur-exposition des pertes).
+                // Tweet uniquement pour: gagné (célébration) + annulé (info remboursement)
                 $twitterResultMsg = '';
-                if ($twitterActif && !empty($twitterConfig['webhook_url']) && $bet) {
+                if ($twitterActif && !empty($twitterConfig['webhook_url']) && $bet && $resultat !== 'perdu') {
                     $titre = $bet['titre'] ? ' — ' . $bet['titre'] : '';
 
                     $coteStr = !empty($bet['cote']) ? ' (cote ' . $bet['cote'] . ')' : '';
