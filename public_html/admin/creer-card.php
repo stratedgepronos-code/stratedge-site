@@ -216,6 +216,19 @@ if ($seAdminFetchPrefix === '/admin' || preg_match('#/admin$#', $seAdminFetchPre
   <div class="creator-layout">
     <div class="form-card">
 
+      <!-- ══ DETECTION AUTO via screenshot ══ -->
+      <div class="form-section-title">📸 Import depuis capture d'écran</div>
+      <div class="help-box" style="background:rgba(255,45,120,0.08);border-color:rgba(255,45,120,0.25);">
+        <strong>🤖 Claude détecte automatiquement le pari depuis ta capture</strong><br>
+        Upload une capture d'écran de bookmaker (Winamax, Betclic, Stake, Unibet, etc.)<br>
+        Claude lit les équipes, marchés, cotes et remplit le formulaire en 5 sec.
+      </div>
+      <div class="field" style="display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;">
+        <input type="file" id="f-screenshot" accept="image/jpeg,image/png,image/webp,image/gif" style="flex:1;min-width:0;background:rgba(255,255,255,0.04);padding:0.6rem;border-radius:8px;border:1px dashed rgba(255,45,120,0.4);color:var(--text-muted);cursor:pointer;">
+        <button type="button" id="btn-detect" onclick="detectFromScreenshot()" style="background:linear-gradient(135deg,#ff2d78,#c4185a);color:#fff;border:none;padding:0.7rem 1.2rem;border-radius:8px;font-family:'Orbitron',sans-serif;font-size:0.85rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;cursor:pointer;white-space:nowrap;">📸 Détecter</button>
+      </div>
+      <div id="detect-status" style="margin-top:0.5rem;font-size:0.85rem;color:var(--text-muted);min-height:20px;"></div>
+
       <!-- ══ SPORT ══ -->
       <div class="form-section-title">🎾 Sport</div>
       <div class="field">
@@ -501,6 +514,145 @@ document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('form-safecombi')) document.getElementById('form-safecombi').style.display = 'none';
   }
 });
+
+// ──────────────────────────────────────────────────────────────
+// 📸 DETECTION AUTO depuis screenshot bookmaker (Claude vision)
+// ──────────────────────────────────────────────────────────────
+async function detectFromScreenshot() {
+  const fileInput = document.getElementById('f-screenshot');
+  const statusEl = document.getElementById('detect-status');
+  const btn = document.getElementById('btn-detect');
+
+  if (!fileInput.files || fileInput.files.length === 0) {
+    statusEl.style.color = '#ff2d78';
+    statusEl.textContent = '⚠️ Sélectionne une capture d\'écran d\'abord.';
+    return;
+  }
+
+  const file = fileInput.files[0];
+  if (file.size > 5 * 1024 * 1024) {
+    statusEl.style.color = '#ff2d78';
+    statusEl.textContent = '⚠️ Image trop lourde (max 5MB). Compresse-la d\'abord.';
+    return;
+  }
+
+  // UI loading
+  btn.disabled = true;
+  btn.textContent = '🔍 Analyse en cours...';
+  statusEl.style.color = 'var(--text-muted)';
+  statusEl.textContent = '🤖 Claude analyse la capture...';
+
+  const csrf = document.getElementById('csrf_token').value;
+  const fd = new FormData();
+  fd.append('csrf_token', csrf);
+  fd.append('screenshot', file);
+
+  try {
+    const r = await fetch('/admin/detect-bet-from-screenshot.php', {
+      method: 'POST',
+      body: fd,
+      credentials: 'same-origin',
+    });
+    const data = await r.json();
+
+    if (!data.success) {
+      statusEl.style.color = '#ff2d78';
+      statusEl.textContent = '❌ ' + (data.error || 'Détection échouée');
+      btn.disabled = false;
+      btn.textContent = '📸 Détecter';
+      return;
+    }
+
+    if (!data.matchs || data.matchs.length === 0) {
+      statusEl.style.color = '#ff2d78';
+      statusEl.textContent = '❌ Aucun match détecté dans cette image.';
+      btn.disabled = false;
+      btn.textContent = '📸 Détecter';
+      return;
+    }
+
+    // Remplir le formulaire selon le nb de paris
+    fillFormFromDetection(data);
+
+    // Status final
+    const nb = data.matchs.length;
+    const cote = data.cote_totale || data.matchs[0].cote;
+    const bookmaker = data.bookmaker_detecte ? ` (${data.bookmaker_detecte})` : '';
+    statusEl.style.color = '#39ff14';
+    statusEl.textContent = `✅ ${nb} pari${nb>1?'s':''} détecté${nb>1?'s':''}${bookmaker} · Cote totale ${cote} · Vérifie/modifie puis génère.`;
+  } catch (e) {
+    statusEl.style.color = '#ff2d78';
+    statusEl.textContent = '❌ Erreur réseau : ' + e.message;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📸 Détecter';
+  }
+}
+
+function fillFormFromDetection(data) {
+  const matchs = data.matchs;
+  const isCombine = matchs.length > 1;
+  const typeSuggere = (data.type_suggere || 'safe').toLowerCase();
+
+  // 1. Sport: prendre celui du 1er match
+  const sport = matchs[0].sport || 'football';
+  const sportSel = document.getElementById('f-sport');
+  if (sportSel) {
+    for (const opt of sportSel.options) {
+      if (opt.value === sport) { sportSel.value = sport; break; }
+    }
+  }
+
+  // 2. Type: si combine de safes -> SafeCombi, si fun (cote >5) -> Fun, sinon Safe ou Live
+  let typeUI = 'Safe';
+  if (typeSuggere === 'live') typeUI = 'Live';
+  else if (typeSuggere === 'fun') typeUI = 'Fun';
+  else if (isCombine) typeUI = 'SafeCombi';
+  else typeUI = 'Safe';
+
+  // Si admin Fun Sport, forcer Fun
+  if (document.getElementById('force-fun-type')) typeUI = 'Fun';
+
+  // Activer le bon type (pill) et afficher le bon formulaire
+  if (typeof selectType === 'function' && document.querySelector(`.type-pill[data-type="${typeUI}"]`)) {
+    selectType(typeUI);
+  }
+
+  // 3. Remplir les champs selon le type
+  if (typeUI === 'Safe' && !isCombine) {
+    const m = matchs[0];
+    const $ = id => document.getElementById(id);
+    if ($('f-match'))  $('f-match').value  = m.equipes || '';
+    if ($('f-prono'))  $('f-prono').value  = m.marche || '';
+    if ($('f-cote'))   $('f-cote').value   = m.cote || '';
+  } else if (typeUI === 'Live' && !isCombine) {
+    const m = matchs[0];
+    const $ = id => document.getElementById(id);
+    if ($('f-live-match')) $('f-live-match').value = m.equipes || '';
+    if ($('f-live-prono')) $('f-live-prono').value = m.marche || '';
+    if ($('f-live-cote'))  $('f-live-cote').value  = m.cote || '';
+  } else {
+    // Combiné (Fun ou SafeCombi) : remplir le textarea raw
+    const lines = [];
+    matchs.forEach((m, i) => {
+      const idx = i + 1;
+      lines.push(`Match ${idx} : ${m.equipes || ''}`);
+      lines.push(`Prono ${idx} : ${m.marche || ''}`);
+      lines.push(`Cote ${idx} : ${m.cote || ''}`);
+      lines.push('');
+    });
+    const txt = lines.join('\n').trim();
+    if (typeUI === 'Fun') {
+      const ta = document.getElementById('f-raw-fun');
+      if (ta) ta.value = txt;
+    } else if (typeUI === 'SafeCombi') {
+      const ta = document.getElementById('f-raw-safecombi');
+      if (ta) ta.value = txt;
+    }
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
 
 // ── Génération de la card ───────────────────────────────────
 async function generateCard() {
