@@ -291,11 +291,7 @@ if (in_array($adminRole, ['admin_fun', 'admin_fun_sport'], true)) {
         debugLog("WARN: admin Fun a tente de poster en tennis -> force football");
         $sport = 'football';
     }
-    // Et le type doit etre Fun (jamais Safe/Live/SafeCombi pour cet admin)
-    if ($typeBet !== 'Fun') {
-        debugLog("WARN: admin Fun a tente type=$typeBet -> force Fun");
-        $typeBet = 'Fun';
-    }
+    // Tous les types autorises (Safe, Live, Fun, SafeCombi)
 }
 if ($adminRole === 'admin_tennis') {
     // Admin Tennis: toujours tennis

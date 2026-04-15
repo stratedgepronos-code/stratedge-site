@@ -252,18 +252,15 @@ if ($seAdminFetchPrefix === '/admin' || preg_match('#/admin$#', $seAdminFetchPre
       </div>
 
       <!-- ══ TYPE DE BET (pills) ══ -->
-      <?php if (!$isAdminFunSport): ?>
       <div class="form-section-title">⚡ Type de Bet</div>
       <div class="type-selector">
         <div class="type-pill <?= $isAdminTennis ? '' : 'active-safe' ?>" data-type="Safe" onclick="selectType('Safe')">🛡️ Safe</div>
         <div class="type-pill" data-type="Live" onclick="selectType('Live')">🔴 Live</div>
-        <div class="type-pill <?= $isAdminTennis ? '' : '' ?>" data-type="Fun" onclick="selectType('Fun')">🎲 Fun</div>
+        <div class="type-pill" data-type="Fun" onclick="selectType('Fun')">🎲 Fun</div>
         <div class="type-pill" data-type="SafeCombi" onclick="selectType('SafeCombi')">🛡️⚡ Combi</div>
       </div>
-      <?php else: ?>
-      <input type="hidden" id="force-fun-type" value="1">
-      <div class="form-section-title">⚡ Type</div>
-      <p style="color:var(--text-muted);font-size:0.9rem;">🎯 Fun — Foot / NBA / NHL uniquement</p>
+      <?php if ($isAdminFunSport): ?>
+      <p style="color:var(--text-muted);font-size:0.85rem;margin-top:0.4rem;">⚽🏀🏒⚾ Foot / NBA / NHL / MLB uniquement (pas de tennis)</p>
       <?php endif; ?>
 
       <!-- ══ FORMULAIRE SAFE (champs structurés) ══ -->
@@ -505,16 +502,6 @@ function selectType(type) {
 }
 
 // Admin Fun Sport : forcer type Fun au chargement
-document.addEventListener('DOMContentLoaded', function() {
-  if (document.getElementById('force-fun-type')) {
-    currentType = 'Fun';
-    document.getElementById('form-fun').style.display = 'block';
-    document.getElementById('form-safe').style.display = 'none';
-    document.getElementById('form-live').style.display = 'none';
-    if (document.getElementById('form-safecombi')) document.getElementById('form-safecombi').style.display = 'none';
-  }
-});
-
 // ──────────────────────────────────────────────────────────────
 // 📸 DETECTION AUTO depuis screenshot bookmaker (Claude vision)
 // ──────────────────────────────────────────────────────────────
@@ -598,7 +585,7 @@ function fillFormFromDetection(data) {
   // Admin Fun Sport: jamais tennis (force football si tennis detecte)
   // Admin Tennis: toujours tennis
   let sport = matchs[0].sport || 'football';
-  const isAdminFunSport = !!document.getElementById('force-fun-type');
+  // Determiner si admin restreint au sport (admin Fun: pas de tennis)
   const sportSel = document.getElementById('f-sport');
   if (sportSel) {
     // Verifier si le sport detecte est disponible dans le select
@@ -620,9 +607,6 @@ function fillFormFromDetection(data) {
   else if (typeSuggere === 'fun') typeUI = 'Fun';
   else if (isCombine) typeUI = 'SafeCombi';
   else typeUI = 'Safe';
-
-  // Si admin Fun Sport, forcer Fun (il ne peut pas faire autre chose)
-  if (isAdminFunSport) typeUI = 'Fun';
 
   // Activer le bon type (pill) et afficher le bon formulaire
   if (typeof selectType === 'function' && document.querySelector(`.type-pill[data-type="${typeUI}"]`)) {
@@ -994,7 +978,6 @@ async function posterBetFromCard() {
   let type = typeMap[currentType] || 'safe';
   let sport = document.getElementById('f-sport') ? document.getElementById('f-sport').value : 'tennis';
   let categorie = sport === 'tennis' ? 'tennis' : 'multi';
-  if (document.getElementById('force-fun-type')) { type = 'fun'; categorie = 'multi'; sport = document.getElementById('f-sport') ? document.getElementById('f-sport').value : 'football'; }
   const analyseHtml = (document.getElementById('f-analyse-html') && document.getElementById('f-analyse-html').value.trim()) || '';
   // Cote = champ card si dispo, sinon cote retournée par generate-card
   let cote = '';

@@ -259,6 +259,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     $texte = $phrases[$resultat];
 
+                    // Ajouter les hashtags selon le role qui a poste le bet original
+                    // (pour cibler le bon public et maximiser la visibilite)
+                    if (function_exists('hashtagsForRole')) {
+                        $roleOriginal = $bet['posted_by_role'] ?? $betData['posted_by_role'] ?? 'superadmin';
+                        $texte .= "\n\n" . hashtagsForRole($roleOriginal);
+                    }
+
                     $imageUrl = !empty($bet['image_path'])
                         ? 'https://stratedgepronos.fr/' . $bet['image_path']
                         : 'https://stratedgepronos.fr/assets/images/logo_site_transparent.png';

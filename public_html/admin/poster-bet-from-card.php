@@ -33,10 +33,10 @@ $coteRaw    = trim((string)($_POST['cote'] ?? ''));
 
 $adminRole = getAdminRole();
 $isSuperAdmin = isSuperAdmin();
-if ($adminRole === 'admin_fun_sport') {
-    $type = 'fun';
-    $categorie = 'multi';
+if ($adminRole === 'admin_fun_sport' || $adminRole === 'admin_fun') {
+    // Admin Fun: tous types, sports = foot/basket/hockey/baseball uniquement (jamais tennis)
     $sport = in_array($sport, ['football','basket','hockey','baseball']) ? $sport : 'football';
+    $categorie = 'multi';
 } elseif ($adminRole === 'admin_tennis') {
     $categorie = 'tennis';
     $sport = 'tennis';

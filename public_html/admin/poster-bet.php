@@ -113,13 +113,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $lastCategorie = 'tennis';
                             $lastType = $types[$i] ?? 'safe';
                         } elseif ($adminRole === 'admin_fun' || $adminRole === 'admin_fun_sport') {
+                            // Admin Fun: tous types autorises (safe/live/fun/safecombi), categorie multi forcee
                             $lastCategorie = 'multi';
-                            $lastType = 'fun';
+                            $lastType = $types[$i] ?? 'fun';
                         }
-                        if ($adminRole === 'admin_fun_sport') {
-                            $lastSport = in_array($sports[$i] ?? '', ['football','basket','hockey']) ? $sports[$i] : 'football';
+                        if ($adminRole === 'admin_fun' || $adminRole === 'admin_fun_sport') {
+                            // Sports admin Fun: foot/basket/hockey/baseball uniquement (jamais tennis)
+                            $lastSport = in_array($sports[$i] ?? '', ['football','basket','hockey','baseball']) ? $sports[$i] : 'football';
                         } else {
-                            $lastSport = ($lastCategorie === 'tennis') ? 'tennis' : (in_array($sports[$i] ?? '', ['football','tennis','basket','hockey']) ? $sports[$i] : 'football');
+                            $lastSport = ($lastCategorie === 'tennis') ? 'tennis' : (in_array($sports[$i] ?? '', ['football','tennis','basket','hockey','baseball']) ? $sports[$i] : 'football');
                         }
                         $lastAnalyseHtml = trim((string)($analyseHtmls[$i] ?? ''));
                         $lastCote = trim((string)($cotes[$i] ?? ''));
@@ -382,6 +384,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 ];
                             }
                             $texte = $phrases[$resultat];
+
+                            // Ajouter les hashtags selon le role qui a poste le bet original
+                            // (pour cibler le bon public et maximiser la visibilite)
+                            if (function_exists('hashtagsForRole')) {
+                                $roleOriginal = $bet['posted_by_role'] ?? 'superadmin';
+                                $texte .= "\n\n" . hashtagsForRole($roleOriginal);
+                            }
+
                             $imgPath = isset($bet['image_path']) ? trim($bet['image_path']) : '';
                             if ($imgPath !== '' && strpos(ltrim($imgPath, '/'), 'uploads/') !== 0) {
                                 $imgPath = 'uploads/bets/' . ltrim($imgPath, '/');
@@ -752,7 +762,10 @@ let fileIndex = 0; // compteur unique par fichier
 
 const typeOpts = `
 <?php if ($adminRole === 'admin_fun' || $adminRole === 'admin_fun_sport'): ?>
+  <option value="safe">🛡️ Safe</option>
   <option value="fun" selected>🎯 Fun</option>
+  <option value="live">⚡ Live</option>
+  <option value="safe_combi">🛡️⚡ Combi</option>
 <?php elseif ($adminRole === 'admin_tennis'): ?>
   <option value="safe">🛡️ Safe</option>
   <option value="fun">🎯 Fun</option>
@@ -801,24 +814,24 @@ function addFiles(files) {
             <option value="tennis">🎾 Tennis</option>
             <?php endif; ?>
           </select>
-          <?php if ($adminRole === 'admin_fun_sport'): ?>
+          <?php if ($adminRole === 'admin_fun' || $adminRole === 'admin_fun_sport'): ?>
           <select name="sport[${idx}]" class="sport-select" style="margin-top:0.4rem;width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.5rem 0.75rem;color:#f0f4f8;font-family:'Rajdhani',sans-serif;font-size:0.9rem;">
             <option value="football">⚽ Foot</option>
             <option value="basket">🏀 NBA</option>
             <option value="hockey">🏒 NHL</option>
+            <option value="baseball">⚾ MLB</option>
           </select>
-          <?php elseif ($adminRole !== 'admin_fun'): ?>
+          <?php elseif ($adminRole !== 'admin_tennis'): ?>
           <select name="sport[${idx}]" class="sport-select" style="margin-top:0.4rem;width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.5rem 0.75rem;color:#f0f4f8;font-family:'Rajdhani',sans-serif;font-size:0.9rem;">
             <option value="football">⚽ Foot</option>
             <option value="tennis">🎾 Tennis</option>
             <option value="basket">🏀 Basket</option>
             <option value="hockey">🏒 Hockey</option>
+            <option value="baseball">⚾ MLB</option>
           </select>
           <?php endif; ?>
           <input type="number" name="cote[${idx}]" step="0.01" min="0" placeholder="Cote (optionnel)" style="margin-top:0.4rem;width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.5rem 0.75rem;color:#f0f4f8;font-size:0.9rem;">
-          <?php if ($adminRole !== 'admin_fun' && $adminRole !== 'admin_fun_sport'): ?>
           <textarea name="analyse_html[${idx}]" placeholder="Analyse HTML (optionnel — coller le HTML de la card pour la page bet)" rows="2" style="margin-top:0.4rem;width:100%;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:0.5rem 0.75rem;color:#f0f4f8;font-size:0.75rem;resize:vertical;"></textarea>
-          <?php endif; ?>
           <div class="locked-upload-zone" onclick="this.querySelector('input').click()" title="Card Locked pour Twitter (optionnel)">
             <input type="file" name="locked_images[${idx}]" accept="image/*" style="display:none" onchange="previewLocked(this)">
             <div class="locked-label">🔒 Card Locked Twitter <span style="opacity:0.5;font-size:0.75rem;">(optionnel)</span></div>
