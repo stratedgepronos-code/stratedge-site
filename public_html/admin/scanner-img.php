@@ -1,57 +1,88 @@
 <?php
 // ============================================================
-// STRATEDGE — Detection auto bet depuis screenshot bookmaker
-// admin/detect-bet-from-screenshot.php
+// STRATEDGE — Scanner image pour extraction auto de bet
+// admin/scanner-img.php
 //
 // Workflow:
-// 1. Admin uploade une capture d'ecran de bookmaker (POST multipart)
+// 1. Admin uploade une image (POST multipart)
 // 2. On envoie l'image en base64 a Claude vision
 // 3. Claude renvoie un JSON structure: matchs[], cote_totale, type
 // 4. Frontend remplit le formulaire avec les donnees
 // ============================================================
 
-require_once __DIR__ . '/../includes/auth.php';
-requireAdmin();
+ob_start();
 
 header('Content-Type: application/json; charset=utf-8');
 
-// --- Recuperation cle Claude ---
+// Helper pour quitter proprement avec JSON (toujours)
+function jsonExit(array $data, int $http = 200): void {
+    while (ob_get_level() > 0) ob_end_clean();
+    http_response_code($http);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode($data);
+    exit;
+}
+
+// Capturer toute erreur PHP et la transformer en JSON
+set_error_handler(function ($severity, $message, $file, $line) {
+    if (!(error_reporting() & $severity)) return false;
+    error_log("[scanner-img] PHP error: $message in $file:$line");
+    jsonExit(['success' => false, 'error' => "PHP error: $message"], 500);
+});
+set_exception_handler(function ($e) {
+    error_log('[scanner-img] Exception: ' . $e->getMessage());
+    jsonExit(['success' => false, 'error' => 'Exception: ' . $e->getMessage()], 500);
+});
+
+try {
+    require_once __DIR__ . '/../includes/auth.php';
+} catch (Throwable $e) {
+    jsonExit(['success' => false, 'error' => 'Auth load failed: ' . $e->getMessage()], 500);
+}
+
+// Verif admin SANS redirect
+if (!function_exists('isAdmin') || !isAdmin()) {
+    jsonExit(['success' => false, 'error' => 'Acces refuse: admin requis. Reconnecte-toi.'], 403);
+}
+
+// Verif methode
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    jsonExit(['success' => false, 'error' => 'POST requis.'], 405);
+}
+
+// CSRF
+$csrf = $_POST['csrf_token'] ?? '';
+if (!$csrf || (function_exists('verifyCsrf') && !verifyCsrf($csrf))) {
+    jsonExit(['success' => false, 'error' => 'CSRF invalide. Recharge la page.'], 403);
+}
+
+// Cle Claude
 $configFile = __DIR__ . '/../config-keys.php';
 if (file_exists($configFile)) { require_once $configFile; }
 $ANTHROPIC_KEY = defined('ANTHROPIC_API_KEY') ? ANTHROPIC_API_KEY : null;
 if (!$ANTHROPIC_KEY) {
-    echo json_encode(['success' => false, 'error' => 'Cle Claude non configuree.']);
-    exit;
+    jsonExit(['success' => false, 'error' => 'Cle Claude non configuree.'], 500);
 }
 
-// --- CSRF ---
-if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
-    echo json_encode(['success' => false, 'error' => 'Token CSRF invalide.']);
-    exit;
-}
-
-// --- Validation upload ---
+// Validation upload
 if (empty($_FILES['screenshot']) || $_FILES['screenshot']['error'] !== UPLOAD_ERR_OK) {
-    echo json_encode(['success' => false, 'error' => 'Aucune image uploadee.']);
-    exit;
+    jsonExit(['success' => false, 'error' => 'Aucune image uploadee.'], 400);
 }
 $tmpFile = $_FILES['screenshot']['tmp_name'];
 $mimeType = mime_content_type($tmpFile);
 $allowedMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 if (!in_array($mimeType, $allowedMimes)) {
-    echo json_encode(['success' => false, 'error' => 'Format non supporte (JPEG/PNG/WebP/GIF).']);
-    exit;
+    jsonExit(['success' => false, 'error' => 'Format non supporte (JPEG/PNG/WebP/GIF).'], 400);
 }
 $sizeMb = filesize($tmpFile) / 1024 / 1024;
 if ($sizeMb > 5) {
-    echo json_encode(['success' => false, 'error' => 'Image trop lourde (max 5MB).']);
-    exit;
+    jsonExit(['success' => false, 'error' => 'Image trop lourde (max 5MB).'], 400);
 }
 
-// --- Encodage base64 pour Claude API ---
+// Base64
 $imageData = base64_encode(file_get_contents($tmpFile));
 
-// --- Construction du prompt vision ---
+// Prompt vision
 $systemPrompt = <<<TXT
 Tu es un assistant specialise dans l'analyse de captures d'ecran de paris sportifs (Winamax, Betclic, Unibet, Stake, PMU, Parions Sport, etc.).
 
@@ -59,9 +90,9 @@ Ta mission: extraire de l'image les informations du/des paris affiches et renvoy
 
 REGLES:
 1. Reponds UNIQUEMENT en JSON valide, sans aucun texte avant ou apres
-2. Pas de balises markdown (pas de ```json)
+2. Pas de balises markdown (pas de \`\`\`json)
 3. Si plusieurs paris sur l'image = combine -> liste tous les matchs dans "matchs"
-4. Cote totale = produit des cotes individuelles (calcule-la si non visible)
+4. Cote totale = produit des cotes individuelles
 5. Sport: 'football', 'tennis', 'basket', 'hockey', 'baseball' uniquement
 6. Type suggere: 'safe' (cote totale <2.5), 'live' (si tag "Live" visible), 'fun' (cote totale >5), 'safecombi' (combine de safe)
 
@@ -84,13 +115,11 @@ FORMAT JSON ATTENDU:
   "bookmaker_detecte": "Winamax"
 }
 
-Si l'image n'est PAS une capture de pari, renvoie:
+Si l'image n'est PAS une capture de pari sportif, renvoie:
 {"success": false, "error": "Pas une capture de pari sportif"}
 
 Champs optionnels: "competition", "date", "bookmaker_detecte" (mets null si invisible).
 TXT;
-
-$userPrompt = "Voici une capture d'ecran. Analyse-la et renvoie le JSON structure du/des paris detectes.";
 
 $payload = [
     'model' => 'claude-sonnet-4-6',
@@ -110,14 +139,14 @@ $payload = [
                 ],
                 [
                     'type' => 'text',
-                    'text' => $userPrompt,
+                    'text' => "Analyse cette capture d'ecran et renvoie le JSON structure du/des paris.",
                 ]
             ]
         ]
     ],
 ];
 
-// --- Appel API ---
+// Appel API
 $ch = curl_init('https://api.anthropic.com/v1/messages');
 curl_setopt_array($ch, [
     CURLOPT_POST => true,
@@ -136,32 +165,26 @@ $curlErr = curl_error($ch);
 curl_close($ch);
 
 if ($curlErr) {
-    echo json_encode(['success' => false, 'error' => 'Erreur reseau: ' . $curlErr]);
-    exit;
+    jsonExit(['success' => false, 'error' => 'Erreur reseau Claude: ' . $curlErr], 500);
 }
 if ($httpCode !== 200) {
-    error_log('[detect-bet] HTTP ' . $httpCode . ' response: ' . substr($response, 0, 500));
-    echo json_encode(['success' => false, 'error' => 'Claude API HTTP ' . $httpCode]);
-    exit;
+    error_log('[scanner-img] Claude HTTP ' . $httpCode . ': ' . substr($response, 0, 500));
+    jsonExit(['success' => false, 'error' => 'Claude API HTTP ' . $httpCode], 500);
 }
 
 $apiData = json_decode($response, true);
 $claudeText = $apiData['content'][0]['text'] ?? '';
 if (!$claudeText) {
-    echo json_encode(['success' => false, 'error' => 'Reponse Claude vide.']);
-    exit;
+    jsonExit(['success' => false, 'error' => 'Reponse Claude vide.'], 500);
 }
 
-// Nettoyer la reponse Claude (parfois entoure de markdown malgre l'instruction)
-$claudeText = preg_replace('/^```json\s*|\s*```$/m', '', trim($claudeText));
-$claudeText = preg_replace('/^```\s*|\s*```$/m', '', trim($claudeText));
+// Nettoyer la reponse (parfois entoure de markdown)
+$claudeText = preg_replace('/^```(?:json)?\s*|\s*```$/m', '', trim($claudeText));
 
 $detected = json_decode($claudeText, true);
 if (!is_array($detected)) {
-    error_log('[detect-bet] JSON invalide de Claude: ' . substr($claudeText, 0, 500));
-    echo json_encode(['success' => false, 'error' => 'Detection echouee, reessaie avec une image plus claire.']);
-    exit;
+    error_log('[scanner-img] JSON invalide: ' . substr($claudeText, 0, 500));
+    jsonExit(['success' => false, 'error' => 'Detection echouee, reessaie avec une image plus claire.'], 500);
 }
 
-// On retourne directement la reponse de Claude (success/error inclus)
-echo json_encode($detected);
+jsonExit($detected);
