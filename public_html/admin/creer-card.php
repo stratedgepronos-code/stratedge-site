@@ -548,7 +548,7 @@ async function detectFromScreenshot() {
   fd.append('screenshot', file);
 
   try {
-    const r = await fetch('/admin/scanner-img.php', {
+    const r = await fetch(adminFetchUrl('scanner-img.php'), {
       method: 'POST',
       body: fd,
       credentials: 'same-origin',
