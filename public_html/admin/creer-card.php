@@ -548,7 +548,7 @@ async function detectFromScreenshot() {
   fd.append('screenshot', file);
 
   try {
-    const r = await fetch('/admin/detect-bet-from-screenshot.php', {
+    const r = await fetch('/admin/detect-pari-screenshot.php', {
       method: 'POST',
       body: fd,
       credentials: 'same-origin',
@@ -594,13 +594,24 @@ function fillFormFromDetection(data) {
   const isCombine = matchs.length > 1;
   const typeSuggere = (data.type_suggere || 'safe').toLowerCase();
 
-  // 1. Sport: prendre celui du 1er match
-  const sport = matchs[0].sport || 'football';
+  // 1. Sport: prendre celui du 1er match, MAIS respecter les restrictions admin
+  // Admin Fun Sport: jamais tennis (force football si tennis detecte)
+  // Admin Tennis: toujours tennis
+  let sport = matchs[0].sport || 'football';
+  const isAdminFunSport = !!document.getElementById('force-fun-type');
   const sportSel = document.getElementById('f-sport');
   if (sportSel) {
+    // Verifier si le sport detecte est disponible dans le select
+    let sportAvailable = false;
     for (const opt of sportSel.options) {
-      if (opt.value === sport) { sportSel.value = sport; break; }
+      if (opt.value === sport) { sportAvailable = true; break; }
     }
+    // Si pas dispo (ex: admin Fun + tennis detecte), prendre le 1er option du select
+    if (!sportAvailable) {
+      sport = sportSel.options[0].value;
+      console.warn('Sport detecte (' + (matchs[0].sport || '?') + ') non autorise pour cet admin, fallback sur ' + sport);
+    }
+    sportSel.value = sport;
   }
 
   // 2. Type: si combine de safes -> SafeCombi, si fun (cote >5) -> Fun, sinon Safe ou Live
@@ -610,8 +621,8 @@ function fillFormFromDetection(data) {
   else if (isCombine) typeUI = 'SafeCombi';
   else typeUI = 'Safe';
 
-  // Si admin Fun Sport, forcer Fun
-  if (document.getElementById('force-fun-type')) typeUI = 'Fun';
+  // Si admin Fun Sport, forcer Fun (il ne peut pas faire autre chose)
+  if (isAdminFunSport) typeUI = 'Fun';
 
   // Activer le bon type (pill) et afficher le bon formulaire
   if (typeof selectType === 'function' && document.querySelector(`.type-pill[data-type="${typeUI}"]`)) {

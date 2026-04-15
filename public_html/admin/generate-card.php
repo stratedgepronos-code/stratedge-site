@@ -283,7 +283,29 @@ if ($typeBet === '_ping') {
     exit;
 }
 
-debugLog("Sport: $sport | Type: $typeBet | Model: " . CLAUDE_MODEL);
+// SECURITE: enforcer les restrictions de sport selon le role admin (defense en profondeur)
+$adminRole = function_exists('getAdminRole') ? getAdminRole() : '';
+if (in_array($adminRole, ['admin_fun', 'admin_fun_sport'], true)) {
+    // Admin Fun: jamais tennis. Si tennis force par le client, fallback football.
+    if ($sport === 'tennis') {
+        debugLog("WARN: admin Fun a tente de poster en tennis -> force football");
+        $sport = 'football';
+    }
+    // Et le type doit etre Fun (jamais Safe/Live/SafeCombi pour cet admin)
+    if ($typeBet !== 'Fun') {
+        debugLog("WARN: admin Fun a tente type=$typeBet -> force Fun");
+        $typeBet = 'Fun';
+    }
+}
+if ($adminRole === 'admin_tennis') {
+    // Admin Tennis: toujours tennis
+    if ($sport !== 'tennis') {
+        debugLog("WARN: admin Tennis a tente sport=$sport -> force tennis");
+        $sport = 'tennis';
+    }
+}
+
+debugLog("Sport: $sport | Type: $typeBet | Role: $adminRole | Model: " . CLAUDE_MODEL);
 
 try {
 
