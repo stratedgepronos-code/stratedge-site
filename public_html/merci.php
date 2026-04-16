@@ -19,7 +19,7 @@ $packs = [
   'semaine'     => ['titre'=>'Pack Semaine','emoji'=>'📅','color'=>'#ff2d78','glow'=>'rgba(255,45,120,0.18)','grad'=>'linear-gradient(135deg,#ff2d78,#c4185a)','video'=>'assets/images/DOIGT.mp4'],
   'pack10'      => ['titre'=>'Pack 10','emoji'=>'🏆','color'=>'#ff2d78','glow'=>'rgba(255,45,120,0.18)','grad'=>'linear-gradient(135deg,#ff2d78,#c4185a)','video'=>'assets/images/DOIGT.mp4'],
   'tennis'      => ['titre'=>'Tennis Semaine','emoji'=>'🎾','color'=>'#00d46a','glow'=>'rgba(0,212,106,0.18)','grad'=>'linear-gradient(135deg,#00d46a,#00a852)','video'=>'assets/images/mascotte_tennis.mp4'],
-  'fun'         => ['titre'=>'Fun Week-End','emoji'=>'🎲','color'=>'#a855f7','glow'=>'rgba(168,85,247,0.18)','grad'=>'linear-gradient(135deg,#a855f7,#ec4899)','video'=>'assets/images/mascotte-fun.mp4'],
+  'fun'         => ['titre'=>'Fun Semaine','emoji'=>'🎲','color'=>'#a855f7','glow'=>'rgba(168,85,247,0.18)','grad'=>'linear-gradient(135deg,#a855f7,#ec4899)','video'=>'assets/images/mascotte-fun.mp4'],
   // Backward-compat pour anciens liens/webhooks qui pourraient encore arriver
   'daily'       => ['titre'=>'Daily','emoji'=>'⚡','color'=>'#ff2d78','glow'=>'rgba(255,45,120,0.18)','grad'=>'linear-gradient(135deg,#ff2d78,#c4185a)','video'=>'assets/images/DOIGT.mp4'],
   'weekend'     => ['titre'=>'Week-End','emoji'=>'📅','color'=>'#00d4ff','glow'=>'rgba(0,212,255,0.18)','grad'=>'linear-gradient(135deg,#00d4ff,#0099cc)','video'=>'assets/images/air.mp4'],
@@ -160,7 +160,12 @@ nav{position:sticky;top:0;z-index:100;background:rgba(6,8,16,0.88);backdrop-filt
     <div class="mascot-ring">
       <video autoplay loop muted playsinline><source src="<?= $p['video'] ?>" type="video/mp4"></video>
     </div>
+    <div style="margin-top:1.5rem;">
+      <a href="bets.php" class="cta-btn" style="font-size:.75rem;padding:.8rem 2rem;">Accéder aux Bets →</a>
+    </div>
   </div>
+
+  <div style="text-align:center;font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);margin-bottom:2rem;opacity:.5;">↓ Lis ces infos importantes avant de commencer ↓</div>
 
   <!-- ═══ DISCLAIMER RESPONSABLE ═══ -->
   <div class="info-card warn" style="animation-delay:.15s">
@@ -212,7 +217,41 @@ nav{position:sticky;top:0;z-index:100;background:rgba(6,8,16,0.88);backdrop-filt
     </div>
     <div class="highlight-box">
       <p><strong>Comment activer les Push :</strong><br>
-      Depuis ton <strong>Dashboard</strong>, clique sur le bouton <strong>"Activer les notifications"</strong>. Ton navigateur te demandera l'autorisation — accepte et c'est fait. Si tu es sur iPhone, ajoute d'abord le site en tant qu'application (bouton Partager → "Sur l'écran d'accueil").</p>
+      Depuis ton <strong>Dashboard</strong>, clique sur le bouton <strong>"Activer les notifications"</strong>. Ton navigateur te demandera l'autorisation — accepte et c'est fait.</p>
+    </div>
+  </div>
+
+  <!-- ═══ INSTALLER L'APPLI SUR TON TÉLÉPHONE ═══ -->
+  <div class="info-card green" style="animation-delay:.38s">
+    <div class="ic-icon">📲</div>
+    <div class="ic-title">Installe StratEdge comme une appli sur ton téléphone</div>
+    <div class="ic-text">
+      Tu peux accéder à StratEdge directement depuis ton écran d'accueil, <strong>comme une vraie application</strong> — sans passer par le navigateur. C'est plus rapide, plus pratique, et tu recevras les <strong>notifications push</strong> même quand l'appli est fermée.
+    </div>
+
+    <div class="highlight-box" style="margin-top:1rem;">
+      <p style="margin-bottom:.5rem;"><strong>📱 Sur iPhone (Safari) :</strong></p>
+      <ol class="steps-list" style="margin-top:.3rem;">
+        <li>Ouvre <strong>stratedgepronos.fr</strong> dans <strong>Safari</strong> (obligatoire, pas Chrome)</li>
+        <li>Appuie sur le bouton <strong>Partager</strong> (carré avec flèche ↑ en bas de l'écran)</li>
+        <li>Fais défiler et appuie sur <strong>"Sur l'écran d'accueil"</strong></li>
+        <li>Confirme en appuyant sur <strong>"Ajouter"</strong> — c'est fait !</li>
+      </ol>
+    </div>
+
+    <div class="highlight-box" style="margin-top:.8rem;">
+      <p style="margin-bottom:.5rem;"><strong>🤖 Sur Android (Chrome) :</strong></p>
+      <ol class="steps-list" style="margin-top:.3rem;">
+        <li>Ouvre <strong>stratedgepronos.fr</strong> dans <strong>Chrome</strong></li>
+        <li>Appuie sur les <strong>3 points ⋮</strong> en haut à droite</li>
+        <li>Appuie sur <strong>"Installer l'application"</strong> ou <strong>"Ajouter à l'écran d'accueil"</strong></li>
+        <li>Confirme — l'icône StratEdge apparaît sur ton écran !</li>
+      </ol>
+    </div>
+
+    <div class="highlight-box" style="margin-top:.8rem;border-color:rgba(0,212,255,0.2);background:rgba(0,212,255,0.04);">
+      <p><strong style="color:#00d4ff;">💡 Pourquoi installer l'appli ?</strong><br>
+      Accès <strong>instantané</strong> en 1 tap depuis l'écran d'accueil · <strong>Notifications push</strong> même appli fermée · Mode <strong>plein écran</strong> sans barre du navigateur · Chargement <strong>ultra rapide</strong></p>
     </div>
   </div>
 
