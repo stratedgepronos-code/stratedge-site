@@ -283,21 +283,31 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
           $mid = (int)$membre['id'];
           $bid = (int)$bet['id'];
           $betRole = $bet['posted_by_role'] ?? 'superadmin';
-          if ($bet['categorie'] === 'tennis' && $betRole === 'admin_tennis') {
-              // Bet Tennis (Shuriik) → accès par abo tennis uniquement
+          
+          if ($bet['categorie'] === 'tennis') {
+              // Bet Tennis → accès par abo tennis (peu importe qui l'a posté)
               $stmtTen = $db->prepare("SELECT 1 FROM abonnements WHERE membre_id=? AND type='tennis' AND actif=1 AND date_fin>NOW() LIMIT 1");
               $stmtTen->execute([$mid]);
               if ($stmtTen->fetchColumn()) $hasAcces = true;
-          } elseif ($betRole === 'admin_fun') {
-              // Bet Fun (Morrayaffa) → accès par abo fun uniquement
+          }
+          
+          if (!$hasAcces && $betRole === 'admin_fun') {
+              // Bet Fun (Morrayaffa) → accès par abo fun
               $stmtFun = $db->prepare("SELECT 1 FROM abonnements WHERE membre_id=? AND type='fun' AND actif=1 AND date_fin>NOW() LIMIT 1");
               $stmtFun->execute([$mid]);
               if ($stmtFun->fetchColumn()) $hasAcces = true;
-          } else {
-              // Bet superadmin (Alex) → VIP Max OU crédits (pass 24h inclus)
+          }
+          
+          if (!$hasAcces) {
+              // VIP Max → accès à tout
               $stmtV = $db->prepare("SELECT 1 FROM abonnements WHERE membre_id=? AND type='vip_max' AND actif=1 LIMIT 1");
               $stmtV->execute([$mid]);
-              if ($stmtV->fetchColumn() || stratedge_credits_deja_consulte($mid, $bid)) $hasAcces = true;
+              if ($stmtV->fetchColumn()) $hasAcces = true;
+          }
+          
+          if (!$hasAcces && $betRole === 'superadmin') {
+              // Bets superadmin → crédits / pass 24h
+              if (stratedge_credits_deja_consulte($mid, $bid)) $hasAcces = true;
           }
       }
       if (!empty($rawPath)) {
