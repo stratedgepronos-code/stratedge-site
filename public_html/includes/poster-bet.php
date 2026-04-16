@@ -237,32 +237,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $titre = $bet['titre'] ? ' — ' . $bet['titre'] : '';
 
                     $coteStr = !empty($bet['cote']) ? ' (cote ' . $bet['cote'] . ')' : '';
+                    $roleOriginal = $bet['posted_by_role'] ?? 'superadmin';
 
                     $betFull = $db->prepare("SELECT * FROM bets WHERE id = ?");
                     $betFull->execute([$betId]);
                     $betData = $betFull->fetch(PDO::FETCH_ASSOC) ?: $bet;
+                    if (!$roleOriginal || $roleOriginal === 'superadmin') {
+                        $roleOriginal = $betData['posted_by_role'] ?? 'superadmin';
+                    }
                     $tweetExplication = genererTweetExplication($betData, $resultat);
+
+                    // Emoji et label adaptés selon le tipster
+                    $isTennis = ($roleOriginal === 'admin_tennis');
+                    $isFun    = in_array($roleOriginal, ['admin_fun', 'admin_fun_sport']);
+                    $winEmoji = $isTennis ? '🎾' : ($isFun ? '🎲' : '🎉');
+                    $winLabel = $isTennis ? '✅ TENNIS GAGNÉ' : ($isFun ? '✅ FUN GAGNÉ' : '✅ BET GAGNÉ');
 
                     if ($tweetExplication !== '') {
                         $phrases = [
-                            'gagne'  => "✅ BET GAGNÉ{$titre}{$coteStr} ! 🎉\n\n{$tweetExplication}\n\n📲 stratedgepronos.fr",
-                            'perdu'  => "❌ Bet perdu{$titre}{$coteStr}.\n\n{$tweetExplication}\n\n📲 stratedgepronos.fr",
-                            'annule' => "↺ Bet annulé{$titre} — remboursement en cours.\n\n{$tweetExplication}\n\n📲 stratedgepronos.fr",
+                            'gagne'  => "{$winLabel}{$titre}{$coteStr} ! {$winEmoji}\n\n{$tweetExplication}\n\n📲 stratedgepronos.fr",
+                            'annule' => "↺ Bet annulé{$titre} — remboursement.\n\n{$tweetExplication}\n\n📲 stratedgepronos.fr",
                         ];
                     } else {
                         $phrases = [
-                            'gagne'  => "✅ BET GAGNÉ{$titre}{$coteStr} ! 🎉\n\nC'est passé comme prévu ! 💰\n\n📲 stratedgepronos.fr",
-                            'perdu'  => "❌ Bet perdu{$titre}{$coteStr}. On revient plus fort 💪\n\n📲 stratedgepronos.fr",
-                            'annule' => "↺ Bet annulé{$titre} — remboursement en cours.\n\n📲 stratedgepronos.fr",
+                            'gagne'  => "{$winLabel}{$titre}{$coteStr} ! {$winEmoji}\n\nC'est passé comme prévu ! 💰\n\n📲 stratedgepronos.fr",
+                            'annule' => "↺ Bet annulé{$titre} — remboursement.\n\n📲 stratedgepronos.fr",
                         ];
                     }
 
-                    $texte = $phrases[$resultat];
+                    $texte = $phrases[$resultat] ?? $phrases['gagne'];
 
-                    // Ajouter les hashtags selon le role qui a poste le bet original
-                    // (pour cibler le bon public et maximiser la visibilite)
+                    // Hashtags selon le role du tipster
                     if (function_exists('hashtagsForRole')) {
-                        $roleOriginal = $bet['posted_by_role'] ?? $betData['posted_by_role'] ?? 'superadmin';
                         $texte .= "\n\n" . hashtagsForRole($roleOriginal);
                     }
 

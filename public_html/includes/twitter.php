@@ -5,18 +5,15 @@
 // ============================================================
 
 /**
- * Hashtags par role admin (collés a la fin du tweet de nouveau bet)
- * Mapping aligne sur posted_by_role:
- *  - superadmin (Alex / Multi)        -> #ParisSportifs #teamparieur
- *  - admin_tennis (Shuriik)           -> #teamparieur #TennisBet
- *  - admin_fun / admin_fun_sport      -> #teamparieur #ParisSportifs
+ * Hashtags par role admin (collés a la fin du tweet)
+ * Mapping aligne sur posted_by_role
  */
 function hashtagsForRole(?string $role): string {
     $map = [
         'superadmin'      => '#ParisSportifs #teamparieur',
-        'admin_tennis'    => '#teamparieur #TennisBet',
-        'admin_fun'       => '#teamparieur #ParisSportifs',
-        'admin_fun_sport' => '#teamparieur #ParisSportifs',
+        'admin_tennis'    => '#Tennis #TennisBet #teamparieur',
+        'admin_fun'       => '#ParisSportifs #GrosseCote #teamparieur',
+        'admin_fun_sport' => '#ParisSportifs #GrosseCote #teamparieur',
     ];
     return $map[$role ?? 'superadmin'] ?? '#ParisSportifs #teamparieur';
 }
@@ -24,6 +21,39 @@ function hashtagsForRole(?string $role): string {
 function twitterPhrase(string $type, string $titre = '', ?string $adminRole = null): string {
     $types     = explode(',', $type);
     $principal = trim($types[0]);
+
+    // Phrases spécifiques Tennis (si admin_tennis)
+    if ($adminRole === 'admin_tennis') {
+        $pool = [
+            'safe' => [
+                "🎾 Nouveau bet TENNIS SAFE posté !\n\n🔒 Analyse BASELINE SYNDICATE réservée aux abonnés\n👉 stratedgepronos.fr",
+                "🎾 BET TENNIS disponible !\n\n📊 H2H, surface, momentum analysés\n🔒 Réservé aux abonnés Tennis\n👉 stratedgepronos.fr",
+            ],
+            'live' => [
+                "🎾⚡ TENNIS LIVE — MATCH EN COURS !\n\n🔒 Accès immédiat sur stratedgepronos.fr\n⏱️ Agis maintenant !",
+                "🔴🎾 BET TENNIS LIVE posté !\n\n⚡ Le match est en cours — abonnés Tennis\n👉 stratedgepronos.fr",
+            ],
+        ];
+        $phrases = $pool[$principal] ?? $pool['safe'];
+        $phrase = $phrases[array_rand($phrases)];
+        if ($titre) $phrase = "📌 " . $titre . "\n\n" . $phrase;
+        $phrase .= "\n\n" . hashtagsForRole($adminRole);
+        return $phrase;
+    }
+
+    // Phrases spécifiques Fun (si admin_fun)
+    if ($adminRole === 'admin_fun' || $adminRole === 'admin_fun_sport') {
+        $pool = [
+            "🎲 BET FUN posté !\n\n💥 Grosse cote, grosses sensations\n🔒 Réservé aux abonnés Fun\n👉 stratedgepronos.fr",
+            "🎯 Nouveau BET FUN dispo !\n\n🔥 Combiné délire pour les audacieux\n🔒 Abonnés Fun uniquement\n👉 stratedgepronos.fr",
+        ];
+        $phrase = $pool[array_rand($pool)];
+        if ($titre) $phrase = "📌 " . $titre . "\n\n" . $phrase;
+        $phrase .= "\n\n" . hashtagsForRole($adminRole);
+        return $phrase;
+    }
+
+    // Phrases standard (superadmin / Multi)
     $phrases = [
         'safe' => [
             "🛡️ Nouveau bet SAFE vient d'être posté !\n\n🔒 Analyse complète réservée aux abonnés\n👉 stratedgepronos.fr",
@@ -42,7 +72,6 @@ function twitterPhrase(string $type, string $titre = '', ?string $adminRole = nu
     $pool   = $phrases[$principal] ?? $phrases['safe'];
     $phrase = $pool[array_rand($pool)];
     if ($titre) $phrase = "📌 " . $titre . "\n\n" . $phrase;
-    // Hashtags en fin de tweet (selon role admin qui a poste)
     $phrase .= "\n\n" . hashtagsForRole($adminRole);
     return $phrase;
 }
