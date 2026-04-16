@@ -372,15 +372,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                             if ($tweetExplication !== '') {
                                 $phrases = [
-                                    'gagne'  => "✅ BET GAGNÉ{$titre}{$coteStr} ! 🎉\n\n{$tweetExplication}\n\n📲 Prends ton abonnement sur stratedgepronos.fr pour avoir accès au prochain bet !",
-                                    'perdu'  => "❌ Bet perdu{$titre}{$coteStr}.\n\n{$tweetExplication}\n\n📲 Abonne-toi sur stratedgepronos.fr pour ne rater aucun des prochains !",
-                                    'annule' => "↺ Bet annulé{$titre} — remboursement en cours.\n\n{$tweetExplication}\n\n📲 Rejoins la communauté sur stratedgepronos.fr",
+                                    'gagne'  => "✅ BET GAGNÉ{$titre}{$coteStr} ! 🎉\n\n{$tweetExplication}\n\n📲 stratedgepronos.fr",
+                                    'perdu'  => "❌ Bet perdu{$titre}{$coteStr}.\n\n{$tweetExplication}\n\n📲 stratedgepronos.fr",
+                                    'annule' => "↺ Bet annulé{$titre} — remboursement en cours.\n\n{$tweetExplication}\n\n📲 stratedgepronos.fr",
                                 ];
                             } else {
                                 $phrases = [
-                                    'gagne'  => "✅ BET GAGNÉ{$titre}{$coteStr} ! 🎉\n\nNous l'avions dit, c'est passé ! 💰\n\n📲 Prends ton abonnement sur stratedgepronos.fr pour avoir accès au prochain bet !",
-                                    'perdu'  => "❌ Bet perdu{$titre}{$coteStr}. Ça arrive !\n\nOn reste la tête haute et on revient plus fort 💪\n\n📲 Abonne-toi sur stratedgepronos.fr pour ne rater aucun des prochains !",
-                                    'annule' => "↺ Bet annulé{$titre} — remboursement en cours pour les abonnés.\n\n📲 Rejoins la communauté sur stratedgepronos.fr",
+                                    'gagne'  => "✅ BET GAGNÉ{$titre}{$coteStr} ! 🎉\n\nC'est passé comme prévu ! 💰\n\n📲 stratedgepronos.fr",
+                                    'perdu'  => "❌ Bet perdu{$titre}{$coteStr}. On revient plus fort 💪\n\n📲 stratedgepronos.fr",
+                                    'annule' => "↺ Bet annulé{$titre} — remboursement en cours.\n\n📲 stratedgepronos.fr",
                                 ];
                             }
                             $texte = $phrases[$resultat];

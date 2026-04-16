@@ -206,12 +206,12 @@ Infos du bet :
 6. NE JAMAIS inventer de score, de joueur ou d'événement que tu ne connais pas
 7. Mentionne le type de pari (carton, but, victoire, handicap...) dans l'explication
 
-Format : 2-3 phrases courtes, max 200 caractères.
+Format : 1-2 phrases courtes, MAXIMUM 100 caractères au total.
 Ton décontracté mais pro, tutoiement.
 PAS d'emoji, PAS de hashtag, PAS de lien, PAS de préambule.
 En français.
 
-Réponds UNIQUEMENT avec les 2-3 phrases.
+Réponds UNIQUEMENT avec les 1-2 phrases (100 caractères max).
 PROMPT;
 
     try {
@@ -245,6 +245,10 @@ PROMPT;
             $text = $data['content'][0]['text'] ?? '';
             $text = trim($text);
             if ($text !== '') {
+                // Tronquer à 120 chars max (sécurité pour rester dans les 280 chars Twitter)
+                if (mb_strlen($text) > 120) {
+                    $text = mb_substr($text, 0, 117) . '...';
+                }
                 error_log('[tweet-ai] Explication générée pour bet "' . $titre . '" (' . $resultat . ') — match data: ' . ($matchData !== '' ? 'OUI' : 'NON'));
                 return $text;
             }
