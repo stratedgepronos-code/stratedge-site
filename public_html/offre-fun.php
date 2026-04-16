@@ -12,24 +12,19 @@ $stmt = $db->prepare("SELECT * FROM abonnements WHERE membre_id = ? AND type = '
 $stmt->execute([$membre['id']]);
 $aboActif = $stmt->fetch();
 
-// Calcul date fin abo Fun = prochain dimanche soir (Europe/Paris)
-$now = new DateTime('now', new DateTimeZone('Europe/Paris'));
-$sunday = clone $now;
-$sunday->modify('Sunday this week');
-$sunday->setTime(23, 59, 59);
-if ($sunday < $now) $sunday->modify('+7 days');
-$dateFinPreview = $sunday->format('d/m/Y à H:i');
+// Fun = abonnement 7 jours glissants (depuis 16/04/2026)
+$dateFinPreview = date('d/m/Y à H:i', strtotime('+7 days'));
 ?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8"><link rel="icon" type="image/png" href="/assets/images/mascotte.png">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Fun Week-End – StratEdge Pronos</title>
-<meta name="description" content="Abonnement Fun Week-End 10€ — bets délire aux grosses cotes jusqu'au dimanche soir.">
+<title>Fun Semaine – StratEdge Pronos</title>
+<meta name="description" content="Abonnement Fun Semaine 10€ — bets délire aux grosses cotes pendant 7 jours.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Fun Week-End 10€ — StratEdge Pronos">
-<meta property="og:description" content="Abonnement Fun Week-End 10€ — bets délire aux grosses cotes jusqu'au dimanche soir.">
+<meta property="og:title" content="Fun Semaine 10€ — StratEdge Pronos">
+<meta property="og:description" content="Abonnement Fun Semaine 10€ — bets délire aux grosses cotes pendant 7 jours.">
 <meta property="og:url" content="https://stratedgepronos.fr/offre-fun.php">
 <meta property="og:image" content="https://stratedgepronos.fr/assets/images/logo%20site.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -89,11 +84,11 @@ $dateFinPreview = $sunday->format('d/m/Y à H:i');
 
   <div class="o-hero">
     <div class="o-mascot-wrap">
-      <img src="/assets/images/mascotte-fun-crazy-nobg.png" alt="Fun Week-End">
+      <img src="/assets/images/mascotte-fun-crazy-nobg.png" alt="Fun Semaine">
     </div>
-    <div class="o-badge">🎲 Fun Only — Week-End</div>
-    <h1>Fun Week-End</h1>
-    <p>L'abonnement délire du week-end — bets aux cotes folles, gros rendements potentiels, pour vibrer sur les matchs du vendredi au dimanche soir.</p>
+    <div class="o-badge">🎲 Fun Only — 7 jours</div>
+    <h1>Fun Semaine</h1>
+    <p>L'abonnement délire — bets aux cotes folles, gros rendements potentiels, pendant 7 jours d'affilée pour vibrer sur tous les matchs.</p>
   </div>
 
   <?php if ($aboActif): ?>
@@ -106,18 +101,18 @@ $dateFinPreview = $sunday->format('d/m/Y à H:i');
 
   <div class="o-card">
     <div class="o-card-head">
-      <div class="o-card-title">Fun Week-End</div>
-      <div class="o-card-period">Jusqu'au dimanche soir</div>
+      <div class="o-card-title">Fun Semaine</div>
+      <div class="o-card-period">7 jours d'accès</div>
     </div>
     <div class="o-price">
       <span class="num">10</span><span class="eur">€</span>
-      <span class="per">/ week-end</span>
+      <span class="per">/ semaine</span>
     </div>
     <ul class="o-features">
-      <li>Tous les bets <b style="color:#a855f7">Fun délire</b> jusqu'à dimanche 23h59</li>
+      <li>Tous les bets <b style="color:#a855f7">Fun délire</b> pendant 7 jours</li>
       <li>Cotes folles 3.0 à 10+</li>
       <li>Couverture Foot, NBA, NHL, MLB Fun + Tennis Fun</li>
-      <li>Pour ressortir du week-end avec une grosse plus-value</li>
+      <li>Pour vibrer sur les matchs et chercher de gros rendements</li>
       <li>Analyses Devil's Advocate sur chaque pari</li>
     </ul>
     <div class="o-btns">
@@ -127,7 +122,7 @@ $dateFinPreview = $sunday->format('d/m/Y à H:i');
   </div>
 
   <div class="o-info">
-    <b>⏱️ Paiement ponctuel</b> — pas de prélèvement automatique. Ton abonnement expire automatiquement le dimanche <?= $dateFinPreview ?>.
+    <b>⏱️ Paiement ponctuel</b> — pas de prélèvement automatique. Ton abonnement expire automatiquement le <?= $dateFinPreview ?>.
   </div>
 </div>
 
