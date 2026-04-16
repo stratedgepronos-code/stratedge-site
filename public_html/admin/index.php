@@ -27,7 +27,8 @@ $nbMessages   = $db->query("SELECT COUNT(*) FROM messages WHERE expediteur='memb
 // === NOUVEAU MODELE 2026 ===
 // MULTI = packs credits (table credits_paris)
 // TENNIS = abo Semaine 15€ (table abonnements type='tennis')
-// FUN = abo Week-End 10€ (table abonnements type='fun')
+// FUN = abo Semaine 10€ (table abonnements type='fun')
+// VIP MAX = abo 30 jours (table abonnements type='vip_max')
 
 // Revenus MULTI (packs credits)
 try {
@@ -39,11 +40,21 @@ try {
 $revenuTennis = (float)$db->query("SELECT COALESCE(SUM(montant),0) FROM abonnements WHERE type='tennis'")->fetchColumn();
 $nbAboTennis  = (int)$db->query("SELECT COUNT(*) FROM abonnements WHERE type='tennis'")->fetchColumn();
 
-// Revenus FUN (abo week-end 10€ ponctuel)
+// Revenus FUN (abo semaine 10€ ponctuel)
 $revenuFun = (float)$db->query("SELECT COALESCE(SUM(montant),0) FROM abonnements WHERE type='fun'")->fetchColumn();
 $nbAboFun  = (int)$db->query("SELECT COUNT(*) FROM abonnements WHERE type='fun'")->fetchColumn();
 
-$revenuTotal = $revenuMulti + $revenuTennis + $revenuFun;
+// Revenus VIP MAX (abo 30 jours)
+$revenuVip = (float)$db->query("SELECT COALESCE(SUM(montant),0) FROM abonnements WHERE type='vip_max'")->fetchColumn();
+$nbAboVip  = (int)$db->query("SELECT COUNT(*) FROM abonnements WHERE type='vip_max'")->fetchColumn();
+$nbVipActifs = (int)$db->query("SELECT COUNT(*) FROM abonnements WHERE type='vip_max' AND actif=1 AND date_fin>NOW()")->fetchColumn();
+
+// Fondateurs VIP Max (places limitées à 10)
+$fondateurPlaces = 0;
+try { $fondateurPlaces = (int)$db->query("SELECT COUNT(*) FROM vip_max_fondateurs")->fetchColumn(); } catch(Throwable $e) {}
+$fondateurRestant = max(0, 10 - $fondateurPlaces);
+
+$revenuTotal = $revenuMulti + $revenuTennis + $revenuFun + $revenuVip;
 
 $derniersMembres = $db->query("SELECT * FROM membres WHERE email != 'stratedgepronos@gmail.com' ORDER BY date_inscription DESC LIMIT 5")->fetchAll();
 $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m ON t.membre_id=m.id WHERE t.statut!='resolu' ORDER BY t.date_creation DESC LIMIT 5")->fetchAll();
@@ -249,15 +260,37 @@ $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m O
         <div class="revenu-left">
           <div class="revenu-emoji">🎯</div>
           <div>
-            <div class="revenu-label" style="color:rgba(168,85,247,0.7);">Revenus Fun Week-End</div>
+            <div class="revenu-label" style="color:rgba(168,85,247,0.7);">Revenus Fun Semaine</div>
             <div class="revenu-value" style="color:#a855f7;"><?= number_format($revenuFun, 2) ?>€</div>
-            <div class="revenu-sub"><?= $nbAboFun ?> abonnement<?= $nbAboFun>1?'s':'' ?> · 10€/week-end</div>
+            <div class="revenu-sub"><?= $nbAboFun ?> abonnement<?= $nbAboFun>1?'s':'' ?> · 10€/sem</div>
           </div>
         </div>
         <div>
           <div class="revenu-pct-label" style="color:rgba(168,85,247,0.7);">Part du total</div>
           <div class="revenu-pct-value" style="color:#a855f7;"><?= $revenuTotal>0 ? number_format(($revenuFun/$revenuTotal)*100,1) : '0.0' ?>%</div>
         </div>
+      </div>
+    </div>
+
+    <!-- VIP MAX -->
+    <div class="revenu-card vip" style="flex-direction:column;align-items:stretch;gap:0.5rem;">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+        <div class="revenu-left">
+          <div class="revenu-emoji">👑</div>
+          <div>
+            <div class="revenu-label" style="color:rgba(245,200,66,0.7);">Revenus VIP Max</div>
+            <div class="revenu-value" style="color:#f5c842;"><?= number_format($revenuVip, 2) ?>€</div>
+            <div class="revenu-sub"><?= $nbAboVip ?> abonnement<?= $nbAboVip>1?'s':'' ?> · <?= $nbVipActifs ?> actif<?= $nbVipActifs>1?'s':'' ?></div>
+          </div>
+        </div>
+        <div>
+          <div class="revenu-pct-label" style="color:rgba(245,200,66,0.7);">Part du total</div>
+          <div class="revenu-pct-value" style="color:#f5c842;"><?= $revenuTotal>0 ? number_format(($revenuVip/$revenuTotal)*100,1) : '0.0' ?>%</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:1rem;margin-top:0.3rem;font-size:0.75rem;color:rgba(245,200,66,0.5);">
+        <span>🏆 Fondateurs : <?= $fondateurPlaces ?>/10</span>
+        <span>📭 Places restantes : <?= $fondateurRestant ?></span>
       </div>
     </div>
 
