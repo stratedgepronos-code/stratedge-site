@@ -961,7 +961,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
   </div>
   <div class="steps-container">
     <div class="step fade-up"><div class="step-number">01</div><div class="step-content"><h3>Créez votre compte</h3><p>Inscription gratuite en 30 secondes. Juste un email et un mot de passe.</p></div></div>
-    <div class="step fade-up"><div class="step-number">02</div><div class="step-content"><h3>Choisissez votre formule</h3><p>Daily (4,50€) par SMS · Week-End (10€) et Weekly (20€) par CB, PayPal, Paysafecard ou crypto.</p></div></div>
+    <div class="step fade-up"><div class="step-number">02</div><div class="step-content"><h3>Choisissez votre formule</h3><p>Multi dès 4,50€ (packs crédits) · Tennis 15€/sem · Fun 10€/sem — par CB ou crypto.</p></div></div>
     <div class="step fade-up"><div class="step-number">03</div><div class="step-content"><h3>Accédez aux bets</h3><p>Votre espace membre est débloqué. Consultez les cards de bets avec toute l'analyse.</p></div></div>
     <div class="step fade-up"><div class="step-number">04</div><div class="step-content"><h3>Misez et gagnez</h3><p>Placez les bets sur votre bookmaker favori. Stake.bet recommandé pour les meilleures cotes.</p></div></div>
   </div>
@@ -1316,16 +1316,16 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
           </video>
         </div>
         <div class="tip-name">Fun Only</div>
-        <div class="tip-sub">Week-end · Champions League</div>
+        <div class="tip-sub">7 jours · Tous les matchs</div>
 
         <div class="tip-sports">
-          <span class="tip-sport-tag">⚽ Foot WE</span>
+          <span class="tip-sport-tag">⚽ Foot</span>
           <span class="tip-sport-tag">🏆 Ligue des Champions</span>
         </div>
 
         <ul class="tip-features">
           <li>Combinés grosses cotes</li>
-          <li>Spécial week-end &amp; soirées C1</li>
+          <li>Tous les matchs de la semaine</li>
           <li>Bets Fun à forte value</li>
           <li>Notifications Push &amp; Email</li>
         </ul>
@@ -1335,7 +1335,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <div class="tip-price-row">
           <div class="tip-price"><span class="cur">€</span>10</div>
         </div>
-        <div class="tip-period">/ week-end (ven→dim)</div>
+        <div class="tip-period">/ semaine (7 jours)</div>
 
         <?php if (isLoggedIn()): ?>
           <a href="offre-fun.php" class="tip-cta">💳 Payer — 10€</a>

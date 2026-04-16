@@ -255,14 +255,17 @@ nav{position:sticky;top:0;z-index:100;background:rgba(6,8,16,0.88);backdrop-filt
     </div>
   </div>
 
-  <!-- ═══ RYTHME DES BETS ═══ -->
+  <!-- ═══ NOS BETS : QUALITÉ > QUANTITÉ ═══ -->
   <div class="info-card" style="animation-delay:.4s">
     <div class="ic-icon">🎯</div>
-    <div class="ic-title">Le rythme des publications</div>
+    <div class="ic-title">On ne mise pas sur n'importe quoi</div>
     <div class="ic-text">
-      Le nombre de bets publiés <strong>n'est pas régulier</strong>. Certaines semaines il y en a plus, d'autres moins. C'est normal et c'est <strong>voulu</strong>.<br><br>
-      On joue <em>uniquement les matchs que nous avons analysés en profondeur</em> — ceux qui présentent les meilleures statistiques, les meilleures value bets, et le plus de chances de passer. xG, Poisson, H2H, forme récente, absences… tout est passé au crible.<br><br>
-      <strong>Moins de bets, mais des bets de qualité.</strong> C'est la philosophie StratEdge.
+      Nos pronos sont basés sur les <strong>matchs du moment</strong> — les vrais événements sportifs en cours. On ne poste pas un bet pour poster un bet. Chaque prono est le résultat d'une <strong>analyse approfondie</strong> du match : statistiques, forme récente des équipes, confrontations directes, absences, cotes des bookmakers, modèles xG et Poisson.<br><br>
+      Le nombre de bets publiés <strong>varie selon le calendrier sportif</strong>. Certaines semaines il y a beaucoup de matchs intéressants (Ligue des Champions, gros week-ends de championnat), d'autres moins. C'est <strong>normal et c'est voulu</strong>.<br><br>
+      On joue <em>uniquement les matchs qui présentent une vraie value</em> — quand notre analyse estime que la probabilité réelle est supérieure à ce que la cote reflète. Pas de remplissage, pas de pari "au feeling".
+    </div>
+    <div class="highlight-box">
+      <p><strong>La philosophie StratEdge :</strong> des bets ciblés, analysés, justifiés. Si tu veux du volume à tout prix, on n'est pas pour toi. Si tu veux de la <strong>qualité et de la rigueur</strong>, tu es au bon endroit.</p>
     </div>
   </div>
 
