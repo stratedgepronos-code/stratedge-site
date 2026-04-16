@@ -384,6 +384,23 @@ if ($typeBet === 'Live') {
             if (strlen($enriched['time_fr']) < 4) $enriched['time_fr'] = $default_time_fr;
         }
 
+        // ── LIVE BET: forcer l'heure actuelle (Europe/Paris) ──────────
+        // Pour un bet LIVE, le match est EN COURS. Claude essaie de deviner
+        // l'heure de début mais se trompe souvent (surtout tennis ITF/WTA
+        // où les horaires dépendent des matchs précédents).
+        // On utilise l'heure actuelle car c'est l'info pertinente pour
+        // l'abonné : "ce bet est posté MAINTENANT, le match est en cours".
+        $liveNow = new DateTime('now', new DateTimeZone('Europe/Paris'));
+        $enriched['time_fr'] = $liveNow->format('H:i');
+        if (class_exists('IntlDateFormatter')) {
+            $fmt = new IntlDateFormatter('fr_FR', IntlDateFormatter::FULL, IntlDateFormatter::NONE, 'Europe/Paris', IntlDateFormatter::GREGORIAN);
+            $enriched['date_fr'] = ucfirst($fmt->format($liveNow));
+        } else {
+            $jFr = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+            $mFr = ['','janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+            $enriched['date_fr'] = $jFr[(int)$liveNow->format('w')] . ' ' . $liveNow->format('d') . ' ' . $mFr[(int)$liveNow->format('n')] . ' ' . $liveNow->format('Y');
+        }
+
         $coteFloat  = floatval($cote);
         $confidence = ($coteFloat > 0) ? min(95, max(30, round(115 / $coteFloat))) : 60;
 
