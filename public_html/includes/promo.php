@@ -7,7 +7,7 @@
 if (!defined('DB_HOST')) require_once __DIR__ . '/db.php';
 
 /** Offres éligibles anniversaire 50% */
-const PROMO_ANNIV_50 = ['tennis', 'daily', 'weekly', 'weekend'];
+const PROMO_ANNIV_50 = ['unique', 'duo', 'trio', 'quinte', 'semaine', 'pack10', 'tennis', 'fun'];
 /** Offres éligibles anniversaire 25% */
 const PROMO_ANNIV_25 = ['vip_max'];
 
@@ -60,7 +60,7 @@ function creerCodeAnniversaireMembre(int $membre_id): ?string {
         $stmt = $db->prepare("SELECT id FROM codes_promo WHERE code = ? LIMIT 1");
         $stmt->execute([$code]);
         if ($stmt->fetch()) return null; // déjà créé cette année
-        $offres = 'tennis,daily,weekly,weekend,vip_max';
+        $offres = 'unique,duo,trio,quinte,semaine,pack10,tennis,fun,vip_max';
         $db->prepare("INSERT INTO codes_promo (code, type, value, offres, max_utilisations, date_expir, actif) VALUES (?, 'percent', 50, ?, 1, NULL, 1)")
            ->execute([$code, $offres]);
         return $code;

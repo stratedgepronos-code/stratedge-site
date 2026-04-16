@@ -77,6 +77,17 @@ $packs = stratedge_packs_config();
     <div class="pk-solde">💎 Crédits disponibles : <b><?= $solde ?></b></div>
   </div>
 
+  <!-- Code promo -->
+  <div style="max-width:400px;margin:0 auto 1.5rem;">
+    <div style="display:flex;gap:.5rem;">
+      <input type="text" id="promoCode" placeholder="Code promo" maxlength="30"
+        style="flex:1;background:#0a0e17;border:1px solid rgba(200,80,192,0.2);border-radius:8px;padding:.6rem .8rem;color:#fff;font-family:'Share Tech Mono',monospace;font-size:.85rem;text-transform:uppercase;letter-spacing:1px;">
+      <button type="button" onclick="checkPromo()" id="promoBtn"
+        style="background:rgba(200,80,192,0.15);border:1px solid rgba(200,80,192,0.3);border-radius:8px;padding:.6rem 1rem;color:#c850c0;font-family:'Orbitron',sans-serif;font-size:.7rem;font-weight:700;cursor:pointer;letter-spacing:1px;">APPLIQUER</button>
+    </div>
+    <div id="promoResult" style="margin-top:.4rem;font-size:.82rem;text-align:center;min-height:1.2rem;"></div>
+  </div>
+
   <div class="pk-grid">
     <?php foreach($packs as $k => $p): $hot = in_array($k, ['trio','quinte']); ?>
     <div class="pk-card <?= $hot ? 'hot' : '' ?>">
@@ -91,7 +102,7 @@ $packs = stratedge_packs_config();
       <?php else: ?><div style="height:1.6rem"></div><?php endif; ?>
       <div class="pk-btns">
         <?php if(in_array('stripe', $p['methodes'])): ?>
-        <a href="/stripe-create-pack.php?pack=<?= $k ?>" class="pk-btn pk-btn-cb">💳 Carte bancaire</a>
+        <a href="/stripe-create-pack.php?pack=<?= $k ?>" class="pk-btn pk-btn-cb" data-pack="<?= $k ?>" data-base="<?= number_format($p['prix'], 2, '.', '') ?>">💳 Carte bancaire</a>
         <?php endif; ?>
         <?php if(in_array('crypto', $p['methodes'])): ?>
         <a href="/nowpayments-create-pack.php?pack=<?= $k ?>" class="pk-btn pk-btn-cr">₿ Crypto</a>
@@ -114,5 +125,36 @@ $packs = stratedge_packs_config();
 </div>
 
 <?php require_once __DIR__ . '/includes/footer-main.php'; ?>
+<script>
+async function checkPromo(){
+  const code=document.getElementById('promoCode').value.trim();
+  const res=document.getElementById('promoResult');
+  if(!code){res.innerHTML='<span style="color:#ff6b6b">Saisis un code promo</span>';return;}
+  res.innerHTML='<span style="color:#aaa">Vérification...</span>';
+  const btns=document.querySelectorAll('.pk-btn-cb[data-pack]');
+  let anyOk=false;
+  for(const btn of btns){
+    const pack=btn.dataset.pack;
+    const base=parseFloat(btn.dataset.base);
+    try{
+      const fd=new FormData();fd.append('code',code);fd.append('offre',pack);
+      const r=await fetch('/api-check-promo.php',{method:'POST',body:fd,credentials:'same-origin'});
+      const d=await r.json();
+      if(d.ok){
+        anyOk=true;
+        btn.href='/stripe-create-pack.php?pack='+pack+'&promo='+encodeURIComponent(code);
+        btn.innerHTML='💳 <s style="opacity:.5">'+base.toFixed(2)+'€</s> '+d.prix_final.toFixed(2)+'€';
+        btn.style.boxShadow='0 0 15px rgba(0,212,106,0.4)';
+      }else{
+        btn.href='/stripe-create-pack.php?pack='+pack;
+        btn.textContent='💳 Carte bancaire';
+        btn.style.boxShadow='';
+      }
+    }catch(e){}
+  }
+  if(anyOk) res.innerHTML='<span style="color:#00d46a">✅ Code appliqué ! Les prix réduits sont affichés ci-dessous.</span>';
+  else res.innerHTML='<span style="color:#ff6b6b">❌ Code invalide ou non applicable à ces formules</span>';
+}
+</script>
 </body>
 </html>

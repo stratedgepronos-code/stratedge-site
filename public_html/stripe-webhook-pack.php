@@ -48,6 +48,22 @@ if ($membreId <= 0 || $packKey === '') {
 $packId = stratedge_credits_ajouter($membreId, $packKey, 'stripe', $txRef);
 
 if ($packId > 0) {
+    // Enregistrer l'utilisation du code promo (si présent)
+    $promoId = (int)($meta['promo_id'] ?? 0);
+    $promoCodeUsed = $meta['promo_code'] ?? '';
+    if ($promoId > 0 && $promoCodeUsed !== '') {
+        try {
+            require_once __DIR__ . '/includes/promo.php';
+            $pack = stratedge_pack_get($packKey);
+            $prixInitial = $pack ? $pack['prix'] : 0;
+            $prixPaye = ($session['amount_total'] ?? 0) / 100;
+            useCodePromo($promoId, $membreId, $packKey, (float)$prixInitial, $prixPaye);
+            error_log("[stripe-webhook-pack] Promo '$promoCodeUsed' enregistrée pour membre #$membreId");
+        } catch (Throwable $e) {
+            error_log('[stripe-webhook-pack] promo error: ' . $e->getMessage());
+        }
+    }
+
     // Email de confirmation
     try {
         $db = getDB();

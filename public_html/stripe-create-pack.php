@@ -3,6 +3,7 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/payment-config.php';
 require_once __DIR__ . '/includes/packs-config.php';
+require_once __DIR__ . '/includes/promo.php';
 requireLogin();
 
 $membre = getMembre();
@@ -13,19 +14,33 @@ if (!$pack || !in_array('stripe', $pack['methodes'], true)) {
     header('Location: /packs-daily.php?err=invalid_pack'); exit;
 }
 
-$sportAccount = stratedge_pack_stripe_account($packKey); // multi/tennis/fun selon le pack
+$sportAccount = stratedge_pack_stripe_account($packKey);
 $account = getStripeAccount($sportAccount);
 $stripeKey = $account['secret'] ?? '';
 if (!$stripeKey) { header('Location: /packs-daily.php?err=stripe_not_ready'); exit; }
 
-$amountCents = (int) round($pack['prix'] * 100);
+$amount = $pack['prix'];
+$productName = 'StratEdge Pack ' . $pack['label'] . ' (' . $pack['nb'] . ' pari' . ($pack['nb']>1?'s':'') . ')';
+
+// Code promo
+$promoCode = strtoupper(trim($_GET['promo'] ?? ''));
+$promoResult = null;
+if ($promoCode !== '') {
+    $promoResult = calculerPrixAvecPromo($amount, $packKey, (int)$membre['id'], $promoCode);
+    if ($promoResult['label'] !== null) {
+        $amount = $promoResult['montant'];
+        $productName .= ' — ' . $promoResult['label'];
+    }
+}
+
+$amountCents = (int) round($amount * 100);
 $siteUrl = defined('SITE_URL') ? rtrim(SITE_URL, '/') : 'https://stratedgepronos.fr';
 
 $postData = [
     'mode' => 'payment',
     'payment_method_types[]' => 'card',
     'line_items[0][price_data][currency]' => 'eur',
-    'line_items[0][price_data][product_data][name]' => 'StratEdge Pack ' . $pack['label'] . ' (' . $pack['nb'] . ' pari' . ($pack['nb']>1?'s':'') . ')',
+    'line_items[0][price_data][product_data][name]' => $productName,
     'line_items[0][price_data][product_data][description]' => 'Crédits à vie · ' . number_format($pack['prix_unit'],2,',','') . '€/pari',
     'line_items[0][price_data][unit_amount]' => $amountCents,
     'line_items[0][quantity]' => 1,
@@ -36,6 +51,8 @@ $postData = [
     'metadata[pack_key]' => $packKey,
     'metadata[pack_nb]' => $pack['nb'],
     'metadata[type]' => 'pack_credits',
+    'metadata[promo_code]' => $promoCode,
+    'metadata[promo_id]' => $promoResult['code_promo_id'] ?? '',
 ];
 
 $ch = curl_init('https://api.stripe.com/v1/checkout/sessions');

@@ -2,12 +2,25 @@
 // Stripe Checkout direct (GET) pour abo Tennis 15€/semaine
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/payment-config.php';
+require_once __DIR__ . '/includes/promo.php';
 requireLogin();
 
 $membre = getMembre();
 $type = 'tennis';
 $amount = PAYMENT_AMOUNTS[$type];
 $label = PAYMENT_LABELS[$type] ?? 'StratEdge Tennis';
+
+// Code promo
+$promoCode = strtoupper(trim($_GET['promo'] ?? ''));
+$promoResult = null;
+if ($promoCode !== '') {
+    $promoResult = calculerPrixAvecPromo($amount, $type, (int)$membre['id'], $promoCode);
+    if ($promoResult['label'] !== null) {
+        $amount = $promoResult['montant'];
+        $label .= ' (' . $promoResult['label'] . ')';
+    }
+}
+
 $orderId = 'SE_' . $membre['id'] . '_' . $type . '_' . time();
 
 $account = getStripeAccount($type);
@@ -33,6 +46,8 @@ $payload = [
     'metadata[type]' => $type,
     'metadata[order_id]' => $orderId,
     'metadata[stripe_account]' => $accountName,
+    'metadata[promo_code]' => $promoCode,
+    'metadata[promo_id]' => $promoResult['code_promo_id'] ?? '',
 ];
 
 $ch = curl_init('https://api.stripe.com/v1/checkout/sessions');

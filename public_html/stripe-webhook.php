@@ -125,6 +125,20 @@ if (activerAbonnement($membreId, $typeActivation)) {
         ajouterPointsGiveaway($membreId, $typeActivation);
     } catch (Throwable $e) { /* silencieux */ }
 
+    // Enregistrer l'utilisation du code promo (si présent dans metadata)
+    $promoId = (int)($metadata['promo_id'] ?? 0);
+    $promoCodeUsed = $metadata['promo_code'] ?? '';
+    if ($promoId > 0 && $promoCodeUsed !== '') {
+        try {
+            require_once __DIR__ . '/includes/promo.php';
+            $prixInitial = PAYMENT_AMOUNTS[$type] ?? $amount;
+            useCodePromo($promoId, $membreId, $type, (float)$prixInitial, $amount);
+            stripeLog("🎟️ Code promo '$promoCodeUsed' (id=$promoId) utilisé par membre #$membreId");
+        } catch (Throwable $e) {
+            stripeLog('WARN: enregistrement promo échoué: ' . $e->getMessage());
+        }
+    }
+
     // Email confirmation
     try {
         require_once __DIR__ . '/includes/mailer.php';

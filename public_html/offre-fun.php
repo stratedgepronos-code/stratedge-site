@@ -116,9 +116,41 @@ $dateFinPreview = date('d/m/Y à H:i', strtotime('+7 days'));
       <li>Analyses Devil's Advocate sur chaque pari</li>
     </ul>
     <div class="o-btns">
-      <a href="/stripe-create-fun.php" class="o-btn o-btn-cb">💳 Carte bancaire — 10€</a>
+      <!-- Code promo -->
+      <div class="promo-wrap" style="width:100%;margin-bottom:1rem;">
+        <div style="display:flex;gap:.5rem;">
+          <input type="text" id="promoCode" placeholder="Code promo" maxlength="30"
+            style="flex:1;background:#0a0e17;border:1px solid rgba(168,85,247,0.2);border-radius:8px;padding:.6rem .8rem;color:#fff;font-family:'Share Tech Mono',monospace;font-size:.85rem;text-transform:uppercase;letter-spacing:1px;">
+          <button type="button" onclick="checkPromo()" id="promoBtn"
+            style="background:rgba(168,85,247,0.15);border:1px solid rgba(168,85,247,0.3);border-radius:8px;padding:.6rem 1rem;color:#a855f7;font-family:'Orbitron',sans-serif;font-size:.7rem;font-weight:700;cursor:pointer;letter-spacing:1px;">OK</button>
+        </div>
+        <div id="promoResult" style="margin-top:.4rem;font-size:.82rem;min-height:1.2rem;"></div>
+      </div>
+      <a href="/stripe-create-fun.php" id="btnCB" class="o-btn o-btn-cb">💳 Carte bancaire — 10€</a>
       <a href="/nowpayments-create-abo.php?type=fun" class="o-btn o-btn-cr">₿ Crypto (BTC, ETH, USDT...)</a>
     </div>
+<script>
+async function checkPromo(){
+  const code=document.getElementById('promoCode').value.trim();
+  const res=document.getElementById('promoResult');
+  const btn=document.getElementById('btnCB');
+  if(!code){res.innerHTML='<span style="color:#ff6b6b">Saisis un code</span>';return;}
+  res.innerHTML='<span style="color:#aaa">Vérification...</span>';
+  try{
+    const fd=new FormData();fd.append('code',code);fd.append('offre','fun');
+    const r=await fetch('/api-check-promo.php',{method:'POST',body:fd,credentials:'same-origin'});
+    const d=await r.json();
+    if(d.ok){
+      res.innerHTML='<span style="color:#a855f7">✅ '+d.label+' → <b>'+d.prix_final.toFixed(2)+'€</b></span>';
+      btn.href='/stripe-create-fun.php?promo='+encodeURIComponent(code);
+      btn.textContent='💳 Carte bancaire — '+d.prix_final.toFixed(2)+'€';
+    }else{
+      res.innerHTML='<span style="color:#ff6b6b">❌ '+d.err+'</span>';
+      btn.href='/stripe-create-fun.php';btn.textContent='💳 Carte bancaire — 10€';
+    }
+  }catch(e){res.innerHTML='<span style="color:#ff6b6b">Erreur réseau</span>';}
+}
+</script>
   </div>
 
   <div class="o-info">

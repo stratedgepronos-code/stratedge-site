@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? 
         $type   = in_array($_POST['type'] ?? '', ['percent', 'fixed']) ? $_POST['type'] : 'percent';
         $value  = (float) ($_POST['value'] ?? 0);
         $offres = [];
-        foreach (['daily', 'weekly', 'weekend', 'tennis', 'vip_max'] as $o) {
+        foreach (['unique', 'duo', 'trio', 'quinte', 'semaine', 'pack10', 'tennis', 'fun', 'vip_max'] as $o) {
             if (!empty($_POST['offres'][$o])) $offres[] = $o;
         }
         $offresStr = implode(',', $offres);
@@ -315,7 +315,7 @@ CREATE TABLE IF NOT EXISTS `promo_anniversaire_use` (
         </div>
         <div style="margin-bottom:1rem;">
           <span style="font-size:0.8rem;color:var(--text-muted);margin-right:0.75rem;">Formules concernées :</span>
-          <?php foreach (['daily' => 'Daily', 'weekend' => 'Week-end', 'weekly' => 'Weekly', 'tennis' => 'Tennis', 'vip_max' => 'VIP Max'] as $k => $l): ?>
+          <?php foreach (['unique' => 'Unique (4,50€)', 'duo' => 'Duo (8€)', 'trio' => 'Trio (12€)', 'quinte' => 'Quinté (18€)', 'semaine' => 'Semaine (20€)', 'pack10' => 'Pack 10 (30€)', 'tennis' => 'Tennis (15€)', 'fun' => 'Fun (10€)', 'vip_max' => 'VIP Max'] as $k => $l): ?>
           <label style="margin-right:1rem;font-size:0.9rem;"><input type="checkbox" name="offres[<?= $k ?>]" value="1"> <?= $l ?></label>
           <?php endforeach; ?>
         </div>
