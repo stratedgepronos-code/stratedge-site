@@ -288,6 +288,26 @@ $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m O
           <div class="revenu-pct-value" style="color:#f5c842;"><?= $revenuTotal>0 ? number_format(($revenuVip/$revenuTotal)*100,1) : '0.0' ?>%</div>
         </div>
       </div>
+      <!-- Splits revenus VIP Max -->
+      <?php
+        $splitShaym   = $revenuVip * 0.50;
+        $splitYaffa   = $revenuVip * 0.20;
+        $splitShuriik = $revenuVip * 0.30;
+      ?>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.5rem;margin-top:0.5rem;">
+        <div style="background:rgba(245,200,66,0.06);border:1px solid rgba(245,200,66,0.15);border-radius:8px;padding:0.5rem 0.6rem;text-align:center;">
+          <div style="font-family:'Orbitron',sans-serif;font-size:0.6rem;color:rgba(245,200,66,0.5);letter-spacing:1px;text-transform:uppercase;">Shaym · 50%</div>
+          <div style="font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;color:#f5c842;margin-top:0.15rem;"><?= number_format($splitShaym, 2) ?>€</div>
+        </div>
+        <div style="background:rgba(168,85,247,0.06);border:1px solid rgba(168,85,247,0.15);border-radius:8px;padding:0.5rem 0.6rem;text-align:center;">
+          <div style="font-family:'Orbitron',sans-serif;font-size:0.6rem;color:rgba(168,85,247,0.5);letter-spacing:1px;text-transform:uppercase;">Yaffa · 20%</div>
+          <div style="font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;color:#a855f7;margin-top:0.15rem;"><?= number_format($splitYaffa, 2) ?>€</div>
+        </div>
+        <div style="background:rgba(57,255,20,0.06);border:1px solid rgba(57,255,20,0.15);border-radius:8px;padding:0.5rem 0.6rem;text-align:center;">
+          <div style="font-family:'Orbitron',sans-serif;font-size:0.6rem;color:rgba(57,255,20,0.5);letter-spacing:1px;text-transform:uppercase;">Shuriik · 30%</div>
+          <div style="font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;color:#39ff14;margin-top:0.15rem;"><?= number_format($splitShuriik, 2) ?>€</div>
+        </div>
+      </div>
       <div style="display:flex;gap:1rem;margin-top:0.3rem;font-size:0.75rem;color:rgba(245,200,66,0.5);">
         <span>🏆 Fondateurs : <?= $fondateurPlaces ?>/10</span>
         <span>📭 Places restantes : <?= $fondateurRestant ?></span>
