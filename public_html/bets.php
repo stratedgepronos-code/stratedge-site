@@ -277,16 +277,24 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
       $types = explode(',', $bet['type']);
       $mainType = trim($types[0]);
       $rawPath = !empty($bet['image_path']) ? $bet['image_path'] : ($bet['locked_image_path'] ?? '');
-      // hasAcces: admin OU VIP MAX OU déjà débloqué (sans auto-consommer)
+      // hasAcces: admin OU VIP MAX OU déjà débloqué (individuel ou pass 24h)
       $hasAcces = $hasAccesGlobal;
       if (!$hasAcces && $membre && isset($bet['id'])) {
           $mid = (int)$membre['id'];
           $bid = (int)$bet['id'];
-          if ($bet['categorie'] === 'tennis') {
+          $betRole = $bet['posted_by_role'] ?? 'superadmin';
+          if ($bet['categorie'] === 'tennis' && $betRole === 'admin_tennis') {
+              // Bet Tennis (Shuriik) → accès par abo tennis uniquement
               $stmtTen = $db->prepare("SELECT 1 FROM abonnements WHERE membre_id=? AND type='tennis' AND actif=1 AND date_fin>NOW() LIMIT 1");
               $stmtTen->execute([$mid]);
               if ($stmtTen->fetchColumn()) $hasAcces = true;
+          } elseif ($betRole === 'admin_fun') {
+              // Bet Fun (Morrayaffa) → accès par abo fun uniquement
+              $stmtFun = $db->prepare("SELECT 1 FROM abonnements WHERE membre_id=? AND type='fun' AND actif=1 AND date_fin>NOW() LIMIT 1");
+              $stmtFun->execute([$mid]);
+              if ($stmtFun->fetchColumn()) $hasAcces = true;
           } else {
+              // Bet superadmin (Alex) → VIP Max OU crédits (pass 24h inclus)
               $stmtV = $db->prepare("SELECT 1 FROM abonnements WHERE membre_id=? AND type='vip_max' AND actif=1 LIMIT 1");
               $stmtV->execute([$mid]);
               if ($stmtV->fetchColumn() || stratedge_credits_deja_consulte($mid, $bid)) $hasAcces = true;
@@ -317,10 +325,19 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
         <?php else: ?><div class="bet-no-img <?= !$hasAcces?'blur':'' ?>">📊</div><?php endif; ?>
         <?php if (!$hasAcces): ?>
         <div class="lock-ov"><div class="lock-i">🔒</div><div class="lock-t">Contenu verrouille</div>
-          <?php if (isLoggedIn() && $bet['categorie']==='multi'): ?>
-          <div class="lock-s">Débloque ce bet avec 1 crédit</div>
-          <button type="button" class="lock-b unlock-btn" data-bet-id="<?= (int)$bet['id'] ?>" style="background:linear-gradient(135deg,#ff2d7a,#c850c0);border:none;cursor:pointer;color:#fff">🔓 Débloquer (1 crédit)</button>
+          <?php
+          $btnRole = $bet['posted_by_role'] ?? 'superadmin';
+          if (isLoggedIn() && $btnRole === 'superadmin'):
+            $hasPass = $membre ? stratedge_credits_has_pass_24h((int)$membre['id']) : false;
+          ?>
+          <?php if ($hasPass): ?>
+          <div class="lock-s">Pass 24h actif — déblocage gratuit</div>
+          <button type="button" class="lock-b unlock-btn" data-bet-id="<?= (int)$bet['id'] ?>" style="background:linear-gradient(135deg,#39ff14,#00d46a);border:none;cursor:pointer;color:#000;font-weight:700">🔓 Débloquer (gratuit)</button>
+          <?php else: ?>
+          <div class="lock-s">1 crédit = accès 24h à tous les pronos Multi</div>
+          <button type="button" class="lock-b unlock-btn" data-bet-id="<?= (int)$bet['id'] ?>" style="background:linear-gradient(135deg,#ff2d7a,#c850c0);border:none;cursor:pointer;color:#fff">🔓 Débloquer (1 crédit · 24h)</button>
           <a href="/packs-daily.php" style="display:block;margin-top:.5rem;color:#00d4ff;font-size:.8rem;text-decoration:none">Pas de crédits ? Recharger</a>
+          <?php endif; ?>
           <?php else: ?>
           <div class="lock-s">Souscris pour acceder a l'analyse complete.</div>
           <a href="<?= isLoggedIn()?'/#pricing':'login.php' ?>" class="lock-b"><?= isLoggedIn()?'Voir les formules':'Se connecter' ?> →</a>
@@ -395,7 +412,8 @@ document.addEventListener('click', async (e) => {
   if (!btn) return;
   e.preventDefault();
   const betId = btn.dataset.betId;
-  if (!confirm('Débloquer ce bet consommera 1 crédit. Continuer ?')) return;
+  const isGratuit = btn.textContent.includes('gratuit');
+  if (!isGratuit && !confirm('1 crédit sera utilisé pour activer ton pass 24h.\nTu auras accès à TOUS les pronos Multi pendant 24h.\nContinuer ?')) return;
   btn.disabled = true; btn.textContent = '⏳ Déblocage...';
   try {
     const fd = new FormData();
@@ -404,10 +422,10 @@ document.addEventListener('click', async (e) => {
     const data = await r.json();
     if (data.ok) { location.reload(); }
     else if (data.err === 'no_credits') {
-      alert('Tu n\'as plus de crédits ! Recharge un pack.');
+      alert('Tu n\'as plus de crédits ! Recharge un pack pour activer ton pass 24h.');
       location.href = '/packs-daily.php';
-    } else { alert('Erreur : ' + (data.err || 'inconnue')); btn.disabled = false; btn.textContent = '🔓 Débloquer (1 crédit)'; }
-  } catch (err) { alert('Erreur réseau'); btn.disabled = false; btn.textContent = '🔓 Débloquer (1 crédit)'; }
+    } else { alert('Erreur : ' + (data.err || 'inconnue')); btn.disabled = false; btn.textContent = '🔓 Réessayer'; }
+  } catch (err) { alert('Erreur réseau'); btn.disabled = false; btn.textContent = '🔓 Réessayer'; }
 });
 </script>
 </body>

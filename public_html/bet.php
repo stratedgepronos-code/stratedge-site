@@ -35,6 +35,15 @@ if ($acces['all']) {
     if ($betCat === 'multi' && !$isFun && $acces['multi']) $autorisé = true;
     if ($isFun && $acces['fun']) $autorisé = true;
     if ($betCat === 'multi' && $acces['multi'] && $acces['fun']) $autorisé = true;
+    
+    // Vérif crédits / pass 24h pour les bets superadmin
+    if (!$autorisé && $membre) {
+        require_once __DIR__ . '/includes/credits-manager.php';
+        $betRole = $bet['posted_by_role'] ?? 'superadmin';
+        if ($betRole === 'superadmin' && stratedge_credits_deja_consulte((int)$membre['id'], $betId)) {
+            $autorisé = true;
+        }
+    }
 }
 if (!$autorisé && $membre) {
     header('Location: /bets.php');
