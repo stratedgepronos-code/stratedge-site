@@ -367,7 +367,7 @@ function emailConfirmationAbonnement(string $email, string $nom, string $type): 
     ];
 
     $info = $typeInfos[$type] ?? $typeInfos['daily'];
-    $dateAchat = date('d/m/Y à H:i');
+    $dateAchat = (new DateTime('now', new DateTimeZone('Europe/Paris')))->format('d/m/Y à H:i');
 
     $contenu = '
         <h2 style="color:#ffffff;font-size:22px;margin:0 0 10px;">Abonnement confirmé ! ✅</h2>
@@ -444,7 +444,7 @@ function emailNouveauBet(string $email, string $nom, string $typeBet, string $ti
                 <tr><td style="color:#ffffff;font-size:14px;padding:5px 0;">Type :</td>
                     <td style="color:#ff2d78;font-size:14px;font-weight:bold;">' . $typeLabel . '</td></tr>
                 <tr><td style="color:#ffffff;font-size:14px;padding:5px 0;">Posté le :</td>
-                    <td style="color:#ffffff;font-size:14px;">' . date('d/m/Y à H:i') . '</td></tr>
+                    <td style="color:#ffffff;font-size:14px;">' . (new DateTime('now', new DateTimeZone('Europe/Paris')))->format('d/m/Y à H:i') . '</td></tr>
             </table>
         </div>
         <div style="text-align:center;margin:25px 0;">
