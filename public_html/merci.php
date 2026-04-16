@@ -65,7 +65,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(6,8,16,0.88);backdrop-filt
 .nav-back:hover{color:var(--txt)}
 
 /* Page */
-.page{max-width:800px;margin:0 auto;padding:3rem 2rem 5rem;position:relative;z-index:1}
+.page{max-width:1000px;margin:0 auto;padding:3rem 2rem 5rem;position:relative;z-index:1}
 
 /* ── Hero Merci ── */
 .hero-merci{text-align:center;margin-bottom:3rem;animation:fU .6s ease both}
@@ -130,8 +130,13 @@ nav{position:sticky;top:0;z-index:100;background:rgba(6,8,16,0.88);backdrop-filt
 .disclaimer-bottom{text-align:center;margin-top:3rem;padding-top:2rem;border-top:1px solid var(--border);animation:fU .9s ease .6s both}
 .disclaimer-bottom p{color:var(--txt3);font-size:.72rem;line-height:1.6;max-width:600px;margin:0 auto;opacity:.7}
 
+/* ── Grid 2 colonnes ── */
+.cards-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:1.5rem}
+.cards-grid .info-card{margin-bottom:0}
+
 @keyframes fU{from{opacity:0;transform:translateY(25px)}to{opacity:1;transform:translateY(0)}}
-@media(max-width:600px){
+@media(max-width:800px){
+  .cards-grid{grid-template-columns:1fr}
   .page{padding:2rem 1rem 4rem}
   .info-card{padding:1.4rem 1.2rem}
   .social-row{flex-direction:column}
@@ -167,14 +172,12 @@ nav{position:sticky;top:0;z-index:100;background:rgba(6,8,16,0.88);backdrop-filt
 
   <div style="text-align:center;font-family:'Orbitron',sans-serif;font-size:.7rem;letter-spacing:2px;text-transform:uppercase;color:var(--txt3);margin-bottom:2rem;opacity:.5;">↓ Lis ces infos importantes avant de commencer ↓</div>
 
-  <!-- ═══ DISCLAIMER RESPONSABLE ═══ -->
+  <!-- ═══ DISCLAIMER RESPONSABLE (full width) ═══ -->
   <div class="info-card warn" style="animation-delay:.15s">
     <div class="ic-icon">⚠️</div>
     <div class="ic-title">Le pari reste un jeu — sois maître de toi-même</div>
     <div class="ic-text">
-      Chez StratEdge, on analyse, on croise les stats, on cherche les meilleures opportunités. Mais <strong>aucun pronostic n'est garanti</strong> — un match de sport reste imprévisible, et c'est d'ailleurs ce qui en fait tout l'intérêt.<br><br>
-      <em>Nous ne sommes pas responsables des résultats en fin de match.</em> Le pari sportif doit rester un <strong>plaisir</strong> et jamais une source de revenu espérée. Ne mise jamais de l'argent que tu ne peux pas te permettre de perdre.<br><br>
-      <strong>C'est à toi de gérer ta bankroll.</strong> Nous te donnons nos analyses et nos conseils, mais la décision finale t'appartient toujours. Sois discipliné, fixe-toi des limites, et respecte-les.
+      <strong>Aucun pronostic n'est garanti</strong> — un match de sport reste imprévisible. <em>Nous ne sommes pas responsables des résultats en fin de match.</em> Le pari sportif doit rester un <strong>plaisir</strong>, jamais une source de revenu espérée. Ne mise jamais de l'argent que tu ne peux pas te permettre de perdre. <strong>C'est à toi de gérer ta bankroll.</strong>
     </div>
   </div>
 
@@ -193,103 +196,105 @@ nav{position:sticky;top:0;z-index:100;background:rgba(6,8,16,0.88);backdrop-filt
   </div>
   <?php endif; ?>
 
-  <!-- ═══ OÙ TROUVER LES PARIS ═══ -->
-  <div class="info-card green" style="animation-delay:.3s">
-    <div class="ic-icon">📊</div>
-    <div class="ic-title">Où retrouver tes paris</div>
-    <div class="ic-text">
-      Tous les bets sont publiés directement sur ton <strong>espace membre</strong>, dans la section <em>"Les Bets"</em>. Chaque bet est affiché sous forme de card avec l'analyse complète, la cote, le type de pari et notre indice de confiance.
-    </div>
-    <ol class="steps-list">
-      <li>Connecte-toi sur <strong>stratedgepronos.fr</strong></li>
-      <li>Va dans <strong>"Les Bets"</strong> depuis le menu ou la sidebar</li>
-      <li>Les bets actifs sont en haut — clique pour voir l'analyse complète</li>
-      <li>Les résultats passés sont dans <strong>"Historique"</strong></li>
-    </ol>
-  </div>
+  <!-- ═══ GRILLE 2 COLONNES ═══ -->
+  <div class="cards-grid">
 
-  <!-- ═══ NOTIFICATIONS ═══ -->
-  <div class="info-card" style="animation-delay:.35s">
-    <div class="ic-icon">🔔</div>
-    <div class="ic-title">Ne rate aucun bet — active tes notifications</div>
-    <div class="ic-text">
-      Tu reçois chaque bet par <strong>email</strong> automatiquement. Mais le plus rapide, c'est les <strong>notifications Push</strong> — tu es alerté instantanément, même quand tu n'es pas sur le site. C'est essentiel pour les <em>bets LIVE</em> qui ont un timing serré.
-    </div>
-    <div class="highlight-box">
-      <p><strong>Comment activer les Push :</strong><br>
-      Depuis ton <strong>Dashboard</strong>, clique sur le bouton <strong>"Activer les notifications"</strong>. Ton navigateur te demandera l'autorisation — accepte et c'est fait.</p>
-    </div>
-  </div>
+    <!-- ── COLONNE GAUCHE ── -->
+    <div>
+      <div class="info-card green" style="animation-delay:.25s;margin-bottom:1.5rem">
+        <div class="ic-icon">📊</div>
+        <div class="ic-title">Où retrouver tes paris</div>
+        <div class="ic-text">
+          Tous les bets sont dans la section <em>"Les Bets"</em> de ton espace membre. Chaque bet = une card avec l'analyse complète, la cote et notre indice de confiance.
+        </div>
+        <ol class="steps-list">
+          <li>Connecte-toi sur <strong>stratedgepronos.fr</strong></li>
+          <li>Va dans <strong>"Les Bets"</strong> depuis le menu</li>
+          <li>Clique sur un bet pour voir l'analyse complète</li>
+        </ol>
+      </div>
 
-  <!-- ═══ INSTALLER L'APPLI SUR TON TÉLÉPHONE ═══ -->
-  <div class="info-card green" style="animation-delay:.38s">
-    <div class="ic-icon">📲</div>
-    <div class="ic-title">Installe StratEdge comme une appli sur ton téléphone</div>
-    <div class="ic-text">
-      Tu peux accéder à StratEdge directement depuis ton écran d'accueil, <strong>comme une vraie application</strong> — sans passer par le navigateur. C'est plus rapide, plus pratique, et tu recevras les <strong>notifications push</strong> même quand l'appli est fermée.
-    </div>
+      <div class="info-card" style="animation-delay:.35s;margin-bottom:1.5rem">
+        <div class="ic-icon">🎯</div>
+        <div class="ic-title">On ne mise pas sur n'importe quoi</div>
+        <div class="ic-text">
+          Nos pronos sont basés sur les <strong>matchs du moment</strong>. Chaque prono = une <strong>analyse approfondie</strong> : stats, forme récente, H2H, absences, cotes, modèles xG et Poisson.<br><br>
+          Le nombre de bets <strong>varie selon le calendrier sportif</strong>. On joue <em>uniquement les matchs qui présentent une vraie value</em>. Pas de remplissage.
+        </div>
+        <div class="highlight-box">
+          <p><strong>La philosophie StratEdge :</strong> des bets ciblés, analysés, justifiés. Si tu veux de la <strong>qualité et de la rigueur</strong>, tu es au bon endroit.</p>
+        </div>
+      </div>
 
-    <div class="highlight-box" style="margin-top:1rem;">
-      <p style="margin-bottom:.5rem;"><strong>📱 Sur iPhone (Safari) :</strong></p>
-      <ol class="steps-list" style="margin-top:.3rem;">
-        <li>Ouvre <strong>stratedgepronos.fr</strong> dans <strong>Safari</strong> (obligatoire, pas Chrome)</li>
-        <li>Appuie sur le bouton <strong>Partager</strong> (carré avec flèche ↑ en bas de l'écran)</li>
-        <li>Fais défiler et appuie sur <strong>"Sur l'écran d'accueil"</strong></li>
-        <li>Confirme en appuyant sur <strong>"Ajouter"</strong> — c'est fait !</li>
-      </ol>
-    </div>
-
-    <div class="highlight-box" style="margin-top:.8rem;">
-      <p style="margin-bottom:.5rem;"><strong>🤖 Sur Android (Chrome) :</strong></p>
-      <ol class="steps-list" style="margin-top:.3rem;">
-        <li>Ouvre <strong>stratedgepronos.fr</strong> dans <strong>Chrome</strong></li>
-        <li>Appuie sur les <strong>3 points ⋮</strong> en haut à droite</li>
-        <li>Appuie sur <strong>"Installer l'application"</strong> ou <strong>"Ajouter à l'écran d'accueil"</strong></li>
-        <li>Confirme — l'icône StratEdge apparaît sur ton écran !</li>
-      </ol>
+      <div class="info-card" style="animation-delay:.45s">
+        <div class="ic-icon">📱</div>
+        <div class="ic-title">Reste connecté</div>
+        <div class="ic-text">
+          Suis-nous sur <strong>X (Twitter)</strong> pour les annonces, les résultats en direct et les coulisses de l'analyse.
+        </div>
+        <div class="social-row">
+          <a href="https://x.com/StratEdgePronos" target="_blank" rel="noopener" class="social-btn btn-x">
+            <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            Suivre @StratEdgePronos
+          </a>
+          <?php if ($isVipMax): ?>
+          <a href="https://t.me/StratEdge_Detecor_Bot" target="_blank" rel="noopener" class="social-btn btn-telegram">
+            <svg viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+            Rejoindre le Telegram VIP
+          </a>
+          <?php endif; ?>
+        </div>
+      </div>
     </div>
 
-    <div class="highlight-box" style="margin-top:.8rem;border-color:rgba(0,212,255,0.2);background:rgba(0,212,255,0.04);">
-      <p><strong style="color:#00d4ff;">💡 Pourquoi installer l'appli ?</strong><br>
-      Accès <strong>instantané</strong> en 1 tap depuis l'écran d'accueil · <strong>Notifications push</strong> même appli fermée · Mode <strong>plein écran</strong> sans barre du navigateur · Chargement <strong>ultra rapide</strong></p>
-    </div>
-  </div>
+    <!-- ── COLONNE DROITE ── -->
+    <div>
+      <div class="info-card" style="animation-delay:.3s;margin-bottom:1.5rem">
+        <div class="ic-icon">🔔</div>
+        <div class="ic-title">Active tes notifications</div>
+        <div class="ic-text">
+          Tu reçois chaque bet par <strong>email</strong> automatiquement. Mais le plus rapide, c'est les <strong>notifications Push</strong> — tu es alerté instantanément. Essentiel pour les <em>bets LIVE</em>.
+        </div>
+        <div class="highlight-box">
+          <p><strong>Comment activer :</strong><br>
+          Dashboard → bouton <strong>"Activer les notifications"</strong> → accepte la demande du navigateur.</p>
+        </div>
+      </div>
 
-  <!-- ═══ NOS BETS : QUALITÉ > QUANTITÉ ═══ -->
-  <div class="info-card" style="animation-delay:.4s">
-    <div class="ic-icon">🎯</div>
-    <div class="ic-title">On ne mise pas sur n'importe quoi</div>
-    <div class="ic-text">
-      Nos pronos sont basés sur les <strong>matchs du moment</strong> — les vrais événements sportifs en cours. On ne poste pas un bet pour poster un bet. Chaque prono est le résultat d'une <strong>analyse approfondie</strong> du match : statistiques, forme récente des équipes, confrontations directes, absences, cotes des bookmakers, modèles xG et Poisson.<br><br>
-      Le nombre de bets publiés <strong>varie selon le calendrier sportif</strong>. Certaines semaines il y a beaucoup de matchs intéressants (Ligue des Champions, gros week-ends de championnat), d'autres moins. C'est <strong>normal et c'est voulu</strong>.<br><br>
-      On joue <em>uniquement les matchs qui présentent une vraie value</em> — quand notre analyse estime que la probabilité réelle est supérieure à ce que la cote reflète. Pas de remplissage, pas de pari "au feeling".
-    </div>
-    <div class="highlight-box">
-      <p><strong>La philosophie StratEdge :</strong> des bets ciblés, analysés, justifiés. Si tu veux du volume à tout prix, on n'est pas pour toi. Si tu veux de la <strong>qualité et de la rigueur</strong>, tu es au bon endroit.</p>
-    </div>
-  </div>
+      <div class="info-card green" style="animation-delay:.38s">
+        <div class="ic-icon">📲</div>
+        <div class="ic-title">Installe l'appli sur ton téléphone</div>
+        <div class="ic-text">
+          Accède à StratEdge depuis ton écran d'accueil <strong>comme une vraie application</strong> — plus rapide, plus pratique, et les <strong>notifications push</strong> fonctionnent même appli fermée.
+        </div>
 
-  <!-- ═══ RÉSEAUX SOCIAUX ═══ -->
-  <div class="info-card" style="animation-delay:.45s">
-    <div class="ic-icon">📱</div>
-    <div class="ic-title">Reste connecté</div>
-    <div class="ic-text">
-      Suis-nous sur <strong>X (Twitter)</strong> pour les annonces, les résultats en direct et les coulisses de l'analyse. C'est aussi là qu'on communique en cas de maintenance ou de nouveauté.
-      <?php if ($isVipMax): ?><br><br>En tant que membre <em>VIP MAX</em>, tu as accès à notre <strong>groupe Telegram privé</strong> — échanges directs, alertes prioritaires et communauté exclusive.<?php endif; ?>
+        <div class="highlight-box" style="margin-top:1rem;">
+          <p style="margin-bottom:.3rem;"><strong>📱 iPhone (Safari) :</strong></p>
+          <ol class="steps-list" style="margin-top:.2rem;">
+            <li>Ouvre le site dans <strong>Safari</strong></li>
+            <li>Bouton <strong>Partager</strong> (↑ en bas)</li>
+            <li><strong>"Sur l'écran d'accueil"</strong></li>
+            <li>Confirme → c'est fait !</li>
+          </ol>
+        </div>
+
+        <div class="highlight-box" style="margin-top:.6rem;">
+          <p style="margin-bottom:.3rem;"><strong>🤖 Android (Chrome) :</strong></p>
+          <ol class="steps-list" style="margin-top:.2rem;">
+            <li>Ouvre le site dans <strong>Chrome</strong></li>
+            <li>Menu <strong>⋮</strong> en haut à droite</li>
+            <li><strong>"Installer l'application"</strong></li>
+            <li>Confirme → icône ajoutée !</li>
+          </ol>
+        </div>
+
+        <div class="highlight-box" style="margin-top:.6rem;border-color:rgba(0,212,255,0.2);background:rgba(0,212,255,0.04);">
+          <p><strong style="color:#00d4ff;">💡 Avantages :</strong> Accès 1 tap · Notifications · Plein écran · Ultra rapide</p>
+        </div>
+      </div>
     </div>
-    <div class="social-row">
-      <a href="https://x.com/StratEdgePronos" target="_blank" rel="noopener" class="social-btn btn-x">
-        <svg viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-        Suivre @StratEdgePronos
-      </a>
-      <?php if ($isVipMax): ?>
-      <a href="https://t.me/StratEdge_Detecor_Bot" target="_blank" rel="noopener" class="social-btn btn-telegram">
-        <svg viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
-        Rejoindre le Telegram VIP
-      </a>
-      <?php endif; ?>
-    </div>
-  </div>
+
+  </div><!-- /.cards-grid -->
 
   <!-- ═══ CTA DASHBOARD ═══ -->
   <div class="cta-section">
