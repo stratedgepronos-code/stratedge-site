@@ -2,6 +2,10 @@
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/mailer.php';
 require_once __DIR__ . '/includes/credits-widget.php';
+// Charger la config VAPID tôt (avant le JS push qui utilise VAPID_PUBLIC_KEY)
+if (file_exists(__DIR__ . '/includes/vapid-config.php')) {
+    require_once __DIR__ . '/includes/vapid-config.php';
+}
 requireLogin();
 
 $db = getDB();
