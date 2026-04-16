@@ -334,15 +334,22 @@ function generateLiveCards($d) {
     $logo1_url = trim($d['team1_logo'] ?? '');
     $logo2_url = trim($d['team2_logo'] ?? '');
     $is_team_sport = in_array($sport, ['football', 'basket', 'hockey', 'baseball']);
+    $logo1FromDb = '';
+    $logo2FromDb = '';
     if ($is_team_sport) {
-        // PRIORITÉ : DB locale (écrase Claude si match trouvé, plus fiable)
+        // PRIORITÉ : DB locale + TheSportsDB cascade (écrase Claude si match trouvé)
         if (function_exists('stratedge_fetch_team_logo_url')) {
-            $localLogo1 = stratedge_fetch_team_logo_url($d['player1'] ?? '', $sport);
-            $localLogo2 = stratedge_fetch_team_logo_url($d['player2'] ?? '', $sport);
-            if ($localLogo1 !== '') $logo1_url = $localLogo1;
-            if ($localLogo2 !== '') $logo2_url = $localLogo2;
+            $logo1FromDb = stratedge_fetch_team_logo_url($d['player1'] ?? '', $sport);
+            $logo2FromDb = stratedge_fetch_team_logo_url($d['player2'] ?? '', $sport);
+            if ($logo1FromDb !== '') $logo1_url = $logo1FromDb;
+            if ($logo2FromDb !== '') $logo2_url = $logo2FromDb;
         }
-        // Fallback si rien trouvé
+        // Pour le football: si la DB n'a pas trouvé, ne PAS utiliser le logo Claude (IDs hallucinés)
+        if ($sport === 'football') {
+            if ($logo1FromDb === '') $logo1_url = '';
+            if ($logo2FromDb === '') $logo2_url = '';
+        }
+        // Fallback NHL/MLB si rien trouvé
         if (!stratedge_is_valid_logo($logo1_url)) {
             if ($sport === 'hockey') $logo1_url = nhlLogoUrl($d['player1'] ?? '');
             elseif ($sport === 'baseball') $logo1_url = mlbLogoUrl($d['player1'] ?? '');
@@ -544,7 +551,7 @@ TEAMSPORT;
             ['eyebrow'=>'PACK UNIQUE','main'=>'1 pari par SMS - <span class="promo-main-hl">4,50€ au 81004</span>','sub'=>'Crédit à vie · ou CB sur stratedgepronos.fr','cta'=>'Tape STAR'],
             ['eyebrow'=>'PACK TRIO 🔥','main'=>'3 paris à la carte - <span class="promo-main-hl">12€</span>','sub'=>'4€/pari · CB ou Crypto · stratedgepronos.fr/packs-daily','cta'=>'ACHETER →'],
             ['eyebrow'=>'PACK 10 🏆','main'=>'10 paris - <span class="promo-main-hl">30€</span>','sub'=>'Économie -33% · stratedgepronos.fr/packs-daily','cta'=>'ACHETER →'],
-            ['eyebrow'=>'FUN WEEK-END 🎲','main'=>'Tous les bets fun délire - <span class="promo-main-hl">10€</span>','sub'=>'Jusqu\'au dimanche soir · stratedgepronos.fr/offre-fun','cta'=>"S'ABONNER →"],
+            ['eyebrow'=>'FUN SEMAINE 🎲','main'=>'Tous les bets fun délire - <span class="promo-main-hl">10€</span>','sub'=>'7 jours d\'accès · stratedgepronos.fr/offre-fun','cta'=>"S'ABONNER →"],
         ];
         $pv = $promoVariants[array_rand($promoVariants)];
         $promo_eyebrow = $pv['eyebrow'];
@@ -1708,17 +1715,27 @@ function generateSafeCards($d) {
     $t1Raw = trim($teamsTmp[0] ?? '');
     $t2Raw = trim($teamsTmp[1] ?? '');
 
-    // PRIORITÉ : DB locale (écrase Claude si match trouvé)
+    // PRIORITÉ : DB locale + TheSportsDB cascade (écrase Claude si match trouvé)
+    // IMPORTANT: pour le football, Claude invente souvent les IDs API-Football → ne JAMAIS
+    // faire confiance à ses URLs logo foot. On clear le logo Claude si la DB locale ne match pas.
+    $logo1FromDb = '';
+    $logo2FromDb = '';
     if (function_exists('stratedge_fetch_team_logo_url')) {
         $sportForLogo = strtolower($d['sport'] ?? ($isTennis ? 'tennis' : 'football'));
         if ($t1Raw !== '') {
-            $localL1 = stratedge_fetch_team_logo_url($t1Raw, $sportForLogo);
-            if ($localL1 !== '') $logo1 = $localL1;
+            $logo1FromDb = stratedge_fetch_team_logo_url($t1Raw, $sportForLogo);
+            if ($logo1FromDb !== '') $logo1 = $logo1FromDb;
         }
         if ($t2Raw !== '') {
-            $localL2 = stratedge_fetch_team_logo_url($t2Raw, $sportForLogo);
-            if ($localL2 !== '') $logo2 = $localL2;
+            $logo2FromDb = stratedge_fetch_team_logo_url($t2Raw, $sportForLogo);
+            if ($logo2FromDb !== '') $logo2 = $logo2FromDb;
         }
+    }
+    // Pour le football: si la DB n'a pas trouvé de logo vérifié, ne PAS utiliser celui de Claude
+    // (Claude hallucine les IDs API-Football → affiche le mauvais club)
+    if ($sport === 'football') {
+        if ($logo1FromDb === '') $logo1 = '';
+        if ($logo2FromDb === '') $logo2 = '';
     }
 
     // Team logos HTML — use flagImg() for proper flag rendering
@@ -1746,7 +1763,7 @@ function generateSafeCards($d) {
             ['icon'=>'📱','title'=>'PACK UNIQUE — 4,50€ par SMS','sub'=>'Tape STAR au 81004 · 1 pari à vie · ou CB sur le site'],
             ['icon'=>'🔥','title'=>'PACK TRIO — 3 paris pour 12€','sub'=>'Soit 4€/pari · CB ou Crypto · /packs-daily'],
             ['icon'=>'🏆','title'=>'PACK 10 — 30€ (-33%)','sub'=>'10 paris à vie · 3€/pari · /packs-daily'],
-            ['icon'=>'🎲','title'=>'FUN WEEK-END — 10€ jusqu\'au dimanche','sub'=>'Bets fun délire · cotes folles · /offre-fun'],
+            ['icon'=>'🎲','title'=>'FUN SEMAINE — 10€ pour 7 jours','sub'=>'Bets fun délire · cotes folles · /offre-fun'],
         ];
         $mp = $multiPromos[array_rand($multiPromos)];
         $promoBlock = "<div class='promo-banner promo-multi'><div class='promo-inner'><span class='promo-icon'>{$mp['icon']}</span><div class='promo-text'><span class='promo-title'>{$mp['title']}</span><span class='promo-sub'>{$mp['sub']}</span></div><span class='promo-btn'>Acheter</span></div></div>";

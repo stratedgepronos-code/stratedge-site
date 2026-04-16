@@ -12,7 +12,16 @@ function stratedge_fetch_team_logo_url($teamName, $sport = 'football') {
     if ($teamName === '') return '';
 
     // ═══════════════════════════════════════════════════════
-    // PRIORITÉ 1 : Base locale (instant, 100% fiable)
+    // PRIORITÉ 0 : Base PHP football (200+ clubs, IDs vérifiés)
+    // ═══════════════════════════════════════════════════════
+    if (strtolower($sport) === 'football') {
+        require_once __DIR__ . '/football-logos-db.php';
+        $fbLogo = stratedge_football_logo($teamName);
+        if ($fbLogo !== '') return $fbLogo;
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // PRIORITÉ 1 : Base locale fichiers PNG (mapping.json)
     // ═══════════════════════════════════════════════════════
     require_once __DIR__ . '/team-logos-db.php';
     $local = stratedge_local_team_logo($teamName, $sport);
