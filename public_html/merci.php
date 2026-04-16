@@ -4,8 +4,9 @@
 // Couleur adaptée au pack · Disclaimer · Guide · Social
 // ============================================================
 require_once __DIR__ . '/includes/auth.php';
-requireLogin();
-$membre = getMembre();
+// Si pas connecté (session perdue au retour de Stripe), afficher quand même la page
+// L'abonnement a été activé par le webhook Stripe côté serveur
+$membre = isLoggedIn() ? getMembre() : null;
 
 $type = $_GET['type'] ?? 'multi_pack';
 $packs = [
@@ -154,7 +155,7 @@ nav{position:sticky;top:0;z-index:100;background:rgba(6,8,16,0.88);backdrop-filt
       <svg viewBox="0 0 24 24" fill="none" stroke="var(--color)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
     </div>
     <div class="hero-pack"><?= $p['emoji'] ?> <?= $p['titre'] ?> · ACTIVÉ</div>
-    <h1>Merci <span><?= clean($membre['nom']) ?></span> !</h1>
+    <h1>Merci <span><?= $membre ? clean($membre['nom']) : 'à toi' ?></span> !</h1>
     <p>Ton accès <strong><?= $p['titre'] ?></strong> est maintenant actif. Bienvenue dans l'Edge — on va faire du beau travail ensemble.</p>
     <div class="mascot-ring">
       <video autoplay loop muted playsinline><source src="<?= $p['video'] ?>" type="video/mp4"></video>
@@ -251,6 +252,11 @@ nav{position:sticky;top:0;z-index:100;background:rgba(6,8,16,0.88);backdrop-filt
   <!-- ═══ CTA DASHBOARD ═══ -->
   <div class="cta-section">
     <a href="bets.php" class="cta-btn">Voir les Bets →</a>
+    <?php if (!$membre): ?>
+    <p style="margin-top:1rem;font-size:0.85rem;color:rgba(255,255,255,0.5);">
+      Session expirée ? <a href="/login.php?redirect=/bets.php" style="color:#00d4ff;">Reconnecte-toi</a> — ton abonnement est déjà activé.
+    </p>
+    <?php endif; ?>
     <div class="cta-sub">Ton espace membre t'attend</div>
   </div>
 

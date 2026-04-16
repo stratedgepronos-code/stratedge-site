@@ -305,8 +305,9 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
               if ($stmtV->fetchColumn()) $hasAcces = true;
           }
           
-          if (!$hasAcces && $betRole === 'superadmin') {
-              // Bets superadmin → crédits / pass 24h
+          if (!$hasAcces && $betRole === 'superadmin' && $bet['categorie'] !== 'tennis') {
+              // Bets superadmin Multi uniquement → crédits / pass 24h
+              // (pas les bets tennis même si postés par superadmin)
               if (stratedge_credits_deja_consulte($mid, $bid)) $hasAcces = true;
           }
       }

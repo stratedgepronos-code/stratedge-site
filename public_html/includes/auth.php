@@ -7,7 +7,7 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start([
         'cookie_httponly' => true,
         'cookie_secure'   => true,
-        'cookie_samesite' => 'Strict',
+        'cookie_samesite' => 'Lax',  // Lax = cookie envoyé au retour de Stripe/PayPal (Strict = perdu)
     ]);
 }
 

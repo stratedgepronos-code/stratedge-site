@@ -105,13 +105,15 @@ function stratedge_credits_deja_consulte(int $membreId, int $betId): bool {
         $stmt->execute([$membreId, $betId]);
         if ($stmt->fetchColumn()) return true;
         
-        // 2. Pass 24h actif → accès à TOUS les bets superadmin
-        // On vérifie que le bet est bien du superadmin
-        $stmtBet = $db->prepare("SELECT posted_by_role FROM bets WHERE id=? LIMIT 1");
+        // 2. Pass 24h actif → accès aux bets superadmin MULTI uniquement (pas tennis)
+        // On vérifie que le bet est du superadmin ET pas categorie tennis
+        $stmtBet = $db->prepare("SELECT posted_by_role, categorie FROM bets WHERE id=? LIMIT 1");
         $stmtBet->execute([$betId]);
-        $betRole = $stmtBet->fetchColumn();
+        $betInfo = $stmtBet->fetch(PDO::FETCH_ASSOC);
+        $betRole = $betInfo['posted_by_role'] ?? '';
+        $betCat  = $betInfo['categorie'] ?? '';
         
-        if ($betRole === 'superadmin' && stratedge_credits_has_pass_24h($membreId)) {
+        if ($betRole === 'superadmin' && $betCat !== 'tennis' && stratedge_credits_has_pass_24h($membreId)) {
             return true;
         }
         

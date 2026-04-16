@@ -19,10 +19,11 @@ try {
     $bet = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$bet) { echo json_encode(['ok'=>false,'err'=>'bet_not_found']); exit; }
     
-    // Crédits Multi = uniquement pour les bets du superadmin (Alex)
-    // Les bets Tennis (admin_tennis) et Fun (admin_fun) passent par abonnement, pas crédits
+    // Crédits Multi = uniquement pour les bets du superadmin (Alex) en catégorie multi
+    // Les bets Tennis et Fun passent par abonnement, pas crédits
     $betRole = $bet['posted_by_role'] ?? 'superadmin';
-    if ($betRole !== 'superadmin') {
+    $betCat  = $bet['categorie'] ?? 'multi';
+    if ($betRole !== 'superadmin' || $betCat === 'tennis') {
         echo json_encode(['ok'=>false,'err'=>'wrong_category','msg'=>'Ce bet nécessite un abonnement, pas des crédits.']);
         exit;
     }
