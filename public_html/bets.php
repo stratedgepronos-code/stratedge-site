@@ -21,6 +21,23 @@ if (isAdmin() && $membre) {
     $stmt = $db->query("SELECT * FROM bets WHERE actif = 1 AND categorie = 'multi' ORDER BY date_post DESC");
 }
 $bets = $stmt->fetchAll();
+
+// Freemium: dernier bet GAGNÉ visible par tout le monde (démo qualité + SEO)
+$freemiumBetId = 0;
+try {
+    $freemiumBetId = (int)$db->query("SELECT id FROM bets WHERE resultat='gagne' AND categorie='multi' ORDER BY date_resultat DESC LIMIT 1")->fetchColumn();
+} catch (Throwable $e) {}
+// Si pas de bet gagné récent dans les actifs, chercher dans l'historique et l'ajouter
+if ($freemiumBetId > 0) {
+    $found = false;
+    foreach ($bets as $b) { if ((int)$b['id'] === $freemiumBetId) { $found = true; break; } }
+    if (!$found) {
+        $stmtFree = $db->prepare("SELECT * FROM bets WHERE id = ? LIMIT 1");
+        $stmtFree->execute([$freemiumBetId]);
+        $freeBet = $stmtFree->fetch(PDO::FETCH_ASSOC);
+        if ($freeBet) array_unshift($bets, $freeBet);
+    }
+}
 $betsSafe = array_filter($bets, function($b) {
     $t = $b['type'];
     return (strpos($t, 'safe') !== false) && (strpos($t, 'live') === false) && (strpos($t, 'fun') === false);
@@ -279,6 +296,10 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
       $rawPath = !empty($bet['image_path']) ? $bet['image_path'] : ($bet['locked_image_path'] ?? '');
       // hasAcces: admin OU VIP MAX OU déjà débloqué (individuel ou pass 24h)
       $hasAcces = $hasAccesGlobal;
+      // Freemium: dernier bet gagné = visible par tout le monde (démo qualité)
+      if ($freemiumBetId > 0 && (int)($bet['id'] ?? 0) === $freemiumBetId) {
+          $hasAcces = true;
+      }
       if (!$hasAcces && $membre && isset($bet['id'])) {
           $mid = (int)$membre['id'];
           $bid = (int)$bet['id'];
@@ -323,6 +344,10 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
           <?php foreach ($types as $t): $t=trim($t); $c=$typeColors[$t]??'#ff2d78'; ?>
           <span class="bet-badge" style="background:<?=$c?>18;color:<?=$c?>;border:1px solid <?=$c?>40;"><?= $typeLabels[$t]??$t ?></span>
           <?php endforeach; ?>
+          <?php if ($freemiumBetId > 0 && (int)($bet['id'] ?? 0) === $freemiumBetId): ?>
+          <span class="bet-badge" style="background:rgba(0,212,106,0.12);color:#00d46a;border:1px solid rgba(0,212,106,0.4);">GRATUIT</span>
+          <span class="bet-badge" style="background:rgba(0,212,106,0.12);color:#00d46a;border:1px solid rgba(0,212,106,0.4);">✅ GAGNÉ</span>
+          <?php endif; ?>
         </div>
         <span class="bet-date"><?= date('d/m/Y',strtotime($bet['date_post'])) ?></span>
       </div>

@@ -19,7 +19,9 @@ try {
 }
 
 $nbMembres    = $db->query("SELECT COUNT(*) FROM membres WHERE email != 'stratedgepronos@gmail.com'")->fetchColumn();
-$nbAboActifs  = $db->query("SELECT COUNT(*) FROM abonnements WHERE actif=1 AND date_fin>NOW()")->fetchColumn();
+$nbAboActifs  = $db->query("SELECT COUNT(*) FROM abonnements WHERE date_fin > NOW()")->fetchColumn();
+// Nettoyage auto: désactiver les abonnements expirés (actif=1 mais date_fin passée)
+try { $db->exec("UPDATE abonnements SET actif=0 WHERE actif=1 AND date_fin <= NOW()"); } catch(Throwable $e) {}
 $nbBets       = $db->query("SELECT COUNT(*) FROM bets WHERE actif=1")->fetchColumn();
 $nbTickets    = $db->query("SELECT COUNT(*) FROM tickets WHERE statut != 'resolu'")->fetchColumn();
 $nbMessages   = $db->query("SELECT COUNT(*) FROM messages WHERE expediteur='membre' AND lu=0")->fetchColumn();

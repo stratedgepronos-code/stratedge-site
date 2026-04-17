@@ -1294,7 +1294,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <?php if (isLoggedIn()): ?>
           <a href="offre-tennis.php" class="tip-cta">💳 Payer — 15€</a>
         <?php else: ?>
-          <a href="login.php?redirect=offre-tennis.php" class="tip-cta">🔒 Se connecter pour payer</a>
+          <a href="offre-tennis.php" class="tip-cta">🎾 Voir l'offre Tennis →</a>
         <?php endif; ?>
         <a href="offre-tennis.php" class="tip-cta-outline">₿ Payer en Crypto</a>
 
@@ -1340,7 +1340,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <?php if (isLoggedIn()): ?>
           <a href="offre-fun.php" class="tip-cta">💳 Payer — 10€</a>
         <?php else: ?>
-          <a href="login.php?redirect=offre-fun.php" class="tip-cta">🔒 Se connecter pour payer</a>
+          <a href="offre-fun.php" class="tip-cta">🎲 Voir l'offre Fun →</a>
         <?php endif; ?>
         <a href="offre-fun.php" class="tip-cta-outline">₿ Payer en Crypto</a>
 
@@ -1387,7 +1387,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
         <?php if (isLoggedIn()): ?>
           <a href="offre.php?type=vip_max" class="tip-cta" style="background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6,#e8a020);color:#050810;">💳 Payer — 50€</a>
         <?php else: ?>
-          <a href="login.php?redirect=offre.php?type=vip_max" class="tip-cta" style="background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6,#e8a020);color:#050810;">🔒 Se connecter pour payer</a>
+          <a href="offre.php?type=vip_max" class="tip-cta" style="background:linear-gradient(135deg,#c8960c,#f5c842,#fffbe6,#e8a020);color:#050810;">👑 Voir l'offre VIP Max →</a>
         <?php endif; ?>
         <a href="offre.php?type=vip_max#crypto" class="tip-cta-outline" style="color:#f5c842;border-color:rgba(245,200,66,0.3);">₿ Payer en Crypto</a>
 

@@ -99,37 +99,32 @@ require_once __DIR__ . '/includes/auth.php';
   <!-- Article 3 : Offres et tarifs -->
   <div class="ml-section">
     <h2>Article 3 — Offres et tarifs</h2>
+    <h3 style="margin:1rem 0 .5rem;color:var(--neon-green,#ff2d78);font-size:1rem;">Packs Crédits Multisports</h3>
     <table class="price-table">
       <thead>
-        <tr>
-          <th>Formule</th>
-          <th>Durée</th>
-          <th>Prix TTC</th>
-          <th>Contenu</th>
-        </tr>
+        <tr><th>Formule</th><th>Crédits</th><th>Prix TTC</th><th>Contenu</th></tr>
       </thead>
       <tbody>
-        <tr>
-          <td><strong>Daily ⚡</strong></td>
-          <td>Prochain bet publié</td>
-          <td>4,50 €</td>
-          <td>Accès au prochain bet Safe + Live</td>
-        </tr>
-        <tr>
-          <td><strong>Week-End 📅</strong></td>
-          <td>Vendredi → Dimanche 23h59</td>
-          <td>10,00 €</td>
-          <td>Tous les bets du week-end</td>
-        </tr>
-        <tr>
-          <td><strong>Weekly 🏆</strong></td>
-          <td>7 jours glissants</td>
-          <td>20,00 €</td>
-          <td>Accès illimité à tous les bets</td>
-        </tr>
+        <tr><td><strong>Unique 🎯</strong></td><td>1 analyse</td><td>4,50 €</td><td>1 crédit = pass 24h tous les bets Multi</td></tr>
+        <tr><td><strong>Duo 2️⃣</strong></td><td>2 analyses</td><td>8,00 €</td><td>2 crédits à vie</td></tr>
+        <tr><td><strong>Trio 🔥</strong></td><td>3 analyses</td><td>12,00 €</td><td>3 crédits à vie · 4€/pari</td></tr>
+        <tr><td><strong>Quinté 💎</strong></td><td>5 analyses</td><td>18,00 €</td><td>5 crédits à vie · 3,60€/pari</td></tr>
+        <tr><td><strong>Semaine 📅</strong></td><td>7 analyses</td><td>20,00 €</td><td>7 crédits à vie · 2,86€/pari</td></tr>
+        <tr><td><strong>Pack 10 🏆</strong></td><td>10 analyses</td><td>30,00 €</td><td>10 crédits à vie · 3€/pari</td></tr>
       </tbody>
     </table>
-    <p>Les prix sont indiqués en euros toutes taxes comprises. StratEdge est un service proposé par un particulier — non assujetti à la TVA (article 293B du CGI).</p>
+    <h3 style="margin:1.5rem 0 .5rem;color:var(--neon-green,#ff2d78);font-size:1rem;">Abonnements</h3>
+    <table class="price-table">
+      <thead>
+        <tr><th>Formule</th><th>Durée</th><th>Prix TTC</th><th>Contenu</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><strong>Tennis 🎾</strong></td><td>7 jours</td><td>15,00 €</td><td>Tous les bets Tennis (ATP, WTA, Challenger)</td></tr>
+        <tr><td><strong>Fun 🎲</strong></td><td>7 jours</td><td>10,00 €</td><td>Tous les bets Fun (combinés grosses cotes)</td></tr>
+        <tr><td><strong>VIP Max 👑</strong></td><td>30 jours</td><td>49,90 €</td><td>Accès à tous les bets (Multi + Tennis + Fun)</td></tr>
+      </tbody>
+    </table>
+    <p>Les prix sont indiqués en euros toutes taxes comprises. StratEdge est un service proposé par un auto-entrepreneur — non assujetti à la TVA (article 293B du CGI). Les crédits Multisports n'expirent pas. Les abonnements Tennis, Fun et VIP Max expirent automatiquement à la fin de la période souscrite, sans reconduction automatique.</p>
   </div>
 
   <!-- Article 4 : Paiement -->
@@ -137,8 +132,9 @@ require_once __DIR__ . '/includes/auth.php';
     <h2>Article 4 — Modalités de paiement</h2>
     <p>Le paiement est dû intégralement à la souscription. Les moyens de paiement acceptés sont :</p>
     <ul>
-      <li><strong>SMS / Appel surtaxé / Carte bancaire / Paysafecard</strong> via StarPass (BD Multimédia)</li>
+      <li><strong>Carte bancaire</strong> (Visa, Mastercard, Apple Pay, Google Pay) via Stripe</li>
       <li><strong>Crypto-monnaies</strong> (BTC, ETH, USDC, SOL, BNB) via NOWPayments</li>
+      <li><strong>Paysafecard</strong> — paiement par code prépayé 16 chiffres</li>
     </ul>
     <p>L'accès au contenu est activé automatiquement après confirmation du paiement. En cas de problème technique, le Client peut contacter le support via la page <a href="/sav.php">SAV</a>.</p>
   </div>
