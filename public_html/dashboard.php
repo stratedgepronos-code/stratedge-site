@@ -362,37 +362,6 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
 </div>
 </div>
 
-</main></div>
-<?php require_once __DIR__ . '/includes/footer-main.php'; ?>
-<script>
-function sw(t){document.querySelectorAll('.tab-p').forEach(function(p){p.classList.remove('active');});var p=document.getElementById('tab-'+t);if(p)p.classList.add('active');history.replaceState(null,'',window.location.pathname+'?tab='+t);}
-function toggleMenu(){document.getElementById('mobileMenu').classList.toggle('open');}
-var np=document.getElementById('newPwd'),cp=document.getElementById('confirmPwd'),pm=document.getElementById('pwdMatch');
-function ck(){if(!cp.value){pm.style.display='none';return;}pm.style.display='block';if(np.value===cp.value){pm.textContent='✓ Correspondent';pm.style.color='#ff2d78';}else{pm.textContent='✗ Ne correspondent pas';pm.style.color='#ff6b9d';}}
-if(np&&cp){np.addEventListener('input',ck);cp.addEventListener('input',ck);}
-
-var VK='<?= defined("VAPID_PUBLIC_KEY")?VAPID_PUBLIC_KEY:"" ?>',pSub=null;
-function u2a(b){var p='='.repeat((4-b.length%4)%4);var r=atob((b+p).replace(/-/g,'+').replace(/_/g,'/'));return new Uint8Array([...r].map(function(c){return c.charCodeAt(0);}));}
-function upUI(s){var st=document.getElementById('nfSt'),b=document.getElementById('btnNf'),h=document.getElementById('nfHelp');
-if(!st||!b||!h)return;
-h.classList.remove('show');
-if(s==='active'){st.className='nf-st nf-on';st.innerHTML='✅ Activées';b.textContent='Désactiver';b.disabled=false;}
-else if(s==='denied'){st.className='nf-st nf-blk';st.innerHTML='🚫 Bloquées';b.textContent='Bloqué';b.disabled=true;h.classList.add('show');}
-else if(s==='unsupported'){st.className='nf-st nf-blk';st.innerHTML='❌ Non disponible';b.textContent='Non disponible';b.disabled=true;}
-else{st.className='nf-st nf-off';st.innerHTML='Pas encore activées';b.textContent='🔔 Activer';b.disabled=false;}}
-async function chkPush(){if(!('serviceWorker' in navigator)||!('PushManager' in window)||!VK||VK==='VOTRE_CLE_PUBLIQUE_VAPID_ICI'){upUI('unsupported');return;}
-try{var r=await navigator.serviceWorker.register('/sw.js');var s=await r.pushManager.getSubscription();pSub=s;
-if(Notification.permission==='denied')upUI('denied');else if(s)upUI('active');else upUI('inactive');}catch(e){upUI('unsupported');}}
-async function togglePush(){var b=document.getElementById('btnNf');b.disabled=true;b.textContent='⏳ En cours...';
-try{var r=await navigator.serviceWorker.ready;
-if(pSub){await pSub.unsubscribe();await fetch('/push-subscribe.php',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({endpoint:pSub.endpoint})});pSub=null;upUI('inactive');}
-else{var pm=await Notification.requestPermission();if(pm!=='granted'){upUI(pm==='denied'?'denied':'inactive');return;}
-var s=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:u2a(VK)});
-await fetch('/push-subscribe.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s)});pSub=s;upUI('active');}}
-catch(e){console.log('[Push]',e.message);upUI('inactive');}}
-chkPush();
-</script>
-
 <!-- ═══ CALCULATEUR BANKROLL ═══ -->
 <div class="tab-p <?= $activeTab==='bankroll'?'active':'' ?>" id="tab-bankroll">
 <div class="crd" style="max-width:600px;">
@@ -447,6 +416,37 @@ chkPush();
 </div>
 </div>
 
+</main></div>
+
+<?php require_once __DIR__ . '/includes/footer-main.php'; ?>
+<script>
+function sw(t){document.querySelectorAll('.tab-p').forEach(function(p){p.classList.remove('active');});var p=document.getElementById('tab-'+t);if(p)p.classList.add('active');history.replaceState(null,'',window.location.pathname+'?tab='+t);}
+function toggleMenu(){document.getElementById('mobileMenu').classList.toggle('open');}
+var np=document.getElementById('newPwd'),cp=document.getElementById('confirmPwd'),pm=document.getElementById('pwdMatch');
+function ck(){if(!cp.value){pm.style.display='none';return;}pm.style.display='block';if(np.value===cp.value){pm.textContent='✓ Correspondent';pm.style.color='#ff2d78';}else{pm.textContent='✗ Ne correspondent pas';pm.style.color='#ff6b9d';}}
+if(np&&cp){np.addEventListener('input',ck);cp.addEventListener('input',ck);}
+
+var VK='<?= defined("VAPID_PUBLIC_KEY")?VAPID_PUBLIC_KEY:"" ?>',pSub=null;
+function u2a(b){var p='='.repeat((4-b.length%4)%4);var r=atob((b+p).replace(/-/g,'+').replace(/_/g,'/'));return new Uint8Array([...r].map(function(c){return c.charCodeAt(0);}));}
+function upUI(s){var st=document.getElementById('nfSt'),b=document.getElementById('btnNf'),h=document.getElementById('nfHelp');
+if(!st||!b||!h)return;
+h.classList.remove('show');
+if(s==='active'){st.className='nf-st nf-on';st.innerHTML='✅ Activées';b.textContent='Désactiver';b.disabled=false;}
+else if(s==='denied'){st.className='nf-st nf-blk';st.innerHTML='🚫 Bloquées';b.textContent='Bloqué';b.disabled=true;h.classList.add('show');}
+else if(s==='unsupported'){st.className='nf-st nf-blk';st.innerHTML='❌ Non disponible';b.textContent='Non disponible';b.disabled=true;}
+else{st.className='nf-st nf-off';st.innerHTML='Pas encore activées';b.textContent='🔔 Activer';b.disabled=false;}}
+async function chkPush(){if(!('serviceWorker' in navigator)||!('PushManager' in window)||!VK||VK==='VOTRE_CLE_PUBLIQUE_VAPID_ICI'){upUI('unsupported');return;}
+try{var r=await navigator.serviceWorker.register('/sw.js');var s=await r.pushManager.getSubscription();pSub=s;
+if(Notification.permission==='denied')upUI('denied');else if(s)upUI('active');else upUI('inactive');}catch(e){upUI('unsupported');}}
+async function togglePush(){var b=document.getElementById('btnNf');b.disabled=true;b.textContent='⏳ En cours...';
+try{var r=await navigator.serviceWorker.ready;
+if(pSub){await pSub.unsubscribe();await fetch('/push-subscribe.php',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({endpoint:pSub.endpoint})});pSub=null;upUI('inactive');}
+else{var pm=await Notification.requestPermission();if(pm!=='granted'){upUI(pm==='denied'?'denied':'inactive');return;}
+var s=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:u2a(VK)});
+await fetch('/push-subscribe.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s)});pSub=s;upUI('active');}}
+catch(e){console.log('[Push]',e.message);upUI('inactive');}}
+chkPush();
+</script>
 <script>
 document.getElementById('bk-conf').addEventListener('input',function(){document.getElementById('bk-conf-val').textContent=this.value+'/10';});
 function calcBankroll(){
@@ -455,39 +455,25 @@ function calcBankroll(){
   var conf=parseInt(document.getElementById('bk-conf').value)||7;
   var method=document.getElementById('bk-method').value;
   var pct,mise,label;
-
   if(method==='kelly'){
-    // Kelly: f = (p*b - q) / b où b=cote-1, p=proba estimée, q=1-p
-    var p=0.35+(conf*0.05); // conf 1→40%, 5→60%, 7→70%, 10→85%
-    var b=cote-1;
-    var q=1-p;
-    var kelly=(p*b-q)/b;
-    if(kelly<=0){kelly=0.01;}
-    // Demi-Kelly (plus prudent)
-    pct=Math.min(kelly*50,10); // cap 10%
-    label='½ Kelly';
+    var p=0.35+(conf*0.05);var b=cote-1;var q=1-p;var kelly=(p*b-q)/b;
+    if(kelly<=0)kelly=0.01;pct=Math.min(kelly*50,10);label='½ Kelly';
   }else{
-    // Flat: 1-5% selon confiance
     var flatMap={1:1,2:1,3:1.5,4:2,5:2,6:2.5,7:3,8:4,9:4,10:5};
-    pct=flatMap[conf]||3;
-    label='Flat '+pct+'%';
+    pct=flatMap[conf]||3;label='Flat '+pct+'%';
   }
-  mise=Math.round(bank*pct)/100;
-  mise=Math.max(0.5,mise);
+  mise=Math.round(bank*pct)/100;mise=Math.max(0.5,mise);
   var gain=Math.round((mise*cote-mise)*100)/100;
   var riskPct=Math.round(mise/bank*10000)/100;
-
   document.getElementById('bk-mise').textContent=mise.toFixed(2)+'€';
   document.getElementById('bk-pct').textContent=label;
   document.getElementById('bk-gain').textContent='+'+gain.toFixed(2)+'€';
   document.getElementById('bk-risk').textContent=riskPct.toFixed(1)+'%';
-
   var riskColor,riskLabel,advice;
   if(riskPct<=2){riskColor='#00d46a';riskLabel='Risque faible';advice='✅ Mise prudente. Tu protèges ta bankroll sur le long terme.';}
   else if(riskPct<=4){riskColor='#00d4ff';riskLabel='Risque modéré';advice='👍 Bon équilibre risque/reward. Mise standard pour un bet de confiance.';}
   else if(riskPct<=7){riskColor='#ffc107';riskLabel='Risque élevé';advice='⚠️ Mise agressive. Acceptable sur un bet haute confiance, pas en routine.';}
   else{riskColor='#ff4444';riskLabel='Risque très élevé';advice='🚨 Mise dangereuse. Jamais plus de 5% de ta bankroll sur un seul bet.';}
-
   document.getElementById('bk-risk-label').textContent=riskLabel;
   document.getElementById('bk-risk').style.color=riskColor;
   document.getElementById('bk-advice').textContent=advice;
