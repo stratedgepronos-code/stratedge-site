@@ -102,45 +102,90 @@ if ($captureStatus !== 'SUCCESS' && $captureCode >= 400) {
     exit;
 }
 
-// ── Activer l'abonnement ─────────────────────────────────────
-$typeActivation = preg_replace('/_fun$/', '', $offreType);
+// ── Activer l'abonnement OU les crédits ──────────────────────
+$packKeys = ['unique', 'duo', 'trio', 'quinte', 'semaine', 'pack10'];
+$isPack = in_array($offreType, $packKeys, true);
 
-if (activerAbonnement($membreId, $typeActivation)) {
-    pscLog("✅ Abonnement activé: membre #$membreId → $typeActivation ({$payment['montant_eur']}€)");
+if ($isPack) {
+    // Pack crédits Multi → ajouter les crédits
+    require_once __DIR__ . '/includes/credits-manager.php';
+    require_once __DIR__ . '/includes/packs-config.php';
+    $packId = stratedge_credits_ajouter($membreId, $offreType, 'paysafecard', $orderId);
 
-    // Marquer comme validé
-    $stmt = $db->prepare("UPDATE paysafe_payments SET statut = 'validé', date_validation = NOW() WHERE id = ?");
-    $stmt->execute([$payment['id']]);
+    if ($packId > 0) {
+        pscLog("✅ Pack crédits activé: membre #$membreId → $offreType (pack_id=$packId, {$payment['montant_eur']}€)");
 
-    // GiveAway points
-    try {
-        require_once __DIR__ . '/includes/giveaway-functions.php';
-        ajouterPointsGiveaway($membreId, $typeActivation);
-    } catch (Throwable $e) { /* silencieux */ }
+        $stmt = $db->prepare("UPDATE paysafe_payments SET statut = 'validé', date_validation = NOW() WHERE id = ?");
+        $stmt->execute([$payment['id']]);
 
-    // Email confirmation
-    try {
-        require_once __DIR__ . '/includes/mailer.php';
-        $stmtM = $db->prepare("SELECT email, nom FROM membres WHERE id = ?");
-        $stmtM->execute([$membreId]);
-        $m = $stmtM->fetch();
-        if ($m && $m['email']) {
-            $label = PAYMENT_LABELS[$offreType] ?? $offreType;
-            envoyerEmail($m['email'], '✅ Paiement Paysafecard confirmé — ' . $label,
-                emailTemplate('✅ Paiement confirmé', '
-                    <p>Salut <strong>' . htmlspecialchars($m['nom']) . '</strong>,</p>
-                    <p>Ton paiement Paysafecard de <strong>' . $payment['montant_eur'] . '€</strong> pour <strong>' . $label . '</strong> a été confirmé.</p>
-                    <p>Ton accès est maintenant actif. <a href="' . SITE_BASE_URL . '/dashboard.php" style="color:#00d4ff;">Accéder à mon espace →</a></p>
-                ')
-            );
+        try {
+            require_once __DIR__ . '/includes/giveaway-functions.php';
+            ajouterPointsGiveaway($membreId, $offreType);
+        } catch (Throwable $e) { /* silencieux */ }
+
+        try {
+            require_once __DIR__ . '/includes/mailer.php';
+            $stmtM = $db->prepare("SELECT email, nom FROM membres WHERE id = ?");
+            $stmtM->execute([$membreId]);
+            $m = $stmtM->fetch();
+            if ($m && $m['email']) {
+                $pack = stratedge_pack_get($offreType);
+                $label = $pack ? $pack['label'] : $offreType;
+                envoyerEmail($m['email'], '✅ Paiement Paysafecard confirmé — ' . $label,
+                    emailTemplate('✅ Paiement confirmé', '
+                        <p>Salut <strong>' . htmlspecialchars($m['nom']) . '</strong>,</p>
+                        <p>Ton paiement Paysafecard de <strong>' . $payment['montant_eur'] . '€</strong> pour <strong>' . $label . '</strong> a été confirmé.</p>
+                        <p>Tes crédits sont ajoutés. <a href="' . SITE_BASE_URL . '/bets.php" style="color:#00d4ff;">Voir les bets →</a></p>
+                    ')
+                );
+            }
+        } catch (Throwable $e) {
+            pscLog('WARN: email échoué: ' . $e->getMessage());
         }
-    } catch (Throwable $e) {
-        pscLog('WARN: email échoué: ' . $e->getMessage());
-    }
 
-    header('Location: /merci.php?type=' . urlencode($type));
+        header('Location: /merci.php?type=' . urlencode($offreType));
+    } else {
+        pscLog("❌ Ajout crédits ÉCHOUÉ: membre #$membreId → $offreType");
+        header('Location: /dashboard.php?error=activation');
+    }
 } else {
-    pscLog("❌ activerAbonnement ÉCHOUÉ: membre #$membreId → $typeActivation");
-    header('Location: /dashboard.php?error=activation');
+    // Abonnement (tennis, fun, vip_max, legacy)
+    $typeActivation = preg_replace('/_fun$/', '', $offreType);
+
+    if (activerAbonnement($membreId, $typeActivation)) {
+        pscLog("✅ Abonnement activé: membre #$membreId → $typeActivation ({$payment['montant_eur']}€)");
+
+        $stmt = $db->prepare("UPDATE paysafe_payments SET statut = 'validé', date_validation = NOW() WHERE id = ?");
+        $stmt->execute([$payment['id']]);
+
+        try {
+            require_once __DIR__ . '/includes/giveaway-functions.php';
+            ajouterPointsGiveaway($membreId, $typeActivation);
+        } catch (Throwable $e) { /* silencieux */ }
+
+        try {
+            require_once __DIR__ . '/includes/mailer.php';
+            $stmtM = $db->prepare("SELECT email, nom FROM membres WHERE id = ?");
+            $stmtM->execute([$membreId]);
+            $m = $stmtM->fetch();
+            if ($m && $m['email']) {
+                $label = PAYMENT_LABELS[$offreType] ?? $offreType;
+                envoyerEmail($m['email'], '✅ Paiement Paysafecard confirmé — ' . $label,
+                    emailTemplate('✅ Paiement confirmé', '
+                        <p>Salut <strong>' . htmlspecialchars($m['nom']) . '</strong>,</p>
+                        <p>Ton paiement Paysafecard de <strong>' . $payment['montant_eur'] . '€</strong> pour <strong>' . $label . '</strong> a été confirmé.</p>
+                        <p>Ton accès est maintenant actif. <a href="' . SITE_BASE_URL . '/dashboard.php" style="color:#00d4ff;">Accéder à mon espace →</a></p>
+                    ')
+                );
+            }
+        } catch (Throwable $e) {
+            pscLog('WARN: email échoué: ' . $e->getMessage());
+        }
+
+        header('Location: /merci.php?type=' . urlencode($type));
+    } else {
+        pscLog("❌ activerAbonnement ÉCHOUÉ: membre #$membreId → $typeActivation");
+        header('Location: /dashboard.php?error=activation');
+    }
 }
 exit;

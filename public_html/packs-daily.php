@@ -59,6 +59,7 @@ $packs = stratedge_packs_config();
 .pk-btn-cb{background:linear-gradient(135deg,#ff2d7a,#c850c0);color:#fff}.pk-btn-cb:hover{box-shadow:0 6px 18px rgba(200,80,192,0.4);transform:translateY(-1px)}
 .pk-btn-cr{background:transparent;color:#ffc107;border:1px solid rgba(255,193,7,0.25)}.pk-btn-cr:hover{background:rgba(255,193,7,0.08)}
 .pk-btn-sm{background:transparent;color:#00d4ff;border:1px solid rgba(0,212,255,0.25)}.pk-btn-sm:hover{background:rgba(0,212,255,0.08)}
+.pk-btn-psc{background:linear-gradient(135deg,#0074d9,#00a8e8);color:#fff;border:none}.pk-btn-psc:hover{box-shadow:0 6px 18px rgba(0,116,217,0.4);transform:translateY(-1px)}
 
 .pk-faq{max-width:700px;margin:2rem auto 3rem;padding:0 1rem}
 .pk-faq h2{font-family:'Orbitron',sans-serif;text-align:center;font-size:1.3rem;margin-bottom:1.5rem;color:rgba(255,255,255,.8)}
@@ -107,6 +108,7 @@ $packs = stratedge_packs_config();
         <?php if(in_array('crypto', $p['methodes'])): ?>
         <a href="/nowpayments-create-pack.php?pack=<?= $k ?>" class="pk-btn pk-btn-cr">₿ Crypto</a>
         <?php endif; ?>
+        <button type="button" onclick="payPSC('<?= $k ?>',<?= number_format($p['prix'], 2, '.', '') ?>)" class="pk-btn pk-btn-psc">🔒 Paysafecard</button>
         <?php if(in_array('sms', $p['methodes'])): ?>
         <a href="/starpass-pack-unique.php" class="pk-btn pk-btn-sm">📱 SMS (4,50€)</a>
         <?php endif; ?>
@@ -154,6 +156,15 @@ async function checkPromo(){
   }
   if(anyOk) res.innerHTML='<span style="color:#00d46a">✅ Code appliqué ! Les prix réduits sont affichés ci-dessous.</span>';
   else res.innerHTML='<span style="color:#ff6b6b">❌ Code invalide ou non applicable à ces formules</span>';
+async function payPSC(pack, prix){
+  const btn=event.target;btn.disabled=true;btn.textContent='⏳ Redirection...';
+  try{
+    const fd=new FormData();fd.append('offre',pack);
+    const r=await fetch('/paysafe-create.php',{method:'POST',body:fd,credentials:'same-origin'});
+    const d=await r.json();
+    if(d.url){window.location.href=d.url;}
+    else{alert('Erreur Paysafecard : '+(d.error||'inconnue'));btn.disabled=false;btn.textContent='🔒 Paysafecard';}
+  }catch(e){alert('Erreur réseau');btn.disabled=false;btn.textContent='🔒 Paysafecard';}
 }
 </script>
 </body>

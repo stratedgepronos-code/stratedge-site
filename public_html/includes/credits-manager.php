@@ -41,7 +41,7 @@ function _stratedge_ensure_pass_table(): void {
  */
 function stratedge_credits_ajouter(int $membreId, string $packKey, string $methode, ?string $txRef = null): int {
     $pack = stratedge_pack_get($packKey);
-    if (!$pack || $membreId <= 0 || !in_array($methode, ['sms','stripe','crypto'], true)) return 0;
+    if (!$pack || $membreId <= 0 || !in_array($methode, ['sms','stripe','crypto','paysafecard'], true)) return 0;
     try {
         $db = getDB();
         $stmt = $db->prepare("INSERT INTO credits_paris (membre_id, nb_initial, nb_restants, pack_type, prix_paye, methode, transaction_ref) VALUES (?, ?, ?, ?, ?, ?, ?)");

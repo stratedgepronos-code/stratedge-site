@@ -123,23 +123,38 @@ function paysafeBaseUrl(): string {
 define('SITE_BASE_URL', 'https://stratedgepronos.fr');
 
 define('PAYMENT_AMOUNTS', [
+    // === Packs crédits Multi ===
+    'unique'       => 4.50,
+    'duo'          => 8.00,
+    'trio'         => 12.00,
+    'quinte'       => 18.00,
+    'semaine'      => 20.00,
+    'pack10'       => 30.00,
+    // === Abos ===
+    'tennis'       => 15.00,
+    'fun'          => 10.00,
+    'vip_max'      => 50.00,
+    // === Legacy (backward compat) ===
     'daily'        => 4.50,
     'weekend'      => 10.00,
     'weekend_fun'  => 20.00,
     'weekly'       => 20.00,
     'weekly_fun'   => 30.00,
-    'tennis'       => 15.00,
-    'vip_max'      => 50.00,
-    'fun'          => 10.00,
 ]);
 
 define('PAYMENT_LABELS', [
+    'unique'       => 'StratEdge — Pack Unique (1 analyse)',
+    'duo'          => 'StratEdge — Pack Duo (2 analyses)',
+    'trio'         => 'StratEdge — Pack Trio (3 analyses)',
+    'quinte'       => 'StratEdge — Quinté (5 analyses)',
+    'semaine'      => 'StratEdge — Pack Semaine (7 analyses)',
+    'pack10'       => 'StratEdge — Pack 10 (10 analyses)',
+    'tennis'       => 'StratEdge — Tennis Semaine',
+    'fun'          => 'StratEdge — Fun Semaine',
+    'vip_max'      => 'StratEdge — VIP Max (30 jours)',
     'daily'        => 'StratEdge — Daily',
     'weekend'      => 'StratEdge — Pack Week-End',
     'weekend_fun'  => 'StratEdge — Pack Week-End + Fun',
     'weekly'       => 'StratEdge — Pack Weekly',
     'weekly_fun'   => 'StratEdge — Pack Weekly + Fun',
-    'tennis'       => 'StratEdge — Tennis Weekly',
-    'vip_max'      => 'StratEdge — VIP Max (30 jours)',
-    'fun'          => 'StratEdge — Fun Only (Week-End)',
 ]);

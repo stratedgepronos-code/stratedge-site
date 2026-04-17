@@ -128,8 +128,19 @@ $dateFinPreview = date('d/m/Y à H:i', strtotime('+7 days'));
       </div>
       <a href="/stripe-create-fun.php" id="btnCB" class="o-btn o-btn-cb">💳 Carte bancaire — 10€</a>
       <a href="/nowpayments-create-abo.php?type=fun" class="o-btn o-btn-cr">₿ Crypto (BTC, ETH, USDT...)</a>
+      <button type="button" onclick="payPaysafe()" class="o-btn" style="background:linear-gradient(135deg,#0074d9,#00a8e8);color:#fff;border:none;width:100%;">🔒 Paysafecard — 10€</button>
     </div>
 <script>
+async function payPaysafe(){
+  const btn=event.target;btn.disabled=true;btn.textContent='⏳ Redirection...';
+  try{
+    const fd=new FormData();fd.append('offre','fun');
+    const r=await fetch('/paysafe-create.php',{method:'POST',body:fd,credentials:'same-origin'});
+    const d=await r.json();
+    if(d.url){window.location.href=d.url;}
+    else{alert('Erreur Paysafecard : '+(d.error||'inconnue'));btn.disabled=false;btn.textContent='🔒 Paysafecard — 10€';}
+  }catch(e){alert('Erreur réseau');btn.disabled=false;btn.textContent='🔒 Paysafecard — 10€';}
+}
 async function checkPromo(){
   const code=document.getElementById('promoCode').value.trim();
   const res=document.getElementById('promoResult');

@@ -32,13 +32,20 @@ $orderId = 'PSC_' . $membre['id'] . '_' . $effectiveType . '_' . time();
 // ── Appel API Paysafecard ────────────────────────────────────
 $apiUrl = paysafeBaseUrl() . '/payments';
 
+// Redirect URLs
+$packTypes = ['unique', 'duo', 'trio', 'quinte', 'semaine', 'pack10'];
+$isPack = in_array($type, $packTypes, true);
+$failureUrl = $isPack
+    ? SITE_BASE_URL . '/packs-daily.php?psc_error=1'
+    : SITE_BASE_URL . '/offre-' . urlencode($type) . '.php?psc_error=1';
+
 $payload = [
     'type'     => 'PAYSAFECARD',
     'amount'   => number_format($amount, 2, '.', ''),
     'currency' => 'EUR',
     'redirect' => [
         'success_url' => SITE_BASE_URL . '/paysafe-return.php?order_id=' . urlencode($orderId) . '&type=' . urlencode($type),
-        'failure_url' => SITE_BASE_URL . '/offre-' . urlencode($type) . '.php?psc_error=1',
+        'failure_url' => $failureUrl,
     ],
     'notification_url' => SITE_BASE_URL . '/paysafe-webhook.php',
     'customer'  => [
