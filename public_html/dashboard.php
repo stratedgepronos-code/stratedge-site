@@ -392,5 +392,109 @@ await fetch('/push-subscribe.php',{method:'POST',headers:{'Content-Type':'applic
 catch(e){console.log('[Push]',e.message);upUI('inactive');}}
 chkPush();
 </script>
+
+<!-- ═══ CALCULATEUR BANKROLL ═══ -->
+<div class="tab-p <?= $activeTab==='bankroll'?'active':'' ?>" id="tab-bankroll">
+<div class="crd" style="max-width:600px;">
+  <div class="crd-h"><span class="ico">🏦</span><span class="tl">Calculateur de mise</span></div>
+  <p style="color:var(--txt3);font-size:0.88rem;margin-bottom:1.2rem;">Calcule ta mise optimale selon ta bankroll et la cote du bet. Méthode flat + Kelly Criterion.</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+    <div>
+      <label style="display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:.3rem;">💰 Ta bankroll (€)</label>
+      <input type="number" id="bk-bank" value="100" min="1" step="1" style="width:100%;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:8px;padding:.6rem;color:#fff;font-size:1rem;">
+    </div>
+    <div>
+      <label style="display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:.3rem;">📊 Cote du bet</label>
+      <input type="number" id="bk-cote" value="1.80" min="1.01" step="0.01" style="width:100%;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:8px;padding:.6rem;color:#fff;font-size:1rem;">
+    </div>
+    <div>
+      <label style="display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:.3rem;">⭐ Confiance (1-10)</label>
+      <input type="range" id="bk-conf" min="1" max="10" value="7" style="width:100%;accent-color:#ff2d78;">
+      <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--txt3);"><span>Faible</span><span id="bk-conf-val" style="color:#ff2d78;font-weight:700;">7/10</span><span>Fort</span></div>
+    </div>
+    <div>
+      <label style="display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:.3rem;">📐 Méthode</label>
+      <select id="bk-method" style="width:100%;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:8px;padding:.6rem;color:#fff;font-size:.9rem;">
+        <option value="flat">Flat (% fixe)</option>
+        <option value="kelly">Kelly Criterion</option>
+      </select>
+    </div>
+  </div>
+
+  <button onclick="calcBankroll()" style="margin-top:1.2rem;width:100%;padding:.8rem;background:linear-gradient(135deg,#ff2d78,#c850c0);border:none;border-radius:10px;color:#fff;font-family:'Orbitron',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;letter-spacing:1px;">CALCULER LA MISE</button>
+
+  <div id="bk-result" style="margin-top:1.2rem;display:none;">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8rem;text-align:center;">
+      <div style="background:rgba(255,45,120,0.08);border:1px solid rgba(255,45,120,0.2);border-radius:12px;padding:1rem;">
+        <div style="font-size:.7rem;color:var(--txt3);letter-spacing:1px;text-transform:uppercase;">Mise conseillée</div>
+        <div id="bk-mise" style="font-family:'Orbitron',sans-serif;font-size:1.4rem;font-weight:900;color:#ff2d78;margin:.3rem 0;">—</div>
+        <div id="bk-pct" style="font-size:.8rem;color:var(--txt3);">—</div>
+      </div>
+      <div style="background:rgba(0,212,106,0.08);border:1px solid rgba(0,212,106,0.2);border-radius:12px;padding:1rem;">
+        <div style="font-size:.7rem;color:var(--txt3);letter-spacing:1px;text-transform:uppercase;">Gain potentiel</div>
+        <div id="bk-gain" style="font-family:'Orbitron',sans-serif;font-size:1.4rem;font-weight:900;color:#00d46a;margin:.3rem 0;">—</div>
+        <div style="font-size:.8rem;color:var(--txt3);">net</div>
+      </div>
+      <div style="background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);border-radius:12px;padding:1rem;">
+        <div style="font-size:.7rem;color:var(--txt3);letter-spacing:1px;text-transform:uppercase;">% Bankroll</div>
+        <div id="bk-risk" style="font-family:'Orbitron',sans-serif;font-size:1.4rem;font-weight:900;color:#00d4ff;margin:.3rem 0;">—</div>
+        <div id="bk-risk-label" style="font-size:.8rem;color:var(--txt3);">—</div>
+      </div>
+    </div>
+    <div id="bk-advice" style="margin-top:.8rem;padding:.8rem 1rem;border-radius:10px;font-size:.85rem;line-height:1.5;"></div>
+  </div>
+</div>
+</div>
+
+<script>
+document.getElementById('bk-conf').addEventListener('input',function(){document.getElementById('bk-conf-val').textContent=this.value+'/10';});
+function calcBankroll(){
+  var bank=parseFloat(document.getElementById('bk-bank').value)||100;
+  var cote=parseFloat(document.getElementById('bk-cote').value)||1.80;
+  var conf=parseInt(document.getElementById('bk-conf').value)||7;
+  var method=document.getElementById('bk-method').value;
+  var pct,mise,label;
+
+  if(method==='kelly'){
+    // Kelly: f = (p*b - q) / b où b=cote-1, p=proba estimée, q=1-p
+    var p=0.35+(conf*0.05); // conf 1→40%, 5→60%, 7→70%, 10→85%
+    var b=cote-1;
+    var q=1-p;
+    var kelly=(p*b-q)/b;
+    if(kelly<=0){kelly=0.01;}
+    // Demi-Kelly (plus prudent)
+    pct=Math.min(kelly*50,10); // cap 10%
+    label='½ Kelly';
+  }else{
+    // Flat: 1-5% selon confiance
+    var flatMap={1:1,2:1,3:1.5,4:2,5:2,6:2.5,7:3,8:4,9:4,10:5};
+    pct=flatMap[conf]||3;
+    label='Flat '+pct+'%';
+  }
+  mise=Math.round(bank*pct)/100;
+  mise=Math.max(0.5,mise);
+  var gain=Math.round((mise*cote-mise)*100)/100;
+  var riskPct=Math.round(mise/bank*10000)/100;
+
+  document.getElementById('bk-mise').textContent=mise.toFixed(2)+'€';
+  document.getElementById('bk-pct').textContent=label;
+  document.getElementById('bk-gain').textContent='+'+gain.toFixed(2)+'€';
+  document.getElementById('bk-risk').textContent=riskPct.toFixed(1)+'%';
+
+  var riskColor,riskLabel,advice;
+  if(riskPct<=2){riskColor='#00d46a';riskLabel='Risque faible';advice='✅ Mise prudente. Tu protèges ta bankroll sur le long terme.';}
+  else if(riskPct<=4){riskColor='#00d4ff';riskLabel='Risque modéré';advice='👍 Bon équilibre risque/reward. Mise standard pour un bet de confiance.';}
+  else if(riskPct<=7){riskColor='#ffc107';riskLabel='Risque élevé';advice='⚠️ Mise agressive. Acceptable sur un bet haute confiance, pas en routine.';}
+  else{riskColor='#ff4444';riskLabel='Risque très élevé';advice='🚨 Mise dangereuse. Jamais plus de 5% de ta bankroll sur un seul bet.';}
+
+  document.getElementById('bk-risk-label').textContent=riskLabel;
+  document.getElementById('bk-risk').style.color=riskColor;
+  document.getElementById('bk-advice').textContent=advice;
+  document.getElementById('bk-advice').style.background='rgba(255,255,255,0.03)';
+  document.getElementById('bk-advice').style.border='1px solid rgba(255,255,255,0.08)';
+  document.getElementById('bk-result').style.display='block';
+}
+</script>
 </body>
 </html>

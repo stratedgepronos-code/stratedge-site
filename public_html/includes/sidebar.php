@@ -26,6 +26,7 @@
   <?php if (!empty($membre)): ?>
   <a href="/dashboard.php">📊 Dashboard</a>
   <a href="/dashboard.php?tab=profil">👤 Mon Profil</a>
+  <a href="/dashboard.php?tab=bankroll">🏦 Bankroll</a>
   <?php endif; ?>
   <a href="/bets.php">🔥 Les Bets</a>
   <a href="/historique.php">📋 Historique</a>
@@ -45,8 +46,9 @@
   <?php endif; ?>
 </div>
 <div class="mob-tabs">
-  <a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')!=='profil'?'active':'' ?>" href="/dashboard.php"><span class="ico">📊</span> Dashboard</a>
+  <a class="s-link <?= $currentPage==='dashboard' && !in_array($_GET['tab']??'',['profil','bankroll'])?'active':'' ?>" href="/dashboard.php"><span class="ico">📊</span> Dashboard</a>
   <a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')==='profil'?'active':'' ?>" href="/dashboard.php?tab=profil"><span class="ico">👤</span> Profil</a>
+  <a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')==='bankroll'?'active':'' ?>" href="/dashboard.php?tab=bankroll"><span class="ico">🏦</span> Bankroll</a>
   <a class="s-link <?= $currentPage==='bets'?'active':'' ?>" href="/bets.php"><span class="ico">🔥</span> Bets</a>
   <a class="s-link <?= ($currentPage??'')==='giveaway'?'active':'' ?>" href="/giveaway.php"><span class="ico">🎁</span> GiveAway</a>
   <a class="s-link <?= $currentPage==='pronocommu'?'active':'' ?>" href="/prono-commu.php"><span class="ico">⚽</span> Prono commu</a>
@@ -72,8 +74,9 @@
   </div>
   <?php endif; ?>
   <div class="side-nav">
-    <a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')!=='profil'?'active':'' ?>" href="/dashboard.php"><span class="ico">📊</span> Dashboard</a>
+    <a class="s-link <?= $currentPage==='dashboard' && !in_array($_GET['tab']??'',['profil','bankroll'])?'active':'' ?>" href="/dashboard.php"><span class="ico">📊</span> Dashboard</a>
     <a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')==='profil'?'active':'' ?>" href="/dashboard.php?tab=profil"><span class="ico">👤</span> Mon Profil</a>
+    <a class="s-link <?= $currentPage==='dashboard' && ($_GET['tab']??'')==='bankroll'?'active':'' ?>" href="/dashboard.php?tab=bankroll"><span class="ico">🏦</span> Bankroll</a>
     <div class="side-sep"></div>
     <a class="s-link <?= $currentPage==='bets'?'active':'' ?>" href="/bets.php"><span class="ico">🔥</span> Les Bets</a>
     <a class="s-link <?= $currentPage==='historique'?'active':'' ?>" href="/historique.php"><span class="ico">📋</span> Historique</a>
