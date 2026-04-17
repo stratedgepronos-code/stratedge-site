@@ -384,14 +384,14 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
     </div>
     <div>
       <label style="display:block;color:var(--txt2);font-size:0.82rem;margin-bottom:.3rem;">📐 Méthode</label>
-      <select id="bk-method" style="width:100%;background:var(--bg-dark);border:1px solid var(--border-subtle);border-radius:8px;padding:.6rem;color:#fff;font-size:.9rem;">
-        <option value="flat">Flat (% fixe)</option>
-        <option value="kelly">Kelly Criterion</option>
+      <select id="bk-method" style="width:100%;background:#0d1220;border:1px solid var(--border-subtle);border-radius:8px;padding:.6rem;color:#fff;font-size:.9rem;color-scheme:dark;">
+        <option value="flat" style="background:#0d1220;color:#fff;">Flat (% fixe)</option>
+        <option value="kelly" style="background:#0d1220;color:#fff;">Kelly Criterion</option>
       </select>
     </div>
   </div>
 
-  <button onclick="calcBankroll()" style="margin-top:1.2rem;width:100%;padding:.8rem;background:linear-gradient(135deg,#ff2d78,#c850c0);border:none;border-radius:10px;color:#fff;font-family:'Orbitron',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;letter-spacing:1px;">CALCULER LA MISE</button>
+  <button id="bk-btn" onclick="calcBankroll()" style="margin-top:1.2rem;width:100%;padding:.8rem;background:linear-gradient(135deg,#ff2d78,#c850c0);border:none;border-radius:10px;color:#fff;font-family:'Orbitron',sans-serif;font-size:.8rem;font-weight:700;cursor:pointer;letter-spacing:1px;">CALCULER LA MISE</button>
 
   <div id="bk-result" style="margin-top:1.2rem;display:none;">
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8rem;text-align:center;">
@@ -448,7 +448,11 @@ catch(e){console.log('[Push]',e.message);upUI('inactive');}}
 chkPush();
 </script>
 <script>
-document.getElementById('bk-conf').addEventListener('input',function(){document.getElementById('bk-conf-val').textContent=this.value+'/10';});
+document.getElementById('bk-conf').addEventListener('input',function(){document.getElementById('bk-conf-val').textContent=this.value+'/10';if(document.getElementById('bk-result').style.display==='block')calcBankroll();});
+// Auto-recalcul quand on change la méthode, la cote ou la bankroll
+document.getElementById('bk-method').addEventListener('change',function(){if(document.getElementById('bk-result').style.display==='block')calcBankroll();});
+document.getElementById('bk-cote').addEventListener('input',function(){if(document.getElementById('bk-result').style.display==='block')calcBankroll();});
+document.getElementById('bk-bank').addEventListener('input',function(){if(document.getElementById('bk-result').style.display==='block')calcBankroll();});
 function calcBankroll(){
   var bank=parseFloat(document.getElementById('bk-bank').value)||100;
   var cote=parseFloat(document.getElementById('bk-cote').value)||1.80;
@@ -480,6 +484,7 @@ function calcBankroll(){
   document.getElementById('bk-advice').style.background='rgba(255,255,255,0.03)';
   document.getElementById('bk-advice').style.border='1px solid rgba(255,255,255,0.08)';
   document.getElementById('bk-result').style.display='block';
+  document.getElementById('bk-btn').textContent='RECALCULER';
 }
 </script>
 </body>
