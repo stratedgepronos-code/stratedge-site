@@ -369,24 +369,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $coteStr = !empty($bet['cote']) ? ' (cote ' . $bet['cote'] . ')' : '';
                             $roleOriginal = $bet['posted_by_role'] ?? 'superadmin';
 
-                            $tweetExplication = genererTweetExplication($bet, $resultat);
-
                             // Emoji et label adaptés selon le tipster
                             $isTennis = ($roleOriginal === 'admin_tennis');
                             $isFun    = in_array($roleOriginal, ['admin_fun', 'admin_fun_sport']);
-                            $winEmoji = $isTennis ? '🎾' : ($isFun ? '🎲' : '🎉');
-                            $winLabel = $isTennis ? '✅ TENNIS GAGNÉ' : ($isFun ? '✅ FUN GAGNÉ' : '✅ BET GAGNÉ');
 
-                            if ($tweetExplication !== '') {
+                            if ($isTennis) {
+                                // Tennis = tweet court, pas d'analyse IA
+                                $coteAt = !empty($bet['cote']) ? ' @' . $bet['cote'] : '';
+                                $matchName = trim($bet['titre'] ?? '');
                                 $phrases = [
-                                    'gagne'  => "{$winLabel}{$titre}{$coteStr} ! {$winEmoji}\n\n{$tweetExplication}\n\n📲 stratedgepronos.fr",
-                                    'annule' => "↺ Bet annulé{$titre} — remboursement.\n\n{$tweetExplication}\n\n📲 stratedgepronos.fr",
+                                    'gagne'  => "🎾 Bet validé{$coteAt} ✅\n\n{$matchName}\n\n📲 stratedgepronos.fr",
+                                    'annule' => "🎾 Bet annulé — {$matchName}\n\n📲 stratedgepronos.fr",
                                 ];
                             } else {
-                                $phrases = [
-                                    'gagne'  => "{$winLabel}{$titre}{$coteStr} ! {$winEmoji}\n\nC'est passé comme prévu ! 💰\n\n📲 stratedgepronos.fr",
-                                    'annule' => "↺ Bet annulé{$titre} — remboursement.\n\n📲 stratedgepronos.fr",
-                                ];
+                                // Multi / Fun = tweet avec analyse IA
+                                $tweetExplication = genererTweetExplication($bet, $resultat);
+                                $winEmoji = $isFun ? '🎲' : '🎉';
+                                $winLabel = $isFun ? '✅ FUN GAGNÉ' : '✅ BET GAGNÉ';
+
+                                if ($tweetExplication !== '') {
+                                    $phrases = [
+                                        'gagne'  => "{$winLabel}{$titre}{$coteStr} ! {$winEmoji}\n\n{$tweetExplication}\n\n📲 stratedgepronos.fr",
+                                        'annule' => "↺ Bet annulé{$titre} — remboursement.\n\n{$tweetExplication}\n\n📲 stratedgepronos.fr",
+                                    ];
+                                } else {
+                                    $phrases = [
+                                        'gagne'  => "{$winLabel}{$titre}{$coteStr} ! {$winEmoji}\n\nC'est passé comme prévu ! 💰\n\n📲 stratedgepronos.fr",
+                                        'annule' => "↺ Bet annulé{$titre} — remboursement.\n\n📲 stratedgepronos.fr",
+                                    ];
+                                }
                             }
                             $texte = $phrases[$resultat] ?? $phrases['gagne'];
 
