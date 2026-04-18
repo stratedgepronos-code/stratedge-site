@@ -258,20 +258,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'gagne'  => "🎾 Bet validé{$coteAt} ✅\n\n{$matchName}\n\n📲 stratedgepronos.fr",
                             'annule' => "🎾 Bet annulé — {$matchName}\n\n📲 stratedgepronos.fr",
                         ];
+                    } elseif ($isFun) {
+                        // Fun = tweet court, pas d'analyse IA
+                        $coteAt = !empty($bet['cote']) ? ' @' . $bet['cote'] : '';
+                        $matchName = trim($bet['titre'] ?? '');
+                        $phrases = [
+                            'gagne'  => "🎲 Bet Fun validé{$coteAt} ✅\n\n{$matchName}\n\n📲 stratedgepronos.fr",
+                            'annule' => "🎲 Bet Fun annulé — {$matchName}\n\n📲 stratedgepronos.fr",
+                        ];
                     } else {
-                        // Multi / Fun = tweet avec analyse IA
+                        // Multi = tweet avec analyse IA courte
                         $tweetExplication = genererTweetExplication($betData, $resultat);
-                        $winEmoji = $isFun ? '🎲' : '🎉';
-                        $winLabel = $isFun ? '✅ FUN GAGNÉ' : '✅ BET GAGNÉ';
 
                         if ($tweetExplication !== '') {
                             $phrases = [
-                                'gagne'  => "{$winLabel}{$titre}{$coteStr} ! {$winEmoji}\n\n{$tweetExplication}\n\n📲 stratedgepronos.fr",
+                                'gagne'  => "✅ BET GAGNÉ{$titre}{$coteStr} ! 🎉\n\n{$tweetExplication}\n\n📲 stratedgepronos.fr",
                                 'annule' => "↺ Bet annulé{$titre} — remboursement.\n\n{$tweetExplication}\n\n📲 stratedgepronos.fr",
                             ];
                         } else {
                             $phrases = [
-                                'gagne'  => "{$winLabel}{$titre}{$coteStr} ! {$winEmoji}\n\nC'est passé comme prévu ! 💰\n\n📲 stratedgepronos.fr",
+                                'gagne'  => "✅ BET GAGNÉ{$titre}{$coteStr} ! 🎉\n\nC'est passé comme prévu ! 💰\n\n📲 stratedgepronos.fr",
                                 'annule' => "↺ Bet annulé{$titre} — remboursement.\n\n📲 stratedgepronos.fr",
                             ];
                         }
