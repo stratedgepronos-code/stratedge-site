@@ -31,20 +31,21 @@ if (isAdmin() && $membre) {
 }
 $bets = $stmt->fetchAll();
 
-// Freemium: dernier bet GAGNÉ visible par tout le monde (démo qualité + SEO)
+// Freemium: dernier bet GAGNÉ visible UNIQUEMENT pour les visiteurs non-connectés (démo qualité + SEO)
 $freemiumBetId = 0;
-try {
-    $freemiumBetId = (int)$db->query("SELECT id FROM bets WHERE resultat='gagne' AND categorie='multi' ORDER BY date_resultat DESC LIMIT 1")->fetchColumn();
-} catch (Throwable $e) {}
-// Si pas de bet gagné récent dans les actifs, chercher dans l'historique et l'ajouter
-if ($freemiumBetId > 0) {
-    $found = false;
-    foreach ($bets as $b) { if ((int)$b['id'] === $freemiumBetId) { $found = true; break; } }
-    if (!$found) {
-        $stmtFree = $db->prepare("SELECT * FROM bets WHERE id = ? LIMIT 1");
-        $stmtFree->execute([$freemiumBetId]);
-        $freeBet = $stmtFree->fetch(PDO::FETCH_ASSOC);
-        if ($freeBet) array_unshift($bets, $freeBet);
+if (!isLoggedIn()) {
+    try {
+        $freemiumBetId = (int)$db->query("SELECT id FROM bets WHERE resultat='gagne' AND categorie='multi' ORDER BY date_resultat DESC LIMIT 1")->fetchColumn();
+    } catch (Throwable $e) {}
+    if ($freemiumBetId > 0) {
+        $found = false;
+        foreach ($bets as $b) { if ((int)$b['id'] === $freemiumBetId) { $found = true; break; } }
+        if (!$found) {
+            $stmtFree = $db->prepare("SELECT * FROM bets WHERE id = ? LIMIT 1");
+            $stmtFree->execute([$freemiumBetId]);
+            $freeBet = $stmtFree->fetch(PDO::FETCH_ASSOC);
+            if ($freeBet) array_unshift($bets, $freeBet);
+        }
     }
 }
 $betsSafe = array_filter($bets, function($b) {
