@@ -10,8 +10,14 @@ $hasAcces = $hasAccesGlobal; // valeur par défaut, sera recalculée par bet
 $currentPage = 'bets';
 $avatarUrl = $membre ? getAvatarUrl($membre) : null;
 
-// Auto-nettoyage: bets avec résultat mais encore actifs → archiver
-try { $db->exec("UPDATE bets SET actif=0 WHERE actif=1 AND resultat IS NOT NULL AND resultat != ''"); } catch(Throwable $e) {}
+// Auto-nettoyage: UNIQUEMENT les bets avec un vrai résultat final (gagne/perdu/annule)
+// ET restaurer ceux qui ont été archivés par erreur
+try {
+    // Restaurer les bets sans vrai résultat qui ont été désactivés par erreur
+    $db->exec("UPDATE bets SET actif=1 WHERE actif=0 AND (resultat IS NULL OR resultat = '' OR resultat NOT IN ('gagne','perdu','annule')) AND date_post > DATE_SUB(NOW(), INTERVAL 7 DAY)");
+    // Archiver uniquement les vrais résultats
+    $db->exec("UPDATE bets SET actif=0 WHERE actif=1 AND resultat IN ('gagne','perdu','annule')");
+} catch(Throwable $e) {}
 
 $typeAbo = $abonnement['type'] ?? '';
 if (isAdmin() && $membre) {
