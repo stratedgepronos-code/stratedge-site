@@ -125,8 +125,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $error = 'Sélectionne un match et saisis l\'analyse.';
         }
     }
+
+    // ── Marquer le résultat d'un prono (gagné/perdu) ──
+    if ($_POST['action'] === 'set_prono_result') {
+        $matchId  = (int)($_POST['match_id'] ?? 0);
+        $resultat = $_POST['resultat'] ?? '';
+        if ($matchId > 0 && in_array($resultat, ['gagne', 'perdu'])) {
+            try {
+                $db->prepare("UPDATE commu_matches SET resultat = ? WHERE id = ? AND is_winner = 1")->execute([$resultat, $matchId]);
+                $success = 'Résultat enregistré : ' . ($resultat === 'gagne' ? '✅ Gagné' : '❌ Perdu');
+            } catch (Throwable $e) {
+                $error = 'Erreur : ' . $e->getMessage();
+            }
+        }
+    }
 }
 
+// Auto-migration: ajouter colonne resultat si absente
+try { $db->exec("ALTER TABLE commu_matches ADD COLUMN resultat VARCHAR(10) DEFAULT NULL AFTER is_winner"); } catch(Throwable $e) {}
 $tomorrow = $tomorrowParis;
 $stmtList = $db->query("
   SELECT m.*, (SELECT COUNT(*) FROM commu_votes v WHERE v.match_id = m.id) AS nb_votes
@@ -269,7 +285,7 @@ code { background:rgba(255,255,255,0.08); padding:0.15rem 0.4rem; border-radius:
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Date match</th><th>Match</th><th>Compétition</th><th>Fin votes</th><th>Votes</th><th>Gagnant</th><th>Action</th></tr>
+          <tr><th>Date match</th><th>Match</th><th>Compétition</th><th>Fin votes</th><th>Votes</th><th>Gagnant</th><th>Résultat</th><th>Action</th></tr>
         </thead>
         <tbody>
           <?php foreach ($allMatches as $m): ?>
@@ -280,6 +296,25 @@ code { background:rgba(255,255,255,0.08); padding:0.15rem 0.4rem; border-radius:
             <td><?= date('d/m H:i', strtotime($m['vote_closed_at'])) ?></td>
             <td><?= (int)$m['nb_votes'] ?></td>
             <td><?= !empty($m['is_winner']) ? '✅ Gagnant' : '—' ?></td>
+            <td>
+              <?php if (!empty($m['is_winner'])): ?>
+                <?php if (!empty($m['resultat'])): ?>
+                  <span style="padding:3px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;
+                    background:<?= $m['resultat']==='gagne' ? 'rgba(0,212,106,0.15)' : 'rgba(255,68,68,0.15)' ?>;
+                    color:<?= $m['resultat']==='gagne' ? '#00d46a' : '#ff4444' ?>;">
+                    <?= $m['resultat']==='gagne' ? '✅ Gagné' : '❌ Perdu' ?>
+                  </span>
+                <?php else: ?>
+                  <form method="post" style="display:inline;">
+                    <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
+                    <input type="hidden" name="action" value="set_prono_result">
+                    <input type="hidden" name="match_id" value="<?= (int)$m['id'] ?>">
+                    <button type="submit" name="resultat" value="gagne" class="btn-sm" style="background:rgba(0,212,106,0.12);color:#00d46a;border:1px solid rgba(0,212,106,0.3);padding:4px 8px;font-size:0.75rem;" onclick="return confirm('Marquer comme GAGNÉ ?');">✅ W</button>
+                    <button type="submit" name="resultat" value="perdu" class="btn-sm" style="background:rgba(255,68,68,0.12);color:#ff4444;border:1px solid rgba(255,68,68,0.3);padding:4px 8px;font-size:0.75rem;" onclick="return confirm('Marquer comme PERDU ?');">❌ L</button>
+                  </form>
+                <?php endif; ?>
+              <?php else: ?>—<?php endif; ?>
+            </td>
             <td>
               <form method="post" style="display:inline;">
                 <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">

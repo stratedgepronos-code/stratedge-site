@@ -46,6 +46,8 @@ try {
         throw $e;
     }
 }
+// Auto-migration: ajouter colonne resultat si absente
+try { $db->exec("ALTER TABLE commu_matches ADD COLUMN resultat VARCHAR(10) DEFAULT NULL AFTER is_winner"); } catch(Throwable $e) {}
 
 $membre = isLoggedIn() ? getMembre() : null;
 if (!$membre) {
@@ -462,6 +464,75 @@ document.querySelectorAll('.btn-vote[data-match-id]').forEach(function(btn){
   });
 });
 </script>
+
+<?php
+// ═══ HISTORIQUE DES PRONOS COMMU ═══
+$historyRows = [];
+try {
+    $historyRows = $db->query("
+        SELECT m.team_home, m.team_away, m.competition, m.match_date, m.heure, m.resultat,
+               (SELECT COUNT(*) FROM commu_votes v WHERE v.match_id = m.id) AS nb_votes
+        FROM commu_matches m
+        WHERE m.is_winner = 1 AND m.resultat IN ('gagne','perdu')
+        ORDER BY m.match_date DESC
+        LIMIT 30
+    ")->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {}
+
+$totalW = count(array_filter($historyRows, fn($r) => $r['resultat'] === 'gagne'));
+$totalL = count(array_filter($historyRows, fn($r) => $r['resultat'] === 'perdu'));
+$totalH = $totalW + $totalL;
+$winRate = $totalH > 0 ? round($totalW / $totalH * 100) : 0;
+?>
+
+<?php if (!empty($historyRows)): ?>
+<div style="max-width:800px;margin:2rem auto;padding:0 1rem;">
+  <div style="background:var(--bg-card,#0d1220);border:1px solid rgba(255,255,255,0.07);border-radius:16px;padding:1.5rem;overflow:hidden;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+      <div style="font-family:'Orbitron',sans-serif;font-size:0.95rem;font-weight:700;color:#f0f4f8;">📋 Historique des pronos</div>
+      <div style="display:flex;gap:0.8rem;font-family:'Share Tech Mono',monospace;font-size:0.8rem;">
+        <span style="color:#00d46a;">✅ <?= $totalW ?>W</span>
+        <span style="color:#ff4444;">❌ <?= $totalL ?>L</span>
+        <span style="color:<?= $winRate >= 60 ? '#00d46a' : ($winRate >= 45 ? '#ffc107' : '#ff4444') ?>;"><?= $winRate ?>%</span>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+        <thead>
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.08);">
+            <th style="text-align:left;padding:0.5rem;color:rgba(255,255,255,0.4);font-family:'Orbitron',sans-serif;font-size:0.65rem;letter-spacing:1px;">DATE</th>
+            <th style="text-align:left;padding:0.5rem;color:rgba(255,255,255,0.4);font-family:'Orbitron',sans-serif;font-size:0.65rem;letter-spacing:1px;">MATCH</th>
+            <th style="text-align:left;padding:0.5rem;color:rgba(255,255,255,0.4);font-family:'Orbitron',sans-serif;font-size:0.65rem;letter-spacing:1px;">COMPÉTITION</th>
+            <th style="text-align:center;padding:0.5rem;color:rgba(255,255,255,0.4);font-family:'Orbitron',sans-serif;font-size:0.65rem;letter-spacing:1px;">VOTES</th>
+            <th style="text-align:center;padding:0.5rem;color:rgba(255,255,255,0.4);font-family:'Orbitron',sans-serif;font-size:0.65rem;letter-spacing:1px;">RÉSULTAT</th>
+          </tr>
+        </thead>
+        <tbody>
+        <?php foreach ($historyRows as $h): 
+          $isW = $h['resultat'] === 'gagne';
+        ?>
+          <tr style="border-bottom:1px solid rgba(255,255,255,0.04);">
+            <td style="padding:0.5rem;color:rgba(255,255,255,0.5);white-space:nowrap;"><?= date('d/m', strtotime($h['match_date'])) ?></td>
+            <td style="padding:0.5rem;color:#f0f4f8;font-weight:600;"><?= htmlspecialchars($h['team_home'] . ' – ' . $h['team_away']) ?></td>
+            <td style="padding:0.5rem;color:rgba(255,255,255,0.45);font-size:0.8rem;"><?= htmlspecialchars($h['competition'] ?? '') ?></td>
+            <td style="padding:0.5rem;text-align:center;color:rgba(255,255,255,0.4);"><?= (int)$h['nb_votes'] ?></td>
+            <td style="padding:0.5rem;text-align:center;">
+              <span style="display:inline-block;padding:3px 10px;border-radius:6px;font-family:'Orbitron',sans-serif;font-size:0.7rem;font-weight:700;
+                background:<?= $isW ? 'rgba(0,212,106,0.12)' : 'rgba(255,68,68,0.12)' ?>;
+                color:<?= $isW ? '#00d46a' : '#ff4444' ?>;
+                border:1px solid <?= $isW ? 'rgba(0,212,106,0.3)' : 'rgba(255,68,68,0.3)' ?>;">
+                <?= $isW ? '✅ W' : '❌ L' ?>
+              </span>
+            </td>
+          </tr>
+        <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<?php endif; ?>
+
 <?php require_once __DIR__ . '/includes/footer-main.php'; ?>
 </body>
 </html>
