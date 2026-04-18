@@ -434,7 +434,7 @@ body { background:#0a0a0a !important; margin:0; padding:0; width:1080px; min-wid
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
 .match-players { display:flex; align-items:center; justify-content:center; gap:20px; }
 .player-info { display:flex; align-items:center; gap:8px; }
-.player { font-family:'Bebas Neue',cursive; font-size:38px; letter-spacing:1px; line-height:1; }
+.player { font-family:'Orbitron','Bebas Neue',sans-serif; font-size:36px; font-weight:700; letter-spacing:1px; line-height:1; text-transform:uppercase; }
 .player.main { color:#fff; }
 .player.opponent { color:rgba(255,255,255,0.7); }
 .vs-badge { font-family:'Orbitron',sans-serif; font-size:19px; font-weight:900; color:#ff2d7a; }
@@ -464,7 +464,7 @@ body { background:#0a0a0a !important; margin:0; padding:0; width:1080px; min-wid
 .promo-left-bar { position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(to bottom,#39ff14,#00e5ff); border-radius:4px 0 0 4px; }
 .promo-text-block { flex:1; padding-left:10px; display:flex; flex-direction:column; gap:3px; }
 .promo-eyebrow { font-size:11px; color:#39ff14; text-transform:uppercase; letter-spacing:2px; font-weight:700; font-family:'Orbitron',sans-serif; }
-.promo-main { font-family:'Bebas Neue',cursive; font-size:20px; letter-spacing:0.8px; color:#fff; }
+.promo-main { font-family:'Bebas Neue','Orbitron',sans-serif; font-size:20px; letter-spacing:0.8px; color:#fff; }
 .promo-main-hl { color:{$sc['promo_price_color']}; }
 .promo-sub { font-size:14px; color:rgba(255,255,255,0.55); font-weight:500; font-family:'Orbitron',sans-serif; }
 .promo-sub span { color:{$sc['promo_price_color']}; font-weight:700; }
