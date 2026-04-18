@@ -186,8 +186,11 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
 .no-bets .big{font-size:4rem;margin-bottom:1rem;}
 .no-bets h3{font-family:'Orbitron',sans-serif;font-size:1.2rem;margin-bottom:0.5rem;color:var(--txt2,#b0bec9);}
 
-.bet-link-analyse{display:block;padding:0.75rem 1.2rem;font-size:0.85rem;font-weight:700;color:var(--pink,#ff2d78);text-decoration:none;text-align:center;border-top:1px solid var(--border,rgba(255,45,120,0.15));transition:background .2s,color .2s;}
-.bet-link-analyse:hover{background:rgba(255,45,120,0.06);color:#ff6b9d;}
+.bet-link-analyse{display:block;padding:0.75rem 1.2rem;font-size:0.85rem;font-weight:700;color:#fff;text-decoration:none;text-align:center;border-top:1px solid rgba(255,45,120,0.15);background:linear-gradient(135deg,rgba(255,45,120,0.12),rgba(0,212,255,0.08));animation:pulseAnalyse 2s ease-in-out infinite;position:relative;overflow:hidden;}
+.bet-link-analyse::before{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent);animation:shimmerAnalyse 3s ease-in-out infinite;}
+.bet-link-analyse:hover{background:linear-gradient(135deg,rgba(255,45,120,0.2),rgba(0,212,255,0.12));color:#fff;animation:none;}
+@keyframes pulseAnalyse{0%,100%{color:#ff2d78;text-shadow:0 0 8px rgba(255,45,120,0.3);}50%{color:#fff;text-shadow:0 0 16px rgba(255,45,120,0.6);}}
+@keyframes shimmerAnalyse{0%{left:-100%;}100%{left:200%;}}
 
 /* Lightbox */
 .lightbox{display:none;position:fixed;inset:0;z-index:9999;background:rgba(5,8,16,0.96);backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:2rem;}
@@ -392,7 +395,7 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
         <?php endif; ?>
       </div>
       <?php if (!empty($bet['analyse_html'])): ?>
-      <a href="/bet.php?id=<?= (int)$bet['id'] ?>" class="bet-link-analyse">Voir l'analyse et commenter →</a>
+      <a href="/bet.php?id=<?= (int)$bet['id'] ?>" class="bet-link-analyse">🔥 Voir l'analyse complète →</a>
       <?php endif; ?>
     </div>
     <?php endforeach; ?>
