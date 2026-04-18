@@ -548,7 +548,7 @@ TEAMSPORT;
     } elseif ($is_team_sport) {
         // Rotation aléatoire entre 3 packs Multi pour varier la pub
         $promoVariants = [
-            ['eyebrow'=>'PACK UNIQUE','main'=>'1 pari par SMS - <span class="promo-main-hl">4,50€ au 81004</span>','sub'=>'Crédit à vie · ou CB sur stratedgepronos.fr','cta'=>'Tape STAR'],
+            ['eyebrow'=>'PACK UNIQUE 🎯','main'=>'1 crédit = <span class="promo-main-hl">24h d\'accès</span>','sub'=>'4,50€ · CB ou Crypto · stratedgepronos.fr/packs-daily','cta'=>'ACHETER →'],
             ['eyebrow'=>'PACK TRIO 🔥','main'=>'3 paris à la carte - <span class="promo-main-hl">12€</span>','sub'=>'4€/pari · CB ou Crypto · stratedgepronos.fr/packs-daily','cta'=>'ACHETER →'],
             ['eyebrow'=>'PACK 10 🏆','main'=>'10 paris - <span class="promo-main-hl">30€</span>','sub'=>'Économie -33% · stratedgepronos.fr/packs-daily','cta'=>'ACHETER →'],
             ['eyebrow'=>'FUN SEMAINE 🎲','main'=>'Tous les bets fun délire - <span class="promo-main-hl">10€</span>','sub'=>'7 jours d\'accès · stratedgepronos.fr/offre-fun','cta'=>"S'ABONNER →"],
@@ -1035,7 +1035,7 @@ HTML;
       <div class='promo-main'><span class='promo-main-hl'>10€ / semaine</span> — comme nos autres offres</div>
       <div class='promo-main' style='font-size:16px;margin-top:6px;line-height:1.5;font-weight:600;'>Pas du safe : que des <span class='promo-main-hl'>grosses cotes</span> · combinés à fort potentiel</div>
       <div class='promo-packs'>
-        <span class='pack-tag pack-tag-max'>🎲 Fun Week-End 10€ · /offre-fun</span>
+        <span class='pack-tag pack-tag-max'>🎲 Fun Semaine 10€ · /offre-fun</span>
       </div>
       <div class='promo-price'>S’abonner sur <span>stratedgepronos.fr</span></div>
     </div>
@@ -1516,15 +1516,15 @@ HTML;
   <div class='sc-promo'>
     <div class='sc-promo-bar'></div>
     <div class='sc-promo-text'>
-      <div class='sc-promo-eyebrow'>🛡️ Safe Combiné — Sélection Premium</div>
-      <div class='sc-promo-main'>En option dans l'offre <span class='sc-promo-hl'>Week-end (+10€)</span></div>
-      <div class='sc-promo-main' style='font-size:17px;margin-top:2px;'>Inclus dans l'offre <span class='sc-promo-hl'>VIP MAX</span></div>
+      <div class='sc-promo-eyebrow'>🛡️ SAFE COMBINÉ — ACCÈS CRÉDITS</div>
+      <div class='sc-promo-main'>1 crédit = <span class='sc-promo-hl'>24h d'accès</span> à tous les pronos</div>
       <div class='sc-promo-packs'>
-        <span class='sc-pack-tag'>📅 Week-end +10€</span>
-        <span class='sc-pack-tag sc-pack-max'>👑 Inclus MAX</span>
+        <span class='sc-pack-tag'>🎯 Unique 4,50€</span>
+        <span class='sc-pack-tag'>🔥 Trio 12€</span>
+        <span class='sc-pack-tag sc-pack-max'>🏆 Pack 10 — 30€</span>
       </div>
     </div>
-    <div class='sc-promo-cta'>⚡ Je m'abonne</div>
+    <div class='sc-promo-cta'>⚡ Acheter</div>
   </div>
 HTML;
     }
@@ -1760,7 +1760,7 @@ function generateSafeCards($d) {
     } else {
         // Rotation aléatoire 3 packs Multi
         $multiPromos = [
-            ['icon'=>'📱','title'=>'PACK UNIQUE — 4,50€ par SMS','sub'=>'Tape STAR au 81004 · 1 pari à vie · ou CB sur le site'],
+            ['icon'=>'🎯','title'=>'PACK UNIQUE — 4,50€','sub'=>'1 crédit = 24h d\'accès · CB ou Crypto · /packs-daily'],
             ['icon'=>'🔥','title'=>'PACK TRIO — 3 paris pour 12€','sub'=>'Soit 4€/pari · CB ou Crypto · /packs-daily'],
             ['icon'=>'🏆','title'=>'PACK 10 — 30€ (-33%)','sub'=>'10 paris à vie · 3€/pari · /packs-daily'],
             ['icon'=>'🎲','title'=>'FUN SEMAINE — 10€ pour 7 jours','sub'=>'Bets fun délire · cotes folles · /offre-fun'],
