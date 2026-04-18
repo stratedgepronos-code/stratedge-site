@@ -10,6 +10,9 @@ $hasAcces = $hasAccesGlobal; // valeur par défaut, sera recalculée par bet
 $currentPage = 'bets';
 $avatarUrl = $membre ? getAvatarUrl($membre) : null;
 
+// Auto-nettoyage: bets avec résultat mais encore actifs → archiver
+try { $db->exec("UPDATE bets SET actif=0 WHERE actif=1 AND resultat IS NOT NULL AND resultat != ''"); } catch(Throwable $e) {}
+
 $typeAbo = $abonnement['type'] ?? '';
 if (isAdmin() && $membre) {
     $stmt = $db->query("SELECT * FROM bets WHERE actif = 1 ORDER BY date_post DESC");
