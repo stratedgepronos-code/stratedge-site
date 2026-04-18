@@ -153,7 +153,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 }
 
 // ── Données pour la page ──
-// Match du jour (gagnant du vote précédent)
+// Match du jour (gagnant du vote) — cherche aujourd'hui, demain, ou le plus récent avec analyse
 $matchDuJour = null;
 $stmtJour = $db->prepare("SELECT * FROM commu_matches WHERE match_date = ? AND is_winner = 1 LIMIT 1");
 $stmtJour->execute([$today]);
@@ -161,6 +161,11 @@ $matchDuJour = $stmtJour->fetch(PDO::FETCH_ASSOC);
 if (!$matchDuJour) {
     $stmtJour->execute([$tomorrow]);
     $matchDuJour = $stmtJour->fetch(PDO::FETCH_ASSOC);
+}
+// Fallback: si pas de gagnant aujourd'hui/demain, afficher le dernier match avec une analyse
+if (!$matchDuJour) {
+    $stmtRecent = $db->query("SELECT * FROM commu_matches WHERE is_winner = 1 AND analysis_html IS NOT NULL AND analysis_html != '' ORDER BY match_date DESC LIMIT 1");
+    $matchDuJour = $stmtRecent->fetch(PDO::FETCH_ASSOC);
 }
 // Matchs à voter : tous ceux dont la fin des votes n'est pas passée (match_date demain ou vote encore ouvert)
 $stmtList = $db->prepare("
