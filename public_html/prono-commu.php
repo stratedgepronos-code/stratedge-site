@@ -162,7 +162,15 @@ if (!$matchDuJour) {
     $stmtJour->execute([$tomorrow]);
     $matchDuJour = $stmtJour->fetch(PDO::FETCH_ASSOC);
 }
-// Fallback: si pas de gagnant aujourd'hui/demain, afficher le dernier match avec une analyse
+// Si le gagnant du jour n'a PAS d'analyse, afficher le plus récent match gagnant qui EN A une
+if ($matchDuJour && empty($matchDuJour['analysis_html'])) {
+    $stmtWithAnalysis = $db->query("SELECT * FROM commu_matches WHERE is_winner = 1 AND analysis_html IS NOT NULL AND analysis_html != '' ORDER BY match_date DESC LIMIT 1");
+    $matchWithAnalysis = $stmtWithAnalysis->fetch(PDO::FETCH_ASSOC);
+    if ($matchWithAnalysis) {
+        $matchDuJour = $matchWithAnalysis;
+    }
+}
+// Fallback: si toujours rien, afficher le dernier match avec une analyse
 if (!$matchDuJour) {
     $stmtRecent = $db->query("SELECT * FROM commu_matches WHERE is_winner = 1 AND analysis_html IS NOT NULL AND analysis_html != '' ORDER BY match_date DESC LIMIT 1");
     $matchDuJour = $stmtRecent->fetch(PDO::FETCH_ASSOC);
@@ -254,7 +262,11 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
 <div class="prono-hero">
   <div class="prono-hero-tag">⚽ Prono de la commu</div>
   <?php if ($matchDuJour): ?>
-  <h1 class="prono-hero-title">Match de la commu<?= $matchDuJour['match_date'] === $today ? ' aujourd\'hui' : ' demain' ?> : <?= clean($matchDuJour['team_home']) ?> – <?= clean($matchDuJour['team_away']) ?></h1>
+  <h1 class="prono-hero-title">Match de la commu<?php
+    if ($matchDuJour['match_date'] === $today) echo ' aujourd\'hui';
+    elseif ($matchDuJour['match_date'] === $tomorrow) echo ' demain';
+    else echo ' du ' . date('d/m', strtotime($matchDuJour['match_date']));
+  ?> : <?= clean($matchDuJour['team_home']) ?> – <?= clean($matchDuJour['team_away']) ?></h1>
   <p class="prono-hero-sub"><?= $matchDuJour['heure'] ? clean($matchDuJour['heure']) . ' — ' : '' ?><?= clean($matchDuJour['competition'] ?? '') ?></p>
   <?php else: ?>
   <h1 class="prono-hero-title">Votez pour le match de demain</h1>
