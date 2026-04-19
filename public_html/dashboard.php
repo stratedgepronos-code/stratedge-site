@@ -367,6 +367,10 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
       <div class="step"><span class="step-n">2</span><div class="step-t">Change <strong>Notifications</strong> → <strong>Autoriser</strong></div></div>
       <div class="step"><span class="step-n">3</span><div class="step-t">Recharge la page (F5)</div></div>
       </div>
+
+      <div style="border-top:1px solid var(--border-soft);margin-top:1rem;padding-top:1rem;text-align:center;">
+        <a href="/notifications-diag.php" style="color:#00d4ff;font-size:0.88rem;text-decoration:none;">🔧 Tester ma config de notifications →</a>
+      </div>
     </div>
   </div></div>
   </div>
