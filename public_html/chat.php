@@ -35,7 +35,7 @@ $stmt = $db->prepare("SELECT * FROM chat_messages WHERE chat_id = ? ORDER BY dat
 <link rel="icon" type="image/png" href="assets/images/mascotte.png">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#050810">
-<meta name="apple-mobile-web-app-capable" content="yes"><link rel="apple-touch-icon" href="/assets/images/mascotte.png">
+<meta name="apple-mobile-web-app-capable" content="yes"><link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png">
 <?php require_once __DIR__ . '/includes/sidebar-css.php'; ?>
 <style>
 .chat-box{max-width:820px;width:100%;margin:0 auto;}

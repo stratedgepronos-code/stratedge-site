@@ -77,7 +77,7 @@ $firstTab = array_key_first($availableSections) ?? 'safe';
 <link rel="icon" type="image/png" href="assets/images/mascotte.png">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#050810">
-<meta name="apple-mobile-web-app-capable" content="yes"><link rel="apple-touch-icon" href="/assets/images/mascotte.png">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="StratEdge"><link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png">
 <?php if ($membre): ?>
   <?php require_once __DIR__ . '/includes/sidebar-css.php'; ?>
 <?php else: ?>

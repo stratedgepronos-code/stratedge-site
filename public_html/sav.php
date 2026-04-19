@@ -73,7 +73,7 @@ $statutLabels = ['ouvert'=>'🟡 Ouvert','en_cours'=>'🔵 En cours','resolu'=>'
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#050810">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<link rel="apple-touch-icon" href="/assets/images/mascotte.png">
+<link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png">
 <?php require_once __DIR__ . '/includes/sidebar-css.php'; ?>
 <style>
 .sec{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:1.8rem;margin-bottom:1.5rem;}

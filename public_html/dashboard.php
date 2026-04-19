@@ -92,7 +92,7 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
 <title>Mon Espace – StratEdge Pronos</title>
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <link rel="manifest" href="/manifest.json"><meta name="theme-color" content="#050810">
-<meta name="apple-mobile-web-app-capable" content="yes"><link rel="apple-touch-icon" href="/assets/images/mascotte.png">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="StratEdge"><link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png">
 <?php require_once __DIR__ . '/includes/sidebar-css.php'; ?>
 <style>
 .tab-p{display:none;}.tab-p.active{display:block;}
@@ -346,13 +346,26 @@ $typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 W
     <div id="nfSt" class="nf-st nf-off">⏳ Vérification...</div><br>
     <button class="btn-nf" id="btnNf" onclick="togglePush()" disabled>Activer les notifications</button>
     <div class="nf-help" id="nfHelp">
-      <h4>🔓 Comment débloquer ?</h4>
-      <div class="step"><span class="step-n">1</span><div class="step-t"><strong>PC :</strong> Clique sur 🔒 à gauche de l'URL</div></div>
+      <h4>📱 iPhone / iPad (iOS 16.4+)</h4>
+      <div class="step"><span class="step-n">1</span><div class="step-t">Ouvre ce site dans <strong>Safari</strong> (obligatoire, pas Chrome)</div></div>
+      <div class="step"><span class="step-n">2</span><div class="step-t">Appuie sur le bouton <strong>Partager</strong> 􀈂 (en bas de Safari)</div></div>
+      <div class="step"><span class="step-n">3</span><div class="step-t">Choisis <strong>"Sur l'écran d'accueil"</strong> puis "Ajouter"</div></div>
+      <div class="step"><span class="step-n">4</span><div class="step-t">Ferme Safari, ouvre <strong>StratEdge depuis l'icône</strong> sur ton écran d'accueil</div></div>
+      <div class="step"><span class="step-n">5</span><div class="step-t">Reviens sur le Dashboard et clique sur <strong>"Activer les notifications"</strong></div></div>
+      <p style="font-size:0.82rem;color:var(--txt3);margin-top:0.8rem;padding:0.6rem;background:rgba(255,193,7,0.08);border-radius:8px;border-left:3px solid #ffc107;">⚠️ Sur iOS, les notifications push fonctionnent <strong>uniquement</strong> si tu ouvres le site depuis l'icône sur l'écran d'accueil. C'est une limitation Apple, pas un bug du site.</p>
+
+      <div style="border-top:1px solid var(--border-soft);margin-top:1rem;padding-top:1rem;">
+      <h4>🤖 Android (Chrome / Samsung / Firefox)</h4>
+      <div class="step"><span class="step-n">1</span><div class="step-t">Clique sur <strong>"Activer les notifications"</strong> ci-dessus</div></div>
+      <div class="step"><span class="step-n">2</span><div class="step-t">Accepte la permission dans la popup du navigateur</div></div>
+      <div class="step"><span class="step-n">3</span><div class="step-t">Si c'est bloqué : ⋮ → <strong>Paramètres du site</strong> → Notifications → Autoriser</div></div>
+      </div>
+
+      <div style="border-top:1px solid var(--border-soft);margin-top:1rem;padding-top:1rem;">
+      <h4>💻 PC (Chrome / Firefox / Edge)</h4>
+      <div class="step"><span class="step-n">1</span><div class="step-t">Clique sur <strong>🔒</strong> à gauche de l'URL</div></div>
       <div class="step"><span class="step-n">2</span><div class="step-t">Change <strong>Notifications</strong> → <strong>Autoriser</strong></div></div>
-      <div class="step"><span class="step-n">3</span><div class="step-t"><strong>Recharge</strong> la page (F5)</div></div>
-      <div style="border-top:1px solid var(--border-soft);margin-top:0.8rem;padding-top:0.8rem;">
-      <div class="step"><span class="step-n">📱</span><div class="step-t"><strong>iPhone :</strong> Safari → Partager → Sur l'écran d'accueil</div></div>
-      <div class="step"><span class="step-n">📱</span><div class="step-t"><strong>Android :</strong> Chrome → ⋮ → Paramètres du site → Notifications → Autoriser</div></div>
+      <div class="step"><span class="step-n">3</span><div class="step-t">Recharge la page (F5)</div></div>
       </div>
     </div>
   </div></div>
@@ -427,24 +440,117 @@ function ck(){if(!cp.value){pm.style.display='none';return;}pm.style.display='bl
 if(np&&cp){np.addEventListener('input',ck);cp.addEventListener('input',ck);}
 
 var VK='<?= defined("VAPID_PUBLIC_KEY")?VAPID_PUBLIC_KEY:"" ?>',pSub=null;
+
+// Détection device / état
+var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+var isIOSSafari = isIOS && /Safari/.test(navigator.userAgent) && !/CriOS|FxiOS|EdgiOS/.test(navigator.userAgent);
+var isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+var iosVersion = 0;
+if (isIOS) {
+  var m = navigator.userAgent.match(/OS (\d+)_(\d+)/);
+  if (m) iosVersion = parseFloat(m[1] + '.' + m[2]);
+}
+
 function u2a(b){var p='='.repeat((4-b.length%4)%4);var r=atob((b+p).replace(/-/g,'+').replace(/_/g,'/'));return new Uint8Array([...r].map(function(c){return c.charCodeAt(0);}));}
-function upUI(s){var st=document.getElementById('nfSt'),b=document.getElementById('btnNf'),h=document.getElementById('nfHelp');
-if(!st||!b||!h)return;
-h.classList.remove('show');
-if(s==='active'){st.className='nf-st nf-on';st.innerHTML='✅ Activées';b.textContent='Désactiver';b.disabled=false;}
-else if(s==='denied'){st.className='nf-st nf-blk';st.innerHTML='🚫 Bloquées';b.textContent='Bloqué';b.disabled=true;h.classList.add('show');}
-else if(s==='unsupported'){st.className='nf-st nf-blk';st.innerHTML='❌ Non disponible';b.textContent='Non disponible';b.disabled=true;}
-else{st.className='nf-st nf-off';st.innerHTML='Pas encore activées';b.textContent='🔔 Activer';b.disabled=false;}}
-async function chkPush(){if(!('serviceWorker' in navigator)||!('PushManager' in window)||!VK||VK==='VOTRE_CLE_PUBLIQUE_VAPID_ICI'){upUI('unsupported');return;}
-try{var r=await navigator.serviceWorker.register('/sw.js');var s=await r.pushManager.getSubscription();pSub=s;
-if(Notification.permission==='denied')upUI('denied');else if(s)upUI('active');else upUI('inactive');}catch(e){upUI('unsupported');}}
-async function togglePush(){var b=document.getElementById('btnNf');b.disabled=true;b.textContent='⏳ En cours...';
-try{var r=await navigator.serviceWorker.ready;
-if(pSub){await pSub.unsubscribe();await fetch('/push-subscribe.php',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({endpoint:pSub.endpoint})});pSub=null;upUI('inactive');}
-else{var pm=await Notification.requestPermission();if(pm!=='granted'){upUI(pm==='denied'?'denied':'inactive');return;}
-var s=await r.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:u2a(VK)});
-await fetch('/push-subscribe.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(s)});pSub=s;upUI('active');}}
-catch(e){console.log('[Push]',e.message);upUI('inactive');}}
+
+function upUI(s, extra){
+  var st=document.getElementById('nfSt'),b=document.getElementById('btnNf'),h=document.getElementById('nfHelp');
+  if(!st||!b||!h)return;
+  h.classList.remove('show');
+  if(s==='active'){st.className='nf-st nf-on';st.innerHTML='✅ Notifications activées';b.textContent='Désactiver';b.disabled=false;}
+  else if(s==='denied'){st.className='nf-st nf-blk';st.innerHTML='🚫 Notifications bloquées';b.textContent='Bloqué par le navigateur';b.disabled=true;h.classList.add('show');}
+  else if(s==='ios-not-installed'){st.className='nf-st nf-blk';st.innerHTML='📱 Installe l\'app pour activer';b.textContent='Voir les instructions';b.disabled=false;h.classList.add('show');}
+  else if(s==='ios-old'){st.className='nf-st nf-blk';st.innerHTML='❌ iOS 16.4+ requis';b.textContent='Mets à jour iOS';b.disabled=true;}
+  else if(s==='unsupported'){st.className='nf-st nf-blk';st.innerHTML='❌ Non disponible sur ce navigateur';b.textContent='Non disponible';b.disabled=true;}
+  else {st.className='nf-st nf-off';st.innerHTML='🔕 Notifications désactivées';b.textContent='🔔 Activer les notifications';b.disabled=false;}
+}
+
+async function chkPush(){
+  // iOS < 16.4 → pas de support push
+  if (isIOS && iosVersion > 0 && iosVersion < 16.4) {
+    upUI('ios-old');
+    return;
+  }
+  // iOS 16.4+ mais pas installé en PWA → impossible
+  if (isIOS && !isStandalone) {
+    upUI('ios-not-installed');
+    return;
+  }
+  // Support SW + PushManager ?
+  if(!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window) || !VK || VK==='VOTRE_CLE_PUBLIQUE_VAPID_ICI'){
+    upUI('unsupported');
+    return;
+  }
+  try{
+    var r = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    // Attendre que le SW soit actif
+    if (r.installing) {
+      await new Promise(resolve => {
+        r.installing.addEventListener('statechange', e => {
+          if (e.target.state === 'activated') resolve();
+        });
+      });
+    }
+    var s = await r.pushManager.getSubscription();
+    pSub = s;
+    if(Notification.permission==='denied')upUI('denied');
+    else if(s)upUI('active');
+    else upUI('inactive');
+  }catch(e){
+    console.error('[Push] chkPush failed:', e);
+    upUI('unsupported');
+  }
+}
+
+async function togglePush(){
+  var b = document.getElementById('btnNf');
+  // Si iOS pas installé, juste afficher l'aide
+  if (isIOS && !isStandalone) {
+    document.getElementById('nfHelp').classList.add('show');
+    return;
+  }
+  b.disabled = true;
+  b.textContent = '⏳ En cours...';
+  try{
+    var r = await navigator.serviceWorker.ready;
+    if(pSub){
+      // Désabonnement
+      var endpoint = pSub.endpoint;
+      await pSub.unsubscribe();
+      await fetch('/push-subscribe.php',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({endpoint:endpoint})});
+      pSub = null;
+      upUI('inactive');
+    } else {
+      // Demander la permission
+      var pm = await Notification.requestPermission();
+      if(pm !== 'granted'){
+        upUI(pm === 'denied' ? 'denied' : 'inactive');
+        return;
+      }
+      // S'abonner
+      var s = await r.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: u2a(VK)
+      });
+      var resp = await fetch('/push-subscribe.php',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(s)
+      });
+      var data = await resp.json();
+      if (data.success) {
+        pSub = s;
+        upUI('active');
+      } else {
+        console.error('[Push] subscribe save failed:', data);
+        upUI('inactive');
+      }
+    }
+  }catch(e){
+    console.error('[Push] togglePush error:', e);
+    upUI('inactive');
+  }
+}
 chkPush();
 </script>
 <script>
