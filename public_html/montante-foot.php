@@ -362,7 +362,7 @@ table.mt-table{width:100%;border-collapse:collapse;}
       <h3>Tous les matchs se jouent sur Stake</h3>
       <p>La montante est jouée exclusivement sur <strong>Stake.bet</strong> pour profiter des meilleures cotes foot et des retraits instantanés en crypto. Crée ton compte avec notre lien partenaire pour un <strong>bonus exclusif StratEdge</strong>.</p>
     </div>
-    <a href="https://stake.bet/?c=2bd992d384" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake-mt">🎁 S'inscrire sur Stake</a>
+    <a href="https://stake.bet/fr?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake-mt">🎁 S'inscrire sur Stake</a>
   </div>
   <div class="pack-banner vip-max">
     <div class="mt-pack-mascot">
