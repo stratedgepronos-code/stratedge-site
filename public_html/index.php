@@ -527,50 +527,83 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .footer-glow { position: relative; }
     .footer-glow::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 400px; height: 1px; background: linear-gradient(90deg, transparent, var(--neon-green), var(--neon-blue), transparent); }
 
-    /* MOBILE MENU */
-    /* MOBILE MENU — Drawer moderne */
-    .mobile-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); z-index:998; }
-    .mobile-overlay.open { display:block; }
-    .mobile-menu {
-      display:block; position:fixed; top:0; right:0; bottom:0; width:280px;
-      background:linear-gradient(180deg,#0d1220 0%,#0a0e17 100%);
-      border-left:1px solid rgba(255,255,255,0.08);
-      z-index:999; padding:0;
-      transform:translateX(100%); transition:transform 0.32s cubic-bezier(0.4,0,0.2,1);
-      display:flex; flex-direction:column;
-      box-shadow:-20px 0 60px rgba(0,0,0,0.5);
+    /* ════════════════════════════════════════════════════════
+       MOBILE MENU — Drawer cyberpunk
+       ════════════════════════════════════════════════════════ */
+    body.menu-open { overflow:hidden; }
+    .mobile-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); backdrop-filter:blur(6px); z-index:250; opacity:0; transition:opacity .3s ease; }
+    .mobile-overlay.open { display:block; opacity:1; }
+    .mobile-menu{
+      position:fixed;top:0;right:0;bottom:0;
+      width:min(88vw,360px);
+      background-color:#0a0e17;
+      background-image:
+        radial-gradient(ellipse 420px 300px at 100% 0%, rgba(255,45,120,0.22), transparent 60%),
+        radial-gradient(ellipse 500px 380px at 0% 12%, rgba(0,212,255,0.14), transparent 60%),
+        radial-gradient(ellipse 400px 320px at 100% 25%, rgba(168,85,247,0.12), transparent 60%),
+        radial-gradient(ellipse 460px 340px at 0% 40%, rgba(255,45,120,0.14), transparent 60%),
+        radial-gradient(ellipse 420px 300px at 100% 55%, rgba(0,212,255,0.13), transparent 60%),
+        radial-gradient(ellipse 400px 300px at 0% 70%, rgba(168,85,247,0.12), transparent 60%),
+        radial-gradient(ellipse 440px 320px at 100% 85%, rgba(255,45,120,0.13), transparent 60%),
+        radial-gradient(ellipse 500px 340px at 50% 100%, rgba(0,212,255,0.11), transparent 60%),
+        linear-gradient(180deg, transparent 0%, rgba(168,85,247,0.04) 50%, rgba(255,45,120,0.03) 100%);
+      background-size:100% 100%;
+      background-repeat:no-repeat;
+      background-attachment:local;
+      border-left:1px solid rgba(255,45,120,0.2);
+      z-index:300;
+      transform:translateX(100%);
+      transition:transform .55s cubic-bezier(0.16,1,0.3,1);
+      display:flex;flex-direction:column;
+      overflow-y:auto;overflow-x:hidden;
+      padding:0 0 calc(1rem + env(safe-area-inset-bottom,0px));
+      box-shadow:-20px 0 60px rgba(0,0,0,0.7);
     }
     .mobile-menu.open { transform:translateX(0); }
-    .mobile-menu-header {
-      padding:1.2rem 1.5rem; border-bottom:1px solid rgba(255,255,255,0.06);
-      display:flex; justify-content:space-between; align-items:center;
+    .mobile-menu::after{
+      content:'';position:absolute;top:-4px;left:0;right:0;height:2px;
+      background:linear-gradient(90deg,transparent 0%,#ff2d78 20%,#00d4ff 50%,#a855f7 80%,transparent 100%);
+      background-size:200% 100%;
+      animation:mmScanTop 4s linear infinite;
+      z-index:5;pointer-events:none;
+      box-shadow:0 0 12px rgba(255,45,120,0.4),0 0 20px rgba(0,212,255,0.3);
     }
-    .mobile-menu-logo { font-family:'Orbitron',sans-serif; font-size:1rem; font-weight:900; color:#fff; }
-    .mobile-menu-logo span { color:var(--neon-green); }
-    .mobile-menu-close { background:none; border:none; color:rgba(255,255,255,0.4); font-size:1.4rem; cursor:pointer; padding:0.2rem; line-height:1; }
-    .mobile-menu-close:hover { color:#fff; }
-    .mobile-menu-body { flex:1; overflow-y:auto; padding:0.8rem 0; }
-    .mobile-menu-section { padding:0.5rem 1.5rem 0.3rem; font-size:0.65rem; font-weight:700; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,0.3); }
-    .mobile-menu a {
-      display:flex; align-items:center; gap:0.9rem;
-      padding:0.85rem 1.5rem; color:rgba(255,255,255,0.7);
-      text-decoration:none; font-size:0.95rem; font-weight:500;
-      transition:all .2s; border-radius:0;
-    }
-    .mobile-menu a:hover, .mobile-menu a.active { color:#fff; background:rgba(255,255,255,0.05); }
-    .mobile-menu a .m-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0; background:rgba(255,255,255,0.05); }
-    .mobile-menu-divider { height:1px; background:rgba(255,255,255,0.06); margin:0.5rem 1.5rem; }
-    .mobile-menu-cta { padding:1rem 1.5rem; border-top:1px solid rgba(255,255,255,0.06); }
-    .mobile-cta-btn {
-      display:block; width:100%; padding:0.9rem 1.2rem; text-align:center;
-      background:linear-gradient(135deg,#ff2d78,#d6245f);
-      color:#fff; font-weight:800; text-decoration:none; border-radius:12px;
-      font-size:0.95rem; transition:all .2s;
-      box-shadow:0 4px 20px rgba(255,45,120,0.3);
-    }
-    .mobile-cta-btn:hover { opacity:0.9; box-shadow:0 6px 28px rgba(255,45,120,0.5); }
-    .mobile-cta-btn.danger { background:rgba(255,45,120,0.12); border:1px solid rgba(255,45,120,0.3); color:#ff2d78; box-shadow:none; }
-    .mobile-badge { background:var(--neon-green); color:#000; border-radius:50px; font-size:0.65rem; font-weight:900; padding:0.1rem 0.45rem; margin-left:auto; }
+    @keyframes mmScanTop{0%{background-position:-200% 0;}100%{background-position:200% 0;}}
+    .mm-inner{position:relative;z-index:2;display:flex;flex-direction:column;padding-top:1rem;flex:1 0 auto;}
+
+    .mm-head{display:flex;align-items:center;justify-content:space-between;padding:0.8rem 1.3rem 1rem;margin-bottom:0.2rem;border-bottom:1px solid rgba(255,45,120,0.1);}
+    .mm-head-title{display:flex;align-items:center;gap:10px;}
+    .mm-head-bar{width:4px;height:20px;border-radius:2px;background:linear-gradient(180deg,#00d4ff 0%,#ff2d78 100%);box-shadow:0 0 10px rgba(255,45,120,0.6),0 0 16px rgba(0,212,255,0.4);animation:mmBarPulse 2.5s ease-in-out infinite;}
+    @keyframes mmBarPulse{0%,100%{box-shadow:0 0 10px rgba(255,45,120,0.6),0 0 16px rgba(0,212,255,0.4);}50%{box-shadow:0 0 14px rgba(255,45,120,0.9),0 0 24px rgba(0,212,255,0.6);}}
+    .mm-head-txt{font-family:'Orbitron',sans-serif;font-size:0.75rem;font-weight:900;letter-spacing:3px;background:linear-gradient(90deg,#ff2d78,#ff6ba1,#ff2d78);background-size:200% auto;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;color:transparent;animation:mmTxtGradient 3s linear infinite;}
+    @keyframes mmTxtGradient{0%{background-position:0 0;}100%{background-position:200% 0;}}
+    .mm-close{background:rgba(255,45,120,0.08);border:1px solid rgba(255,45,120,0.25);width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#ff2d78;font-size:1rem;cursor:pointer;transition:all .2s;}
+    .mm-close:hover{background:rgba(255,45,120,0.15);box-shadow:0 0 16px rgba(255,45,120,0.5);}
+
+    .mm-sect{font-family:'Orbitron',sans-serif;font-size:0.62rem;font-weight:700;letter-spacing:3px;color:rgba(255,255,255,0.3);padding:0.9rem 1.3rem 0.5rem;text-transform:uppercase;position:relative;z-index:2;display:flex;align-items:center;gap:8px;}
+    .mm-sect::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(255,255,255,0.1),transparent);}
+
+    .mm-lnks{padding:0 10px;position:relative;z-index:2;}
+    .mm-lnk{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;margin-bottom:3px;color:rgba(255,255,255,0.7);text-decoration:none;font-family:'Rajdhani',sans-serif;font-weight:600;font-size:0.95rem;transition:all .2s;position:relative;overflow:hidden;border:1px solid transparent;}
+    .mm-lnk::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,45,120,0.08),transparent);transition:left .5s ease;}
+    .mm-lnk:hover{color:#fff;background:rgba(255,255,255,0.03);border-color:rgba(255,255,255,0.05);}
+    .mm-lnk:hover::before{left:100%;}
+    .mm-ico{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;background:rgba(255,255,255,0.04);flex-shrink:0;position:relative;transition:all .2s;}
+    .mm-lnk:hover .mm-ico{background:rgba(255,255,255,0.07);transform:scale(1.05);}
+    .mm-lnk-lbl{flex:1;}
+    .mm-lnk-chev{color:rgba(255,255,255,0.3);font-size:1rem;transition:transform .2s;}
+    .mm-lnk:hover .mm-lnk-chev{transform:translateX(3px);color:#ff2d78;}
+    .mm-lnk.mm-admin{color:#ffc107;}
+    .mm-lnk.mm-admin .mm-ico{background:rgba(255,193,7,0.08);}
+
+    .mm-foot{margin:16px 14px 0;padding-top:16px;border-top:1px solid rgba(255,255,255,0.06);display:flex;gap:8px;position:relative;z-index:2;}
+    .mm-cta{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:12px 8px;border-radius:12px;text-decoration:none;font-family:'Orbitron',sans-serif;font-size:0.7rem;font-weight:700;letter-spacing:1.2px;transition:all .2s;white-space:nowrap;}
+    .mm-cta-out{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:rgba(255,255,255,0.5)!important;}
+    .mm-cta-login{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:#fff!important;}
+    .mm-cta-main{flex:1.3;background:linear-gradient(135deg,#ff2d78,#d6245f);color:#fff!important;font-weight:900;box-shadow:0 4px 16px rgba(255,45,120,0.35);position:relative;overflow:hidden;}
+    .mm-cta-main::before{content:'';position:absolute;top:0;left:-100%;width:70%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.3),transparent);animation:mmBtnShine 2.8s ease-in-out infinite;}
+    @keyframes mmBtnShine{0%{left:-100%;}60%,100%{left:200%;}}
+    .mm-cta-main:hover{box-shadow:0 6px 24px rgba(255,45,120,0.6);transform:translateY(-1px);}
 
     /* SCROLL ANIMATIONS */
     .fade-up { opacity: 0; transform: translateY(30px); transition: opacity 0.6s ease, transform 0.6s ease; }
@@ -828,70 +861,55 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
 <!-- Overlay -->
 <div class="mobile-overlay" id="mobileOverlay" onclick="closeMenu()"></div>
 
-<!-- Drawer mobile -->
+<!-- Drawer mobile cyberpunk -->
 <div class="mobile-menu" id="mobileMenu" role="navigation" aria-label="Menu mobile">
-  <div class="mobile-menu-header">
-    <span class="mobile-menu-logo"><span>Strat</span>Edge</span>
-    <button class="mobile-menu-close" onclick="closeMenu()" aria-label="Fermer">✕</button>
-  </div>
+  <div class="mm-inner">
+    <div class="mm-head">
+      <div class="mm-head-title">
+        <div class="mm-head-bar"></div>
+        <div class="mm-head-txt">NAVIGATION</div>
+      </div>
+      <button class="mm-close" onclick="closeMenu()" aria-label="Fermer">✕</button>
+    </div>
 
-  <div class="mobile-menu-body">
-    <div class="mobile-menu-section">Navigation</div>
-    <a href="/" onclick="closeMenu()">
-      <span class="m-icon">🏠</span> Accueil
-    </a>
-    <a href="bets.php" onclick="closeMenu()">
-      <span class="m-icon">🔥</span> Les Bets
-    </a>
-    <a href="historique.php" onclick="closeMenu()">
-      <span class="m-icon">📋</span> Historique
-    </a>
-    <a href="giveaway.php" onclick="closeMenu()">
-      <span class="m-icon">🎁</span> GiveAway
-    </a>
-    <a href="prono-commu.php" onclick="closeMenu()">
-      <span class="m-icon">⚽</span> Prono de la commu
-    </a>
-    <a href="montante-tennis.php" onclick="closeMenu()">
-      <span class="m-icon">🎾</span> Montante Tennis
-    </a>
-    <a href="#stake" onclick="closeMenu()">
-      <span class="m-icon">🎯</span> Stake.bet
-    </a>
-
-    <div class="mobile-menu-divider"></div>
+    <div class="mm-sect">Principal</div>
+    <div class="mm-lnks">
+      <a href="/" class="mm-lnk"><div class="mm-ico">🏠</div><div class="mm-lnk-lbl">Accueil</div><div class="mm-lnk-chev">›</div></a>
+      <a href="/bets.php" class="mm-lnk"><div class="mm-ico">🔥</div><div class="mm-lnk-lbl">Les Bets</div><div class="mm-lnk-chev">›</div></a>
+      <a href="/historique.php" class="mm-lnk"><div class="mm-ico">📋</div><div class="mm-lnk-lbl">Historique</div><div class="mm-lnk-chev">›</div></a>
+      <a href="/giveaway.php" class="mm-lnk"><div class="mm-ico">🎁</div><div class="mm-lnk-lbl">GiveAway</div><div class="mm-lnk-chev">›</div></a>
+      <a href="/prono-commu.php" class="mm-lnk"><div class="mm-ico">⚽</div><div class="mm-lnk-lbl">Prono de la commu</div><div class="mm-lnk-chev">›</div></a>
+      <a href="/montante-tennis.php" class="mm-lnk"><div class="mm-ico">🎾</div><div class="mm-lnk-lbl">Montante Tennis</div><div class="mm-lnk-chev">›</div></a>
+    </div>
 
     <?php if (isLoggedIn()): ?>
-      <div class="mobile-menu-section">Mon compte</div>
-      <a href="dashboard.php" onclick="closeMenu()">
-        <span class="m-icon">👤</span> Mon espace
-      </a>
-      <a href="chat.php" onclick="closeMenu()">
-        <span class="m-icon">💬</span> Messages
-      </a>
-      <a href="sav.php" onclick="closeMenu()">
-        <span class="m-icon">🎫</span> Support / SAV
-      </a>
+    <div class="mm-sect">Mon compte</div>
+    <div class="mm-lnks">
+      <a href="/dashboard.php" class="mm-lnk"><div class="mm-ico">📊</div><div class="mm-lnk-lbl">Dashboard</div><div class="mm-lnk-chev">›</div></a>
+      <a href="/dashboard.php?tab=profil" class="mm-lnk"><div class="mm-ico">👤</div><div class="mm-lnk-lbl">Mon Profil</div><div class="mm-lnk-chev">›</div></a>
+      <a href="/dashboard.php?tab=bankroll" class="mm-lnk"><div class="mm-ico">🏦</div><div class="mm-lnk-lbl">Bankroll</div><div class="mm-lnk-chev">›</div></a>
+      <a href="/sav.php" class="mm-lnk"><div class="mm-ico">🎫</div><div class="mm-lnk-lbl">SAV</div><div class="mm-lnk-chev">›</div></a>
+    </div>
+    <?php endif; ?>
+
+    <div class="mm-sect">Autres</div>
+    <div class="mm-lnks">
+      <a href="/souscrire.php" class="mm-lnk"><div class="mm-ico">💳</div><div class="mm-lnk-lbl">Souscrire</div><div class="mm-lnk-chev">›</div></a>
+      <a href="https://x.com/strat_edge_" target="_blank" rel="noopener noreferrer" class="mm-lnk"><div class="mm-ico">𝕏</div><div class="mm-lnk-lbl">Suivre sur X</div><div class="mm-lnk-chev">↗</div></a>
       <?php if (isAdmin()): ?>
-        <div class="mobile-menu-divider"></div>
-        <a href="panel-x9k3m/index.php" onclick="closeMenu()" style="color:#ffc107;">
-          <span class="m-icon" style="background:rgba(255,193,7,0.1);">⚙️</span> Panel Admin
-        </a>
+      <a href="/panel-x9k3m/index.php" class="mm-lnk mm-admin"><div class="mm-ico">⚙️</div><div class="mm-lnk-lbl">Panel Admin</div><div class="mm-lnk-chev">›</div></a>
       <?php endif; ?>
-    <?php else: ?>
-      <div class="mobile-menu-section">Compte</div>
-      <a href="login.php" onclick="closeMenu()">
-        <span class="m-icon">🔐</span> Connexion
-      </a>
-    <?php endif; ?>
-  </div>
+    </div>
 
-  <div class="mobile-menu-cta">
+    <div class="mm-foot">
     <?php if (isLoggedIn()): ?>
-      <a href="logout.php" class="mobile-cta-btn danger" onclick="closeMenu()">Déconnexion</a>
+      <a href="/logout.php" class="mm-cta mm-cta-out">🚪 LOGOUT</a>
+      <a href="/souscrire.php" class="mm-cta mm-cta-main">💳 SOUSCRIRE</a>
     <?php else: ?>
-      <a href="register.php" class="mobile-cta-btn" onclick="closeMenu()">S'inscrire gratuitement</a>
+      <a href="/login.php" class="mm-cta mm-cta-login">🔓 CONNEXION</a>
+      <a href="/register.php" class="mm-cta mm-cta-main">✨ S'INSCRIRE</a>
     <?php endif; ?>
+    </div>
   </div>
 </div>
 
@@ -1496,14 +1514,22 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     menu.classList.toggle('open');
     overlay.classList.toggle('open');
     btn.classList.toggle('open');
-    document.body.style.overflow = isOpen ? '' : 'hidden';
+    document.body.classList.toggle('menu-open', !isOpen);
   }
   function closeMenu() {
     document.getElementById('mobileMenu').classList.remove('open');
     document.getElementById('mobileOverlay').classList.remove('open');
     document.getElementById('hamburgerBtn').classList.remove('open');
-    document.body.style.overflow = '';
+    document.body.classList.remove('menu-open');
   }
+  // Fermer au clic sur un lien
+  document.querySelectorAll('#mobileMenu a').forEach(function(a){
+    a.addEventListener('click', function(){ closeMenu(); });
+  });
+  // Fermer avec Escape
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') closeMenu();
+  });
   const observer = new IntersectionObserver((entries) => {
     entries.forEach((entry, i) => {
       if (entry.isIntersecting) { setTimeout(() => { entry.target.classList.add('visible'); }, i * 80); observer.unobserve(entry.target); }
