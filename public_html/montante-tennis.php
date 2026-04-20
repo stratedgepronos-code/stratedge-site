@@ -7,12 +7,8 @@ require_once __DIR__ . '/includes/auth.php';
 $db = getDB();
 
 $membre = isLoggedIn() ? getMembre() : null;
-if (!$membre) {
-    header('Location: /login.php?redirect=' . urlencode('/montante-tennis.php'));
-    exit;
-}
 $currentPage = 'montante';
-$avatarUrl = getAvatarUrl($membre);
+$avatarUrl = $membre ? getAvatarUrl($membre) : null;
 
 // Auto-création des tables si absentes
 try {
