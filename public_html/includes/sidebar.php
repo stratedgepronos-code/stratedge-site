@@ -129,6 +129,7 @@ if (!empty($membre)) {
 
 <!-- Drawer mobile CYBERPUNK -->
 <div class="mobile-menu" id="mobileMenu">
+<div class="mm-inner">
   <!-- Header -->
   <div class="mm-head">
     <div class="mm-head-title">
@@ -275,6 +276,7 @@ if (!empty($membre)) {
     <a href="/register.php" class="mm-cta mm-cta-main">✨ S'INSCRIRE</a>
   <?php endif; ?>
   </div>
+</div><!-- /mm-inner -->
 </div>
 
 <!-- Mobile bottom tab bar -->
