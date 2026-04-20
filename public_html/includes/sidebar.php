@@ -13,37 +13,34 @@ if (!empty($membre)) {
     try {
         $_db = getDB();
 
-        // ── Stats par tipster (30 derniers jours) ──
-        $_tipsterStats = ['multi'=>['w'=>0,'l'=>0,'roi'=>0], 'tennis'=>['w'=>0,'l'=>0,'roi'=>0], 'fun'=>['w'=>0,'l'=>0,'roi'=>0]];
-        $_statsStmt = $_db->prepare("
-            SELECT categorie, resultat, cote FROM bets
-            WHERE resultat IN ('gagne','perdu','annule')
-              AND date_resultat >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-              AND categorie IN ('multi','tennis','fun')
-        ");
-        $_statsStmt->execute();
-        $_rows = $_statsStmt->fetchAll();
+        // ── Stats par tipster — MEME LOGIQUE que historique.php (all-time, par posted_by_role) ──
+        $_tipsterStats = ['multi'=>['w'=>0,'l'=>0,'roi'=>0,'winrate'=>0], 'tennis'=>['w'=>0,'l'=>0,'roi'=>0,'winrate'=>0], 'fun'=>['w'=>0,'l'=>0,'roi'=>0,'winrate'=>0]];
         $_gains = ['multi'=>0.0,'tennis'=>0.0,'fun'=>0.0];
-        $_mises = ['multi'=>0,'tennis'=>0,'fun'=>0];
-        foreach ($_rows as $_r) {
-            $_cat = $_r['categorie'];
-            if (!isset($_tipsterStats[$_cat])) continue;
-            if ($_r['resultat'] === 'annule') continue;
-            $_mises[$_cat]++;
-            $_c = (float) str_replace(',', '.', $_r['cote'] ?? 0);
-            if ($_r['resultat'] === 'gagne') {
-                $_tipsterStats[$_cat]['w']++;
-                $_gains[$_cat] += ($_c - 1);
+
+        $_allBets = $_db->query("SELECT posted_by_role, categorie, resultat, cote FROM bets WHERE resultat IN ('gagne','perdu')")->fetchAll();
+
+        foreach ($_allBets as $_b) {
+            // Déterminer le tipster (même logique que historique.php::_tipsterOf)
+            $_role = $_b['posted_by_role'] ?? '';
+            if ($_role === 'admin_tennis') $_tip = 'tennis';
+            elseif ($_role === 'admin_fun') $_tip = 'fun';
+            elseif ($_role === 'superadmin') $_tip = 'multi';
+            elseif (($_b['categorie'] ?? '') === 'tennis') $_tip = 'tennis';
+            else $_tip = 'multi';
+
+            $_c = (float) str_replace(',', '.', $_b['cote'] ?? 0);
+            if ($_b['resultat'] === 'gagne') {
+                $_tipsterStats[$_tip]['w']++;
+                if ($_c > 0) $_gains[$_tip] += ($_c - 1);
             } else {
-                $_tipsterStats[$_cat]['l']++;
-                $_gains[$_cat] -= 1;
+                $_tipsterStats[$_tip]['l']++;
+                $_gains[$_tip] -= 1;
             }
         }
         foreach ($_tipsterStats as $_k => $_s) {
             $_total = $_s['w'] + $_s['l'];
             $_tipsterStats[$_k]['winrate'] = $_total > 0 ? round($_s['w'] * 100 / $_total) : 0;
-            $_tipsterStats[$_k]['roi'] = $_mises[$_k] > 0 ? round($_gains[$_k] * 100 / $_mises[$_k]) : 0;
-            $_tipsterStats[$_k]['total'] = $_total;
+            $_tipsterStats[$_k]['roi']     = $_total > 0 ? round($_gains[$_k] * 100 / $_total) : 0;
         }
 
         // Bets live actifs
