@@ -493,8 +493,8 @@ CSS;
 .card-wrapper.tennis .live-dot { background:#ff2d7a !important; box-shadow:0 0 6px #ff2d7a; }
 .card-wrapper.tennis .vs-badge { background:none !important; background-image:none !important; box-shadow:none !important; border:none !important; padding:0 !important; margin:0 !important; }
 .card-wrapper.tennis .vs-badge svg { display:block; }
-.card-wrapper.tennis .player { font-family:'Orbitron',sans-serif !important; font-weight:700; font-size:36px; letter-spacing:1px; }
-.card-wrapper.tennis .player.opponent { color:rgba(255,255,255,0.7); }
+.card-wrapper.tennis .player { font-family:'Orbitron',sans-serif !important; font-weight:700; font-size:36px; letter-spacing:1px; color:#fff !important; }
+.card-wrapper.tennis .player.main, .card-wrapper.tennis .player.opponent { color:#fff !important; }
 .card-wrapper.tennis .datetime-day { font-size:21px; color:rgba(255,255,255,0.55); }
 .card-wrapper.tennis .datetime-time { font-size:58px; }
 .card-wrapper.tennis .match-comp { font-size:16px; color:rgba(255,255,255,0.5); }
