@@ -803,15 +803,16 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
   <div class="nav-inner">
     <a href="/" class="logo"><img src="assets/images/logo site.png" alt="StratEdge Pronos" class="logo-img"></a>
     <ul class="nav-links">
-      <li><a href="historique.php">Historique</a></li>
-      <li><a href="#stake">Stake.bet</a></li>
-      <li><a href="bets.php">📊 Les Bets</a></li>
+      <li><a href="bets.php">🔥 Bets</a></li>
+      <li><a href="historique.php">📋 Historique</a></li>
+      <li><a href="giveaway.php">🎁 GiveAway</a></li>
+      <li><a href="prono-commu.php">⚽ Prono commu</a></li>
+      <li><a href="montante-tennis.php">🎾 Montante</a></li>
       <?php if (isLoggedIn()): ?>
         <?php if (isAdmin()): ?>
-          <li><a href="panel-x9k3m/index.php" style="background:rgba(255,193,7,0.15);border:1px solid rgba(255,193,7,0.3);color:#ffc107;padding:0.5rem 1.2rem;border-radius:6px;font-weight:700;">⚙️ Panel</a></li>
+          <li><a href="panel-x9k3m/index.php" style="background:rgba(255,193,7,0.15);border:1px solid rgba(255,193,7,0.3);color:#ffc107;padding:0.4rem 0.9rem;border-radius:6px;font-weight:700;">⚙️ Panel</a></li>
         <?php endif; ?>
         <li><a href="dashboard.php" class="nav-member">👤 <?= clean($membre['nom']) ?></a></li>
-        <li><a href="logout.php">Déconnexion</a></li>
       <?php else: ?>
         <li><a href="login.php">Connexion</a></li>
         <li><a href="register.php" class="nav-cta">S'inscrire</a></li>
@@ -838,10 +839,19 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       <span class="m-icon">🏠</span> Accueil
     </a>
     <a href="bets.php" onclick="closeMenu()">
-      <span class="m-icon">📊</span> Les Bets
+      <span class="m-icon">🔥</span> Les Bets
     </a>
     <a href="historique.php" onclick="closeMenu()">
-      <span class="m-icon">📅</span> Historique
+      <span class="m-icon">📋</span> Historique
+    </a>
+    <a href="giveaway.php" onclick="closeMenu()">
+      <span class="m-icon">🎁</span> GiveAway
+    </a>
+    <a href="prono-commu.php" onclick="closeMenu()">
+      <span class="m-icon">⚽</span> Prono de la commu
+    </a>
+    <a href="montante-tennis.php" onclick="closeMenu()">
+      <span class="m-icon">🎾</span> Montante Tennis
     </a>
     <a href="#stake" onclick="closeMenu()">
       <span class="m-icon">🎯</span> Stake.bet
