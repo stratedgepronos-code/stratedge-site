@@ -192,6 +192,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $error = 'Match requis.';
             }
         }
+    } elseif ($_POST['action'] === 'delete_step') {
+        $stepId = (int)($_POST['step_id'] ?? 0);
+        if ($stepId) {
+            // Récupérer l'étape + son montante_id
+            $stmt = $db->prepare("SELECT montante_id, step_number FROM montante_steps WHERE id = ?");
+            $stmt->execute([$stepId]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($row) {
+                $mid = (int)$row['montante_id'];
+                $deletedNum = (int)$row['step_number'];
+
+                // Supprimer l'étape
+                $db->prepare("DELETE FROM montante_steps WHERE id = ?")->execute([$stepId]);
+
+                // Décrémenter les step_number des étapes qui étaient après
+                $db->prepare("UPDATE montante_steps SET step_number = step_number - 1 WHERE montante_id = ? AND step_number > ?")
+                   ->execute([$mid, $deletedNum]);
+
+                // Recalculer les bankroll_apres en cascade
+                $cfg = $db->prepare("SELECT * FROM montante_config WHERE id = ?");
+                $cfg->execute([$mid]);
+                $cfgRow = $cfg->fetch(PDO::FETCH_ASSOC);
+                if ($cfgRow) {
+                    $currentBr = (float)$cfgRow['bankroll_initial'];
+                    $stRows = $db->prepare("SELECT * FROM montante_steps WHERE montante_id = ? ORDER BY step_number ASC");
+                    $stRows->execute([$mid]);
+                    foreach ($stRows->fetchAll(PDO::FETCH_ASSOC) as $st) {
+                        $gp = null;
+                        $brAfter = null;
+                        if ($st['resultat'] === 'gagne') {
+                            $gp = (float)$st['mise'] * ((float)$st['cote'] - 1);
+                            $currentBr += $gp;
+                            $brAfter = $currentBr;
+                        } elseif ($st['resultat'] === 'perdu') {
+                            $gp = -(float)$st['mise'];
+                            $currentBr += $gp;
+                            $brAfter = $currentBr;
+                        } elseif ($st['resultat'] === 'annule') {
+                            $gp = 0;
+                            $brAfter = $currentBr;
+                        }
+                        $db->prepare("UPDATE montante_steps SET gain_perte = ?, bankroll_apres = ? WHERE id = ?")
+                           ->execute([$gp, $brAfter, $st['id']]);
+                    }
+                }
+
+                $success = 'Étape supprimée, numérotation et bankroll recalculés.';
+            }
+        }
     }
 }
 
@@ -424,6 +473,12 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
             <td style="font-weight:600;"><?= $s['bankroll_apres'] !== null ? number_format((float)$s['bankroll_apres'], 2) . '€' : '—' ?></td>
             <td>
               <a href="?edit_step=<?= (int)$s['id'] ?>" class="btn-sm" style="display:inline-block;margin-bottom:0.25rem;background:rgba(0,212,255,0.12);color:#00d4ff;border:1px solid rgba(0,212,255,0.3);text-decoration:none;">✏️ Modifier</a>
+              <form method="post" style="display:inline;" onsubmit="return confirm('Supprimer définitivement cette étape ? Les numéros des étapes suivantes seront décalés et les bankrolls recalculés.')">
+                <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
+                <input type="hidden" name="action" value="delete_step">
+                <input type="hidden" name="step_id" value="<?= (int)$s['id'] ?>">
+                <button type="submit" class="btn-sm" style="background:rgba(255,68,68,0.12);color:#ff4444;border:1px solid rgba(255,68,68,0.3);margin-bottom:0.25rem;">🗑️ Supprimer</button>
+              </form>
               <?php if ($s['resultat'] === 'en_cours'): ?>
               <div style="display:flex;gap:0.25rem;flex-wrap:wrap;">
                 <?php foreach (['gagne' => '✅', 'perdu' => '❌', 'annule' => '↺'] as $res => $icon): ?>
