@@ -54,7 +54,20 @@ body.menu-open{overflow:hidden;}
 .mobile-menu{
   position:fixed;top:0;right:0;bottom:0;
   width:min(88vw,360px);
-  background:#0a0e17;
+  background-color:#0a0e17;
+  background-image:
+    radial-gradient(ellipse 420px 300px at 100% 0%, rgba(255,45,120,0.22), transparent 60%),
+    radial-gradient(ellipse 500px 380px at 0% 12%, rgba(0,212,255,0.14), transparent 60%),
+    radial-gradient(ellipse 400px 320px at 100% 25%, rgba(168,85,247,0.12), transparent 60%),
+    radial-gradient(ellipse 460px 340px at 0% 40%, rgba(255,45,120,0.14), transparent 60%),
+    radial-gradient(ellipse 420px 300px at 100% 55%, rgba(0,212,255,0.13), transparent 60%),
+    radial-gradient(ellipse 400px 300px at 0% 70%, rgba(168,85,247,0.12), transparent 60%),
+    radial-gradient(ellipse 440px 320px at 100% 85%, rgba(255,45,120,0.13), transparent 60%),
+    radial-gradient(ellipse 500px 340px at 50% 100%, rgba(0,212,255,0.11), transparent 60%),
+    linear-gradient(180deg, transparent 0%, rgba(168,85,247,0.04) 50%, rgba(255,45,120,0.03) 100%);
+  background-size:100% 100%;
+  background-repeat:no-repeat;
+  background-attachment:local;
   border-left:1px solid rgba(255,45,120,0.2);
   z-index:300;
   transform:translateX(100%);
@@ -66,7 +79,7 @@ body.menu-open{overflow:hidden;}
 }
 .mobile-menu.open{transform:translateX(0);}
 
-/* Scanline top (reste sur la viewport via fixed) */
+/* Scanline top animé */
 .mobile-menu::after{
   content:'';position:absolute;top:-4px;left:0;right:0;height:2px;
   background:linear-gradient(90deg,transparent 0%,#ff2d78 20%,#00d4ff 50%,#a855f7 80%,transparent 100%);
@@ -80,31 +93,12 @@ body.menu-open{overflow:hidden;}
   100%{background-position:200% 0;}
 }
 
-/* Wrapper pour scroll interne — PORTE le background ambiant (couvre toute la hauteur scrollable) */
+/* Wrapper pour scroll interne — flex-shrink:0 pour ne pas être compressé */
 .mm-inner{
   position:relative;z-index:2;
   display:flex;flex-direction:column;
   padding-top:1rem;
-  min-height:100%;
-}
-.mm-inner::before{
-  content:'';position:absolute;inset:0;
-  background:
-    radial-gradient(ellipse 400px 280px at 100% 0%, rgba(255,45,120,0.22), transparent 60%),
-    radial-gradient(ellipse 500px 380px at 0% 15%, rgba(0,212,255,0.14), transparent 60%),
-    radial-gradient(ellipse 380px 320px at 100% 30%, rgba(168,85,247,0.12), transparent 60%),
-    radial-gradient(ellipse 440px 340px at 0% 45%, rgba(255,45,120,0.14), transparent 60%),
-    radial-gradient(ellipse 420px 300px at 100% 60%, rgba(0,212,255,0.13), transparent 60%),
-    radial-gradient(ellipse 380px 280px at 0% 75%, rgba(168,85,247,0.11), transparent 60%),
-    radial-gradient(ellipse 420px 300px at 100% 90%, rgba(255,45,120,0.13), transparent 60%),
-    radial-gradient(ellipse 440px 320px at 50% 100%, rgba(0,212,255,0.1), transparent 60%),
-    linear-gradient(180deg, transparent 0%, rgba(255,45,120,0.02) 25%, rgba(168,85,247,0.04) 50%, rgba(255,45,120,0.03) 75%, rgba(0,212,255,0.03) 100%);
-  pointer-events:none;z-index:-1;
-  animation:mmAmbient 12s ease-in-out infinite alternate;
-}
-@keyframes mmAmbient{
-  0%{filter:hue-rotate(0deg);}
-  100%{filter:hue-rotate(-25deg);}
+  flex:1 0 auto;
 }
 
 /* Header */
