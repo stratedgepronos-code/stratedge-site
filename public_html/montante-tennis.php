@@ -331,7 +331,7 @@ table.mt-table{width:100%;border-collapse:collapse;}
 <div class="mt-stats">
   <div class="stat-card bankroll">
     <div class="stat-val" style="color:#00d4ff;"><?= number_format($currentBankroll, 2, ',', ' ') ?>€</div>
-    <div class="stat-label">Bankroll</div>
+    <div class="stat-label">Objectif</div>
   </div>
   <div class="stat-card profit">
     <div class="stat-val <?= $totalProfit >= 0 ? 'profit-pos' : 'profit-neg' ?>"><?= ($totalProfit >= 0 ? '+' : '') . number_format($totalProfit, 2, ',', ' ') ?>€</div>
