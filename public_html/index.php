@@ -73,8 +73,8 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .nav-inner { max-width: 1200px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; height: 70px; }
     .logo { text-decoration: none; display: flex; align-items: center; }
     .logo-img { height: 45px; width: auto; }
-    .nav-links { display: flex; gap: 1.5rem; list-style: none; align-items: center; }
-    .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 1rem; font-weight: 500; letter-spacing: 1px; text-transform: uppercase; transition: color 0.3s; }
+    .nav-links { display: flex; gap: 1.1rem; list-style: none; align-items: center; }
+    .nav-links a { color: var(--text-secondary); text-decoration: none; font-size: 0.92rem; font-weight: 500; letter-spacing: 0.5px; transition: color 0.3s; white-space:nowrap; }
     .nav-links a:hover { color: var(--neon-green); }
     .nav-cta { background: linear-gradient(135deg, var(--neon-green), var(--neon-green-dim)); color: var(--bg-dark) !important; padding: 0.5rem 1.2rem; border-radius: 6px; font-weight: 700; }
     .nav-member { background: rgba(255,45,120,0.1); border: 1px solid var(--border-subtle); color: var(--neon-green) !important; padding: 0.5rem 1.2rem; border-radius: 6px; font-weight: 700; display: flex; align-items: center; gap: 0.5rem; }
@@ -676,9 +676,11 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     @media (max-width: 1200px) {
       .hero-visual { width: min(700px, min(42vw, 72vh)); }
     }
+    @media (max-width: 1100px) {
+      .hamburger { display: flex; } .nav-links { display: none; }
+    }
     @media (max-width: 900px) {
       html,body{overflow-x:hidden;}
-      .hamburger { display: flex; } .nav-links { display: none; }
       .hero { height: auto; min-height: auto; overflow: hidden; width:100%; }
       .hero-inner { padding: 80px 1.2rem 2.5rem; }
       .hero-text { text-align: center; max-width: 100%; }
@@ -892,6 +894,45 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     <?php endif; ?>
   </div>
 </div>
+
+<!-- Mobile bottom tab bar -->
+<div class="home-mob-tabs">
+  <a href="/bets.php" class="hmt-lnk"><span class="hmt-ico">🔥</span> Bets</a>
+  <a href="/prono-commu.php" class="hmt-lnk"><span class="hmt-ico">⚽</span> Prono</a>
+  <a href="/giveaway.php" class="hmt-lnk"><span class="hmt-ico">🎁</span> GiveAway</a>
+  <a href="/montante-tennis.php" class="hmt-lnk"><span class="hmt-ico">🎾</span> Montante</a>
+  <?php if (isLoggedIn()): ?>
+  <a href="/dashboard.php" class="hmt-lnk"><span class="hmt-ico">📊</span> Compte</a>
+  <?php else: ?>
+  <a href="/login.php" class="hmt-lnk"><span class="hmt-ico">🔐</span> Connexion</a>
+  <?php endif; ?>
+</div>
+<style>
+.home-mob-tabs{display:none;}
+@media(max-width:900px){
+  .home-mob-tabs{
+    display:flex;position:fixed;bottom:0;left:0;right:0;z-index:300;
+    background:rgba(5,8,16,0.97);backdrop-filter:blur(20px);
+    border-top:1px solid rgba(255,45,120,0.15);
+    justify-content:space-around;align-items:stretch;
+    height:calc(60px + env(safe-area-inset-bottom,0px));
+    padding-bottom:env(safe-area-inset-bottom,0px);
+    box-shadow:0 -4px 20px rgba(0,0,0,0.5);
+  }
+  .home-mob-tabs .hmt-lnk{
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:0.2rem;flex:1;
+    padding:0.4rem 0;
+    font-size:0.62rem;font-weight:700;letter-spacing:0.3px;
+    color:rgba(255,255,255,0.5);text-decoration:none;
+    min-height:52px;
+    -webkit-tap-highlight-color:transparent;
+  }
+  .home-mob-tabs .hmt-lnk:hover{color:#ff2d78;}
+  .home-mob-tabs .hmt-ico{font-size:1.25rem;line-height:1;}
+  body{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px));}
+}
+</style>
 
 <!-- HERO -->
 <section class="hero">
