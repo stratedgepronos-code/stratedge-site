@@ -66,19 +66,22 @@ body.menu-open{overflow:hidden;}
 }
 .mobile-menu.open{transform:translateX(0);}
 
-/* Ambient background animé bleu→rose qui respire */
+/* Ambient background animé : couvre TOUT le drawer (haut, milieu, bas) */
 .mobile-menu::before{
   content:'';position:absolute;inset:0;
   background:
-    radial-gradient(ellipse 400px 300px at 100% 0%, rgba(255,45,120,0.22), transparent 60%),
-    radial-gradient(ellipse 500px 400px at 0% 40%, rgba(0,212,255,0.12), transparent 60%),
-    radial-gradient(ellipse 300px 400px at 100% 100%, rgba(168,85,247,0.1), transparent 60%);
+    radial-gradient(ellipse 400px 280px at 100% 0%, rgba(255,45,120,0.22), transparent 60%),
+    radial-gradient(ellipse 500px 380px at 0% 25%, rgba(0,212,255,0.14), transparent 60%),
+    radial-gradient(ellipse 380px 320px at 100% 50%, rgba(168,85,247,0.12), transparent 60%),
+    radial-gradient(ellipse 440px 340px at 0% 75%, rgba(255,45,120,0.14), transparent 60%),
+    radial-gradient(ellipse 420px 300px at 100% 100%, rgba(0,212,255,0.12), transparent 60%),
+    linear-gradient(180deg, transparent 0%, rgba(255,45,120,0.02) 50%, rgba(168,85,247,0.04) 100%);
   pointer-events:none;z-index:0;
   animation:mmAmbient 12s ease-in-out infinite alternate;
 }
 @keyframes mmAmbient{
   0%{filter:hue-rotate(0deg);}
-  100%{filter:hue-rotate(-20deg);}
+  100%{filter:hue-rotate(-25deg);}
 }
 
 /* Ligne scanline verticale qui descend */
@@ -218,17 +221,17 @@ body.menu-open{overflow:hidden;}
 .mm-badge-tennis{background:rgba(57,255,20,0.1);border:1px solid rgba(57,255,20,0.3);color:#39ff14;box-shadow:0 0 10px rgba(57,255,20,0.2);}
 .mm-badge-fun{background:rgba(168,85,247,0.1);border:1px solid rgba(168,85,247,0.3);color:#c084fc;box-shadow:0 0 10px rgba(168,85,247,0.2);}
 
-/* Stats live */
-.mm-stats{
-  margin:0 14px 14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;
+/* Stats par TIPSTER (3 cards) */
+.mm-tipsters{
+  margin:0 14px 10px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;
   position:relative;z-index:2;
 }
-.mm-stat{
-  padding:11px 6px;border-radius:12px;text-align:center;
+.mm-tipster{
+  padding:10px 6px 11px;border-radius:12px;text-align:center;
   position:relative;overflow:hidden;
   transition:transform .2s;
 }
-.mm-stat::before{
+.mm-tipster::before{
   content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;
   background:linear-gradient(90deg,transparent,rgba(255,255,255,0.05),transparent);
   animation:mmStatShimmer 5s linear infinite;
@@ -237,18 +240,85 @@ body.menu-open{overflow:hidden;}
   0%,100%{left:-100%;}
   50%{left:100%;}
 }
-.mm-stat-win{background:rgba(0,212,106,0.08);border:1px solid rgba(0,212,106,0.25);box-shadow:0 0 12px rgba(0,212,106,0.1) inset;}
-.mm-stat-roi{background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.25);box-shadow:0 0 12px rgba(0,212,255,0.1) inset;}
-.mm-stat-live{background:rgba(255,45,120,0.08);border:1px solid rgba(255,45,120,0.25);box-shadow:0 0 12px rgba(255,45,120,0.1) inset;}
-.mm-stat-val{
-  font-family:'Orbitron',sans-serif;font-size:1rem;font-weight:900;line-height:1;
-  display:flex;align-items:center;justify-content:center;gap:4px;
+.mm-t-multi{background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.25);box-shadow:0 0 12px rgba(0,212,255,0.1) inset;}
+.mm-t-tennis{background:rgba(57,255,20,0.08);border:1px solid rgba(57,255,20,0.25);box-shadow:0 0 12px rgba(57,255,20,0.1) inset;}
+.mm-t-fun{background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.25);box-shadow:0 0 12px rgba(168,85,247,0.1) inset;}
+.mm-t-head{display:flex;align-items:center;justify-content:center;gap:4px;margin-bottom:6px;position:relative;z-index:2;}
+.mm-t-emoji{font-size:0.78rem;line-height:1;}
+.mm-t-name{
+  font-family:'Orbitron',sans-serif;font-size:0.58rem;font-weight:900;letter-spacing:1.5px;
+  color:rgba(255,255,255,0.5);
+}
+.mm-t-multi .mm-t-name{color:rgba(0,212,255,0.8);}
+.mm-t-tennis .mm-t-name{color:rgba(57,255,20,0.8);}
+.mm-t-fun .mm-t-name{color:rgba(168,85,247,0.9);}
+.mm-t-stats{position:relative;z-index:2;}
+.mm-t-val{
+  font-family:'Orbitron',sans-serif;font-size:1.05rem;font-weight:900;line-height:1;
+}
+.mm-t-multi .mm-t-val{color:#00d4ff;text-shadow:0 0 8px rgba(0,212,255,0.5);}
+.mm-t-tennis .mm-t-val{color:#39ff14;text-shadow:0 0 8px rgba(57,255,20,0.5);}
+.mm-t-fun .mm-t-val{color:#c084fc;text-shadow:0 0 8px rgba(168,85,247,0.5);}
+.mm-t-roi{
+  font-family:'Share Tech Mono',monospace;font-size:0.6rem;font-weight:600;
+  margin-top:3px;color:rgba(255,255,255,0.45);
+  letter-spacing:0.3px;
+}
+
+/* Bets en cours — bloc dédié avec dot pulse */
+.mm-live{
+  display:flex;align-items:center;justify-content:space-between;
+  margin:0 14px 14px;padding:13px 14px;border-radius:12px;
+  background:linear-gradient(135deg,rgba(255,45,120,0.1) 0%,rgba(255,45,120,0.03) 100%);
+  border:1px solid rgba(255,45,120,0.25);
+  position:relative;overflow:hidden;z-index:2;
+  text-decoration:none;
+  box-shadow:0 0 16px rgba(255,45,120,0.12) inset;
+  transition:all .2s;
+}
+.mm-live:hover{background:linear-gradient(135deg,rgba(255,45,120,0.14) 0%,rgba(255,45,120,0.05) 100%);box-shadow:0 0 20px rgba(255,45,120,0.2) inset,0 0 20px rgba(255,45,120,0.15);}
+.mm-live::before{
+  content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,45,120,0.15),transparent);
+  animation:mmLiveShimmer 3.5s ease-in-out infinite;
+}
+@keyframes mmLiveShimmer{
+  0%,100%{left:-60%;}
+  50%{left:120%;}
+}
+.mm-live-left{display:flex;align-items:center;gap:11px;position:relative;z-index:2;}
+.mm-live-pulse{
+  width:12px;height:12px;border-radius:50%;background:#ff2d78;
+  box-shadow:0 0 12px #ff2d78,0 0 4px rgba(255,255,255,0.4) inset;
+  animation:mmLivePulse 1.2s ease-in-out infinite;
+  position:relative;flex-shrink:0;
+}
+.mm-live-pulse::before{
+  content:'';position:absolute;inset:-4px;border-radius:50%;
+  background:rgba(255,45,120,0.3);
+  animation:mmLiveRing 1.2s ease-out infinite;
+}
+@keyframes mmLivePulse{
+  0%,100%{transform:scale(1);}
+  50%{transform:scale(1.15);}
+}
+@keyframes mmLiveRing{
+  0%{transform:scale(0.8);opacity:0.6;}
+  100%{transform:scale(2);opacity:0;}
+}
+.mm-live-txt{display:flex;flex-direction:column;gap:2px;}
+.mm-live-lbl{
+  font-family:'Orbitron',sans-serif;font-size:0.68rem;font-weight:900;letter-spacing:2px;
+  color:#ff2d78;text-shadow:0 0 6px rgba(255,45,120,0.4);
+}
+.mm-live-sub{font-size:0.72rem;color:var(--txt3);font-weight:500;}
+.mm-live-count{
+  font-family:'Orbitron',sans-serif;font-size:1.6rem;font-weight:900;
+  color:#ff2d78;line-height:1;text-shadow:0 0 10px rgba(255,45,120,0.5);
   position:relative;z-index:2;
 }
-.mm-stat-win .mm-stat-val{color:#00d46a;text-shadow:0 0 8px rgba(0,212,106,0.5);}
-.mm-stat-roi .mm-stat-val{color:#00d4ff;text-shadow:0 0 8px rgba(0,212,255,0.5);}
-.mm-stat-live .mm-stat-val{color:var(--pink);text-shadow:0 0 8px rgba(255,45,120,0.5);}
-.mm-stat-lbl{font-size:0.58rem;color:var(--txt3);margin-top:4px;letter-spacing:1px;text-transform:uppercase;position:relative;z-index:2;}
+
+/* Dot pulse générique (pour icons) */
 .mm-live-dot{
   width:6px;height:6px;border-radius:50%;background:var(--pink);
   box-shadow:0 0 8px var(--pink);animation:mmPulse 1.2s ease-in-out infinite;
@@ -450,7 +520,9 @@ body.menu-open{overflow:hidden;}
   .mob-tabs .s-link{font-size:0.56rem;gap:0.15rem;}
   .mob-tabs .s-link .ico{font-size:1.1rem;}
   .mobile-menu{width:94vw;}
-  .mm-stat-val{font-size:0.9rem;}
-  .mm-stat-lbl{font-size:0.52rem;}
+  .mm-t-val{font-size:0.95rem;}
+  .mm-t-name{font-size:0.54rem;}
+  .mm-t-roi{font-size:0.55rem;}
+  .mm-live-count{font-size:1.4rem;}
 }
 </style>

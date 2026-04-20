@@ -13,34 +13,43 @@ if (!empty($membre)) {
     try {
         $_db = getDB();
 
-        // Stats winrate + ROI sur les 30 derniers jours
+        // ── Stats par tipster (30 derniers jours) ──
+        $_tipsterStats = ['multi'=>['w'=>0,'l'=>0,'roi'=>0], 'tennis'=>['w'=>0,'l'=>0,'roi'=>0], 'fun'=>['w'=>0,'l'=>0,'roi'=>0]];
         $_statsStmt = $_db->prepare("
-            SELECT resultat, cote FROM bets
+            SELECT categorie, resultat, cote FROM bets
             WHERE resultat IN ('gagne','perdu','annule')
               AND date_resultat >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+              AND categorie IN ('multi','tennis','fun')
         ");
         $_statsStmt->execute();
         $_rows = $_statsStmt->fetchAll();
-        $_g = 0; $_p = 0; $_gain = 0.0; $_mise = 0;
+        $_gains = ['multi'=>0.0,'tennis'=>0.0,'fun'=>0.0];
+        $_mises = ['multi'=>0,'tennis'=>0,'fun'=>0];
         foreach ($_rows as $_r) {
+            $_cat = $_r['categorie'];
+            if (!isset($_tipsterStats[$_cat])) continue;
             if ($_r['resultat'] === 'annule') continue;
-            $_mise++;
+            $_mises[$_cat]++;
             $_c = (float) str_replace(',', '.', $_r['cote'] ?? 0);
-            if ($_r['resultat'] === 'gagne') { $_g++; $_gain += ($_c - 1); }
-            else { $_p++; $_gain -= 1; }
+            if ($_r['resultat'] === 'gagne') {
+                $_tipsterStats[$_cat]['w']++;
+                $_gains[$_cat] += ($_c - 1);
+            } else {
+                $_tipsterStats[$_cat]['l']++;
+                $_gains[$_cat] -= 1;
+            }
         }
-        $_winrate = ($_g + $_p) > 0 ? round($_g * 100 / ($_g + $_p)) : 0;
-        $_roi = $_mise > 0 ? round($_gain * 100 / $_mise) : 0;
+        foreach ($_tipsterStats as $_k => $_s) {
+            $_total = $_s['w'] + $_s['l'];
+            $_tipsterStats[$_k]['winrate'] = $_total > 0 ? round($_s['w'] * 100 / $_total) : 0;
+            $_tipsterStats[$_k]['roi'] = $_mises[$_k] > 0 ? round($_gains[$_k] * 100 / $_mises[$_k]) : 0;
+            $_tipsterStats[$_k]['total'] = $_total;
+        }
 
         // Bets live actifs
         $_liveStmt = $_db->query("SELECT COUNT(*) FROM bets WHERE actif=1 AND (resultat IS NULL OR resultat='' OR resultat NOT IN ('gagne','perdu','annule'))");
         $_liveCount = (int) $_liveStmt->fetchColumn();
-
-        $_mmStats = [
-            'winrate' => $_winrate,
-            'roi'     => $_roi,
-            'live'    => $_liveCount,
-        ];
+        $_mmStats = ['live' => $_liveCount];
 
         // Nouveaux bets < 6h pour badge NEW
         $_newStmt = $_db->query("SELECT COUNT(*) FROM bets WHERE actif=1 AND date_post >= DATE_SUB(NOW(), INTERVAL 6 HOUR)");
@@ -66,7 +75,6 @@ if (!empty($membre)) {
                 $_mmBadge = 'tennis';
                 $_mmAboLabel = 'DAILY';
             }
-            // Durée restante
             if (!empty($_abo['date_fin']) && $_mmAboLabel) {
                 $_fin = new DateTime($_abo['date_fin']);
                 $_now = new DateTime('now');
@@ -84,7 +92,7 @@ if (!empty($membre)) {
             $_mmGiveawayActif = !empty($_gw);
         }
     } catch (Exception $_e) {
-        // Silencieux - on n'affiche juste pas les stats si erreur
+        // Silencieux
     }
 }
 ?>
@@ -160,22 +168,52 @@ if (!empty($membre)) {
     </div>
   </div>
 
-  <?php if ($_mmStats): ?>
-  <!-- Stats live -->
-  <div class="mm-stats">
-    <div class="mm-stat mm-stat-win">
-      <div class="mm-stat-val"><?= $_mmStats['winrate'] ?>%</div>
-      <div class="mm-stat-lbl">Winrate</div>
+  <?php if (!empty($_tipsterStats)): ?>
+  <!-- Stats par tipster -->
+  <div class="mm-tipsters">
+    <div class="mm-tipster mm-t-multi">
+      <div class="mm-t-head">
+        <div class="mm-t-emoji">⚽</div>
+        <div class="mm-t-name">MULTI</div>
+      </div>
+      <div class="mm-t-stats">
+        <div class="mm-t-val"><?= $_tipsterStats['multi']['winrate'] ?>%</div>
+        <div class="mm-t-roi"><?= $_tipsterStats['multi']['roi'] >= 0 ? '+' : '' ?><?= $_tipsterStats['multi']['roi'] ?>% ROI</div>
+      </div>
     </div>
-    <div class="mm-stat mm-stat-roi">
-      <div class="mm-stat-val"><?= $_mmStats['roi'] >= 0 ? '+' : '' ?><?= $_mmStats['roi'] ?></div>
-      <div class="mm-stat-lbl">ROI</div>
+    <div class="mm-tipster mm-t-tennis">
+      <div class="mm-t-head">
+        <div class="mm-t-emoji">🎾</div>
+        <div class="mm-t-name">TENNIS</div>
+      </div>
+      <div class="mm-t-stats">
+        <div class="mm-t-val"><?= $_tipsterStats['tennis']['winrate'] ?>%</div>
+        <div class="mm-t-roi"><?= $_tipsterStats['tennis']['roi'] >= 0 ? '+' : '' ?><?= $_tipsterStats['tennis']['roi'] ?>% ROI</div>
+      </div>
     </div>
-    <div class="mm-stat mm-stat-live">
-      <div class="mm-stat-val"><?php if ($_mmStats['live'] > 0): ?><span class="mm-live-dot"></span><?php endif; ?><?= $_mmStats['live'] ?></div>
-      <div class="mm-stat-lbl">Live</div>
+    <div class="mm-tipster mm-t-fun">
+      <div class="mm-t-head">
+        <div class="mm-t-emoji">🎲</div>
+        <div class="mm-t-name">FUN</div>
+      </div>
+      <div class="mm-t-stats">
+        <div class="mm-t-val"><?= $_tipsterStats['fun']['winrate'] ?>%</div>
+        <div class="mm-t-roi"><?= $_tipsterStats['fun']['roi'] >= 0 ? '+' : '' ?><?= $_tipsterStats['fun']['roi'] ?>% ROI</div>
+      </div>
     </div>
   </div>
+
+  <!-- Bets en cours -->
+  <a href="/bets.php" class="mm-live">
+    <div class="mm-live-left">
+      <span class="mm-live-pulse"></span>
+      <div class="mm-live-txt">
+        <div class="mm-live-lbl">BETS EN COURS</div>
+        <div class="mm-live-sub"><?= $_mmStats['live'] ?> bet<?= $_mmStats['live'] > 1 ? 's' : '' ?> <?= $_mmStats['live'] > 1 ? 'actifs' : 'actif' ?></div>
+      </div>
+    </div>
+    <div class="mm-live-count"><?= $_mmStats['live'] ?></div>
+  </a>
   <?php endif; ?>
   <?php endif; ?>
 
