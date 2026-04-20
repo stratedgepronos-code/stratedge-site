@@ -842,7 +842,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       <li><a href="historique.php">📋 Historique</a></li>
       <li><a href="giveaway.php">🎁 GiveAway</a></li>
       <li><a href="prono-commu.php">⚽ Prono commu</a></li>
-      <li><a href="montante-tennis.php">🎾 Montante</a></li>
+      <li><a href="montante.php">📈 Montante</a></li>
       <?php if (isLoggedIn()): ?>
         <?php if (isAdmin()): ?>
           <li><a href="panel-x9k3m/index.php" style="background:rgba(255,193,7,0.15);border:1px solid rgba(255,193,7,0.3);color:#ffc107;padding:0.4rem 0.9rem;border-radius:6px;font-weight:700;">⚙️ Panel</a></li>
@@ -879,7 +879,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       <a href="/historique.php" class="mm-lnk"><div class="mm-ico">📋</div><div class="mm-lnk-lbl">Historique</div><div class="mm-lnk-chev">›</div></a>
       <a href="/giveaway.php" class="mm-lnk"><div class="mm-ico">🎁</div><div class="mm-lnk-lbl">GiveAway</div><div class="mm-lnk-chev">›</div></a>
       <a href="/prono-commu.php" class="mm-lnk"><div class="mm-ico">⚽</div><div class="mm-lnk-lbl">Prono de la commu</div><div class="mm-lnk-chev">›</div></a>
-      <a href="/montante-tennis.php" class="mm-lnk"><div class="mm-ico">🎾</div><div class="mm-lnk-lbl">Montante Tennis</div><div class="mm-lnk-chev">›</div></a>
+      <a href="/montante.php" class="mm-lnk"><div class="mm-ico">📈</div><div class="mm-lnk-lbl">Montante</div><div class="mm-lnk-chev">›</div></a>
     </div>
 
     <?php if (isLoggedIn()): ?>
@@ -918,7 +918,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
   <a href="/bets.php" class="hmt-lnk"><span class="hmt-ico">🔥</span> Bets</a>
   <a href="/prono-commu.php" class="hmt-lnk"><span class="hmt-ico">⚽</span> Prono</a>
   <a href="/giveaway.php" class="hmt-lnk"><span class="hmt-ico">🎁</span> GiveAway</a>
-  <a href="/montante-tennis.php" class="hmt-lnk"><span class="hmt-ico">🎾</span> Montante</a>
+  <a href="/montante.php" class="hmt-lnk"><span class="hmt-ico">📈</span> Montante</a>
   <?php if (isLoggedIn()): ?>
   <a href="/dashboard.php" class="hmt-lnk"><span class="hmt-ico">📊</span> Compte</a>
   <?php else: ?>

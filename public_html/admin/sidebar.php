@@ -185,7 +185,7 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
     </a>
 
     <?php
-    $bettingOpenPages = ['poster-bet','creer-card','edit-bet-image','prono-commu-admin','montante-tennis','ht-tracker'];
+    $bettingOpenPages = ['poster-bet','creer-card','edit-bet-image','prono-commu-admin','montante-tennis','montante-foot','ht-tracker'];
     if (function_exists('isSuperAdmin') && isSuperAdmin()) {
         $bettingOpenPages[] = 'historique';
     }
@@ -202,6 +202,9 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
         <a href="prono-commu-admin.php" <?= ($pageActive==='prono-commu-admin') ?'class="active"':'' ?>><span>⚽</span> Prono de la commu</a>
         <?php if (isSuperAdmin() || getAdminRole() === 'admin_tennis'): ?>
         <a href="montante-tennis.php" <?= ($pageActive==='montante-tennis') ?'class="active"':'' ?>><span>🎾</span> Montante Tennis</a>
+        <?php endif; ?>
+        <?php if (isSuperAdmin() || getAdminRole() === 'admin_foot'): ?>
+        <a href="montante-foot.php" <?= ($pageActive==='montante-foot') ?'class="active"':'' ?>><span>⚽</span> Montante Foot</a>
         <?php endif; ?>
         <a href="edit-bet-image.php" <?= ($pageActive==='edit-bet-image') ?'class="active"':'' ?>><span>🖼️</span> Modifier image bet</a>
         <a href="ht-tracker.php" <?= ($pageActive==='ht-tracker') ?'class="active"':'' ?> style="<?= ($pageActive==='ht-tracker') ? '' : 'color:rgba(0,212,255,0.85);' ?>"><span>🎯</span> Bet Mi-Temps</a>

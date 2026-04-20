@@ -104,7 +104,7 @@ if (!empty($membre)) {
     <a href="/historique.php" class="nav-lnk <?= $_cp==='historique'?'active':'' ?>">📋 Historique</a>
     <a href="/giveaway.php" class="nav-lnk <?= $_cp==='giveaway'?'active':'' ?>">🎁 GiveAway</a>
     <a href="/prono-commu.php" class="nav-lnk <?= $_cp==='pronocommu'?'active':'' ?>">⚽ Prono commu</a>
-    <a href="/montante-tennis.php" class="nav-lnk <?= $_cp==='montante'?'active':'' ?>">🎾 Montante</a>
+    <a href="/montante.php" class="nav-lnk <?= $_cp==='montante'?'active':'' ?>">📈 Montante</a>
   </div>
 
   <div class="nav-acts">
@@ -241,9 +241,9 @@ if (!empty($membre)) {
       <div class="mm-lnk-lbl">Prono de la commu</div>
       <div class="mm-lnk-chev">›</div>
     </a>
-    <a href="/montante-tennis.php" class="mm-lnk <?= $_cp==='montante'?'active':'' ?>">
-      <div class="mm-ico">🎾</div>
-      <div class="mm-lnk-lbl">Montante Tennis</div>
+    <a href="/montante.php" class="mm-lnk <?= $_cp==='montante'?'active':'' ?>">
+      <div class="mm-ico">📈</div>
+      <div class="mm-lnk-lbl">Montante</div>
       <div class="mm-lnk-chev">›</div>
     </a>
   </div>
@@ -319,7 +319,7 @@ if (!empty($membre)) {
   <a class="s-link <?= $_cp==='bets'?'active':'' ?>" href="/bets.php"><span class="ico">🔥</span> Bets</a>
   <a class="s-link <?= $_cp==='pronocommu'?'active':'' ?>" href="/prono-commu.php"><span class="ico">⚽</span> Prono</a>
   <a class="s-link <?= $_cp==='giveaway'?'active':'' ?>" href="/giveaway.php"><span class="ico">🎁</span> GiveAway</a>
-  <a class="s-link <?= $_cp==='montante'?'active':'' ?>" href="/montante-tennis.php"><span class="ico">🎾</span> Montante</a>
+  <a class="s-link <?= $_cp==='montante'?'active':'' ?>" href="/montante.php"><span class="ico">📈</span> Montante</a>
   <?php if (!empty($membre)): ?>
   <a class="s-link <?= $_cp==='dashboard' && !in_array($_GET['tab']??'',['profil','bankroll'])?'active':'' ?>" href="/dashboard.php"><span class="ico">📊</span> Compte</a>
   <?php else: ?>
@@ -361,7 +361,7 @@ if (!empty($membre)) {
     <div class="side-sect">COMMUNAUTÉ</div>
     <a class="s-link <?= $_cp==='giveaway'?'active':'' ?>" href="/giveaway.php"><span class="ico">🎁</span> GiveAway</a>
     <a class="s-link <?= $_cp==='pronocommu'?'active':'' ?>" href="/prono-commu.php"><span class="ico">⚽</span> Prono de la commu</a>
-    <a class="s-link <?= $_cp==='montante'?'active':'' ?>" href="/montante-tennis.php"><span class="ico">🎾</span> Montante Tennis</a>
+    <a class="s-link <?= $_cp==='montante'?'active':'' ?>" href="/montante.php"><span class="ico">📈</span> Montante</a>
 
     <div class="side-sect">AUTRES</div>
     <?php if (!empty($membre)): ?>
