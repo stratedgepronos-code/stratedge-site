@@ -158,12 +158,59 @@ table.mt-table{width:100%;border-collapse:collapse;}
 .mt-table td{padding:0.75rem 0.8rem;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.9rem;color:var(--txt2);}
 .mt-table tr:last-child td{border-bottom:none;}
 .mt-table .step-num{font-family:'Orbitron',sans-serif;font-weight:700;color:var(--txt);font-size:0.85rem;}
-.res-badge{padding:0.2rem 0.6rem;border-radius:6px;font-size:0.75rem;font-weight:700;}
-.res-gagne{background:rgba(0,200,100,0.12);color:#00c864;border:1px solid rgba(0,200,100,0.3);}
-.res-perdu{background:rgba(255,68,68,0.12);color:#ff4444;border:1px solid rgba(255,68,68,0.3);}
+.res-badge{padding:0.3rem 0.7rem;border-radius:8px;font-size:0.75rem;font-weight:700;position:relative;display:inline-block;}
+
+/* VICTOIRE — vert néon scintillant */
+.res-gagne{
+  background:linear-gradient(135deg,rgba(57,255,20,0.18),rgba(0,212,106,0.08));
+  color:#39ff14;
+  border:1px solid rgba(57,255,20,0.55);
+  text-shadow:0 0 8px rgba(57,255,20,0.7);
+  box-shadow:0 0 14px rgba(57,255,20,0.35),0 0 4px rgba(57,255,20,0.3) inset;
+  animation:winGlow 2.2s ease-in-out infinite;
+  overflow:hidden;
+}
+.res-gagne::before{
+  content:'';position:absolute;top:0;left:-100%;
+  width:60%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(57,255,20,0.35),transparent);
+  animation:winShine 3s ease-in-out infinite;
+}
+@keyframes winGlow{
+  0%,100%{box-shadow:0 0 12px rgba(57,255,20,0.3),0 0 4px rgba(57,255,20,0.25) inset;border-color:rgba(57,255,20,0.5);}
+  50%{box-shadow:0 0 22px rgba(57,255,20,0.65),0 0 30px rgba(57,255,20,0.25),0 0 6px rgba(57,255,20,0.4) inset;border-color:rgba(57,255,20,0.9);}
+}
+@keyframes winShine{
+  0%,100%{left:-100%;}
+  50%{left:140%;}
+}
+
+/* DEFAITE — rouge plus sobre, sans animation */
+.res-perdu{
+  background:rgba(255,68,68,0.12);
+  color:#ff6b6b;
+  border:1px solid rgba(255,68,68,0.3);
+  opacity:0.85;
+}
+
 .res-annule{background:rgba(245,158,11,0.12);color:#f59e0b;border:1px solid rgba(245,158,11,0.3);}
-.res-encours{background:rgba(0,212,255,0.1);color:#00d4ff;border:1px solid rgba(0,212,255,0.25);}
+
+/* EN COURS — cyan pulse subtil */
+.res-encours{
+  background:rgba(0,212,255,0.1);
+  color:#00d4ff;
+  border:1px solid rgba(0,212,255,0.35);
+  animation:pendingPulse 2s ease-in-out infinite;
+}
+@keyframes pendingPulse{
+  0%,100%{box-shadow:0 0 8px rgba(0,212,255,0.2);border-color:rgba(0,212,255,0.3);}
+  50%{box-shadow:0 0 14px rgba(0,212,255,0.45);border-color:rgba(0,212,255,0.6);}
+}
+
+/* Profit cell — vert qui brille quand positif */
 .profit-cell{font-family:'Space Mono',monospace;font-weight:700;font-size:0.82rem;}
+.profit-cell.profit-win{color:#39ff14;text-shadow:0 0 8px rgba(57,255,20,0.4);}
+.profit-cell.profit-lose{color:#ff6b6b;}
 
 .mt-progress{margin-bottom:2rem;}
 .progress-bar{height:6px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;margin-top:0.5rem;}
