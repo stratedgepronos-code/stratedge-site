@@ -8,7 +8,6 @@ $_cp = $currentPage ?? '';
     <span class="nav-logo-fb" style="display:none;"><em>STRAT</em>EDGE</span>
   </a>
 
-  <!-- Liens centraux desktop (≥1024px) -->
   <div class="nav-center">
     <a href="/bets.php" class="nav-lnk <?= $_cp==='bets'?'active':'' ?>">🔥 Bets</a>
     <a href="/historique.php" class="nav-lnk <?= $_cp==='historique'?'active':'' ?>">📋 Historique</a>
@@ -18,8 +17,8 @@ $_cp = $currentPage ?? '';
   </div>
 
   <div class="nav-acts">
-    <a href="https://x.com/strat_edge_" target="_blank" rel="noopener noreferrer" class="nav-x" aria-label="Suivre StratEdge sur X (Twitter)">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+    <a href="https://x.com/strat_edge_" target="_blank" rel="noopener noreferrer" class="nav-x" aria-label="Suivre sur X">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
     </a>
     <?php if (empty($membre)): ?>
       <a href="/souscrire.php" class="nav-btn">Souscrire</a>
@@ -34,15 +33,28 @@ $_cp = $currentPage ?? '';
       <a href="/register.php" class="nav-btn nav-btn-pink">S'inscrire</a>
     <?php endif; ?>
   </div>
-  <button class="hamburger" onclick="toggleMenu()" aria-label="Menu"><span></span><span></span><span></span></button>
+  <button class="hamburger" id="btnHam" onclick="toggleMenu()" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
 </nav>
 
-<!-- Drawer mobile (redesigné) -->
+<!-- Overlay -->
+<div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+
+<!-- Drawer mobile -->
 <div class="mobile-menu" id="mobileMenu">
+  <div class="mm-head">
+    <div class="mm-head-title">MENU</div>
+    <button class="mm-close" onclick="closeMenu()" aria-label="Fermer">✕</button>
+  </div>
+
   <?php if (!empty($membre)): ?>
   <div class="mm-user">
     <div class="mm-av"><?php if (!empty($avatarUrl)): ?><img src="<?= $avatarUrl ?>?v=<?= time() ?>" alt=""><?php else: ?><?= strtoupper(substr($membre['nom'],0,1)) ?><?php endif; ?></div>
-    <div class="mm-info"><div class="mm-name"><?= htmlspecialchars($membre['nom']) ?></div><div class="mm-email"><?= htmlspecialchars($membre['email']) ?></div></div>
+    <div class="mm-info">
+      <div class="mm-name"><?= htmlspecialchars($membre['nom']) ?></div>
+      <div class="mm-email"><?= htmlspecialchars($membre['email']) ?></div>
+    </div>
   </div>
   <?php endif; ?>
 
@@ -77,7 +89,7 @@ $_cp = $currentPage ?? '';
   </div>
 </div>
 
-<!-- Mobile bottom tab bar — 5 liens essentiels -->
+<!-- Mobile bottom tab bar -->
 <div class="mob-tabs">
   <a class="s-link <?= $_cp==='bets'?'active':'' ?>" href="/bets.php"><span class="ico">🔥</span> Bets</a>
   <a class="s-link <?= $_cp==='pronocommu'?'active':'' ?>" href="/prono-commu.php"><span class="ico">⚽</span> Prono</a>
@@ -90,7 +102,7 @@ $_cp = $currentPage ?? '';
   <?php endif; ?>
 </div>
 
-<!-- Mascotte en position fixe -->
+<!-- Mascotte -->
 <div class="mascotte-bg"><img src="/assets/images/mascotte.png" alt=""></div>
 
 <div class="app">
@@ -139,30 +151,39 @@ $_cp = $currentPage ?? '';
 </aside>
 <main class="content">
 <script>
-function toggleMenu(){
-  var m = document.getElementById('mobileMenu');
-  if (m) m.classList.toggle('open');
-  document.body.style.overflow = m && m.classList.contains('open') ? 'hidden' : '';
-}
-document.addEventListener('click', function(e){
-  var m = document.getElementById('mobileMenu');
-  var btn = document.querySelector('.hamburger');
-  if (!m || !m.classList.contains('open')) return;
-  if ((btn && btn.contains(e.target)) || m.contains(e.target)) return;
-  m.classList.remove('open');
-  document.body.style.overflow = '';
-});
-document.querySelectorAll('#mobileMenu a').forEach(function(a){
-  a.addEventListener('click', function(){
-    var m = document.getElementById('mobileMenu');
-    if (m) m.classList.remove('open');
-    document.body.style.overflow = '';
+(function(){
+  var menu = document.getElementById('mobileMenu');
+  var overlay = document.getElementById('menuOverlay');
+  var btn = document.getElementById('btnHam');
+
+  window.toggleMenu = function(){
+    var isOpen = menu.classList.contains('open');
+    if (isOpen) closeMenu();
+    else openMenu();
+  };
+
+  window.openMenu = function(){
+    menu.classList.add('open');
+    overlay.classList.add('show');
+    btn.classList.add('open');
+    document.body.classList.add('menu-open');
+  };
+
+  window.closeMenu = function(){
+    menu.classList.remove('open');
+    overlay.classList.remove('show');
+    btn.classList.remove('open');
+    document.body.classList.remove('menu-open');
+  };
+
+  // Fermer au clic sur un lien
+  menu.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click', function(){ closeMenu(); });
   });
-});
-document.addEventListener('keydown', function(e){
-  if (e.key === 'Escape') {
-    var m = document.getElementById('mobileMenu');
-    if (m) { m.classList.remove('open'); document.body.style.overflow = ''; }
-  }
-});
+
+  // Fermer avec Escape
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && menu.classList.contains('open')) closeMenu();
+  });
+})();
 </script>
