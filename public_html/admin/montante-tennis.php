@@ -38,6 +38,7 @@ try {
           `step_number` INT UNSIGNED NOT NULL,
           `match_desc` VARCHAR(255) NOT NULL,
           `competition` VARCHAR(120) DEFAULT NULL,
+          `pronostic` VARCHAR(255) DEFAULT NULL,
           `cote` DECIMAL(10,2) NOT NULL,
           `mise` DECIMAL(10,2) NOT NULL,
           `resultat` ENUM('en_cours','gagne','perdu','annule') DEFAULT 'en_cours',
@@ -51,6 +52,13 @@ try {
     } else {
         throw $e;
     }
+}
+
+// Migration : ajout colonne pronostic si elle n'existe pas
+try {
+    $db->query("SELECT pronostic FROM montante_steps LIMIT 1");
+} catch (Throwable $e) {
+    try { $db->exec("ALTER TABLE montante_steps ADD COLUMN `pronostic` VARCHAR(255) DEFAULT NULL AFTER `competition`"); } catch (Throwable $e2) {}
 }
 
 // POST actions
@@ -89,6 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $montanteId = (int)($_POST['montante_id'] ?? 0);
         $matchDesc = trim($_POST['match_desc'] ?? '');
         $competition = trim($_POST['competition'] ?? '');
+        $pronostic = trim($_POST['pronostic'] ?? '');
         $cote = max(1.01, (float)($_POST['cote'] ?? 1.5));
         $mise = max(0.5, (float)($_POST['mise'] ?? 10));
         $dateMatch = $_POST['date_match'] ?? null;
@@ -101,8 +110,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $stmtMax->execute([$montanteId]);
             $nextStep = (int)$stmtMax->fetchColumn() + 1;
 
-            $stmt = $db->prepare("INSERT INTO montante_steps (montante_id, step_number, match_desc, competition, cote, mise, date_match, heure, analyse) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$montanteId, $nextStep, $matchDesc, $competition ?: null, $cote, $mise, $dateMatch ?: null, $heure ?: null, $analyse ?: null]);
+            $stmt = $db->prepare("INSERT INTO montante_steps (montante_id, step_number, match_desc, competition, pronostic, cote, mise, date_match, heure, analyse) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            $stmt->execute([$montanteId, $nextStep, $matchDesc, $competition ?: null, $pronostic ?: null, $cote, $mise, $dateMatch ?: null, $heure ?: null, $analyse ?: null]);
             $stepId = (int)$db->lastInsertId();
             $success = 'Étape ' . $nextStep . ' ajoutée : ' . clean($matchDesc);
             if ($stepId && $config = $db->query("SELECT * FROM montante_config WHERE id = " . (int)$montanteId)->fetch(PDO::FETCH_ASSOC)) {
@@ -167,6 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         if ($stepId) {
             $matchDesc = trim($_POST['match_desc'] ?? '');
             $competition = trim($_POST['competition'] ?? '');
+            $pronostic = trim($_POST['pronostic'] ?? '');
             $cote = max(1.01, (float)($_POST['cote'] ?? 1.5));
             $mise = max(0.5, (float)($_POST['mise'] ?? 10));
             $dateMatch = !empty($_POST['date_match']) ? $_POST['date_match'] : null;
@@ -174,8 +184,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $analyse = trim($_POST['analyse'] ?? '');
 
             if ($matchDesc !== '') {
-                $db->prepare("UPDATE montante_steps SET match_desc = ?, competition = ?, cote = ?, mise = ?, date_match = ?, heure = ?, analyse = ? WHERE id = ?")
-                   ->execute([$matchDesc, $competition ?: null, $cote, $mise, $dateMatch ?: null, $heure ?: null, $analyse ?: null, $stepId]);
+                $db->prepare("UPDATE montante_steps SET match_desc = ?, competition = ?, pronostic = ?, cote = ?, mise = ?, date_match = ?, heure = ?, analyse = ? WHERE id = ?")
+                   ->execute([$matchDesc, $competition ?: null, $pronostic ?: null, $cote, $mise, $dateMatch ?: null, $heure ?: null, $analyse ?: null, $stepId]);
                 header('Location: ' . parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH) . '?success_edit=1');
                 exit;
             } else {
@@ -317,6 +327,7 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
       <div class="form-grid">
         <div class="form-group"><label>Match</label><input type="text" name="match_desc" placeholder="Ex: Djokovic vs Nadal" required></div>
         <div class="form-group"><label>Compétition</label><input type="text" name="competition" placeholder="Ex: Roland-Garros"></div>
+        <div class="form-group" style="grid-column:1/-1;"><label>🎯 Pronostic</label><input type="text" name="pronostic" placeholder="Ex: Victoire Djokovic · Plus de 21,5 jeux · 2-0 sets · ..."></div>
         <div class="form-group"><label>Cote</label><input type="number" name="cote" step="0.01" min="1.01" value="1.50" required></div>
         <div class="form-group"><label>Mise (€)</label><input type="number" name="mise" step="0.01" min="0.5" value="<?= number_format((float)$config['mise_depart'], 2, '.', '') ?>" required></div>
         <div class="form-group"><label>Date du match</label>
@@ -361,6 +372,7 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
         <div class="form-grid">
           <div class="form-group"><label>Match</label><input type="text" name="match_desc" value="<?= htmlspecialchars($editStepRow['match_desc'] ?? '') ?>" required></div>
           <div class="form-group"><label>Compétition</label><input type="text" name="competition" value="<?= htmlspecialchars($editStepRow['competition'] ?? '') ?>"></div>
+          <div class="form-group" style="grid-column:1/-1;"><label>🎯 Pronostic</label><input type="text" name="pronostic" value="<?= htmlspecialchars($editStepRow['pronostic'] ?? '') ?>" placeholder="Ex: Victoire Djokovic · Plus de 21,5 jeux · 2-0 sets"></div>
           <div class="form-group"><label>Cote</label><input type="number" name="cote" step="0.01" min="1.01" value="<?= number_format((float)$editStepRow['cote'], 2, '.', '') ?>" required></div>
           <div class="form-group"><label>Mise (€)</label><input type="number" name="mise" step="0.01" min="0.5" value="<?= number_format((float)$editStepRow['mise'], 2, '.', '') ?>" required></div>
           <div class="form-group"><label>Date du match</label>

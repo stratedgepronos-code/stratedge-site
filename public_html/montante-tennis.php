@@ -147,6 +147,33 @@ foreach ($steps as $s) {
 .mt-current::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#00d46a,#00d4ff);border-radius:14px 14px 0 0;}
 .mt-current-tag{font-family:'Space Mono',monospace;font-size:0.75rem;letter-spacing:2px;text-transform:uppercase;color:#00d46a;margin-bottom:1rem;display:block;}
 .mt-current-match{font-family:'Orbitron',sans-serif;font-size:1.2rem;font-weight:700;margin-bottom:0.8rem;min-height:1.6em;color:#fff;word-break:break-word;}
+
+.mt-current-prono{
+  display:inline-flex;align-items:center;gap:12px;
+  margin-bottom:1rem;padding:10px 18px;
+  background:linear-gradient(135deg,rgba(57,255,20,0.12),rgba(0,212,106,0.04));
+  border:1px solid rgba(57,255,20,0.4);
+  border-radius:10px;
+  box-shadow:0 0 18px rgba(57,255,20,0.2),0 0 4px rgba(57,255,20,0.2) inset;
+  position:relative;overflow:hidden;
+  animation:pronoGlow 2.5s ease-in-out infinite;
+}
+.mt-current-prono::before{
+  content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(57,255,20,0.2),transparent);
+  animation:pronoShine 3.5s ease-in-out infinite;
+}
+@keyframes pronoGlow{
+  0%,100%{box-shadow:0 0 14px rgba(57,255,20,0.2),0 0 4px rgba(57,255,20,0.18) inset;border-color:rgba(57,255,20,0.4);}
+  50%{box-shadow:0 0 22px rgba(57,255,20,0.45),0 0 30px rgba(57,255,20,0.15),0 0 5px rgba(57,255,20,0.25) inset;border-color:rgba(57,255,20,0.7);}
+}
+@keyframes pronoShine{
+  0%,100%{left:-100%;}
+  50%{left:150%;}
+}
+.mt-prono-label{font-family:'Orbitron',sans-serif;font-size:0.72rem;letter-spacing:2.5px;color:rgba(57,255,20,0.75);text-transform:uppercase;font-weight:700;position:relative;z-index:2;}
+.mt-prono-value{font-family:'Rajdhani',sans-serif;font-weight:700;font-size:1.05rem;color:#39ff14;text-shadow:0 0 10px rgba(57,255,20,0.6);position:relative;z-index:2;}
+
 .mt-current-meta{display:flex;flex-wrap:wrap;gap:1.2rem;color:var(--txt2);font-size:0.95rem;padding:0.8rem 0;background:rgba(255,255,255,0.02);border-radius:8px;padding:0.8rem;}
 .mt-current-meta span{display:flex;align-items:center;gap:0.4rem;}
 .mt-current-analyse{margin-top:1rem;padding:1rem;border-top:1px solid var(--border);color:var(--txt2);font-size:0.95rem;line-height:1.7;background:rgba(0,212,106,0.03);border-radius:0 0 10px 10px;}
@@ -406,6 +433,12 @@ table.mt-table{width:100%;border-collapse:collapse;}
 <div class="mt-current">
   <div class="mt-current-tag">⚡ Étape en cours — Step <?= (int)$currentStep['step_number'] ?></div>
   <div class="mt-current-match"><?= trim(clean($currentStep['match_desc'] ?? '')) !== '' ? clean($currentStep['match_desc']) : 'Prono Step ' . (int)$currentStep['step_number'] . ' — Détails à compléter' ?></div>
+  <?php if (!empty(trim($currentStep['pronostic'] ?? ''))): ?>
+  <div class="mt-current-prono">
+    <span class="mt-prono-label">🎯 Pronostic</span>
+    <span class="mt-prono-value"><?= clean($currentStep['pronostic']) ?></span>
+  </div>
+  <?php endif; ?>
   <div class="mt-current-meta">
     <?php if (!empty(trim($currentStep['competition'] ?? ''))): ?><span>🏆 <?= clean($currentStep['competition']) ?></span><?php endif; ?>
     <?php if (!empty($currentStep['date_match'])): ?><span>📅 <?= date('d/m/Y', strtotime($currentStep['date_match'])) ?></span><?php endif; ?>
@@ -423,13 +456,14 @@ table.mt-table{width:100%;border-collapse:collapse;}
   <div class="mt-table-title">📋 Historique des étapes</div>
   <table class="mt-table">
     <thead>
-      <tr><th>#</th><th>Match</th><th>Compétition</th><th>Date</th><th>Cote</th><th>Mise</th><th>Résultat</th><th>+/-</th><th>Bankroll</th></tr>
+      <tr><th>#</th><th>Match</th><th>🎯 Pronostic</th><th>Compétition</th><th>Date</th><th>Cote</th><th>Mise</th><th>Résultat</th><th>+/-</th><th>Bankroll</th></tr>
     </thead>
     <tbody>
     <?php foreach (array_reverse($steps) as $s): ?>
       <tr>
         <td class="step-num"><?= (int)$s['step_number'] ?></td>
         <td><?= clean($s['match_desc']) ?></td>
+        <td style="color:#39ff14;font-weight:700;"><?= !empty(trim($s['pronostic'] ?? '')) ? clean($s['pronostic']) : '—' ?></td>
         <td><?= clean($s['competition'] ?? '—') ?></td>
         <td style="white-space:nowrap;"><?= $s['date_match'] ? date('d/m', strtotime($s['date_match'])) : '—' ?><?= $s['heure'] ? ' ' . clean($s['heure']) : '' ?></td>
         <td style="color:#00d4ff;font-weight:600;"><?= number_format((float)$s['cote'], 2) ?></td>
@@ -480,7 +514,7 @@ table.mt-table{width:100%;border-collapse:collapse;}
       <div class="mt-table-wrap" style="margin-top:1rem;">
         <table class="mt-table">
           <thead>
-            <tr><th>#</th><th>Match</th><th>Compétition</th><th>Date</th><th>Cote</th><th>Mise</th><th>Résultat</th><th>+/-</th><th>Bankroll</th></tr>
+            <tr><th>#</th><th>Match</th><th>🎯 Pronostic</th><th>Compétition</th><th>Date</th><th>Cote</th><th>Mise</th><th>Résultat</th><th>+/-</th><th>Bankroll</th></tr>
           </thead>
           <tbody>
           <?php foreach ($arc['steps'] as $as):
@@ -491,6 +525,7 @@ table.mt-table{width:100%;border-collapse:collapse;}
             <tr>
               <td class="step-num"><?= (int)$as['step_number'] ?></td>
               <td><?= clean($as['match_desc']) ?></td>
+              <td style="color:#39ff14;font-weight:700;"><?= !empty(trim($as['pronostic'] ?? '')) ? clean($as['pronostic']) : '—' ?></td>
               <td><?= clean($as['competition'] ?? '—') ?></td>
               <td style="white-space:nowrap;"><?= $as['date_match'] ? date('d/m', strtotime($as['date_match'])) : '—' ?></td>
               <td style="color:#00d4ff;font-weight:600;"><?= number_format((float)$as['cote'], 2) ?></td>
