@@ -66,25 +66,7 @@ body.menu-open{overflow:hidden;}
 }
 .mobile-menu.open{transform:translateX(0);}
 
-/* Ambient background animé : couvre TOUT le drawer (haut, milieu, bas) */
-.mobile-menu::before{
-  content:'';position:absolute;inset:0;
-  background:
-    radial-gradient(ellipse 400px 280px at 100% 0%, rgba(255,45,120,0.22), transparent 60%),
-    radial-gradient(ellipse 500px 380px at 0% 25%, rgba(0,212,255,0.14), transparent 60%),
-    radial-gradient(ellipse 380px 320px at 100% 50%, rgba(168,85,247,0.12), transparent 60%),
-    radial-gradient(ellipse 440px 340px at 0% 75%, rgba(255,45,120,0.14), transparent 60%),
-    radial-gradient(ellipse 420px 300px at 100% 100%, rgba(0,212,255,0.12), transparent 60%),
-    linear-gradient(180deg, transparent 0%, rgba(255,45,120,0.02) 50%, rgba(168,85,247,0.04) 100%);
-  pointer-events:none;z-index:0;
-  animation:mmAmbient 12s ease-in-out infinite alternate;
-}
-@keyframes mmAmbient{
-  0%{filter:hue-rotate(0deg);}
-  100%{filter:hue-rotate(-25deg);}
-}
-
-/* Ligne scanline verticale qui descend */
+/* Scanline top (reste sur la viewport via fixed) */
 .mobile-menu::after{
   content:'';position:absolute;top:-4px;left:0;right:0;height:2px;
   background:linear-gradient(90deg,transparent 0%,#ff2d78 20%,#00d4ff 50%,#a855f7 80%,transparent 100%);
@@ -98,11 +80,31 @@ body.menu-open{overflow:hidden;}
   100%{background-position:200% 0;}
 }
 
-/* Wrapper pour scroll interne */
+/* Wrapper pour scroll interne — PORTE le background ambiant (couvre toute la hauteur scrollable) */
 .mm-inner{
   position:relative;z-index:2;
   display:flex;flex-direction:column;
   padding-top:1rem;
+  min-height:100%;
+}
+.mm-inner::before{
+  content:'';position:absolute;inset:0;
+  background:
+    radial-gradient(ellipse 400px 280px at 100% 0%, rgba(255,45,120,0.22), transparent 60%),
+    radial-gradient(ellipse 500px 380px at 0% 15%, rgba(0,212,255,0.14), transparent 60%),
+    radial-gradient(ellipse 380px 320px at 100% 30%, rgba(168,85,247,0.12), transparent 60%),
+    radial-gradient(ellipse 440px 340px at 0% 45%, rgba(255,45,120,0.14), transparent 60%),
+    radial-gradient(ellipse 420px 300px at 100% 60%, rgba(0,212,255,0.13), transparent 60%),
+    radial-gradient(ellipse 380px 280px at 0% 75%, rgba(168,85,247,0.11), transparent 60%),
+    radial-gradient(ellipse 420px 300px at 100% 90%, rgba(255,45,120,0.13), transparent 60%),
+    radial-gradient(ellipse 440px 320px at 50% 100%, rgba(0,212,255,0.1), transparent 60%),
+    linear-gradient(180deg, transparent 0%, rgba(255,45,120,0.02) 25%, rgba(168,85,247,0.04) 50%, rgba(255,45,120,0.03) 75%, rgba(0,212,255,0.03) 100%);
+  pointer-events:none;z-index:-1;
+  animation:mmAmbient 12s ease-in-out infinite alternate;
+}
+@keyframes mmAmbient{
+  0%{filter:hue-rotate(0deg);}
+  100%{filter:hue-rotate(-25deg);}
 }
 
 /* Header */
