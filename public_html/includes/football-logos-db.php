@@ -260,23 +260,66 @@ function stratedge_football_logo(string $teamName): string {
         ];
     }
 
-    // Recherche directe
+    // Recherche directe (API-Football ID)
     if (isset($db[$name])) {
-        return 'https://media.api-sports.io/football/teams/' . $db[$name] . '.png';
+        $id = $db[$name];
+        // Priorité 1 : logo local
+        $localPath = __DIR__ . '/../assets/logos/football/api-' . $id . '.png';
+        if (is_file($localPath) && filesize($localPath) > 500) {
+            return '/assets/logos/football/api-' . $id . '.png';
+        }
+        // Priorité 2 : URL distante (fallback si local pas encore téléchargé)
+        return 'https://media.api-sports.io/football/teams/' . $id . '.png';
     }
 
     // Recherche partielle (mots clés)
     $nameWords = explode(' ', $name);
     foreach ($db as $key => $id) {
-        // Si le nom recherché contient le mot clé (>= 4 chars)
         foreach ($nameWords as $w) {
             if (strlen($w) >= 4 && $key === $w) {
+                $localPath = __DIR__ . '/../assets/logos/football/api-' . $id . '.png';
+                if (is_file($localPath) && filesize($localPath) > 500) {
+                    return '/assets/logos/football/api-' . $id . '.png';
+                }
                 return 'https://media.api-sports.io/football/teams/' . $id . '.png';
             }
         }
     }
 
-    // Pas trouvé → retourne vide (le fallback TheSportsDB prendra le relais)
+    // Fallback 3 : lookup manifest TheSportsDB (ligues exotiques)
+    static $manifest = null;
+    if ($manifest === null) {
+        $manifestFile = __DIR__ . '/../assets/logos/football/manifest.json';
+        if (is_file($manifestFile)) {
+            $data = @json_decode(@file_get_contents($manifestFile), true);
+            $manifest = $data['mapping'] ?? [];
+        } else {
+            $manifest = [];
+        }
+    }
+
+    // Slugify le nom recherché pour matcher les clés du manifest TheSportsDB
+    $slug = strtolower(trim($teamName));
+    if (function_exists('iconv')) {
+        $conv = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $slug);
+        if ($conv !== false) $slug = $conv;
+    }
+    $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
+    $slug = trim($slug, '-');
+
+    if (isset($manifest[$slug])) {
+        return '/assets/logos/football/' . $manifest[$slug];
+    }
+
+    // Recherche partielle dans le manifest (mots clés >= 4 chars)
+    $slugWords = explode('-', $slug);
+    foreach ($slugWords as $w) {
+        if (strlen($w) >= 4 && isset($manifest[$w])) {
+            return '/assets/logos/football/' . $manifest[$w];
+        }
+    }
+
+    // Pas trouvé → retourne vide
     return '';
 }
 
