@@ -108,19 +108,22 @@ Cache : `/assets/players/{sport}/{player_id}.{ext}` (png ou jpg selon sport)
 
 ### 1. Football (201 équipes + ligues exotiques)
 ```
-/admin/download-football-logos.php
+https://stratedgepronos.fr/panel-x9k3m/download-football-logos.php
 ```
 Télécharge Big5 + MLS + SA (via API-Football) + K/J-League + Liga MX + A-League etc. (via TheSportsDB)
 
 ### 2. Master (NBA + NHL + MLB + Flags)
 ```
-/admin/download-all-logos.php
+https://stratedgepronos.fr/panel-x9k3m/download-all-logos.php
 ```
 Télécharge en un coup :
 - 30 logos NBA
 - 32 logos NHL
 - 30 logos MLB
 - 250 flags pays
+
+> ⚠️ **IMPORTANT** : Le dossier `/admin/` est bloqué en accès direct par `.htaccess`.
+> Utilisez toujours le chemin secret `/panel-x9k3m/` pour accéder aux scripts admin.
 
 ### Fréquence
 Relance **tous les 1-2 mois** pour récupérer les nouvelles équipes / flags MAJ.
