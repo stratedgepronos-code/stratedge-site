@@ -61,6 +61,48 @@ try {
     try { $db->exec("ALTER TABLE montante_steps ADD COLUMN `pronostic` VARCHAR(255) DEFAULT NULL AFTER `competition`"); } catch (Throwable $e2) {}
 }
 
+// Auto-migration bankroll: si une step a un bankroll_apres > objectif*1.5, c'est que
+// l'ancien code a stocké (objectif + gain) au lieu de (mise_depart + gain). On recalcule.
+try {
+    $badRows = $db->query("
+        SELECT ms.montante_id, ms.bankroll_apres, mc.bankroll_initial, mc.mise_depart
+        FROM montante_steps ms
+        JOIN montante_config mc ON mc.id = ms.montante_id
+        WHERE ms.bankroll_apres IS NOT NULL
+          AND ms.bankroll_apres > mc.bankroll_initial
+          AND mc.bankroll_initial > mc.mise_depart * 5
+        LIMIT 1
+    ")->fetch();
+    if ($badRows) {
+        // Recalcul toutes les montantes tennis
+        $allMontantes = $db->query("SELECT * FROM montante_config")->fetchAll(PDO::FETCH_ASSOC);
+        foreach ($allMontantes as $mBr) {
+            $miseDepart = (float)$mBr['mise_depart'];
+            $currentBr = $miseDepart;
+            $stRows = $db->prepare("SELECT * FROM montante_steps WHERE montante_id = ? ORDER BY step_number ASC");
+            $stRows->execute([$mBr['id']]);
+            foreach ($stRows->fetchAll(PDO::FETCH_ASSOC) as $st) {
+                $gp = null; $brAfter = null;
+                if ($st['resultat'] === 'gagne') {
+                    $gp = round((float)$st['mise'] * ((float)$st['cote'] - 1), 2);
+                    $currentBr = round($currentBr + $gp, 2);
+                    $brAfter = $currentBr;
+                } elseif ($st['resultat'] === 'perdu') {
+                    $gp = -1 * (float)$st['mise'];
+                    $currentBr = round($currentBr + $gp, 2);
+                    $brAfter = $currentBr;
+                } elseif ($st['resultat'] === 'annule') {
+                    $gp = 0;
+                    $brAfter = $currentBr;
+                }
+                $db->prepare("UPDATE montante_steps SET gain_perte = ?, bankroll_apres = ? WHERE id = ?")
+                   ->execute([$gp, $brAfter, $st['id']]);
+            }
+        }
+        $success = '✓ Bankroll recalculée automatiquement (correction ancienne logique).';
+    }
+} catch (Throwable $e) { /* silent */ }
+
 // POST actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
