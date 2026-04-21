@@ -14,10 +14,30 @@ function stratedge_fetch_team_logo_url($teamName, $sport = 'football') {
     // ═══════════════════════════════════════════════════════
     // PRIORITÉ 0 : Base PHP football (200+ clubs, IDs vérifiés)
     // ═══════════════════════════════════════════════════════
-    if (strtolower($sport) === 'football') {
+    $sportLower = strtolower($sport);
+    if ($sportLower === 'football' || $sportLower === 'soccer') {
         require_once __DIR__ . '/football-logos-db.php';
         $fbLogo = stratedge_football_logo($teamName);
         if ($fbLogo !== '') return $fbLogo;
+    }
+
+    // ═══════════════════════════════════════════════════════
+    // PRIORITÉ 0 bis : Bases US (NBA / NHL / MLB — locaux si téléchargés)
+    // ═══════════════════════════════════════════════════════
+    if (in_array($sportLower, ['nba', 'basket', 'basketball'], true)) {
+        require_once __DIR__ . '/nba-logos-db.php';
+        $u = stratedge_nba_logo($teamName);
+        if ($u !== '') return $u;
+    }
+    if (in_array($sportLower, ['nhl', 'hockey', 'ice hockey'], true)) {
+        require_once __DIR__ . '/nhl-logos-db.php';
+        $u = stratedge_nhl_logo($teamName);
+        if ($u !== '') return $u;
+    }
+    if (in_array($sportLower, ['mlb', 'baseball'], true)) {
+        require_once __DIR__ . '/mlb-logos-db.php';
+        $u = stratedge_mlb_logo($teamName);
+        if ($u !== '') return $u;
     }
 
     // ═══════════════════════════════════════════════════════
