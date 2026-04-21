@@ -64,13 +64,13 @@ foreach ($archives as $arc) {
     $arcSteps = $db->prepare("SELECT * FROM montante_steps WHERE montante_id = ? ORDER BY step_number ASC");
     $arcSteps->execute([$arc['id']]);
     $arcRows = $arcSteps->fetchAll();
-    $g = 0; $p = 0; $br = (float)$arc['bankroll_initial'];
+    $g = 0; $p = 0; $br = (float)$arc['mise_depart'];
     foreach ($arcRows as $as) {
         if ($as['resultat'] === 'gagne') $g++;
         elseif ($as['resultat'] === 'perdu') $p++;
         if ($as['bankroll_apres'] !== null) $br = (float)$as['bankroll_apres'];
     }
-    $profit = $br - (float)$arc['bankroll_initial'];
+    $profit = $br - (float)$arc['mise_depart'];
     $archivesData[] = ['config' => $arc, 'steps' => $arcRows, 'gagnes' => $g, 'perdus' => $p, 'profit' => $profit, 'bankroll_final' => $br];
 }
 
@@ -78,7 +78,8 @@ $totalGagnes = 0;
 $totalPerdus = 0;
 $totalAnnules = 0;
 $totalProfit = 0;
-$currentBankroll = (float)$config['bankroll_initial'];
+// Capital de départ = mise_depart (ex: 10€), pas l'objectif
+$currentBankroll = (float)$config['mise_depart'];
 $streak = 0;
 $bestStreak = 0;
 
@@ -99,10 +100,11 @@ foreach ($steps as &$s) {
 }
 unset($s);
 
-$totalProfit = $currentBankroll - (float)$config['bankroll_initial'];
+$totalProfit = $currentBankroll - (float)$config['mise_depart'];
 $totalBets = $totalGagnes + $totalPerdus;
 $winRate = $totalBets > 0 ? round($totalGagnes / $totalBets * 100) : 0;
-$roi = (float)$config['bankroll_initial'] > 0 ? round($totalProfit / (float)$config['bankroll_initial'] * 100, 1) : 0;
+// ROI calculé sur la mise de départ (le vrai capital engagé)
+$roi = (float)$config['mise_depart'] > 0 ? round($totalProfit / (float)$config['mise_depart'] * 100, 1) : 0;
 
 $currentStep = null;
 foreach ($steps as $s) {

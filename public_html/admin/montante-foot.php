@@ -143,7 +143,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $previousSteps = $db->prepare("SELECT * FROM montante_foot_steps WHERE montante_id = ? AND step_number < ? ORDER BY step_number DESC LIMIT 1");
                 $previousSteps->execute([$s['montante_id'], $s['step_number']]);
                 $prev = $previousSteps->fetch();
-                $bankrollAvant = $prev ? (float)$prev['bankroll_apres'] : (float)$mc['bankroll_initial'];
+                // La montante commence à la mise de départ (ex: 10€), pas à l'objectif (500€)
+                $bankrollAvant = $prev ? (float)$prev['bankroll_apres'] : (float)$mc['mise_depart'];
 
                 $gainPerte = 0;
                 if ($resultat === 'gagne') {
@@ -215,7 +216,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $cfg->execute([$mid]);
                 $cfgRow = $cfg->fetch(PDO::FETCH_ASSOC);
                 if ($cfgRow) {
-                    $currentBr = (float)$cfgRow['bankroll_initial'];
+                    // Le capital de départ = mise de départ (ex: 10€), pas l'objectif
+                    $currentBr = (float)$cfgRow['mise_depart'];
                     $stRows = $db->prepare("SELECT * FROM montante_foot_steps WHERE montante_id = ? ORDER BY step_number ASC");
                     $stRows->execute([$mid]);
                     foreach ($stRows->fetchAll(PDO::FETCH_ASSOC) as $st) {
@@ -326,7 +328,7 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
     <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
       <strong style="font-size:1.1rem;"><?= clean($config['nom']) ?></strong>
       <span class="status-badge status-<?= $config['statut'] ?>"><?= $config['statut'] === 'active' ? '🟢 Active' : ($config['statut'] === 'pause' ? '⏸ Pause' : '⬛ Terminée') ?></span>
-      <span style="color:var(--text-muted);font-size:0.85rem;">Montant visé : <?= number_format((float)$config['bankroll_initial'], 2) ?>€ · Mise départ : <?= number_format((float)$config['mise_depart'], 2) ?>€</span>
+      <span style="color:var(--text-muted);font-size:0.85rem;">Objectif : <?= number_format((float)$config['bankroll_initial'], 2) ?>€ · Mise départ : <?= number_format((float)$config['mise_depart'], 2) ?>€</span>
     </div>
     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
       <?php foreach (['active' => '▶ Activer', 'pause' => '⏸ Pause', 'terminee' => '⏹ Terminer'] as $st => $label): ?>
@@ -349,7 +351,7 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
         <input type="hidden" name="action" value="create_montante">
         <div class="form-grid">
           <div class="form-group"><label>Nom</label><input type="text" name="nom" value="Montante Foot" required></div>
-          <div class="form-group"><label>Montant visé (€)</label><input type="number" name="bankroll_initial" value="100" step="0.01" min="1" required></div>
+          <div class="form-group"><label>Objectif (€)</label><input type="number" name="bankroll_initial" value="500" step="0.01" min="1" required></div>
           <div class="form-group"><label>Mise de départ (€)</label><input type="number" name="mise_depart" value="10" step="0.01" min="0.5" required></div>
           <div class="form-group"><label>Date début</label>
             <div class="strateedge-date-wrap">
@@ -513,7 +515,7 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
       <div>
         <strong><?= clean($m['nom']) ?></strong>
         <span class="status-badge status-<?= $m['statut'] ?>" style="margin-left:0.5rem;"><?= $m['statut'] === 'active' ? '🟢' : ($m['statut'] === 'pause' ? '⏸' : '⬛') ?></span>
-        <span style="color:var(--text-muted);font-size:0.82rem;margin-left:0.5rem;">ID <?= (int)$m['id'] ?> · <?= number_format((float)$m['bankroll_initial'], 0) ?>€ visé · <?= date('d/m/Y', strtotime($m['date_debut'] ?? $m['created_at'])) ?></span>
+        <span style="color:var(--text-muted);font-size:0.82rem;margin-left:0.5rem;">ID <?= (int)$m['id'] ?> · <?= number_format((float)$m['bankroll_initial'], 0) ?>€ objectif · <?= date('d/m/Y', strtotime($m['date_debut'] ?? $m['created_at'])) ?></span>
       </div>
       <form method="post" style="display:inline;" onsubmit="return confirm('Supprimer définitivement cette montante et toutes ses étapes ?');">
         <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
