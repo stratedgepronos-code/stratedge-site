@@ -20,13 +20,15 @@ function fetchMontanteQuickStats(PDO $db, string $configTable, string $stepsTabl
         }
         $res['active'] = true;
         $res['nom'] = $cfg['nom'] ?? '';
-        $initial = (float)$cfg['bankroll_initial'];
-        $target = (float)($cfg['bankroll_target'] ?? 500);
+        // Logique : bankroll_initial = objectif (500€), mise_depart = capital réel (10€)
+        $miseDepart = (float)$cfg['mise_depart'];
+        $target = (float)$cfg['bankroll_initial'];  // ex: 500€
 
         $stmt = $db->prepare("SELECT * FROM {$stepsTable} WHERE montante_id = ? ORDER BY step_number ASC");
         $stmt->execute([$cfg['id']]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        $br = $initial;
+        // Bankroll courante démarre de la mise de départ, pas de l'objectif
+        $br = $miseDepart;
         $w = 0; $l = 0;
         foreach ($rows as $r) {
             if ($r['resultat'] === 'gagne') { $w++; if ($r['bankroll_apres'] !== null) $br = (float)$r['bankroll_apres']; }

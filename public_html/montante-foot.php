@@ -400,7 +400,7 @@ table.mt-table{width:100%;border-collapse:collapse;}
 
 <div class="mt-stats">
   <div class="stat-card bankroll">
-    <div class="stat-val" style="color:#00d4ff;"><?= number_format($currentBankroll, 2, ',', ' ') ?>€</div>
+    <div class="stat-val" style="color:#00d4ff;"><?= number_format($currentBankroll, 2, ',', ' ') ?>€ <span style="font-size:0.5em;color:rgba(255,255,255,0.5);font-weight:400;">/ <?= number_format((float)$config['bankroll_initial'], 0, ',', ' ') ?>€</span></div>
     <div class="stat-label">Objectif</div>
   </div>
   <div class="stat-card profit">
