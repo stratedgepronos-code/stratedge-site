@@ -204,7 +204,8 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".combi-teams .flag{width:26px;height:17px;margin-right:6px}";
     $css .= ".combi-teams .team-logo{width:26px;height:26px;margin-right:6px}";
     $css .= ".combi-sep{font-family:'Instrument Serif',serif;font-style:italic;font-size:16px;color:$accent;opacity:.7;padding:0 8px}";
-    $css .= ".combi-pick{font-family:'Instrument Serif',serif;font-style:italic;font-size:17px;color:#ede8e0;opacity:.85;white-space:nowrap;margin-left:18px;flex-shrink:0}";
+    $css .= ".combi-pick{display:flex;align-items:center;margin-left:18px;flex-shrink:0;line-height:0}";
+    $css .= ".combi-pick-svg{display:block;height:24px;width:auto;max-width:260px}";
     $css .= ".combi-cote{font-family:'Share Tech Mono',monospace;font-size:16px;color:$accent;background:rgba($rgb,.1);padding:4px 10px;border:1px solid rgba($rgb,.3);margin-left:18px;flex-shrink:0}";
     $css .= ".pick-locked{position:relative;z-index:2;max-width:540px;border:1.5px solid $accent;padding:18px 22px;margin-bottom:0;display:flex;align-items:center;box-shadow:0 0 20px rgba($rgb,.3);overflow:hidden}";
     $css .= ".pick-locked::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(-45deg, transparent 0 14px, rgba($rgb,.04) 14px 15px);pointer-events:none}";
@@ -537,9 +538,15 @@ function stratedge_build_card($d, $locked = false) {
         foreach ($matches as $m) {
             $t1 = stratedge_team_line($m['t1'] ?? '', $m['flag1'] ?? '', $sport, $m['logo1'] ?? '');
             $t2 = stratedge_team_line($m['t2'] ?? '', $m['flag2'] ?? '', $sport, $m['logo2'] ?? '');
-            $pick_txt = htmlspecialchars((string)($m['pick'] ?? ''), ENT_QUOTES, 'UTF-8');
+            $pick_raw = htmlspecialchars((string)($m['pick'] ?? ''), ENT_QUOTES, 'UTF-8');
+            // Combi pick en SVG (même fix que kicker - préserve espaces)
+            $pick_chars = mb_strlen($m['pick'] ?? '', 'UTF-8');
+            $pick_vb_w = max(220, $pick_chars * 10);
+            $pick_svg = "<svg class='combi-pick-svg' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 $pick_vb_w 26' preserveAspectRatio='xMinYMid meet'>"
+                      . "<text x='0' y='19' font-family=\"'Instrument Serif', Georgia, serif\" font-style='italic' font-size='18' fill='#ede8e0' opacity='.85' xml:space='preserve'>$pick_raw</text>"
+                      . "</svg>";
             $cote_txt = htmlspecialchars((string)($m['cote'] ?? ''), ENT_QUOTES, 'UTF-8');
-            $rows .= "<div class='combi-row'><div class='combi-teams'>$t1<span class='combi-sep'>vs</span>$t2</div><div class='combi-pick'>$pick_txt</div><div class='combi-cote'>$cote_txt</div></div>";
+            $rows .= "<div class='combi-row'><div class='combi-teams'>$t1<span class='combi-sep'>vs</span>$t2</div><div class='combi-pick'>$pick_svg</div><div class='combi-cote'>$cote_txt</div></div>";
         }
         $pick_block_full = "<div class='pick combi'><div class='pick-eyebrow'>Sélections combinées · " . count($matches) . " picks</div><div class='combi-list'>$rows</div></div>";
     } else {
