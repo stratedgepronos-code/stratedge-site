@@ -419,6 +419,23 @@ if ($typeBet === 'Live') {
             'prono_joueur'=> (int)($enriched['prono_joueur'] ?? 1),
             'cote'        => $cote,
             'confidence'  => $confidence,
+            // Champs éditoriaux V18
+            'n_edition'    => $enriched['n_edition']    ?? '',
+            'ghost'        => $enriched['ghost']        ?? 'LIVE',
+            'kicker'       => $enriched['kicker']       ?? '',
+            'pick_main'    => $enriched['pick_main']    ?? '',
+            'pick_accent'  => $enriched['pick_accent']  ?? '',
+            'pick_market'  => $enriched['pick_market']  ?? '',
+            'quote_main'   => $enriched['quote_main']   ?? '',
+            'quote_accent' => $enriched['quote_accent'] ?? '',
+            'value_pct'    => $enriched['value_pct']    ?? 0,
+            'badge_text'   => $enriched['badge_text']   ?? '',
+            // Player prop
+            'is_player_prop'     => !empty($enriched['is_player_prop']),
+            'player_id'          => $enriched['player_id']          ?? null,
+            'player_name'        => $enriched['player_name']        ?? '',
+            'player_stats_hint'  => $enriched['player_stats_hint']  ?? '',
+            'opp_team'           => $enriched['opp_team']           ?? '',
         ]);
 
         debugLog("LIVE OK! normal=" . strlen($cards['html_normal']) . " locked=" . strlen($cards['html_locked']));
@@ -466,6 +483,37 @@ if ($typeBet === 'Fun') {
     debugLog("FUN enrich text: " . $result['text']);
     $enriched = parseClaudeJson($result['text']);
     debugLog("FUN Enriched: " . json_encode($enriched));
+
+    // Compat V18: prompt retourne 'selections' OU 'bets' (legacy). On harmonise sur 'bets'.
+    if ($enriched && empty($enriched['bets']) && !empty($enriched['selections'])) {
+        // Adapter format selections → bets
+        $enriched['bets'] = [];
+        foreach ($enriched['selections'] as $sel) {
+            $enriched['bets'][] = [
+                'match' => trim(($sel['team1'] ?? '') . ' vs ' . ($sel['team2'] ?? '')),
+                'player1' => $sel['team1'] ?? '',
+                'player2' => $sel['team2'] ?? '',
+                'flag1' => $sel['flag1'] ?? '',
+                'flag2' => $sel['flag2'] ?? '',
+                'prono' => $sel['prono'] ?? '',
+                'cote' => $sel['cote'] ?? '1.0',
+                'heure' => $sel['heure'] ?? ($enriched['time_fr'] ?? '20:00'),
+            ];
+        }
+    }
+    // Compat V18 aussi: si single pick (player1/player2 sans bets/selections), on construit un bet unique
+    if ($enriched && empty($enriched['bets']) && !empty($enriched['player1'])) {
+        $enriched['bets'] = [[
+            'match' => trim(($enriched['player1'] ?? '') . ' vs ' . ($enriched['player2'] ?? '')),
+            'player1' => $enriched['player1'] ?? '',
+            'player2' => $enriched['player2'] ?? '',
+            'flag1' => $enriched['flag1'] ?? '',
+            'flag2' => $enriched['flag2'] ?? '',
+            'prono' => trim(($enriched['pick_main'] ?? '') . ' ' . ($enriched['pick_accent'] ?? '')),
+            'cote' => $enriched['cote'] ?? '1.0',
+            'heure' => $enriched['time_fr'] ?? '20:00',
+        ]];
+    }
 
     if (!$enriched || empty($enriched['bets'])) {
         debugLog("FUN WARN: enrichissement échoué");
@@ -542,6 +590,23 @@ if ($typeBet === 'Safe Combiné') {
     debugLog("SAFE_COMBI enrich text: " . $result['text']);
     $enriched = parseClaudeJson($result['text']);
     debugLog("SAFE_COMBI Enriched: " . json_encode($enriched));
+
+    // Compat V18: prompt retourne 'selections' → on harmonise sur 'bets'
+    if ($enriched && empty($enriched['bets']) && !empty($enriched['selections'])) {
+        $enriched['bets'] = [];
+        foreach ($enriched['selections'] as $sel) {
+            $enriched['bets'][] = [
+                'match' => trim(($sel['team1'] ?? '') . ' vs ' . ($sel['team2'] ?? '')),
+                'player1' => $sel['team1'] ?? '',
+                'player2' => $sel['team2'] ?? '',
+                'flag1' => $sel['flag1'] ?? '',
+                'flag2' => $sel['flag2'] ?? '',
+                'prono' => $sel['prono'] ?? '',
+                'cote' => $sel['cote'] ?? '1.0',
+                'heure' => $sel['heure'] ?? ($enriched['time_fr'] ?? '20:00'),
+            ];
+        }
+    }
 
     if (!$enriched || empty($enriched['bets'])) {
         debugLog("SAFE_COMBI WARN: enrichissement échoué");
@@ -626,8 +691,13 @@ debugLog("SAFE V2 enrich text: " . $result['text']);
 $enriched = parseClaudeJson($result['text']);
 debugLog("SAFE V2 Enriched: " . json_encode($enriched));
 
-if (!$enriched || empty($enriched['match'])) {
-    debugLog("SAFE V2 WARN: enrichissement échoué");
+// Normaliser: le nouveau prompt V18 retourne player1/player2; on construit 'match' pour compat
+if ($enriched && empty($enriched['match']) && (!empty($enriched['player1']) || !empty($enriched['player2']))) {
+    $enriched['match'] = trim(($enriched['player1'] ?? '') . ' vs ' . ($enriched['player2'] ?? ''));
+}
+
+if (!$enriched || (empty($enriched['match']) && empty($enriched['player1']))) {
+    debugLog("SAFE V2 WARN: enrichissement échoué (ni match ni player1)");
     http_response_code(500);
     echo json_encode(['error' => "Claude n'a pas pu analyser le match. Vérifiez le format."]);
     exit;
@@ -639,6 +709,8 @@ try {
         'date_fr'     => $enriched['date_fr']     ?? date('d/m/Y'),
         'time_fr'     => $enriched['time_fr']     ?? date('H:i'),
         'match'       => $enriched['match']       ?? $rawMatch,
+        'player1'     => $enriched['player1']     ?? '',
+        'player2'     => $enriched['player2']     ?? '',
         'heure'       => $enriched['heure']       ?? $enriched['time_fr'] ?? '',
         'competition' => $enriched['competition'] ?? '',
         'flag1'       => $enriched['flag1']       ?? '',
@@ -648,6 +720,23 @@ try {
         'prono'       => $enriched['prono']       ?? $rawProno,
         'cote'        => $enriched['cote']        ?? $rawCote,
         'confidence'  => intval($enriched['confidence'] ?? 65),
+        // Champs éditoriaux V18
+        'n_edition'    => $enriched['n_edition']    ?? '',
+        'ghost'        => $enriched['ghost']        ?? '',
+        'kicker'       => $enriched['kicker']       ?? '',
+        'pick_main'    => $enriched['pick_main']    ?? '',
+        'pick_accent'  => $enriched['pick_accent']  ?? '',
+        'pick_market'  => $enriched['pick_market']  ?? '',
+        'quote_main'   => $enriched['quote_main']   ?? '',
+        'quote_accent' => $enriched['quote_accent'] ?? '',
+        'value_pct'    => $enriched['value_pct']    ?? 0,
+        'badge_text'   => $enriched['badge_text']   ?? '',
+        // Player prop
+        'is_player_prop'     => !empty($enriched['is_player_prop']),
+        'player_id'          => $enriched['player_id']          ?? null,
+        'player_name'        => $enriched['player_name']        ?? '',
+        'player_stats_hint'  => $enriched['player_stats_hint']  ?? '',
+        'opp_team'           => $enriched['opp_team']           ?? '',
         'value_pct'   => floatval($enriched['value_pct'] ?? 0),
         'analyse'     => $enriched['analyse']     ?? '',
     ]);

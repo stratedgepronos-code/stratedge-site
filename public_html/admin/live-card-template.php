@@ -371,6 +371,25 @@ function stratedge_normalize_data($d, $type) {
     $matches = [];
     if (!empty($d['matches']) && is_array($d['matches'])) {
         $matches = $d['matches'];
+    } elseif (!empty($d['bets']) && is_array($d['bets'])) {
+        // Format legacy Fun/Combi : bets[]
+        foreach ($d['bets'] as $bet) {
+            $matches[] = [
+                't1' => $bet['player1'] ?? $bet['team1'] ?? $bet['t1'] ?? '',
+                't2' => $bet['player2'] ?? $bet['team2'] ?? $bet['t2'] ?? '',
+                'flag1' => $bet['flag1'] ?? '',
+                'flag2' => $bet['flag2'] ?? '',
+                'logo1' => $bet['team1_logo'] ?? $bet['logo1'] ?? '',
+                'logo2' => $bet['team2_logo'] ?? $bet['logo2'] ?? '',
+                'pick' => $bet['prono'] ?? $bet['pick'] ?? '',
+                'cote' => $bet['cote'] ?? '',
+                'comp' => $bet['competition'] ?? $bet['comp'] ?? '',
+            ];
+        }
+        // Type auto: si plusieurs bets, c'est un combi
+        if (count($matches) > 1 && $type === 'fun') {
+            // garder type = fun mais afficher les picks en liste
+        }
     } elseif ($type === 'combi' && !empty($d['selections']) && is_array($d['selections'])) {
         foreach ($d['selections'] as $sel) {
             $matches[] = [
@@ -387,6 +406,14 @@ function stratedge_normalize_data($d, $type) {
     } else {
         $t1 = $d['player1'] ?? $d['team1'] ?? $d['t1'] ?? '';
         $t2 = $d['player2'] ?? $d['team2'] ?? $d['t2'] ?? '';
+        // Fallback: parse $d['match'] = "A vs B"
+        if ((!$t1 || !$t2) && !empty($d['match'])) {
+            $parts = preg_split('/\s+vs?\s+/i', (string)$d['match']);
+            if (count($parts) === 2) {
+                if (!$t1) $t1 = trim($parts[0]);
+                if (!$t2) $t2 = trim($parts[1]);
+            }
+        }
         if ($t1 || $t2) {
             $matches = [[
                 't1' => $t1,
@@ -448,7 +475,7 @@ function stratedge_build_card($d, $locked = false) {
 
     $sport = $data['sport'] ?? '';
     $matches = $data['matches'] ?? [];
-    $is_combi = ($type === 'combi');
+    $is_combi = ($type === 'combi') || (count($matches) > 1 && $type === 'fun');
 
     // Mascotte OR player-prop photo
     $mascot_html = '';
