@@ -162,7 +162,7 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".brand-line{width:46px;height:1px;background:#ede8e0;opacity:.35;margin-top:10px}";
     $css .= ".top-right{text-align:right}";
     $css .= ".date-meta{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.7;margin-bottom:14px;font-weight:700}";
-    $css .= ".badge-sport{display:inline-flex;align-items:center;font-family:'Archivo Narrow',sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:$accent;background:rgba($rgb,.1);border:1.5px solid $accent;padding:7px 14px;border-radius:2px;box-shadow:0 0 14px rgba($rgb,.5), inset 0 0 8px rgba($rgb,.1);text-shadow:0 0 8px rgba($rgb,.6);white-space:nowrap}";
+    $css .= ".badge-sport{display:inline-flex;align-items:center;font-family:'Archivo Narrow',sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:$accent;background:rgba($rgb,.1);border:1.5px solid $accent;padding:7px 14px;border-radius:2px;box-shadow:0 0 6px rgba($rgb,.35);text-shadow:0 0 4px rgba($rgb,.6);white-space:nowrap}";
     $css .= ".badge-sport::before{content:'';width:6px;height:6px;border-radius:50%;background:$accent;box-shadow:0 0 10px $accent;margin-right:10px;flex-shrink:0}";
     $css .= ".kicker-wrap{position:relative;z-index:5;margin-bottom:0;line-height:0}";
     $css .= ".kicker-svg{display:block;height:34px;width:auto;max-width:100%}";
@@ -173,7 +173,7 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".time-svg{height:74px;width:auto;display:block;overflow:visible}";
     $css .= ".time-accent{color:$accent;text-shadow:0 0 18px rgba($rgb,.55), 0 0 6px rgba($rgb,.8), 0 2px 0 rgba(255,255,255,.15)}";
     $css .= ".time-label{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.55;padding-bottom:14px;margin-left:14px;white-space:nowrap}";
-    $css .= ".type-stamp{position:relative;z-index:5;display:inline-flex;align-items:center;gap:14px;padding:14px 22px;background:rgba($rgb,.12);border:2px solid $accent;border-radius:4px;margin:18px 0 22px 0;box-shadow:0 0 24px rgba($rgb,.35), inset 0 0 14px rgba($rgb,.08)}";
+    $css .= ".type-stamp{position:relative;z-index:5;display:inline-flex;align-items:center;gap:14px;padding:14px 22px;background:rgba($rgb,.12);border:2px solid $accent;border-radius:4px;margin:18px 0 22px 0;box-shadow:0 0 10px rgba($rgb,.25)}";
     $css .= ".type-stamp-icon{width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:$accent;filter:drop-shadow(0 0 8px rgba($rgb,.6))}";
     $css .= ".type-stamp-text{display:flex;flex-direction:column;gap:2px}";
     $css .= ".type-stamp-label{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;line-height:1;color:$accent;text-shadow:0 0 12px rgba($rgb,.7)}";
@@ -236,9 +236,9 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".cta-unlock{max-width:620px;border-top:1px solid rgba(237,232,224,.15);padding-top:16px;margin-bottom:18px;display:flex;align-items:center;gap:20px}";
     $css .= ".cta-unlock-text{font-family:'Instrument Serif',serif;font-style:italic;font-size:22px;line-height:1.25;color:#ede8e0;opacity:.85;flex:1;word-spacing:.1em}";
     $css .= ".cta-unlock-text .hl{color:$accent;font-style:italic;text-shadow:0 0 8px rgba($rgb,.4)}";
-    $css .= ".cta-arrow{width:56px;height:56px;border:1.5px solid $accent;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba($rgb,.08);box-shadow:0 0 18px rgba($rgb,.4), inset 0 0 10px rgba($rgb,.1)}";
+    $css .= ".cta-arrow{width:56px;height:56px;border:1.5px solid $accent;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba(0,0,0,.3);box-shadow:0 0 8px rgba($rgb,.3)}";
     $css .= ".cta-arrow::after{content:'';width:18px;height:18px;border-right:1.5px solid $accent;border-top:1.5px solid $accent;transform:rotate(45deg) translate(-3px,3px)}";
-    $css .= ".promo{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;background:linear-gradient(135deg, rgba($rgb,.18) 0%, rgba($rgb,.08) 100%);border:1.5px solid $accent;box-shadow:0 0 28px rgba($rgb,.4), inset 0 0 14px rgba($rgb,.1);position:relative}";
+    $css .= ".promo{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;background:linear-gradient(135deg, rgba($rgb,.18) 0%, rgba($rgb,.08) 100%);border:1.5px solid $accent;box-shadow:0 0 12px rgba($rgb,.25);position:relative}";
     $css .= ".promo-left{display:flex;flex-direction:column;gap:4px}";
     $css .= ".promo-eyebrow{font-family:'Archivo Narrow',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:$accent}";
     $css .= ".promo-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:#ede8e0;word-spacing:.15em}";
