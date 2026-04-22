@@ -103,13 +103,13 @@ function stratedge_card_theme($tipster) {
     }
     if ($t === 'fun') {
         return [
-            'accent' => '#ff2d7a', 'rgb' => '255,45,122',
-            'accent_gradient' => 'linear-gradient(180deg,#ff8cb8 0%,#ff2d7a 50%,#c850c0 100%)',
-            'accent_gradient_2' => 'linear-gradient(180deg,#ff8cb8,#c850c0)',
-            'bg' => 'linear-gradient(160deg, #1a0820 0%, #14081a 40%, #050208 100%)',
+            'accent' => '#b026ff', 'rgb' => '176,38,255',
+            'accent_gradient' => 'linear-gradient(180deg,#d580ff 0%,#b026ff 50%,#6a00b0 100%)',
+            'accent_gradient_2' => 'linear-gradient(180deg,#d580ff,#b026ff)',
+            'bg' => 'linear-gradient(160deg, #14081e 0%, #0f0518 40%, #050208 100%)',
             'bg_dark' => '#050208',
             'mascot' => '/assets/images/mascotte-fun-hires.png',
-            'conf_bar' => 'linear-gradient(90deg,#ff2d7a,#c850c0)',
+            'conf_bar' => 'linear-gradient(90deg,#b026ff,#d580ff)',
             'edition' => 'FUN ZONE',
             'div_short' => 'Fun',
         ];
