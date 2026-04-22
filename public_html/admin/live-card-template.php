@@ -167,8 +167,8 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".kicker{position:relative;z-index:5;font-family:'Instrument Serif',serif;font-style:italic;font-size:24px;color:#ede8e0;opacity:.6;margin-bottom:0;word-spacing:.1em;white-space:pre-wrap}";
     $css .= ".time-block{position:relative;z-index:5;display:flex;align-items:flex-end;margin-bottom:8px}";
     $css .= ".time{font-family:'Inter',sans-serif;font-weight:900;font-size:64px;line-height:.9;letter-spacing:-3px;color:#ede8e0;font-variant-numeric:tabular-nums}";
-    $css .= ".time-accent{color:$accent;filter:drop-shadow(0 0 18px rgba($rgb,.4)) drop-shadow(0 0 8px rgba($rgb,.6))}";
-    $css .= ".time-label{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.4;padding-bottom:12px;margin-left:36px}";
+    $css .= ".time-accent{color:$accent;text-shadow:0 0 18px rgba($rgb,.55), 0 0 6px rgba($rgb,.8), 0 2px 0 rgba(255,255,255,.15)}";
+    $css .= ".time-label{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.55;padding-bottom:14px;margin-left:14px;white-space:nowrap}";
     $css .= ".type-stamp{position:relative;z-index:5;display:inline-flex;align-items:center;gap:14px;padding:14px 22px;background:rgba($rgb,.12);border:2px solid $accent;border-radius:4px;margin:18px 0 22px 0;box-shadow:0 0 24px rgba($rgb,.35), inset 0 0 14px rgba($rgb,.08)}";
     $css .= ".type-stamp-icon{width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:$accent;filter:drop-shadow(0 0 8px rgba($rgb,.6))}";
     $css .= ".type-stamp-text{display:flex;flex-direction:column;gap:2px}";
@@ -358,6 +358,13 @@ function stratedge_player_prop_solo($player_id, $sport, $player_name, $stats_hin
     return $html;
 }
 
+/** htmlspecialchars + remplace les espaces normaux par &nbsp; pour forcer l'affichage (html2canvas collapse les espaces) */
+function stratedge_nbsp_esc($text) {
+    $safe = htmlspecialchars((string)$text, ENT_QUOTES, 'UTF-8');
+    // Remplacer espaces simples entre mots par nbsp (html2canvas-proof)
+    return str_replace(' ', '&nbsp;', $safe);
+}
+
 function stratedge_normalize_data($d, $type) {
     $sport = $d['sport'] ?? '';
     $sport_lower = strtolower((string)$sport);
@@ -519,9 +526,9 @@ function stratedge_build_card($d, $locked = false) {
             $comp = htmlspecialchars((string)($m['comp'] ?? ''), ENT_QUOTES, 'UTF-8');
             $match_section = "<div class='match'><div class='team'>$t1</div><div class='vs'>versus</div><div class='team'>$t2</div><div class='comp'>$comp</div></div>";
         }
-        $pm = htmlspecialchars((string)($data['pick_main'] ?? ''), ENT_QUOTES, 'UTF-8');
-        $pa = htmlspecialchars((string)($data['pick_accent'] ?? ''), ENT_QUOTES, 'UTF-8');
-        $pmkt = htmlspecialchars((string)($data['pick_market'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $pm = stratedge_nbsp_esc($data['pick_main'] ?? '');
+        $pa = stratedge_nbsp_esc($data['pick_accent'] ?? '');
+        $pmkt = stratedge_nbsp_esc($data['pick_market'] ?? '');
         $pick_block_full = "<div class='pick'><div class='pick-eyebrow'>Le Pick</div><div class='pick-main'>$pm&nbsp;<span class='pick-accent'>$pa</span></div><div class='pick-market'>$pmkt</div></div>";
     }
 
@@ -536,14 +543,14 @@ function stratedge_build_card($d, $locked = false) {
         $footer_top = "<div class='cta-unlock'><div class='cta-unlock-text'>«&nbsp;Déverrouille l&apos;analyse.&nbsp;<span class='hl'>Le pick t&apos;attend.</span>&nbsp;»</div><div class='cta-arrow'></div></div>";
     } else {
         $pick_html = $pick_block_full;
-        $qm = htmlspecialchars((string)($data['quote_main'] ?? 'Analyse validée.'), ENT_QUOTES, 'UTF-8');
-        $qa = htmlspecialchars((string)($data['quote_accent'] ?? 'Le pick tient.'), ENT_QUOTES, 'UTF-8');
+        $qm = stratedge_nbsp_esc($data['quote_main'] ?? 'Analyse validée.');
+        $qa = stratedge_nbsp_esc($data['quote_accent'] ?? 'Le pick tient.');
         $footer_top = "<div class='quote'>«&nbsp;$qm&nbsp;<span class='hl'>$qa</span>&nbsp;»</div>";
     }
 
     $n_edition_safe = htmlspecialchars((string)$data['n_edition'], ENT_QUOTES, 'UTF-8');
     $ghost_safe = htmlspecialchars((string)$data['ghost'], ENT_QUOTES, 'UTF-8');
-    $kicker_safe = htmlspecialchars((string)$data['kicker'], ENT_QUOTES, 'UTF-8');
+    $kicker_safe = stratedge_nbsp_esc($data['kicker']);
     $time_safe = htmlspecialchars((string)$data['time_fr'], ENT_QUOTES, 'UTF-8');
     $cote_safe = htmlspecialchars((string)$data['cote'], ENT_QUOTES, 'UTF-8');
     $value = (float)$data['value_pct'];
@@ -580,7 +587,7 @@ function stratedge_build_card($d, $locked = false) {
   <div class='inner'>
     $header
     <div class='kicker'>$kicker_safe</div>
-    <div class='time-block'><div class='time time-accent'>$time_safe</div><div class='time-label'>Paris</div></div>
+    <div class='time-block'><div class='time time-accent'>$time_safe</div><div class='time-label'>heure&nbsp;de&nbsp;Paris</div></div>
     $type_stamp
     $match_section$pick_html
     <div class='data-row'>
