@@ -36,6 +36,18 @@ Tu reçois les infos d'un match (sport, match, pronostic, cote). Tu réponds UNI
 - Le serveur te donne la date+heure actuelle dans le prompt utilisateur. Utilise cette heure.
 - Format HH:MM, timezone Europe/Paris.
 
+🔴 RÈGLE COMPÉTITION — VÉRIFIE BIEN LA DIVISION ACTUELLE
+- La "competition" doit refléter la DIVISION ACTUELLE (saison 2025-2026) des équipes, PAS leur division historique.
+- Les clubs peuvent être promus/relégués d'une saison à l'autre. NE te fie PAS à tes souvenirs d'une saison passée.
+- Si tu n'es pas sûr à 100%, choisis le nom neutre de la ligue nationale SANS division (ex: "La Liga" plutôt que "La Liga 2"). NEVER guess a division number.
+- Exemples saison 2025-26 (à vérifier selon l'équipe):
+  • Levante UD = La Liga (promu en 2025)
+  • Villarreal, Sevilla, Valencia, Celta Vigo = La Liga
+  • Espanyol, Getafe, Girona = La Liga
+  • Sporting Gijón, Las Palmas, Leganés = La Liga 2 (Segunda)
+- Format: "La Liga · J[numéro] · [stade]" ou "Premier League · J[N] · [stade]" etc.
+- ⚠️ Si tu mets "La Liga 2" pour un match qui est en fait en La Liga, c'est un BUG CRITIQUE.
+
 ⚠️ Toutes les heures = Europe/Paris (UTC+1 hiver / UTC+2 été). Pour matchs US, convertir ET/PT vers Paris.
 
 Structure de sortie OBLIGATOIRE :
@@ -115,6 +127,13 @@ Tu reçois les infos d'un bet Fun (grosse cote, longshot). Tu réponds UNIQUEMEN
 🔴 HEURE : time_fr = HEURE DU COUP D'ENVOI du match (Europe/Paris), PAS l'heure actuelle.
 Format HH:MM. Si inconnue, mets "20:00" par défaut.
 
+🔴 RÈGLE COMPÉTITION — VÉRIFIE BIEN LA DIVISION ACTUELLE (saison 2025-2026)
+- La "competition" doit refléter la DIVISION ACTUELLE des équipes, PAS leur division historique.
+- Les clubs peuvent être promus/relégués. NE te fie PAS à tes souvenirs d'une saison passée.
+- Si tu n'es pas sûr à 100%, choisis le nom neutre SANS division (ex: "La Liga" plutôt que "La Liga 2").
+- Exemples 2025-26: Levante UD = La Liga (promu en 2025) • Sporting Gijón = La Liga 2.
+- ⚠️ Mauvaise division = BUG CRITIQUE.
+
 Structure de sortie OBLIGATOIRE :
 {
   "date_fr": "Mercredi 22 Avril · 2026",
@@ -159,6 +178,14 @@ define('CLAUDE_SAFE_ENRICH_PROMPT', <<<'PROMPT'
 Tu reçois un bet Safe (analyse validée, confiance forte). Tu réponds UNIQUEMENT par un objet JSON valide, sans texte avant/après, sans backticks.
 
 🔴 HEURE : time_fr = HEURE DU COUP D'ENVOI (Europe/Paris). Si inconnue, trouve-la via les horaires officiels (Ligue 1 21h/17h, PL 16h/18h30, C1 21h, NBA ~01h-04h Paris, NHL ~01h-03h Paris…).
+
+🔴 RÈGLE COMPÉTITION — VÉRIFIE BIEN LA DIVISION ACTUELLE (saison 2025-2026)
+- La "competition" doit refléter la DIVISION ACTUELLE des équipes, PAS leur division historique.
+- Les clubs peuvent être promus/relégués d'une saison à l'autre. NE te fie PAS à tes souvenirs d'une saison passée.
+- Si tu n'es pas sûr à 100%, choisis le nom neutre de la ligue nationale SANS division (ex: "La Liga" plutôt que "La Liga 2"). NEVER guess a division number.
+- Exemples 2025-26: Levante UD = La Liga (promu en 2025) • Real Sociedad, Valencia, Sevilla, Villarreal = La Liga • Sporting Gijón, Las Palmas, Leganés = La Liga 2.
+- Format: "La Liga · J[numéro] · [stade]" ou "Premier League · J[N] · [stade]".
+- ⚠️ Si tu mets une mauvaise division, c'est un BUG CRITIQUE.
 
 Structure de sortie OBLIGATOIRE :
 {
@@ -229,6 +256,11 @@ define('CLAUDE_COMBI_ENRICH_PROMPT', <<<'PROMPT'
 Tu reçois un combiné (2-5 picks avec cote totale). Tu réponds UNIQUEMENT par un objet JSON valide.
 
 🔴 HEURE : time_fr = HEURE DU PREMIER MATCH du combiné (Europe/Paris).
+
+🔴 RÈGLE COMPÉTITION — VÉRIFIE BIEN LA DIVISION ACTUELLE (saison 2025-2026)
+- Si tu mentionnes la compétition dans les sélections, vérifie la division actuelle de CHAQUE équipe.
+- Exemples 2025-26: Levante UD = La Liga (promu en 2025) • Sporting Gijón = La Liga 2.
+- Si doute, utilise le nom neutre (ex: "La Liga" sans numéro de division).
 
 Structure OBLIGATOIRE :
 {
