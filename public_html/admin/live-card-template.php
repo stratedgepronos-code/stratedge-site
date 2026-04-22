@@ -164,6 +164,8 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".date-meta{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.7;margin-bottom:14px;font-weight:700}";
     $css .= ".badge-sport{display:inline-flex;align-items:center;font-family:'Archivo Narrow',sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:$accent;background:rgba($rgb,.1);border:1.5px solid $accent;padding:7px 14px;border-radius:2px;box-shadow:0 0 14px rgba($rgb,.5), inset 0 0 8px rgba($rgb,.1);text-shadow:0 0 8px rgba($rgb,.6);white-space:nowrap}";
     $css .= ".badge-sport::before{content:'';width:6px;height:6px;border-radius:50%;background:$accent;box-shadow:0 0 10px $accent;margin-right:10px;flex-shrink:0}";
+    $css .= ".kicker-wrap{position:relative;z-index:5;margin-bottom:0;line-height:0}";
+    $css .= ".kicker-svg{display:block;height:34px;width:auto;max-width:100%}";
     $css .= ".kicker{position:relative;z-index:5;font-family:'Instrument Serif',serif;font-style:italic;font-size:24px;color:#ede8e0;opacity:.6;margin-bottom:0;word-spacing:.1em;white-space:pre-wrap}";
     $css .= ".time-block{position:relative;z-index:5;display:flex;align-items:flex-end;margin-bottom:8px}";
     $css .= ".time{font-family:'Inter',sans-serif;font-weight:900;font-size:64px;line-height:.9;letter-spacing:-3px;color:#ede8e0;font-variant-numeric:tabular-nums}";
@@ -572,7 +574,15 @@ function stratedge_build_card($d, $locked = false) {
 
     $n_edition_safe = htmlspecialchars((string)$data['n_edition'], ENT_QUOTES, 'UTF-8');
     $ghost_safe = htmlspecialchars((string)$data['ghost'], ENT_QUOTES, 'UTF-8');
-    $kicker_safe = stratedge_nbsp_esc($data['kicker']);
+    // Kicker en SVG pour préserver les espaces (html2canvas/Instrument Serif italic collapse parfois les espaces)
+    $kicker_raw = htmlspecialchars((string)$data['kicker'], ENT_QUOTES, 'UTF-8');
+    // Calcule une largeur approximative pour le viewBox (pour ne pas tronquer le texte long)
+    $kicker_chars = mb_strlen($data['kicker'], 'UTF-8');
+    $kicker_vb_width = max(280, $kicker_chars * 13); // ~13px par caractère en italique 24px
+    $kicker_svg = "<svg class='kicker-svg' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 $kicker_vb_width 36' preserveAspectRatio='xMinYMin meet'>"
+                . "<text x='0' y='26' font-family=\"'Instrument Serif', Georgia, serif\" font-style='italic' font-size='26' fill='#ede8e0' opacity='.6' xml:space='preserve'>$kicker_raw</text>"
+                . "</svg>";
+    $kicker_safe = stratedge_nbsp_esc($data['kicker']); // fallback si SVG échoue
     $time_safe = htmlspecialchars((string)$data['time_fr'], ENT_QUOTES, 'UTF-8');
     $cote_safe = htmlspecialchars((string)$data['cote'], ENT_QUOTES, 'UTF-8');
     $value = (float)$data['value_pct'];
@@ -620,7 +630,7 @@ function stratedge_build_card($d, $locked = false) {
   <div class='edition'>Nº $n_edition_safe · $edition_label</div>
   <div class='inner'>
     $header
-    <div class='kicker'>$kicker_safe</div>
+    <div class='kicker-wrap'>$kicker_svg</div>
     <div class='time-block'><div class='time-svg-wrap'>$time_svg</div><div class='time-label'>heure de Paris</div></div>
     $type_stamp
     $match_section$pick_html
