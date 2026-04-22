@@ -198,15 +198,17 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".pick-accent{font-family:'Instrument Serif',serif;font-style:italic;font-size:30px;color:$accent;text-shadow:0 0 10px rgba($rgb,.5)}";
     $css .= ".pick-market{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.45;margin-top:8px}";
     $css .= ".combi-list{display:flex;flex-direction:column;gap:14px;margin-top:8px}";
-    $css .= ".combi-row{display:flex;align-items:center;padding:10px 0;border-top:1px dashed rgba($rgb,.2);white-space:nowrap}";
+    $css .= ".combi-row{display:flex;flex-direction:column;padding:10px 0;border-top:1px dashed rgba($rgb,.2);gap:4px}";
     $css .= ".combi-row:first-child{border-top:none;padding-top:4px}";
-    $css .= ".combi-teams{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.5px;color:#ede8e0;line-height:1.2;display:flex;align-items:center;flex:1;min-width:0}";
-    $css .= ".combi-teams .flag{width:26px;height:17px;margin-right:6px}";
-    $css .= ".combi-teams .team-logo{width:26px;height:26px;margin-right:6px}";
+    $css .= ".combi-teams{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:.5px;color:#ede8e0;line-height:1.15;display:flex;align-items:center;flex:1;min-width:0;overflow:hidden}";
+    $css .= ".combi-teams .flag{width:24px;height:16px;margin-right:6px;flex-shrink:0}";
+    $css .= ".combi-teams .team-logo{width:24px;height:24px;margin-right:6px;flex-shrink:0}";
     $css .= ".combi-sep{font-family:'Instrument Serif',serif;font-style:italic;font-size:16px;color:$accent;opacity:.7;padding:0 8px}";
-    $css .= ".combi-pick{display:flex;align-items:center;margin-left:18px;flex-shrink:0;line-height:0}";
-    $css .= ".combi-pick-svg{display:block;height:24px;width:auto;max-width:260px}";
-    $css .= ".combi-cote{font-family:'Share Tech Mono',monospace;font-size:16px;color:$accent;background:rgba($rgb,.1);padding:4px 10px;border:1px solid rgba($rgb,.3);margin-left:18px;flex-shrink:0}";
+    $css .= ".combi-row-top{display:flex;align-items:center;gap:10px;white-space:nowrap;overflow:hidden}";
+    $css .= ".combi-row-bottom{display:flex;align-items:center;padding-left:0;gap:10px}";
+    $css .= ".combi-pick{display:flex;align-items:center;flex:1;min-width:0;line-height:0;margin-left:0}";
+    $css .= ".combi-pick-svg{display:block;height:20px;width:auto;max-width:100%}";
+    $css .= ".combi-cote{font-family:'Share Tech Mono',monospace;font-size:15px;color:$accent;background:rgba($rgb,.1);padding:3px 10px;border:1px solid rgba($rgb,.3);flex-shrink:0;margin-left:0;letter-spacing:.5px}";
     $css .= ".pick-locked{position:relative;z-index:2;max-width:540px;border:1.5px solid $accent;padding:18px 22px;margin-bottom:0;display:flex;align-items:center;box-shadow:0 0 20px rgba($rgb,.3);overflow:hidden}";
     $css .= ".pick-locked::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(-45deg, transparent 0 14px, rgba($rgb,.04) 14px 15px);pointer-events:none}";
     $css .= ".padlock{position:relative;width:48px;height:48px;flex-shrink:0;margin-right:28px;border:1.5px solid $accent;display:flex;align-items:center;justify-content:center;border-radius:2px;box-shadow:0 0 14px rgba($rgb,.5), inset 0 0 8px rgba($rgb,.15)}";
@@ -481,7 +483,7 @@ function stratedge_normalize_data($d, $type) {
         'pick_main' => $d['pick_main'] ?? $d['prono'] ?? '',
         'pick_accent' => $d['pick_accent'] ?? '',
         'pick_market' => $d['pick_market'] ?? $d['market'] ?? 'Marché · Pick',
-        'cote' => $d['cote'] ?? '1.50',
+        'cote' => $d['cote'] ?? $d['cote_totale'] ?? '1.50',
         'value_pct' => $d['value_pct'] ?? 0,
         'confidence' => $d['confidence'] ?? 60,
         'quote_main' => $d['quote_main'] ?? 'La data parle.',
@@ -546,7 +548,7 @@ function stratedge_build_card($d, $locked = false) {
                       . "<text x='0' y='19' font-family=\"'Instrument Serif', Georgia, serif\" font-style='italic' font-size='18' fill='#ede8e0' opacity='.85' xml:space='preserve'>$pick_raw</text>"
                       . "</svg>";
             $cote_txt = htmlspecialchars((string)($m['cote'] ?? ''), ENT_QUOTES, 'UTF-8');
-            $rows .= "<div class='combi-row'><div class='combi-teams'>$t1<span class='combi-sep'>vs</span>$t2</div><div class='combi-pick'>$pick_svg</div><div class='combi-cote'>$cote_txt</div></div>";
+            $rows .= "<div class='combi-row'><div class='combi-row-top'><div class='combi-teams'>$t1<span class='combi-sep'>vs</span>$t2</div></div><div class='combi-row-bottom'><div class='combi-pick'>$pick_svg</div><div class='combi-cote'>$cote_txt</div></div></div>";
         }
         $pick_block_full = "<div class='pick combi'><div class='pick-eyebrow'>Sélections combinées · " . count($matches) . " picks</div><div class='combi-list'>$rows</div></div>";
     } else {

@@ -542,8 +542,17 @@ if ($typeBet === 'Fun') {
             'date_fr'     => $enriched['date_fr']    ?? date('d/m/Y'),
             'time_fr'     => $enriched['time_fr']    ?? date('H:i'),
             'bets'        => $enriched['bets'],
-            'cote_totale' => $coteTotale,
+            'cote'        => $coteTotale,              // ⚠️ template attend 'cote' (cote totale pour combi)
+            'cote_totale' => $coteTotale,              // compat legacy
             'confidence'  => intval($enriched['confidence'] ?? 65),
+            'value_pct'   => $enriched['value_pct']   ?? 0,
+            // Champs éditoriaux V18
+            'n_edition'    => $enriched['n_edition']    ?? '',
+            'ghost'        => $enriched['ghost']        ?? 'CRAZY',
+            'kicker'       => $enriched['kicker']       ?? 'Fun Zone.',
+            'quote_main'   => $enriched['quote_main']   ?? 'Longshot assumé.',
+            'quote_accent' => $enriched['quote_accent'] ?? "On parie pour rire.",
+            'badge_text'   => $enriched['badge_text']   ?? 'Fun · Combi',
         ]);
     } catch (Throwable $e) {
         debugLog("FUN generateFunCards ERROR: " . $e->getMessage() . " @ " . $e->getFile() . ":" . $e->getLine());
@@ -635,8 +644,17 @@ if ($typeBet === 'Safe Combiné') {
             'date_fr'            => $enriched['date_fr']    ?? date('d/m/Y'),
             'time_fr'            => $enriched['time_fr']    ?? date('H:i'),
             'bets'               => $enriched['bets'],
+            'cote'               => $coteTotale,             // ⚠️ template attend 'cote'
             'cote_totale'        => $coteTotale,
+            'confidence'         => $confGlobale,
             'confidence_globale' => $confGlobale,
+            'value_pct'          => $enriched['value_pct']   ?? 0,
+            'n_edition'          => $enriched['n_edition']   ?? '',
+            'ghost'              => $enriched['ghost']       ?? 'COMBI',
+            'kicker'             => $enriched['kicker']      ?? 'Combi du jour.',
+            'quote_main'         => $enriched['quote_main']  ?? 'Analyses croisées.',
+            'quote_accent'       => $enriched['quote_accent']?? 'Un ticket.',
+            'badge_text'         => $enriched['badge_text']  ?? 'Multisports · Combi',
         ]);
     } catch (Throwable $e) {
         debugLog("SAFE_COMBI generateSafeCombiCards ERROR: " . $e->getMessage() . " @ " . $e->getFile() . ":" . $e->getLine());
