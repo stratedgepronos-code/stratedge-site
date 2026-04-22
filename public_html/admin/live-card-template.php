@@ -164,10 +164,10 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".date-meta{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.7;margin-bottom:14px;font-weight:700}";
     $css .= ".badge-sport{display:inline-flex;align-items:center;font-family:'Archivo Narrow',sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:$accent;background:rgba($rgb,.1);border:1.5px solid $accent;padding:7px 14px;border-radius:2px;box-shadow:0 0 14px rgba($rgb,.5), inset 0 0 8px rgba($rgb,.1);text-shadow:0 0 8px rgba($rgb,.6);white-space:nowrap}";
     $css .= ".badge-sport::before{content:'';width:6px;height:6px;border-radius:50%;background:$accent;box-shadow:0 0 10px $accent;margin-right:10px;flex-shrink:0}";
-    $css .= ".kicker{position:relative;z-index:5;font-family:'Instrument Serif',serif;font-style:italic;font-size:24px;color:#ede8e0;opacity:.6;margin-bottom:0}";
+    $css .= ".kicker{position:relative;z-index:5;font-family:'Instrument Serif',serif;font-style:italic;font-size:24px;color:#ede8e0;opacity:.6;margin-bottom:0;word-spacing:.1em;white-space:pre-wrap}";
     $css .= ".time-block{position:relative;z-index:5;display:flex;align-items:flex-end;margin-bottom:8px}";
     $css .= ".time{font-family:'Inter',sans-serif;font-weight:900;font-size:64px;line-height:.9;letter-spacing:-3px;color:#ede8e0;font-variant-numeric:tabular-nums}";
-    $css .= ".time-accent{background:$grad;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;filter:drop-shadow(0 0 18px rgba($rgb,.4))}";
+    $css .= ".time-accent{color:$accent;filter:drop-shadow(0 0 18px rgba($rgb,.4)) drop-shadow(0 0 8px rgba($rgb,.6))}";
     $css .= ".time-label{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.4;padding-bottom:12px;margin-left:36px}";
     $css .= ".type-stamp{position:relative;z-index:5;display:inline-flex;align-items:center;gap:14px;padding:14px 22px;background:rgba($rgb,.12);border:2px solid $accent;border-radius:4px;margin:18px 0 22px 0;box-shadow:0 0 24px rgba($rgb,.35), inset 0 0 14px rgba($rgb,.08)}";
     $css .= ".type-stamp-icon{width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:$accent;filter:drop-shadow(0 0 8px rgba($rgb,.6))}";
@@ -190,8 +190,8 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".pick{position:relative;z-index:2;max-width:540px;border:1px solid rgba(237,232,224,.2);padding:16px 22px;margin-bottom:0}";
     $css .= ".pick.combi{max-width:620px;border:none;border-top:1px solid rgba(237,232,224,.25);border-bottom:1px solid rgba(237,232,224,.25);padding:16px 0}";
     $css .= ".pick-eyebrow{font-family:'Archivo Narrow',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.45;margin-bottom:10px}";
-    $css .= ".pick-main{font-family:'Bebas Neue',sans-serif;font-size:34px;line-height:1;letter-spacing:-.5px;color:#ede8e0;margin-bottom:6px}";
-    $css .= ".pick-accent{font-family:'Instrument Serif',serif;font-style:italic;font-size:34px;background:$grad;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}";
+    $css .= ".pick-main{font-family:'Bebas Neue',sans-serif;font-size:34px;line-height:1;letter-spacing:-.5px;color:#ede8e0;margin-bottom:6px;word-spacing:.15em}";
+    $css .= ".pick-accent{font-family:'Instrument Serif',serif;font-style:italic;font-size:34px;color:$accent;text-shadow:0 0 10px rgba($rgb,.5)}";
     $css .= ".pick-market{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.45;margin-top:8px}";
     $css .= ".combi-list{display:flex;flex-direction:column;gap:14px;margin-top:8px}";
     $css .= ".combi-row{display:flex;align-items:center;padding:10px 0;border-top:1px dashed rgba($rgb,.2);white-space:nowrap}";
@@ -208,8 +208,8 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".padlock::before{content:'';position:absolute;inset:-5px;border:1px solid rgba($rgb,.15)}";
     $css .= ".locked-text{position:relative;z-index:1;flex:1}";
     $css .= ".locked-eyebrow{font-family:'Archivo Narrow',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:$accent;margin-bottom:6px}";
-    $css .= ".locked-main{font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1.05;letter-spacing:-.5px;color:#ede8e0}";
-    $css .= ".locked-accent{font-family:'Instrument Serif',serif;font-style:italic;background:$grad2;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}";
+    $css .= ".locked-main{font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1.05;letter-spacing:-.5px;color:#ede8e0;word-spacing:.15em}";
+    $css .= ".locked-accent{font-family:'Instrument Serif',serif;font-style:italic;color:$accent;text-shadow:0 0 10px rgba($rgb,.5)}";
     $css .= ".locked-sub{font-family:'Instrument Serif',serif;font-style:italic;font-size:15px;color:#ede8e0;opacity:.55;margin-top:6px}";
     $css .= ".data-row{position:relative;z-index:5;display:flex;align-items:center;margin-top:24px;margin-bottom:0;max-width:720px}";
     $css .= ".data-cote{display:flex;flex-direction:column;gap:4px}";
@@ -224,18 +224,18 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".conf-fill{position:absolute;left:0;top:0;bottom:0;width:$c%;background:$conf_bar}";
     $css .= ".conf-dot{position:absolute;left:$c%;top:50%;transform:translate(-50%,-50%);width:10px;height:10px;border-radius:50%;background:$accent;box-shadow:0 0 14px $accent}";
     $css .= ".footer-abs{position:absolute;left:64px;right:64px;bottom:56px;z-index:10}";
-    $css .= ".quote{font-family:'Instrument Serif',serif;font-style:italic;font-size:24px;line-height:1.25;color:#ede8e0;opacity:.75;max-width:620px;border-top:1px solid rgba(237,232,224,.15);padding-top:16px;margin-bottom:20px}";
-    $css .= ".quote .hl{background:$grad2;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-style:italic}";
+    $css .= ".quote{font-family:'Instrument Serif',serif;font-style:italic;font-size:24px;line-height:1.25;color:#ede8e0;opacity:.75;max-width:620px;border-top:1px solid rgba(237,232,224,.15);padding-top:16px;margin-bottom:20px;word-spacing:.1em}";
+    $css .= ".quote .hl{color:$accent;font-style:italic;text-shadow:0 0 8px rgba($rgb,.4)}";
     $css .= ".cta-unlock{max-width:620px;border-top:1px solid rgba(237,232,224,.15);padding-top:16px;margin-bottom:18px;display:flex;align-items:center;gap:20px}";
-    $css .= ".cta-unlock-text{font-family:'Instrument Serif',serif;font-style:italic;font-size:22px;line-height:1.25;color:#ede8e0;opacity:.85;flex:1}";
-    $css .= ".cta-unlock-text .hl{background:$grad2;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-style:italic}";
+    $css .= ".cta-unlock-text{font-family:'Instrument Serif',serif;font-style:italic;font-size:22px;line-height:1.25;color:#ede8e0;opacity:.85;flex:1;word-spacing:.1em}";
+    $css .= ".cta-unlock-text .hl{color:$accent;font-style:italic;text-shadow:0 0 8px rgba($rgb,.4)}";
     $css .= ".cta-arrow{width:56px;height:56px;border:1.5px solid $accent;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:rgba($rgb,.08);box-shadow:0 0 18px rgba($rgb,.4), inset 0 0 10px rgba($rgb,.1)}";
     $css .= ".cta-arrow::after{content:'';width:18px;height:18px;border-right:1.5px solid $accent;border-top:1.5px solid $accent;transform:rotate(45deg) translate(-3px,3px)}";
     $css .= ".promo{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;background:linear-gradient(135deg, rgba($rgb,.18) 0%, rgba($rgb,.08) 100%);border:1.5px solid $accent;box-shadow:0 0 28px rgba($rgb,.4), inset 0 0 14px rgba($rgb,.1);position:relative}";
     $css .= ".promo-left{display:flex;flex-direction:column;gap:4px}";
     $css .= ".promo-eyebrow{font-family:'Archivo Narrow',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:$accent}";
-    $css .= ".promo-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:#ede8e0}";
-    $css .= ".promo-title .price{background:$grad2;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}";
+    $css .= ".promo-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px;color:#ede8e0;word-spacing:.15em}";
+    $css .= ".promo-title .price{color:$accent;text-shadow:0 0 8px rgba($rgb,.4)}";
     $css .= ".promo-url{font-family:'Share Tech Mono',monospace;font-size:10px;color:#ede8e0;opacity:.5;margin-top:2px}";
     $css .= ".promo-cta{font-family:'Archivo Narrow',sans-serif;font-weight:700;font-size:12px;letter-spacing:3px;text-transform:uppercase;color:$bg_dark;background:$accent;padding:12px 20px;display:inline-flex;align-items:center;gap:10px;text-decoration:none;box-shadow:0 0 22px rgba($rgb,.6), 0 4px 16px rgba(0,0,0,.4)}";
     $css .= ".promo-cta .arrow{display:inline-block;width:24px;height:1px;background:$bg_dark;position:relative}";
@@ -522,7 +522,7 @@ function stratedge_build_card($d, $locked = false) {
         $pm = htmlspecialchars((string)($data['pick_main'] ?? ''), ENT_QUOTES, 'UTF-8');
         $pa = htmlspecialchars((string)($data['pick_accent'] ?? ''), ENT_QUOTES, 'UTF-8');
         $pmkt = htmlspecialchars((string)($data['pick_market'] ?? ''), ENT_QUOTES, 'UTF-8');
-        $pick_block_full = "<div class='pick'><div class='pick-eyebrow'>Le Pick</div><div class='pick-main'>$pm <span class='pick-accent'>$pa</span></div><div class='pick-market'>$pmkt</div></div>";
+        $pick_block_full = "<div class='pick'><div class='pick-eyebrow'>Le Pick</div><div class='pick-main'>$pm&nbsp;<span class='pick-accent'>$pa</span></div><div class='pick-market'>$pmkt</div></div>";
     }
 
     if ($locked) {
@@ -531,14 +531,14 @@ function stratedge_build_card($d, $locked = false) {
         $accent = $theme['accent'];
         $pick_html = "<div class='pick-locked'>"
                    . "<div class='padlock'><svg viewBox='0 0 24 24' fill='none' stroke='$accent' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' width='20' height='20'><rect x='4' y='10' width='16' height='12' rx='1'/><path d='M8 10V6a4 4 0 0 1 8 0v4'/></svg></div>"
-                   . "<div class='locked-text'><div class='locked-eyebrow'>Le Pick · Contenu réservé</div><div class='locked-main'>Souscris au pack <span class='locked-accent'>$div_short</span></div><div class='locked-sub'>$locked_label</div></div>"
+                   . "<div class='locked-text'><div class='locked-eyebrow'>Le Pick · Contenu réservé</div><div class='locked-main'>Souscris au pack&nbsp;<span class='locked-accent'>$div_short</span></div><div class='locked-sub'>$locked_label</div></div>"
                    . "</div>";
-        $footer_top = "<div class='cta-unlock'><div class='cta-unlock-text'>« Déverrouille l&apos;analyse. <span class='hl'>Le pick t&apos;attend.</span> »</div><div class='cta-arrow'></div></div>";
+        $footer_top = "<div class='cta-unlock'><div class='cta-unlock-text'>«&nbsp;Déverrouille l&apos;analyse.&nbsp;<span class='hl'>Le pick t&apos;attend.</span>&nbsp;»</div><div class='cta-arrow'></div></div>";
     } else {
         $pick_html = $pick_block_full;
         $qm = htmlspecialchars((string)($data['quote_main'] ?? 'Analyse validée.'), ENT_QUOTES, 'UTF-8');
         $qa = htmlspecialchars((string)($data['quote_accent'] ?? 'Le pick tient.'), ENT_QUOTES, 'UTF-8');
-        $footer_top = "<div class='quote'>« $qm <span class='hl'>$qa</span> »</div>";
+        $footer_top = "<div class='quote'>«&nbsp;$qm&nbsp;<span class='hl'>$qa</span>&nbsp;»</div>";
     }
 
     $n_edition_safe = htmlspecialchars((string)$data['n_edition'], ENT_QUOTES, 'UTF-8');
@@ -600,7 +600,7 @@ function stratedge_build_card($d, $locked = false) {
     <div class='promo'>
       <div class='promo-left'>
         <div class='promo-eyebrow'>$promo_eye</div>
-        <div class='promo-title'>$promo_title <span class='price'>$promo_price</span></div>
+        <div class='promo-title'>$promo_title&nbsp;<span class='price'>$promo_price</span></div>
         <div class='promo-url'>$promo_url</div>
       </div>
       <a class='promo-cta' href='#'>S&apos;abonner <span class='arrow'></span></a>
