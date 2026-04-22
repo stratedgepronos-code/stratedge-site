@@ -173,12 +173,12 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".time-svg{height:74px;width:auto;display:block;overflow:visible}";
     $css .= ".time-accent{color:$accent;text-shadow:0 0 18px rgba($rgb,.55), 0 0 6px rgba($rgb,.8), 0 2px 0 rgba(255,255,255,.15)}";
     $css .= ".time-label{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.55;padding-bottom:14px;margin-left:14px;white-space:nowrap}";
-    $css .= ".type-stamp{position:relative;z-index:5;display:inline-flex;align-items:center;gap:14px;padding:14px 22px;background:rgba($rgb,.12);border:2px solid $accent;border-radius:4px;margin:18px 0 22px 0;box-shadow:0 0 10px rgba($rgb,.25)}";
+    $css .= ".type-stamp{position:relative;z-index:5;display:inline-flex;align-items:center;gap:14px;padding:14px 22px;background:rgba($rgb,.12);border:2px solid $accent;border-radius:4px;margin:18px 0 22px 0}";
     $css .= ".type-stamp-icon{width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:$accent;filter:drop-shadow(0 0 8px rgba($rgb,.6))}";
     $css .= ".type-stamp-text{display:flex;flex-direction:column;gap:2px}";
     $css .= ".type-stamp-label{font-family:'Bebas Neue',sans-serif;font-size:30px;letter-spacing:3px;line-height:1;color:$accent;text-shadow:0 0 12px rgba($rgb,.7)}";
     $css .= ".type-stamp-sub{font-family:'Archivo Narrow',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.55}";
-    $css .= ".type-stamp.is-live{border-color:#ff3838;background:rgba(255,56,56,.1);box-shadow:0 0 24px rgba(255,56,56,.5), inset 0 0 14px rgba(255,56,56,.1)}";
+    $css .= ".type-stamp.is-live{border-color:#ff3838;background:rgba(255,56,56,.1)}";
     $css .= ".type-stamp.is-live .type-stamp-label,.type-stamp.is-live .type-stamp-icon{color:#ff3838;text-shadow:0 0 12px rgba(255,56,56,.8)}";
     $css .= ".type-stamp.is-live .type-stamp-icon{filter:drop-shadow(0 0 10px rgba(255,56,56,.8))}";
     $css .= ".live-dot{width:14px;height:14px;border-radius:50%;background:#ff3838;box-shadow:0 0 16px #ff3838, 0 0 30px rgba(255,56,56,.6)}";
