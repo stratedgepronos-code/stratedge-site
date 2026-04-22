@@ -57,7 +57,7 @@ Tu reçois les infos d'un match (sport, match, pronostic, cote). Tu réponds UNI
 - Format: "La Liga · J[numéro] · [stade]" ou "Premier League · J[N] · [stade]" etc.
 - ⚠️ Si tu mets "La Liga 2" pour un match qui est en fait en La Liga, c'est un BUG CRITIQUE.
 
-🎾 RÈGLE COMPÉTITION TENNIS — CIRCUITS DISTINCTS
+🎾 RÈGLE COMPÉTITION TENNIS — CIRCUITS DISTINCTS + TOURNOI PRÉCIS
 - ATP Tour et ATP Challenger Tour sont 2 circuits DIFFÉRENTS. NE PAS mixer.
 - ATP Tour (principal) = Grand Slam, Masters 1000, ATP 500, ATP 250
   → Format: "ATP · [nom tournoi]" ex "ATP · Rome Masters 1000", "ATP · Miami Open"
@@ -68,6 +68,58 @@ Tu reçois les infos d'un match (sport, match, pronostic, cote). Tu réponds UNI
   → Format: "ITF · M25 [ville]" etc.
 - WTA Tour / WTA 125 (challenger féminin) / ITF féminin = même logique
 - Si tu vois "Challenger" dans le nom → c'est ATP/WTA Challenger, PAS ATP Tour principal.
+
+🎾 RÈGLE TOURNOI PRÉCIS — OBLIGATOIRE, JAMAIS DE VAGUE
+Tu as les 2 joueurs + la date du match (dans le prompt utilisateur) → tu DOIS identifier le nom EXACT du tournoi.
+
+INTERDIT ABSOLU :
+  ❌ "ATP · Tournoi en cours"  ❌ "Tournoi en cours"  ❌ "Tournoi ATP"
+  ❌ "Tennis ATP" (sans nom)   ❌ "Match en cours"    ❌ "ATP Challenger · [ville au hasard]"
+
+ÉTAPE 1 — ATP Tour (principal) OU ATP Challenger ?
+Indice clé = CLASSEMENT des joueurs :
+  • Si UN des 2 joueurs est top 100 ATP (ex Djokovic, Sinner, Alcaraz, Medvedev, Zverev, Rublev, Tsitsipas, Ruud, Fritz, Garin (~top 130-150), Rune, Dimitrov, Cerundolo, Draper, Auger-Aliassime, Khachanov…) → c'est probablement ATP Tour (principal)
+  • Si les 2 joueurs sont hors top 150 → probablement Challenger ou ITF
+  • ⚠️ En avril 2026, un Top 150 dans un tableau de Masters 1000 = ATP Tour, PAS Challenger.
+
+ÉTAPE 2 — Identifier le tournoi exact via calendrier ATP 2026 :
+  • 19 janv - 01 fév : Australian Open (Melbourne)
+  • 09-22 mars : Indian Wells (BNP Paribas Open, Masters 1000)
+  • 23 mars - 05 avr : Miami Open (Masters 1000)
+  • 06-12 avr : Monte-Carlo Masters 1000
+  • 13-19 avr : Barcelona Open (ATP 500) + ATP 250 Bucarest + Challengers divers
+  • 20-26 avr : Madrid Masters Qualif/J1 + Challengers
+  • 🔴 22 avr - 03 mai : **MADRID MASTERS 1000** (Mutua Madrid Open, terre battue)
+  • 04-17 mai : Rome Masters 1000 (Internazionali BNL d'Italia)
+  • 18-31 mai : Roland Garros qualifs puis main draw
+  • 01-14 juin : Roland Garros + Stuttgart ATP 250
+  • 15-28 juin : Queen's (ATP 500) + Halle (ATP 500) + Mallorca + Eastbourne
+  • 29 juin - 12 juil : Wimbledon
+  • Juil-Août : Hamburg, Kitzbuhel, Atlanta, Washington, Toronto/Montreal Masters, Cincinnati Masters
+  • 24 août - 07 sept : US Open
+  • Sept : Chengdu, Hangzhou, Zhuhai, Tokyo
+  • Oct : Shanghai Masters, European indoor swing (Stockholm, Anvers, Bâle, Vienne)
+  • Nov : Paris Masters, ATP Finals (Turin)
+
+ÉTAPE 3 — Identifier la phase du tournoi selon les jours :
+  • J1-J2 du tournoi = 1er tour / Round 1
+  • J3-J4 = 2e tour / Round 2
+  • J5-J6 = 1/8 de finale (si 64 joueurs) ou Round 3
+  • J7-J8 = 1/4 de finale
+  • J9-J10 = 1/2 finale
+  • J11-J12 = Finale
+
+EXEMPLES CORRECTS :
+  ✅ "ATP Madrid Masters 1000 · 1er tour" (match le 23 avril 2026 pendant Madrid)
+  ✅ "Monte-Carlo Masters 1000 · 1/8 de finale" (J5 du tournoi)
+  ✅ "Roland Garros · 3e tour" (en fin de semaine 2)
+  ✅ "ATP Barcelona Open 500 · Quart de finale"
+  ✅ "ATP Challenger · Madrid · Demi-finale" (si vraiment Challenger)
+  ✅ "ITF · M25 Santiago · 2nd tour"
+
+Si tu n'es PAS sûr du niveau (ATP principal vs Challenger), regarde les classements :
+  → 2 joueurs avec classement ATP ≤ 200 qui s'affrontent pendant la semaine d'un Masters 1000 = Masters 1000 (1er tour)
+  → JAMAIS "Challenger" pour un match pendant une semaine de Masters 1000 sans preuve claire.
 
 ⚠️ Toutes les heures = Europe/Paris (UTC+1 hiver / UTC+2 été). Pour matchs US, convertir ET/PT vers Paris.
 
@@ -229,6 +281,49 @@ Tu reçois un bet Safe (analyse validée, confiance forte). Tu réponds UNIQUEME
 - WTA / WTA 125 / ITF féminin = même logique
 - Si "Challenger" dans le nom → ATP/WTA Challenger, PAS ATP Tour principal.
 - ⚠️ "Tennis ATP · Challenger" = BUG (mixe ATP principal + circuit Challenger). Utilise "ATP Challenger · [tournoi]".
+
+🎾 RÈGLE TOURNOI PRÉCIS — OBLIGATOIRE, JAMAIS DE VAGUE
+Tu as les 2 joueurs + la date du match → tu DOIS identifier le nom EXACT du tournoi.
+
+INTERDIT ABSOLU :
+  ❌ "ATP · Tournoi en cours"  ❌ "Tournoi en cours"  ❌ "Tournoi ATP"
+  ❌ "Tennis ATP" (sans nom)   ❌ "Match en cours"    ❌ "ATP Challenger · [ville au hasard]"
+
+ÉTAPE 1 — ATP Tour (principal) OU ATP Challenger ?
+Indice clé = CLASSEMENT des joueurs :
+  • Si UN des 2 joueurs est top 150 ATP (ex Djokovic, Sinner, Alcaraz, Medvedev, Zverev, Rublev, Tsitsipas, Ruud, Fritz, Garin (~top 130-150), Rune, Dimitrov, Cerundolo, Draper, Auger-Aliassime, Khachanov…) → c'est probablement ATP Tour (principal)
+  • Si les 2 joueurs sont hors top 200 → probablement Challenger ou ITF
+  • ⚠️ En avril 2026, un Top 150 dans un tableau de Masters 1000 = ATP Tour, PAS Challenger.
+
+ÉTAPE 2 — Identifier le tournoi exact via calendrier ATP 2026 :
+  • 19 janv - 01 fév : Australian Open (Melbourne)
+  • 09-22 mars : Indian Wells (BNP Paribas Open, Masters 1000)
+  • 23 mars - 05 avr : Miami Open (Masters 1000)
+  • 06-12 avr : Monte-Carlo Masters 1000
+  • 13-19 avr : Barcelona Open (ATP 500) + ATP 250 Bucarest + Challengers
+  • 🔴 22 avr - 03 mai : **MADRID MASTERS 1000** (Mutua Madrid Open, terre battue)
+  • 04-17 mai : Rome Masters 1000 (Internazionali BNL d'Italia)
+  • 18 mai - 07 juin : Roland Garros (qualifs + main draw)
+  • 15-28 juin : Queen's (ATP 500) + Halle (ATP 500) + Mallorca
+  • 29 juin - 12 juil : Wimbledon
+  • Juil-Août : Hamburg, Kitzbuhel, Atlanta, Washington, Toronto/Montreal Masters, Cincinnati Masters
+  • 24 août - 07 sept : US Open
+  • Sept-Oct : Asian swing (Chengdu, Tokyo, Shanghai Masters)
+  • Oct-Nov : European indoor (Stockholm, Anvers, Bâle, Vienne, Paris Masters, ATP Finals Turin)
+
+ÉTAPE 3 — Identifier la phase du tournoi selon les jours depuis le début :
+  • J1-J2 = 1er tour • J3-J4 = 2e tour • J5-J6 = 1/8 de finale ou Round 3
+  • J7-J8 = 1/4 de finale • J9-J10 = 1/2 finale • J11-J12 = Finale
+
+EXEMPLES CORRECTS :
+  ✅ "ATP Madrid Masters 1000 · 1er tour" (match le 23 avril 2026 pendant Madrid)
+  ✅ "Monte-Carlo Masters 1000 · 1/8 de finale" (J5 du tournoi)
+  ✅ "Roland Garros · 3e tour"
+  ✅ "ATP Barcelona Open 500 · Quart de finale"
+  ✅ "ATP Challenger · Madrid · Demi-finale" (si vraiment Challenger)
+
+Si 2 joueurs avec classement ATP ≤ 200 s'affrontent pendant la semaine d'un Masters 1000 = Masters 1000 (1er tour).
+JAMAIS "Challenger" pour un match pendant une semaine de Masters 1000 sans preuve claire.
 
 Structure de sortie OBLIGATOIRE :
 {
