@@ -214,38 +214,62 @@ Format HH:MM. Si inconnue, mets "20:00" par défaut.
 - Exemples 2025-26: Levante UD = La Liga (promu en 2025) • Sporting Gijón = La Liga 2.
 - ⚠️ Mauvaise division = BUG CRITIQUE.
 
-Structure de sortie OBLIGATOIRE :
+🔴 DÉTECTION SOLO vs COMBI — LIS L'INPUT ATTENTIVEMENT
+L'admin peut te donner SOIT un seul pari, SOIT plusieurs lignes à combiner.
+- SI l'input contient UNE SEULE ligne / un seul pari → structure SOLO (player1/player2/pick_main/pick_accent)
+- SI l'input contient PLUSIEURS LIGNES (plusieurs matches + picks + cotes) → structure COMBI (array "bets")
+  ⚠️ Chaque ligne = 1 pari distinct, JAMAIS concaténer les joueurs entre lignes
+  Exemple input COMBI (3 lignes séparées):
+    Ligne 1: Garin - Blockx - Vainqueur Garin - 2.60
+    Ligne 2: Hanfmann - Giron - Vainqueur Hanfmann - 1.36
+    Ligne 3: Atmane - Kecmanovic - Vainqueur Atmane - 2.21
+  → OBLIGATOIRE : 3 objets dans "bets", jamais "Garin · Hanfmann · Atmane" en un seul bet.
+
+═══ STRUCTURE SOLO (1 seul pari) ═══
 {
   "date_fr": "Mercredi 22 Avril · 2026",
   "time_fr": "21:45",
   "sport": "foot",
   "player1": "Porto",
   "player2": "Benfica",
-  "flag1": "PT",
-  "flag2": "PT",
-  "competition": "Primeira Liga · O Clássico · Estádio do Dragão",
+  "flag1": "PT", "flag2": "PT",
+  "competition": "Primeira Liga · O Clássico",
   "badge_text": "Fun · Solo",
-  "n_edition": "073",
-  "ghost": "CRAZY",
-  "kicker": "Volume I.",
-  "pick_main": "Score exact",
-  "pick_accent": "3-2 Porto.",
+  "n_edition": "073", "ghost": "CRAZY", "kicker": "Volume I.",
+  "pick_main": "Score exact", "pick_accent": "3-2 Porto.",
   "pick_market": "Marché spécial · Score exact",
-  "cote": "15.00",
-  "confidence": 22,
-  "value_pct": 31.2,
-  "quote_main": "La data dit non.",
-  "quote_accent": "Le cœur dit oui."
+  "cote": "15.00", "confidence": 22, "value_pct": 31.2,
+  "quote_main": "La data dit non.", "quote_accent": "Le cœur dit oui."
 }
 
-RÈGLES (mêmes règles que LIVE pour les champs, adaptées au contexte FUN) :
-- badge_text : "Fun · Solo", "Fun · Combi", "Hockey · NHL · Fun", "Tennis · Fun"…
-- ghost : mot/chiffre qui évoque une grosse cote — "CRAZY", "×50", "×100", "COMMU"
-- kicker : "Volume I.", "Volume II.", "Édition week-end."
+═══ STRUCTURE COMBI (2+ paris combinés) ═══
+{
+  "date_fr": "Jeudi 23 Avril · 2026",
+  "time_fr": "13:00",
+  "sport": "tennis",
+  "badge_text": "Tennis · Fun",
+  "n_edition": "072", "ghost": "CRAZY", "kicker": "Fun Zone.",
+  "confidence": 28, "value_pct": 18.5,
+  "quote_main": "La cote bombe.", "quote_accent": "On parie pour rire.",
+  "bets": [
+    {"player1": "Garin, Cristian", "player2": "Alexander Blockx", "flag1": "CL", "flag2": "BE", "prono": "Vainqueur Garin", "cote": "2.60", "heure": "13:00"},
+    {"player1": "Hanfmann, Yannick", "player2": "Giron, Marcos", "flag1": "DE", "flag2": "US", "prono": "Vainqueur Hanfmann", "cote": "1.36", "heure": "14:30"},
+    {"player1": "Atmane, Terence", "player2": "Kecmanovic, Miomir", "flag1": "FR", "flag2": "RS", "prono": "Vainqueur Atmane", "cote": "2.21", "heure": "16:00"}
+  ]
+}
+
+RÈGLES CHAMPS COMMUNS :
+- badge_text : "Fun · Solo" (1 pari) OU "[Sport] · Fun" / "Fun · Combi" (multi)
+- ghost : "CRAZY", "×50", "×100", "COMMU", "TRIO" (3 picks), "DUO" (2), "QUAD" (4)
+- kicker : "Volume I.", "Fun Zone.", "Édition week-end."
 - confidence : 20-45 (fun = longshot, confiance faible)
-- cote : format "5.00" à "50.00" typiquement
-- value_pct : souvent 15-35%
 - quote_main/quote_accent : ton fun/rebelle — "On parie pour rire. On encaisse sérieux."
+
+RÈGLES COMBI spécifiques :
+- "bets" = array de 2 à 5 paris. JAMAIS 1 seul bet dans un combi. JAMAIS concaténer les joueurs.
+- Chaque bet a: player1, player2, flag1 (ISO2), flag2 (ISO2), prono (court ex "Vainqueur X"), cote (string), heure
+- La "cote" globale (hors bets) n'est PAS obligatoire en combi — le serveur calcule le produit.
+- Pas de player1/player2/pick_main au niveau racine quand "bets" est présent.
 
 JSON pur uniquement.
 PROMPT
