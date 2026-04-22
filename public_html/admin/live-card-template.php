@@ -208,7 +208,7 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".combi-row-bottom{display:flex;align-items:center;padding-left:0;gap:10px}";
     $css .= ".combi-pick{display:flex;align-items:center;flex:1;min-width:0;line-height:0;margin-left:0}";
     $css .= ".combi-pick-svg{display:block;height:20px;width:auto;max-width:100%}";
-    $css .= ".combi-cote{font-family:'Share Tech Mono',monospace;font-size:15px;font-weight:700;color:$accent;background:rgba(0,0,0,.4);padding:4px 12px;border:1.5px solid $accent;box-shadow:0 0 8px rgba($rgb,.3) inset;flex-shrink:0;margin-left:0;letter-spacing:.5px;white-space:nowrap;display:inline-flex;align-items:center;line-height:1;min-width:54px;justify-content:center}";
+    $css .= ".combi-cote{font-family:'Share Tech Mono',monospace;font-size:15px;font-weight:700;color:$accent;background:#000;padding:4px 12px;border:1.5px solid $accent;flex-shrink:0;margin-left:0;letter-spacing:.5px;white-space:nowrap;display:inline-flex;align-items:center;line-height:1;min-width:54px;justify-content:center}";
     $css .= ".pick-locked{position:relative;z-index:2;max-width:540px;border:1.5px solid $accent;padding:18px 22px;margin-bottom:0;display:flex;align-items:center;box-shadow:0 0 20px rgba($rgb,.3);overflow:hidden}";
     $css .= ".pick-locked::before{content:'';position:absolute;inset:0;background:repeating-linear-gradient(-45deg, transparent 0 14px, rgba($rgb,.04) 14px 15px);pointer-events:none}";
     $css .= ".padlock{position:relative;width:48px;height:48px;flex-shrink:0;margin-right:28px;border:1.5px solid $accent;display:flex;align-items:center;justify-content:center;border-radius:2px;box-shadow:0 0 14px rgba($rgb,.5), inset 0 0 8px rgba($rgb,.15)}";
@@ -222,7 +222,7 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".data-cote{display:flex;flex-direction:column;gap:4px}";
     $css .= ".data-label{font-family:'Archivo Narrow',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.45}";
     $css .= ".cote-val{font-family:'Inter',sans-serif;font-weight:900;font-size:58px;letter-spacing:-3px;line-height:1;color:$accent;font-variant-numeric:tabular-nums}";
-    $css .= ".value-pill{display:inline-flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;color:$accent;background:rgba($rgb,.08);border:1px solid rgba($rgb,.4);padding:5px 10px;border-radius:2px;margin-top:6px;width:fit-content}";
+    $css .= ".value-pill{display:inline-flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:1px;color:$accent;background:rgba(0,0,0,.5);border:1px solid $accent;padding:5px 10px;border-radius:2px;margin-top:6px;width:fit-content}";
     $css .= ".conf{flex:1;max-width:340px;margin-left:90px}";
     $css .= ".conf-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}";
     $css .= ".conf-num{font-family:'Share Tech Mono',monospace;font-size:14px;color:#ede8e0;opacity:.8}";
