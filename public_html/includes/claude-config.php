@@ -1,19 +1,18 @@
 <?php
 // ============================================================
-// STRATEDGE — claude-config.php V17
-// V17 : Safe hors tennis = mascotte.png pleine hauteur transparente (comme tennis)
-// V14 : Pas de logo tournoi (texte uniquement), cote pill fond rose néon uni (#FF2D78)
-// V13 : Fix CORS logos, drapeaux flagcdn obligatoires, cote pill simple
-// V12 : Stats enrichies (6-8 lignes par joueur/équipe), logos tournois/compétitions, barre confiance + value universels
-// V11 : Sonnet 4.6 avec extended thinking (Safe uniquement)
-// V10 : Safe card tennis — barre confiance, value, 5 derniers (D en rouge), VS plus grand, drapeaux
-// V9 : CLAUDE_FUN_ENRICH_PROMPT ajouté, Safe = Claude génère le HTML complet
+// STRATEDGE — claude-config.php V18 (éditorial 1080x1080)
+// V18 : refonte cards éditorial — nouveaux champs (n_edition, ghost,
+//       kicker, pick_main, pick_accent, quote_main, quote_accent),
+//       règle horaire live vs match, détection player prop
+// V17 : Safe hors tennis = mascotte.png pleine hauteur transparente
+// V14 : Pas de logo tournoi (texte uniquement), cote pill fond rose néon
+// V13 : Fix CORS logos, drapeaux flagcdn obligatoires
 // ⚠️  NE JAMAIS exposer ce fichier publiquement
 // ============================================================
 
 if (!defined('ABSPATH')) { define('ABSPATH', true); }
 
-// Clé API UNIQUEMENT dans claude-config.local.php (gitignored) → jamais écrasée par git pull
+// Clé API UNIQUEMENT dans claude-config.local.php (gitignored)
 $__claude_local = __DIR__ . '/claude-config.local.php';
 if (is_file($__claude_local)) {
     require_once $__claude_local;
@@ -24,437 +23,235 @@ if (!defined('CLAUDE_API_KEY')) {
 }
 
 define('CLAUDE_MODEL', 'claude-sonnet-4-6');
-
 define('CLAUDE_THINKING_ENABLED', false);
 
 // ============================================================
-// ⚡ LIVE — Enrichissement uniquement (JSON, pas de HTML)
+// ⚡ LIVE — Enrichissement JSON (template PHP rend le HTML)
 // ============================================================
 define('CLAUDE_LIVE_ENRICH_PROMPT', <<<'PROMPT'
 Tu reçois les infos d'un match (sport, match, pronostic, cote). Tu réponds UNIQUEMENT par un objet JSON valide, sans aucun texte avant ou après, sans backticks.
 
-🔴🔴🔴 [BLOC HEURE RENFORCÉ v2] 🔴🔴🔴
-RÈGLE #1 ABSOLUE AVANT TOUT:
-- time_fr n'est JAMAIS l'heure actuelle. Pas l'heure de génération. Pas l'heure serveur.
-- time_fr = HEURE RÉELLE DU COUP D'ENVOI du match (en heure de Paris).
-- Si tu ne connais pas l'heure du match: utilise "20:00" par défaut.
-- Si tu vois un match "Mainz vs Freiburg Bundesliga" sans heure donnée: cherche l'heure officielle DFL (typiquement 15:30, 17:30, 18:30, 20:30 Paris pour Bundesliga samedi/dimanche).
-- Si la même heure apparaît que l'heure courante: c'est un BUG, re-vérifie.
+🔴 RÈGLE HEURE — LIVE = HEURE DU POST, PAS DU MATCH
+- time_fr pour un bet LIVE = heure de publication de la card = HEURE ACTUELLE (maintenant).
+- Le serveur te donne la date+heure actuelle dans le prompt utilisateur. Utilise cette heure.
+- Format HH:MM, timezone Europe/Paris.
 
-🔴 EXEMPLE CONCRET:
-Si je te demande une carte à 19:36 et que tu renvoies time_fr="19:36" → tu as mis l'heure actuelle → FAUX.
-Si tu renvoies time_fr="17:30" (heure officielle du match) → correct.
+⚠️ Toutes les heures = Europe/Paris (UTC+1 hiver / UTC+2 été). Pour matchs US, convertir ET/PT vers Paris.
 
-⚠️ HEURE DU MATCH — PRIORITÉ ABSOLUE — TOUJOURS EN HEURE DE PARIS (Europe/Paris)
-- date_fr et time_fr = heure RÉELLE du coup d'envoi / début, exprimée pour un abonné en France (Europe/Paris, UTC+1 hiver / UTC+2 été).
-- Tu DOIS rechercher ou déduire cette heure (calendriers Ligue 1, Liga, PL, C1, Europa, NHL, MLB, ATP/WTA…). Horaires types : Ligue 1 21h ou 17h/15h dimanche ; C1 21h ; NHL souvent 01h–03h Paris ; tennis selon tournoi.
-- ⚠️ MATCHS AUX ÉTATS-UNIS (OBLIGATOIRE) : MLB, NBA, NFL, MLS, NCAA, NHL à domicile US, tennis US (Indian Wells, US Open sessions US, Miami jour…). Tu DOIS convertir l'heure locale américaine (souvent Eastern ET, parfois Pacific PT côte ouest) vers Paris. NE JAMAIS renvoyer l'heure « telle qu'annoncée aux USA » sans conversion.
-- MLB / soirée US : souvent entre 01h et 04h heure de Paris, parfois lendemain ; vérifie le passage minuit (date_fr = jour du coup d'envoi à Paris).
-- Rappel décalage indicatif été : Paris ≈ ET + 6h (ex. 19h05 ET → 01h05 Paris lendemain ; 13h10 ET → 19h10 Paris).
-- ⚠️ BASEBALL MLB : même règle — jamais l'heure US brute dans time_fr.
-- Si le message contient "date_fr" et "time_fr" explicites avec la mention "secours" ou "par défaut", utilise-les UNIQUEMENT si tu ne peux pas déduire l'heure réelle du match. Dès que tu connais le créneau du match (ex: "dimanche 21h Ligue 1"), renvoie cette date/heure réelle.
-- ❌ INTERDIT ABSOLU : ne JAMAIS utiliser l'heure actuelle ni l'heure UK brute sans conversion. Les matchs FA Cup / Championship UK sont en heure locale UK (GMT/BST), tu DOIS convertir vers Paris (+1h hiver, +1h été aussi). Ex: 15:00 UK = 16:00 Paris (hiver) / 16:00 UK = 17:00 Paris (été). Règle: Paris = UK + 1h toujours. Si tu ne connais pas l'heure du match, utilise 20:00 comme placeholder, JAMAIS l'heure courante.
-- ❌ INTERDIT : Ne JAMAIS mettre la compétition au hasard. Si tu ne connais pas avec certitude, cherche la vraie compétition (Premier League, Championship, Ligue 1, FA Cup, League Cup, Coupe de France, etc.). Vérifie la division du club.
-- Format date_fr : en français (ex: "Dimanche 2 Mars 2026"). Format time_fr : HH:MM (ex: "21:00").
+Structure de sortie OBLIGATOIRE :
+{
+  "date_fr": "Mercredi 22 Avril · 2026",
+  "time_fr": "21:08",
+  "sport": "tennis",
+  "player1": "Djokovic N.",
+  "player2": "Sinner J.",
+  "flag1": "RS",
+  "flag2": "IT",
+  "team1_logo": "",
+  "team2_logo": "",
+  "competition": "Tennis ATP · Masters 1000 · Demi-finale",
+  "badge_text": "Tennis · ATP",
+  "n_edition": "348",
+  "ghost": "LIVE",
+  "kicker": "Chapitre cinq.",
+  "pick_main": "Sinner remporte",
+  "pick_accent": "le set 2.",
+  "pick_market": "Marché live · Gagnant set en cours",
+  "cote": "2.10",
+  "confidence": 65,
+  "value_pct": 12.7,
+  "quote_main": "Break confirmé.",
+  "quote_accent": "Momentum basculé.",
+  "is_player_prop": false,
+  "player_id": null,
+  "player_name": "",
+  "player_stats_hint": "",
+  "opp_team": ""
+}
 
-Clés obligatoires :
-- date_fr : date réelle du match (voir règle ci-dessus).
-- time_fr : heure réelle de coup d'envoi / début (voir règle ci-dessus).
-- player1 : nom du premier joueur/équipe en VERSION OFFICIELLE LOCALE (langue du club), PAS la traduction française.
-  Exemples corrects: "Freiburg" (pas "Fribourg"), "Bayern München" ou "Bayern Munich" (pas "Bayern de Munich"), "Juventus" (pas "La Juve"), "Inter Milan" (pas "Inter de Milan"), "Manchester United" (pas "Manchester Uni"), "PSG" ou "Paris Saint-Germain", "Atlético Madrid" (pas "Atletico de Madrid"), "Sevilla" (pas "Séville"), "München" ou "Munich" OK, "Köln" ou "Cologne" OK.
-  → IMPÉRATIF pour que le logo soit retrouvé correctement.
-- player2 : nom du second (ex: "Baez S.")
-- flag1, flag2 : emoji drapeau pays
-- competition : compétition + surface si pertinent
-- prono_joueur : 1 ou 2 selon le pronostic
+RÈGLES CHAMPS :
+- sport : "tennis", "foot", "basket", "nba", "hockey", "nhl", "baseball", "mlb" (minuscules)
+- player1/player2 : noms exacts. Tennis "NOM P." (maj + initiale). Équipes "PARIS SG", "BOSTON CELTICS"…
+- flag1/flag2 : code ISO2 pays (FR, GB, US, ES, IT, DE, RS…). Tennis toujours présent. Team sports tu peux laisser "" (le logo prime).
+- team1_logo/team2_logo : laisse "" — le serveur PHP résout via ses helpers locaux.
+- competition : nom complet (ex. "Ligue 1 · J29 · Parc des Princes")
+- badge_text : "Tennis · ATP", "Foot · Ligue 1", "Basket · NBA", "Hockey · NHL"…
+- n_edition : nombre à 3 chiffres (ex "348"). Si inconnu, génère un nombre cohérent 100-999.
+- ghost : 3-5 caractères UPPERCASE (ex "L1", "ATP", "NBA", "LIVE", "DUEL"). Texte fantôme géant en arrière-plan.
+- kicker : phrase éditoriale italique (2-4 mots). Ex "Dossier quatre.", "Chapitre cinq.", "Player Props.".
+- pick_main : début du pronostic en Bebas Neue (ex "Sinner remporte", "Victoire PSG", "Denver couvre")
+- pick_accent : fin du pronostic en italique gradient (ex "le set 2.", "& BTTS Oui.", "+4.5 points.")
+  → pick_main + pick_accent doivent former UNE phrase claire
+- pick_market : ligne sous le pick, format "Marché · description" (ex "Marché live · Gagnant set en cours")
+- cote : string "2.10" ou "2.30"
+- confidence : entier 30-95 basé sur analyse (forme, H2H, contexte, absences)
+- value_pct : value en %. Formule (proba estimée × cote - 1) × 100. Si négative → 0.
+- quote_main : citation 2-5 mots (sans guillemets) — "Break confirmé.", "Le court ne ment pas."
+- quote_accent : fin citation italique 2-4 mots — "Momentum basculé.", "La data non plus."
 
-⚠️ LOGOS OBLIGATOIRES pour football, basket (NBA), hockey (NHL), baseball (MLB) :
-- team1_logo et team2_logo : URLs DIRECTES vers le logo.
-  FOOTBALL : https://media.api-sports.io/football/teams/{id}.png (PSG=85, Marseille=81, etc.).
-  NHL : https://a.espncdn.com/combiner/i?img=/i/teamlogos/nhl/500/scoreboard/{abbrev}.png (ana, bos, buf, etc.).
-  MLB : https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/scoreboard/{abbrev}.png (ari, atl, bal, bos, chc, chw, cin, cle, col, det, hou, kc, laa, lad, mia, mil, min, nym, nyy, oak, phi, pit, sd, sf, sea, stl, tb, tex, tor, wsh).
-  NBA : cdn.nba.com.
-  En dernier recours seulement, mets "".
+🎯 PLAYER PROP DETECTION (optionnel) :
+Si le pronostic concerne UN SEUL joueur (buteur, SOT, total points NBA, points+rebonds+passes…) :
+- is_player_prop: true
+- player_id: ID du joueur (NBA=stats.nba.com id, NHL=nhl.com id, MLB=mlb.com id, Soccer=api-sports id)
+- player_name: nom en MAJUSCULES (ex "MBAPPÉ", "HAALAND")
+- player_stats_hint: court hint MAJUSCULES (ex "⚽ 28 BUTS · L1 · LOI DE L'EX")
+- opp_team: équipe adverse (ex "OM", "BARCELONE", "LAKERS")
+Si tu ne connais PAS l'ID exact → is_player_prop: false (mascotte par défaut).
 
-Exemple foot : {"date_fr":"Dimanche 2 Mars 2026","time_fr":"21:00","player1":"PSG","player2":"Marseille","flag1":"🇫🇷","flag2":"🇫🇷","competition":"Ligue 1","prono_joueur":1,"team1_logo":"https://media.api-sports.io/football/teams/85.png","team2_logo":"https://media.api-sports.io/football/teams/81.png"}
+JSON pur. Aucun texte avant/après. Aucun backtick.
 PROMPT
 );
 
 // ============================================================
-// ⚡ FUN BET — Enrichissement uniquement (JSON, pas de HTML)
-// L'admin saisit : sport + liste brute de paris
-// Claude retourne les données structurées pour le template PHP
+// 🎪 FUN — Enrichissement JSON (longshot)
 // ============================================================
 define('CLAUDE_FUN_ENRICH_PROMPT', <<<'PROMPT'
-Tu reçois le sport et une liste brute de paris combinés (Fun Bet). Tu réponds UNIQUEMENT par un objet JSON valide, sans aucun texte avant ou après, sans backticks.
+Tu reçois les infos d'un bet Fun (grosse cote, longshot). Tu réponds UNIQUEMENT par un objet JSON valide, sans texte avant/après, sans backticks.
+
+🔴 HEURE : time_fr = HEURE DU COUP D'ENVOI du match (Europe/Paris), PAS l'heure actuelle.
+Format HH:MM. Si inconnue, mets "20:00" par défaut.
 
 Structure de sortie OBLIGATOIRE :
 {
-  "date_fr": "Mercredi 26 Février 2026",
-  "time_fr": "20:45",
-  "bets": [
-    {
-      "match": "RDC Genk vs Dinamo Zagreb",
-      "heure": "20:45",
-      "flag1": "🇧🇪",
-      "flag2": "🇭🇷",
-      "team1_logo": "https://...",
-      "team2_logo": "https://...",
-      "prono": "Les 2 équipes marquent + +4.5 corners Genk",
-      "cote": "2.95"
-    },
-    {
-      "match": "Celta Vigo vs PAOK",
-      "heure": "21:00",
-      "flag1": "🇪🇸",
-      "flag2": "🇬🇷",
-      "team1_logo": "https://...",
-      "team2_logo": "https://...",
-      "prono": "2ème MT +0.5 Celta + +4.5 corners Celta",
-      "cote": "2.49"
-    }
-  ],
-  "cote_totale": "7.35",
-  "confidence": 68
+  "date_fr": "Mercredi 22 Avril · 2026",
+  "time_fr": "21:45",
+  "sport": "foot",
+  "player1": "Porto",
+  "player2": "Benfica",
+  "flag1": "PT",
+  "flag2": "PT",
+  "competition": "Primeira Liga · O Clássico · Estádio do Dragão",
+  "badge_text": "Fun · Solo",
+  "n_edition": "073",
+  "ghost": "CRAZY",
+  "kicker": "Volume I.",
+  "pick_main": "Score exact",
+  "pick_accent": "3-2 Porto.",
+  "pick_market": "Marché spécial · Score exact",
+  "cote": "15.00",
+  "confidence": 22,
+  "value_pct": 31.2,
+  "quote_main": "La data dit non.",
+  "quote_accent": "Le cœur dit oui."
 }
 
-Règles :
-- date_fr = date du PREMIER match (le plus tôt chronologiquement), en toutes lettres en français.
-- time_fr = heure du PREMIER match (coup d'envoi), TOUJOURS en heure de Paris (fuseau Europe/Paris). C'est l'heure qui doit apparaître en GRAND en haut de la card : cohérente avec le match qui commence le plus tôt dans la liste.
-- ⚠️ ÉTATS-UNIS (MLB, NBA, NFL, MLS, NHL domicile US, tennis US…) : convertir ET ou PT vers Paris. Jamais l'heure US non convertie. Soir US → souvent nuit ou lendemain matin à Paris.
-- bets = tableau ordonné par ordre CHRONOLOGIQUE de coup d'envoi (le 1er match à jouer en premier dans le tableau). Chaque entrée OBLIGATOIRE :
-  - match : nom des équipes (ex: "Équipe A vs Équipe B")
-  - heure : heure RÉELLE de coup d'envoi (début du match), fuseau Europe/Paris, format HH:MM. Tu DOIS la rechercher ou la déduire : utilise ta connaissance des calendriers (Ligue 1, C1, Ligue Europa, NHL, MLB, etc.). Ex: Ligue 1 souvent 21h ou 17h ; C1/Europa 18:45 ou 21:00 ; NHL 01:00 ou 02:00 Paris ; MLB 23h30-02h00 Paris (matchs soir US), 19h-22h Paris (matchs après-midi US). Ne mets pas une heure au hasard.
-  - flag1, flag2 : emoji drapeau pays équipe 1 et 2
-  - team1_logo, team2_logo : pour le FOOTBALL, HOCKEY NHL et BASEBALL MLB, fournis une URL directe vers le logo de chaque équipe.
-    FOOTBALL : API-Football https://media.api-sports.io/football/teams/{id}.png ou FotMob, ou "".
-    HOCKEY NHL : ESPN CDN https://a.espncdn.com/combiner/i?img=/i/teamlogos/nhl/500/scoreboard/{abbrev}.png avec abbrev en minuscules (ana, bos, buf, car, cbj, cgy, chi, col, dal, det, edm, fla, la, min, mtl, nj, nsh, nyi, nyr, ott, phi, pit, sea, sjs, stl, tb, tor, utah, vgk, wsh, wpg).
-    BASEBALL MLB : ESPN CDN https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/scoreboard/{abbrev}.png (ari, atl, bal, bos, chc, chw, cin, cle, col, det, hou, kc, laa, lad, mia, mil, min, nym, nyy, oak, phi, pit, sd, sf, sea, stl, tb, tex, tor, wsh). Si tu ne trouves pas, mets "".
-  - prono, cote : texte du pari et cote exacte fournie
-- cote_totale = produit de toutes les cotes individuelles, arrondi à 2 décimales
-- confidence = indice de confiance global estimé entre 40 et 85
-- Les drapeaux : tu connais les nationalités/pays des équipes. Si incertain, utilise le drapeau du pays le plus probable.
-- Toutes les heures en Europe/Paris. JSON pur uniquement. Aucun texte, aucun commentaire, aucun backtick.
+RÈGLES (mêmes règles que LIVE pour les champs, adaptées au contexte FUN) :
+- badge_text : "Fun · Solo", "Fun · Combi", "Hockey · NHL · Fun", "Tennis · Fun"…
+- ghost : mot/chiffre qui évoque une grosse cote — "CRAZY", "×50", "×100", "COMMU"
+- kicker : "Volume I.", "Volume II.", "Édition week-end."
+- confidence : 20-45 (fun = longshot, confiance faible)
+- cote : format "5.00" à "50.00" typiquement
+- value_pct : souvent 15-35%
+- quote_main/quote_accent : ton fun/rebelle — "On parie pour rire. On encaisse sérieux."
+
+JSON pur uniquement.
 PROMPT
 );
 
 // ============================================================
-// 🛡️ SAFE COMBINÉ — Enrichissement (JSON, pas de HTML)
-// L'admin saisit : sport + liste de paris Safe à combiner
-// Claude retourne les données structurées pour le template PHP
-// ============================================================
-define('CLAUDE_SAFE_COMBI_ENRICH_PROMPT', <<<'PROMPT'
-Tu reçois le sport et une liste de paris Safe à combiner. Tu réponds UNIQUEMENT par un objet JSON valide, sans aucun texte avant ou après, sans backticks.
-
-Structure de sortie OBLIGATOIRE :
-{
-  "date_fr": "Mercredi 26 Février 2026",
-  "time_fr": "20:45",
-  "bets": [
-    {
-      "match": "PSG vs Marseille",
-      "heure": "20:45",
-      "flag1": "🇫🇷",
-      "flag2": "🇫🇷",
-      "team1_logo": "https://...",
-      "team2_logo": "https://...",
-      "prono": "Victoire PSG",
-      "cote": "1.65",
-      "confidence": 78,
-      "value_pct": 8.2,
-      "analyse": "PSG invaincu à domicile, série de 12V consécutives. Marseille sans Aubameyang."
-    }
-  ],
-  "cote_totale": "3.42",
-  "confidence_globale": 68
-}
-
-Règles :
-- date_fr = date du PREMIER match (le plus tôt chronologiquement), en toutes lettres en français.
-- time_fr = heure du PREMIER match (coup d'envoi), TOUJOURS heure de Paris ; c'est l'heure affichée en grand en tête de card, alignée sur le match qui commence le plus tôt.
-- ⚠️ ÉTATS-UNIS (MLB, NBA, NFL, MLS, NHL US, tennis US…) : convertir ET/PT vers Paris. Jamais l'heure américaine brute.
-- bets = tableau ordonné par ordre CHRONOLOGIQUE de coup d'envoi (1er match en premier). Chaque entrée OBLIGATOIRE :
-  - match : nom des équipes/joueurs (ex: "Équipe A vs Équipe B")
-  - heure : heure RÉELLE de coup d'envoi (début du match), fuseau Europe/Paris, format HH:MM. Tu DOIS la rechercher ou la déduire (calendriers Ligue 1, C1, Europa, NHL, MLB, tennis). Ex: Ligue 1 21h ; C1 21h ou 18:45 ; NHL 01:00 ou 02:00 Paris ; MLB 23h30-02h00 Paris (matchs soir US), 19h-22h Paris (matchs après-midi US).
-  - flag1, flag2 : emoji drapeau pays équipe/joueur 1 et 2
-  - team1_logo, team2_logo : pour le FOOTBALL, fournis une URL vers le logo (API-Football https://media.api-sports.io/football/teams/{id}.png). Pour le HOCKEY NHL : ESPN CDN. Pour le BASEBALL MLB : ESPN CDN https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/scoreboard/{abbrev}.png (ari, atl, bal, bos, chc, chw, cin, cle, col, det, hou, kc, laa, lad, mia, mil, min, nym, nyy, oak, phi, pit, sd, sf, sea, stl, tb, tex, tor, wsh). Sinon "".
-  - prono : texte du pronostic exact
-  - cote : cote exacte fournie par l'admin
-  - confidence : indice de confiance INDIVIDUEL pour CE bet (40-92). Évalue selon : forme, H2H, contexte, stats récentes.
-  - value_pct : estimation de la value en %. Formule : (probabilité estimée × cote - 1) × 100. Si négative, mettre 0.
-  - analyse : 1-2 phrases courtes justifiant le pronostic (stats clés, forme, contexte)
-- cote_totale = produit de toutes les cotes individuelles, arrondi à 2 décimales
-- confidence_globale = moyenne pondérée des confiances individuelles, ajustée à la baisse (-5 à -10 points car combiné = plus de risque)
-- Les drapeaux : tu connais les nationalités/pays. Si incertain, utilise le drapeau du pays le plus probable.
-- Toutes les heures en Europe/Paris. JSON pur uniquement. Aucun texte, aucun commentaire, aucun backtick.
-PROMPT
-);
-
-// ============================================================
-// 🛡️ SAFE SINGLE — Enrichissement JSON (comme Fun/Live)
-// L'admin saisit : sport + match + prono + cote
-// Claude retourne les données structurées pour le template PHP
+// 🛡️ SAFE — Enrichissement JSON (analyse validée)
 // ============================================================
 define('CLAUDE_SAFE_ENRICH_PROMPT', <<<'PROMPT'
-Tu reçois le sport, le match, le pronostic et la cote d'un bet Safe. Tu réponds UNIQUEMENT par un objet JSON valide, sans aucun texte avant ou après, sans backticks.
+Tu reçois un bet Safe (analyse validée, confiance forte). Tu réponds UNIQUEMENT par un objet JSON valide, sans texte avant/après, sans backticks.
+
+🔴 HEURE : time_fr = HEURE DU COUP D'ENVOI (Europe/Paris). Si inconnue, trouve-la via les horaires officiels (Ligue 1 21h/17h, PL 16h/18h30, C1 21h, NBA ~01h-04h Paris, NHL ~01h-03h Paris…).
 
 Structure de sortie OBLIGATOIRE :
 {
-  "date_fr": "Mercredi 26 Février 2026",
-  "time_fr": "20:45",
-  "match": "PSG vs Bayern Munich",
-  "heure": "21:00",
-  "competition": "Ligue des Champions",
-  "flag1": "🇫🇷",
-  "flag2": "🇩🇪",
-  "team1_logo": "https://...",
-  "team2_logo": "https://...",
-  "prono": "Victoire PSG + Plus de 1.5 buts",
-  "cote": "1.85",
-  "confidence": 78,
-  "value_pct": 8.2,
-  "analyse": "PSG invaincu à domicile, 12V consécutives au Parc. Bayern sans Müller et Sané. xG moyen PSG dom: 2.3."
+  "date_fr": "Mercredi 22 Avril · 2026",
+  "time_fr": "21:00",
+  "sport": "foot",
+  "player1": "Paris SG",
+  "player2": "Olympique Marseille",
+  "flag1": "FR",
+  "flag2": "FR",
+  "competition": "Ligue 1 · J29 · Parc des Princes",
+  "badge_text": "Foot · Ligue 1",
+  "n_edition": "128",
+  "ghost": "L1",
+  "kicker": "Dossier douze.",
+  "pick_main": "Victoire PSG",
+  "pick_accent": "& BTTS Oui.",
+  "pick_market": "Marché combiné · 1 + BTTS",
+  "cote": "2.45",
+  "confidence": 62,
+  "value_pct": 9.1,
+  "quote_main": "Deux camps. Une analyse.",
+  "quote_accent": "Un pick.",
+  "is_player_prop": false,
+  "player_id": null,
+  "player_name": "",
+  "player_stats_hint": "",
+  "opp_team": ""
 }
 
-Règles :
-- date_fr = date du match en toutes lettres en français
-- time_fr = heure du coup d'envoi, TOUJOURS heure de Paris (fuseau Europe/Paris)
-- ⚠️ ÉTATS-UNIS (MLB, NBA, NFL, MLS, NHL US, tennis US…) : convertir ET/PT vers Paris
-- match : nom des équipes/joueurs exactement comme fourni
-- heure : heure RÉELLE de coup d'envoi, Europe/Paris, format HH:MM
-- competition : nom de la compétition (Ligue 1, Premier League, Ligue des Champions, ATP, NHL, MLB...)
-- flag1, flag2 : emoji drapeau pays
-- team1_logo, team2_logo : URL directe vers le logo
-  FOOTBALL : API-Football https://media.api-sports.io/football/teams/{id}.png
-  HOCKEY NHL : ESPN CDN https://a.espncdn.com/combiner/i?img=/i/teamlogos/nhl/500/scoreboard/{abbrev}.png
-  BASEBALL MLB : ESPN CDN https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/scoreboard/{abbrev}.png
-  TENNIS : "" (pas de logo)
-  Si tu ne trouves pas, mets ""
-- prono : texte du pronostic exact (tel que fourni par l'admin)
-- cote : cote exacte fournie
-- confidence : indice de confiance (40-92). Évalue selon forme, H2H, contexte, stats
-- value_pct : estimation de la value en %. Formule : (probabilité estimée × cote - 1) × 100. Si négative, 0
-- analyse : 2-3 phrases courtes justifiant le pronostic (stats clés, forme, contexte, absences)
-- Toutes les heures en Europe/Paris. JSON pur uniquement.
+RÈGLES (identiques à LIVE, adaptées SAFE) :
+- confidence : 55-85 (Safe = confiance élevée)
+- value_pct : typiquement 5-15%
+- pick_main + pick_accent forment 1 phrase claire ("Victoire PSG & BTTS Oui.")
+- kicker : ton éditorial sobre — "Dossier douze.", "Dossier quatre.", "Chapitre treize."
+- quote_main/quote_accent : 2-5 mots chacun, ton premium ("Le court ne ment pas. La data non plus.")
+
+🎯 PLAYER PROP : Mêmes règles que LIVE. is_player_prop=true uniquement si tu as l'ID exact du joueur.
+
+JSON pur uniquement.
 PROMPT
 );
 
 // ============================================================
-// 🛡️ PROMPT SAFE LEGACY (ancien format HTML complet — conservé comme backup)
+// 🎰 COMBI — Enrichissement JSON multi-picks
+// ============================================================
+define('CLAUDE_COMBI_ENRICH_PROMPT', <<<'PROMPT'
+Tu reçois un combiné (2-5 picks avec cote totale). Tu réponds UNIQUEMENT par un objet JSON valide.
+
+🔴 HEURE : time_fr = HEURE DU PREMIER MATCH du combiné (Europe/Paris).
+
+Structure OBLIGATOIRE :
+{
+  "date_fr": "Mercredi 22 Avril · 2026",
+  "time_fr": "20:45",
+  "sport": "foot",
+  "badge_text": "Multisports · Combi",
+  "n_edition": "130",
+  "ghost": "TRIO",
+  "kicker": "Édition nº 08.",
+  "cote": "6.68",
+  "confidence": 52,
+  "value_pct": 16.5,
+  "quote_main": "Trois chocs.",
+  "quote_accent": "Un ticket.",
+  "selections": [
+    {"team1": "Man City", "team2": "Liverpool", "flag1": "GB", "flag2": "GB", "prono": "Plus 2.5 buts", "cote": "1.72"},
+    {"team1": "Inter", "team2": "Juventus", "flag1": "IT", "flag2": "IT", "prono": "BTTS Oui", "cote": "1.85"},
+    {"team1": "Real Madrid", "team2": "Barcelone", "flag1": "ES", "flag2": "ES", "prono": "Victoire Real", "cote": "2.10"}
+  ]
+}
+
+RÈGLES :
+- cote (globale) = produit des cotes individuelles (ici 1.72 × 1.85 × 2.10 ≈ 6.68). Calcule et arrondis à 2 décimales.
+- confidence globale : moyenne pondérée, typique 40-65 pour combi 3 picks.
+- selections : array de 2 à 5 picks. Chaque pick a :
+  - team1/team2 : noms équipes
+  - flag1/flag2 : ISO2 pays
+  - prono : pick en 2-5 mots (ex "Plus 2.5 buts", "BTTS Oui", "Victoire Real", "HC -1.5")
+  - cote : cote individuelle format "1.72"
+- badge_text : "Multisports · Combi", "Tennis · Combi", "Fun · Combi"
+- ghost : "TRIO" (3 picks), "DUO" (2), "QUAD" (4)
+- kicker : "Édition nº XX." ou "Édition week-end."
+
+JSON pur uniquement.
+PROMPT
+);
+
+// Alias pour compat avec generate-card.php (avant V18 utilisait CLAUDE_SAFE_COMBI_ENRICH_PROMPT)
+if (!defined('CLAUDE_SAFE_COMBI_ENRICH_PROMPT')) {
+    define('CLAUDE_SAFE_COMBI_ENRICH_PROMPT', CLAUDE_COMBI_ENRICH_PROMPT);
+}
+
+// ============================================================
+// 🛡️ LEGACY — Ancien prompt HTML complet (backup rollback uniquement)
 // ============================================================
 define('CLAUDE_CARD_PROMPT', <<<'PROMPT'
-Tu es le générateur de cards visuelles StratEdge V5. Tu reçois des données de bet en JSON et tu retournes EXCLUSIVEMENT un objet JSON avec deux cards HTML.
-
-⚠️ RÈGLE ABSOLUE — FORMAT DE SORTIE
-Tu dois retourner UNIQUEMENT ceci, sans rien d'autre :
-{"html_normal":"...HTML complet...","html_locked":"...HTML complet..."}
-Pas de texte avant. Pas de texte après. Pas de backticks. JSON valide pur.
-Dans le HTML : utiliser des apostrophes dans les attributs (style= class= src=), jamais de guillemets doubles.
-
----
-
-🧠 PROTOCOLE D'ANALYSE VALUE BET
-
-Probabilité réelle (pondération) :
-- Stats saisonnières (25%) + Domicile/extérieur (25%) + H2H face-à-face (30%) + Forme récente (20%)
-Value = (Probabilité réelle × Cote) - 1
-Confiance 5-6/10→1-2% bankroll, 7/10→3%, 8/10→4%, 9-10/10→5%
-
----
-
-🎨 DESIGN SYSTEM
-
-Import Google Fonts dans chaque <style> :
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&display=swap');
-
-Dimensions : width:1440px; overflow:hidden
-⚠️ PAS de min-height fixe. Hauteur auto, contenu compact, pas de grands vides.
-Les 2 cards (normale et locked) doivent avoir la MÊME largeur (1440px) et des proportions similaires.
-⚠️ NETTETÉ : ajouter dans le body : -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility;
-Background : #080A12
-Grille fond (z-index:0) : position:absolute; inset:0; repeating-linear-gradient cyan 2.5% opacity, espacement 40px; pointer-events:none
-Contenu z-index:2; position:relative
-Ligne gradient haut ET bas (4px) : linear-gradient(90deg,#FF2D78,#00D4FF)
-Police titre : Orbitron | Corps : Rajdhani
-Rose:#FF2D78 · Cyan:#00D4FF · Vert:#00FF88 · Orange:#FFA500 · Texte:#F0F4F8
-
----
-
-🖼️ IMAGES
-
-Logo StratEdge (coin haut gauche) :
-<img src='https://stratedgepronos.fr/assets/images/logo_site_transparent.png' style='height:70px'>
-
-Logos clubs/joueurs — ⚠️ IMPORTANT : ajouter les logos à côté des noms :
-- FOOTBALL : utiliser les logos via ces CDN :
-  • API-Football : https://media.api-sports.io/football/teams/{api_football_id}.png
-    Exemples : Real Madrid=541, Barcelona=529, PSG=85, Man City=50, Liverpool=40, Bayern=157, Juventus=496, Inter=505, Milan=489, Benfica=211, Porto=212, Marseille=81, Lyon=80, Monaco=91, Lille=79, Arsenal=42, Chelsea=49, Man United=33, Tottenham=47, Napoli=492, Roma=497, Lazio=487, Dortmund=165, Atletico=530, Sevilla=536, Ajax=194, Feyenoord=215, Celtic=247, Rangers=257, Sporting=228, Galatasaray=645, Fenerbahce=611
-  • FotMob : https://images.fotmob.com/image_resources/logo/teamlogo/{fotmob_id}_small.png
-  • Football-Data.org : https://crests.football-data.org/{fd_id}.png
-  Si tu ne connais pas l'ID exact d'un club, utilise le drapeau emoji du pays
-
-- TENNIS : drapeau VISUEL à côté du nom — utiliser OBLIGATOIREMENT une image <img> flagcdn.com :
-  Format : <img src='https://flagcdn.com/w40/{code}.png' style='height:20px;border-radius:2px;vertical-align:middle;margin-right:6px' alt=''>
-  Codes pays courants : fr, es, us, ch, de, it, gb, ar, cl, br, au, ca, jp, rs, hr, gr, cz, pl, ru, cn, kr, no, se, dk, bg, ro, hu, at, pt, nl, be, ge, kz, in, za, tn, dz, ma, il, ua
-  ⚠️ NE PAS utiliser d'emoji drapeau (🇫🇷 etc.) — ils ne se rendent pas correctement dans html2canvas pour l'export JPG.
-  ⚠️ NE PAS écrire de code texte "FR", "CH" — utiliser l'image flagcdn.com.
-  Toujours mettre le drapeau à côté du nom dans la match card ET dans les titres des colonnes Stats.
-- BASKET NBA : https://cdn.nba.com/logos/nba/{nba_team_id}/primary/L/logo.svg
-- HOCKEY NHL : drapeau emoji ou texte abrégé
-- BASEBALL MLB : ESPN CDN https://a.espncdn.com/combiner/i?img=/i/teamlogos/mlb/500/scoreboard/{abbrev}.png (ari, atl, bal, bos, chc, chw, cin, cle, col, det, hou, kc, laa, lad, mia, mil, min, nym, nyy, oak, phi, pit, sd, sf, sea, stl, tb, tex, tor, wsh). Toutes les équipes MLB sont américaines, drapeau 🇺🇸 (sauf Toronto 🇨🇦).
-
-Mascotte WATERMARK — ⚠️⚠️ OBLIGATOIRE POUR TOUS LES SPORTS (y compris baseball, football, basket, hockey), doit occuper toute la hauteur de la card en arrière-plan transparent :
-HTML EXACT pour la mascotte (à placer IMMÉDIATEMENT après l'ouverture de la div principale de la card, AVANT tout contenu) :
-- TENNIS : <img src='https://stratedgepronos.fr/assets/images/mascotte-tennis.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
-- FOOTBALL / BASKET / HOCKEY et tout autre sport SAFE/LIVE : <img src='https://stratedgepronos.fr/assets/images/mascotte.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
-- BASEBALL (MLB) : <img src='https://stratedgepronos.fr/assets/images/mascotte-mlb.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
-- FUN (tous les bets de type Fun, quel que soit le sport) : <img src='https://stratedgepronos.fr/assets/images/mascotte-fun-nobg.png' style='position:absolute;left:50%;top:0;transform:translateX(-50%);height:100%;width:auto;object-fit:contain;pointer-events:none;opacity:0.45;z-index:1'>
-- Card locked : même chose mais opacity:0.25
-⚠️ NE JAMAIS OUBLIER la mascotte ! La div principale DOIT avoir position:relative et le contenu z-index:2. mascotte.png = pleine hauteur, transparente derrière le texte. Si tu oublies la mascotte, la card sera rejetée.
-
----
-
-🏷️ BADGE SPORT (coin haut droit, Orbitron 16px bold, padding:10px 20px, border-radius:20px)
-🎾 TENNIS → #00FF88 | ⚽ FOOTBALL → #FF2D78 | 🏀 BASKET → #FFA500 | 🏒 HOCKEY → #00D4FF | ⚾ BASEBALL → #FF2D78
-
----
-
-🎾 TENNIS SAFE CARD — Règles spécifiques (appliquer quand sport = tennis)
-
-- Tournoi obligatoire : tu DOIS rechercher et identifier le tournoi (compétition) dans lequel le match se joue (ATP, WTA, Challenger, etc.) en te basant sur la date du match, les joueurs et le calendrier. Affiche le nom exact du tournoi dans la barre compétition (ex: "ATP 250 — Buenos Aires — Terre battue", "WTA 1000 — Indian Wells — Dur", "Challenger — Pau — Dur int."). Dans la section ANALYSE, mentionne brièvement le tournoi si pertinent (ex: "En quart à Buenos Aires sur terre battue…"). Ne laisse jamais la compétition vide ou générique pour le tennis.
-- Barre de confiance : afficher une barre horizontale de confiance (0–100%) sur les DEUX cards (normale et locked). Style : conteneur (height:14px; background:rgba(255,255,255,0.1); border-radius:6px; overflow:hidden), remplissage (height:100%; width:XX%; background:linear-gradient(90deg,#00FF88,#00D4FF); border-radius:6px). XX = ton pourcentage de confiance (ex: 72 → width:72%). ⚠️ Placer la barre SOUS LA COTE : directement sous le bouton pill de la cote, dans le bloc prono, avec un label "Confiance XX%" (Rajdhani 14px #8A9BB0). Ordre dans le bloc prono : badge Safe → nom du bet → COTE (bouton pill) → barre de confiance → probabilité → value.
-- Value : calculer et afficher obligatoirement. Formule : Value = (Probabilité réelle × Cote) - 1, affichée en % (ex: VALUE +5,2% en vert #00FF88, ou "Valeur neutre" en gris si ≤0). Sur card normale ET locked (locked : la value peut rester visible à côté de la cote).
-- 5 derniers résultats : dans la section Stats (forme récente), afficher explicitement les 5 derniers matchs (ex: V V D V N). Les défaites (D) doivent être en rouge : color:#e53935; font-weight:700. Les victoires (V) en vert #00FF88, N en gris.
-- VS : pour le tennis, le "VS" entre les deux joueurs doit être plus grand : font-size:32px; font-weight:900; color:#FF2D78 (ou dégradé rose). Bien visible.
-- Drapeaux : la card est exportée en JPG via html2canvas. Utiliser OBLIGATOIREMENT <img src='https://flagcdn.com/w40/{code}.png'> — JAMAIS d'emoji (rendu cassé dans html2canvas), JAMAIS de code texte "CH"/"FR".
-- ⚠️ NE PAS afficher de logo tournoi/compétition. Uniquement le NOM de la compétition en texte (ex: "ATP 250 — Buenos Aires — Terre battue", "Ligue 1", "Champions League").
-- Bande promo : pour la card Safe TENNIS uniquement, ajouter la petite pub comme sur Fun/Live tennis, AVANT la ligne gradient (la barre rose→bleu reste le dernier élément) : rectangle vert néon avec "🎾 SAFE TENNIS — PACK ATP / WTA", "Inclus dans le Pack Tennis Pro", tag "🎾 Tennis Weekly — 15€/sem", "Abonne-toi au Pack Tennis" et bouton rose "🎾 Je m'abonne". Sur la card normale ET sur la card locked (même bloc visible). Voir §11 pour le HTML et CSS exacts.
-- Bande promo (foot, basket, hockey, baseball) : pour la card Safe FOOTBALL, BASKET, HOCKEY ou BASEBALL, ajouter la bande promo en rose néon AVANT la ligne gradient (la barre rose→bleu reste le dernier élément) : offres Daily 4,50€, Week-End 10€, Weekly 20€, VIP MAX 50€/mois, bouton "Je m'abonne" rose. Sur la card normale ET locked. Voir §12 pour le HTML et CSS exacts (classe promo-banner-multi, couleur #FF2D78).
-- ⚠️ NE PAS modifier les polices : garder Orbitron et Rajdhani telles quelles dans tout le HTML. Aucun changement de font-family.
-
----
-
-📐 STRUCTURE CARD NORMALE (de haut en bas)
-
-1. Ligne gradient haut 4px
-2. Header (padding:20px 28px 16px; display:flex; justify-content:space-between; align-items:center) :
-   - <img> logo_site_transparent.png height:70px
-   - Badge sport
-3. Barre compétition (margin:0 28px; padding:12px 20px; background:rgba(0,212,255,0.04); border:1px solid rgba(0,212,255,0.08); border-radius:10px; display:flex; justify-content:space-between; align-items:center) :
-   - Gauche : Compétition + surface/round si pertinent (Orbitron 14px cyan uppercase) — TEXTE UNIQUEMENT, pas d'image
-   - Droite : Date + heure FRANÇAISE (Orbitron 14px) — heure de Paris, y compris pour matchs aux USA (convertir ET/PT)
-4. Match card (margin:20px 28px; padding:28px; border:1px solid rgba(255,45,120,0.12); border-radius:14px) :
-   - ⚠️ OBLIGATOIRE sur les DEUX cards (normale ET locked) : afficher les drapeaux (tennis) ou logos équipes (foot/basket/hockey) à côté des noms. Ne jamais les omettre sur la card locked.
-   - Noms joueurs/équipes (Orbitron 28px 700) avec <img> logo du club (height:34px) OU pour tennis : <img src='https://flagcdn.com/w40/{code}.png' style='height:24px;border-radius:2px;vertical-align:middle;margin-right:6px'> à côté du nom.
-   - Format football : <img src='https://media.api-sports.io/football/teams/{id}.png' style='height:34px;vertical-align:middle;margin-right:8px'><span>NOM EQUIPE</span>
-   - Format tennis : <img src='https://flagcdn.com/w40/{code}.png' style='height:24px;border-radius:2px;vertical-align:middle;margin-right:6px'><span>NOM JOUEUR</span>
-   - VS en rose — pour TENNIS : font-size:38px; font-weight:900; color:#FF2D78 (bien visible)
-   - Stade/surface (Rajdhani 17px #8A9BB0)
-   - Dots forme CERCLES 32x32px (V=vert glow, D=rouge glow, N=gris)
-5. ⚠️ SECTION STATS OBLIGATOIRE (margin:16px 28px; display:flex; gap:16px) — 2 colonnes côte à côte, RICHES EN DONNÉES :
-   - Colonne gauche "JOUEUR 1 / ÉQUIPE 1" (flex:1; padding:16px; background:rgba(0,212,255,0.04); border:1px solid rgba(0,212,255,0.08); border-radius:10px) :
-     • Titre : nom du joueur/équipe (Orbitron 16px cyan uppercase) + pour tennis : <img> drapeau flagcdn.com (height:20px)
-     • Stats clés (Rajdhani 17px #8A9BB0), afficher AU MINIMUM 6 à 8 lignes de stats :
-       TENNIS : Classement ATP/WTA · Bilan saison (V-D) · Bilan sur surface (terre/dur/gazon) · % 1er service · Aces/match · % break points sauvés · Forme récente (5 derniers : V V D V N avec D en rouge color:#e53935) · Titres saison
-       FOOTBALL : Position classement · Points · Bilan domicile/extérieur (V-N-D) · Buts marqués/encaissés · Série en cours · xG moyen · Derniers résultats (5 derniers avec D en rouge)
-       BASKET : Classement conférence · Bilan V-D · Points/match · Rebonds/match · Différentiel points · Série en cours · Forme récente (5 derniers)
-       HOCKEY : Classement division · Points · Bilan V-D-OT · Buts/match · Avantage numérique % · Forme récente (5 derniers)
-   - Colonne droite "JOUEUR 2 / ÉQUIPE 2" : même structure, mêmes stats
-   - ⚠️ Utilise tes connaissances pour fournir des stats RÉELLES et à jour. Si tu ne connais pas les stats exactes, donne une estimation crédible basée sur ce que tu sais du joueur/équipe. Plus il y a de stats pertinentes, mieux c'est.
-6. Contexte H2H (margin:0 28px 16px; padding:16px 20px; background:rgba(255,45,120,0.04); border:1px solid rgba(255,45,120,0.08); border-radius:10px) :
-   - Titre "FACE À FACE" (Orbitron 14px rose uppercase)
-   - Historique confrontations directes (Rajdhani 17px #8A9BB0) : bilan H2H, dernier résultat, bilan par surface (tennis), résultats détaillés des 2-3 derniers affrontements si connus
-7. Bloc prono (margin:20px 28px; padding:28px; text-align:center; border-radius:14px; background:linear-gradient(135deg,rgba(255,45,120,0.06),rgba(168,85,247,0.06),rgba(0,212,255,0.06)); border:1px solid rgba(255,45,120,0.15)) :
-   - Badge type (Safe) : Orbitron 14px, background:linear-gradient(90deg,#00FF88,#00D4FF), color:#080A12, padding:8px 24px, border-radius:20px
-   - Nom du bet (Orbitron 22px #FF2D78, margin:14px 0)
-   - ⚠️ COTE OBLIGATOIRE — Afficher le CHIFFRE de la cote (ex: 1.89) bien lisible en BLANC dans un bouton pill.
-     Le bouton pill : background:#FF2D78; border-radius:18px; padding:18px 48px; display:inline-block; box-shadow:0 4px 22px rgba(255,45,122,0.5); overflow:hidden; — UNIQUEMENT rose néon uni (#FF2D78), PAS de dégradé.
-     Le chiffre de la cote DANS le bouton : font-family:Orbitron; font-size:58px; font-weight:900; color:#ffffff; ⚠️ color DOIT être #ffffff (blanc pur).
-     ⚠️ NE PAS mettre de gradient sur le pill — background:#FF2D78 uniquement. Pas de ::before/::after, pas de shine, pas de div intérieure.
-   - Juste SOUS la cote : barre de confiance horizontale (conteneur height:14px; background:rgba(255,255,255,0.1); border-radius:6px; overflow:hidden; remplissage height:100%; width:XX%; background:linear-gradient(90deg,#00FF88,#00D4FF); border-radius:6px) + label "Confiance XX%" (Rajdhani 14px #8A9BB0). Appliquer à TOUS les sports.
-   - Probabilité réelle estimée (Rajdhani 18px #8A9BB0)
-   - Value (si positive : Vert #00FF88 "VALUE +X%" | si nulle/négative : gris "Valeur neutre") (Rajdhani 18px). Appliquer à TOUS les sports.
-8. Bankroll (margin:0 28px; padding:16px 20px; background:rgba(0,255,136,0.04); border:1px solid rgba(0,255,136,0.1); border-radius:10px) :
-   - Mise conseillée + % bankroll + gain potentiel (Rajdhani 17px)
-9. Analyse (margin:16px 28px 20px; padding:20px; background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.06); border-radius:10px) :
-   - Titre "ANALYSE" Orbitron 14px cyan
-   - Texte Rajdhani 17px #8A9BB0 (3-4 lignes max, concis). Pour le TENNIS : inclure le tournoi (nom + surface) dans la description dès que pertinent (ex: "En quart à Buenos Aires sur terre battue, X a le H2H et la forme pour s'imposer.").
-10. (TENNIS Safe ou FOOT/BASKET/HOCKEY) Bande promo (voir §11 ou §12) — margin:16px 28px 20px ; sur la card NORMALE et sur la card LOCKED.
-11. (TENNIS Safe UNIQUEMENT) Bande promo tennis — à placer AVANT la ligne gradient (donc la barre rose→bleu sera tout en bas). Structure HTML à inclure dans le <style> + dans le body :
-
-CSS à ajouter pour la promo (tennis Safe) :
-.promo-banner { background:rgba(14,22,14,0.95); border:1px solid rgba(57,255,20,0.35); border-radius:14px; padding:14px 18px; position:relative; display:flex; align-items:center; justify-content:space-between; gap:14px; }
-.promo-left-bar { position:absolute; left:0; top:0; bottom:0; width:4px; background:linear-gradient(to bottom,#39ff14,#00e5ff); border-radius:4px 0 0 4px; }
-.promo-text-block { flex:1; padding-left:10px; display:flex; flex-direction:column; gap:5px; }
-.promo-eyebrow { font-family:Orbitron,sans-serif; font-size:13px; color:#39ff14; text-transform:uppercase; letter-spacing:2px; font-weight:700; }
-.promo-main { font-family:Orbitron,sans-serif; font-size:21px; font-weight:700; color:#fff; }
-.promo-main-hl { color:#39ff14; }
-.promo-packs { display:flex; gap:6px; flex-wrap:wrap; }
-.pack-tag { font-family:Orbitron,sans-serif; font-size:13px; font-weight:700; padding:6px 12px; border-radius:5px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); color:rgba(255,255,255,0.6); }
-.pack-tag-max { color:#39ff14; border-color:rgba(57,255,20,0.35); background:rgba(57,255,20,0.08); }
-.promo-price { font-family:Orbitron,sans-serif; font-size:14px; color:rgba(255,255,255,0.55); }
-.promo-price span { color:#39ff14; font-weight:700; font-size:19px; }
-.promo-right { flex-shrink:0; }
-.promo-cta { display:inline-flex; align-items:center; background:linear-gradient(135deg,#ff2d78,#d6245f); color:#fff; font-family:Orbitron,sans-serif; font-size:14px; font-weight:900; letter-spacing:0.8px; text-transform:uppercase; padding:10px 18px; border-radius:10px; box-shadow:0 0 14px rgba(255,45,120,0.5); }
-
-HTML de la bande (à insérer AVANT la ligne gradient bas, pour sport = tennis uniquement) :
-<div class='promo-banner'><div class='promo-left-bar'></div><div class='promo-text-block'><div class='promo-eyebrow'>🎾 SAFE TENNIS — PACK ATP / WTA</div><div class='promo-main'>Inclus dans le <span class='promo-main-hl'>Pack Tennis Pro</span></div><div class='promo-packs'><span class='pack-tag pack-tag-max'>🎾 Tennis Weekly — 15€/sem</span></div><div class='promo-price'>Abonne-toi au <span>Pack Tennis</span></div></div><div class='promo-right'><div class='promo-cta'>🎾 Je m'abonne</div></div></div>
-
-12. (Safe FOOTBALL, BASKET, HOCKEY uniquement — pas tennis) Bande promo (rose néon) — à placer AVANT la ligne gradient. Voir HTML §12. Sur card NORMALE et LOCKED.
-
-CSS à ajouter pour la promo multi (foot/basket/hockey) :
-.promo-banner-multi { background:rgba(20,8,14,0.95); border:1px solid rgba(255,45,120,0.35); border-radius:14px; padding:14px 18px; position:relative; display:flex; align-items:center; justify-content:space-between; gap:14px; }
-.promo-banner-multi .promo-left-bar { background:linear-gradient(to bottom,#ff2d78,#d6245f); }
-.promo-banner-multi .promo-eyebrow { color:#ff2d78; }
-.promo-banner-multi .promo-main-hl { color:#ff2d78; }
-.promo-banner-multi .promo-price span { color:#ff2d78; }
-.promo-banner-multi .pack-tag-max { color:#ff2d78; border-color:rgba(255,45,120,0.35); background:rgba(255,45,120,0.08); }
-.promo-banner-multi .promo-cta { background:linear-gradient(135deg,#ff2d78,#d6245f); color:#fff; box-shadow:0 0 14px rgba(255,45,120,0.5); }
-
-HTML de la bande multi (sport = football, basket ou hockey uniquement) — à insérer AVANT la ligne gradient :
-<div class='promo-banner promo-banner-multi'><div class='promo-left-bar'></div><div class='promo-text-block'><div class='promo-eyebrow'>🛡️ SAFE — FOOT, NBA, HOCKEY</div><div class='promo-main'>Accès bets Safe &amp; Live · <span class='promo-main-hl'>Daily 4,50€</span> · Week-End 10€ · Weekly 20€</div><div class='promo-packs'><span class='pack-tag'>Daily 4,50€</span><span class='pack-tag'>Week-End 10€</span><span class='pack-tag'>Weekly 20€</span><span class='pack-tag pack-tag-max'>VIP MAX 50€/mois</span></div><div class='promo-price'>Abonne-toi dès <span>4,50€</span> — SMS, CB, Crypto</div></div><div class='promo-right'><div class='promo-cta'>Je m'abonne</div></div></div>
-
-13. Ligne gradient bas (rose néon → bleu néon) 4px — TOUJOURS en DERNIER, après la bande promo si présente. Style : height:4px; background:linear-gradient(90deg,#FF2D78,#00D4FF); width:100%. C'est le tout dernier élément visuel de la card (normale et locked).
-
----
-
-🔒 STRUCTURE CARD LOCKED
-
-La card locked DOIT CACHER le contenu premium. Structure identique à la card normale SAUF :
-
-⚠️ CE QUI DOIT ÊTRE CACHÉ (remplacé par du contenu flouté/masqué) :
-- Section Stats (§5) : remplacer le contenu par des barres grises floues (div style='height:14px; background:rgba(255,255,255,0.08); border-radius:4px; margin:6px 0; filter:blur(3px)') — 3 ou 4 barres par colonne, garder les titres visibles
-- Contexte H2H (§6) : même chose, barres grises floues à la place du texte
-- Bloc prono (§7) : le NOM DU BET doit être COMPLÈTEMENT CACHÉ — remplacer le texte du pari par une barre grise floue (div style='height:20px; width:60%; margin:10px auto; background:rgba(255,255,255,0.1); border-radius:6px; filter:blur(6px)'). ⚠️ NE PAS écrire le nom du pari, même flouté. La COTE reste visible : le bouton pill doit être IDENTIQUE à la card normale — fond background:#FF2D78, chiffre de la cote en color:#ffffff (blanc pur). Exemple HTML obligatoire : <div style='display:inline-block;background:#FF2D78;border-radius:18px;padding:18px 48px;box-shadow:0 4px 22px rgba(255,45,122,0.5)'><span style='font-family:Orbitron,sans-serif;font-size:58px;font-weight:900;color:#ffffff'>1.89</span></div> (remplacer 1.89 par la cote réelle). Ne pas mettre de dégradé ni shine sur le pill.
-- Analyse (§9) : contenu remplacé par barres grises floues
-- Bankroll (§8) : contenu flouté
-
-⚠️ CE QUI RESTE VISIBLE :
-- Header, logo, badge sport
-- Barre compétition (date, heure, compétition en texte) — TOUS SPORTS
-- Barre de confiance (Confiance XX%) et value (VALUE +X% ou Valeur neutre) restent visibles sur la locked — TOUS SPORTS
-- Match card (noms joueurs, drapeaux ou logos équipes, VS, surface) — TOUT VISIBLE, avec les mêmes <img> drapeaux/logos que sur la card normale
-- La COTE dans le bloc prono : bouton pill rose #FF2D78 avec le chiffre en color:#ffffff (blanc), bien visible, pas floutée
-- Les titres des sections (STATS, FACE À FACE, ANALYSE, etc.)
-- Pour le TENNIS : la bande promo en bas (§11) reste visible sur la card locked (identique à la card normale).
-- Pour FOOTBALL, BASKET, HOCKEY : la bande promo en bas (§12) reste visible sur la card locked (identique à la card normale).
-
-⚠️ OVERLAY CTA — Après le bloc prono flouté, ajouter un bloc centré :
-- Cadenas 🔒 (font-size:50px; text-align:center)
-- Texte "CONTENU RÉSERVÉ AUX ABONNÉS" (Orbitron 16px, color:rgba(255,255,255,0.5), letter-spacing:2px)
-- Bouton CTA "🔓 Accède au pronostic complet" (display:inline-block; padding:16px 36px; background:linear-gradient(90deg,#FF2D78,#00D4FF); color:#fff; font-family:Orbitron; font-size:17px; font-weight:700; border-radius:12px; text-decoration:none; letter-spacing:1px)
-
----
-
-⚠️ RAPPELS CRITIQUES
-
-1. SORTIE = JSON pur : {"html_normal":"...","html_locked":"..."}. Rien d'autre.
-2. HTML : apostrophes UNIQUEMENT dans les attributs. JAMAIS de guillemets doubles.
-3. Heure = fuseau Europe/Paris. JAMAIS l'heure locale du pays du match sans conversion (USA : MLB/NBA/NFL/MLS/NHL/tennis US → convertir ET/PT vers Paris).
-4. Tout en français.
-5. Chaque HTML est COMPLET et AUTONOME (<!DOCTYPE html>, <style> avec @import fonts, etc.).
-6. Le glow extérieur est TOUJOURS en z-index:-1 avec isolation:isolate sur la card.
-7. ⚠️ NE JAMAIS modifier les polices : utiliser uniquement Orbitron et Rajdhani comme indiqué. Pas de changement de font-family.
-8. ⚠️ Card LOCKED : la cote doit apparaître en BLANC (#ffffff) dans le carré rose (#FF2D78) ; les drapeaux (tennis) ou logos équipes (foot/basket/hockey) doivent être présents dans la match card sur les DEUX cards (normale et locked).
+[LEGACY V5 — conservé pour rollback uniquement, plus utilisé depuis V18]
 PROMPT
 );
