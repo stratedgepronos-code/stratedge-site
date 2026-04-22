@@ -167,6 +167,8 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".kicker{position:relative;z-index:5;font-family:'Instrument Serif',serif;font-style:italic;font-size:24px;color:#ede8e0;opacity:.6;margin-bottom:0;word-spacing:.1em;white-space:pre-wrap}";
     $css .= ".time-block{position:relative;z-index:5;display:flex;align-items:flex-end;margin-bottom:8px}";
     $css .= ".time{font-family:'Inter',sans-serif;font-weight:900;font-size:64px;line-height:.9;letter-spacing:-3px;color:#ede8e0;font-variant-numeric:tabular-nums}";
+    $css .= ".time-svg-wrap{display:inline-block;height:74px;line-height:0}";
+    $css .= ".time-svg{height:74px;width:auto;display:block;overflow:visible}";
     $css .= ".time-accent{color:$accent;text-shadow:0 0 18px rgba($rgb,.55), 0 0 6px rgba($rgb,.8), 0 2px 0 rgba(255,255,255,.15)}";
     $css .= ".time-label{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.55;padding-bottom:14px;margin-left:14px;white-space:nowrap}";
     $css .= ".type-stamp{position:relative;z-index:5;display:inline-flex;align-items:center;gap:14px;padding:14px 22px;background:rgba($rgb,.12);border:2px solid $accent;border-radius:4px;margin:18px 0 22px 0;box-shadow:0 0 24px rgba($rgb,.35), inset 0 0 14px rgba($rgb,.08)}";
@@ -190,8 +192,8 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".pick{position:relative;z-index:2;max-width:540px;border:1px solid rgba(237,232,224,.2);padding:16px 22px;margin-bottom:0}";
     $css .= ".pick.combi{max-width:620px;border:none;border-top:1px solid rgba(237,232,224,.25);border-bottom:1px solid rgba(237,232,224,.25);padding:16px 0}";
     $css .= ".pick-eyebrow{font-family:'Archivo Narrow',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.45;margin-bottom:10px}";
-    $css .= ".pick-main{font-family:'Bebas Neue',sans-serif;font-size:34px;line-height:1;letter-spacing:-.5px;color:#ede8e0;margin-bottom:6px;word-spacing:.15em}";
-    $css .= ".pick-accent{font-family:'Instrument Serif',serif;font-style:italic;font-size:34px;color:$accent;text-shadow:0 0 10px rgba($rgb,.5)}";
+    $css .= ".pick-main{font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1.1;letter-spacing:-.5px;color:#ede8e0;margin-bottom:6px;word-spacing:.15em;word-wrap:break-word;overflow-wrap:break-word}";
+    $css .= ".pick-accent{font-family:'Instrument Serif',serif;font-style:italic;font-size:30px;color:$accent;text-shadow:0 0 10px rgba($rgb,.5)}";
     $css .= ".pick-market{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.45;margin-top:8px}";
     $css .= ".combi-list{display:flex;flex-direction:column;gap:14px;margin-top:8px}";
     $css .= ".combi-row{display:flex;align-items:center;padding:10px 0;border-top:1px dashed rgba($rgb,.2);white-space:nowrap}";
@@ -358,11 +360,31 @@ function stratedge_player_prop_solo($player_id, $sport, $player_name, $stats_hin
     return $html;
 }
 
-/** htmlspecialchars + remplace les espaces normaux par &nbsp; pour forcer l'affichage (html2canvas collapse les espaces) */
+/** Version light (+40% vers blanc) d'une couleur hex pour gradient */
+function _stratedge_gradient_light($hex) {
+    $hex = ltrim((string)$hex, '#');
+    if (strlen($hex) !== 6) return '#ffffff';
+    $r = min(255, hexdec(substr($hex,0,2)) + 80);
+    $g = min(255, hexdec(substr($hex,2,2)) + 80);
+    $b = min(255, hexdec(substr($hex,4,2)) + 80);
+    return sprintf('#%02x%02x%02x', $r, $g, $b);
+}
+/** Version dark (-40% vers noir) */
+function _stratedge_gradient_dark($hex) {
+    $hex = ltrim((string)$hex, '#');
+    if (strlen($hex) !== 6) return '#000000';
+    $r = max(0, hexdec(substr($hex,0,2)) - 80);
+    $g = max(0, hexdec(substr($hex,2,2)) - 80);
+    $b = max(0, hexdec(substr($hex,4,2)) - 80);
+    return sprintf('#%02x%02x%02x', $r, $g, $b);
+}
+
+/** htmlspecialchars + remplace espaces normaux par U+00A0 (non-breaking space littéral)
+    → html2canvas préserve U+00A0 alors qu'il peut collapse &nbsp; entity */
 function stratedge_nbsp_esc($text) {
     $safe = htmlspecialchars((string)$text, ENT_QUOTES, 'UTF-8');
-    // Remplacer espaces simples entre mots par nbsp (html2canvas-proof)
-    return str_replace(' ', '&nbsp;', $safe);
+    // Remplacer espaces simples par U+00A0 LITTÉRAL (pas l'entité HTML)
+    return str_replace(' ', "\xC2\xA0", $safe);
 }
 
 function stratedge_normalize_data($d, $type) {
@@ -529,7 +551,7 @@ function stratedge_build_card($d, $locked = false) {
         $pm = stratedge_nbsp_esc($data['pick_main'] ?? '');
         $pa = stratedge_nbsp_esc($data['pick_accent'] ?? '');
         $pmkt = stratedge_nbsp_esc($data['pick_market'] ?? '');
-        $pick_block_full = "<div class='pick'><div class='pick-eyebrow'>Le Pick</div><div class='pick-main'>$pm&nbsp;<span class='pick-accent'>$pa</span></div><div class='pick-market'>$pmkt</div></div>";
+        $pick_block_full = "<div class='pick'><div class='pick-eyebrow'>Le Pick</div><div class='pick-main'>{$pm} <span class='pick-accent'>$pa</span></div><div class='pick-market'>$pmkt</div></div>";
     }
 
     if ($locked) {
@@ -538,14 +560,14 @@ function stratedge_build_card($d, $locked = false) {
         $accent = $theme['accent'];
         $pick_html = "<div class='pick-locked'>"
                    . "<div class='padlock'><svg viewBox='0 0 24 24' fill='none' stroke='$accent' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' width='20' height='20'><rect x='4' y='10' width='16' height='12' rx='1'/><path d='M8 10V6a4 4 0 0 1 8 0v4'/></svg></div>"
-                   . "<div class='locked-text'><div class='locked-eyebrow'>Le Pick · Contenu réservé</div><div class='locked-main'>Souscris au pack&nbsp;<span class='locked-accent'>$div_short</span></div><div class='locked-sub'>$locked_label</div></div>"
+                   . "<div class='locked-text'><div class='locked-eyebrow'>Le Pick · Contenu réservé</div><div class='locked-main'>Souscris au pack <span class='locked-accent'>$div_short</span></div><div class='locked-sub'>$locked_label</div></div>"
                    . "</div>";
-        $footer_top = "<div class='cta-unlock'><div class='cta-unlock-text'>«&nbsp;Déverrouille l&apos;analyse.&nbsp;<span class='hl'>Le pick t&apos;attend.</span>&nbsp;»</div><div class='cta-arrow'></div></div>";
+        $footer_top = "<div class='cta-unlock'><div class='cta-unlock-text'>« Déverrouille l&apos;analyse. <span class='hl'>Le pick t&apos;attend.</span> »</div><div class='cta-arrow'></div></div>";
     } else {
         $pick_html = $pick_block_full;
         $qm = stratedge_nbsp_esc($data['quote_main'] ?? 'Analyse validée.');
         $qa = stratedge_nbsp_esc($data['quote_accent'] ?? 'Le pick tient.');
-        $footer_top = "<div class='quote'>«&nbsp;$qm&nbsp;<span class='hl'>$qa</span>&nbsp;»</div>";
+        $footer_top = "<div class='quote'>« {$qm} <span class='hl'>$qa</span> »</div>";
     }
 
     $n_edition_safe = htmlspecialchars((string)$data['n_edition'], ENT_QUOTES, 'UTF-8');
@@ -556,6 +578,18 @@ function stratedge_build_card($d, $locked = false) {
     $value = (float)$data['value_pct'];
     $value_sign = ($value >= 0) ? '+' : '';
     $value_txt = htmlspecialchars(number_format($value, 1, '.', ''), ENT_QUOTES, 'UTF-8');
+
+    // SVG pour l'heure avec vrai gradient (html2canvas rasterise le SVG correctement)
+    $time_svg = "<svg class='time-svg' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 260 80' preserveAspectRatio='xMinYMax meet'>"
+              . "<defs><linearGradient id='timegrad' x1='0%' y1='0%' x2='0%' y2='100%'>"
+              . "<stop offset='0%' stop-color='" . _stratedge_gradient_light($theme['accent']) . "'/>"
+              . "<stop offset='70%' stop-color='" . $theme['accent'] . "'/>"
+              . "<stop offset='100%' stop-color='" . _stratedge_gradient_dark($theme['accent']) . "'/>"
+              . "</linearGradient>"
+              . "<filter id='timeglow' x='-20%' y='-20%' width='140%' height='140%'><feGaussianBlur stdDeviation='3'/><feMerge><feMergeNode/><feMergeNode/><feMergeNode in='SourceGraphic'/></feMerge></filter>"
+              . "</defs>"
+              . "<text x='0' y='68' font-family=\"Inter, 'Helvetica Neue', sans-serif\" font-weight='900' font-size='82' letter-spacing='-3' fill='url(#timegrad)' filter='url(#timeglow)'>$time_safe</text>"
+              . "</svg>";
 
     $n_picks = $is_combi ? count($matches) : 0;
     $type_stamp = stratedge_type_stamp($type, $n_picks);
@@ -587,7 +621,7 @@ function stratedge_build_card($d, $locked = false) {
   <div class='inner'>
     $header
     <div class='kicker'>$kicker_safe</div>
-    <div class='time-block'><div class='time time-accent'>$time_safe</div><div class='time-label'>heure&nbsp;de&nbsp;Paris</div></div>
+    <div class='time-block'><div class='time-svg-wrap'>$time_svg</div><div class='time-label'>heure de Paris</div></div>
     $type_stamp
     $match_section$pick_html
     <div class='data-row'>
@@ -607,7 +641,7 @@ function stratedge_build_card($d, $locked = false) {
     <div class='promo'>
       <div class='promo-left'>
         <div class='promo-eyebrow'>$promo_eye</div>
-        <div class='promo-title'>$promo_title&nbsp;<span class='price'>$promo_price</span></div>
+        <div class='promo-title'>{$promo_title} <span class='price'>$promo_price</span></div>
         <div class='promo-url'>$promo_url</div>
       </div>
       <a class='promo-cta' href='#'>S&apos;abonner <span class='arrow'></span></a>

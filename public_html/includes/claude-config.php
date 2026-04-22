@@ -80,8 +80,12 @@ RÈGLES CHAMPS :
 - ghost : 3-5 caractères UPPERCASE (ex "L1", "ATP", "NBA", "LIVE", "DUEL"). Texte fantôme géant en arrière-plan.
 - kicker : phrase éditoriale italique (2-4 mots). Ex "Dossier quatre.", "Chapitre cinq.", "Player Props.".
 - pick_main : début du pronostic en Bebas Neue (ex "Sinner remporte", "Victoire PSG", "Denver couvre")
-- pick_accent : fin du pronostic en italique gradient (ex "le set 2.", "& BTTS Oui.", "+4.5 points.")
-  → pick_main + pick_accent doivent former UNE phrase claire
+- pick_accent : fin du pronostic en italique, COMPLÈTE le pick_main (ex "le set 2.", "& BTTS Oui.", "+4.5 points.")
+  → pick_main + pick_accent doivent former UNE phrase NATURELLE lue en entier
+  ⚠️ NE PAS dupliquer le marché. Si pick_main = "Mbappé marque" → pick_accent = "n'importe quand." (PAS "& Marquer dans le match.")
+  ⚠️ LONGUEUR MAX: 30-40 caractères au total (pick_main + pick_accent ensemble). Si dépasse, raccourcis.
+  EXEMPLES OK: "Victoire PSG & BTTS Oui." | "Mbappé marque n'importe quand." | "Sinner remporte le set 2." | "Plus de 2.5 buts dans le match." | "Denver couvre +4.5 points."
+  EXEMPLES KO: "Mbappé marque & Marquer dans le match." (redondant) | "BTTS BTTS Oui." (duplique)
 - pick_market : ligne sous le pick, format "Marché · description" (ex "Marché live · Gagnant set en cours")
 - cote : string "2.10" ou "2.30"
 - confidence : entier 30-95 basé sur analyse (forme, H2H, contexte, absences)
@@ -188,9 +192,29 @@ Structure de sortie OBLIGATOIRE :
 RÈGLES (identiques à LIVE, adaptées SAFE) :
 - confidence : 55-85 (Safe = confiance élevée)
 - value_pct : typiquement 5-15%
-- pick_main + pick_accent forment 1 phrase claire ("Victoire PSG & BTTS Oui.")
+- pick_main + pick_accent forment 1 phrase claire et NATURELLE ensemble
 - kicker : ton éditorial sobre — "Dossier douze.", "Dossier quatre.", "Chapitre treize."
 - quote_main/quote_accent : 2-5 mots chacun, ton premium ("Le court ne ment pas. La data non plus.")
+
+⚠️ RÈGLE CRITIQUE pick_main / pick_accent : doivent former UNE phrase lisible, pas une duplication.
+Le pick_accent complète ou nuance le pick_main, il ne répète PAS le marché.
+
+EXEMPLES CORRECTS :
+  ✅ Buteur : pick_main="Mbappé marque" + pick_accent="n'importe quand."
+  ✅ Buteur : pick_main="Haaland buteur" + pick_accent="dès la 1ère mi-temps."
+  ✅ Résultat : pick_main="Victoire PSG" + pick_accent="& BTTS Oui."
+  ✅ Total : pick_main="Plus de 2.5 buts" + pick_accent="dans ce match."
+  ✅ Handicap : pick_main="Real -1 HC" + pick_accent="à domicile."
+  ✅ Set : pick_main="Djokovic gagne" + pick_accent="le set 2."
+  ✅ NBA : pick_main="Denver couvre" + pick_accent="+4.5 points."
+
+EXEMPLES INTERDITS (duplication/incohérence):
+  ❌ pick_main="Mbappé marque" + pick_accent="& Marquer dans le match." (redondant + & bizarre)
+  ❌ pick_main="Buteur Haaland" + pick_accent="buteur dans le match." (duplique "buteur")
+  ❌ pick_main="BTTS" + pick_accent="BTTS Oui." (duplique)
+
+LONGUEUR : pick_main + pick_accent doit tenir en ~30-40 caractères TOTAL.
+Si tu dépasses, raccourcis pick_accent (ex: "dans le match." → "dans le 1.").
 
 🎯 PLAYER PROP : Mêmes règles que LIVE. is_player_prop=true uniquement si tu as l'ID exact du joueur.
 
