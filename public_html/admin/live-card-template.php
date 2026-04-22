@@ -571,12 +571,27 @@ function stratedge_build_card($d, $locked = false) {
                    . "<div class='padlock'><svg viewBox='0 0 24 24' fill='none' stroke='$accent' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' width='20' height='20'><rect x='4' y='10' width='16' height='12' rx='1'/><path d='M8 10V6a4 4 0 0 1 8 0v4'/></svg></div>"
                    . "<div class='locked-text'><div class='locked-eyebrow'>Le Pick · Contenu réservé</div><div class='locked-main'>Souscris au pack <span class='locked-accent'>$div_short</span></div><div class='locked-sub'>$locked_label</div></div>"
                    . "</div>";
-        $footer_top = "<div class='cta-unlock'><div class='cta-unlock-text'>« Déverrouille l&apos;analyse. <span class='hl'>Le pick t&apos;attend.</span> »</div><div class='cta-arrow'></div></div>";
+        // CTA unlock en SVG pour préserver les espaces
+        $cta_svg = "<svg class='footer-svg' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 36' preserveAspectRatio='xMinYMid meet'>"
+                 . "<text x='0' y='26' font-family=\"'Instrument Serif', Georgia, serif\" font-style='italic' font-size='22' fill='#ede8e0' opacity='.85' xml:space='preserve'>"
+                 . "<tspan>« Déverrouille l’analyse. </tspan>"
+                 . "<tspan fill='$accent' opacity='1'>Le pick t’attend.</tspan>"
+                 . "<tspan> »</tspan>"
+                 . "</text></svg>";
+        $footer_top = "<div class='cta-unlock'><div class='cta-unlock-text'>$cta_svg</div><div class='cta-arrow'></div></div>";
     } else {
         $pick_html = $pick_block_full;
-        $qm = stratedge_nbsp_esc($data['quote_main'] ?? 'Analyse validée.');
-        $qa = stratedge_nbsp_esc($data['quote_accent'] ?? 'Le pick tient.');
-        $footer_top = "<div class='quote'>« {$qm} <span class='hl'>$qa</span> »</div>";
+        // Quote en SVG pour préserver les espaces (html2canvas + Instrument Serif italic = bug espaces)
+        $qm_raw = htmlspecialchars((string)($data['quote_main'] ?? 'Analyse validée.'), ENT_QUOTES, 'UTF-8');
+        $qa_raw = htmlspecialchars((string)($data['quote_accent'] ?? 'Le pick tient.'), ENT_QUOTES, 'UTF-8');
+        $accent_hex = $theme['accent'];
+        $quote_svg = "<svg class='footer-svg' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 700 40' preserveAspectRatio='xMinYMid meet'>"
+                   . "<text x='0' y='28' font-family=\"'Instrument Serif', Georgia, serif\" font-style='italic' font-size='24' fill='#ede8e0' opacity='.75' xml:space='preserve'>"
+                   . "<tspan>« $qm_raw </tspan>"
+                   . "<tspan fill='$accent_hex' opacity='1'>$qa_raw</tspan>"
+                   . "<tspan> »</tspan>"
+                   . "</text></svg>";
+        $footer_top = "<div class='quote'>$quote_svg</div>";
     }
 
     $n_edition_safe = htmlspecialchars((string)$data['n_edition'], ENT_QUOTES, 'UTF-8');

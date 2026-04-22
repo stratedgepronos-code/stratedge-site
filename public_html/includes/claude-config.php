@@ -57,6 +57,18 @@ Tu reçois les infos d'un match (sport, match, pronostic, cote). Tu réponds UNI
 - Format: "La Liga · J[numéro] · [stade]" ou "Premier League · J[N] · [stade]" etc.
 - ⚠️ Si tu mets "La Liga 2" pour un match qui est en fait en La Liga, c'est un BUG CRITIQUE.
 
+🎾 RÈGLE COMPÉTITION TENNIS — CIRCUITS DISTINCTS
+- ATP Tour et ATP Challenger Tour sont 2 circuits DIFFÉRENTS. NE PAS mixer.
+- ATP Tour (principal) = Grand Slam, Masters 1000, ATP 500, ATP 250
+  → Format: "ATP · [nom tournoi]" ex "ATP · Rome Masters 1000", "ATP · Miami Open"
+- ATP Challenger Tour (circuit secondaire, niveau en dessous) = tournois Challenger
+  → Format: "ATP Challenger · [nom tournoi]" OU "Challenger Tour · [ville]"
+  → JAMAIS "Tennis ATP · Challenger" (incohérent, mixe les circuits)
+- ITF World Tennis Tour = niveau encore en dessous (tournois Futures / M15 / M25)
+  → Format: "ITF · M25 [ville]" etc.
+- WTA Tour / WTA 125 (challenger féminin) / ITF féminin = même logique
+- Si tu vois "Challenger" dans le nom → c'est ATP/WTA Challenger, PAS ATP Tour principal.
+
 ⚠️ Toutes les heures = Europe/Paris (UTC+1 hiver / UTC+2 été). Pour matchs US, convertir ET/PT vers Paris.
 
 Structure de sortie OBLIGATOIRE :
@@ -96,7 +108,9 @@ RÈGLES CHAMPS :
 - flag1/flag2 : code ISO2 pays (FR, GB, US, ES, IT, DE, RS…). Tennis toujours présent. Team sports tu peux laisser "" (le logo prime).
 - team1_logo/team2_logo : laisse "" — le serveur PHP résout via ses helpers locaux.
 - competition : nom complet (ex. "Ligue 1 · J29 · Parc des Princes")
-- badge_text : "Tennis · ATP", "Foot · Ligue 1", "Basket · NBA", "Hockey · NHL"…
+- badge_text : "Tennis · ATP", "Tennis · Challenger", "Tennis · ITF", "Tennis · WTA", "Foot · Ligue 1", "Foot · La Liga", "Basket · NBA", "Hockey · NHL"…
+  → Pour tennis Challenger, écris "Tennis · Challenger" (PAS "Tennis · ATP")
+  → Pour ITF Futures, écris "Tennis · ITF"
 - n_edition : nombre à 3 chiffres (ex "348"). Si inconnu, génère un nombre cohérent 100-999.
 - ghost : 3-5 caractères UPPERCASE (ex "L1", "ATP", "NBA", "LIVE", "DUEL"). Texte fantôme géant en arrière-plan.
 - kicker : phrase éditoriale italique (2-4 mots). Ex "Dossier quatre.", "Chapitre cinq.", "Player Props.".
@@ -206,6 +220,15 @@ Tu reçois un bet Safe (analyse validée, confiance forte). Tu réponds UNIQUEME
 - Exemples 2025-26: Levante UD = La Liga (promu en 2025) • Real Sociedad, Valencia, Sevilla, Villarreal = La Liga • Sporting Gijón, Las Palmas, Leganés = La Liga 2.
 - Format: "La Liga · J[numéro] · [stade]" ou "Premier League · J[N] · [stade]".
 - ⚠️ Si tu mets une mauvaise division, c'est un BUG CRITIQUE.
+
+🎾 RÈGLE COMPÉTITION TENNIS — CIRCUITS DISTINCTS
+- ATP Tour et ATP Challenger Tour = 2 circuits DIFFÉRENTS. JAMAIS les mixer.
+- ATP Tour → "ATP · [tournoi]" ex "ATP · Rome Masters 1000", "ATP · Monte-Carlo"
+- ATP Challenger Tour → "ATP Challenger · [ville]" ex "ATP Challenger · Madrid"
+- ITF Futures → "ITF · M25 Biarritz" etc.
+- WTA / WTA 125 / ITF féminin = même logique
+- Si "Challenger" dans le nom → ATP/WTA Challenger, PAS ATP Tour principal.
+- ⚠️ "Tennis ATP · Challenger" = BUG (mixe ATP principal + circuit Challenger). Utilise "ATP Challenger · [tournoi]".
 
 Structure de sortie OBLIGATOIRE :
 {
