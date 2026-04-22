@@ -31,6 +31,15 @@ define('CLAUDE_THINKING_ENABLED', false);
 define('CLAUDE_LIVE_ENRICH_PROMPT', <<<'PROMPT'
 Tu reçois les infos d'un match (sport, match, pronostic, cote). Tu réponds UNIQUEMENT par un objet JSON valide, sans aucun texte avant ou après, sans backticks.
 
+🔴 RÈGLE COTE — UTILISE LA COTE FOURNIE PAR L'ADMIN
+- L'admin te fournit une cote dans le prompt utilisateur (ex "Cote : 2.45").
+- Tu DOIS utiliser CETTE cote exacte dans ta sortie JSON, sans la modifier.
+- NE PAS inventer une cote. NE PAS mettre 1.50 par défaut.
+- Si l'admin met "Cote : 2.45" → ta sortie : "cote": "2.45"
+- Si l'admin met "Cote : 3.10" → ta sortie : "cote": "3.10"
+- La cote peut être 1.25, 1.50, 2.45, 3.10, 5.00, 15.00, 50.00 — prends EXACTEMENT la valeur fournie.
+- ⚠️ Mettre une cote différente de celle fournie = BUG CRITIQUE.
+
 🔴 RÈGLE HEURE — LIVE = HEURE DU POST, PAS DU MATCH
 - time_fr pour un bet LIVE = heure de publication de la card = HEURE ACTUELLE (maintenant).
 - Le serveur te donne la date+heure actuelle dans le prompt utilisateur. Utilise cette heure.
@@ -99,7 +108,7 @@ RÈGLES CHAMPS :
   EXEMPLES OK: "Victoire PSG & BTTS Oui." | "Mbappé marque n'importe quand." | "Sinner remporte le set 2." | "Plus de 2.5 buts dans le match." | "Denver couvre +4.5 points."
   EXEMPLES KO: "Mbappé marque & Marquer dans le match." (redondant) | "BTTS BTTS Oui." (duplique)
 - pick_market : ligne sous le pick, format "Marché · description" (ex "Marché live · Gagnant set en cours")
-- cote : string "2.10" ou "2.30"
+- cote : string format "2.10" — DOIT correspondre EXACTEMENT à la cote fournie par l'admin (voir RÈGLE COTE)
 - confidence : entier 30-95 basé sur analyse (forme, H2H, contexte, absences)
 - value_pct : value en %. Formule (proba estimée × cote - 1) × 100. Si négative → 0.
 - quote_main : citation 2-5 mots (sans guillemets) — "Break confirmé.", "Le court ne ment pas."
@@ -123,6 +132,11 @@ PROMPT
 // ============================================================
 define('CLAUDE_FUN_ENRICH_PROMPT', <<<'PROMPT'
 Tu reçois les infos d'un bet Fun (grosse cote, longshot). Tu réponds UNIQUEMENT par un objet JSON valide, sans texte avant/après, sans backticks.
+
+🔴 RÈGLE COTE — UTILISE LA COTE FOURNIE PAR L'ADMIN
+- Si l'admin fournit une cote explicite (ex "Cote : 15.00") → utilise EXACTEMENT cette valeur.
+- Si l'admin ne fournit qu'une liste de paris combinés, calcule la cote totale (produit des cotes).
+- NE PAS inventer une cote arbitraire.
 
 🔴 HEURE : time_fr = HEURE DU COUP D'ENVOI du match (Europe/Paris), PAS l'heure actuelle.
 Format HH:MM. Si inconnue, mets "20:00" par défaut.
@@ -176,6 +190,12 @@ PROMPT
 // ============================================================
 define('CLAUDE_SAFE_ENRICH_PROMPT', <<<'PROMPT'
 Tu reçois un bet Safe (analyse validée, confiance forte). Tu réponds UNIQUEMENT par un objet JSON valide, sans texte avant/après, sans backticks.
+
+🔴 RÈGLE COTE — UTILISE LA COTE FOURNIE PAR L'ADMIN (voir prompt utilisateur "Cote : X.XX")
+- La cote dans ta sortie JSON DOIT être EXACTEMENT celle fournie par l'admin.
+- Si l'admin met "Cote : 2.45" → ta sortie : "cote": "2.45"
+- NE PAS inventer. NE PAS mettre 1.50 par défaut. NE PAS arrondir.
+- ⚠️ Mauvaise cote = BUG CRITIQUE.
 
 🔴 HEURE : time_fr = HEURE DU COUP D'ENVOI (Europe/Paris). Si inconnue, trouve-la via les horaires officiels (Ligue 1 21h/17h, PL 16h/18h30, C1 21h, NBA ~01h-04h Paris, NHL ~01h-03h Paris…).
 

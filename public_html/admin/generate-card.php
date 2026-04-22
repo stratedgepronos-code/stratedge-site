@@ -704,6 +704,12 @@ if (!$enriched || (empty($enriched['match']) && empty($enriched['player1']))) {
 }
 
 try {
+    // ⚠️ SÉCURITÉ COTE: si l'admin a fourni une cote explicite, on la garde coûte que coûte.
+    // Claude peut se tromper et inventer une cote différente — on fait confiance à l'admin.
+    $finalCote = (!empty($rawCote) && is_numeric(str_replace(',', '.', $rawCote)))
+                 ? $rawCote
+                 : ($enriched['cote'] ?? '1.50');
+
     $cards = generateSafeCards([
         'sport'       => $sport,
         'date_fr'     => $enriched['date_fr']     ?? date('d/m/Y'),
@@ -718,7 +724,7 @@ try {
         'team1_logo'  => $enriched['team1_logo']  ?? '',
         'team2_logo'  => $enriched['team2_logo']  ?? '',
         'prono'       => $enriched['prono']       ?? $rawProno,
-        'cote'        => $enriched['cote']        ?? $rawCote,
+        'cote'        => $finalCote,
         'confidence'  => intval($enriched['confidence'] ?? 65),
         // Champs éditoriaux V18
         'n_edition'    => $enriched['n_edition']    ?? '',
@@ -748,7 +754,7 @@ try {
 }
 
 debugLog("SAFE V2 OK! 1080px compact");
-echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Safe', 'card_width' => 1080, 'cote' => $enriched['cote'] ?? $rawCote]);
+echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Safe', 'card_width' => 1080, 'cote' => $finalCote]);
 
 } catch (Throwable $e) {
     debugLog("FATAL: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
