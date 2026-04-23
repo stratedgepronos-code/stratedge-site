@@ -365,7 +365,7 @@ $espnTeams = [
     'fc-cincinnati'         => ['espn_id' => 18267, 'slug' => 'fc-cincinnati', 'aliases' => ['cincinnati-mls']],
     'colorado-rapids'       => ['espn_id' => 184,   'slug' => 'colorado-rapids', 'aliases' => ['rapids']],
 
-    // === La Liga (promus 2025-26, pas dans API-Football correctement) ===
+    // === La Liga (équipes manquantes dans API-Football coverage standard) ===
     'real-oviedo'           => ['espn_id' => 92,    'slug' => 'real-oviedo', 'aliases' => ['oviedo']],
 
     // === Liga MX === (IDs ESPN vérifiés via pages team 2025-26)

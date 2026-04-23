@@ -120,7 +120,6 @@ function stratedge_football_logo(string $teamName): string {
             'espanyol' => 540, 'rcd espanyol' => 540,
             'leganes' => 727, 'cd leganes' => 727,
             'valladolid' => 720, 'real valladolid' => 720,
-            // Promotions 2025-26 en La Liga
             'real oviedo' => 726, 'oviedo' => 726,
             // Segunda
             'racing santander' => 730, 'racing' => 730,
