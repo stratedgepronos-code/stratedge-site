@@ -164,15 +164,15 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
 .bet-date{font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--txt3,#8a9bb0);}
 .bet-titre{font-family:'Rajdhani',sans-serif;font-size:0.95rem;font-weight:600;padding:0 1.2rem 0.8rem 1.4rem;color:var(--txt2,#b0bec9);line-height:1.3;}
 
-/* Image */
-.bet-img-wrap{position:relative;overflow:hidden;aspect-ratio:16/9;}
-.bet-img{width:100%;height:100%;display:block;object-fit:cover;transition:transform .4s;}
+/* Image — cards StratEdge sont carrées 1080x1080, on affiche TOUT (pas de crop) */
+.bet-img-wrap{position:relative;overflow:hidden;aspect-ratio:1/1;background:#0a0a12;}
+.bet-img{width:100%;height:100%;display:block;object-fit:contain;transition:transform .4s;}
 .bet-img.blur{filter:blur(14px);transform:scale(1.08);}
 .bet-img-wrap.zoomable{cursor:zoom-in;}
 .bet-img-wrap.zoomable:hover .bet-img{transform:scale(1.03);}
 .zoom-tip{position:absolute;bottom:10px;right:10px;background:rgba(0,0,0,0.65);backdrop-filter:blur(6px);color:#fff;font-size:0.72rem;padding:0.3rem 0.65rem;border-radius:6px;pointer-events:none;opacity:0;transition:opacity .25s;}
 .bet-img-wrap.zoomable:hover .zoom-tip{opacity:1;}
-.bet-no-img{width:100%;aspect-ratio:16/9;background:linear-gradient(135deg,rgba(255,45,120,0.04),rgba(0,212,255,0.02));display:flex;align-items:center;justify-content:center;font-size:3rem;color:var(--txt3,#8a9bb0);}
+.bet-no-img{width:100%;aspect-ratio:1/1;background:linear-gradient(135deg,rgba(255,45,120,0.04),rgba(0,212,255,0.02));display:flex;align-items:center;justify-content:center;font-size:3rem;color:var(--txt3,#8a9bb0);}
 
 /* Lock overlay */
 .lock-ov{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(5,8,16,0.8);backdrop-filter:blur(8px);text-align:center;gap:0.8rem;padding:2rem;}
