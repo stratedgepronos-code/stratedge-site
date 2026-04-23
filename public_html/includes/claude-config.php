@@ -197,6 +197,7 @@ RÈGLES CHAMPS :
   ⚠️ VÉRIFIE BIEN les nationalités tennis — erreurs fréquentes à NE PAS faire :
   • Julia Riera → AR (Argentine, née à Pergamino 🇦🇷) — PAS hongroise/paraguayenne/uruguayenne
   • Kayla Day → US (Américaine, née à Santa Barbara CA 🇺🇸) — PAS australienne/canadienne
+  • Stefan Dostanic → US (Américain, né à Irvine CA 🇺🇸, USC/Wake Forest) — PAS serbe malgré le nom slave
   • Camila Osorio → CO (Colombienne)
   • María Lourdes Carle → AR (Argentine)
   • Nadia Podoroska → AR (Argentine)
@@ -205,12 +206,16 @@ RÈGLES CHAMPS :
   • Whitney Osuigwe → US (Américaine, née en Floride)
   • Hailey Baptiste → US (Américaine)
   • Robin Montgomery → US (Américaine)
-  • Katie Volynets → US (Américaine)
+  • Katie Volynets → US (Américaine malgré nom slave)
   • Varvara Gracheva → FR (française depuis 2023, PAS russe)
   • Aliaksandra Sasnovich → BY (Biélorusse)
   • Anastasia Potapova → RU (Russe)
+  ⚠️ PIÈGE NOMS SLAVES/EUROPÉENS → nationalité US :
+  Beaucoup de joueurs/joueuses US ont des noms d'origine serbe, russe, ukrainienne,
+  polonaise, croate, etc. mais sont 100% américains (nés aux USA, représentent USA).
+  NE JUGE PAS la nationalité au son du nom — vérifie la birthplace + federation.
   Si tu as un doute sur une joueuse, écris son pays en clair dans un commentaire mental
-  mais NE PAS deviner le flag — vérifie sur WTA/ITF/Wikipedia avant.
+  mais NE PAS deviner le flag — vérifie sur WTA/ITF/ATP/Wikipedia avant.
 - team1_logo/team2_logo : laisse "" — le serveur PHP résout via ses helpers locaux.
 - competition : nom complet (ex. "Ligue 1 · J29 · Parc des Princes")
 - badge_text : "Tennis · ATP", "Tennis · Challenger", "Tennis · ITF", "Tennis · WTA", "Foot · Ligue 1", "Foot · La Liga", "Basket · NBA", "Hockey · NHL"…
