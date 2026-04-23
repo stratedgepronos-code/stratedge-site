@@ -194,6 +194,23 @@ RÈGLES CHAMPS :
 - sport : "tennis", "foot", "basket", "nba", "hockey", "nhl", "baseball", "mlb" (minuscules)
 - player1/player2 : noms exacts. Tennis "NOM P." (maj + initiale). Équipes "PARIS SG", "BOSTON CELTICS"…
 - flag1/flag2 : code ISO2 pays (FR, GB, US, ES, IT, DE, RS…). Tennis toujours présent. Team sports tu peux laisser "" (le logo prime).
+  ⚠️ VÉRIFIE BIEN les nationalités tennis — erreurs fréquentes à NE PAS faire :
+  • Julia Riera → AR (Argentine, née à Pergamino 🇦🇷) — PAS hongroise/paraguayenne/uruguayenne
+  • Kayla Day → US (Américaine, née à Santa Barbara CA 🇺🇸) — PAS australienne/canadienne
+  • Camila Osorio → CO (Colombienne)
+  • María Lourdes Carle → AR (Argentine)
+  • Nadia Podoroska → AR (Argentine)
+  • Solana Sierra → AR (Argentine)
+  • Francisca Jones → GB (Britannique, pas espagnole)
+  • Whitney Osuigwe → US (Américaine, née en Floride)
+  • Hailey Baptiste → US (Américaine)
+  • Robin Montgomery → US (Américaine)
+  • Katie Volynets → US (Américaine)
+  • Varvara Gracheva → FR (française depuis 2023, PAS russe)
+  • Aliaksandra Sasnovich → BY (Biélorusse)
+  • Anastasia Potapova → RU (Russe)
+  Si tu as un doute sur une joueuse, écris son pays en clair dans un commentaire mental
+  mais NE PAS deviner le flag — vérifie sur WTA/ITF/Wikipedia avant.
 - team1_logo/team2_logo : laisse "" — le serveur PHP résout via ses helpers locaux.
 - competition : nom complet (ex. "Ligue 1 · J29 · Parc des Princes")
 - badge_text : "Tennis · ATP", "Tennis · Challenger", "Tennis · ITF", "Tennis · WTA", "Foot · Ligue 1", "Foot · La Liga", "Basket · NBA", "Hockey · NHL"…
