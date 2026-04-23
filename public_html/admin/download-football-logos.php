@@ -365,25 +365,26 @@ $espnTeams = [
     'fc-cincinnati'         => ['espn_id' => 18267, 'slug' => 'fc-cincinnati', 'aliases' => ['cincinnati-mls']],
     'colorado-rapids'       => ['espn_id' => 184,   'slug' => 'colorado-rapids', 'aliases' => ['rapids']],
 
-    // === Liga MX ===
-    'club-america'          => ['espn_id' => 229,   'slug' => 'club-america', 'aliases' => ['america', 'club-america-mex']],
-    'cd-guadalajara'        => ['espn_id' => 233,   'slug' => 'cd-guadalajara', 'aliases' => ['chivas', 'guadalajara']],
-    'cruz-azul'             => ['espn_id' => 228,   'slug' => 'cruz-azul', 'aliases' => ['cruz-azul-mex']],
-    'pumas-unam'            => ['espn_id' => 235,   'slug' => 'pumas-unam', 'aliases' => ['pumas', 'unam']],
-    'cf-monterrey'          => ['espn_id' => 231,   'slug' => 'monterrey', 'aliases' => ['monterrey', 'rayados']],
-    'tigres-uanl'           => ['espn_id' => 2296,  'slug' => 'tigres-uanl', 'aliases' => ['tigres']],
-    'club-leon'             => ['espn_id' => 237,   'slug' => 'club-leon', 'aliases' => ['leon']],
-    'cf-pachuca'            => ['espn_id' => 241,   'slug' => 'pachuca', 'aliases' => ['pachuca', 'tuzos']],
-    'toluca'                => ['espn_id' => 240,   'slug' => 'toluca', 'aliases' => ['toluca-mex']],
-    'atlas'                 => ['espn_id' => 230,   'slug' => 'atlas', 'aliases' => ['atlas-mex']],
-    'club-necaxa'           => ['espn_id' => 236,   'slug' => 'club-necaxa', 'aliases' => ['necaxa']],
-    'club-tijuana'          => ['espn_id' => 2295,  'slug' => 'club-tijuana', 'aliases' => ['tijuana', 'xolos']],
-    'puebla'                => ['espn_id' => 239,   'slug' => 'puebla', 'aliases' => ['puebla-mex']],
-    'santos-laguna'         => ['espn_id' => 238,   'slug' => 'santos-laguna', 'aliases' => ['santos-laguna-mex']],
-    'queretaro'             => ['espn_id' => 242,   'slug' => 'queretaro', 'aliases' => ['queretaro-mex']],
-    'mazatlan-fc'           => ['espn_id' => 20672, 'slug' => 'mazatlan-fc', 'aliases' => ['mazatlan']],
-    'atletico-san-luis'     => ['espn_id' => 9659,  'slug' => 'atletico-san-luis', 'aliases' => ['san-luis']],
-    'fc-juarez'             => ['espn_id' => 19320, 'slug' => 'fc-juarez', 'aliases' => ['juarez']],
+    // === Liga MX === (IDs ESPN vérifiés via pages team 2025-26)
+    'club-leon'             => ['espn_id' => 228,   'slug' => 'leon', 'aliases' => ['leon']],
+    'cf-pachuca'            => ['espn_id' => 234,   'slug' => 'pachuca', 'aliases' => ['pachuca', 'tuzos']],
+    'toluca'                => ['espn_id' => 223,   'slug' => 'toluca', 'aliases' => ['toluca-mex']],
+    'tigres-uanl'           => ['espn_id' => 232,   'slug' => 'tigres-uanl', 'aliases' => ['tigres']],
+    'club-tijuana'          => ['espn_id' => 10125, 'slug' => 'tijuana', 'aliases' => ['tijuana', 'xolos']],
+    'queretaro'             => ['espn_id' => 222,   'slug' => 'queretaro', 'aliases' => ['queretaro-mex']],
+    'mazatlan-fc'           => ['espn_id' => 20702, 'slug' => 'mazatlan-fc', 'aliases' => ['mazatlan']],
+    'atletico-san-luis'     => ['espn_id' => 15720, 'slug' => 'atletico-de-san-luis', 'aliases' => ['san-luis']],
+    'fc-juarez'             => ['espn_id' => 17851, 'slug' => 'fc-juarez', 'aliases' => ['juarez']],
+    // IDs Liga MX non vérifiés — on les laisse commentés, le scraper log les erreurs si faux
+    // 'club-america'     => ['espn_id' => ?, 'slug' => 'club-america'],
+    // 'cd-guadalajara'   => ['espn_id' => ?, 'slug' => 'guadalajara'],
+    // 'cruz-azul'        => ['espn_id' => ?, 'slug' => 'cruz-azul'],
+    // 'pumas-unam'       => ['espn_id' => ?, 'slug' => 'pumas-unam'],
+    // 'cf-monterrey'     => ['espn_id' => ?, 'slug' => 'monterrey'],
+    // 'atlas'            => ['espn_id' => ?, 'slug' => 'atlas'],
+    // 'club-necaxa'      => ['espn_id' => ?, 'slug' => 'necaxa'],
+    // 'puebla'           => ['espn_id' => ?, 'slug' => 'puebla'],
+    // 'santos-laguna'    => ['espn_id' => ?, 'slug' => 'santos-laguna'],
 ];
 
 /**
@@ -414,6 +415,45 @@ function scrape_espn_team_logo(int $espnId, string $slug): ?string {
         return html_entity_decode($m[1]);
     }
 
+    return null;
+}
+
+/**
+ * Recherche ESPN par nom pour trouver team_id et logo URL.
+ * Utile quand on ne connaît pas l'ID exact.
+ * @return array|null ['espn_id' => int, 'slug' => string, 'logo' => string] ou null
+ */
+function search_espn_team(string $teamName, string $league = 'soccer'): ?array {
+    $q = urlencode($teamName);
+    $apiUrl = "https://site.web.api.espn.com/apis/common/v3/search?query={$q}&limit=10&type=team&sport={$league}";
+    $json = http_get($apiUrl, 10);
+    if (!$json) return null;
+    $data = @json_decode($json, true);
+    if (!$data) return null;
+
+    // Parcourir les résultats et trouver le premier match soccer
+    $results = $data['results'] ?? [];
+    foreach ($results as $grp) {
+        $items = $grp['contents'] ?? [];
+        foreach ($items as $item) {
+            if (($item['type'] ?? '') !== 'team') continue;
+            $name = strtolower($item['displayName'] ?? '');
+            $target = strtolower($teamName);
+            // Match fuzzy : au moins 4 chars communs ou substring
+            if ($name === $target || strpos($name, $target) !== false || strpos($target, $name) !== false) {
+                $img = $item['image']?['default'] ?? ($item['logo'] ?? null);
+                $uid = $item['uid'] ?? '';
+                // uid format: s:600~l:775~t:20232
+                if (preg_match('/t:(\d+)/', $uid, $m)) {
+                    return [
+                        'espn_id' => (int)$m[1],
+                        'slug' => strtolower(preg_replace('/[^a-z0-9]+/i', '-', $item['displayName'])),
+                        'logo' => $img,
+                    ];
+                }
+            }
+        }
+    }
     return null;
 }
 
@@ -473,6 +513,77 @@ if (!empty($errors3)) {
 echo "\n";
 
 // ────────────────────────────────────────────────
+// PHASE 3.5 — Auto-discover équipes Liga MX (API search ESPN)
+// ────────────────────────────────────────────────
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+echo "  PHASE 3.5 — Auto-discover Liga MX\n";
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+
+// Équipes Liga MX à découvrir automatiquement (nom officiel ESPN attendu)
+$autoDiscover = [
+    'Club América'            => ['america', 'club-america', 'club-america-mex'],
+    'Guadalajara'             => ['chivas', 'guadalajara', 'cd-guadalajara'],
+    'Cruz Azul'               => ['cruz-azul', 'cruz-azul-mex'],
+    'Pumas UNAM'              => ['pumas', 'unam', 'pumas-unam'],
+    'Monterrey'               => ['monterrey', 'rayados', 'cf-monterrey'],
+    'Atlas'                   => ['atlas', 'atlas-mex'],
+    'Necaxa'                  => ['necaxa', 'club-necaxa'],
+    'Puebla'                  => ['puebla', 'puebla-mex', 'club-puebla'],
+    'Santos Laguna'           => ['santos-laguna', 'santos-laguna-mex'],
+];
+
+$ok35 = 0; $ko35 = 0;
+foreach ($autoDiscover as $searchName => $aliases) {
+    // Skip si tous les aliases sont déjà dans le manifest (déjà trouvé via une autre phase)
+    $allFound = true;
+    foreach ($aliases as $a) if (!isset($manifest[$a])) { $allFound = false; break; }
+    if ($allFound) { continue; }
+
+    echo "  ▸ Recherche '{$searchName}' ... ";
+    flush();
+
+    $found = search_espn_team($searchName);
+    if (!$found || empty($found['espn_id'])) {
+        echo "✗ pas trouvé\n";
+        $ko35++;
+        usleep(300000);
+        continue;
+    }
+
+    $espnId = $found['espn_id'];
+    $outFile = $base . "/espn-{$espnId}.png";
+    $fname = "espn-{$espnId}.png";
+
+    // Si déjà téléchargé, juste update le manifest
+    if (is_file($outFile) && filesize($outFile) > 500) {
+        foreach ($aliases as $a) if (!isset($manifest[$a])) $manifest[$a] = $fname;
+        echo "✓ déjà en cache (ID {$espnId})\n";
+        usleep(300000);
+        continue;
+    }
+
+    // Télécharger le logo
+    $logoUrl = !empty($found['logo']) ? $found['logo'] : "https://a.espncdn.com/i/teamlogos/soccer/500/{$espnId}.png";
+    $body = http_get($logoUrl, 10);
+    if ($body !== null && strlen($body) > 500) {
+        if (@file_put_contents($outFile, $body) !== false) {
+            foreach ($aliases as $a) if (!isset($manifest[$a])) $manifest[$a] = $fname;
+            $ok35++;
+            echo "✓ ID {$espnId} (" . number_format(strlen($body) / 1024, 1) . " Ko)\n";
+        } else {
+            $ko35++;
+            echo "✗ write fail\n";
+        }
+    } else {
+        $ko35++;
+        echo "✗ fetch fail (logo={$logoUrl})\n";
+    }
+    usleep(500000);
+}
+
+echo "\n[PHASE 3.5 DONE] {$ok35} découvertes · {$ko35} échecs\n\n";
+
+// ────────────────────────────────────────────────
 // PHASE 4 — Manifest JSON
 // ────────────────────────────────────────────────
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
@@ -501,12 +612,13 @@ foreach (glob($base . '/*.png') as $f) $totalSize += filesize($f);
 echo "═══════════════════════════════════════════════\n";
 echo "  RÉCAPITULATIF\n";
 echo "═══════════════════════════════════════════════\n";
-echo sprintf("  PHASE 1 (API-Football)  : %d ok, %d skip, %d ko\n", $ok1, $skip1, $ko1);
-echo sprintf("  PHASE 2 (TheSportsDB)   : %d ok, %d skip, %d ko\n", $ok2, $skip2, $ko2);
-echo sprintf("  PHASE 3 (ESPN CDN)      : %d ok, %d skip, %d ko\n", $ok3, $skip3, $ko3);
-echo sprintf("  Total fichiers PNG      : %d\n", $totalFiles);
-echo sprintf("  Taille totale           : %s\n", number_format($totalSize / 1024 / 1024, 2) . ' Mo');
-echo sprintf("  Manifest entries        : %d slugs\n", count($manifest));
+echo sprintf("  PHASE 1 (API-Football)    : %d ok, %d skip, %d ko\n", $ok1, $skip1, $ko1);
+echo sprintf("  PHASE 2 (TheSportsDB)     : %d ok, %d skip, %d ko\n", $ok2, $skip2, $ko2);
+echo sprintf("  PHASE 3 (ESPN scraper)    : %d ok, %d skip, %d ko\n", $ok3, $skip3, $ko3);
+echo sprintf("  PHASE 3.5 (ESPN search)   : %d découvertes, %d échecs\n", $ok35, $ko35);
+echo sprintf("  Total fichiers PNG        : %d\n", $totalFiles);
+echo sprintf("  Taille totale             : %s\n", number_format($totalSize / 1024 / 1024, 2) . ' Mo');
+echo sprintf("  Manifest entries          : %d slugs\n", count($manifest));
 echo "\n✅ TERMINÉ.\n";
 echo "\nProchaine étape :\n";
 echo "  1. Vérifier /assets/logos/football/ contient bien les PNG\n";
