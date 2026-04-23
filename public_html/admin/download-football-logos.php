@@ -36,7 +36,24 @@ if (!is_writable($base)) die("❌ $base n'est pas writable\n");
 echo "═══════════════════════════════════════════════\n";
 echo "  STRATEDGE — Téléchargeur logos football\n";
 echo "═══════════════════════════════════════════════\n\n";
-echo "Dossier cible : " . realpath($base) . "\n\n";
+echo "Dossier cible : " . realpath($base) . "\n";
+
+// Force modes : ?force=espn (re-télécharge seulement ESPN), ?force=all (tout)
+$forceMode = $_GET['force'] ?? '';
+if ($forceMode === 'espn' || $forceMode === 'all') {
+    echo "⚠️  FORCE MODE = '$forceMode' → suppression avant re-download\n";
+    $wipePatterns = ($forceMode === 'all')
+        ? ['api-*.png', 'tsdb-*.png', 'espn-*.png']
+        : ['espn-*.png'];
+    $wiped = 0;
+    foreach ($wipePatterns as $pat) {
+        foreach (glob($base . '/' . $pat) as $f) {
+            @unlink($f); $wiped++;
+        }
+    }
+    echo "   → {$wiped} fichiers supprimés\n";
+}
+echo "\n";
 
 // ────────────────────────────────────────────────
 // UTILS
@@ -305,95 +322,155 @@ if (!empty($errors2)) {
 echo "\n";
 
 // ────────────────────────────────────────────────
-// PHASE 3 — ESPN CDN fallback (MLS/Liga MX complémentaire)
+// PHASE 3 — ESPN SCRAPER (MLS/Liga MX)
+// Scrape directement la page team ESPN pour récupérer
+// le vrai URL du logo (évite les bugs d'ID CDN).
 // ────────────────────────────────────────────────
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-echo "  PHASE 3 — ESPN CDN (MLS/Liga MX fallback)\n";
+echo "  PHASE 3 — ESPN scraper (URL logo réel)\n";
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
 
-// ESPN team IDs format: https://a.espncdn.com/i/teamlogos/soccer/500/{espn_id}.png
-// MLS + Liga MX teams with manually verified ESPN IDs
+// Liste [slug interne → ESPN team_id] — on scrape les vraies pages ESPN
+// Si l'ID est faux (ex: équipe renommée/bougée), le scraper détectera
+// que le logo retrouvé n'est PAS celui attendu via l'URL.
 $espnTeams = [
-    // === MLS ===
-    'real-salt-lake'        => ['espn_id' => 4771, 'aliases' => ['rsl', 'salt-lake']],
-    'inter-miami-cf'        => ['espn_id' => 20232, 'aliases' => ['inter-miami', 'miami']],
-    'cf-montreal'           => ['espn_id' => 9720, 'aliases' => ['montreal']],
-    'la-galaxy'             => ['espn_id' => 187, 'aliases' => ['galaxy']],
-    'los-angeles-fc'        => ['espn_id' => 18966, 'aliases' => ['lafc']],
-    'new-york-city-fc'      => ['espn_id' => 17012, 'aliases' => ['nycfc']],
-    'new-york-red-bulls'    => ['espn_id' => 190, 'aliases' => ['red-bulls', 'nyrb']],
-    'atlanta-united-fc'     => ['espn_id' => 18418, 'aliases' => ['atlanta-united', 'atlanta-mls']],
-    'seattle-sounders-fc'   => ['espn_id' => 9726, 'aliases' => ['seattle', 'sounders']],
-    'portland-timbers'      => ['espn_id' => 9723, 'aliases' => ['portland', 'timbers']],
-    'columbus-crew'         => ['espn_id' => 183, 'aliases' => ['columbus', 'crew']],
-    'toronto-fc'            => ['espn_id' => 7318, 'aliases' => ['toronto-mls']],
-    'san-jose-earthquakes'  => ['espn_id' => 191, 'aliases' => ['san-jose', 'earthquakes']],
-    'vancouver-whitecaps-fc'=> ['espn_id' => 9727, 'aliases' => ['vancouver', 'whitecaps']],
-    'dc-united'             => ['espn_id' => 193, 'aliases' => ['washington']],
-    'philadelphia-union'    => ['espn_id' => 10739, 'aliases' => ['philadelphia']],
-    'fc-dallas'             => ['espn_id' => 185, 'aliases' => ['dallas-mls']],
-    'houston-dynamo-fc'     => ['espn_id' => 6077, 'aliases' => ['houston', 'dynamo']],
-    'chicago-fire-fc'       => ['espn_id' => 182, 'aliases' => ['chicago-fire']],
-    'sporting-kansas-city'  => ['espn_id' => 186, 'aliases' => ['sporting-kc']],
-    'minnesota-united-fc'   => ['espn_id' => 17362, 'aliases' => ['minnesota', 'loons']],
-    'orlando-city-sc'       => ['espn_id' => 12363, 'aliases' => ['orlando']],
-    'nashville-sc'          => ['espn_id' => 18986, 'aliases' => ['nashville']],
-    'austin-fc'             => ['espn_id' => 20906, 'aliases' => ['austin']],
-    'st-louis-city-sc'      => ['espn_id' => 22713, 'aliases' => ['st-louis']],
-    'charlotte-fc'          => ['espn_id' => 21300, 'aliases' => ['charlotte']],
-    'new-england-revolution'=> ['espn_id' => 189, 'aliases' => ['revolution', 'new-england']],
-    'fc-cincinnati'         => ['espn_id' => 18267, 'aliases' => ['cincinnati-mls']],
-    'colorado-rapids'       => ['espn_id' => 184, 'aliases' => ['rapids']],
+    // === MLS === (ESPN team IDs confirmés via standings/fixtures)
+    'real-salt-lake'        => ['espn_id' => 4771, 'slug' => 'real-salt-lake', 'aliases' => ['rsl', 'salt-lake']],
+    'inter-miami-cf'        => ['espn_id' => 20232, 'slug' => 'inter-miami-cf', 'aliases' => ['inter-miami', 'miami']],
+    'cf-montreal'           => ['espn_id' => 9720,  'slug' => 'cf-montreal', 'aliases' => ['montreal']],
+    'la-galaxy'             => ['espn_id' => 187,   'slug' => 'la-galaxy', 'aliases' => ['galaxy']],
+    'los-angeles-fc'        => ['espn_id' => 18966, 'slug' => 'los-angeles-fc', 'aliases' => ['lafc']],
+    'new-york-city-fc'      => ['espn_id' => 17606, 'slug' => 'new-york-city-fc', 'aliases' => ['nycfc']],
+    'new-york-red-bulls'    => ['espn_id' => 190,   'slug' => 'red-bull-new-york', 'aliases' => ['red-bulls', 'nyrb']],
+    'atlanta-united-fc'     => ['espn_id' => 18418, 'slug' => 'atlanta-united-fc', 'aliases' => ['atlanta-united', 'atlanta-mls']],
+    'seattle-sounders-fc'   => ['espn_id' => 9726,  'slug' => 'seattle-sounders-fc', 'aliases' => ['seattle', 'sounders']],
+    'portland-timbers'      => ['espn_id' => 9723,  'slug' => 'portland-timbers', 'aliases' => ['portland', 'timbers']],
+    'columbus-crew'         => ['espn_id' => 183,   'slug' => 'columbus-crew', 'aliases' => ['columbus', 'crew']],
+    'toronto-fc'            => ['espn_id' => 7318,  'slug' => 'toronto-fc', 'aliases' => ['toronto-mls']],
+    'san-jose-earthquakes'  => ['espn_id' => 191,   'slug' => 'san-jose-earthquakes', 'aliases' => ['san-jose', 'earthquakes']],
+    'vancouver-whitecaps-fc'=> ['espn_id' => 9727,  'slug' => 'vancouver-whitecaps-fc', 'aliases' => ['vancouver', 'whitecaps']],
+    'dc-united'             => ['espn_id' => 193,   'slug' => 'dc-united', 'aliases' => ['washington']],
+    'philadelphia-union'    => ['espn_id' => 10739, 'slug' => 'philadelphia-union', 'aliases' => ['philadelphia']],
+    'fc-dallas'             => ['espn_id' => 185,   'slug' => 'fc-dallas', 'aliases' => ['dallas-mls']],
+    'houston-dynamo-fc'     => ['espn_id' => 6077,  'slug' => 'houston-dynamo-fc', 'aliases' => ['houston', 'dynamo']],
+    'chicago-fire-fc'       => ['espn_id' => 182,   'slug' => 'chicago-fire-fc', 'aliases' => ['chicago-fire']],
+    'sporting-kansas-city'  => ['espn_id' => 186,   'slug' => 'sporting-kansas-city', 'aliases' => ['sporting-kc']],
+    'minnesota-united-fc'   => ['espn_id' => 17362, 'slug' => 'minnesota-united-fc', 'aliases' => ['minnesota', 'loons']],
+    'orlando-city-sc'       => ['espn_id' => 12011, 'slug' => 'orlando-city-sc', 'aliases' => ['orlando']],
+    'nashville-sc'          => ['espn_id' => 18986, 'slug' => 'nashville-sc', 'aliases' => ['nashville']],
+    'austin-fc'             => ['espn_id' => 20906, 'slug' => 'austin-fc', 'aliases' => ['austin']],
+    'st-louis-city-sc'      => ['espn_id' => 22713, 'slug' => 'st-louis-city-sc', 'aliases' => ['st-louis']],
+    'charlotte-fc'          => ['espn_id' => 21300, 'slug' => 'charlotte-fc', 'aliases' => ['charlotte']],
+    'new-england-revolution'=> ['espn_id' => 189,   'slug' => 'new-england-revolution', 'aliases' => ['revolution', 'new-england']],
+    'fc-cincinnati'         => ['espn_id' => 18267, 'slug' => 'fc-cincinnati', 'aliases' => ['cincinnati-mls']],
+    'colorado-rapids'       => ['espn_id' => 184,   'slug' => 'colorado-rapids', 'aliases' => ['rapids']],
 
     // === Liga MX ===
-    'club-america'          => ['espn_id' => 229, 'aliases' => ['america', 'club-america-mex']],
-    'cd-guadalajara'        => ['espn_id' => 233, 'aliases' => ['chivas', 'guadalajara']],
-    'cruz-azul'             => ['espn_id' => 228, 'aliases' => ['cruz-azul-mex']],
-    'pumas-unam'            => ['espn_id' => 235, 'aliases' => ['pumas', 'unam']],
-    'cf-monterrey'          => ['espn_id' => 231, 'aliases' => ['monterrey', 'rayados']],
-    'tigres-uanl'           => ['espn_id' => 2296, 'aliases' => ['tigres']],
-    'club-leon'             => ['espn_id' => 237, 'aliases' => ['leon']],
-    'cf-pachuca'            => ['espn_id' => 241, 'aliases' => ['pachuca', 'tuzos']],
-    'toluca'                => ['espn_id' => 240, 'aliases' => ['toluca-mex']],
-    'atlas'                 => ['espn_id' => 230, 'aliases' => ['atlas-mex']],
-    'club-necaxa'           => ['espn_id' => 236, 'aliases' => ['necaxa']],
-    'club-tijuana'          => ['espn_id' => 2295, 'aliases' => ['tijuana', 'xolos']],
-    'puebla'                => ['espn_id' => 239, 'aliases' => ['puebla-mex']],
-    'santos-laguna'         => ['espn_id' => 238, 'aliases' => ['santos-laguna-mex']],
-    'queretaro'             => ['espn_id' => 242, 'aliases' => ['queretaro-mex']],
-    'mazatlan-fc'           => ['espn_id' => 20672, 'aliases' => ['mazatlan']],
-    'atletico-san-luis'     => ['espn_id' => 9659, 'aliases' => ['san-luis']],
-    'fc-juarez'             => ['espn_id' => 19320, 'aliases' => ['juarez']],
+    'club-america'          => ['espn_id' => 229,   'slug' => 'club-america', 'aliases' => ['america', 'club-america-mex']],
+    'cd-guadalajara'        => ['espn_id' => 233,   'slug' => 'cd-guadalajara', 'aliases' => ['chivas', 'guadalajara']],
+    'cruz-azul'             => ['espn_id' => 228,   'slug' => 'cruz-azul', 'aliases' => ['cruz-azul-mex']],
+    'pumas-unam'            => ['espn_id' => 235,   'slug' => 'pumas-unam', 'aliases' => ['pumas', 'unam']],
+    'cf-monterrey'          => ['espn_id' => 231,   'slug' => 'monterrey', 'aliases' => ['monterrey', 'rayados']],
+    'tigres-uanl'           => ['espn_id' => 2296,  'slug' => 'tigres-uanl', 'aliases' => ['tigres']],
+    'club-leon'             => ['espn_id' => 237,   'slug' => 'club-leon', 'aliases' => ['leon']],
+    'cf-pachuca'            => ['espn_id' => 241,   'slug' => 'pachuca', 'aliases' => ['pachuca', 'tuzos']],
+    'toluca'                => ['espn_id' => 240,   'slug' => 'toluca', 'aliases' => ['toluca-mex']],
+    'atlas'                 => ['espn_id' => 230,   'slug' => 'atlas', 'aliases' => ['atlas-mex']],
+    'club-necaxa'           => ['espn_id' => 236,   'slug' => 'club-necaxa', 'aliases' => ['necaxa']],
+    'club-tijuana'          => ['espn_id' => 2295,  'slug' => 'club-tijuana', 'aliases' => ['tijuana', 'xolos']],
+    'puebla'                => ['espn_id' => 239,   'slug' => 'puebla', 'aliases' => ['puebla-mex']],
+    'santos-laguna'         => ['espn_id' => 238,   'slug' => 'santos-laguna', 'aliases' => ['santos-laguna-mex']],
+    'queretaro'             => ['espn_id' => 242,   'slug' => 'queretaro', 'aliases' => ['queretaro-mex']],
+    'mazatlan-fc'           => ['espn_id' => 20672, 'slug' => 'mazatlan-fc', 'aliases' => ['mazatlan']],
+    'atletico-san-luis'     => ['espn_id' => 9659,  'slug' => 'atletico-san-luis', 'aliases' => ['san-luis']],
+    'fc-juarez'             => ['espn_id' => 19320, 'slug' => 'fc-juarez', 'aliases' => ['juarez']],
 ];
 
-$ok3 = 0; $skip3 = 0; $ko3 = 0;
-foreach ($espnTeams as $slug => $info) {
+/**
+ * Scrape la page team ESPN et extrait l'URL du logo depuis les meta og:image
+ * ou depuis le HTML (img src avec teamlogos/soccer/500/).
+ * @return string|null URL complète du logo trouvé, ou null si fail.
+ */
+function scrape_espn_team_logo(int $espnId, string $slug): ?string {
+    $pageUrl = "https://www.espn.com/soccer/team/_/id/{$espnId}/{$slug}";
+    $html = http_get($pageUrl, 15);
+    if ($html === null || strlen($html) < 1000) return null;
+
+    // 1) og:image meta tag (le plus fiable)
+    if (preg_match('#<meta\s+property=["\']og:image["\']\s+content=["\']([^"\']+)["\']#i', $html, $m)) {
+        $url = html_entity_decode($m[1]);
+        if (strpos($url, 'teamlogos/soccer') !== false) return $url;
+    }
+
+    // 2) Premier <img> avec src contenant teamlogos/soccer/500/
+    if (preg_match('#src=["\']((?:https?:)?//[^"\']*?teamlogos/soccer/500/[^"\']+\.png)["\']#i', $html, $m)) {
+        $url = html_entity_decode($m[1]);
+        if (strpos($url, '//') === 0) $url = 'https:' . $url;
+        return $url;
+    }
+
+    // 3) combiner URL pattern
+    if (preg_match('#(https?://a\.espncdn\.com/combiner/i\?img=/i/teamlogos/soccer/500/\d+\.png[^"\']*)#i', $html, $m)) {
+        return html_entity_decode($m[1]);
+    }
+
+    return null;
+}
+
+$ok3 = 0; $skip3 = 0; $ko3 = 0; $errors3 = [];
+foreach ($espnTeams as $internalSlug => $info) {
     $espnId = $info['espn_id'];
+    $espnSlug = $info['slug'];
     $aliases = $info['aliases'];
     $outFile = $base . "/espn-{$espnId}.png";
     $fname = "espn-{$espnId}.png";
 
+    // Skip si déjà téléchargé
     if (is_file($outFile) && filesize($outFile) > 500) {
         $skip3++;
-        $manifest[$slug] = $fname;
+        $manifest[$internalSlug] = $fname;
         foreach ($aliases as $a) if (!isset($manifest[$a])) $manifest[$a] = $fname;
         continue;
     }
 
-    $url = "https://a.espncdn.com/i/teamlogos/soccer/500/{$espnId}.png";
-    $body = http_get($url, 10);
+    echo "  ▸ {$internalSlug} (ID {$espnId}) ... ";
+    flush();
+
+    // Étape 1 : scraper la page ESPN pour trouver l'URL logo réel
+    $logoUrl = scrape_espn_team_logo($espnId, $espnSlug);
+
+    if (!$logoUrl) {
+        // Fallback : essayer l'URL CDN directe (au cas où)
+        $logoUrl = "https://a.espncdn.com/i/teamlogos/soccer/500/{$espnId}.png";
+    }
+
+    // Étape 2 : télécharger le logo trouvé
+    $body = http_get($logoUrl, 10);
     if ($body !== null && strlen($body) > 500) {
         if (@file_put_contents($outFile, $body) !== false) {
-            $manifest[$slug] = $fname;
+            $manifest[$internalSlug] = $fname;
             foreach ($aliases as $a) if (!isset($manifest[$a])) $manifest[$a] = $fname;
             $ok3++;
-            if ($ok3 % 10 === 0) { echo "  → {$ok3} téléchargés\n"; flush(); }
-        } else { $ko3++; }
-    } else { $ko3++; }
-    usleep(100000);
+            echo "✓ (" . number_format(strlen($body) / 1024, 1) . " Ko)\n";
+            flush();
+        } else {
+            $ko3++;
+            echo "✗ write fail\n";
+        }
+    } else {
+        $ko3++;
+        $errors3[] = "{$internalSlug}: logoUrl=$logoUrl fail";
+        echo "✗ fetch fail\n";
+    }
+    usleep(400000); // 400ms pour ne pas flood ESPN
 }
 
-echo "\n[PHASE 3 DONE] {$ok3} téléchargés · {$skip3} déjà là · {$ko3} erreurs\n\n";
+echo "\n[PHASE 3 DONE] {$ok3} téléchargés · {$skip3} déjà là · {$ko3} erreurs\n";
+if (!empty($errors3)) {
+    echo "\nErreurs détaillées :\n";
+    foreach ($errors3 as $e) echo "  • $e\n";
+}
+echo "\n";
 
 // ────────────────────────────────────────────────
 // PHASE 4 — Manifest JSON
