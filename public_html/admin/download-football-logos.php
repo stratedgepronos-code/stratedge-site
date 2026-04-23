@@ -145,9 +145,10 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 
 // IDs ligues TheSportsDB (free API v3)
 $tsdbLeagues = [
-    4322 => 'K League 1 (Corée)',
-    4346 => 'J1 League (Japon)',
+    4346 => 'MLS (USA)',
     4350 => 'Liga MX (Mexique)',
+    4322 => 'K League 1 (Corée)',
+    4347 => 'J1 League (Japon)',
     4356 => 'A-League (Australie)',
     4411 => 'Primera A (Colombie/Liga BetPlay)',
     4338 => 'Süper Lig (Turquie)',
@@ -156,6 +157,15 @@ $tsdbLeagues = [
     4330 => 'Veikkausliiga (Finlande)',
     4344 => 'Cyprus First Division',
     4394 => 'Pro League (Arabie)',
+    4328 => 'Premier League (EPL backup)',
+    4332 => 'Major League Soccer 2',
+    4335 => 'La Liga (Spain backup)',
+    4391 => 'USL Championship',
+    4348 => 'Brasileirão (backup)',
+    4351 => 'Primera División (Argentine)',
+    4353 => 'Liga de Expansion MX',
+    4367 => 'Liga I (Roumanie)',
+    4403 => 'J2 League (Japon D2)',
 ];
 
 $ok2 = 0; $skip2 = 0; $ko2 = 0; $errors2 = [];
@@ -201,10 +211,77 @@ foreach ($tsdbLeagues as $lgId => $lgName) {
         if ($body !== null && strlen($body) > 500) {
             if (@file_put_contents($outFile, $body) !== false) {
                 $manifest[$slug] = $fname;
-                // Ajouter aussi version sans accents/chars spéciaux + version raw
-                $rawSlug = slugify(preg_replace('/\s*(fc|cf|ca|sc|ac|as)\s*/i', ' ', $name));
-                if ($rawSlug !== $slug && strlen($rawSlug) > 2) {
-                    $manifest[$rawSlug] = $fname;
+                // Variantes: raw sans FC/CF/SC + alias courts/alternatifs
+                $variants = [];
+                $rawSlug = slugify(preg_replace('/\s*(fc|cf|ca|sc|ac|as|cd|cf|club)\s*/i', ' ', $name));
+                if ($rawSlug !== $slug && strlen($rawSlug) > 2) $variants[] = $rawSlug;
+                // Alternative names from TheSportsDB
+                $altNames = trim($team['strAlternate'] ?? '');
+                if ($altNames) {
+                    foreach (explode(',', $altNames) as $alt) {
+                        $altSlug = slugify(trim($alt));
+                        if ($altSlug && strlen($altSlug) > 2) $variants[] = $altSlug;
+                    }
+                }
+                // Noms courts spécifiques Liga MX / MLS connus
+                $shortMap = [
+                    'club america' => ['america'],
+                    'club de futbol monterrey' => ['monterrey', 'rayados'],
+                    'cd guadalajara' => ['chivas', 'guadalajara'],
+                    'club tigres uanl' => ['tigres', 'tigres uanl'],
+                    'cruz azul fc' => ['cruz azul', 'cruz-azul'],
+                    'cf pachuca' => ['pachuca', 'tuzos'],
+                    'club leon' => ['leon'],
+                    'club necaxa' => ['necaxa', 'rayos'],
+                    'atlas fc' => ['atlas'],
+                    'club tijuana' => ['tijuana', 'xolos'],
+                    'puebla fc' => ['puebla'],
+                    'club santos laguna' => ['santos laguna', 'santos-mex'],
+                    'queretaro fc' => ['queretaro'],
+                    'mazatlan fc' => ['mazatlan'],
+                    'club atletico de san luis' => ['san luis', 'atletico san luis'],
+                    'fc juarez' => ['juarez'],
+                    'club puebla' => ['puebla'],
+                    'pumas unam' => ['pumas', 'unam'],
+                    'toluca fc' => ['toluca'],
+                    'real salt lake' => ['salt lake', 'rsl'],
+                    'inter miami cf' => ['inter miami', 'miami'],
+                    'cf montreal' => ['montreal', 'impact montreal'],
+                    'la galaxy' => ['galaxy', 'los angeles galaxy'],
+                    'los angeles fc' => ['lafc'],
+                    'new york city fc' => ['nycfc', 'new york city'],
+                    'new york red bulls' => ['red bulls', 'nyrb'],
+                    'atlanta united fc' => ['atlanta united', 'atlanta mls'],
+                    'seattle sounders fc' => ['seattle', 'sounders'],
+                    'portland timbers' => ['portland', 'timbers'],
+                    'columbus crew' => ['columbus', 'crew'],
+                    'toronto fc' => ['toronto mls'],
+                    'san jose earthquakes' => ['san jose', 'earthquakes'],
+                    'vancouver whitecaps fc' => ['vancouver', 'whitecaps'],
+                    'dc united' => ['d.c. united', 'washington'],
+                    'philadelphia union' => ['philadelphia'],
+                    'fc dallas' => ['dallas mls'],
+                    'houston dynamo fc' => ['houston', 'dynamo'],
+                    'chicago fire fc' => ['chicago', 'chicago fire'],
+                    'sporting kansas city' => ['sporting kc', 'kansas city'],
+                    'minnesota united fc' => ['minnesota', 'loons'],
+                    'orlando city sc' => ['orlando'],
+                    'nashville sc' => ['nashville'],
+                    'austin fc' => ['austin'],
+                    'st louis city sc' => ['st louis', 'saint louis'],
+                    'charlotte fc' => ['charlotte'],
+                    'new england revolution' => ['new england', 'revolution'],
+                    'fc cincinnati' => ['cincinnati mls'],
+                    'colorado rapids' => ['colorado', 'rapids'],
+                ];
+                $normName = strtolower($name);
+                if (isset($shortMap[$normName])) {
+                    foreach ($shortMap[$normName] as $short) {
+                        $variants[] = slugify($short);
+                    }
+                }
+                foreach (array_unique($variants) as $v) {
+                    if ($v && !isset($manifest[$v])) $manifest[$v] = $fname;
                 }
                 $ok2++;
             } else {
@@ -228,7 +305,98 @@ if (!empty($errors2)) {
 echo "\n";
 
 // ────────────────────────────────────────────────
-// PHASE 3 — Manifest JSON
+// PHASE 3 — ESPN CDN fallback (MLS/Liga MX complémentaire)
+// ────────────────────────────────────────────────
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+echo "  PHASE 3 — ESPN CDN (MLS/Liga MX fallback)\n";
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+
+// ESPN team IDs format: https://a.espncdn.com/i/teamlogos/soccer/500/{espn_id}.png
+// MLS + Liga MX teams with manually verified ESPN IDs
+$espnTeams = [
+    // === MLS ===
+    'real-salt-lake'        => ['espn_id' => 4771, 'aliases' => ['rsl', 'salt-lake']],
+    'inter-miami-cf'        => ['espn_id' => 20232, 'aliases' => ['inter-miami', 'miami']],
+    'cf-montreal'           => ['espn_id' => 9720, 'aliases' => ['montreal']],
+    'la-galaxy'             => ['espn_id' => 187, 'aliases' => ['galaxy']],
+    'los-angeles-fc'        => ['espn_id' => 18966, 'aliases' => ['lafc']],
+    'new-york-city-fc'      => ['espn_id' => 17012, 'aliases' => ['nycfc']],
+    'new-york-red-bulls'    => ['espn_id' => 190, 'aliases' => ['red-bulls', 'nyrb']],
+    'atlanta-united-fc'     => ['espn_id' => 18418, 'aliases' => ['atlanta-united', 'atlanta-mls']],
+    'seattle-sounders-fc'   => ['espn_id' => 9726, 'aliases' => ['seattle', 'sounders']],
+    'portland-timbers'      => ['espn_id' => 9723, 'aliases' => ['portland', 'timbers']],
+    'columbus-crew'         => ['espn_id' => 183, 'aliases' => ['columbus', 'crew']],
+    'toronto-fc'            => ['espn_id' => 7318, 'aliases' => ['toronto-mls']],
+    'san-jose-earthquakes'  => ['espn_id' => 191, 'aliases' => ['san-jose', 'earthquakes']],
+    'vancouver-whitecaps-fc'=> ['espn_id' => 9727, 'aliases' => ['vancouver', 'whitecaps']],
+    'dc-united'             => ['espn_id' => 193, 'aliases' => ['washington']],
+    'philadelphia-union'    => ['espn_id' => 10739, 'aliases' => ['philadelphia']],
+    'fc-dallas'             => ['espn_id' => 185, 'aliases' => ['dallas-mls']],
+    'houston-dynamo-fc'     => ['espn_id' => 6077, 'aliases' => ['houston', 'dynamo']],
+    'chicago-fire-fc'       => ['espn_id' => 182, 'aliases' => ['chicago-fire']],
+    'sporting-kansas-city'  => ['espn_id' => 186, 'aliases' => ['sporting-kc']],
+    'minnesota-united-fc'   => ['espn_id' => 17362, 'aliases' => ['minnesota', 'loons']],
+    'orlando-city-sc'       => ['espn_id' => 12363, 'aliases' => ['orlando']],
+    'nashville-sc'          => ['espn_id' => 18986, 'aliases' => ['nashville']],
+    'austin-fc'             => ['espn_id' => 20906, 'aliases' => ['austin']],
+    'st-louis-city-sc'      => ['espn_id' => 22713, 'aliases' => ['st-louis']],
+    'charlotte-fc'          => ['espn_id' => 21300, 'aliases' => ['charlotte']],
+    'new-england-revolution'=> ['espn_id' => 189, 'aliases' => ['revolution', 'new-england']],
+    'fc-cincinnati'         => ['espn_id' => 18267, 'aliases' => ['cincinnati-mls']],
+    'colorado-rapids'       => ['espn_id' => 184, 'aliases' => ['rapids']],
+
+    // === Liga MX ===
+    'club-america'          => ['espn_id' => 229, 'aliases' => ['america', 'club-america-mex']],
+    'cd-guadalajara'        => ['espn_id' => 233, 'aliases' => ['chivas', 'guadalajara']],
+    'cruz-azul'             => ['espn_id' => 228, 'aliases' => ['cruz-azul-mex']],
+    'pumas-unam'            => ['espn_id' => 235, 'aliases' => ['pumas', 'unam']],
+    'cf-monterrey'          => ['espn_id' => 231, 'aliases' => ['monterrey', 'rayados']],
+    'tigres-uanl'           => ['espn_id' => 2296, 'aliases' => ['tigres']],
+    'club-leon'             => ['espn_id' => 237, 'aliases' => ['leon']],
+    'cf-pachuca'            => ['espn_id' => 241, 'aliases' => ['pachuca', 'tuzos']],
+    'toluca'                => ['espn_id' => 240, 'aliases' => ['toluca-mex']],
+    'atlas'                 => ['espn_id' => 230, 'aliases' => ['atlas-mex']],
+    'club-necaxa'           => ['espn_id' => 236, 'aliases' => ['necaxa']],
+    'club-tijuana'          => ['espn_id' => 2295, 'aliases' => ['tijuana', 'xolos']],
+    'puebla'                => ['espn_id' => 239, 'aliases' => ['puebla-mex']],
+    'santos-laguna'         => ['espn_id' => 238, 'aliases' => ['santos-laguna-mex']],
+    'queretaro'             => ['espn_id' => 242, 'aliases' => ['queretaro-mex']],
+    'mazatlan-fc'           => ['espn_id' => 20672, 'aliases' => ['mazatlan']],
+    'atletico-san-luis'     => ['espn_id' => 9659, 'aliases' => ['san-luis']],
+    'fc-juarez'             => ['espn_id' => 19320, 'aliases' => ['juarez']],
+];
+
+$ok3 = 0; $skip3 = 0; $ko3 = 0;
+foreach ($espnTeams as $slug => $info) {
+    $espnId = $info['espn_id'];
+    $aliases = $info['aliases'];
+    $outFile = $base . "/espn-{$espnId}.png";
+    $fname = "espn-{$espnId}.png";
+
+    if (is_file($outFile) && filesize($outFile) > 500) {
+        $skip3++;
+        $manifest[$slug] = $fname;
+        foreach ($aliases as $a) if (!isset($manifest[$a])) $manifest[$a] = $fname;
+        continue;
+    }
+
+    $url = "https://a.espncdn.com/i/teamlogos/soccer/500/{$espnId}.png";
+    $body = http_get($url, 10);
+    if ($body !== null && strlen($body) > 500) {
+        if (@file_put_contents($outFile, $body) !== false) {
+            $manifest[$slug] = $fname;
+            foreach ($aliases as $a) if (!isset($manifest[$a])) $manifest[$a] = $fname;
+            $ok3++;
+            if ($ok3 % 10 === 0) { echo "  → {$ok3} téléchargés\n"; flush(); }
+        } else { $ko3++; }
+    } else { $ko3++; }
+    usleep(100000);
+}
+
+echo "\n[PHASE 3 DONE] {$ok3} téléchargés · {$skip3} déjà là · {$ko3} erreurs\n\n";
+
+// ────────────────────────────────────────────────
+// PHASE 4 — Manifest JSON
 // ────────────────────────────────────────────────
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
 echo "  PHASE 3 — Génération manifest\n";
@@ -258,11 +426,12 @@ echo "  RÉCAPITULATIF\n";
 echo "═══════════════════════════════════════════════\n";
 echo sprintf("  PHASE 1 (API-Football)  : %d ok, %d skip, %d ko\n", $ok1, $skip1, $ko1);
 echo sprintf("  PHASE 2 (TheSportsDB)   : %d ok, %d skip, %d ko\n", $ok2, $skip2, $ko2);
+echo sprintf("  PHASE 3 (ESPN CDN)      : %d ok, %d skip, %d ko\n", $ok3, $skip3, $ko3);
 echo sprintf("  Total fichiers PNG      : %d\n", $totalFiles);
 echo sprintf("  Taille totale           : %s\n", number_format($totalSize / 1024 / 1024, 2) . ' Mo');
 echo sprintf("  Manifest entries        : %d slugs\n", count($manifest));
 echo "\n✅ TERMINÉ.\n";
 echo "\nProchaine étape :\n";
 echo "  1. Vérifier /assets/logos/football/ contient bien les PNG\n";
-echo "  2. stratedge_football_logo_local() va automatiquement utiliser ces fichiers\n";
+echo "  2. stratedge_football_logo() va automatiquement utiliser ces fichiers\n";
 echo "  3. Relancer ce script dans 1 mois pour MAJ nouvelles équipes\n";

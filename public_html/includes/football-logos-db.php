@@ -343,10 +343,10 @@ function stratedge_football_logo(string $teamName): string {
         return '/assets/logos/football/' . $manifest[$slug];
     }
 
-    // Recherche partielle dans le manifest (mots clés >= 4 chars)
+    // Recherche partielle dans le manifest — skip les mots génériques (même règle que DB)
     $slugWords = explode('-', $slug);
     foreach ($slugWords as $w) {
-        if (strlen($w) >= 4 && isset($manifest[$w])) {
+        if (strlen($w) >= 4 && !in_array($w, $generic_words, true) && isset($manifest[$w])) {
             return '/assets/logos/football/' . $manifest[$w];
         }
     }
