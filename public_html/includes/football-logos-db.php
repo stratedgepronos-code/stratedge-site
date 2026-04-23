@@ -98,7 +98,7 @@ function stratedge_football_logo(string $teamName): string {
             'hull' => 74, 'hull city' => 74,
 
             // ═══ ESPAGNE — La Liga ═══
-            'real madrid' => 541, 'real' => 541,
+            'real madrid' => 541,
             'barcelona' => 529, 'barcelone' => 529, 'barca' => 529, 'fc barcelona' => 529, 'fc barcelone' => 529,
             'atletico madrid' => 530, 'atletico' => 530, 'atletico de madrid' => 530,
             'sevilla' => 536, 'seville' => 536, 'sevilla fc' => 536, 'fc seville' => 536,
@@ -251,14 +251,47 @@ function stratedge_football_logo(string $teamName): string {
             'atletico paranaense' => 134, 'athletico-pr' => 134, 'athletico paranaense' => 134,
 
             // ═══ MLS ═══
-            'inter miami' => 18656, 'cf montreal' => 18645,
-            'la galaxy' => 1600, 'lafc' => 18646, 'los angeles fc' => 18646,
-            'new york rb' => 1602, 'new york red bulls' => 1602,
+            'inter miami' => 18656, 'inter miami cf' => 18656,
+            'cf montreal' => 18645, 'montreal impact' => 18645,
+            'la galaxy' => 1600, 'los angeles galaxy' => 1600,
+            'lafc' => 18646, 'los angeles fc' => 18646,
+            'new york rb' => 1602, 'new york red bulls' => 1602, 'red bulls' => 1602,
             'nycfc' => 18649, 'new york city' => 18649, 'new york city fc' => 18649,
-            'atlanta united' => 1609, 'seattle sounders' => 1595,
-            'portland timbers' => 1598, 'columbus crew' => 1596,
+            'atlanta united' => 1609, 'atlanta utd' => 1609,
+            'seattle sounders' => 1595, 'seattle' => 1595,
+            'portland timbers' => 1598, 'portland' => 1598,
+            'columbus crew' => 1596, 'columbus' => 1596,
+            'real salt lake' => 1599, 'rsl' => 1599, 'salt lake' => 1599,
+            'san jose earthquakes' => 1611, 'san jose' => 1611, 'earthquakes' => 1611,
+            'vancouver whitecaps' => 1606, 'whitecaps' => 1606, 'vancouver' => 1606,
+            'toronto fc' => 1597, 'toronto mls' => 1597,
+            'dc united' => 1616, 'd.c. united' => 1616,
+            'philadelphia union' => 1614, 'philadelphia fc' => 1614,
+            'fc dallas' => 1607, 'dallas mls' => 1607,
+            'houston dynamo' => 1608, 'dynamo houston' => 1608,
+            'chicago fire' => 1610, 'chicago fire fc' => 1610,
+            'sporting kc' => 1615, 'sporting kansas city' => 1615, 'kansas city mls' => 1615,
+            'minnesota united' => 9568, 'minnesota utd' => 9568,
+            'orlando city' => 1612, 'orlando city sc' => 1612,
+            'nashville sc' => 18654, 'nashville mls' => 18654,
+            'austin fc' => 18655, 'austin mls' => 18655,
+            'st louis city' => 22727, 'st. louis city sc' => 22727, 'saint louis mls' => 22727,
+            'charlotte fc' => 20532, 'charlotte mls' => 20532,
+            'new england revolution' => 1594, 'revolution' => 1594, 'new england mls' => 1594,
+            'fc cincinnati' => 18648, 'cincinnati mls' => 18648,
+            'colorado rapids' => 1613, 'rapids' => 1613,
+            'inter miami' => 18656,
         ];
     }
+
+    // ⚠️ Normalisation nom recherché pour éviter matches ambigus
+    // 'Real Salt Lake' ne doit PAS tomber sur 'Real Madrid' via le mot 'real'
+    // → on teste d'abord le nom complet, puis variantes sans mots génériques
+    $name_words_all = explode(' ', $name);
+    $generic_words = ['fc', 'sc', 'cf', 'ac', 'as', 'united', 'city', 'real', 'inter', 'sporting', 'olympique', 'club', 'football', 'the', 'de', 'du', 'le', 'la', 'les'];
+    $specific_words = array_values(array_filter($name_words_all, function($w) use ($generic_words) {
+        return strlen($w) >= 3 && !in_array($w, $generic_words, true);
+    }));
 
     // Recherche directe (API-Football ID)
     if (isset($db[$name])) {
@@ -272,11 +305,10 @@ function stratedge_football_logo(string $teamName): string {
         return 'https://media.api-sports.io/football/teams/' . $id . '.png';
     }
 
-    // Recherche partielle (mots clés)
-    $nameWords = explode(' ', $name);
+    // Recherche partielle (mots clés distinctifs uniquement, pas les génériques type 'fc', 'real')
     foreach ($db as $key => $id) {
-        foreach ($nameWords as $w) {
-            if (strlen($w) >= 4 && $key === $w) {
+        foreach ($specific_words as $w) {
+            if ($key === $w) {
                 $localPath = __DIR__ . '/../assets/logos/football/api-' . $id . '.png';
                 if (is_file($localPath) && filesize($localPath) > 500) {
                     return '/assets/logos/football/api-' . $id . '.png';
