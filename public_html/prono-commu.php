@@ -323,7 +323,7 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
 <?php else: ?>
 <div class="prono-commu-wrap">
   <aside class="panel votes-panel">
-    <div class="panel-title">📋 Matchs du lendemain — Vote <span style="font-size:0.7rem;font-weight:400;color:var(--txt3);">(1 vote par session)</span></div>
+    <div class="panel-title">📋 Matchs de la prochaine session — Vote <span style="font-size:0.7rem;font-weight:400;color:var(--txt3);">(1 vote par session)</span></div>
     <?php if (empty($matchsLendemain)): ?>
     <div class="no-matchs">Aucun match à voter pour le moment.<br><small>Les matchs sont ajoutés par l'équipe (admin → Prono de la commu) ou importés via l'API Football-Data.</small></div>
     <?php else: ?>
@@ -558,7 +558,6 @@ $winRate = $totalH > 0 ? round($totalW / $totalH * 100) : 0;
             <th style="text-align:left;padding:0.5rem;color:rgba(255,255,255,0.4);font-family:'Orbitron',sans-serif;font-size:0.65rem;letter-spacing:1px;">DATE</th>
             <th style="text-align:left;padding:0.5rem;color:rgba(255,255,255,0.4);font-family:'Orbitron',sans-serif;font-size:0.65rem;letter-spacing:1px;">MATCH</th>
             <th style="text-align:left;padding:0.5rem;color:rgba(255,255,255,0.4);font-family:'Orbitron',sans-serif;font-size:0.65rem;letter-spacing:1px;">COMPÉTITION</th>
-            <th style="text-align:center;padding:0.5rem;color:rgba(255,255,255,0.4);font-family:'Orbitron',sans-serif;font-size:0.65rem;letter-spacing:1px;">VOTES</th>
             <th style="text-align:center;padding:0.5rem;color:rgba(255,255,255,0.4);font-family:'Orbitron',sans-serif;font-size:0.65rem;letter-spacing:1px;">RÉSULTAT</th>
           </tr>
         </thead>
@@ -570,7 +569,6 @@ $winRate = $totalH > 0 ? round($totalW / $totalH * 100) : 0;
             <td style="padding:0.5rem;color:rgba(255,255,255,0.5);white-space:nowrap;"><?= date('d/m', strtotime($h['match_date'])) ?></td>
             <td style="padding:0.5rem;color:#f0f4f8;font-weight:600;"><?= htmlspecialchars($h['team_home'] . ' – ' . $h['team_away']) ?></td>
             <td style="padding:0.5rem;color:rgba(255,255,255,0.45);font-size:0.8rem;"><?= htmlspecialchars($h['competition'] ?? '') ?></td>
-            <td style="padding:0.5rem;text-align:center;color:rgba(255,255,255,0.4);"><?= (int)$h['nb_votes'] ?></td>
             <td style="padding:0.5rem;text-align:center;">
               <span style="display:inline-block;padding:3px 10px;border-radius:6px;font-family:'Orbitron',sans-serif;font-size:0.7rem;font-weight:700;
                 background:<?= $isW ? 'rgba(0,212,106,0.12)' : 'rgba(255,68,68,0.12)' ?>;
