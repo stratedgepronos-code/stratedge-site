@@ -67,11 +67,35 @@ $voteCloseToday = $today . ' 23:59:00';
 $now = $nowDt->format('Y-m-d H:i:s');
 
 // ── Auto-import des matchs du lendemain si la liste est vide ──
-$stmtCheck = $db->prepare("SELECT 1 FROM commu_matches WHERE vote_closed_at > ? AND is_winner = 0 LIMIT 1");
-$stmtCheck->execute([$now]);
-if (!$stmtCheck->fetch()) {
-    $voteClosedAt = $today . ' 23:59:00';
-    @importFootballMatches($db, $tomorrow, $voteClosedAt, $tzParis);
+// Chargement de l'état pause
+$pauseActive = '0';
+$pauseDate = '';
+try {
+    $db->exec("CREATE TABLE IF NOT EXISTS `commu_options` (
+        `option_key` VARCHAR(64) NOT NULL PRIMARY KEY,
+        `option_value` VARCHAR(255) NOT NULL,
+        `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    $opts = $db->query("SELECT option_key, option_value FROM commu_options")->fetchAll(PDO::FETCH_KEY_PAIR);
+    $pauseActive = $opts['pause_active'] ?? '0';
+    $pauseDate = $opts['pause_date'] ?? '';
+    // Auto-désactivation si la pause date est dépassée
+    if ($pauseActive === '1' && $pauseDate && $pauseDate < $today) {
+        $db->prepare("UPDATE commu_options SET option_value = '0' WHERE option_key = 'pause_active'")->execute();
+        $pauseActive = '0';
+    }
+} catch (Throwable $e) { /* fallback silencieux */ }
+
+$isPaused = ($pauseActive === '1');
+
+// Auto-import désactivé si mode pause
+if (!$isPaused) {
+    $stmtCheck = $db->prepare("SELECT 1 FROM commu_matches WHERE vote_closed_at > ? AND is_winner = 0 LIMIT 1");
+    $stmtCheck->execute([$now]);
+    if (!$stmtCheck->fetch()) {
+        $voteClosedAt = $today . ' 23:59:00';
+        @importFootballMatches($db, $tomorrow, $voteClosedAt, $tzParis);
+    }
 }
 
 // ── Fermeture des votes (si 23h59 passée et pas encore traité) ──
@@ -284,6 +308,19 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
   <p class="prono-hero-sub" id="timer-expired" style="display:none;margin-top:0.5rem;font-size:0.9rem;color:var(--pink);">Votes clos. Résultats au-dessus.</p>
 </div>
 
+<?php if ($isPaused): ?>
+<div class="pause-hero" style="margin:2rem 0;padding:3rem 2rem;background:linear-gradient(160deg,rgba(255,180,50,0.08) 0%,rgba(10,10,18,0.95) 100%);border:1px solid rgba(255,180,50,0.3);border-radius:18px;text-align:center;position:relative;overflow:hidden;">
+  <div style="font-size:3.5rem;margin-bottom:1rem;filter:drop-shadow(0 0 20px rgba(255,180,50,0.4));">🚫⚽</div>
+  <h2 style="font-family:'Orbitron',sans-serif;font-size:1.6rem;color:#ffb432;margin-bottom:0.8rem;letter-spacing:1px;text-shadow:0 0 20px rgba(255,180,50,0.4);">PAS DE BET COMMU CE JOUR !</h2>
+  <p style="font-size:1.1rem;color:var(--text-secondary,#b0bec9);margin-bottom:0.5rem;font-weight:500;">À demain pour le bet 🔥</p>
+  <p style="font-size:0.85rem;color:var(--txt3,#8a9bb0);max-width:520px;margin:1rem auto 0;line-height:1.5;">
+    Pas de prono communautaire aujourd'hui. Reviens demain pour voter et suivre l'analyse détaillée du match gagnant.
+  </p>
+  <p style="font-size:0.75rem;color:var(--txt3,#8a9bb0);margin-top:1.5rem;">
+    💡 En attendant, découvre nos <a href="/bets" style="color:var(--neon-blue,#00d4ff);text-decoration:none;">analyses premium</a> sur les bets du jour.
+  </p>
+</div>
+<?php else: ?>
 <div class="prono-commu-wrap">
   <aside class="panel votes-panel">
     <div class="panel-title">📋 Matchs du lendemain — Vote <span style="font-size:0.7rem;font-weight:400;color:var(--txt3);">(1 vote par session)</span></div>
@@ -388,6 +425,7 @@ if ($matchDuJour && !empty($matchDuJour['analysis_html'])) {
     </div>
   </aside>
 </div>
+<?php endif; // fin else isPaused ?>
 
 <input type="hidden" id="csrf_token" value="<?= htmlspecialchars(csrfToken()) ?>">
 <input type="hidden" id="timer_target" value="<?= (int)$timerTargetTs ?>">

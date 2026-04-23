@@ -139,10 +139,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
         }
     }
+
+    // ── Supprimer UN match précis ──
+    if ($_POST['action'] === 'delete_match') {
+        $matchId = (int)($_POST['match_id'] ?? 0);
+        if ($matchId > 0) {
+            try {
+                $stmt = $db->prepare("SELECT team_home, team_away FROM commu_matches WHERE id = ?");
+                $stmt->execute([$matchId]);
+                $matchInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+                // Suppression cascade via FK sur commu_votes
+                $db->prepare("DELETE FROM commu_matches WHERE id = ?")->execute([$matchId]);
+                if ($matchInfo) {
+                    $success = 'Match supprimé : ' . $matchInfo['team_home'] . ' – ' . $matchInfo['team_away'];
+                } else {
+                    $success = 'Match supprimé.';
+                }
+            } catch (Throwable $e) {
+                $error = 'Erreur suppression : ' . $e->getMessage();
+            }
+        }
+    }
+
+    // ── Basculer le mode "Pas de prono aujourd'hui" ──
+    if ($_POST['action'] === 'toggle_pause') {
+        try {
+            // Créer la table d'options si elle n'existe pas
+            $db->exec("CREATE TABLE IF NOT EXISTS `commu_options` (
+                `option_key` VARCHAR(64) NOT NULL PRIMARY KEY,
+                `option_value` VARCHAR(255) NOT NULL,
+                `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+            $newState = ($_POST['new_state'] ?? '0') === '1' ? '1' : '0';
+            $pauseDate = $_POST['pause_date'] ?? date('Y-m-d');
+            $stmt = $db->prepare("INSERT INTO commu_options (option_key, option_value) VALUES (?, ?)
+                                  ON DUPLICATE KEY UPDATE option_value = VALUES(option_value)");
+            $stmt->execute(['pause_active', $newState]);
+            $stmt->execute(['pause_date', $pauseDate]);
+
+            if ($newState === '1') {
+                $success = '🚫 Pause activée. Le front affichera "Pas de bet commu ce jour, à demain pour le bet".';
+            } else {
+                $success = '✅ Pause désactivée. Les pronos reprennent normalement.';
+            }
+        } catch (Throwable $e) {
+            $error = 'Erreur pause : ' . $e->getMessage();
+        }
+    }
 }
 
 // Auto-migration: ajouter colonne resultat si absente
 try { $db->exec("ALTER TABLE commu_matches ADD COLUMN resultat VARCHAR(10) DEFAULT NULL AFTER is_winner"); } catch(Throwable $e) {}
+
+// Charger l'état de pause (mode "pas de prono aujourd'hui")
+$pauseActive = '0';
+$pauseDate = '';
+try {
+    $db->exec("CREATE TABLE IF NOT EXISTS `commu_options` (
+        `option_key` VARCHAR(64) NOT NULL PRIMARY KEY,
+        `option_value` VARCHAR(255) NOT NULL,
+        `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    $opts = $db->query("SELECT option_key, option_value FROM commu_options")->fetchAll(PDO::FETCH_KEY_PAIR);
+    $pauseActive = $opts['pause_active'] ?? '0';
+    $pauseDate = $opts['pause_date'] ?? '';
+    // Si la pause date est passée (d'un autre jour), on la désactive automatiquement
+    if ($pauseActive === '1' && $pauseDate && $pauseDate < date('Y-m-d')) {
+        $db->prepare("UPDATE commu_options SET option_value = '0' WHERE option_key = 'pause_active'")->execute();
+        $pauseActive = '0';
+    }
+} catch (Throwable $e) { /* fallback silencieux */ }
 $tomorrow = $tomorrowParis;
 $stmtList = $db->query("
   SELECT m.*, (SELECT COUNT(*) FROM commu_votes v WHERE v.match_id = m.id) AS nb_votes
@@ -199,6 +266,39 @@ code { background:rgba(255,255,255,0.08); padding:0.15rem 0.4rem; border-radius:
 
   <?php if ($success): ?><div class="alert-success">✅ <?= htmlspecialchars($success) ?></div><?php endif; ?>
   <?php if ($error): ?><div class="alert-error">⚠️ <?= htmlspecialchars($error) ?></div><?php endif; ?>
+
+  <!-- ═══ CARD PAUSE : Pas de prono aujourd'hui ═══ -->
+  <div class="card" style="border:1px solid <?= $pauseActive === '1' ? 'rgba(255,180,50,0.5)' : 'var(--border-subtle)' ?>; background:<?= $pauseActive === '1' ? 'rgba(255,180,50,0.08)' : 'var(--bg-card)' ?>;">
+    <h2>🚫 Pas de prono aujourd'hui</h2>
+    <?php if ($pauseActive === '1'): ?>
+      <div style="padding:1rem;background:rgba(255,180,50,0.12);border-radius:10px;margin-bottom:1rem;">
+        <strong style="color:#ffb432;font-size:1rem;">⚠️ PAUSE ACTIVE</strong>
+        <?php if ($pauseDate): ?>
+          <span style="color:var(--text-secondary);margin-left:0.5rem;">Le <?= htmlspecialchars($pauseDate) ?></span>
+        <?php endif; ?>
+        <p style="color:var(--text-muted);font-size:0.85rem;margin-top:0.5rem;">
+          Le front affiche : « Pas de bet commu ce jour ! À demain pour le bet »
+        </p>
+      </div>
+      <form method="post" style="display:inline-block;">
+        <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
+        <input type="hidden" name="action" value="toggle_pause">
+        <input type="hidden" name="new_state" value="0">
+        <button type="submit" class="btn btn-pink">✅ Désactiver la pause (reprendre les pronos)</button>
+      </form>
+    <?php else: ?>
+      <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:1rem;">
+        Active ce mode quand tu ne proposes pas de prono communautaire ce jour. Le front affichera alors un message explicite au lieu du panel de vote / analyse vide.
+      </p>
+      <form method="post" style="display:inline-block;" onsubmit="return confirm('Activer le mode Pause ? Le front affichera quand même la page mais avec un message explicite.');">
+        <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
+        <input type="hidden" name="action" value="toggle_pause">
+        <input type="hidden" name="new_state" value="1">
+        <input type="hidden" name="pause_date" value="<?= date('Y-m-d') ?>">
+        <button type="submit" class="btn" style="background:rgba(255,180,50,0.15);color:#ffb432;border:1px solid rgba(255,180,50,0.35);">🚫 Activer "Pas de prono aujourd'hui"</button>
+      </form>
+    <?php endif; ?>
+  </div>
 
   <div class="card">
     <h2>🌐 Importer les matchs du lendemain</h2>
@@ -285,7 +385,7 @@ code { background:rgba(255,255,255,0.08); padding:0.15rem 0.4rem; border-radius:
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Date match</th><th>Match</th><th>Compétition</th><th>Fin votes</th><th>Votes</th><th>Gagnant</th><th>Résultat</th><th>Action</th></tr>
+          <tr><th>Date match</th><th>Match</th><th>Compétition</th><th>Fin votes</th><th>Votes</th><th>Gagnant</th><th>Résultat</th><th>Actions</th></tr>
         </thead>
         <tbody>
           <?php foreach ($allMatches as $m): ?>
@@ -316,12 +416,20 @@ code { background:rgba(255,255,255,0.08); padding:0.15rem 0.4rem; border-radius:
               <?php else: ?>—<?php endif; ?>
             </td>
             <td>
-              <form method="post" style="display:inline;">
-                <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
-                <input type="hidden" name="action" value="set_winner">
-                <input type="hidden" name="match_id" value="<?= (int)$m['id'] ?>">
-                <button type="submit" class="btn-sm" style="background:rgba(0,212,106,0.12);color:#00d46a;border:1px solid rgba(0,212,106,0.3);" onclick="return confirm('Définir ce match comme gagnant pour cette session ?');">Choisir comme gagnant</button>
-              </form>
+              <div style="display:flex;gap:0.3rem;flex-wrap:wrap;">
+                <form method="post" style="display:inline;">
+                  <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
+                  <input type="hidden" name="action" value="set_winner">
+                  <input type="hidden" name="match_id" value="<?= (int)$m['id'] ?>">
+                  <button type="submit" class="btn-sm" style="background:rgba(0,212,106,0.12);color:#00d46a;border:1px solid rgba(0,212,106,0.3);padding:4px 8px;font-size:0.75rem;border-radius:5px;cursor:pointer;" onclick="return confirm('Définir ce match comme gagnant pour cette session ?');">🏆 Gagnant</button>
+                </form>
+                <form method="post" style="display:inline;" onsubmit="return confirm('Supprimer définitivement ce match (et tous ses votes) ?\n\n<?= htmlspecialchars(addslashes($m['team_home'] . ' – ' . $m['team_away'])) ?>');">
+                  <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
+                  <input type="hidden" name="action" value="delete_match">
+                  <input type="hidden" name="match_id" value="<?= (int)$m['id'] ?>">
+                  <button type="submit" class="btn-sm" style="background:rgba(255,68,68,0.12);color:#ff4444;border:1px solid rgba(255,68,68,0.3);padding:4px 8px;font-size:0.75rem;border-radius:5px;cursor:pointer;" title="Supprimer ce match">🗑️</button>
+                </form>
+              </div>
             </td>
           </tr>
           <?php endforeach; ?>
