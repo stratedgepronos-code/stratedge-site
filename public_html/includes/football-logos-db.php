@@ -256,6 +256,8 @@ function stratedge_football_logo(string $teamName): string {
             'la galaxy' => 1600, 'los angeles galaxy' => 1600,
             'lafc' => 18646, 'los angeles fc' => 18646,
             'new york rb' => 1602, 'new york red bulls' => 1602, 'red bulls' => 1602,
+            'ny red bulls' => 1602, 'ny redbulls' => 1602, 'ny rb' => 1602,
+            'rb new york' => 1602, 'red bull new york' => 1602, 'new york red bull' => 1602,
             'nycfc' => 18649, 'new york city' => 18649, 'new york city fc' => 18649,
             'atlanta united' => 1609, 'atlanta utd' => 1609,
             'seattle sounders' => 1595, 'seattle' => 1595,
@@ -293,32 +295,7 @@ function stratedge_football_logo(string $teamName): string {
         return strlen($w) >= 3 && !in_array($w, $generic_words, true);
     }));
 
-    // Recherche directe (API-Football ID)
-    if (isset($db[$name])) {
-        $id = $db[$name];
-        // Priorité 1 : logo local
-        $localPath = __DIR__ . '/../assets/logos/football/api-' . $id . '.png';
-        if (is_file($localPath) && filesize($localPath) > 500) {
-            return '/assets/logos/football/api-' . $id . '.png';
-        }
-        // Priorité 2 : URL distante (fallback si local pas encore téléchargé)
-        return 'https://media.api-sports.io/football/teams/' . $id . '.png';
-    }
-
-    // Recherche partielle (mots clés distinctifs uniquement, pas les génériques type 'fc', 'real')
-    foreach ($db as $key => $id) {
-        foreach ($specific_words as $w) {
-            if ($key === $w) {
-                $localPath = __DIR__ . '/../assets/logos/football/api-' . $id . '.png';
-                if (is_file($localPath) && filesize($localPath) > 500) {
-                    return '/assets/logos/football/api-' . $id . '.png';
-                }
-                return 'https://media.api-sports.io/football/teams/' . $id . '.png';
-            }
-        }
-    }
-
-    // Fallback 3 : lookup manifest TheSportsDB (ligues exotiques)
+    // Load manifest early (used by multiple lookup paths)
     static $manifest = null;
     if ($manifest === null) {
         $manifestFile = __DIR__ . '/../assets/logos/football/manifest.json';
@@ -330,7 +307,7 @@ function stratedge_football_logo(string $teamName): string {
         }
     }
 
-    // Slugify le nom recherché pour matcher les clés du manifest TheSportsDB
+    // Slugify le nom recherché (utilisé pour lookup manifest)
     $slug = strtolower(trim($teamName));
     if (function_exists('iconv')) {
         $conv = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $slug);
@@ -339,11 +316,50 @@ function stratedge_football_logo(string $teamName): string {
     $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
     $slug = trim($slug, '-');
 
+    /**
+     * Résout un logo pour un ID api-sports avec 3 niveaux:
+     *   1. Fichier local api-{id}.png (si téléchargé)
+     *   2. Manifest lookup (via slug du nom d'équipe, donne ESPN ou TheSportsDB local)
+     *   3. URL api-sports.io distante (dernier recours, peut retourner 403)
+     */
+    $resolveLogo = function($id) use (&$manifest, $slug) {
+        // 1) Fichier local api-sports
+        $localPath = __DIR__ . '/../assets/logos/football/api-' . $id . '.png';
+        if (is_file($localPath) && filesize($localPath) > 500) {
+            return '/assets/logos/football/api-' . $id . '.png';
+        }
+        // 2) Manifest lookup via slug (trouvé par ESPN ou TheSportsDB)
+        if (isset($manifest[$slug])) {
+            $f = __DIR__ . '/../assets/logos/football/' . $manifest[$slug];
+            if (is_file($f) && filesize($f) > 500) {
+                return '/assets/logos/football/' . $manifest[$slug];
+            }
+        }
+        // 3) URL api-sports distante (fallback de dernier recours)
+        return 'https://media.api-sports.io/football/teams/' . $id . '.png';
+    };
+
+    // Recherche directe (API-Football ID)
+    if (isset($db[$name])) {
+        return $resolveLogo($db[$name]);
+    }
+
+    // Recherche partielle (mots clés distinctifs uniquement, pas les génériques type 'fc', 'real')
+    foreach ($db as $key => $id) {
+        foreach ($specific_words as $w) {
+            if ($key === $w) {
+                return $resolveLogo($id);
+            }
+        }
+    }
+
+    // Fallback : lookup direct manifest (pour équipes non hardcodées dans \$db)
+    // Le manifest contient TheSportsDB, ESPN scraper et tous les alias.
     if (isset($manifest[$slug])) {
         return '/assets/logos/football/' . $manifest[$slug];
     }
 
-    // Recherche partielle dans le manifest — skip les mots génériques (même règle que DB)
+    // Recherche partielle dans le manifest — skip les mots génériques
     $slugWords = explode('-', $slug);
     foreach ($slugWords as $w) {
         if (strlen($w) >= 4 && !in_array($w, $generic_words, true) && isset($manifest[$w])) {
