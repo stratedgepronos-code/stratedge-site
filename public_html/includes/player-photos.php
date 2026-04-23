@@ -92,8 +92,15 @@ function stratedge_player_photo($playerId, string $sport = 'nba', int $ttlDays =
         return $cacheUrl;
     }
 
-    // Fallback : retourner l'URL source direct (le navigateur chargera depuis le CDN)
-    return $sourceUrl;
+    // Pas de fallback vers URL source si le serveur a retourné 403/404/etc.
+    // (le navigateur échouera probablement aussi, laissant une image cassée
+    //  et masquant la mascotte de fallback côté template).
+    // On ne tente le fallback que si curl a échoué pour une raison réseau (code 0)
+    if ($code === 0 && $sourceUrl !== '') {
+        return $sourceUrl;
+    }
+
+    return '';
 }
 
 /**

@@ -133,8 +133,10 @@ Table de conversion USA → Paris (en période DST américain, de mars à novemb
   • CT (Central Time, ex: Chicago, Houston, Dallas, St Louis)   = Paris -7h
     → 19:10 CT → Paris 02:10 (lendemain)
     → 20:10 CT → Paris 03:10
-  • MT (Mountain Time, ex: Denver, Phoenix)                      = Paris -8h
+  • MT (Mountain Time, ex: Denver, Phoenix, Salt Lake City, Utah)  = Paris -8h
     → 19:10 MT → Paris 03:10 (lendemain)
+    → 19:30 MT → Paris 03:30 (lendemain)  ⚠️ Real Salt Lake = MT (Utah)
+    → 20:00 MT → Paris 04:00 (lendemain)
   • PT (Pacific Time, ex: Los Angeles, San Francisco, Seattle)   = Paris -9h
     → 19:10 PT → Paris 04:10 (lendemain)
     → 22:10 PT → Paris 07:10 (lendemain)
@@ -143,6 +145,8 @@ Table de conversion USA → Paris (en période DST américain, de mars à novemb
 EXEMPLES CRITIQUES :
   ❌ MLB "San Francisco Giants vs Los Angeles Dodgers" à 22h10 → FAUX (c'est heure locale PT)
   ✅ Le match est à 18:45 PT (heure locale Oracle Park) → 03:45 Paris le lendemain → time_fr "03:45"
+  ❌ MLS "Real Salt Lake vs Inter Miami CF" à 19:30 → FAUX (c'est heure MT au Rio Tinto Stadium, Utah)
+  ✅ 19:30 MT → 03:30 Paris le lendemain → time_fr "03:30" (PAS 02:30)
   ❌ NBA "Lakers vs Warriors" à 19:30 → FAUX (heure locale PT)
   ✅ 19:30 PT → 04:30 Paris le lendemain → time_fr "04:30"
   ❌ NHL "Rangers vs Bruins" à 19:00 → FAUX (heure ET)
@@ -337,10 +341,10 @@ Si inconnue, trouve-la via les horaires officiels (Ligue 1 21h/17h, PL 16h/18h30
   • PT (LA/San Francisco/Seattle)          = Paris -9h (22:10 PT → 07:10 Paris, 18:45 PT → 03:45)
 ⚠️ Si tu retournes un time_fr avant 20h pour un match US, tu as oublié de convertir.
 Exemple: MLB Giants vs Dodgers à 18:45 PT → time_fr "03:45" (PAS "22:10" qui est l'heure locale).
-Équipes PT: Giants, Dodgers, Angels, Padres, Mariners, Athletics, Warriors, Lakers, Clippers, Kings, Ducks, Sharks.
-Équipes ET: Yankees, Red Sox, Mets, Phillies, Braves, Orioles, Rays, Blue Jays, Heat, Celtics, Knicks, 76ers, Rangers, Bruins, Maple Leafs.
-Équipes CT: Cubs, White Sox, Cardinals, Astros, Rangers, Royals, Twins, Brewers, Bulls, Mavericks, Blackhawks, Wild.
-Équipes MT: Rockies, Nuggets, Jazz, Avalanche, Coyotes.
+Équipes PT: Giants, Dodgers, Angels, Padres, Mariners, Athletics, Warriors, Lakers, Clippers, Kings, Ducks, Sharks, LA Galaxy, LAFC, Seattle Sounders, Portland Timbers, Vancouver Whitecaps, San Jose Earthquakes.
+Équipes ET: Yankees, Red Sox, Mets, Phillies, Braves, Orioles, Rays, Blue Jays, Heat, Celtics, Knicks, 76ers, Rangers, Bruins, Maple Leafs, Inter Miami, Atlanta United, Columbus Crew, DC United, Toronto FC, New England Revolution, New York City FC, NY Red Bulls, Orlando City, Charlotte FC, Nashville SC, Philadelphia Union, CF Montreal, FC Cincinnati.
+Équipes CT: Cubs, White Sox, Cardinals, Astros, Rangers, Royals, Twins, Brewers, Bulls, Mavericks, Blackhawks, Wild, Chicago Fire, Houston Dynamo, FC Dallas, Sporting KC, Minnesota United, Austin FC, St Louis City SC.
+Équipes MT (Mountain Time = Paris -8h): Rockies, Nuggets, Jazz, Avalanche, Coyotes, **Real Salt Lake (Utah)**, Colorado Rapids.
 
 🔴 RÈGLE COMPÉTITION — VÉRIFIE BIEN LA DIVISION ACTUELLE (saison 2025-2026)
 - La "competition" doit refléter la DIVISION ACTUELLE des équipes, PAS leur division historique.
