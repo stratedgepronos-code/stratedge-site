@@ -368,6 +368,9 @@ $espnTeams = [
     // === La Liga (équipes manquantes dans API-Football coverage standard) ===
     'real-oviedo'           => ['espn_id' => 92,    'slug' => 'real-oviedo', 'aliases' => ['oviedo']],
 
+    // === Eredivisie (Pays-Bas) ===
+    'pec-zwolle'            => ['espn_id' => 2565,  'slug' => 'pec-zwolle', 'aliases' => ['zwolle', 'fc-zwolle']],
+
     // === Liga MX === (IDs ESPN vérifiés via pages team 2025-26)
     'club-leon'             => ['espn_id' => 228,   'slug' => 'leon', 'aliases' => ['leon']],
     'cf-pachuca'            => ['espn_id' => 234,   'slug' => 'pachuca', 'aliases' => ['pachuca', 'tuzos']],

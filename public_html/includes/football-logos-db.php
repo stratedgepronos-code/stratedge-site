@@ -192,12 +192,29 @@ function stratedge_football_logo(string $teamName): string {
             'braga' => 217, 'sc braga' => 217,
             'guimaraes' => 222, 'vitoria guimaraes' => 222, 'vitoria sc' => 222,
 
-            // ═══ PAYS-BAS — Eredivisie ═══
+            // ═══ PAYS-BAS — Eredivisie 2025-26 (18 clubs) ═══
             'ajax' => 194, 'ajax amsterdam' => 194,
             'psv' => 197, 'psv eindhoven' => 197,
             'feyenoord' => 215, 'feyenoord rotterdam' => 215,
-            'az' => 202, 'az alkmaar' => 202,
+            'az' => 202, 'az alkmaar' => 202, 'alkmaar' => 202,
             'twente' => 201, 'fc twente' => 201,
+            'utrecht' => 193, 'fc utrecht' => 193,
+            'go ahead eagles' => 196, 'go ahead' => 196, 'eagles deventer' => 196,
+            'nec' => 413, 'nec nijmegen' => 413,
+            'sparta rotterdam' => 419, 'sparta' => 419,
+            'fortuna sittard' => 415, 'fortuna' => 415,
+            'heerenveen' => 206, 'sc heerenveen' => 206,
+            'groningen' => 200, 'fc groningen' => 200,
+            'pec zwolle' => 204, 'zwolle' => 204, 'fc zwolle' => 204,
+            'rkc waalwijk' => 416, 'waalwijk' => 416, 'rkc' => 416,
+            'nac breda' => 417, 'nac' => 417, 'breda' => 417,
+            'heracles' => 412, 'heracles almelo' => 412,
+            'telstar' => 1911, 'sc telstar' => 1911,
+            'volendam' => 418, 'fc volendam' => 418,
+            // Eerste Divisie (2e division NL) — peu commun mais inclus par sécurité
+            'almere city' => 414, 'almere' => 414,
+            'willem ii' => 209, 'willem 2' => 209,
+            'mvv maastricht' => 411, 'mvv' => 411,
 
             // ═══ BELGIQUE — Jupiler Pro ═══
             'club brugge' => 569, 'club bruges' => 569, 'bruges' => 569,
