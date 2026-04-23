@@ -441,7 +441,10 @@ function search_espn_team(string $teamName, string $league = 'soccer'): ?array {
             $target = strtolower($teamName);
             // Match fuzzy : au moins 4 chars communs ou substring
             if ($name === $target || strpos($name, $target) !== false || strpos($target, $name) !== false) {
-                $img = $item['image']?['default'] ?? ($item['logo'] ?? null);
+                $img = null;
+                if (isset($item['image']['default'])) $img = $item['image']['default'];
+                elseif (isset($item['logo'])) $img = $item['logo'];
+                elseif (isset($item['image']) && is_string($item['image'])) $img = $item['image'];
                 $uid = $item['uid'] ?? '';
                 // uid format: s:600~l:775~t:20232
                 if (preg_match('/t:(\d+)/', $uid, $m)) {
