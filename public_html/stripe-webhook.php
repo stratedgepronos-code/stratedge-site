@@ -91,8 +91,8 @@ try {
     stripeLog('WARN: doublon check failed: ' . $e->getMessage());
 }
 
-// ── Activer l'abonnement ─────────────────────────────────────
-if (activerAbonnement($membreId, $typeActivation)) {
+// ── Activer l'abonnement (avec montant réel après code promo) ──
+if (activerAbonnement($membreId, $typeActivation, (float)$amount)) {
     stripeLog("✅ Abonnement activé: membre #$membreId → $typeActivation ({$amount}€) [order: $orderId] [compte: $stripeAccountName]");
 
     // Sauvegarder en BDD

@@ -329,7 +329,8 @@ function hasAcces(int $membreId): bool {
 }
 
 // ── Activer un abonnement après paiement ──────────────────
-function activerAbonnement(int $membreId, string $type): bool {
+// $montantReel : montant réellement payé (après promo). Si null, utilise le prix de base.
+function activerAbonnement(int $membreId, string $type, ?float $montantReel = null): bool {
     $db = getDB();
 
     // Calcul date de fin
@@ -352,8 +353,10 @@ function activerAbonnement(int $membreId, string $type): bool {
     }
     if ($type === 'rasstoss') { $dateFin = '2090-01-01 00:00:00'; }
 
+    // Montant : si un montant réel est fourni (ex: après code promo), on l'utilise
+    // Sinon on retombe sur le prix catalogue de base
     $montants = ['daily' => 4.50, 'weekend' => 10.00, 'weekend_fun' => 20.00, 'weekly' => 20.00, 'tennis' => 15.00, 'vip_max' => 50.00, 'fun' => 10.00, 'rasstoss' => 0.00];
-    $montant = $montants[$type] ?? 0;
+    $montant = ($montantReel !== null && $montantReel >= 0) ? $montantReel : ($montants[$type] ?? 0);
 
     $stmt = $db->prepare("
         INSERT INTO abonnements (membre_id, type, date_fin, actif, montant)
