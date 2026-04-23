@@ -121,7 +121,39 @@ Si tu n'es PAS sûr du niveau (ATP principal vs Challenger), regarde les classem
   → 2 joueurs avec classement ATP ≤ 200 qui s'affrontent pendant la semaine d'un Masters 1000 = Masters 1000 (1er tour)
   → JAMAIS "Challenger" pour un match pendant une semaine de Masters 1000 sans preuve claire.
 
-⚠️ Toutes les heures = Europe/Paris (UTC+1 hiver / UTC+2 été). Pour matchs US, convertir ET/PT vers Paris.
+🔴 RÈGLE FUSEAU HORAIRE — TOUJOURS HEURE DE PARIS, JAMAIS HEURE LOCALE
+time_fr doit TOUJOURS être en heure de Paris (Europe/Paris), PAS l'heure locale du stade/lieu du match.
+⚠️ Pour les matchs US/Canada : TU DOIS CONVERTIR vers Paris avant de retourner time_fr.
+
+Table de conversion USA → Paris (en période DST américain, de mars à novembre) :
+  • ET (Eastern Time, ex: Miami, NY, Boston, Toronto, Atlanta)  = Paris -6h
+    → Si match à 19:10 ET → Paris 01:10 (le lendemain)
+    → Si match à 20:00 ET → Paris 02:00
+    → Si match à 22:10 ET → Paris 04:10
+  • CT (Central Time, ex: Chicago, Houston, Dallas, St Louis)   = Paris -7h
+    → 19:10 CT → Paris 02:10 (lendemain)
+    → 20:10 CT → Paris 03:10
+  • MT (Mountain Time, ex: Denver, Phoenix)                      = Paris -8h
+    → 19:10 MT → Paris 03:10 (lendemain)
+  • PT (Pacific Time, ex: Los Angeles, San Francisco, Seattle)   = Paris -9h
+    → 19:10 PT → Paris 04:10 (lendemain)
+    → 22:10 PT → Paris 07:10 (lendemain)
+    → 18:45 PT → Paris 03:45 (lendemain)
+
+EXEMPLES CRITIQUES :
+  ❌ MLB "San Francisco Giants vs Los Angeles Dodgers" à 22h10 → FAUX (c'est heure locale PT)
+  ✅ Le match est à 18:45 PT (heure locale Oracle Park) → 03:45 Paris le lendemain → time_fr "03:45"
+  ❌ NBA "Lakers vs Warriors" à 19:30 → FAUX (heure locale PT)
+  ✅ 19:30 PT → 04:30 Paris le lendemain → time_fr "04:30"
+  ❌ NHL "Rangers vs Bruins" à 19:00 → FAUX (heure ET)
+  ✅ 19:00 ET → 01:00 Paris lendemain → time_fr "01:00"
+
+RÈGLE pratique pour tous sports US :
+  • MLB/NBA/NHL/NFL/MLS : presque toujours début de soirée heure US = TRÈS TÔT le lendemain Paris (01h-07h)
+  • Si tu calcules un time_fr avant 20h en étant en ET/PT/CT : tu as PROBABLEMENT oublié de convertir
+  • Vérifie l'équipe à domicile pour savoir le fuseau (Dodgers/Giants = PT, Yankees/Red Sox = ET, Cubs = CT, Nuggets = MT)
+
+Pour les matchs EU/UK/Afrique/Asie : garde l'heure locale si elle est déjà Europe/Paris OU convertis depuis UK (Paris +1h par rapport à UK en été).
 
 Structure de sortie OBLIGATOIRE :
 {
@@ -204,8 +236,16 @@ Tu reçois les infos d'un bet Fun (grosse cote, longshot). Tu réponds UNIQUEMEN
 - Si l'admin ne fournit qu'une liste de paris combinés, calcule la cote totale (produit des cotes).
 - NE PAS inventer une cote arbitraire.
 
-🔴 HEURE : time_fr = HEURE DU COUP D'ENVOI du match (Europe/Paris), PAS l'heure actuelle.
+🔴 HEURE : time_fr = HEURE DU COUP D'ENVOI du match en HEURE DE PARIS (Europe/Paris), JAMAIS l'heure locale.
 Format HH:MM. Si inconnue, mets "20:00" par défaut.
+
+🔴 CONVERSION FUSEAU US → PARIS (matchs MLB/NBA/NHL/NFL/MLS)
+  • ET (Miami/NY/Boston/Toronto/Atlanta)  = Paris -6h (19:10 ET → 01:10 Paris lendemain)
+  • CT (Chicago/Houston/Dallas/St Louis)   = Paris -7h
+  • MT (Denver/Phoenix/Salt Lake City)     = Paris -8h
+  • PT (LA/San Francisco/Seattle)          = Paris -9h (22:10 PT → 07:10 Paris lendemain, 18:45 PT → 03:45)
+⚠️ Si tu retournes un time_fr avant 20h pour un match US, tu as oublié de convertir.
+Exemple: MLB Giants vs Dodgers à 18:45 PT → time_fr "03:45" (PAS "22:10" qui est l'heure locale).
 
 🔴 RÈGLE COMPÉTITION — VÉRIFIE BIEN LA DIVISION ACTUELLE (saison 2025-2026)
 - La "competition" doit refléter la DIVISION ACTUELLE des équipes, PAS leur division historique.
@@ -287,7 +327,20 @@ Tu reçois un bet Safe (analyse validée, confiance forte). Tu réponds UNIQUEME
 - NE PAS inventer. NE PAS mettre 1.50 par défaut. NE PAS arrondir.
 - ⚠️ Mauvaise cote = BUG CRITIQUE.
 
-🔴 HEURE : time_fr = HEURE DU COUP D'ENVOI (Europe/Paris). Si inconnue, trouve-la via les horaires officiels (Ligue 1 21h/17h, PL 16h/18h30, C1 21h, NBA ~01h-04h Paris, NHL ~01h-03h Paris…).
+🔴 HEURE : time_fr = HEURE DU COUP D'ENVOI en HEURE DE PARIS (Europe/Paris), JAMAIS l'heure locale du stade.
+Si inconnue, trouve-la via les horaires officiels (Ligue 1 21h/17h, PL 16h/18h30, C1 21h).
+
+🔴 CONVERSION FUSEAU US → PARIS (OBLIGATOIRE pour MLB/NBA/NHL/NFL/MLS)
+  • ET (Miami/NY/Boston/Toronto/Atlanta)  = Paris -6h (19:10 ET → 01:10 Paris lendemain)
+  • CT (Chicago/Houston/Dallas/St Louis)   = Paris -7h (20:10 CT → 03:10 Paris)
+  • MT (Denver/Phoenix/Salt Lake City)     = Paris -8h
+  • PT (LA/San Francisco/Seattle)          = Paris -9h (22:10 PT → 07:10 Paris, 18:45 PT → 03:45)
+⚠️ Si tu retournes un time_fr avant 20h pour un match US, tu as oublié de convertir.
+Exemple: MLB Giants vs Dodgers à 18:45 PT → time_fr "03:45" (PAS "22:10" qui est l'heure locale).
+Équipes PT: Giants, Dodgers, Angels, Padres, Mariners, Athletics, Warriors, Lakers, Clippers, Kings, Ducks, Sharks.
+Équipes ET: Yankees, Red Sox, Mets, Phillies, Braves, Orioles, Rays, Blue Jays, Heat, Celtics, Knicks, 76ers, Rangers, Bruins, Maple Leafs.
+Équipes CT: Cubs, White Sox, Cardinals, Astros, Rangers, Royals, Twins, Brewers, Bulls, Mavericks, Blackhawks, Wild.
+Équipes MT: Rockies, Nuggets, Jazz, Avalanche, Coyotes.
 
 🔴 RÈGLE COMPÉTITION — VÉRIFIE BIEN LA DIVISION ACTUELLE (saison 2025-2026)
 - La "competition" doit refléter la DIVISION ACTUELLE des équipes, PAS leur division historique.
@@ -417,7 +470,12 @@ PROMPT
 define('CLAUDE_COMBI_ENRICH_PROMPT', <<<'PROMPT'
 Tu reçois un combiné (2-5 picks avec cote totale). Tu réponds UNIQUEMENT par un objet JSON valide.
 
-🔴 HEURE : time_fr = HEURE DU PREMIER MATCH du combiné (Europe/Paris).
+🔴 HEURE : time_fr = HEURE DU PREMIER MATCH du combiné en HEURE DE PARIS (Europe/Paris).
+
+🔴 CONVERSION FUSEAU US → PARIS pour MLB/NBA/NHL/NFL/MLS (OBLIGATOIRE)
+  • ET (NY/Boston/Miami) = Paris -6h | CT (Chicago/Houston) = Paris -7h
+  • MT (Denver/Phoenix)  = Paris -8h | PT (LA/SF/Seattle)  = Paris -9h
+⚠️ Ne jamais mettre l'heure locale US. Ex: match 22:10 PT → time_fr "07:10" le lendemain.
 
 🔴 RÈGLE COMPÉTITION — VÉRIFIE BIEN LA DIVISION ACTUELLE (saison 2025-2026)
 - Si tu mentionnes la compétition dans les sélections, vérifie la division actuelle de CHAQUE équipe.
