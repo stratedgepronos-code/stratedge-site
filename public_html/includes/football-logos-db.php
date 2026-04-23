@@ -339,6 +339,36 @@ function stratedge_football_logo(string $teamName): string {
         return 'https://media.api-sports.io/football/teams/' . $id . '.png';
     };
 
+    // ⚠️ MLS/Liga MX : les IDs api-sports sont peu fiables. Si le slug est dans
+    // le manifest (Phase 3 ESPN scraper vérifié), on le sert en priorité AVANT
+    // même la DB api-sports, car le fichier api-XXXX.png peut contenir le logo
+    // d'une AUTRE équipe (ex: 1616 pouvait être LA Galaxy au lieu de DC United).
+    $mls_liga_mx_indicators = [
+        'mls', 'inter miami', 'salt lake', 'galaxy', 'lafc', 'nycfc', 'red bull',
+        'new york rb', 'atlanta united', 'seattle sounders', 'portland timbers',
+        'columbus crew', 'toronto fc', 'san jose', 'vancouver', 'dc united',
+        'philadelphia union', 'fc dallas', 'houston dynamo', 'chicago fire',
+        'sporting kc', 'minnesota united', 'orlando city', 'nashville sc',
+        'austin fc', 'st louis', 'charlotte fc', 'revolution', 'cincinnati',
+        'colorado rapids', 'cf montreal', 'montreal',
+        // Liga MX
+        'america', 'club america', 'chivas', 'cruz azul', 'pumas', 'monterrey',
+        'tigres', 'leon', 'pachuca', 'toluca', 'atlas', 'necaxa', 'tijuana',
+        'xolos', 'puebla', 'santos laguna', 'queretaro', 'mazatlan',
+        'atletico san luis', 'juarez',
+    ];
+    $is_mls_liga_mx = false;
+    foreach ($mls_liga_mx_indicators as $ind) {
+        if (strpos($name, $ind) !== false) { $is_mls_liga_mx = true; break; }
+    }
+
+    if ($is_mls_liga_mx && isset($manifest[$slug])) {
+        $f = __DIR__ . '/../assets/logos/football/' . $manifest[$slug];
+        if (is_file($f) && filesize($f) > 500) {
+            return '/assets/logos/football/' . $manifest[$slug];
+        }
+    }
+
     // Recherche directe (API-Football ID)
     if (isset($db[$name])) {
         return $resolveLogo($db[$name]);
