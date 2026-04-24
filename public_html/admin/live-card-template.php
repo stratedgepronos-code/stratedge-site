@@ -195,7 +195,7 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".pick.combi{max-width:620px;border:none;border-top:1px solid rgba(237,232,224,.25);border-bottom:1px solid rgba(237,232,224,.25);padding:16px 0}";
     $css .= ".pick-eyebrow{font-family:'Archivo Narrow',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.45;margin-bottom:10px}";
     $css .= ".pick-main{font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1.1;letter-spacing:-.5px;color:#ede8e0;margin-bottom:6px;word-spacing:.15em;word-wrap:break-word;overflow-wrap:break-word}";
-    $css .= ".pick-accent{font-family:'Instrument Serif',serif;font-style:italic;font-size:30px;color:$accent;text-shadow:0 0 10px rgba($rgb,.5);letter-spacing:.03em;word-spacing:.08em;padding-left:2px}";
+    $css .= ".pick-accent{font-family:'Instrument Serif',serif;font-style:italic;font-size:30px;color:$accent;text-shadow:0 0 10px rgba($rgb,.5)}";
     $css .= ".pick-market{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.45;margin-top:8px}";
     $css .= ".combi-list{display:flex;flex-direction:column;gap:14px;margin-top:8px}";
     $css .= ".combi-row{display:flex;flex-direction:column;padding:10px 0;border-top:1px dashed rgba($rgb,.2);gap:4px}";
@@ -545,7 +545,7 @@ function stratedge_build_card($d, $locked = false) {
             $pick_chars = mb_strlen($m['pick'] ?? '', 'UTF-8');
             $pick_vb_w = max(220, $pick_chars * 10);
             $pick_svg = "<svg class='combi-pick-svg' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 $pick_vb_w 26' preserveAspectRatio='xMinYMid meet'>"
-                      . "<text x='0' y='19' font-family=\"'Instrument Serif', Georgia, serif\" font-style='italic' font-size='18' fill='#ede8e0' opacity='.85' letter-spacing='0.4' xml:space='preserve'>$pick_raw</text>"
+                      . "<text x='0' y='19' font-family=\"'Instrument Serif', Georgia, serif\" font-style='italic' font-size='18' fill='#ede8e0' opacity='.85' xml:space='preserve'>$pick_raw</text>"
                       . "</svg>";
             $cote_txt = htmlspecialchars((string)($m['cote'] ?? ''), ENT_QUOTES, 'UTF-8');
             $rows .= "<div class='combi-row'><div class='combi-row-top'><div class='combi-teams'>$t1<span class='combi-sep'>vs</span>$t2</div></div><div class='combi-row-bottom'><div class='combi-pick'>$pick_svg</div><div class='combi-cote'>$cote_txt</div></div></div>";
