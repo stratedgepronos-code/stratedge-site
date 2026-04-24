@@ -154,6 +154,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $success = ($labels[$resultat] ?? strtoupper($resultat)) . " · Target #{$betId}";
         }
     }
+    elseif (($_POST['action'] ?? '') === 'delete_bet') {
+        // SUPERADMIN ONLY — sécurité stricte
+        if (!function_exists('isSuperAdmin') || !isSuperAdmin()) {
+            $error = 'ACCÈS REFUSÉ · Seul le superadmin peut supprimer';
+        } else {
+            $betId = (int)($_POST['bet_id'] ?? 0);
+            if ($betId > 0) {
+                try {
+                    // Récupère les chemins d'image pour nettoyer les fichiers
+                    $s = $db->prepare("SELECT image_path, locked_image_path, titre FROM bets WHERE id = ?");
+                    $s->execute([$betId]);
+                    $b = $s->fetch(PDO::FETCH_ASSOC);
+
+                    if ($b) {
+                        // Supprime les fichiers physiques si présents
+                        foreach (['image_path', 'locked_image_path'] as $col) {
+                            if (!empty($b[$col])) {
+                                $p = ltrim($b[$col], '/');
+                                $full = __DIR__ . '/../' . $p;
+                                if (file_exists($full) && is_file($full)) @unlink($full);
+                            }
+                        }
+
+                        // Supprime la ligne BDD
+                        $db->prepare("DELETE FROM bets WHERE id = ?")->execute([$betId]);
+                        $success = 'DELETED · Bet #' . $betId . ($b['titre'] ? ' (' . substr($b['titre'], 0, 30) . ')' : '');
+                    } else {
+                        $error = 'Bet #' . $betId . ' introuvable';
+                    }
+                } catch (Throwable $e) {
+                    error_log('[valider-bets] delete: ' . $e->getMessage());
+                    $error = 'Erreur suppression : ' . mb_substr($e->getMessage(), 0, 150);
+                }
+            }
+        }
+    }
 
     $filter = $_POST['filter'] ?? 'en_cours';
     header("Location: ?filter=$filter&msg=" . urlencode($success ?: $error) . "&msg_type=" . ($success ? 'success' : 'error'));
@@ -561,6 +597,29 @@ $winRate = $totalFinished > 0 ? round(($counts['gagne'] / $totalFinished) * 100)
   .action.is-current svg { transform: none; }
   .action.loading { pointer-events: none; opacity: 0.6; }
 
+  /* DANGER ZONE (superadmin only) */
+  .danger-zone { margin-top: 8px; display: flex; justify-content: flex-end; }
+  .btn-delete {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; background: transparent;
+    color: rgba(255, 93, 93, 0.6);
+    border: 1px solid rgba(255, 93, 93, 0.2);
+    border-radius: 6px;
+    font-family: var(--mono); font-size: 10px; font-weight: 600;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.18s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-delete:hover {
+    color: #ff5d5d;
+    border-color: rgba(255, 93, 93, 0.6);
+    background: rgba(255, 93, 93, 0.08);
+    box-shadow: 0 0 20px rgba(255, 93, 93, 0.15);
+  }
+  .btn-delete:active { transform: translateY(1px); }
+  .btn-delete svg { stroke: currentColor; flex-shrink: 0; }
+
   /* EMPTY */
   .empty {
     grid-column: 1 / -1; padding: 80px 24px;
@@ -831,6 +890,23 @@ $winRate = $totalFinished > 0 ? round(($counts['gagne'] / $totalFinished) * 100)
             </button>
           </form>
         </div>
+
+        <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
+        <form method="POST" class="danger-zone"
+              onsubmit="return confirm('⚠️ SUPPRIMER DÉFINITIVEMENT ce bet ?\n\n#<?= (int)$b['id'] ?> · <?= htmlspecialchars(addslashes(mb_substr($b['titre'] ?? '(sans titre)', 0, 60))) ?>\n\nCette action est irréversible.');">
+          <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
+          <input type="hidden" name="action" value="delete_bet">
+          <input type="hidden" name="bet_id" value="<?= (int)$b['id'] ?>">
+          <input type="hidden" name="filter" value="<?= htmlspecialchars($filter) ?>">
+          <button type="submit" class="btn-delete" title="Supprimer définitivement (superadmin)">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+            </svg>
+            <span>Supprimer le bet</span>
+          </button>
+        </form>
+        <?php endif; ?>
       </div>
     </article>
     <?php endforeach; ?>
