@@ -43,8 +43,10 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
     height:100vh; position:fixed; top:0; left:0; display:flex; flex-direction:column;
     z-index:150; overflow-y:auto; transition:transform 0.3s ease;
   }
-  .sidebar-logo { padding:1.5rem; border-bottom:1px solid var(--border-subtle); flex-shrink:0; }
-  .sidebar-logo img { height:35px; }
+  .sidebar-logo { padding:1.2rem 1rem; border-bottom:1px solid var(--border-subtle); flex-shrink:0; text-align:center; }
+  .sidebar-logo a { display:inline-flex; align-items:center; justify-content:center; text-decoration:none; transition:.2s; }
+  .sidebar-logo a:hover { opacity:.85; }
+  .sidebar-logo img { max-height:48px; max-width:100%; width:auto; height:auto; display:block; filter:drop-shadow(0 0 10px rgba(255,45,120,0.25)); }
   .sidebar-label {
     font-family:'Space Mono',monospace; font-size:0.6rem; letter-spacing:3px;
     text-transform:uppercase; color:var(--text-muted); padding:1.5rem 1.5rem 0.5rem;
@@ -172,15 +174,11 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 <!-- SIDEBAR -->
 <div class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <a href="/bets" style="text-decoration:none;display:flex;align-items:center;gap:10px;transition:.2s;" title="Voir Les Bets sur le site" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+    <a href="/bets" title="Voir Les Bets sur le site">
       <img src="/assets/images/logo_site_transparent.png" alt="StratEdge"
-           style="height:40px;width:auto;filter:drop-shadow(0 0 8px rgba(255,45,120,0.25));"
-           onerror="this.src='/assets/images/logo site.png';this.onerror=function(){this.style.display='none';document.getElementById('sidebar-logo-fallback').style.display='block';}">
-      <div id="sidebar-logo-fallback" style="display:none;font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:900;color:#fff;letter-spacing:1px;">
-        <span style="color:#ff2d78;">STRAT</span>EDGE
-      </div>
+           onerror="this.onerror=null;this.src='/assets/images/logo site.png';">
     </a>
-    <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text-muted);letter-spacing:2px;margin-top:0.5rem;text-transform:uppercase;">Admin Panel</div>
+    <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text-muted);letter-spacing:2px;margin-top:0.6rem;text-transform:uppercase;">Admin Panel</div>
   </div>
 
   <div class="sidebar-label">Navigation</div>
@@ -202,8 +200,8 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
         <span class="chevron">›</span>
       </button>
       <div class="nav-group-inner">
-        <a href="poster-bet.php" <?= ($pageActive==='poster-bet') ?'class="active"':'' ?>><span>📸</span> Poster un bet</a>
         <a href="valider-bets.php" <?= ($pageActive==='valider-bets') ?'class="active"':'' ?>><span>✅</span> Valider les bets</a>
+        <a href="poster-bet.php" <?= ($pageActive==='poster-bet') ?'class="active"':'' ?>><span>📸</span> Poster un bet</a>
         <a href="creer-card.php" <?= ($pageActive==='creer-card') ?'class="active"':'' ?>><span>🎨</span> Créer une Card</a>
         <a href="prono-commu-admin.php" <?= ($pageActive==='prono-commu-admin') ?'class="active"':'' ?>><span>⚽</span> Prono de la commu</a>
         <?php if (isSuperAdmin() || getAdminRole() === 'admin_tennis'): ?>
@@ -311,8 +309,8 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 </div>
 <nav class="admin-mob-tabs">
   <a href="index.php" class="<?= ($pageActive==='index') ? 'active' : '' ?>"><span class="ico">📊</span><span>Dashboard</span></a>
-  <a href="poster-bet.php" class="<?= ($pageActive==='poster-bet') ? 'active' : '' ?>"><span class="ico">📸</span><span>Poster</span></a>
   <a href="valider-bets.php" class="<?= ($pageActive==='valider-bets') ? 'active' : '' ?>"><span class="ico">✅</span><span>Valider</span></a>
+  <a href="poster-bet.php" class="<?= ($pageActive==='poster-bet') ? 'active' : '' ?>"><span class="ico">📸</span><span>Poster</span></a>
   <a href="messages.php" class="<?= ($pageActive==='messages') ? 'active' : '' ?>"><span class="ico">💬</span><span>Messages</span></a>
   <a href="tickets.php" class="<?= ($pageActive==='tickets') ? 'active' : '' ?>"><span class="ico">🎫</span><span>SAV</span></a>
 </nav>

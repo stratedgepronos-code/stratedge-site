@@ -536,6 +536,9 @@ $winRate = $totalFinished > 0 ? round(($counts['gagne'] / $totalFinished) * 100)
 </head>
 <body>
 
+<?php require_once __DIR__ . '/sidebar.php'; ?>
+
+<div class="main">
 <div class="scanline"></div>
 
 <div class="page">
@@ -786,6 +789,8 @@ $winRate = $totalFinished > 0 ? round(($counts['gagne'] / $totalFinished) * 100)
     if (map[e.key]) window.location = '?filter=' + map[e.key];
   });
 </script>
+
+</div><!-- /.main -->
 
 </body>
 </html>
