@@ -137,21 +137,22 @@ $winRate = $totalFinished > 0 ? round(($counts['gagne'] / $totalFinished) * 100)
     --serif: 'Instrument Serif', serif;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-  html, body { height: 100%; overflow-x: hidden; }
+  html { overflow-x: hidden; }
   body {
     font-family: var(--body); background: var(--bg); color: var(--t1);
     min-height: 100vh; -webkit-font-smoothing: antialiased;
-    padding-bottom: 100px; position: relative;
   }
-  body::before {
-    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  /* Les backgrounds ambiants vivent DANS .main pour ne pas recouvrir la sidebar */
+  .main { position: relative; padding-bottom: 100px; min-height: 100vh; }
+  .main::before {
+    content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
     background:
       radial-gradient(ellipse 800px 600px at 15% 10%, rgba(255, 45, 120, 0.08), transparent 60%),
       radial-gradient(ellipse 700px 500px at 85% 90%, rgba(0, 212, 255, 0.06), transparent 60%),
       radial-gradient(ellipse 400px 400px at 50% 50%, rgba(176, 38, 255, 0.03), transparent 70%);
   }
-  body::after {
-    content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  .main::after {
+    content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
     background-image:
       linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
       linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
@@ -160,7 +161,7 @@ $winRate = $totalFinished > 0 ? round(($counts['gagne'] / $totalFinished) * 100)
     -webkit-mask-image: radial-gradient(ellipse at center, black 0%, transparent 85%);
   }
   .scanline {
-    position: fixed; left: 0; right: 0; height: 2px; z-index: 1;
+    position: absolute; left: 0; right: 0; height: 2px; z-index: 1;
     background: linear-gradient(90deg, transparent, var(--pink), transparent);
     opacity: 0.3; pointer-events: none; animation: scan 8s linear infinite;
   }

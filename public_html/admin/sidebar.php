@@ -188,7 +188,7 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
     </a>
 
     <?php
-    $bettingOpenPages = ['poster-bet','valider-bets','creer-card','edit-bet-image','prono-commu-admin','montante-tennis','montante-foot','ht-tracker'];
+    $bettingOpenPages = ['valider-bets','creer-card','edit-bet-image','prono-commu-admin','montante-tennis','montante-foot','ht-tracker'];
     if (function_exists('isSuperAdmin') && isSuperAdmin()) {
         $bettingOpenPages[] = 'historique';
     }
@@ -201,7 +201,6 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
       </button>
       <div class="nav-group-inner">
         <a href="valider-bets.php" <?= ($pageActive==='valider-bets') ?'class="active"':'' ?>><span>✅</span> Valider les bets</a>
-        <a href="poster-bet.php" <?= ($pageActive==='poster-bet') ?'class="active"':'' ?>><span>📸</span> Poster un bet</a>
         <a href="creer-card.php" <?= ($pageActive==='creer-card') ?'class="active"':'' ?>><span>🎨</span> Créer une Card</a>
         <a href="prono-commu-admin.php" <?= ($pageActive==='prono-commu-admin') ?'class="active"':'' ?>><span>⚽</span> Prono de la commu</a>
         <?php if (isSuperAdmin() || getAdminRole() === 'admin_tennis'): ?>
@@ -310,7 +309,7 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 <nav class="admin-mob-tabs">
   <a href="index.php" class="<?= ($pageActive==='index') ? 'active' : '' ?>"><span class="ico">📊</span><span>Dashboard</span></a>
   <a href="valider-bets.php" class="<?= ($pageActive==='valider-bets') ? 'active' : '' ?>"><span class="ico">✅</span><span>Valider</span></a>
-  <a href="poster-bet.php" class="<?= ($pageActive==='poster-bet') ? 'active' : '' ?>"><span class="ico">📸</span><span>Poster</span></a>
+  <a href="creer-card.php" class="<?= ($pageActive==='creer-card') ? 'active' : '' ?>"><span class="ico">🎨</span><span>Créer</span></a>
   <a href="messages.php" class="<?= ($pageActive==='messages') ? 'active' : '' ?>"><span class="ico">💬</span><span>Messages</span></a>
   <a href="tickets.php" class="<?= ($pageActive==='tickets') ? 'active' : '' ?>"><span class="ico">🎫</span><span>SAV</span></a>
 </nav>
