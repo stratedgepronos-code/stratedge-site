@@ -13,6 +13,17 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 ?>
 <!-- ════ STYLES SIDEBAR + RESPONSIVE ════ -->
 <style>
+  /* Fallback variables — définies localement pour que la sidebar fonctionne
+     même si la page hôte n'a pas le même set de variables CSS */
+  .mobile-topbar, .sidebar, .sidebar-overlay, .admin-mob-tabs {
+    --bg-card: #0d1220;
+    --border-subtle: rgba(255, 255, 255, 0.07);
+    --neon-green: #ff2d78;
+    --text-primary: #f0f4f8;
+    --text-secondary: #b0bec9;
+    --text-muted: #8a9bb0;
+  }
+
   /* TOPBAR MOBILE */
   .mobile-topbar {
     display:none; position:fixed; top:0; left:0; right:0; z-index:200;
@@ -39,9 +50,15 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 
   /* SIDEBAR */
   .sidebar {
-    width:240px; background:var(--bg-card); border-right:1px solid var(--border-subtle);
+    width:240px !important;
+    background: #0d1220 !important;
+    background-image: linear-gradient(180deg, #0d1220 0%, #0a0f1a 100%);
+    border-right:1px solid var(--border-subtle, rgba(255,255,255,0.07));
     height:100vh; position:fixed; top:0; left:0; display:flex; flex-direction:column;
     z-index:150; overflow-y:auto; transition:transform 0.3s ease;
+  }
+  .mobile-topbar {
+    background: #0d1220 !important;
   }
   .sidebar-logo { padding:1.2rem 1rem; border-bottom:1px solid var(--border-subtle); flex-shrink:0; text-align:center; }
   .sidebar-logo a { display:inline-flex; align-items:center; justify-content:center; text-decoration:none; transition:.2s; }
