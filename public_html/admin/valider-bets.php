@@ -57,19 +57,96 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 } catch (Throwable $e) { error_log('[valider-bets] notif: ' . $e->getMessage()); }
 
-                if ($twitterActif && !empty($twitterConfig['webhook_url']) && $resultat !== 'perdu') {
-                    try {
-                        $matchName = trim($bet['titre'] ?? '');
-                        $coteRaw = (string)($bet['cote'] ?? '');
-                        $coteAt = ($coteRaw !== '' && $coteRaw !== '0' && $coteRaw !== '0.00') ? " @ $coteRaw" : '';
-                        $isFun = (stripos((string)($bet['categorie'] ?? ''), 'fun') !== false);
-                        $msg = $isFun
-                            ? ($resultat === 'gagne' ? "🎲 Bet Fun validé{$coteAt} ✅\n\n{$matchName}\n\n📲 stratedgepronos.fr" : "↺ Bet Fun annulé — mise remboursée\n\n{$matchName}\n\n📲 stratedgepronos.fr")
-                            : ($resultat === 'gagne' ? "🎾 Bet validé{$coteAt} ✅\n\n{$matchName}\n\n📲 stratedgepronos.fr" : "↺ Bet annulé — mise remboursée\n\n{$matchName}\n\n📲 stratedgepronos.fr");
-                        if (function_exists('twitter_post_from_webhook')) {
-                            twitter_post_from_webhook($msg, null, $twitterConfig['webhook_url']);
+                // Tweet de résultat avec image de la card
+                // (sauf pour les bets perdus : évite sur-exposition des pertes)
+                try {
+                    if ($twitterActif && !empty($twitterConfig['webhook_url']) && $bet && $resultat !== 'perdu') {
+                        $titre = !empty($bet['titre']) ? ' — ' . $bet['titre'] : '';
+                        $coteStr = !empty($bet['cote']) ? ' (cote ' . $bet['cote'] . ')' : '';
+                        $roleOriginal = $bet['posted_by_role'] ?? 'superadmin';
+
+                        // Emoji et label adaptés selon le tipster
+                        $isTennis = ($roleOriginal === 'admin_tennis');
+                        $isFun    = in_array($roleOriginal, ['admin_fun', 'admin_fun_sport']);
+
+                        if ($isTennis) {
+                            // Tennis = tweet court, pas d'analyse IA
+                            $coteAt = !empty($bet['cote']) ? ' @' . $bet['cote'] : '';
+                            $matchName = trim($bet['titre'] ?? '');
+                            $phrases = [
+                                'gagne'  => "🎾 Bet validé{$coteAt} ✅\n\n{$matchName}\n\n📲 stratedgepronos.fr",
+                                'annule' => "🎾 Bet annulé — {$matchName}\n\n📲 stratedgepronos.fr",
+                            ];
+                        } elseif ($isFun) {
+                            // Fun = tweet court, pas d'analyse IA
+                            $coteAt = !empty($bet['cote']) ? ' @' . $bet['cote'] : '';
+                            $matchName = trim($bet['titre'] ?? '');
+                            $phrases = [
+                                'gagne'  => "🎲 Bet Fun validé{$coteAt} ✅\n\n{$matchName}\n\n📲 stratedgepronos.fr",
+                                'annule' => "🎲 Bet Fun annulé — {$matchName}\n\n📲 stratedgepronos.fr",
+                            ];
+                        } else {
+                            // Multi = tweet avec analyse IA courte si dispo
+                            $tweetExplication = function_exists('genererTweetExplication')
+                                ? genererTweetExplication($bet, $resultat)
+                                : '';
+                            if ($tweetExplication !== '') {
+                                $phrases = [
+                                    'gagne'  => "✅ BET GAGNÉ{$titre}{$coteStr} ! 🎉\n\n{$tweetExplication}\n\n📲 stratedgepronos.fr",
+                                    'annule' => "↺ Bet annulé{$titre} — remboursement.\n\n{$tweetExplication}\n\n📲 stratedgepronos.fr",
+                                ];
+                            } else {
+                                $phrases = [
+                                    'gagne'  => "✅ BET GAGNÉ{$titre}{$coteStr} ! 🎉\n\nC'est passé comme prévu ! 💰\n\n📲 stratedgepronos.fr",
+                                    'annule' => "↺ Bet annulé{$titre} — remboursement.\n\n📲 stratedgepronos.fr",
+                                ];
+                            }
                         }
-                    } catch (Throwable $e) { error_log('[valider-bets] tweet: ' . $e->getMessage()); }
+                        $texte = $phrases[$resultat] ?? $phrases['gagne'] ?? '';
+
+                        // Hashtags selon le role du tipster
+                        if (function_exists('hashtagsForRole')) {
+                            $texte .= "\n\n" . hashtagsForRole($roleOriginal);
+                        }
+
+                        // URL image de la card (servie via restore-image.php pour gérer BLOB + disque)
+                        $imgPath = isset($bet['image_path']) ? trim($bet['image_path']) : '';
+                        if ($imgPath !== '' && strpos(ltrim($imgPath, '/'), 'uploads/') !== 0) {
+                            $imgPath = 'uploads/bets/' . ltrim($imgPath, '/');
+                        }
+                        $imageUrl = $imgPath !== ''
+                            ? 'https://stratedgepronos.fr/restore-image.php?dir=bets&file=' . rawurlencode(basename($imgPath))
+                            : 'https://stratedgepronos.fr/assets/images/logo_site_transparent.png';
+
+                        // Webhook spécifique "avec image" si configuré, sinon webhook standard
+                        $webhookUrl = ($imgPath !== '' && !empty($twitterConfig['webhook_url_image']))
+                            ? $twitterConfig['webhook_url_image']
+                            : $twitterConfig['webhook_url'];
+
+                        // Payload IFTTT/Make format: value1=texte, value2=title, value3=imageUrl
+                        $payload = json_encode([
+                            'value1' => $texte,
+                            'value2' => 'StratEdge Pronos',
+                            'value3' => $imageUrl,
+                        ], JSON_UNESCAPED_UNICODE);
+
+                        $ch = curl_init($webhookUrl);
+                        curl_setopt_array($ch, [
+                            CURLOPT_POST           => true,
+                            CURLOPT_POSTFIELDS     => $payload,
+                            CURLOPT_RETURNTRANSFER => true,
+                            CURLOPT_HTTPHEADER     => ['Content-Type: application/json; charset=utf-8'],
+                            CURLOPT_TIMEOUT        => 10,
+                        ]);
+                        curl_exec($ch);
+                        $twCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                        curl_close($ch);
+                        if ($twCode < 200 || $twCode >= 300) {
+                            error_log('[valider-bets] tweet HTTP ' . $twCode . ' bet #' . $betId);
+                        }
+                    }
+                } catch (Throwable $e) {
+                    error_log('[valider-bets] tweet: ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
                 }
             }
 
