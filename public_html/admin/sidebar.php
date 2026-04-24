@@ -24,6 +24,20 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
     --text-muted: #8a9bb0;
   }
 
+  /* Force la font système moderne sur TOUS les éléments de la sidebar + nav mobile.
+     Indépendant de la font-family de la page hôte.
+     Applique aussi aux enfants (nav, a, button, span, div) pour garantir la
+     cohérence peu importe les styles de la page. */
+  .sidebar, .sidebar *,
+  .mobile-topbar, .mobile-topbar *,
+  .admin-mob-tabs, .admin-mob-tabs * {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  }
+  /* Exceptions: les éléments qui doivent garder leur font cyberpunk spécifique */
+  .sidebar-logo, .mob-logo, .admin-brand-fallback {
+    /* leur font est déclarée inline ou via class spécifique */
+  }
+
   /* TOPBAR MOBILE */
   .mobile-topbar {
     display:none; position:fixed; top:0; left:0; right:0; z-index:200;
