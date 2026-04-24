@@ -159,7 +159,7 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 
 <!-- TOPBAR MOBILE -->
 <div class="mobile-topbar">
-  <a href="/bets" class="mob-logo" style="text-decoration:none;display:flex;align-items:center;gap:0.5rem;" title="Aller à la page Les Bets (front)">
+  <a href="/bets.php" class="mob-logo" style="text-decoration:none;display:flex;align-items:center;gap:0.5rem;" title="Aller à la page Les Bets (front)">
     <img src="/assets/images/logo_site_transparent.png" alt="StratEdge" style="height:32px;" onerror="this.src='/assets/images/logo site.png';this.onerror=function(){this.style.display='none';this.nextElementSibling.style.display='inline';}">
     <span style="display:none;font-family:'Orbitron',sans-serif;font-size:1rem;color:#ff2d78;font-weight:900;">STRATEDGE</span>
   </a>
@@ -174,7 +174,7 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 <!-- SIDEBAR -->
 <div class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <a href="/bets" title="Voir Les Bets sur le site">
+    <a href="/bets.php" title="Voir Les Bets sur le site">
       <img src="/assets/images/logo_site_transparent.png" alt="StratEdge"
            onerror="this.onerror=null;this.src='/assets/images/logo site.png';">
     </a>
