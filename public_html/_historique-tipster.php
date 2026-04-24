@@ -92,6 +92,10 @@ if ($filtreResult !== 'tous') {
 }
 
 // === Stats globales tipster ===
+// ⚠️ Les stats suivent les filtres TYPE + SPORT actifs pour que le ratio,
+// le donut et les compteurs se mettent à jour à chaque clic de filtre.
+// On utilise \$betsAvantResult (filtré type+sport, pas filtré par résultat)
+// pour que le donut "% Win" reste cohérent même si l'user filtre sur "Perdus".
 function _calcStatsT(array $arr): array {
     $g = count(array_filter($arr, fn($b) => $b['resultat'] === 'gagne'));
     $p = count(array_filter($arr, fn($b) => $b['resultat'] === 'perdu'));
@@ -110,16 +114,17 @@ function _calcStatsT(array $arr): array {
     $roi = $miseTotale > 0 ? round(($gainNet / $miseTotale) * 100, 1) : 0;
     return compact('g','p','a','taux','coteMoy','roi') + ['total' => count($arr)];
 }
-$stats = _calcStatsT($bets);
+$stats = _calcStatsT($betsAvantResult);
 
 // Sports disponibles dans ce tipster (pour les filtres sport)
 $sportsDispo = array_unique(array_filter(array_map(fn($b) => $b['sport'] ?? '', $bets)));
 sort($sportsDispo);
 
 // Évolution bankroll cumulative chronologique
+// Suit aussi les filtres TYPE + SPORT actifs (cohérent avec les stats ci-dessus)
 $bankrollPoints = [];
 $cumul = 0;
-$arrChrono = array_reverse($bets);
+$arrChrono = array_reverse($betsAvantResult);
 foreach ($arrChrono as $b) {
     if ($b['resultat'] === 'gagne') {
         $c = (float)str_replace(',', '.', $b['cote'] ?? 0);
