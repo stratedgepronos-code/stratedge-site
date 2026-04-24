@@ -272,7 +272,11 @@ $winRate = $totalFinished > 0 ? round(($counts['gagne'] / $totalFinished) * 100)
     border-radius: 4px; color: var(--t2);
     min-width: 22px; text-align: center; letter-spacing: 0.5px;
   }
-  .tab.active .tab-count { background: currentColor; color: var(--bg-deep); }
+  .tab.active .tab-count {
+    background: rgba(0, 0, 0, 0.55);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
 
   /* TOAST */
   .toast {
