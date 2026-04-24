@@ -216,6 +216,30 @@ function stratedge_football_logo(string $teamName): string {
             'willem ii' => 209, 'willem 2' => 209,
             'mvv maastricht' => 411, 'mvv' => 411,
 
+            // ═══ JAPON — J1 League 2026 (18 clubs) ═══
+            // IDs api-sports peu fiables pour J-League : système priorisera
+            // le manifest ESPN (Phase 3 scraper) via stratedge_football_logo().
+            'kashima antlers' => 292, 'kashima' => 292,
+            'kashiwa reysol' => 296, 'kashiwa' => 296, 'reysol' => 296,
+            'urawa red diamonds' => 287, 'urawa' => 287, 'urawa reds' => 287,
+            'yokohama f marinos' => 285, 'yokohama marinos' => 285, 'f marinos' => 285,
+            'yokohama fc' => 289,
+            'kawasaki frontale' => 281, 'kawasaki' => 281, 'frontale' => 281,
+            'fc tokyo' => 286, 'tokyo fc' => 286,
+            'tokyo verdy' => 294, 'verdy' => 294,
+            'cerezo osaka' => 284, 'cerezo' => 284,
+            'gamba osaka' => 280, 'gamba' => 280,
+            'vissel kobe' => 282, 'vissel' => 282, 'kobe' => 282,
+            'sanfrecce hiroshima' => 283, 'sanfrecce' => 283, 'hiroshima' => 283,
+            'nagoya grampus' => 288, 'nagoya' => 288, 'grampus' => 288,
+            'shonan bellmare' => 295, 'shonan' => 295, 'bellmare' => 295,
+            'sagan tosu' => 297, 'tosu' => 297,
+            'avispa fukuoka' => 298, 'avispa' => 298, 'fukuoka' => 298,
+            'consadole sapporo' => 293, 'consadole' => 293, 'sapporo' => 293,
+            'albirex niigata' => 290, 'albirex' => 290, 'niigata' => 290,
+            'kyoto sanga' => 291, 'kyoto' => 291, 'sanga' => 291,
+            'machida zelvia' => 7197, 'machida' => 7197, 'zelvia' => 7197,
+
             // ═══ BELGIQUE — Jupiler Pro ═══
             'club brugge' => 569, 'club bruges' => 569, 'bruges' => 569,
             'anderlecht' => 554, 'rsc anderlecht' => 554,
@@ -357,11 +381,12 @@ function stratedge_football_logo(string $teamName): string {
         return 'https://media.api-sports.io/football/teams/' . $id . '.png';
     };
 
-    // ⚠️ MLS/Liga MX : les IDs api-sports sont peu fiables. Si le slug est dans
-    // le manifest (Phase 3 ESPN scraper vérifié), on le sert en priorité AVANT
-    // même la DB api-sports, car le fichier api-XXXX.png peut contenir le logo
+    // ⚠️ MLS/Liga MX/J1 League : les IDs api-sports sont peu fiables. Si le slug
+    // est dans le manifest (Phase 3 ESPN scraper vérifié), on le sert en priorité
+    // AVANT même la DB api-sports, car le fichier api-XXXX.png peut contenir le logo
     // d'une AUTRE équipe (ex: 1616 pouvait être LA Galaxy au lieu de DC United).
-    $mls_liga_mx_indicators = [
+    $priority_manifest_indicators = [
+        // MLS
         'mls', 'inter miami', 'salt lake', 'galaxy', 'lafc', 'nycfc', 'red bull',
         'new york rb', 'atlanta united', 'seattle sounders', 'portland timbers',
         'columbus crew', 'toronto fc', 'san jose', 'vancouver', 'dc united',
@@ -374,13 +399,19 @@ function stratedge_football_logo(string $teamName): string {
         'tigres', 'leon', 'pachuca', 'toluca', 'atlas', 'necaxa', 'tijuana',
         'xolos', 'puebla', 'santos laguna', 'queretaro', 'mazatlan',
         'atletico san luis', 'juarez',
+        // J1 League (Japon) - IDs api-sports peu fiables
+        'kashima', 'kashiwa', 'reysol', 'antlers', 'urawa', 'yokohama', 'marinos',
+        'kawasaki', 'frontale', 'fc tokyo', 'tokyo verdy', 'verdy', 'cerezo',
+        'gamba', 'vissel', 'sanfrecce', 'hiroshima', 'nagoya', 'grampus',
+        'shonan', 'bellmare', 'sagan', 'avispa', 'fukuoka', 'consadole', 'sapporo',
+        'albirex', 'niigata', 'sanga', 'machida', 'zelvia',
     ];
-    $is_mls_liga_mx = false;
-    foreach ($mls_liga_mx_indicators as $ind) {
-        if (strpos($name, $ind) !== false) { $is_mls_liga_mx = true; break; }
+    $is_priority_league = false;
+    foreach ($priority_manifest_indicators as $ind) {
+        if (strpos($name, $ind) !== false) { $is_priority_league = true; break; }
     }
 
-    if ($is_mls_liga_mx && isset($manifest[$slug])) {
+    if ($is_priority_league && isset($manifest[$slug])) {
         $f = __DIR__ . '/../assets/logos/football/' . $manifest[$slug];
         if (is_file($f) && filesize($f) > 500) {
             return '/assets/logos/football/' . $manifest[$slug];

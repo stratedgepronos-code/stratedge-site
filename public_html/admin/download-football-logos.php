@@ -371,6 +371,10 @@ $espnTeams = [
     // === Eredivisie (Pays-Bas) ===
     'pec-zwolle'            => ['espn_id' => 2565,  'slug' => 'pec-zwolle', 'aliases' => ['zwolle', 'fc-zwolle']],
 
+    // === J1 League (Japon) — IDs ESPN vérifiés ===
+    'kashima-antlers'       => ['espn_id' => 7115,  'slug' => 'kashima-antlers', 'aliases' => ['kashima']],
+    'kashiwa-reysol'        => ['espn_id' => 7476,  'slug' => 'kashiwa-reysol', 'aliases' => ['kashiwa', 'reysol']],
+
     // === Liga MX === (IDs ESPN vérifiés via pages team 2025-26)
     'club-leon'             => ['espn_id' => 228,   'slug' => 'leon', 'aliases' => ['leon']],
     'cf-pachuca'            => ['espn_id' => 234,   'slug' => 'pachuca', 'aliases' => ['pachuca', 'tuzos']],
@@ -528,7 +532,7 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "  PHASE 3.5 — Auto-discover Liga MX\n";
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
 
-// Équipes Liga MX à découvrir automatiquement (nom officiel ESPN attendu)
+// Équipes Liga MX + J1 League à découvrir automatiquement (nom officiel ESPN attendu)
 $autoDiscover = [
     'Club América'            => ['america', 'club-america', 'club-america-mex'],
     'Guadalajara'             => ['chivas', 'guadalajara', 'cd-guadalajara'],
@@ -539,6 +543,25 @@ $autoDiscover = [
     'Necaxa'                  => ['necaxa', 'club-necaxa'],
     'Puebla'                  => ['puebla', 'puebla-mex', 'club-puebla'],
     'Santos Laguna'           => ['santos-laguna', 'santos-laguna-mex'],
+    // J1 League (Japon) - 18 clubs 2026 (Kashima + Kashiwa déjà en hardcoded)
+    'Urawa Red Diamonds'      => ['urawa', 'urawa-reds', 'urawa-red-diamonds'],
+    'Yokohama F. Marinos'     => ['yokohama-marinos', 'yokohama-f-marinos', 'f-marinos'],
+    'Yokohama FC'             => ['yokohama-fc'],
+    'Kawasaki Frontale'       => ['kawasaki', 'kawasaki-frontale', 'frontale'],
+    'FC Tokyo'                => ['fc-tokyo', 'tokyo'],
+    'Tokyo Verdy'             => ['tokyo-verdy', 'verdy'],
+    'Cerezo Osaka'            => ['cerezo', 'cerezo-osaka'],
+    'Gamba Osaka'             => ['gamba', 'gamba-osaka'],
+    'Vissel Kobe'             => ['vissel', 'vissel-kobe', 'kobe'],
+    'Sanfrecce Hiroshima'     => ['sanfrecce', 'sanfrecce-hiroshima', 'hiroshima'],
+    'Nagoya Grampus'          => ['nagoya', 'nagoya-grampus', 'grampus'],
+    'Shonan Bellmare'         => ['shonan', 'shonan-bellmare', 'bellmare'],
+    'Sagan Tosu'              => ['sagan-tosu', 'tosu'],
+    'Avispa Fukuoka'          => ['avispa', 'avispa-fukuoka', 'fukuoka'],
+    'Consadole Sapporo'       => ['consadole', 'consadole-sapporo', 'sapporo'],
+    'Albirex Niigata'         => ['albirex', 'albirex-niigata', 'niigata'],
+    'Kyoto Sanga'             => ['kyoto', 'kyoto-sanga', 'sanga'],
+    'Machida Zelvia'          => ['machida', 'machida-zelvia', 'zelvia'],
 ];
 
 $ok35 = 0; $ko35 = 0;
