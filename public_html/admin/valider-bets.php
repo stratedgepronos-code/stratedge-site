@@ -639,9 +639,20 @@ $winRate = $totalFinished > 0 ? round(($counts['gagne'] / $totalFinished) * 100)
       $catClass = $categorie === 'tennis' ? 'ribbon-tennis' : 'ribbon-multi';
       $catLabel = $categorie === 'tennis' ? 'TENNIS' : ($categorie === 'fun' ? 'FUN' : 'MULTI');
 
-      $img = $b['image'] ?? '';
-      if ($img && !str_starts_with($img, 'http') && !str_starts_with($img, '/')) {
-          $img = '/uploads/bets/' . basename($img);
+      // Logique image identique à bets.php (public) :
+      // 1) image_path (ou locked_image_path en fallback)
+      // 2) Si chemin relatif, on passe par restore-image.php (gère aussi les BLOB)
+      // 3) Si URL http(s)://, on garde tel quel
+      $rawPath = !empty($b['image_path']) ? $b['image_path'] : ($b['locked_image_path'] ?? '');
+      $img = '';
+      if (!empty($rawPath)) {
+          if (strpos($rawPath, 'http') === 0) {
+              $img = $rawPath;
+          } else {
+              $basename = basename($rawPath);
+              $dir = (strpos($rawPath, 'locked') !== false) ? 'locked' : 'bets';
+              $img = '/restore-image.php?dir=' . $dir . '&file=' . rawurlencode($basename);
+          }
       }
     ?>
     <article class="card">
