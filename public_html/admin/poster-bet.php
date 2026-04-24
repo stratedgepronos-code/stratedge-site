@@ -296,6 +296,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         error_log('[poster-bet] notifications: ' . $notifE->getMessage() . ' in ' . $notifE->getFile() . ':' . $notifE->getLine() . "\n" . $notifE->getTraceAsString());
                         $success = $nbPostes . ' bet' . ($nbPostes > 1 ? 's postés' : ' posté') . ' ✅ (notifications partiellement en erreur).' . $twitterMsg;
                     }
+
+                    // Redirige vers valider-bets.php avec le message en flash
+                    $_SESSION['flash_success'] = $success;
+                    header('Location: valider-bets.php');
+                    exit;
                 } else {
                     $error = 'Aucun fichier valide uploadé.';
                 }

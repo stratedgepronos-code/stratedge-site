@@ -164,6 +164,14 @@ $filter = $_GET['filter'] ?? 'en_cours';
 $msgGet = $_GET['msg'] ?? '';
 $msgTypeGet = $_GET['msg_type'] ?? '';
 
+// Flash success depuis poster-bet.php (après post réussi)
+if (session_status() === PHP_SESSION_NONE) { session_start(); }
+if (!empty($_SESSION['flash_success'])) {
+    $msgGet = $_SESSION['flash_success'];
+    $msgTypeGet = 'success';
+    unset($_SESSION['flash_success']);
+}
+
 $sql = "SELECT * FROM bets ";
 switch ($filter) {
     case 'en_cours': $sql .= "WHERE (resultat IS NULL OR resultat = '' OR resultat = 'en_cours') AND actif = 1 "; break;
