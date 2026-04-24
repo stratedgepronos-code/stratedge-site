@@ -107,18 +107,38 @@ if ($lockedImage && $lockedImage['error'] === UPLOAD_ERR_OK) {
 
 $titre = $titre !== '' ? $titre : 'Bet StratEdge';
 
+// Logger pour débugger si les bets ne s'insèrent pas
+$logFile = __DIR__ . '/../logs/poster-bet-from-card.log';
+$logDir  = dirname($logFile);
+if (!is_dir($logDir)) @mkdir($logDir, 0755, true);
+$logCtx = sprintf(
+    "[%s] role=%s cat=%s type=%s sport=%s titre=%s cote=%s",
+    date('Y-m-d H:i:s'),
+    $adminRole ?: 'super',
+    $categorie, $type, $sport,
+    mb_substr($titre, 0, 40),
+    $cote ?? '-'
+);
+
 try {
-    $stmt = $db->prepare("INSERT INTO bets (titre, image_path, image_data, locked_image_path, locked_image_data, type, categorie, sport, description, analyse_html, cote) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    // Force actif = 1 explicitement (ne dépend pas du DEFAULT de la colonne)
+    $stmt = $db->prepare("INSERT INTO bets (titre, image_path, image_data, locked_image_path, locked_image_data, type, categorie, sport, description, analyse_html, cote, actif) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)");
     $stmt->execute([$titre, $lastImagePath, $imageBlob ?: null, $lastLockedPath ?: null, $lockedBlob ?: null, $type, $categorie, $sport, $description, $analyseHtml ?: null, $cote]);
+    @file_put_contents($logFile, "$logCtx OK_V1 id=" . $db->lastInsertId() . "\n", FILE_APPEND);
 } catch (Throwable $e) {
+    @file_put_contents($logFile, "$logCtx FAIL_V1: " . mb_substr($e->getMessage(), 0, 200) . "\n", FILE_APPEND);
     try {
-        $stmt = $db->prepare("INSERT INTO bets (titre, image_path, image_data, locked_image_path, locked_image_data, type, categorie, sport, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $db->prepare("INSERT INTO bets (titre, image_path, image_data, locked_image_path, locked_image_data, type, categorie, sport, description, actif) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)");
         $stmt->execute([$titre, $lastImagePath, $imageBlob ?: null, $lastLockedPath ?: null, $lockedBlob ?: null, $type, $categorie, $sport, $description]);
+        @file_put_contents($logFile, "$logCtx OK_V2 id=" . $db->lastInsertId() . "\n", FILE_APPEND);
     } catch (Throwable $e2) {
+        @file_put_contents($logFile, "$logCtx FAIL_V2: " . mb_substr($e2->getMessage(), 0, 200) . "\n", FILE_APPEND);
         try {
-            $stmt = $db->prepare("INSERT INTO bets (titre, image_path, locked_image_path, type, categorie, sport, description) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            $stmt = $db->prepare("INSERT INTO bets (titre, image_path, locked_image_path, type, categorie, sport, description, actif) VALUES (?, ?, ?, ?, ?, ?, ?, 1)");
             $stmt->execute([$titre, $lastImagePath, $lastLockedPath ?: null, $type, $categorie, $sport, $description]);
+            @file_put_contents($logFile, "$logCtx OK_V3 id=" . $db->lastInsertId() . "\n", FILE_APPEND);
         } catch (Throwable $e3) {
+            @file_put_contents($logFile, "$logCtx FAIL_V3: " . mb_substr($e3->getMessage(), 0, 200) . "\n", FILE_APPEND);
             echo json_encode(['success' => false, 'error' => 'Erreur BDD : ' . $e3->getMessage()]);
             exit;
         }
