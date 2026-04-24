@@ -157,8 +157,8 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 
 <!-- TOPBAR MOBILE -->
 <div class="mobile-topbar">
-  <a href="index.php" class="mob-logo" style="text-decoration:none;display:flex;align-items:center;gap:0.5rem;">
-    <img src="../assets/images/logo site.png" alt="StratEdge" style="height:28px;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'">
+  <a href="/bets" class="mob-logo" style="text-decoration:none;display:flex;align-items:center;gap:0.5rem;" title="Aller à la page Les Bets (front)">
+    <img src="/assets/images/logo_site_transparent.png" alt="StratEdge" style="height:32px;" onerror="this.src='/assets/images/logo site.png';this.onerror=function(){this.style.display='none';this.nextElementSibling.style.display='inline';}">
     <span style="display:none;font-family:'Orbitron',sans-serif;font-size:1rem;color:#ff2d78;font-weight:900;">STRATEDGE</span>
   </a>
   <div class="hamburger" id="hamburger" onclick="toggleSidebar()">
@@ -172,10 +172,15 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 <!-- SIDEBAR -->
 <div class="sidebar" id="sidebar">
   <div class="sidebar-logo">
-    <div style="font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:900;color:#fff;letter-spacing:1px;">
-      <span style="color:#ff2d78;">STRAT</span>EDGE
-    </div>
-    <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text-muted);letter-spacing:2px;margin-top:0.4rem;text-transform:uppercase;">Admin Panel</div>
+    <a href="/bets" style="text-decoration:none;display:flex;align-items:center;gap:10px;transition:.2s;" title="Voir Les Bets sur le site" onmouseover="this.style.opacity='.85'" onmouseout="this.style.opacity='1'">
+      <img src="/assets/images/logo_site_transparent.png" alt="StratEdge"
+           style="height:40px;width:auto;filter:drop-shadow(0 0 8px rgba(255,45,120,0.25));"
+           onerror="this.src='/assets/images/logo site.png';this.onerror=function(){this.style.display='none';document.getElementById('sidebar-logo-fallback').style.display='block';}">
+      <div id="sidebar-logo-fallback" style="display:none;font-family:'Orbitron',sans-serif;font-size:1.1rem;font-weight:900;color:#fff;letter-spacing:1px;">
+        <span style="color:#ff2d78;">STRAT</span>EDGE
+      </div>
+    </a>
+    <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text-muted);letter-spacing:2px;margin-top:0.5rem;text-transform:uppercase;">Admin Panel</div>
   </div>
 
   <div class="sidebar-label">Navigation</div>
