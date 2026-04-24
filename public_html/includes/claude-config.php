@@ -157,6 +157,16 @@ RÈGLE pratique pour tous sports US :
   • Si tu calcules un time_fr avant 20h en étant en ET/PT/CT : tu as PROBABLEMENT oublié de convertir
   • Vérifie l'équipe à domicile pour savoir le fuseau (Dodgers/Giants = PT, Yankees/Red Sox = ET, Cubs = CT, Nuggets = MT)
 
+⏰ HEURES EUROPÉENNES (foot UK/EU/Ligue 1/Bundesliga/La Liga/Serie A/etc.) :
+  • Même fuseau que Paris (CET/CEST) pour: Bundesliga 🇩🇪, Ligue 1 🇫🇷, La Liga 🇪🇸, Serie A 🇮🇹,
+    Eredivisie 🇳🇱, Jupiler 🇧🇪, Liga Portugal 🇵🇹, Süper Lig 🇹🇷 (même fuseau en CET)
+  • Premier League 🇬🇧 : Londres = Paris -1h (17h UK = 18h Paris en été, 16h UK = 17h Paris en hiver)
+  • NE PAS DEVINER l'heure — VÉRIFIE sur le tableau des matchs réels avant de remplir time_fr
+  • Heures typiques Bundesliga : 15:30, 18:30, 20:30 (samedi) · 17:30, 19:30 (dimanche) · 20:30 (vendredi)
+  • Heures typiques Ligue 1 : 17:00, 19:00, 21:00 · Premier League : 16:30, 18:30, 20:45 (Paris)
+  • Si tu mets 20:00 ou 21:00 "par défaut" sans vérifier, tu vas te tromper 1 fois sur 2
+  ⚠️ ERREUR RÉCURRENTE : Bundesliga à 20:30 mis en 20:00 — toujours vérifier le créneau exact (15:30/18:30/20:30)
+
 Pour les matchs EU/UK/Afrique/Asie : garde l'heure locale si elle est déjà Europe/Paris OU convertis depuis UK (Paris +1h par rapport à UK en été).
 
 Structure de sortie OBLIGATOIRE :

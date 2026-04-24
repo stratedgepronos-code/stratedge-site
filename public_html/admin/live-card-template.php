@@ -186,7 +186,7 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".type-stamp.is-fun .type-stamp-label::after{content:'';display:inline-block;width:8px;height:8px;background:$accent;margin-left:10px;transform:rotate(45deg);box-shadow:0 0 10px $accent;vertical-align:middle}";
     $css .= ".combi-count{font-family:'Inter',sans-serif;font-weight:900;font-size:44px;letter-spacing:-2px;line-height:.9;color:$accent;text-shadow:0 0 14px rgba($rgb,.7);margin-left:6px}";
     $css .= ".match{position:relative;z-index:2;margin-bottom:26px;max-width:540px}";
-    $css .= ".team{font-family:'Bebas Neue',sans-serif;font-size:38px;line-height:1;letter-spacing:-.5px;color:#ede8e0;display:flex;align-items:center;gap:14px;margin:6px 0}";
+    $css .= ".team{font-family:'Bebas Neue',sans-serif;font-size:38px;line-height:1;letter-spacing:.5px;color:#ede8e0;display:flex;align-items:center;gap:14px;margin:6px 0;word-spacing:.05em}";
     $css .= ".team-logo{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(0,0,0,.6));flex-shrink:0}";
     $css .= ".flag{width:38px;height:25px;object-fit:cover;display:inline-block;margin-right:10px;border-radius:2px;flex-shrink:0}";
     $css .= ".vs{font-family:'Instrument Serif',serif;font-style:italic;font-size:28px;color:$accent;margin:0 0 0 22px;opacity:.9}";
@@ -194,7 +194,7 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".pick{position:relative;z-index:2;max-width:540px;border:1px solid rgba(237,232,224,.2);padding:16px 22px;margin-bottom:0}";
     $css .= ".pick.combi{max-width:620px;border:none;border-top:1px solid rgba(237,232,224,.25);border-bottom:1px solid rgba(237,232,224,.25);padding:16px 0}";
     $css .= ".pick-eyebrow{font-family:'Archivo Narrow',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.45;margin-bottom:10px}";
-    $css .= ".pick-main{font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1.1;letter-spacing:-.5px;color:#ede8e0;margin-bottom:6px;word-spacing:.15em;word-wrap:break-word;overflow-wrap:break-word}";
+    $css .= ".pick-main{font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1.1;letter-spacing:0;color:#ede8e0;margin-bottom:6px;word-spacing:.15em;word-wrap:break-word;overflow-wrap:break-word}";
     $css .= ".pick-accent{font-family:'Instrument Serif',serif;font-style:italic;font-size:30px;color:$accent;text-shadow:0 0 10px rgba($rgb,.5)}";
     $css .= ".pick-market{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.45;margin-top:8px}";
     $css .= ".combi-list{display:flex;flex-direction:column;gap:14px;margin-top:8px}";
@@ -215,7 +215,7 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".padlock::before{content:'';position:absolute;inset:-5px;border:1px solid rgba($rgb,.15)}";
     $css .= ".locked-text{position:relative;z-index:1;flex:1}";
     $css .= ".locked-eyebrow{font-family:'Archivo Narrow',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:$accent;margin-bottom:6px}";
-    $css .= ".locked-main{font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1.05;letter-spacing:-.5px;color:#ede8e0;word-spacing:.15em}";
+    $css .= ".locked-main{font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1.05;letter-spacing:0;color:#ede8e0;word-spacing:.15em}";
     $css .= ".locked-accent{font-family:'Instrument Serif',serif;font-style:italic;color:$accent;text-shadow:0 0 10px rgba($rgb,.5)}";
     $css .= ".locked-sub{font-family:'Instrument Serif',serif;font-style:italic;font-size:15px;color:#ede8e0;opacity:.55;margin-top:6px}";
     $css .= ".data-row{position:relative;z-index:5;display:flex;align-items:center;margin-top:24px;margin-bottom:0;max-width:720px}";
@@ -250,7 +250,7 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".player-solo{position:absolute;right:-40px;bottom:30px;width:540px;z-index:3;filter:drop-shadow(0 30px 60px rgba(0,0,0,.85));pointer-events:none}";
     $css .= ".player-solo img.main{width:100%;height:auto;display:block}";
     $css .= ".player-solo-label{position:absolute;bottom:24px;left:24px;right:130px;padding:10px 14px;background:linear-gradient(90deg,rgba(0,0,0,.88),rgba(0,0,0,.5));border-left:4px solid $accent}";
-    $css .= ".psolo-name{font-family:'Bebas Neue',sans-serif;font-size:54px;letter-spacing:-1px;line-height:.9;color:#ede8e0;text-shadow:0 2px 10px rgba(0,0,0,.95)}";
+    $css .= ".psolo-name{font-family:'Bebas Neue',sans-serif;font-size:54px;letter-spacing:0;line-height:.9;color:#ede8e0;text-shadow:0 2px 10px rgba(0,0,0,.95)}";
     $css .= ".psolo-stats{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:$accent;margin-top:6px}";
     $css .= ".opp-badge{position:absolute;top:60px;right:30px;width:96px;text-align:center}";
     $css .= ".opp-badge img{width:90px;height:90px;filter:drop-shadow(0 0 12px rgba(0,0,0,.8))}";
