@@ -381,6 +381,33 @@ function stratedge_football_logo(string $teamName): string {
         return 'https://media.api-sports.io/football/teams/' . $id . '.png';
     };
 
+    // ═══════════════════════════════════════════════════════
+    // J-LEAGUE: mapping direct slug → ESPN ID
+    // IDs ESPN vérifiés via espn.com/soccer/team/_/id/{id}
+    // On sert l'URL ESPN directe (ou le fichier local si téléchargé via Phase 3)
+    // ═══════════════════════════════════════════════════════
+    $j_league_espn = [
+        'kashima-antlers'       => 7115,
+        'kashima'               => 7115,
+        'kashiwa-reysol'        => 7476,
+        'kashiwa'               => 7476,
+        'reysol'                => 7476,
+    ];
+    if (isset($j_league_espn[$slug])) {
+        $espnId = $j_league_espn[$slug];
+        // 1) Fichier local ESPN (si déjà scrapé)
+        $localPath = __DIR__ . '/../assets/logos/football/espn-' . $espnId . '.png';
+        if (is_file($localPath) && filesize($localPath) > 500) {
+            return '/assets/logos/football/espn-' . $espnId . '.png';
+        }
+        // 2) Manifest
+        if (isset($manifest[$slug])) {
+            return '/assets/logos/football/' . $manifest[$slug];
+        }
+        // 3) URL ESPN directe (fonctionne au navigateur)
+        return 'https://a.espncdn.com/i/teamlogos/soccer/500/' . $espnId . '.png';
+    }
+
     // ⚠️ MLS/Liga MX/J1 League : les IDs api-sports sont peu fiables. Si le slug
     // est dans le manifest (Phase 3 ESPN scraper vérifié), on le sert en priorité
     // AVANT même la DB api-sports, car le fichier api-XXXX.png peut contenir le logo
