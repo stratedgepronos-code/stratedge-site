@@ -326,7 +326,10 @@ function stratedge_brand_header($date_fr, $badge_text) {
 }
 
 function stratedge_team_line($team_name, $flag, $sport, $explicit_logo = '') {
-    $team_safe = htmlspecialchars((string)$team_name, ENT_QUOTES, 'UTF-8');
+    // ⚠️ Utiliser stratedge_nbsp_esc (espaces convertis en U+00A0) pour que
+    // html2canvas / wkhtmltoimage préservent les espaces dans Bebas Neue
+    // (sinon "BOLOGNA FC" devient "BOLOGNAFC", "AS ROMA" devient "ASROMA")
+    $team_safe = stratedge_nbsp_esc((string)$team_name);
     $is_tennis = strtolower((string)$sport) === 'tennis';
     if ($is_tennis) {
         $flag_url = stratedge_flag_resolve($flag);
@@ -349,8 +352,9 @@ function stratedge_player_prop_solo($player_id, $sport, $player_name, $stats_hin
     if (!function_exists('stratedge_player_photo')) return '';
     $photo = stratedge_player_photo($player_id, $sport);
     if (!$photo) return '';
-    $name_safe = htmlspecialchars((string)$player_name, ENT_QUOTES, 'UTF-8');
-    $stats_safe = htmlspecialchars((string)$stats_hint, ENT_QUOTES, 'UTF-8');
+    // Utiliser nbsp_esc pour préserver les espaces dans les noms (LIONEL MESSI etc.)
+    $name_safe = stratedge_nbsp_esc((string)$player_name);
+    $stats_safe = stratedge_nbsp_esc((string)$stats_hint);
     $html  = "<div class='player-solo'>";
     $html .= "<img class='main' src='" . htmlspecialchars($photo, ENT_QUOTES, 'UTF-8') . "' alt=''>";
     $html .= "<div class='player-solo-label'><div class='psolo-name'>$name_safe</div>";
@@ -358,7 +362,7 @@ function stratedge_player_prop_solo($player_id, $sport, $player_name, $stats_hin
     $html .= "</div>";
     $opp_logo = stratedge_resolve_team_logo($opp_team_name, $opp_team_sport);
     if ($opp_logo) {
-        $opp_short = htmlspecialchars(mb_substr((string)$opp_team_name, 0, 3, 'UTF-8'), ENT_QUOTES, 'UTF-8');
+        $opp_short = stratedge_nbsp_esc(mb_substr((string)$opp_team_name, 0, 3, 'UTF-8'));
         $html .= "<div class='opp-badge'><img src='" . htmlspecialchars($opp_logo, ENT_QUOTES, 'UTF-8') . "' alt=''><div class='opp-label'>vs $opp_short</div></div>";
     }
     $html .= "</div>";
