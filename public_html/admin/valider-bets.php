@@ -65,43 +65,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $coteStr = !empty($bet['cote']) ? ' (cote ' . $bet['cote'] . ')' : '';
                         $roleOriginal = $bet['posted_by_role'] ?? 'superadmin';
 
-                        // Emoji et label adaptés selon le tipster
+                        // Emoji selon le tipster
                         $isTennis = ($roleOriginal === 'admin_tennis');
                         $isFun    = in_array($roleOriginal, ['admin_fun', 'admin_fun_sport']);
+                        $emoji = $isTennis ? '🎾' : ($isFun ? '🎲' : '⚽');
 
-                        if ($isTennis) {
-                            // Tennis = tweet court, pas d'analyse IA
-                            $coteAt = !empty($bet['cote']) ? ' @' . $bet['cote'] : '';
-                            $matchName = trim($bet['titre'] ?? '');
-                            $phrases = [
-                                'gagne'  => "🎾 Bet validé{$coteAt} ✅\n\n{$matchName}\n\n📲 stratedgepronos.fr",
-                                'annule' => "🎾 Bet annulé — {$matchName}\n\n📲 stratedgepronos.fr",
-                            ];
-                        } elseif ($isFun) {
-                            // Fun = tweet court, pas d'analyse IA
-                            $coteAt = !empty($bet['cote']) ? ' @' . $bet['cote'] : '';
-                            $matchName = trim($bet['titre'] ?? '');
-                            $phrases = [
-                                'gagne'  => "🎲 Bet Fun validé{$coteAt} ✅\n\n{$matchName}\n\n📲 stratedgepronos.fr",
-                                'annule' => "🎲 Bet Fun annulé — {$matchName}\n\n📲 stratedgepronos.fr",
-                            ];
-                        } else {
-                            // Multi = tweet avec analyse IA courte si dispo
-                            $tweetExplication = function_exists('genererTweetExplication')
-                                ? genererTweetExplication($bet, $resultat)
-                                : '';
-                            if ($tweetExplication !== '') {
-                                $phrases = [
-                                    'gagne'  => "✅ BET GAGNÉ{$titre}{$coteStr} ! 🎉\n\n{$tweetExplication}\n\n📲 stratedgepronos.fr",
-                                    'annule' => "↺ Bet annulé{$titre} — remboursement.\n\n{$tweetExplication}\n\n📲 stratedgepronos.fr",
-                                ];
-                            } else {
-                                $phrases = [
-                                    'gagne'  => "✅ BET GAGNÉ{$titre}{$coteStr} ! 🎉\n\nC'est passé comme prévu ! 💰\n\n📲 stratedgepronos.fr",
-                                    'annule' => "↺ Bet annulé{$titre} — remboursement.\n\n📲 stratedgepronos.fr",
-                                ];
-                            }
-                        }
+                        $matchName = trim($bet['titre'] ?? '');
+                        $coteAt    = !empty($bet['cote']) ? ' @' . $bet['cote'] : '';
+
+                        // Format simple et uniforme: bet + résultat (✅ ou ↺) + site
+                        // Pas d'analyse IA — tweet ultra-court qui laisse parler la card image
+                        $phrases = [
+                            'gagne'  => "{$emoji} {$matchName}{$coteAt} ✅\n\n📲 stratedgepronos.fr",
+                            'annule' => "{$emoji} {$matchName} — bet annulé ↺\n\n📲 stratedgepronos.fr",
+                        ];
                         $texte = $phrases[$resultat] ?? $phrases['gagne'] ?? '';
 
                         // Hashtags selon le role du tipster
