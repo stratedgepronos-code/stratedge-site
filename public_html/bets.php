@@ -68,6 +68,22 @@ $sections = [
 ];
 $availableSections = array_filter($sections, fn($s) => !empty($s['bets']));
 $firstTab = array_key_first($availableSections) ?? 'safe';
+
+// Stats live 30 derniers jours pour afficher dans le hero
+$liveStats = ['gagnes' => 0, 'perdus' => 0, 'taux' => 0];
+try {
+    $catFilter = ($typeAbo === 'tennis') ? "AND categorie = 'tennis'" : (isAdmin() || $typeAbo === 'rasstoss' ? "" : "AND categorie = 'multi'");
+    $r = $db->query("SELECT
+        SUM(CASE WHEN resultat='gagne' THEN 1 ELSE 0 END) AS g,
+        SUM(CASE WHEN resultat='perdu' THEN 1 ELSE 0 END) AS p
+        FROM bets
+        WHERE date_post > DATE_SUB(NOW(), INTERVAL 30 DAY)
+          AND resultat IN ('gagne','perdu') $catFilter")->fetch(PDO::FETCH_ASSOC);
+    $liveStats['gagnes'] = (int)($r['g'] ?? 0);
+    $liveStats['perdus'] = (int)($r['p'] ?? 0);
+    $tot = $liveStats['gagnes'] + $liveStats['perdus'];
+    $liveStats['taux'] = $tot > 0 ? round($liveStats['gagnes'] / $tot * 100) : 0;
+} catch (Throwable $e) {}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -201,9 +217,52 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
 .lightbox-close:hover{background:#ff2d78;}
 .lightbox-caption{text-align:center;margin-top:0.8rem;color:var(--txt3,#8a9bb0);font-size:0.88rem;}
 
+/* ═══ HERO V2 ═══ */
+.bets-hero-inner{max-width:1100px;margin:0 auto;}
+.hero-stats{display:flex;gap:0.7rem;justify-content:center;flex-wrap:wrap;margin-top:1.5rem;}
+.hstat{display:inline-flex;align-items:center;gap:0.5rem;padding:0.55rem 1.1rem;border-radius:12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);font-family:'Rajdhani',sans-serif;font-size:0.9rem;color:var(--txt2,#b0bec9);transition:.2s;}
+.hstat:hover{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.14);}
+.hstat strong{font-family:'Orbitron',sans-serif;font-size:1.05rem;color:var(--txt,#f0f4f8);font-weight:900;}
+.hstat .lbl{font-size:0.78rem;color:var(--txt3,#8a9bb0);text-transform:uppercase;letter-spacing:1px;}
+.hstat .dot{width:8px;height:8px;border-radius:50%;background:#ff2d78;box-shadow:0 0 12px rgba(255,45,120,0.6);animation:pulse-dot 1.5s ease-in-out infinite;}
+.hstat-live{border-color:rgba(255,45,120,0.3);background:rgba(255,45,120,0.06);}
+.hstat-live strong{color:#ff2d78;}
+.hstat-w{border-color:rgba(0,212,106,0.3);background:rgba(0,212,106,0.06);}
+.hstat-w strong{color:#00d46a;}
+
+/* ═══ BANNER ABO V2 ═══ */
+.abo-b{border-radius:16px;padding:1.4rem 1.8rem;margin-bottom:1.8rem;display:flex;align-items:center;gap:1.4rem;flex-wrap:wrap;position:relative;overflow:hidden;}
+.abo-b.ok{background:linear-gradient(135deg,rgba(0,212,106,0.12),rgba(0,212,255,0.06));border:1px solid rgba(0,212,106,0.3);}
+.abo-b.no{background:linear-gradient(135deg,rgba(255,45,120,0.1),rgba(255,107,43,0.05));border:1px solid rgba(255,45,120,0.25);}
+.abo-b-icon{font-size:2rem;flex-shrink:0;filter:drop-shadow(0 0 12px rgba(255,255,255,0.15));}
+.abo-b-content{flex:1;min-width:200px;}
+.abo-b-content h3{font-family:'Orbitron',sans-serif;font-size:1rem;margin-bottom:0.3rem;color:var(--txt,#f0f4f8);}
+.abo-b-content p{color:var(--txt2,#b0bec9);font-size:0.92rem;}
+.abo-tag{font-weight:700;font-family:'Space Mono',monospace;font-size:0.85rem;}
+
+/* ═══ EMPTY STATE V2 ═══ */
+.no-bets{text-align:center;padding:4rem 2rem;background:var(--card,#111827);border-radius:18px;border:1px solid var(--border,rgba(255,45,120,0.15));}
+.no-bets-icon{font-size:3.5rem;margin-bottom:1.2rem;opacity:0.7;animation:floaty 3s ease-in-out infinite;}
+@keyframes floaty{0%,100%{transform:translateY(0);}50%{transform:translateY(-8px);}}
+.no-bets h3{font-family:'Orbitron',sans-serif;font-size:1.4rem;margin-bottom:0.6rem;color:var(--txt,#f0f4f8);}
+.no-bets p{color:var(--txt3,#8a9bb0);font-size:0.95rem;max-width:420px;margin:0 auto 1.5rem;line-height:1.5;}
+.no-bets-btn{display:inline-flex;align-items:center;gap:0.5rem;background:rgba(29,155,240,0.12);color:#1d9bf0;padding:0.75rem 1.5rem;border-radius:10px;border:1px solid rgba(29,155,240,0.3);text-decoration:none;font-weight:700;font-size:0.9rem;transition:.2s;}
+.no-bets-btn:hover{background:rgba(29,155,240,0.2);border-color:#1d9bf0;}
+
 /* Responsive */
 @media(max-width:768px){
   .bets-grid{grid-template-columns:1fr;gap:1rem;}
+  .hero-stats{gap:0.5rem;}
+  .hstat{padding:0.45rem 0.9rem;font-size:0.82rem;}
+  .hstat strong{font-size:0.95rem;}
+  .hstat .lbl{font-size:0.7rem;letter-spacing:0.5px;}
+  .abo-b{padding:1.1rem 1.2rem;gap:1rem;}
+  .abo-b-icon{font-size:1.6rem;}
+  .abo-b-content h3{font-size:0.92rem;}
+  .abo-b-content p{font-size:0.85rem;}
+  .no-bets{padding:3rem 1.5rem;}
+  .no-bets-icon{font-size:2.8rem;}
+  .no-bets h3{font-size:1.2rem;}
   .tabs-bar{
     border-radius:10px;
     overflow-x:auto;
@@ -259,33 +318,55 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
 <?php endif; ?>
 
 <div class="bets-hero">
-  <div class="bets-tag">Pronos en cours</div>
-  <h1 class="bets-title">Les <span>Bets</span></h1>
-  <p class="bets-sub">Nos analyses et cards de bets. Abonnement requis pour le contenu complet.</p>
-  <?php if ($nbTotal > 0): ?>
-  <div class="bets-counter"><span class="pulse"></span> <?= $nbTotal ?> bet<?= $nbTotal > 1 ? 's' : '' ?> actif<?= $nbTotal > 1 ? 's' : '' ?></div>
-  <?php endif; ?>
+  <div class="bets-hero-inner">
+    <div class="bets-tag">⚡ Pronos en cours</div>
+    <h1 class="bets-title">Les <span>Bets</span></h1>
+    <p class="bets-sub">Nos analyses détaillées, mises à jour en temps réel.</p>
+    <div class="hero-stats">
+      <?php if ($nbTotal > 0): ?>
+      <div class="hstat hstat-live"><span class="dot"></span> <strong><?= $nbTotal ?></strong> <span class="lbl">en cours</span></div>
+      <?php endif; ?>
+      <?php if ($liveStats['gagnes'] + $liveStats['perdus'] > 0): ?>
+      <div class="hstat"><strong><?= $liveStats['taux'] ?>%</strong> <span class="lbl">de réussite · 30j</span></div>
+      <div class="hstat hstat-w"><strong>+<?= $liveStats['gagnes'] ?></strong> <span class="lbl">gagnés</span></div>
+      <?php endif; ?>
+    </div>
+  </div>
 </div>
 
 <div class="bets-wrap">
   <?php if ($hasAcces): ?>
-  <div class="abo-b ok"><div><h3>Acces complet debloque</h3>
-    <p><?php if (isAdmin() && $membre && $abonnement === null): ?><span style="color:#00d4ff;font-weight:700;">Acces admin</span>
-    <?php elseif (!empty($abonnement['type']) && $abonnement['type']==='rasstoss'): ?><span style="color:#ffd700;font-weight:700;">Rass-Toss — Life Time</span>
-    <?php elseif (!empty($abonnement['type']) && $abonnement['type']==='daily'): ?>Daily — expire au prochain bet
-    <?php elseif (!empty($abonnement['type']) && $abonnement['type']==='weekend'): ?>Week-End — expire le <?= date('d/m/Y a H:i',strtotime($abonnement['date_fin'])) ?>
-    <?php elseif (!empty($abonnement['type'])): ?>Weekly 7j — expire le <?= date('d/m/Y a H:i',strtotime($abonnement['date_fin'])) ?>
-    <?php else: ?><span style="color:#00d4ff;font-weight:700;">Acces admin</span><?php endif; ?></p>
-  </div><span style="font-size:1.4rem;">🔓</span></div>
+  <div class="abo-b ok">
+    <div class="abo-b-icon">🔓</div>
+    <div class="abo-b-content">
+      <h3>Accès complet débloqué</h3>
+      <p><?php if (isAdmin() && $membre && $abonnement === null): ?><span class="abo-tag" style="color:#00d4ff;">Accès admin</span>
+      <?php elseif (!empty($abonnement['type']) && $abonnement['type']==='rasstoss'): ?><span class="abo-tag" style="color:#ffd700;">Rass-Toss · Life Time</span>
+      <?php elseif (!empty($abonnement['type']) && $abonnement['type']==='daily'): ?>Daily · expire au prochain bet
+      <?php elseif (!empty($abonnement['type']) && $abonnement['type']==='weekend'): ?>Week-End · expire le <?= date('d/m/Y à H:i',strtotime($abonnement['date_fin'])) ?>
+      <?php elseif (!empty($abonnement['type'])): ?>Weekly 7j · expire le <?= date('d/m/Y à H:i',strtotime($abonnement['date_fin'])) ?>
+      <?php else: ?><span class="abo-tag" style="color:#00d4ff;">Accès admin</span><?php endif; ?></p>
+    </div>
+  </div>
   <?php else: ?>
-  <div class="abo-b no"><div><h3>Contenu verrouille</h3><p>Souscris pour acceder aux analyses completes des bets.</p></div>
+  <div class="abo-b no">
+    <div class="abo-b-icon">🔒</div>
+    <div class="abo-b-content">
+      <h3>Contenu verrouillé</h3>
+      <p>Souscris pour accéder aux analyses complètes des bets.</p>
+    </div>
     <?php if (!isLoggedIn()): ?><a href="login.php" class="btn-sub">Se connecter →</a>
     <?php else: ?><a href="/#pricing" class="btn-sub">Voir les formules →</a><?php endif; ?>
   </div>
   <?php endif; ?>
 
   <?php if (empty($bets)): ?>
-  <div class="no-bets"><div class="big">🎯</div><h3>Aucun bet disponible</h3><p>Les nouvelles analyses arrivent bientot, reste connecte !</p></div>
+  <div class="no-bets">
+    <div class="no-bets-icon">⏳</div>
+    <h3>Aucun bet en cours</h3>
+    <p>Les analyses sont en préparation. Reviens bientôt — on tweete dès qu'un nouveau bet est dispo.</p>
+    <a href="https://twitter.com/StratEdgePronos" target="_blank" rel="noopener" class="no-bets-btn">📲 Suivre sur X / Twitter</a>
+  </div>
   <?php else: ?>
 
   <!-- Onglets Safe | Live | Fun -->
