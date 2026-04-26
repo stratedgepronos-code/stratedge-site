@@ -302,6 +302,58 @@ table.mt-table{width:100%;border-collapse:collapse;}
 .archive-card.open .archive-detail{max-height:2000px;}
 .archive-toggle{font-size:0.75rem;color:var(--txt3);margin-top:0.5rem;text-align:center;}
 
+/* ═══ MOBILE STACKED CARDS — historique étapes ═══ */
+.mt-mobile-cards{display:none;}
+.mt-step-card{
+  background:rgba(255,255,255,0.02);
+  border:1px solid rgba(255,255,255,0.08);
+  border-radius:12px;
+  padding:1rem 1.1rem;
+  margin-bottom:0.75rem;
+  position:relative;
+  overflow:hidden;
+}
+.mt-step-card.is-gagne{border-color:rgba(0,212,106,0.25);background:rgba(0,212,106,0.04);}
+.mt-step-card.is-perdu{border-color:rgba(255,68,68,0.25);background:rgba(255,68,68,0.04);}
+.mt-step-card.is-annule{border-color:rgba(255,193,7,0.25);background:rgba(255,193,7,0.04);}
+.mt-step-card-header{
+  display:flex;justify-content:space-between;align-items:flex-start;
+  margin-bottom:0.6rem;gap:0.5rem;
+}
+.mt-step-num{
+  font-family:'Orbitron',sans-serif;font-weight:900;
+  font-size:0.85rem;letter-spacing:1px;
+  background:rgba(255,45,120,0.15);color:#ff2d78;
+  padding:0.25rem 0.6rem;border-radius:6px;flex-shrink:0;
+}
+.mt-step-result{
+  font-family:'Space Mono',monospace;font-size:0.7rem;font-weight:700;
+  padding:0.25rem 0.55rem;border-radius:5px;letter-spacing:0.5px;flex-shrink:0;
+}
+.mt-step-match{
+  font-family:'Rajdhani',sans-serif;font-size:1.05rem;font-weight:700;
+  color:var(--txt,#f0f4f8);line-height:1.25;margin-bottom:0.4rem;
+}
+.mt-step-prono{
+  display:flex;align-items:center;gap:0.4rem;
+  font-size:0.92rem;color:#39ff14;font-weight:700;
+  margin-bottom:0.7rem;
+}
+.mt-step-prono::before{content:'🎯';font-size:0.9rem;}
+.mt-step-meta{
+  display:flex;flex-wrap:wrap;gap:0.4rem 0.9rem;
+  font-family:'Space Mono',monospace;font-size:0.72rem;
+  color:var(--txt3,#8a9bb0);margin-bottom:0.6rem;
+}
+.mt-step-meta strong{color:var(--txt2,#b0bec9);font-weight:700;}
+.mt-step-footer{
+  display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;
+  padding-top:0.6rem;border-top:1px solid rgba(255,255,255,0.06);
+}
+.mt-step-foot-cell{display:flex;flex-direction:column;gap:0.15rem;}
+.mt-step-foot-lbl{font-family:'Space Mono',monospace;font-size:0.6rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--txt3,#8a9bb0);}
+.mt-step-foot-val{font-family:'Rajdhani',sans-serif;font-size:0.95rem;font-weight:700;}
+
 /* Sur mobile : montante en cours ou message "aucune montante" en premier */
 @media(max-width:768px){
   .mt-mobile-flex{display:flex;flex-direction:column;}
@@ -321,8 +373,10 @@ table.mt-table{width:100%;border-collapse:collapse;}
   .mt-stats{grid-template-columns:1fr 1fr;gap:0.7rem;}
   .stat-val{font-size:1.2rem;}
   .mt-current{padding:1rem;}
-  .mt-table-wrap{overflow-x:auto;}
-  .mt-table{min-width:600px;}
+  /* TABLE → CARDS sur mobile : on cache la table et on affiche les cards stack */
+  .mt-table-wrap table.mt-table{display:none;}
+  .mt-table-wrap .mt-mobile-cards{display:block;padding:0.6rem;}
+  .mt-table-wrap{overflow:visible;}
   .stake-promo-row{grid-template-columns:1fr;}
   .stake-banner,.pack-banner{min-height:auto;}
   .stake-banner{text-align:center;}
@@ -486,6 +540,47 @@ table.mt-table{width:100%;border-collapse:collapse;}
     <?php endforeach; ?>
     </tbody>
   </table>
+
+  <!-- Mobile cards (visible uniquement <= 768px) -->
+  <div class="mt-mobile-cards">
+    <?php foreach (array_reverse($steps) as $s):
+      $r = $s['resultat'] ?? 'en_cours';
+      $resClass = ['gagne'=>'is-gagne','perdu'=>'is-perdu','annule'=>'is-annule','en_cours'=>''][$r] ?? '';
+      $resColors = ['gagne'=>'background:rgba(0,212,106,0.18);color:#00d46a;','perdu'=>'background:rgba(255,68,68,0.18);color:#ff4444;','annule'=>'background:rgba(255,193,7,0.18);color:#ffc107;','en_cours'=>'background:rgba(255,255,255,0.08);color:#b0bec9;'][$r] ?? '';
+      $resLabel = ['gagne'=>'✅ GAGNÉ','perdu'=>'❌ PERDU','annule'=>'↺ ANNULÉ','en_cours'=>'⏳ EN COURS'][$r] ?? strtoupper($r);
+    ?>
+    <div class="mt-step-card <?= $resClass ?>">
+      <div class="mt-step-card-header">
+        <div class="mt-step-num">STEP <?= (int)$s['step_number'] ?></div>
+        <div class="mt-step-result" style="<?= $resColors ?>"><?= $resLabel ?></div>
+      </div>
+      <div class="mt-step-match"><?= clean($s['match_desc']) ?: '—' ?></div>
+      <?php if (!empty(trim($s['pronostic'] ?? ''))): ?>
+        <div class="mt-step-prono"><?= clean($s['pronostic']) ?></div>
+      <?php endif; ?>
+      <div class="mt-step-meta">
+        <?php if (!empty(trim($s['competition'] ?? ''))): ?><span>🏆 <strong><?= clean($s['competition']) ?></strong></span><?php endif; ?>
+        <?php if (!empty($s['date_match'])): ?><span>📅 <strong><?= date('d/m', strtotime($s['date_match'])) ?></strong><?= !empty($s['heure']) ? ' ' . clean($s['heure']) : '' ?></span><?php endif; ?>
+        <span>📊 cote <strong style="color:#00d4ff;"><?= number_format((float)$s['cote'], 2) ?></strong></span>
+        <span>💰 <strong style="color:#ffc107;"><?= number_format((float)$s['mise'], 2) ?>€</strong></span>
+      </div>
+      <div class="mt-step-footer">
+        <div class="mt-step-foot-cell">
+          <span class="mt-step-foot-lbl">Gain / Perte</span>
+          <span class="mt-step-foot-val <?= ($s['gain_perte'] ?? 0) >= 0 ? 'profit-pos' : 'profit-neg' ?>">
+            <?php if ($s['gain_perte'] !== null): ?><?= ($s['gain_perte'] >= 0 ? '+' : '') . number_format((float)$s['gain_perte'], 2) ?>€<?php else: ?>—<?php endif; ?>
+          </span>
+        </div>
+        <div class="mt-step-foot-cell">
+          <span class="mt-step-foot-lbl">Bankroll après</span>
+          <span class="mt-step-foot-val" style="color:#00d4ff;">
+            <?= $s['bankroll_apres'] !== null ? number_format((float)$s['bankroll_apres'], 2) . '€' : '—' ?>
+          </span>
+        </div>
+      </div>
+    </div>
+    <?php endforeach; ?>
+  </div>
 </div>
 
 <?php endif; ?>
@@ -541,6 +636,47 @@ table.mt-table{width:100%;border-collapse:collapse;}
           <?php endforeach; ?>
           </tbody>
         </table>
+
+        <!-- Mobile cards pour cette archive -->
+        <div class="mt-mobile-cards">
+          <?php foreach ($arc['steps'] as $as):
+            $r = $as['resultat'] ?? 'en_cours';
+            $resClass = ['gagne'=>'is-gagne','perdu'=>'is-perdu','annule'=>'is-annule','en_cours'=>''][$r] ?? '';
+            $resColors = ['gagne'=>'background:rgba(0,212,106,0.18);color:#00d46a;','perdu'=>'background:rgba(255,68,68,0.18);color:#ff4444;','annule'=>'background:rgba(255,193,7,0.18);color:#ffc107;','en_cours'=>'background:rgba(255,255,255,0.08);color:#b0bec9;'][$r] ?? '';
+            $resLabel = ['gagne'=>'✅ GAGNÉ','perdu'=>'❌ PERDU','annule'=>'↺ ANNULÉ','en_cours'=>'⏳ EN COURS'][$r] ?? strtoupper($r);
+          ?>
+          <div class="mt-step-card <?= $resClass ?>">
+            <div class="mt-step-card-header">
+              <div class="mt-step-num">STEP <?= (int)$as['step_number'] ?></div>
+              <div class="mt-step-result" style="<?= $resColors ?>"><?= $resLabel ?></div>
+            </div>
+            <div class="mt-step-match"><?= clean($as['match_desc']) ?: '—' ?></div>
+            <?php if (!empty(trim($as['pronostic'] ?? ''))): ?>
+              <div class="mt-step-prono"><?= clean($as['pronostic']) ?></div>
+            <?php endif; ?>
+            <div class="mt-step-meta">
+              <?php if (!empty(trim($as['competition'] ?? ''))): ?><span>🏆 <strong><?= clean($as['competition']) ?></strong></span><?php endif; ?>
+              <?php if (!empty($as['date_match'])): ?><span>📅 <strong><?= date('d/m', strtotime($as['date_match'])) ?></strong></span><?php endif; ?>
+              <span>📊 cote <strong style="color:#00d4ff;"><?= number_format((float)$as['cote'], 2) ?></strong></span>
+              <span>💰 <strong style="color:#ffc107;"><?= number_format((float)$as['mise'], 2) ?>€</strong></span>
+            </div>
+            <div class="mt-step-footer">
+              <div class="mt-step-foot-cell">
+                <span class="mt-step-foot-lbl">Gain / Perte</span>
+                <span class="mt-step-foot-val <?= ($as['gain_perte'] ?? 0) >= 0 ? 'profit-pos' : 'profit-neg' ?>">
+                  <?= $as['gain_perte'] !== null ? (($as['gain_perte'] >= 0 ? '+' : '') . number_format((float)$as['gain_perte'], 2) . '€') : '—' ?>
+                </span>
+              </div>
+              <div class="mt-step-foot-cell">
+                <span class="mt-step-foot-lbl">Bankroll après</span>
+                <span class="mt-step-foot-val" style="color:#00d4ff;">
+                  <?= $as['bankroll_apres'] !== null ? number_format((float)$as['bankroll_apres'], 2) . '€' : '—' ?>
+                </span>
+              </div>
+            </div>
+          </div>
+          <?php endforeach; ?>
+        </div>
       </div>
       <?php endif; ?>
     </div>
