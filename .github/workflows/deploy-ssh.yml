@@ -36,6 +36,9 @@ jobs:
               --filter 'P includes/smtp-config.php' \
               --filter 'P includes/football_data_config.php' \
               --filter 'P includes/claude-config.local.php' \
+              --filter 'P admin/edge-finder/lib/config.php' \
+              --filter 'P admin/edge-finder/data/imports/' \
+              --filter 'P admin/edge-finder/data/import.log' \
               --timeout=60 \
               -e "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p ${{ env.SSH_PORT }}" \
               public_html/ \
