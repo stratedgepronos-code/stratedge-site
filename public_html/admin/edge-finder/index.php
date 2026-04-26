@@ -8,7 +8,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/lib/db.php';
 
 // Auth super-admin via la session existante du site (visible uniquement par toi)
-require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../../includes/auth.php';
 requireSuperAdmin();
 
 // =============================================================================
