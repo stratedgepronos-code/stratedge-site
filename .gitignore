@@ -43,3 +43,8 @@ public_html/slot-state.json
 # Clés secrètes (hors Git)
 config-keys.php
 public_html/config-keys.php
+
+# Edge Finder dashboard — secrets et runtime
+public_html/admin/edge-finder/lib/config.php
+public_html/admin/edge-finder/data/imports/
+public_html/admin/edge-finder/data/import.log
