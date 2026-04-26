@@ -275,12 +275,6 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
       <span>🎁</span> GiveAway
     </a>
 
-    <?php if (isSuperAdmin()): ?>
-    <a href="vault.php" <?= ($pageActive==='vault') ?'class="active"':'' ?> style="color:rgba(245,200,66,0.9);">
-      <span>🔐</span> Coffre-Fort
-    </a>
-    <?php endif; ?>
-
     <?php $msgOpen = in_array($pageActive, ['messagerie-interne','messages']); ?>
     <div class="nav-group <?= $msgOpen ? 'open' : '' ?>" data-group="messagerie">
       <button type="button" class="nav-group-toggle" onclick="toggleNavGroup(this)">
@@ -319,13 +313,6 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
         </a>
       </div>
     </div>
-
-    <!-- Command Center -->
-    <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
-    <a href="scanner.php" class="nav-item <?= ($pageActive==='scanner') ?'active':'' ?>" style="color:#00d4ff;">
-      <span>⚡</span> Command Center
-    </a>
-    <?php endif; ?>
 
     <!-- Edge Finder (super admin uniquement) -->
     <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
