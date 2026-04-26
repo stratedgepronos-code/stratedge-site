@@ -326,6 +326,13 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
       <span>⚡</span> Command Center
     </a>
     <?php endif; ?>
+
+    <!-- Edge Finder (super admin uniquement) -->
+    <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
+    <a href="edge-finder/" class="nav-item <?= ($pageActive==='edge-finder') ?'active':'' ?>" style="color:#ff2d78;">
+      <span>🎯</span> Edge Finder
+    </a>
+    <?php endif; ?>
   </nav>
 
   <div class="sidebar-footer">

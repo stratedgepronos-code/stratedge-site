@@ -19,10 +19,10 @@ require_once __DIR__ . '/../../includes/auth.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-// Auth via session admin
-if (!isAdmin()) {
+// Auth via session admin (super-admin uniquement)
+if (!isSuperAdmin()) {
     http_response_code(401);
-    echo json_encode(['error' => 'Not authenticated']);
+    echo json_encode(['error' => 'Not authenticated (super-admin required)']);
     exit;
 }
 
