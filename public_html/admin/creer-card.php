@@ -1011,7 +1011,7 @@ async function posterBetFromCard() {
 
     if (resp.ok && data.success) {
       if (statusEl) { statusEl.textContent = 'Bet posté avec succès ! Redirection…'; statusEl.style.color = '#00c864'; }
-      setTimeout(function() { window.location.href = 'poster-bet.php?posted_from_card=1'; }, 1200);
+      setTimeout(function() { window.location.href = 'valider-bets.php?msg=' + encodeURIComponent('Bet posté depuis Créer une Card ✅') + '&msg_type=success'; }, 1200);
     } else {
       if (btn) { btn.disabled = false; btn.textContent = '🚀 Poster le bet'; }
       if (statusEl) { statusEl.textContent = data.error || 'Erreur lors de l\'envoi.'; statusEl.style.color = '#ff6b9d'; }
