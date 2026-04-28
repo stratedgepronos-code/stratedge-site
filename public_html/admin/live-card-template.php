@@ -391,7 +391,15 @@ function _stratedge_gradient_dark($hex) {
 /** htmlspecialchars + remplace espaces normaux par U+00A0 (non-breaking space littéral)
     → html2canvas préserve U+00A0 alors qu'il peut collapse &nbsp; entity */
 function stratedge_nbsp_esc($text) {
-    $safe = htmlspecialchars((string)$text, ENT_QUOTES, 'UTF-8');
+    $text = (string)$text;
+    // Pré-nettoyage: corriger les écarts d'espacement causés par l'IA
+    // "12 + rebonds" → "12+ rebonds" (le + reste collé au chiffre)
+    // "11 .5" → "11.5" (point décimal jamais isolé)
+    // "Plus de  10" → "Plus de 10" (double espace → simple)
+    $text = preg_replace('/(\d)\s+\+/', '$1+', $text);
+    $text = preg_replace('/(\d)\s+\.(\d)/', '$1.$2', $text);
+    $text = preg_replace('/\s{2,}/', ' ', $text);
+    $safe = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
     // Remplacer espaces simples par U+00A0 LITTÉRAL (pas l'entité HTML)
     return str_replace(' ', "\xC2\xA0", $safe);
 }
