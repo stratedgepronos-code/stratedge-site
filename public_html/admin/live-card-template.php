@@ -161,7 +161,7 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".brand-logo{height:36px;width:auto;display:block;filter:drop-shadow(0 0 8px rgba(0,0,0,.7))}";
     $css .= ".brand-line{width:46px;height:1px;background:#ede8e0;opacity:.35;margin-top:10px}";
     $css .= ".top-right{text-align:right}";
-    $css .= ".date-meta{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.7;margin-bottom:14px;font-weight:700}";
+    $css .= ".date-meta{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;word-spacing:6px;text-transform:uppercase;color:#ede8e0;opacity:.7;margin-bottom:14px;font-weight:700}";
     $css .= ".badge-sport{display:inline-flex;align-items:center;font-family:'Archivo Narrow',sans-serif;font-size:11px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:$accent;background:rgba($rgb,.1);border:1.5px solid $accent;padding:7px 14px;border-radius:2px;box-shadow:0 0 6px rgba($rgb,.35);text-shadow:0 0 4px rgba($rgb,.6);white-space:nowrap}";
     $css .= ".badge-sport::before{content:'';width:6px;height:6px;border-radius:50%;background:$accent;box-shadow:0 0 10px $accent;margin-right:10px;flex-shrink:0}";
     $css .= ".kicker-wrap{position:relative;z-index:5;margin-bottom:0;line-height:0}";
@@ -172,7 +172,7 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".time-svg-wrap{display:inline-block;height:74px;line-height:0}";
     $css .= ".time-svg{height:74px;width:auto;display:block;overflow:visible}";
     $css .= ".time-accent{color:$accent;text-shadow:0 0 18px rgba($rgb,.55), 0 0 6px rgba($rgb,.8), 0 2px 0 rgba(255,255,255,.15)}";
-    $css .= ".time-label{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.55;padding-bottom:14px;margin-left:14px;white-space:nowrap}";
+    $css .= ".time-label{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;word-spacing:6px;text-transform:uppercase;color:#ede8e0;opacity:.55;padding-bottom:14px;margin-left:14px;white-space:nowrap}";
     $css .= ".type-stamp{position:relative;z-index:5;display:inline-flex;align-items:center;gap:14px;padding:14px 22px;background:rgba($rgb,.12);border:2px solid $accent;border-radius:4px;margin:18px 0 22px 0}";
     $css .= ".type-stamp-icon{width:36px;height:36px;display:flex;align-items:center;justify-content:center;color:$accent;filter:drop-shadow(0 0 8px rgba($rgb,.6))}";
     $css .= ".type-stamp-text{display:flex;flex-direction:column;gap:2px}";
@@ -190,13 +190,13 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".team-logo{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(0,0,0,.6));flex-shrink:0}";
     $css .= ".flag{width:38px;height:25px;object-fit:cover;display:inline-block;margin-right:10px;border-radius:2px;flex-shrink:0}";
     $css .= ".vs{font-family:'Instrument Serif',serif;font-style:italic;font-size:28px;color:$accent;margin:0 0 0 22px;opacity:.9}";
-    $css .= ".comp{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.5;margin-top:10px;padding-left:22px}";
+    $css .= ".comp{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;word-spacing:6px;text-transform:uppercase;color:#ede8e0;opacity:.5;margin-top:10px;padding-left:22px}";
     $css .= ".pick{position:relative;z-index:2;max-width:540px;border:1px solid rgba(237,232,224,.2);padding:16px 22px;margin-bottom:0}";
     $css .= ".pick.combi{max-width:620px;border:none;border-top:1px solid rgba(237,232,224,.25);border-bottom:1px solid rgba(237,232,224,.25);padding:16px 0}";
     $css .= ".pick-eyebrow{font-family:'Archivo Narrow',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.45;margin-bottom:10px}";
     $css .= ".pick-main{font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1.1;letter-spacing:0;color:#ede8e0;margin-bottom:6px;word-spacing:.15em;word-wrap:break-word;overflow-wrap:break-word}";
     $css .= ".pick-accent{font-family:'Instrument Serif',serif;font-style:italic;font-size:30px;color:$accent;text-shadow:0 0 10px rgba($rgb,.5)}";
-    $css .= ".pick-market{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.45;margin-top:8px}";
+    $css .= ".pick-market{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;word-spacing:6px;text-transform:uppercase;color:#ede8e0;opacity:.45;margin-top:8px}";
     $css .= ".combi-list{display:flex;flex-direction:column;gap:14px;margin-top:8px}";
     $css .= ".combi-row{display:flex;flex-direction:column;padding:10px 0;border-top:1px dashed rgba($rgb,.2);gap:4px}";
     $css .= ".combi-row:first-child{border-top:none;padding-top:4px}";
@@ -214,7 +214,7 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".padlock{position:relative;width:48px;height:48px;flex-shrink:0;margin-right:28px;border:1.5px solid $accent;display:flex;align-items:center;justify-content:center;border-radius:2px;box-shadow:0 0 14px rgba($rgb,.5), inset 0 0 8px rgba($rgb,.15)}";
     $css .= ".padlock::before{content:'';position:absolute;inset:-5px;border:1px solid rgba($rgb,.15)}";
     $css .= ".locked-text{position:relative;z-index:1;flex:1}";
-    $css .= ".locked-eyebrow{font-family:'Archivo Narrow',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:$accent;margin-bottom:6px}";
+    $css .= ".locked-eyebrow{font-family:'Archivo Narrow',sans-serif;font-size:10px;letter-spacing:3px;word-spacing:6px;text-transform:uppercase;color:$accent;margin-bottom:6px}";
     $css .= ".locked-main{font-family:'Bebas Neue',sans-serif;font-size:28px;line-height:1.05;letter-spacing:0;color:#ede8e0;word-spacing:.15em}";
     $css .= ".locked-accent{font-family:'Instrument Serif',serif;font-style:italic;color:$accent;text-shadow:0 0 10px rgba($rgb,.5)}";
     $css .= ".locked-sub{font-family:'Instrument Serif',serif;font-style:italic;font-size:15px;color:#ede8e0;opacity:.55;margin-top:6px}";
@@ -251,7 +251,7 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".player-solo img.main{width:100%;height:auto;display:block}";
     $css .= ".player-solo-label{position:absolute;bottom:24px;left:24px;right:130px;padding:10px 14px;background:linear-gradient(90deg,rgba(0,0,0,.88),rgba(0,0,0,.5));border-left:4px solid $accent}";
     $css .= ".psolo-name{font-family:'Bebas Neue',sans-serif;font-size:54px;letter-spacing:0;line-height:.9;color:#ede8e0;text-shadow:0 2px 10px rgba(0,0,0,.95)}";
-    $css .= ".psolo-stats{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;text-transform:uppercase;color:$accent;margin-top:6px}";
+    $css .= ".psolo-stats{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;word-spacing:8px;text-transform:uppercase;color:$accent;margin-top:6px}";
     $css .= ".opp-badge{position:absolute;top:60px;right:30px;width:96px;text-align:center}";
     $css .= ".opp-badge img{width:90px;height:90px;filter:drop-shadow(0 0 12px rgba(0,0,0,.8))}";
     $css .= ".opp-label{font-family:'Archivo Narrow',sans-serif;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:$accent;margin-top:6px}";
