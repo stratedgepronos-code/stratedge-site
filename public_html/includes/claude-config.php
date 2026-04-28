@@ -239,8 +239,13 @@ RÈGLES CHAMPS :
   → pick_main + pick_accent doivent former UNE phrase NATURELLE lue en entier
   ⚠️ NE PAS dupliquer le marché. Si pick_main = "Mbappé marque" → pick_accent = "n'importe quand." (PAS "& Marquer dans le match.")
   ⚠️ LONGUEUR MAX: 30-40 caractères au total (pick_main + pick_accent ensemble). Si dépasse, raccourcis.
-  EXEMPLES OK: "Victoire PSG & BTTS Oui." | "Mbappé marque n'importe quand." | "Sinner remporte le set 2." | "Plus de 2.5 buts dans le match." | "Denver couvre +4.5 points."
-  EXEMPLES KO: "Mbappé marque & Marquer dans le match." (redondant) | "BTTS BTTS Oui." (duplique)
+  ⚠️ FORMAT CHIFFRE : utilise TOUJOURS la notation "+X.5" (signe avant) → "+11.5 rebonds", "+2.5 buts", "+4.5 points".
+     ❌ JAMAIS "12+ rebonds" ou "11.5+ rebonds" (signe après) — c'est ambigu.
+     ✅ "+11.5 rebonds" / "+2.5 buts" / "+1.5 cartons" / "+4.5 points"
+  ⚠️ NE PAS AJOUTER de mots de contexte temporel : pas de "ce soir", "aujourd'hui", "ce match", "dans cette rencontre".
+     Le pick_accent se limite STRICTEMENT au pronostic. Le contexte est ailleurs (date, kicker).
+  EXEMPLES OK: "Victoire PSG & BTTS Oui." | "Mbappé marque n'importe quand." | "Sinner remporte le set 2." | "+2.5 buts dans le match." | "Denver couvre +4.5 points." | "+11.5 rebonds."
+  EXEMPLES KO: "Mbappé marque & Marquer dans le match." (redondant) | "BTTS BTTS Oui." (duplique) | "12+ rebonds ce soir." (signe inversé + mot temporel) | "11.5 rebonds aujourd'hui." (mot temporel)
 - pick_market : ligne sous le pick, format "Marché · description" (ex "Marché live · Gagnant set en cours")
 - cote : string format "2.10" — DOIT correspondre EXACTEMENT à la cote fournie par l'admin (voir RÈGLE COTE)
 - confidence : entier 30-95 basé sur analyse (forme, H2H, contexte, absences)
@@ -477,6 +482,14 @@ RÈGLES (identiques à LIVE, adaptées SAFE) :
 ⚠️ RÈGLE CRITIQUE pick_main / pick_accent : doivent former UNE phrase lisible, pas une duplication.
 Le pick_accent complète ou nuance le pick_main, il ne répète PAS le marché.
 
+⚠️ FORMAT CHIFFRE OBLIGATOIRE : signe AVANT le nombre → "+11.5 rebonds", "+2.5 buts", "+4.5 points".
+   ❌ JAMAIS "12+ rebonds" ou "11.5+ buts" (signe après).
+   ✅ TOUJOURS "+X.5 [stat]" pour les overs / handicaps positifs.
+
+⚠️ INTERDIT — mots de contexte temporel dans pick_accent :
+   Pas de "ce soir", "aujourd'hui", "ce match", "dans cette rencontre", "ce duel".
+   Le pick_accent se limite STRICTEMENT au pronostic. Le contexte est ailleurs (date, kicker).
+
 EXEMPLES CORRECTS :
   ✅ Buteur : pick_main="Mbappé marque" + pick_accent="n'importe quand."
   ✅ Buteur : pick_main="Haaland buteur" + pick_accent="dès la 1ère mi-temps."
@@ -485,11 +498,14 @@ EXEMPLES CORRECTS :
   ✅ Handicap : pick_main="Real -1 HC" + pick_accent="à domicile."
   ✅ Set : pick_main="Djokovic gagne" + pick_accent="le set 2."
   ✅ NBA : pick_main="Denver couvre" + pick_accent="+4.5 points."
+  ✅ NBA Player : pick_main="Jokic dépasse" + pick_accent="+11.5 rebonds."
 
 EXEMPLES INTERDITS (duplication/incohérence):
   ❌ pick_main="Mbappé marque" + pick_accent="& Marquer dans le match." (redondant + & bizarre)
   ❌ pick_main="Buteur Haaland" + pick_accent="buteur dans le match." (duplique "buteur")
   ❌ pick_main="BTTS" + pick_accent="BTTS Oui." (duplique)
+  ❌ pick_main="Jokic dépasse" + pick_accent="12+ rebonds." (signe inversé, doit être "+12.5 rebonds.")
+  ❌ pick_main="Jokic dépasse" + pick_accent="11.5 rebonds ce soir." (mot temporel "ce soir")
 
 LONGUEUR : pick_main + pick_accent doit tenir en ~30-40 caractères TOTAL.
 Si tu dépasses, raccourcis pick_accent (ex: "dans le match." → "dans le 1.").
