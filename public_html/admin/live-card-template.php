@@ -481,14 +481,6 @@ function stratedge_normalize_data($d, $type) {
         elseif ($type === 'fun') $badge_text .= ' · Fun';
     }
 
-    return [
-        'tipster' => $tipster,
-        'type' => $type,
-        'sport' => $sport,
-        'badge_text' => $badge_text,
-        'n_edition' => $d['n_edition'] ?? date('Ymd'),
-        'ghost' => $d['ghost'] ?? strtoupper(substr((string)$sport, 0, 3)),
-        'kicker' => $d['kicker'] ?? 'Dossier du jour.',
     // Cote: si combi (matches multiples) et cote globale absente/invalide,
     // calcule automatiquement le produit des cotes individuelles
     $cote_final = $d['cote'] ?? $d['cote_totale'] ?? $d['odds'] ?? '';
@@ -505,11 +497,16 @@ function stratedge_normalize_data($d, $type) {
             $cote_final = number_format($produit, 2, '.', '');
         }
     }
-    if ($cote_num <= 1.0 && empty($cote_final)) $cote_final = '1.50';
+    if (empty($cote_final) || (float)$cote_final <= 1.0) $cote_final = '1.50';
 
     return [
-        'sport' => $sport,
         'tipster' => $tipster,
+        'type' => $type,
+        'sport' => $sport,
+        'badge_text' => $badge_text,
+        'n_edition' => $d['n_edition'] ?? date('Ymd'),
+        'ghost' => $d['ghost'] ?? strtoupper(substr((string)$sport, 0, 3)),
+        'kicker' => $d['kicker'] ?? 'Dossier du jour.',
         'date_fr' => $d['date_fr'] ?? date('l j F · Y'),
         'time_fr' => $d['time_fr'] ?? $d['heure'] ?? '20:00',
         'matches' => $matches,
