@@ -428,7 +428,7 @@ function stratedge_normalize_data($d, $type) {
                 'logo1' => $bet['team1_logo'] ?? $bet['logo1'] ?? '',
                 'logo2' => $bet['team2_logo'] ?? $bet['logo2'] ?? '',
                 'pick' => $bet['prono'] ?? $bet['pick'] ?? '',
-                'cote' => $bet['cote'] ?? '',
+                'cote' => $bet['cote'] ?? $bet['odds'] ?? $bet['odd'] ?? $bet['cotation'] ?? '',
                 'comp' => $bet['competition'] ?? $bet['comp'] ?? '',
             ];
         }
@@ -446,7 +446,7 @@ function stratedge_normalize_data($d, $type) {
                 'logo1' => $sel['team1_logo'] ?? $sel['logo1'] ?? '',
                 'logo2' => $sel['team2_logo'] ?? $sel['logo2'] ?? '',
                 'pick' => $sel['prono'] ?? $sel['pick'] ?? '',
-                'cote' => $sel['cote'] ?? '',
+                'cote' => $sel['cote'] ?? $sel['odds'] ?? $sel['odd'] ?? $sel['cotation'] ?? '',
             ];
         }
     } else {
@@ -489,13 +489,34 @@ function stratedge_normalize_data($d, $type) {
         'n_edition' => $d['n_edition'] ?? date('Ymd'),
         'ghost' => $d['ghost'] ?? strtoupper(substr((string)$sport, 0, 3)),
         'kicker' => $d['kicker'] ?? 'Dossier du jour.',
+    // Cote: si combi (matches multiples) et cote globale absente/invalide,
+    // calcule automatiquement le produit des cotes individuelles
+    $cote_final = $d['cote'] ?? $d['cote_totale'] ?? $d['odds'] ?? '';
+    $cote_num = (float)str_replace(',', '.', (string)$cote_final);
+    if (count($matches) > 1 && $cote_num <= 1.0) {
+        $produit = 1.0;
+        $valid = true;
+        foreach ($matches as $m) {
+            $c = (float)str_replace(',', '.', (string)($m['cote'] ?? ''));
+            if ($c < 1.01) { $valid = false; break; }
+            $produit *= $c;
+        }
+        if ($valid && $produit > 1.0) {
+            $cote_final = number_format($produit, 2, '.', '');
+        }
+    }
+    if ($cote_num <= 1.0 && empty($cote_final)) $cote_final = '1.50';
+
+    return [
+        'sport' => $sport,
+        'tipster' => $tipster,
         'date_fr' => $d['date_fr'] ?? date('l j F · Y'),
         'time_fr' => $d['time_fr'] ?? $d['heure'] ?? '20:00',
         'matches' => $matches,
         'pick_main' => $d['pick_main'] ?? $d['prono'] ?? '',
         'pick_accent' => $d['pick_accent'] ?? '',
         'pick_market' => $d['pick_market'] ?? $d['market'] ?? 'Marché · Pick',
-        'cote' => $d['cote'] ?? $d['cote_totale'] ?? '1.50',
+        'cote' => $cote_final,
         'value_pct' => $d['value_pct'] ?? 0,
         'confidence' => $d['confidence'] ?? 60,
         'quote_main' => $d['quote_main'] ?? 'La data parle.',
