@@ -186,7 +186,8 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".type-stamp.is-fun .type-stamp-label::after{content:'';display:inline-block;width:8px;height:8px;background:$accent;margin-left:10px;transform:rotate(45deg);box-shadow:0 0 10px $accent;vertical-align:middle}";
     $css .= ".combi-count{font-family:'Inter',sans-serif;font-weight:900;font-size:44px;letter-spacing:-2px;line-height:.9;color:$accent;text-shadow:0 0 14px rgba($rgb,.7);margin-left:6px}";
     $css .= ".match{position:relative;z-index:2;margin-bottom:26px;max-width:540px}";
-    $css .= ".team{font-family:'Bebas Neue',sans-serif;font-size:38px;line-height:1;letter-spacing:.5px;color:#ede8e0;display:flex;align-items:center;gap:14px;margin:6px 0;word-spacing:.05em}";
+    $css .= ".team{font-family:'Bebas Neue',sans-serif;font-size:38px;line-height:1;letter-spacing:.5px;color:#ede8e0;display:flex;align-items:center;gap:14px;margin:6px 0;word-spacing:.1em}";
+    $css .= ".team-text{display:inline-block;padding:0 4px 0 4px;flex:1}";
     $css .= ".team-logo{width:44px;height:44px;object-fit:contain;filter:drop-shadow(0 0 8px rgba(0,0,0,.6));flex-shrink:0}";
     $css .= ".flag{width:38px;height:25px;object-fit:cover;display:inline-block;margin-right:10px;border-radius:2px;flex-shrink:0}";
     $css .= ".vs{font-family:'Instrument Serif',serif;font-style:italic;font-size:28px;color:$accent;margin:0 0 0 22px;opacity:.9}";
@@ -194,7 +195,7 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".pick{position:relative;z-index:2;max-width:540px;border:1px solid rgba(237,232,224,.2);padding:16px 22px;margin-bottom:0}";
     $css .= ".pick.combi{max-width:620px;border:none;border-top:1px solid rgba(237,232,224,.25);border-bottom:1px solid rgba(237,232,224,.25);padding:16px 0}";
     $css .= ".pick-eyebrow{font-family:'Archivo Narrow',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.45;margin-bottom:10px}";
-    $css .= ".pick-main{font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1.1;letter-spacing:0;color:#ede8e0;margin-bottom:6px;word-spacing:.15em;word-wrap:break-word;overflow-wrap:break-word}";
+    $css .= ".pick-main{font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1.1;letter-spacing:0;color:#ede8e0;margin-bottom:6px;word-spacing:.2em;word-wrap:break-word;overflow-wrap:break-word;display:inline-block;padding:0 4px}";
     $css .= ".pick-accent{font-family:'Bebas Neue',sans-serif;font-size:30px;color:$accent;text-shadow:0 0 10px rgba($rgb,.5);word-spacing:.15em;display:inline-block;padding:0 2px}";
     $css .= ".pick-market{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;word-spacing:6px;text-transform:uppercase;color:#ede8e0;opacity:.45;margin-top:8px}";
     $css .= ".combi-list{display:flex;flex-direction:column;gap:14px;margin-top:8px}";
@@ -329,12 +330,14 @@ function stratedge_team_line($team_name, $flag, $sport, $explicit_logo = '') {
     // ⚠️ Utiliser stratedge_nbsp_esc (espaces convertis en U+00A0) pour que
     // html2canvas / wkhtmltoimage préservent les espaces dans Bebas Neue
     // (sinon "BOLOGNA FC" devient "BOLOGNAFC", "AS ROMA" devient "ASROMA")
+    // + wrap dans .team-text avec padding-left pour éviter le 1er char mangé
     $team_safe = stratedge_nbsp_esc((string)$team_name);
+    $team_wrapped = "<span class='team-text'>$team_safe</span>";
     $is_tennis = strtolower((string)$sport) === 'tennis';
     if ($is_tennis) {
         $flag_url = stratedge_flag_resolve($flag);
-        if ($flag_url) return "<img class='flag' src='" . htmlspecialchars($flag_url, ENT_QUOTES, 'UTF-8') . "' alt=''>$team_safe";
-        return $team_safe;
+        if ($flag_url) return "<img class='flag' src='" . htmlspecialchars($flag_url, ENT_QUOTES, 'UTF-8') . "' alt=''>$team_wrapped";
+        return $team_wrapped;
     }
     $logo_url = '';
     if ($explicit_logo && stratedge_is_valid_logo($explicit_logo)) {
@@ -342,10 +345,10 @@ function stratedge_team_line($team_name, $flag, $sport, $explicit_logo = '') {
     } else {
         $logo_url = stratedge_resolve_team_logo($team_name, $sport);
     }
-    if ($logo_url) return "<img class='team-logo' src='" . htmlspecialchars($logo_url, ENT_QUOTES, 'UTF-8') . "' alt=''>$team_safe";
+    if ($logo_url) return "<img class='team-logo' src='" . htmlspecialchars($logo_url, ENT_QUOTES, 'UTF-8') . "' alt=''>$team_wrapped";
     $flag_url = stratedge_flag_resolve($flag);
-    if ($flag_url) return "<img class='flag' src='" . htmlspecialchars($flag_url, ENT_QUOTES, 'UTF-8') . "' alt=''>$team_safe";
-    return $team_safe;
+    if ($flag_url) return "<img class='flag' src='" . htmlspecialchars($flag_url, ENT_QUOTES, 'UTF-8') . "' alt=''>$team_wrapped";
+    return $team_wrapped;
 }
 
 function stratedge_player_prop_solo($player_id, $sport, $player_name, $stats_hint, $opp_team_name, $opp_team_sport) {
