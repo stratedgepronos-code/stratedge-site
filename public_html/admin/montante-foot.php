@@ -347,6 +347,47 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
 .strateedge-date-wrap .cal-icon{position:absolute;right:0.75rem;top:50%;transform:translateY(-50%);line-height:0;color:#ff2d78;}
 .strateedge-date-wrap .cal-icon svg{display:block;width:20px!important;height:20px!important;max-width:20px;max-height:20px;}
 .strateedge-date-wrap .cal-popover:not(.is-open):empty{display:none;}
+
+/* ═══ MOBILE CARDS (admin) — étapes en stack vertical ═══ */
+.adm-step-cards{display:none;}
+.adm-step-card{background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:1rem;margin-bottom:0.75rem;}
+.adm-step-card.is-gagne{border-color:rgba(0,200,100,0.3);background:rgba(0,200,100,0.04);}
+.adm-step-card.is-perdu{border-color:rgba(255,68,68,0.3);background:rgba(255,68,68,0.04);}
+.adm-step-card.is-annule{border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.04);}
+.adm-step-card.is-en_cours{border-color:rgba(0,212,255,0.3);background:rgba(0,212,255,0.04);}
+.adm-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;margin-bottom:0.6rem;}
+.adm-card-num{font-family:'Orbitron',sans-serif;font-weight:900;font-size:0.85rem;letter-spacing:1px;background:rgba(255,45,120,0.15);color:#ff2d78;padding:0.25rem 0.6rem;border-radius:6px;flex-shrink:0;}
+.adm-card-result{font-size:0.7rem;font-weight:700;padding:0.25rem 0.55rem;border-radius:5px;letter-spacing:0.5px;flex-shrink:0;}
+.adm-card-match{font-size:1rem;font-weight:700;color:var(--text-primary);line-height:1.3;margin-bottom:0.3rem;word-break:break-word;}
+.adm-card-meta{display:flex;flex-wrap:wrap;gap:0.4rem 0.9rem;font-family:'Space Mono',monospace;font-size:0.72rem;color:var(--text-muted);margin-bottom:0.7rem;}
+.adm-card-meta strong{color:var(--text-secondary);font-weight:700;}
+.adm-card-stats{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;padding:0.6rem 0;border-top:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:0.7rem;}
+.adm-card-stat-cell{display:flex;flex-direction:column;gap:0.15rem;}
+.adm-card-stat-lbl{font-family:'Space Mono',monospace;font-size:0.6rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);}
+.adm-card-stat-val{font-size:0.95rem;font-weight:700;}
+.adm-card-actions{display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;}
+.adm-card-actions form{display:inline-flex;}
+.adm-card-actions .btn-sm{padding:0.4rem 0.7rem;font-size:0.78rem;}
+
+/* Responsive admin */
+@media(max-width:768px){
+  .main{padding:1rem 0.8rem;}
+  .page-header h1{font-size:1.15rem;}
+  .card{padding:1.1rem;border-radius:12px;margin-bottom:1rem;}
+  .card h2{font-size:0.95rem;}
+  .form-grid{grid-template-columns:1fr;gap:0.7rem;}
+  .form-group input,.form-group select,.form-group textarea{font-size:1rem;padding:0.7rem;}
+  .btn{width:100%;padding:0.75rem 1rem;}
+  /* Table → cards mobile */
+  .table-wrap table{display:none;}
+  .table-wrap{overflow:visible;}
+  .adm-step-cards{display:block;}
+  /* Montante row stats wrap better */
+  .montante-row{flex-direction:column;align-items:stretch;gap:0.6rem;}
+  .montante-row > *{width:100%;}
+  /* Form actions full width */
+  .alert-success,.alert-error{font-size:0.85rem;padding:0.7rem;}
+}
 </style>
 <link href="/assets/css/calendar-strateedge.css" rel="stylesheet">
 </head>
@@ -541,6 +582,66 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
         <?php endforeach; ?>
         </tbody>
       </table>
+
+      <!-- Cards mobile (visible <= 768px) -->
+      <div class="adm-step-cards">
+        <?php foreach ($steps as $s):
+          $r = $s['resultat'] ?? 'en_cours';
+          $rc = ['gagne'=>['✅ Gagné','#00c864','rgba(0,200,100,0.18)'],'perdu'=>['❌ Perdu','#ff4444','rgba(255,68,68,0.18)'],'annule'=>['↺ Annulé','#f59e0b','rgba(245,158,11,0.18)'],'en_cours'=>['⏳ En cours','#00d4ff','rgba(0,212,255,0.15)']];
+          $ri = $rc[$r] ?? $rc['en_cours'];
+        ?>
+        <div class="adm-step-card is-<?= $r ?>">
+          <div class="adm-card-header">
+            <div class="adm-card-num">STEP <?= (int)$s['step_number'] ?></div>
+            <div class="adm-card-result" style="background:<?= $ri[2] ?>;color:<?= $ri[1] ?>;"><?= $ri[0] ?></div>
+          </div>
+          <div class="adm-card-match"><?= clean($s['match_desc']) ?: '—' ?></div>
+          <?php if (!empty(trim($s['pronostic'] ?? ''))): ?>
+            <div style="color:#ff2d78;font-weight:700;margin-bottom:0.5rem;font-size:0.92rem;">🎯 <?= clean($s['pronostic']) ?></div>
+          <?php endif; ?>
+          <div class="adm-card-meta">
+            <?php if (!empty(trim($s['competition'] ?? ''))): ?><span>🏆 <strong><?= clean($s['competition']) ?></strong></span><?php endif; ?>
+            <?php if (!empty($s['date_match'])): ?><span>📅 <strong><?= date('d/m', strtotime($s['date_match'])) ?></strong><?= !empty($s['heure']) ? ' ' . clean($s['heure']) : '' ?></span><?php endif; ?>
+            <span>📊 cote <strong style="color:var(--neon-blue);"><?= number_format((float)$s['cote'], 2) ?></strong></span>
+            <span>💰 mise <strong style="color:#ffc107;"><?= number_format((float)$s['mise'], 2) ?>€</strong></span>
+          </div>
+          <div class="adm-card-stats">
+            <div class="adm-card-stat-cell">
+              <span class="adm-card-stat-lbl">Gain / Perte</span>
+              <span class="adm-card-stat-val <?= ($s['gain_perte'] ?? 0) >= 0 ? 'profit-pos' : 'profit-neg' ?>">
+                <?= $s['gain_perte'] !== null ? (($s['gain_perte'] >= 0 ? '+' : '') . number_format((float)$s['gain_perte'], 2) . '€') : '—' ?>
+              </span>
+            </div>
+            <div class="adm-card-stat-cell">
+              <span class="adm-card-stat-lbl">Bankroll après</span>
+              <span class="adm-card-stat-val" style="color:var(--neon-blue);">
+                <?= $s['bankroll_apres'] !== null ? number_format((float)$s['bankroll_apres'], 2) . '€' : '—' ?>
+              </span>
+            </div>
+          </div>
+          <div class="adm-card-actions">
+            <a href="?edit_step=<?= (int)$s['id'] ?>" class="btn-sm" style="background:rgba(0,212,255,0.12);color:#00d4ff;border:1px solid rgba(0,212,255,0.3);text-decoration:none;">✏️ Modifier</a>
+            <form method="post" onsubmit="return confirm('Supprimer définitivement cette étape ?')">
+              <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
+              <input type="hidden" name="action" value="delete_step">
+              <input type="hidden" name="step_id" value="<?= (int)$s['id'] ?>">
+              <button type="submit" class="btn-sm" style="background:rgba(255,68,68,0.12);color:#ff4444;border:1px solid rgba(255,68,68,0.3);">🗑️ Supprimer</button>
+            </form>
+            <?php if ($s['resultat'] === 'en_cours'): ?>
+              <?php foreach (['gagne' => '✅', 'perdu' => '❌', 'annule' => '↺'] as $res => $icon): ?>
+              <form method="post" onsubmit="return confirm('Marquer comme <?= $res ?> ?')">
+                <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
+                <input type="hidden" name="action" value="set_resultat">
+                <input type="hidden" name="step_id" value="<?= (int)$s['id'] ?>">
+                <input type="hidden" name="resultat" value="<?= $res ?>">
+                <button type="submit" class="btn-sm" style="background:<?= $rc[$res][2] ?>;color:<?= $rc[$res][1] ?>;border:1px solid <?= $rc[$res][1] ?>;"><?= $icon ?></button>
+              </form>
+              <?php endforeach; ?>
+            <?php endif; ?>
+          </div>
+        </div>
+        <?php endforeach; ?>
+      </div>
     </div>
   </div>
   <?php endif; ?>
