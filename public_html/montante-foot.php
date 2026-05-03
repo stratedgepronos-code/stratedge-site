@@ -357,13 +357,6 @@ table.mt-table{width:100%;border-collapse:collapse;}
 /* Sur mobile : montante en cours ou message "aucune montante" en premier */
 @media(max-width:768px){
   .mt-mobile-flex{display:flex;flex-direction:column;}
-  .mt-mobile-flex .mt-empty,
-  .mt-mobile-flex .mt-current{order:-2;}
-  .mt-mobile-flex .mt-promo-visual{order:-1;}
-  .mt-mobile-flex .stake-promo-row{order:0;}
-  .mt-mobile-flex .mt-stats{order:1;}
-  .mt-mobile-flex .mt-progress{order:2;}
-  .mt-mobile-flex .mt-table-wrap{order:3;}
 }
 @media(max-width:768px){
   .mt-hero{margin:-1rem -0.8rem 1.5rem;padding:1.5rem 0.8rem 1.2rem;}
@@ -402,47 +395,6 @@ table.mt-table{width:100%;border-collapse:collapse;}
 </div>
 
 <div class="mt-mobile-flex">
-<!-- Visuel pleine largeur -->
-<div class="mt-promo-visual">
-  <div class="mt-promo-visual-inner">
-    <div class="mt-promo-tag">PRONOS ANALYSÉS AVEC MINUTIE</div>
-    <div class="mt-promo-title">Stake · VIP Max · Multi Pack — Rejoins l'Edge</div>
-  </div>
-</div>
-
-<!-- 3 bannières : Stake, VIP Max, Multi Pack (même taille) -->
-<div class="stake-promo-row">
-  <div class="stake-banner">
-    <div class="stake-banner-icon">⚽</div>
-    <div class="stake-banner-text">
-      <h3>Tous les matchs se jouent sur Stake</h3>
-      <p>La montante est jouée exclusivement sur <strong>Stake.bet</strong> pour profiter des meilleures cotes foot et des retraits instantanés en crypto. Crée ton compte avec notre lien partenaire pour un <strong>bonus exclusif StratEdge</strong>.</p>
-    </div>
-    <a href="https://stake.bet/fr?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake-mt">🎁 S'inscrire sur Stake</a>
-  </div>
-  <div class="pack-banner vip-max">
-    <div class="mt-pack-mascot">
-      <video autoplay loop muted playsinline>
-        <source src="assets/images/vip_max.mp4" type="video/mp4">
-      </video>
-    </div>
-    <div>
-      <h4>👑 VIP Max</h4>
-      <p>1 mois — 50€<br>Tous les pronos + accès complet</p>
-    </div>
-    <a href="/offre.php?type=vip_max" class="btn-pack">Voir l'offre</a>
-  </div>
-  <div class="pack-banner multi-pack">
-    <div class="mt-pack-mascot">
-      <img src="/assets/images/mascotte-rose.png" alt="Multi Mascot" style="width:100%;height:100%;object-fit:contain;">
-    </div>
-    <div>
-      <h4>⚽ Multi Pack</h4>
-      <p>À la carte · Dès 4,50€<br>Pronos foot à la demande</p>
-    </div>
-    <a href="/packs-daily.php" class="btn-pack">Voir les packs</a>
-  </div>
-</div>
 
 <?php if ($config['id'] === 0 || empty($steps)): ?>
 <div class="mt-empty">
@@ -682,6 +634,49 @@ table.mt-table{width:100%;border-collapse:collapse;}
   <?php endforeach; ?>
 </div>
 <?php endif; ?>
+
+<!-- ═══ ZONE PROMO (déplacée en bas après historique + archives) ═══ -->
+<!-- Visuel pleine largeur -->
+<div class="mt-promo-visual">
+  <div class="mt-promo-visual-inner">
+    <div class="mt-promo-tag">PRONOS ANALYSÉS AVEC MINUTIE</div>
+    <div class="mt-promo-title">Stake · VIP Max · Multi Pack — Rejoins l'Edge</div>
+  </div>
+</div>
+
+<!-- 3 bannières : Stake, VIP Max, Multi Pack (même taille) -->
+<div class="stake-promo-row">
+  <div class="stake-banner">
+    <div class="stake-banner-icon">⚽</div>
+    <div class="stake-banner-text">
+      <h3>Tous les matchs se jouent sur Stake</h3>
+      <p>La montante est jouée exclusivement sur <strong>Stake.bet</strong> pour profiter des meilleures cotes foot et des retraits instantanés en crypto. Crée ton compte avec notre lien partenaire pour un <strong>bonus exclusif StratEdge</strong>.</p>
+    </div>
+    <a href="https://stake.bet/fr?c=n26yI0vn" target="_blank" rel="noopener noreferrer nofollow" class="btn-stake-mt">🎁 S'inscrire sur Stake</a>
+  </div>
+  <div class="pack-banner vip-max">
+    <div class="mt-pack-mascot">
+      <video autoplay loop muted playsinline>
+        <source src="assets/images/vip_max.mp4" type="video/mp4">
+      </video>
+    </div>
+    <div>
+      <h4>👑 VIP Max</h4>
+      <p>1 mois — 50€<br>Tous les pronos + accès complet</p>
+    </div>
+    <a href="/offre.php?type=vip_max" class="btn-pack">Voir l'offre</a>
+  </div>
+  <div class="pack-banner multi-pack">
+    <div class="mt-pack-mascot">
+      <img src="/assets/images/mascotte-rose.png" alt="Multi Mascot" style="width:100%;height:100%;object-fit:contain;">
+    </div>
+    <div>
+      <h4>⚽ Multi Pack</h4>
+      <p>À la carte · Dès 4,50€<br>Pronos foot à la demande</p>
+    </div>
+    <a href="/packs-daily.php" class="btn-pack">Voir les packs</a>
+  </div>
+</div>
 
 <?php require_once __DIR__ . '/includes/footer-main.php'; ?>
 </main></div>
