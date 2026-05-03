@@ -121,7 +121,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $newConfig->execute([$newId]);
             $newConfigRow = $newConfig->fetch(PDO::FETCH_ASSOC);
             if ($newConfigRow) {
-                notifyMontanteDemarrage($newConfigRow);
+                notifyMontanteDemarrage($newConfigRow, 'multi-sport');
             }
         }
 
@@ -159,7 +159,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $newStep->execute([$stepId]);
                 $newStepRow = $newStep->fetch(PDO::FETCH_ASSOC);
                 if ($newStepRow) {
-                    notifyMontanteNouvelleEtape($newStepRow, $config);
+                    notifyMontanteNouvelleEtape($newStepRow, $config, 'multi-sport');
                 }
             }
         } else {
@@ -200,7 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $s['resultat'] = $resultat;
                 $s['gain_perte'] = $gainPerte;
                 $s['bankroll_apres'] = $bankrollApres;
-                notifyMontanteResultat($s, $mc, $resultat);
+                notifyMontanteResultat($s, $mc, $resultat, 'multi-sport');
             }
         } else {
             $error = 'Résultat invalide.';

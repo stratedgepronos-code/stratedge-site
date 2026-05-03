@@ -681,62 +681,72 @@ function emailAnniversaireCodePromo(string $email, string $nom, string $codeProm
     return envoyerEmail($email, '🎂 Joyeux anniversaire — Ton code promo StratEdge', emailTemplate('Anniversaire', $contenu, $email));
 }
 
-// ── Montante Tennis : démarrage ─────────────────────────────
-function emailMontanteDemarrage(string $email, string $nom, array $config): bool {
-    $montant = number_format((float)($config['bankroll_initial'] ?? 100), 2, ',', ' ');
+// ── Montante : démarrage (tennis OU multi-sport selon $context) ──
+function emailMontanteDemarrage(string $email, string $nom, array $config, string $context = 'tennis'): bool {
+    $isTennis = ($context === 'tennis');
+    $emoji    = $isTennis ? '🎾' : '⚽';
+    $label    = $isTennis ? 'Montante Tennis' : 'Montante Multi-sport';
+    $url      = $isTennis ? 'https://stratedgepronos.fr/montante-tennis.php' : 'https://stratedgepronos.fr/montante-foot.php';
+    $montant  = number_format((float)($config['bankroll_initial'] ?? 100), 2, ',', ' ');
     $contenu = '
-        <h2 style="color:#ffffff;font-size:22px;margin:0 0 10px;">🎾 Nouvelle Montante Tennis</h2>
+        <h2 style="color:#ffffff;font-size:22px;margin:0 0 10px;">' . $emoji . ' Nouvelle ' . $label . '</h2>
         <p style="color:#ffffff;font-size:15px;line-height:1.7;margin:0 0 20px;">
             Bonjour <strong style="color:#ffffff;">' . htmlspecialchars($nom) . '</strong>,<br>
-            Une nouvelle montante Tennis vient de démarrer sur StratEdge. Montant visé : <strong style="color:#00d46a;">' . $montant . ' €</strong>.
+            Une nouvelle ' . $label . ' vient de démarrer sur StratEdge. Montant visé : <strong style="color:#00d46a;">' . $montant . ' €</strong>.
         </p>
         <div style="text-align:center;margin:25px 0;">
-            <a href="https://stratedgepronos.fr/montante-tennis.php"
+            <a href="' . $url . '"
                style="display:inline-block;background:linear-gradient(135deg,#00d46a,#00a050);color:white;padding:14px 35px;border-radius:10px;text-decoration:none;font-weight:700;font-size:16px;">
                 Voir la montante →
             </a>
         </div>';
-    return envoyerEmail($email, '🎾 Démarrage Montante Tennis — StratEdge', emailTemplate('Montante Tennis', $contenu, $email));
+    return envoyerEmail($email, $emoji . ' Démarrage ' . $label . ' — StratEdge', emailTemplate($label, $contenu, $email));
 }
 
-// ── Montante Tennis : nouvelle étape ───────────────────────
-function emailMontanteNouvelleEtape(string $email, string $nom, array $step, array $config): bool {
-    $match = htmlspecialchars($step['match_desc'] ?? 'Nouveau prono');
-    $stepNum = (int)($step['step_number'] ?? 1);
+// ── Montante : nouvelle étape ───────────────────────
+function emailMontanteNouvelleEtape(string $email, string $nom, array $step, array $config, string $context = 'tennis'): bool {
+    $isTennis = ($context === 'tennis');
+    $label    = $isTennis ? 'Montante Tennis' : 'Montante Multi-sport';
+    $url      = $isTennis ? 'https://stratedgepronos.fr/montante-tennis.php' : 'https://stratedgepronos.fr/montante-foot.php';
+    $match    = htmlspecialchars($step['match_desc'] ?? 'Nouveau prono');
+    $stepNum  = (int)($step['step_number'] ?? 1);
     $contenu = '
-        <h2 style="color:#ffffff;font-size:22px;margin:0 0 10px;">⚡ Step ' . $stepNum . ' — Montante Tennis</h2>
+        <h2 style="color:#ffffff;font-size:22px;margin:0 0 10px;">⚡ Step ' . $stepNum . ' — ' . $label . '</h2>
         <p style="color:#ffffff;font-size:15px;line-height:1.7;margin:0 0 20px;">
             Bonjour <strong style="color:#ffffff;">' . htmlspecialchars($nom) . '</strong>,<br>
             Nouvelle étape : <strong style="color:#00d4ff;">' . $match . '</strong>
         </p>
         <div style="text-align:center;margin:25px 0;">
-            <a href="https://stratedgepronos.fr/montante-tennis.php"
+            <a href="' . $url . '"
                style="display:inline-block;background:linear-gradient(135deg,#00d46a,#00a050);color:white;padding:14px 35px;border-radius:10px;text-decoration:none;font-weight:700;font-size:16px;">
                 Voir le détail →
             </a>
         </div>';
-    return envoyerEmail($email, '⚡ Step ' . $stepNum . ' Montante Tennis — StratEdge', emailTemplate('Montante Tennis', $contenu, $email));
+    return envoyerEmail($email, '⚡ Step ' . $stepNum . ' ' . $label . ' — StratEdge', emailTemplate($label, $contenu, $email));
 }
 
-// ── Montante Tennis : résultat d\'une étape ──────────────────
-function emailMontanteResultat(string $email, string $nom, array $step, array $config, string $resultat): bool {
+// ── Montante : résultat d\'une étape ─────────────────
+function emailMontanteResultat(string $email, string $nom, array $step, array $config, string $resultat, string $context = 'tennis'): bool {
+    $isTennis = ($context === 'tennis');
+    $label    = $isTennis ? 'Montante Tennis' : 'Montante Multi-sport';
+    $url      = $isTennis ? 'https://stratedgepronos.fr/montante-tennis.php' : 'https://stratedgepronos.fr/montante-foot.php';
     $icons = ['gagne' => '✅', 'perdu' => '❌', 'annule' => '↺'];
     $labels = ['gagne' => 'Gagné', 'perdu' => 'Perdu', 'annule' => 'Annulé'];
     $icon = $icons[$resultat] ?? '📊';
-    $label = $labels[$resultat] ?? $resultat;
+    $resLabel = $labels[$resultat] ?? $resultat;
     $match = htmlspecialchars($step['match_desc'] ?? 'Prono');
     $stepNum = (int)($step['step_number'] ?? 0);
     $contenu = '
-        <h2 style="color:#ffffff;font-size:22px;margin:0 0 10px;">' . $icon . ' Step ' . $stepNum . ' — ' . $label . '</h2>
+        <h2 style="color:#ffffff;font-size:22px;margin:0 0 10px;">' . $icon . ' Step ' . $stepNum . ' — ' . $resLabel . '</h2>
         <p style="color:#ffffff;font-size:15px;line-height:1.7;margin:0 0 20px;">
             Bonjour <strong style="color:#ffffff;">' . htmlspecialchars($nom) . '</strong>,<br>
-            Résultat de l\'étape : <strong>' . $match . '</strong> → ' . $icon . ' ' . $label . '
+            Résultat de l\'étape : <strong>' . $match . '</strong> → ' . $icon . ' ' . $resLabel . '
         </p>
         <div style="text-align:center;margin:25px 0;">
-            <a href="https://stratedgepronos.fr/montante-tennis.php"
+            <a href="' . $url . '"
                style="display:inline-block;background:linear-gradient(135deg,#00d46a,#00a050);color:white;padding:14px 35px;border-radius:10px;text-decoration:none;font-weight:700;font-size:16px;">
                 Voir la montante →
             </a>
         </div>';
-    return envoyerEmail($email, $icon . ' Résultat Step ' . $stepNum . ' Montante Tennis — StratEdge', emailTemplate('Montante Tennis', $contenu, $email));
+    return envoyerEmail($email, $icon . ' Résultat Step ' . $stepNum . ' ' . $label . ' — StratEdge', emailTemplate($label, $contenu, $email));
 }
