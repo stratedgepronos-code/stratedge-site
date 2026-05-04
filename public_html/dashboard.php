@@ -82,7 +82,7 @@ $stmtNl = $db->prepare("SELECT COUNT(*) FROM messages WHERE membre_id = ? AND ex
 $stmtNl->execute([$membre['id']]); $nbNonLus = (int)$stmtNl->fetchColumn();
 $welcome = isset($_GET['welcome']); $avatarUrl = getAvatarUrl($membre);
 $abo = getAbonnementActif($membre['id']);
-$typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekly'=>'🏆 Weekly 7j','rasstoss'=>'👑 Rass-Toss'];
+$typeLabels = ['daily'=>'⚡ Daily','weekend'=>'📅 Week-End','weekend_fun'=>'🎲 Week-End Fun','weekly'=>'🏆 Weekly 7j','tennis'=>'🎾 Tennis','fun'=>'🎲 Fun','vip_max'=>'👑 VIP Max','rasstoss'=>'👑 Rass-Toss'];
 ?>
 <!DOCTYPE html>
 <html lang="fr">
