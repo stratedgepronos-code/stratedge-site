@@ -220,6 +220,14 @@ RÈGLES CHAMPS :
   • Varvara Gracheva → FR (française depuis 2023, PAS russe)
   • Aliaksandra Sasnovich → BY (Biélorusse)
   • Anastasia Potapova → RU (Russe)
+  • Henrique Rocha → PT (Portugais, né à Felgueiras 🇵🇹) — PAS brésilien (confusion avec d'autres "Rocha")
+  • Nuno Borges → PT (Portugais, né à Maia 🇵🇹)
+  • Jaime Faria → PT (Portugais)
+  • Frederico Silva → PT (Portugais, né à Lisbonne 🇵🇹)
+  • Gastão Elias → PT (Portugais)
+  • Thiago Monteiro → BR (Brésilien, né à Fortaleza 🇧🇷) — confondu parfois avec joueurs PT
+  • Thiago Seyboth Wild → BR (Brésilien)
+  • João Fonseca → BR (Brésilien, né à Rio de Janeiro 🇧🇷)
   ⚠️ PIÈGE NOMS SLAVES/EUROPÉENS → nationalité US :
   Beaucoup de joueurs/joueuses US ont des noms d'origine serbe, russe, ukrainienne,
   polonaise, croate, etc. mais sont 100% américains (nés aux USA, représentent USA).
