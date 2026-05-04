@@ -180,10 +180,13 @@ echo "\n";
 // 7) Action manuelle: créer un abo tennis 7j
 if (($_GET['fix'] ?? '') === 'tennis') {
     echo "━━━ EXÉCUTION FIX: création abo tennis 7j ━━━\n";
+    // Permet de passer le montant réel (après code promo) via ?montant=7.50
+    $montantFix = isset($_GET['montant']) ? (float)$_GET['montant'] : 15.00;
     try {
-        $ok = activerAbonnement((int)$membre['id'], 'tennis', 15.00);
+        $ok = activerAbonnement((int)$membre['id'], 'tennis', $montantFix);
         if ($ok) {
             echo "  ✅ Abonnement tennis créé pour membre #{$membre['id']}\n";
+            echo "  Montant enregistré: " . number_format($montantFix, 2) . "€\n";
             echo "  Date fin: " . date('Y-m-d H:i:s', strtotime('+7 days')) . "\n";
             echo "  Recharge la page sans ?fix= pour vérifier.\n";
         } else {
