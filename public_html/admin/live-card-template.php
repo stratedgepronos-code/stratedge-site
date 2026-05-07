@@ -433,6 +433,7 @@ function stratedge_normalize_data($d, $type) {
                 'pick' => $bet['prono'] ?? $bet['pick'] ?? '',
                 'cote' => $bet['cote'] ?? $bet['odds'] ?? $bet['odd'] ?? $bet['cotation'] ?? '',
                 'comp' => $bet['competition'] ?? $bet['comp'] ?? '',
+                'market' => $bet['market'] ?? $bet['marche'] ?? $bet['pick_market'] ?? '',
             ];
         }
         // Type auto: si plusieurs bets, c'est un combi
@@ -592,10 +593,27 @@ function stratedge_build_card($d, $locked = false) {
             $comp = htmlspecialchars((string)($m['comp'] ?? ''), ENT_QUOTES, 'UTF-8');
             $match_section = "<div class='match'><div class='team'>$t1</div><div class='vs'>versus</div><div class='team'>$t2</div><div class='comp'>$comp</div></div>";
         }
-        $pm = stratedge_nbsp_esc($data['pick_main'] ?? '');
-        $pa = stratedge_nbsp_esc($data['pick_accent'] ?? '');
-        $pmkt = stratedge_nbsp_esc($data['pick_market'] ?? '');
-        $pick_block_full = "<div class='pick'><div class='pick-eyebrow'>Le Pick</div><div class='pick-main'>{$pm} <span class='pick-accent'>$pa</span></div><div class='pick-market'>$pmkt</div></div>";
+        // pick_main / pick_accent : si Claude a fourni les 2 separes (format Safe), on les utilise.
+        // Sinon (cas Fun solo via bets[]) on fallback sur matches[0].pick comme texte unique.
+        $pick_main_raw = $data['pick_main'] ?? '';
+        $pick_accent_raw = $data['pick_accent'] ?? '';
+        if ($pick_main_raw === '' && $pick_accent_raw === '' && !empty($matches[0]['pick'])) {
+            $pick_main_raw = (string)$matches[0]['pick'];
+        }
+        // pick_market : fallback sur matches[0].market puis matches[0].comp
+        $pick_market_raw = $data['pick_market'] ?? '';
+        if ($pick_market_raw === '' || $pick_market_raw === 'Marché · Pick') {
+            if (!empty($matches[0]['market'])) {
+                $pick_market_raw = (string)$matches[0]['market'];
+            } elseif (!empty($matches[0]['comp'])) {
+                $pick_market_raw = (string)$matches[0]['comp'];
+            }
+        }
+        $pm = stratedge_nbsp_esc($pick_main_raw);
+        $pa = stratedge_nbsp_esc($pick_accent_raw);
+        $pmkt = stratedge_nbsp_esc($pick_market_raw);
+        $accent_span = $pa !== '' ? " <span class='pick-accent'>$pa</span>" : '';
+        $pick_block_full = "<div class='pick'><div class='pick-eyebrow'>Le Pick</div><div class='pick-main'>{$pm}{$accent_span}</div><div class='pick-market'>$pmkt</div></div>";
     }
 
     if ($locked) {
