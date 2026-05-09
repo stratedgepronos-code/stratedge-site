@@ -8,17 +8,33 @@
  * Hashtags par role admin (collés a la fin du tweet)
  * Mapping aligne sur posted_by_role
  */
-function hashtagsForRole(?string $role): string {
+function hashtagsForRole(?string $role, string $sport = ''): string {
+    $sport = strtolower(trim($sport));
+    // Superadmin (Multi) — hashtags varient selon le sport du bet
+    if ($role === 'superadmin' || $role === null) {
+        $bySport = [
+            'football'   => '#TeamParieur #Foot',
+            'foot'       => '#TeamParieur #Foot',
+            'soccer'     => '#TeamParieur #Foot',
+            'hockey'     => '#NHL #TeamParieur',
+            'nhl'        => '#NHL #TeamParieur',
+            'basket'     => '#TeamParieur #NBA',
+            'basketball' => '#TeamParieur #NBA',
+            'nba'        => '#TeamParieur #NBA',
+            'baseball'   => '#TeamParieur #MLB',
+            'mlb'        => '#TeamParieur #MLB',
+        ];
+        return $bySport[$sport] ?? '#TeamParieur #Foot';
+    }
     $map = [
-        'superadmin'      => '#Foot #Pronostic #TeamParieur',
-        'admin_tennis'    => '#Tennis #TennisBet #teamparieur',
+        'admin_tennis'    => '#Tennis #teamparieur',
         'admin_fun'       => '#ParisSportifs #GrosseCote #teamparieur',
         'admin_fun_sport' => '#ParisSportifs #GrosseCote #teamparieur',
     ];
-    return $map[$role ?? 'superadmin'] ?? '#Foot #Pronostic #TeamParieur';
+    return $map[$role] ?? '#TeamParieur #Foot';
 }
 
-function twitterPhrase(string $type, string $titre = '', ?string $adminRole = null): string {
+function twitterPhrase(string $type, string $titre = '', ?string $adminRole = null, string $sport = ''): string {
     $types     = explode(',', $type);
     $principal = trim($types[0]);
 
@@ -37,7 +53,7 @@ function twitterPhrase(string $type, string $titre = '', ?string $adminRole = nu
         $phrases = $pool[$principal] ?? $pool['safe'];
         $phrase = $phrases[array_rand($phrases)];
         if ($titre) $phrase = "📌 " . $titre . "\n\n" . $phrase;
-        $phrase .= "\n\n" . hashtagsForRole($adminRole);
+        $phrase .= "\n\n" . hashtagsForRole($adminRole, $sport);
         return $phrase;
     }
 
@@ -49,7 +65,7 @@ function twitterPhrase(string $type, string $titre = '', ?string $adminRole = nu
         ];
         $phrase = $pool[array_rand($pool)];
         if ($titre) $phrase = "📌 " . $titre . "\n\n" . $phrase;
-        $phrase .= "\n\n" . hashtagsForRole($adminRole);
+        $phrase .= "\n\n" . hashtagsForRole($adminRole, $sport);
         return $phrase;
     }
 
@@ -65,7 +81,7 @@ function twitterPhrase(string $type, string $titre = '', ?string $adminRole = nu
         if (function_exists('genererTweetVerrouilleAlgo')) {
             $aiTweet = genererTweetVerrouilleAlgo([
                 'titre' => $titre,
-                'sport' => '', // sport pas accessible ici, Claude se base sur le titre
+                'sport' => $sport,
                 'cote'  => '',
             ]);
             if ($aiTweet !== '') {
@@ -99,7 +115,7 @@ function twitterPhrase(string $type, string $titre = '', ?string $adminRole = nu
     $pool   = $phrases[$principal] ?? $phrases['safe'];
     $phrase = $pool[array_rand($pool)];
     if ($titre) $phrase = "📌 " . $titre . "\n\n" . $phrase;
-    $phrase .= "\n\n" . hashtagsForRole($adminRole);
+    $phrase .= "\n\n" . hashtagsForRole($adminRole, $sport);
     return $phrase;
 }
 

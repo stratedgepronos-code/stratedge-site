@@ -81,9 +81,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ];
                         $texte = $phrases[$resultat] ?? $phrases['gagne'] ?? '';
 
-                        // Hashtags selon le role du tipster
+                        // Hashtags selon le role du tipster + sport du bet
                         if (function_exists('hashtagsForRole')) {
-                            $texte .= "\n\n" . hashtagsForRole($roleOriginal);
+                            $betSport = $bet['sport'] ?? '';
+                            $texte .= "\n\n" . hashtagsForRole($roleOriginal, $betSport);
                         }
 
                         // URL image de la card (servie via restore-image.php pour gérer BLOB + disque)

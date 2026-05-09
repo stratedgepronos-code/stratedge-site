@@ -188,7 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             // Determine role (variable existante en haut du handler) pour hashtags
                             $roleForTweet = ($adminRole === 'admin_tennis') ? 'admin_tennis'
                                           : (($adminRole === 'admin_fun' || $adminRole === 'admin_fun_sport') ? 'admin_fun' : 'superadmin');
-                            $texte    = twitterPhrase($lastType, $lastTitre, $roleForTweet);
+                            $texte    = twitterPhrase($lastType, $lastTitre, $roleForTweet, $lastSport);
                             $imageChoisie = $lastLockedPath ?: $lastImagePath;
                             $imageDir = (strpos($imageChoisie, 'locked') !== false) ? 'locked' : 'bets';
                             $imageUrl = 'https://stratedgepronos.fr/restore-image.php?dir=' . $imageDir . '&file=' . rawurlencode(basename($imageChoisie));
@@ -412,9 +412,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             }
                             $texte = $phrases[$resultat] ?? $phrases['gagne'];
 
-                            // Hashtags selon le role du tipster
+                            // Hashtags selon le role du tipster + sport du bet
                             if (function_exists('hashtagsForRole')) {
-                                $texte .= "\n\n" . hashtagsForRole($roleOriginal);
+                                $betSport = $bet['sport'] ?? '';
+                                $texte .= "\n\n" . hashtagsForRole($roleOriginal, $betSport);
                             }
 
                             $imgPath = isset($bet['image_path']) ? trim($bet['image_path']) : '';

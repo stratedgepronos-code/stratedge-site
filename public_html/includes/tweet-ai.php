@@ -280,19 +280,20 @@ function genererTweetVerrouilleAlgo(array $bet): string {
     if ($titre === '') return '';
     if (!defined('CLAUDE_API_KEY') || CLAUDE_API_KEY === '') return '';
 
-    // Mapping sport → emoji + hashtag
+    // Mapping sport → emoji + hashtags (selon prefs user, ordre exact respecté)
     $sportConfig = [
-        'football' => ['emoji' => '⚽', 'tag' => '#Foot'],
-        'foot'     => ['emoji' => '⚽', 'tag' => '#Foot'],
-        'basket'   => ['emoji' => '🏀', 'tag' => '#NBA'],
-        'basketball' => ['emoji' => '🏀', 'tag' => '#NBA'],
-        'tennis'   => ['emoji' => '🎾', 'tag' => '#Tennis'],
-        'hockey'   => ['emoji' => '🏒', 'tag' => '#NHL'],
-        'baseball' => ['emoji' => '⚾', 'tag' => '#MLB'],
+        'football'   => ['emoji' => '⚽', 'tags' => '#TeamParieur #Foot'],
+        'foot'       => ['emoji' => '⚽', 'tags' => '#TeamParieur #Foot'],
+        'soccer'     => ['emoji' => '⚽', 'tags' => '#TeamParieur #Foot'],
+        'basket'     => ['emoji' => '🏀', 'tags' => '#TeamParieur #NBA'],
+        'basketball' => ['emoji' => '🏀', 'tags' => '#TeamParieur #NBA'],
+        'tennis'     => ['emoji' => '🎾', 'tags' => '#Tennis #teamparieur'],
+        'hockey'     => ['emoji' => '🏒', 'tags' => '#NHL #TeamParieur'],
+        'baseball'   => ['emoji' => '⚾', 'tags' => '#TeamParieur #MLB'],
     ];
     $sk = strtolower($sport);
     $sportEmoji = $sportConfig[$sk]['emoji'] ?? '🎯';
-    $sportTag   = $sportConfig[$sk]['tag']   ?? '#Sport';
+    $sportTags  = $sportConfig[$sk]['tags']  ?? '#TeamParieur #Foot';
 
     $prompt = <<<PROMPT
 Tu es community manager de StratEdge Pronos (site de pronostics sportifs).
@@ -314,7 +315,7 @@ Infos du bet:
 4. TON conversationnel, naturel, expert mais accessible — pas de marketing forcé
 5. Mentionne le match avec emoji sport ({$sportEmoji}) + heure si présente dans le titre
 6. Donne un mini-teaser sur TON ANGLE d'analyse SANS révéler le pick (genre une stat intéressante, un pattern observé, un facteur clé)
-7. Termine par 2 ou 3 hashtags MAX (privilégie {$sportTag} #Pronostic #TeamParieur)
+7. Termine par EXACTEMENT ces 2 hashtags, dans cet ordre précis : {$sportTags}
 
 ⚠️ INTERDITS:
 - 👇 agressif type "👇 dis moi en commentaire"
@@ -332,7 +333,7 @@ Infos du bet:
 
 [1 question ouverte au lecteur, genre "Vous voyez quoi sur ce match?" "Pari ouvert ou fermé pour vous?" "Lequel des 2 a l'avantage selon toi?"]
 
-{$sportTag} #Pronostic #TeamParieur
+{$sportTags}
 
 ⚠️ EXEMPLES DE BON STYLE (imite le ton, pas le contenu spécifique):
 
@@ -343,7 +344,7 @@ Au Bernabeu en quart C1, Madrid n'a pas perdu depuis 2014. Mais City arrive en p
 
 Lequel des 2 a l'avantage selon toi?
 
-#Foot #UCL #TeamParieur"
+#TeamParieur #Foot"
 
 Exemple 2:
 "⚽ Lyon vs Marseille · 20h45
@@ -352,7 +353,7 @@ Le Vélodrome reste un casse-tête pour les visiteurs (1 défaite OM en L1 cette
 
 Vous voyez ça comment ce derby?
 
-#Foot #L1 #Pronostic"
+#TeamParieur #Foot"
 
 ⚠️ N'invente AUCUNE stat précise si tu n'es pas sûr. Reste général sur ton angle (rythme, contexte, dynamique des équipes).
 
