@@ -55,12 +55,12 @@ function twitterPhrase(string $type, string $titre = '', ?string $adminRole = nu
 
     // Phrases standard (superadmin / Multi)
     // ⚠️ Format CHALLENGE actif (mai-juin 2026): card verrouillée, déblocage par
-    // 20 likes ou 1 SMS. Pour revenir à l'ancien format, restore le pool précédent.
+    // 20 likes (priorité) ou SMS fallback si seuil non atteint à H-1h.
     $phrases = [
         'safe' => [
-            "🔥 PRONO MULTI VERROUILLÉ\n\nMon analyse + le pick = sur stratedgepronos.fr\n\nPour débloquer (1er des 2) :\n❤️ 20 likes\n📱 SMS STRATEDGE au 81004 (4,50€) après inscription sur stratedgepronos.fr",
-            "🔒 BET MULTI DU JOUR — VERROUILLÉ\n\nL'analyse complète + la cote sont sur stratedgepronos.fr\n\nDébloque pour TOUTE la commu (1er des 2) :\n❤️ 20 likes\n📱 SMS STRATEDGE au 81004 (4,50€) après inscription sur stratedgepronos.fr",
-            "💎 NOUVEAU PRONO MULTI · VERROUILLÉ\n\nMon analyse + le pick t'attendent sur stratedgepronos.fr\n\nÀ débloquer (1er atteint = pick révélé) :\n❤️ 20 likes\n📱 SMS STRATEDGE au 81004 (4,50€) après inscription sur stratedgepronos.fr",
+            "🔥 PRONO MULTI VERROUILLÉ\n\nMon analyse + le pick = sur stratedgepronos.fr\n\nPour débloquer :\n❤️ 20 likes\n\nSi le nombre de likes n'est pas atteint 1h avant le début du match :\n📱 SMS STRATEDGE au 81004 (4,50€) après inscription sur stratedgepronos.fr",
+            "🔒 BET MULTI DU JOUR — VERROUILLÉ\n\nL'analyse complète + la cote sont sur stratedgepronos.fr\n\nPour débloquer pour TOUTE la commu :\n❤️ 20 likes\n\nSi le nombre de likes n'est pas atteint 1h avant le début du match :\n📱 SMS STRATEDGE au 81004 (4,50€) après inscription sur stratedgepronos.fr",
+            "💎 NOUVEAU PRONO MULTI · VERROUILLÉ\n\nMon analyse + le pick t'attendent sur stratedgepronos.fr\n\nPour débloquer :\n❤️ 20 likes\n\nSi le nombre de likes n'est pas atteint 1h avant le début du match :\n📱 SMS STRATEDGE au 81004 (4,50€) après inscription sur stratedgepronos.fr",
         ],
         'live' => [
             "⚡ BET LIVE EN COURS — AGIS MAINTENANT !\n\n🔒 Accès immédiat sur stratedgepronos.fr\n⏱️ Ne rate pas cette opportunité !",
