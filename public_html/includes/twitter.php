@@ -10,12 +10,12 @@
  */
 function hashtagsForRole(?string $role): string {
     $map = [
-        'superadmin'      => '#ParisSportifs #teamparieur',
+        'superadmin'      => '#Foot #Pronostic #TeamParieur',
         'admin_tennis'    => '#Tennis #TennisBet #teamparieur',
         'admin_fun'       => '#ParisSportifs #GrosseCote #teamparieur',
         'admin_fun_sport' => '#ParisSportifs #GrosseCote #teamparieur',
     ];
-    return $map[$role ?? 'superadmin'] ?? '#ParisSportifs #teamparieur';
+    return $map[$role ?? 'superadmin'] ?? '#Foot #Pronostic #TeamParieur';
 }
 
 function twitterPhrase(string $type, string $titre = '', ?string $adminRole = null): string {
@@ -54,11 +54,13 @@ function twitterPhrase(string $type, string $titre = '', ?string $adminRole = nu
     }
 
     // Phrases standard (superadmin / Multi)
+    // ⚠️ Format CHALLENGE actif (mai-juin 2026): card verrouillée, déblocage par
+    // 20 likes ou 1 SMS. Pour revenir à l'ancien format, restore le pool précédent.
     $phrases = [
         'safe' => [
-            "🛡️ Nouveau bet SAFE vient d'être posté !\n\n🔒 Analyse complète réservée aux abonnés\n👉 stratedgepronos.fr",
-            "📊 Un bet SAFE est disponible !\n\n🔒 Card visible pour les abonnés uniquement\n💰 stratedgepronos.fr",
-            "🛡️ BET SAFE du jour !\n\n🔒 Réservé aux membres\n👉 stratedgepronos.fr",
+            "🔥 PRONO MULTI VERROUILLÉ\n\nMon analyse + le pick = sur stratedgepronos.fr\n\nPour débloquer (1er des 2) :\n❤️ 20 likes\n📱 SMS STRATEDGE au 81004 (4,50€) après inscription sur stratedgepronos.fr",
+            "🔒 BET MULTI DU JOUR — VERROUILLÉ\n\nL'analyse complète + la cote sont sur stratedgepronos.fr\n\nDébloque pour TOUTE la commu (1er des 2) :\n❤️ 20 likes\n📱 SMS STRATEDGE au 81004 (4,50€) après inscription sur stratedgepronos.fr",
+            "💎 NOUVEAU PRONO MULTI · VERROUILLÉ\n\nMon analyse + le pick t'attendent sur stratedgepronos.fr\n\nÀ débloquer (1er atteint = pick révélé) :\n❤️ 20 likes\n📱 SMS STRATEDGE au 81004 (4,50€) après inscription sur stratedgepronos.fr",
         ],
         'live' => [
             "⚡ BET LIVE EN COURS — AGIS MAINTENANT !\n\n🔒 Accès immédiat sur stratedgepronos.fr\n⏱️ Ne rate pas cette opportunité !",
