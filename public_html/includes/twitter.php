@@ -56,6 +56,31 @@ function twitterPhrase(string $type, string $titre = '', ?string $adminRole = nu
     // Phrases standard (superadmin / Multi)
     // ⚠️ Format CHALLENGE actif (mai-juin 2026): card verrouillée, déblocage par
     // 20 likes (priorité) ou SMS fallback si seuil non atteint à H-1h.
+    //
+    // Pour Multi Safe (cas le plus fréquent du superadmin), on tente d'abord une
+    // génération Claude algo-friendly (no link, no farming, drives replies).
+    // Si la génération échoue (API down, key manquante, retour vide) on tombe sur
+    // le pool statique ci-dessous.
+    if ($principal === 'safe') {
+        if (function_exists('genererTweetVerrouilleAlgo')) {
+            $aiTweet = genererTweetVerrouilleAlgo([
+                'titre' => $titre,
+                'sport' => '', // sport pas accessible ici, Claude se base sur le titre
+                'cote'  => '',
+            ]);
+            if ($aiTweet !== '') {
+                // Stocker la reply suggérée en session pour affichage admin
+                if (function_exists('suggestionReplyVerrouille')) {
+                    if (session_status() === PHP_SESSION_NONE) @session_start();
+                    $_SESSION['suggested_x_reply'] = suggestionReplyVerrouille();
+                }
+                // Claude génère un tweet AUTONOME avec match/teaser/question/hashtags.
+                // On ne préfixe PAS avec 📌 titre, on n'ajoute PAS hashtagsForRole.
+                return $aiTweet;
+            }
+        }
+    }
+
     $phrases = [
         'safe' => [
             "🔥 PRONO MULTI VERROUILLÉ\n\nMon analyse + le pick = sur stratedgepronos.fr\n\nPour débloquer :\n❤️ 20 likes\n\nSi le nombre de likes n'est pas atteint 1h avant le début du match :\n📱 SMS STRATEDGE au 81004 (4,50€) après inscription sur stratedgepronos.fr",

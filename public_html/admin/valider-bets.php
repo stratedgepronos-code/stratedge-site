@@ -185,6 +185,12 @@ if (!empty($_SESSION['flash_success'])) {
     unset($_SESSION['flash_success']);
 }
 
+// Reply X suggérée à poster manuellement (générée lors du dernier post Multi Safe)
+$suggestedXReply = $_SESSION['suggested_x_reply'] ?? '';
+if ($suggestedXReply !== '') {
+    unset($_SESSION['suggested_x_reply']); // one-shot, on n'affiche qu'une fois
+}
+
 $sql = "SELECT * FROM bets ";
 switch ($filter) {
     case 'en_cours': $sql .= "WHERE (resultat IS NULL OR resultat = '' OR resultat = 'en_cours') AND actif = 1 "; break;
@@ -395,6 +401,56 @@ $winRate = $totalFinished > 0 ? round(($counts['gagne'] / $totalFinished) * 100)
   .toast.error { background: rgba(255, 56, 100, 0.15); border: 1px solid var(--red); color: var(--red); }
   @keyframes toast-in { from { opacity: 0; transform: translate(-50%, -20px); } to { opacity: 1; transform: translate(-50%, 0); } }
   @keyframes toast-out { to { opacity: 0; transform: translate(-50%, -10px); } }
+
+  /* X REPLY SUGGÉRÉE (à poster manuellement après auto-tweet) */
+  .x-reply-card {
+    margin: 16px 24px 0;
+    background: linear-gradient(135deg, rgba(29,155,240,.08), rgba(29,155,240,.03));
+    border: 1px solid rgba(29,155,240,.3);
+    border-radius: 12px;
+    padding: 16px 18px;
+    animation: toast-in 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+  }
+  .x-reply-header { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 12px; }
+  .x-reply-icon {
+    flex-shrink: 0; width: 38px; height: 38px;
+    background: #000; color: #fff;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 20px; font-weight: 900; font-family: 'Chirp', 'Segoe UI', sans-serif;
+  }
+  .x-reply-title {
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    letter-spacing: 2px; color: #1d9bf0; text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .x-reply-sub {
+    font-size: 12px; line-height: 1.45; color: var(--text-secondary, #b0bec9);
+  }
+  .x-reply-text {
+    background: rgba(0,0,0,.4);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 8px;
+    padding: 12px 14px;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    font-size: 13px; line-height: 1.55;
+    color: var(--text-primary, #f0f4f8);
+    white-space: pre-wrap; word-wrap: break-word;
+    margin: 0 0 10px; max-height: 200px; overflow-y: auto;
+  }
+  .x-reply-copy {
+    background: rgba(29,155,240,.15); color: #1d9bf0;
+    border: 1px solid rgba(29,155,240,.4);
+    border-radius: 6px; padding: 8px 14px;
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    cursor: pointer; transition: .2s;
+  }
+  .x-reply-copy:hover { background: rgba(29,155,240,.25); border-color: #1d9bf0; }
+  @media (max-width: 768px) {
+    .x-reply-card { margin: 14px 16px 0; padding: 14px; }
+    .x-reply-icon { width: 32px; height: 32px; font-size: 17px; }
+    .x-reply-text { font-size: 12px; }
+  }
 
   /* FEED */
   .feed { padding: 20px 24px 40px; display: grid; grid-template-columns: 1fr; gap: 14px; }
@@ -727,6 +783,32 @@ $winRate = $totalFinished > 0 ? round(($counts['gagne'] / $totalFinished) * 100)
       <?= $msgTypeGet === 'success' ? '▲' : '⊘' ?>
       <?= htmlspecialchars($msgGet) ?>
     </div>
+  <?php endif; ?>
+
+  <?php if ($suggestedXReply !== ''): ?>
+    <div class="x-reply-card">
+      <div class="x-reply-header">
+        <span class="x-reply-icon">𝕏</span>
+        <div>
+          <div class="x-reply-title">REPLY À POSTER MANUELLEMENT SUR X</div>
+          <div class="x-reply-sub">Ton tweet auto vient de partir. Poste cette reply 5 min après pour le lien + SMS (ne pas mettre dans le tweet principal — l'algo X punit les liens)</div>
+        </div>
+      </div>
+      <pre class="x-reply-text" id="xReplyText"><?= htmlspecialchars($suggestedXReply) ?></pre>
+      <button type="button" class="x-reply-copy" onclick="copyXReply()">📋 Copier la reply</button>
+    </div>
+    <script>
+      function copyXReply(){
+        const t = document.getElementById('xReplyText').innerText;
+        navigator.clipboard.writeText(t).then(() => {
+          const btn = event.target;
+          const old = btn.innerText;
+          btn.innerText = '✓ Copié !';
+          btn.style.background = 'rgba(0,229,160,.2)';
+          setTimeout(() => { btn.innerText = old; btn.style.background = ''; }, 2000);
+        });
+      }
+    </script>
   <?php endif; ?>
 
   <div class="feed">

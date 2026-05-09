@@ -261,3 +261,158 @@ PROMPT;
 
     return '';
 }
+
+// ============================================================
+// GÉNÉRATION TWEET ALGO-FRIENDLY pour bet MULTI SAFE
+// ============================================================
+// Tweet auto-posté quand admin poste un bet Multi Safe (superadmin).
+// Format optimisé pour l'algo X 2026:
+//   - PAS DE LIEN externe dans le tweet principal (tueur de portée)
+//   - PAS DE "X likes pour débloquer" (pattern engagement-farming détecté)
+//   - QUESTION ouverte qui invite aux replies (replies = 13.5x les likes)
+//   - 2-3 hashtags max
+// La reply avec le lien + SMS est postée MANUELLEMENT par l'admin après.
+function genererTweetVerrouilleAlgo(array $bet): string {
+    $titre = trim((string)($bet['titre'] ?? ''));
+    $sport = trim((string)($bet['sport'] ?? 'football'));
+    $cote  = trim((string)($bet['cote'] ?? ''));
+
+    if ($titre === '') return '';
+    if (!defined('CLAUDE_API_KEY') || CLAUDE_API_KEY === '') return '';
+
+    // Mapping sport → emoji + hashtag
+    $sportConfig = [
+        'football' => ['emoji' => '⚽', 'tag' => '#Foot'],
+        'foot'     => ['emoji' => '⚽', 'tag' => '#Foot'],
+        'basket'   => ['emoji' => '🏀', 'tag' => '#NBA'],
+        'basketball' => ['emoji' => '🏀', 'tag' => '#NBA'],
+        'tennis'   => ['emoji' => '🎾', 'tag' => '#Tennis'],
+        'hockey'   => ['emoji' => '🏒', 'tag' => '#NHL'],
+        'baseball' => ['emoji' => '⚾', 'tag' => '#MLB'],
+    ];
+    $sk = strtolower($sport);
+    $sportEmoji = $sportConfig[$sk]['emoji'] ?? '🎯';
+    $sportTag   = $sportConfig[$sk]['tag']   ?? '#Sport';
+
+    $prompt = <<<PROMPT
+Tu es community manager de StratEdge Pronos (site de pronostics sportifs).
+
+MISSION: générer UN tweet pour annoncer un nouveau pronostic.
+Le tweet sera posté sur X (Twitter). Il doit MAXIMISER LA PORTÉE selon l'algo X 2026.
+
+Infos du bet:
+- Match: {$titre}
+- Sport: {$sport}
+- Cote retenue: {$cote}
+- Type: Multi Safe (analyse complète sur le site, pick verrouillé sur X)
+
+⚠️ RÈGLES ABSOLUES (algo X 2026):
+
+1. AUCUN LIEN externe (pas de "stratedgepronos.fr" dans le tweet — l'algo punit lourdement les liens, jusqu'à -90% de portée)
+2. AUCUN "X likes pour débloquer", "RT pour voir", "follow pour recevoir" → ces patterns sont détectés comme engagement-farming et supprimés activement par l'algo
+3. POSE UNE QUESTION OUVERTE en fin de tweet qui invite aux replies — c'est le levier le plus puissant (replies = 13.5x le poids des likes dans le scoring)
+4. TON conversationnel, naturel, expert mais accessible — pas de marketing forcé
+5. Mentionne le match avec emoji sport ({$sportEmoji}) + heure si présente dans le titre
+6. Donne un mini-teaser sur TON ANGLE d'analyse SANS révéler le pick (genre une stat intéressante, un pattern observé, un facteur clé)
+7. Termine par 2 ou 3 hashtags MAX (privilégie {$sportTag} #Pronostic #TeamParieur)
+
+⚠️ INTERDITS:
+- 👇 agressif type "👇 dis moi en commentaire"
+- "Mon pick verrouillé" formulé comme un cliffhanger commercial
+- Émojis cliquetis (🚨🔥💯💎) en chaine
+- Promesses de gains ("100% sûr", "banco", "value énorme")
+- Ton vendeur ("ne ratez pas", "à ne pas manquer")
+
+⚠️ LONGUEUR: 220 caractères MAX au total (avec hashtags).
+
+⚠️ STRUCTURE QUI MARCHE:
+{$sportEmoji} [Match] [heure si dispo]
+
+[1-2 lignes: ton angle d'analyse, fait intéressant, pattern, contexte]
+
+[1 question ouverte au lecteur, genre "Vous voyez quoi sur ce match?" "Pari ouvert ou fermé pour vous?" "Lequel des 2 a l'avantage selon toi?"]
+
+{$sportTag} #Pronostic #TeamParieur
+
+⚠️ EXEMPLES DE BON STYLE (imite le ton, pas le contenu spécifique):
+
+Exemple 1:
+"⚽ Real Madrid vs City · 21h00
+
+Au Bernabeu en quart C1, Madrid n'a pas perdu depuis 2014. Mais City arrive en pleine forme post-trêve.
+
+Lequel des 2 a l'avantage selon toi?
+
+#Foot #UCL #TeamParieur"
+
+Exemple 2:
+"⚽ Lyon vs Marseille · 20h45
+
+Le Vélodrome reste un casse-tête pour les visiteurs (1 défaite OM en L1 cette saison à domicile). Mais Lyon vient avec ses 5 victoires consécutives.
+
+Vous voyez ça comment ce derby?
+
+#Foot #L1 #Pronostic"
+
+⚠️ N'invente AUCUNE stat précise si tu n'es pas sûr. Reste général sur ton angle (rythme, contexte, dynamique des équipes).
+
+Réponds UNIQUEMENT avec le tweet, rien d'autre. Pas de préambule, pas de guillemets, pas d'explication.
+PROMPT;
+
+    try {
+        $payload = json_encode([
+            'model'      => 'claude-sonnet-4-20250514',
+            'max_tokens' => 400,
+            'messages'   => [
+                ['role' => 'user', 'content' => $prompt]
+            ]
+        ], JSON_UNESCAPED_UNICODE);
+
+        $ch = curl_init('https://api.anthropic.com/v1/messages');
+        curl_setopt_array($ch, [
+            CURLOPT_POST           => true,
+            CURLOPT_POSTFIELDS     => $payload,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_HTTPHEADER     => [
+                'Content-Type: application/json',
+                'x-api-key: ' . CLAUDE_API_KEY,
+                'anthropic-version: 2023-06-01',
+            ],
+            CURLOPT_TIMEOUT        => 25,
+        ]);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        if ($httpCode >= 200 && $httpCode < 300 && $response) {
+            $data = json_decode($response, true);
+            $text = $data['content'][0]['text'] ?? '';
+            $text = trim($text);
+            // Sécurité: enlever guillemets si Claude les a mis malgré l'instruction
+            $text = trim($text, " \t\n\r\0\x0B\"'");
+            if ($text !== '' && mb_strlen($text) <= 280) {
+                error_log('[tweet-ai] Tweet algo Multi Safe généré pour "' . $titre . '" (' . mb_strlen($text) . ' chars)');
+                return $text;
+            }
+            error_log('[tweet-ai] Tweet algo Multi Safe rejeté (vide ou >280 chars) pour "' . $titre . '"');
+        } else {
+            error_log('[tweet-ai] Échec API Claude tweet algo (HTTP ' . $httpCode . ') pour "' . $titre . '"');
+        }
+    } catch (\Throwable $e) {
+        error_log('[tweet-ai] Erreur tweet algo: ' . $e->getMessage());
+    }
+
+    return '';
+}
+
+// Reply suggérée à poster MANUELLEMENT sur X par l'admin après le tweet principal.
+// Le lien externe et l'instruction SMS sont mis ICI pour ne pas tuer la portée du tweet principal.
+function suggestionReplyVerrouille(): string {
+    $variants = [
+        "🎯 Pour ceux qui veulent l'analyse complète + ma confiance + la cote :\n\nstratedgepronos.fr\n\nOu plus rapide : SMS STRATEDGE au 81004 (4,50€) après inscription sur le site.",
+        "📊 L'analyse Dixon-Coles + xG + le pick complet sont sur :\n\nstratedgepronos.fr\n\nPour les pressés : SMS STRATEDGE au 81004 (4,50€) après inscription.",
+        "🔓 Le pick + l'analyse complète sont disponibles sur :\n\nstratedgepronos.fr\n\nAccès direct via SMS STRATEDGE au 81004 (4,50€) après inscription sur le site.",
+    ];
+    return $variants[array_rand($variants)];
+}
