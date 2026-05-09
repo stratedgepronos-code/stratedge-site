@@ -83,9 +83,9 @@ function twitterPhrase(string $type, string $titre = '', ?string $adminRole = nu
 
     $phrases = [
         'safe' => [
-            "🔥 PRONO MULTI VERROUILLÉ\n\nMon analyse + le pick = sur stratedgepronos.fr\n\nPour débloquer :\n❤️ 20 likes\n\nSi le nombre de likes n'est pas atteint 1h avant le début du match :\n📱 SMS STRATEDGE au 81004 (4,50€) après inscription sur stratedgepronos.fr",
-            "🔒 BET MULTI DU JOUR — VERROUILLÉ\n\nL'analyse complète + la cote sont sur stratedgepronos.fr\n\nPour débloquer pour TOUTE la commu :\n❤️ 20 likes\n\nSi le nombre de likes n'est pas atteint 1h avant le début du match :\n📱 SMS STRATEDGE au 81004 (4,50€) après inscription sur stratedgepronos.fr",
-            "💎 NOUVEAU PRONO MULTI · VERROUILLÉ\n\nMon analyse + le pick t'attendent sur stratedgepronos.fr\n\nPour débloquer :\n❤️ 20 likes\n\nSi le nombre de likes n'est pas atteint 1h avant le début du match :\n📱 SMS STRATEDGE au 81004 (4,50€) après inscription sur stratedgepronos.fr",
+            "🔥 PRONO MULTI VERROUILLÉ\n\nMon analyse + le pick = sur stratedgepronos.fr\n\nPour débloquer :\n❤️ 20 likes\n\nSi le nombre de likes n'est pas atteint 1h avant le début du match :\n📱 SMS sur le site.",
+            "🔒 BET MULTI DU JOUR — VERROUILLÉ\n\nL'analyse complète + la cote sont sur stratedgepronos.fr\n\nPour débloquer pour TOUTE la commu :\n❤️ 20 likes\n\nSi le nombre de likes n'est pas atteint 1h avant le début du match :\n📱 SMS sur le site.",
+            "💎 NOUVEAU PRONO MULTI · VERROUILLÉ\n\nMon analyse + le pick t'attendent sur stratedgepronos.fr\n\nPour débloquer :\n❤️ 20 likes\n\nSi le nombre de likes n'est pas atteint 1h avant le début du match :\n📱 SMS sur le site.",
         ],
         'live' => [
             "⚡ BET LIVE EN COURS — AGIS MAINTENANT !\n\n🔒 Accès immédiat sur stratedgepronos.fr\n⏱️ Ne rate pas cette opportunité !",
