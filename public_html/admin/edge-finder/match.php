@@ -43,8 +43,10 @@ $candidates = SE_Db::queryAll(
 
 function fmt_kickoff_full(?string $utc_dt): string {
     if (!$utc_dt) return '';
-    $dt = new DateTime($utc_dt, new DateTimeZone('UTC'));
-    $dt->setTimezone(new DateTimeZone('Europe/Paris'));
+    // NOTE: malgre le nom du champ 'kickoff_utc', la DB stocke deja en
+    // heure locale (Europe/Paris) car MySQL FROM_UNIXTIME() utilise la TZ
+    // du serveur lors de la generation. On affiche tel quel sans conversion.
+    $dt = new DateTime($utc_dt);
     return $dt->format('d/m/Y H\hi');
 }
 

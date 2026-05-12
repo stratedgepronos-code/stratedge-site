@@ -71,7 +71,7 @@ $where_sql = implode(' AND ', $where);
 
 $matches = SE_Db::queryAll(
     "SELECT m.*,
-            DATE(CONVERT_TZ(m.kickoff_utc, '+00:00', '+02:00')) AS day_paris
+            DATE(m.kickoff_utc) AS day_paris
      FROM pick_matches m
      WHERE $where_sql
      ORDER BY m.kickoff_utc ASC",
@@ -126,8 +126,9 @@ foreach ($matches as $m) {
 // Helpers d'affichage
 // =============================================================================
 function fmt_kickoff(string $utc_dt): string {
-    $dt = new DateTime($utc_dt, new DateTimeZone('UTC'));
-    $dt->setTimezone(new DateTimeZone('Europe/Paris'));
+    // NOTE: champ nomme kickoff_utc mais contient deja l'heure Paris
+    // (DB MySQL FROM_UNIXTIME utilise TZ du serveur). Pas de conversion.
+    $dt = new DateTime($utc_dt);
     return $dt->format('H\hi');
 }
 
