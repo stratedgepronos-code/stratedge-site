@@ -317,7 +317,20 @@ try {
     <?php foreach ($matches_by_day as $day => $day_matches): ?>
       <h2 class="ef-day-header"><?= fmt_day($day) ?> — <?= count($day_matches) ?> match<?= count($day_matches) > 1 ? 's' : '' ?></h2>
 
-      <?php foreach ($day_matches as $m): ?>
+      <?php foreach ($day_matches as $m):
+        $match_highlights = [];
+        if (!empty($m['highlights'])) {
+            $match_highlights = json_decode($m['highlights'], true) ?: [];
+        }
+        $has_strong = !empty(array_filter($match_highlights, fn($h) => ($h['level'] ?? '') === 'strong'));
+        $has_warning = !empty(array_filter($match_highlights, fn($h) => ($h['level'] ?? '') === 'warning'));
+        $star_icon = $has_strong ? '⭐' : ($has_warning ? '⚠️' : '');
+        $highlights_tip = '';
+        if (!empty($match_highlights)) {
+            $tips = array_map(fn($h) => ($h['icon'] ?? '') . ' ' . ($h['label'] ?? '') . ' — ' . ($h['reason'] ?? ''), $match_highlights);
+            $highlights_tip = htmlspecialchars(implode("\n", $tips), ENT_QUOTES);
+        }
+      ?>
         <article class="ef-match" data-match-id="<?= (int)$m['match_id'] ?>">
           <header class="ef-match-header">
             <div class="ef-match-league">
@@ -326,15 +339,20 @@ try {
               <?php if ($m['league_tier']): ?>
                 <span class="ef-match-tier"><?= htmlspecialchars($m['league_tier']) ?></span>
               <?php endif ?>
+              <?php if ($star_icon): ?>
+                <span class="ef-match-star" title="<?= $highlights_tip ?>"><?= $star_icon ?></span>
+              <?php endif ?>
             </div>
             <div class="ef-match-time">⏱ <?= fmt_kickoff($m['kickoff_utc']) ?></div>
           </header>
 
-          <div class="ef-match-teams">
-            <span class="ef-match-team-home"><?= htmlspecialchars($m['home_name']) ?></span>
-            <span class="ef-match-vs">vs</span>
-            <span class="ef-match-team-away"><?= htmlspecialchars($m['away_name']) ?></span>
-          </div>
+          <a href="match.php?id=<?= (int)$m['match_id'] ?>" class="ef-match-link" title="Voir le détail du match">
+            <div class="ef-match-teams">
+              <span class="ef-match-team-home"><?= htmlspecialchars($m['home_name']) ?></span>
+              <span class="ef-match-vs">vs</span>
+              <span class="ef-match-team-away"><?= htmlspecialchars($m['away_name']) ?></span>
+            </div>
+          </a>
 
           <div class="ef-match-lambdas">
             <span>λ<sub>home</sub> <strong><?= number_format((float)$m['lambda_home'], 2) ?></strong></span>

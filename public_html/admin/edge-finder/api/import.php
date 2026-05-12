@@ -108,13 +108,23 @@ try {
         // Delete éventuelle ligne existante (cascade sur pick_candidates)
         SE_Db::execute("DELETE FROM pick_matches WHERE match_id = ?", [$match_id]);
 
+        $fs = $m['footystats'] ?? [];
+        $highlights = $m['highlights'] ?? [];
+
         SE_Db::execute(
             "INSERT INTO pick_matches
              (match_id, import_id, season_id, league_name, league_tier, league_country,
               kickoff_utc, home_id, home_name, away_id, away_name,
               lambda_home, lambda_away, lambda_total,
+              home_xg_prematch, away_xg_prematch, home_ppg, away_ppg,
+              btts_potential, o25_potential, o35_potential, avg_potential,
+              btts_fhg_potential, btts_2hg_potential,
+              corners_potential, corners_o85_potential, corners_o95_potential, corners_o105_potential,
+              cards_potential, highlights,
               n_auto, n_manual, n_warn, best_conviction)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                     ?, ?, ?, ?)",
             [
                 $match_id,
                 $import_id,
@@ -130,6 +140,22 @@ try {
                 $m['lambda_home'] ?? null,
                 $m['lambda_away'] ?? null,
                 $m['lambda_total'] ?? null,
+                $fs['home_xg']           ?? null,
+                $fs['away_xg']           ?? null,
+                $fs['home_ppg']          ?? null,
+                $fs['away_ppg']          ?? null,
+                $fs['btts_potential']    ?? null,
+                $fs['o25_potential']     ?? null,
+                $fs['o35_potential']     ?? null,
+                $fs['avg_potential']     ?? null,
+                $fs['btts_fhg_potential']  ?? null,
+                $fs['btts_2hg_potential']  ?? null,
+                $fs['corners_potential']   ?? null,
+                $fs['corners_o85_potential']  ?? null,
+                $fs['corners_o95_potential']  ?? null,
+                $fs['corners_o105_potential'] ?? null,
+                $fs['cards_potential']        ?? null,
+                empty($highlights) ? null : json_encode($highlights, JSON_UNESCAPED_UNICODE),
                 (int)($m['n_auto'] ?? 0),
                 (int)($m['n_manual'] ?? 0),
                 (int)($m['n_warn'] ?? 0),

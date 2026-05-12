@@ -446,6 +446,35 @@ body::before {
   font-style: italic;
 }
 
+.ef-match-star {
+  display: inline-block;
+  margin-left: 0.5rem;
+  font-size: 1.1rem;
+  cursor: help;
+  filter: drop-shadow(0 0 6px rgba(255,184,0,0.6));
+  animation: ef-star-pulse 2s ease-in-out infinite;
+}
+
+@keyframes ef-star-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.15); opacity: 0.85; }
+}
+
+.ef-match-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: transform 0.2s, opacity 0.2s;
+}
+.ef-match-link:hover {
+  transform: translateX(2px);
+  opacity: 0.92;
+}
+.ef-match-link:hover .ef-match-team-home,
+.ef-match-link:hover .ef-match-team-away {
+  text-shadow: 0 0 12px rgba(0,212,255,0.4);
+}
+
 .ef-match-lambdas {
   display: flex;
   align-items: center;
