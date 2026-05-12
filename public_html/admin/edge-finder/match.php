@@ -360,6 +360,96 @@ try {
   </article>
 
   <!-- STATS GRID -->
+  <?php
+    $tm = $match['team_metrics'] ? json_decode($match['team_metrics'], true) : [];
+  ?>
+
+  <!-- STATS PAR EQUIPE -->
+  <?php if (!empty($tm)): ?>
+  <div style="background: var(--ef-bg-card); border: 1px solid var(--ef-border); border-radius: 14px; padding: 1.25rem 1.5rem; margin-bottom: 1.5rem;">
+    <h3 style="font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.15em; color: var(--ef-pink); font-size: 1.2rem; margin-bottom: 1rem;">
+      🎯 Profil par équipe (calculé depuis le modèle DC)
+    </h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+
+      <!-- HOME -->
+      <div>
+        <h4 style="font-family: 'Rajdhani', sans-serif; color: var(--ef-cyan); font-size: 1rem; margin-bottom: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em;">
+          🏠 <?= htmlspecialchars($match['home_name']) ?> (domicile)
+        </h4>
+        <div class="stat-line">
+          <span class="label">Marque ≥ 1 but (FT)</span>
+          <span class="value <?= hot_class($tm['home_scores_ft'] ?? null, 75) ?>" style="color: var(--ef-green)"><?= number_format($tm['home_scores_ft'] ?? 0, 0) ?>%</span>
+        </div>
+        <div class="stat-line">
+          <span class="label">Marque ≥ 2 buts (FT)</span>
+          <span class="value <?= hot_class($tm['home_scores_2plus_ft'] ?? null, 50) ?>"><?= number_format($tm['home_scores_2plus_ft'] ?? 0, 0) ?>%</span>
+        </div>
+        <div class="stat-line">
+          <span class="label">Encaisse ≥ 1 but (FT)</span>
+          <span class="value <?= hot_class($tm['home_concedes_ft'] ?? null, 70) ?>" style="color: var(--ef-yellow)"><?= number_format($tm['home_concedes_ft'] ?? 0, 0) ?>%</span>
+        </div>
+        <div class="stat-line">
+          <span class="label">Marque en 1ère MT</span>
+          <span class="value <?= hot_class($tm['home_scores_ht'] ?? null, 50) ?>"><?= number_format($tm['home_scores_ht'] ?? 0, 0) ?>%</span>
+        </div>
+        <div class="stat-line">
+          <span class="label">Encaisse en 1ère MT</span>
+          <span class="value <?= hot_class($tm['home_concedes_ht'] ?? null, 50) ?>" style="color: var(--ef-yellow)"><?= number_format($tm['home_concedes_ht'] ?? 0, 0) ?>%</span>
+        </div>
+        <div class="stat-line">
+          <span class="label">Marque en 2ème MT</span>
+          <span class="value <?= hot_class($tm['home_scores_2h'] ?? null, 55) ?>"><?= number_format($tm['home_scores_2h'] ?? 0, 0) ?>%</span>
+        </div>
+        <div class="stat-line">
+          <span class="label">Encaisse en 2ème MT</span>
+          <span class="value <?= hot_class($tm['home_concedes_2h'] ?? null, 55) ?>" style="color: var(--ef-yellow)"><?= number_format($tm['home_concedes_2h'] ?? 0, 0) ?>%</span>
+        </div>
+      </div>
+
+      <!-- AWAY -->
+      <div>
+        <h4 style="font-family: 'Rajdhani', sans-serif; color: var(--ef-cyan); font-size: 1rem; margin-bottom: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em;">
+          ✈️ <?= htmlspecialchars($match['away_name']) ?> (extérieur)
+        </h4>
+        <div class="stat-line">
+          <span class="label">Marque ≥ 1 but (FT)</span>
+          <span class="value <?= hot_class($tm['away_scores_ft'] ?? null, 70) ?>" style="color: var(--ef-green)"><?= number_format($tm['away_scores_ft'] ?? 0, 0) ?>%</span>
+        </div>
+        <div class="stat-line">
+          <span class="label">Marque ≥ 2 buts (FT)</span>
+          <span class="value <?= hot_class($tm['away_scores_2plus_ft'] ?? null, 45) ?>"><?= number_format($tm['away_scores_2plus_ft'] ?? 0, 0) ?>%</span>
+        </div>
+        <div class="stat-line">
+          <span class="label">Encaisse ≥ 1 but (FT)</span>
+          <span class="value <?= hot_class($tm['away_concedes_ft'] ?? null, 75) ?>" style="color: var(--ef-yellow)"><?= number_format($tm['away_concedes_ft'] ?? 0, 0) ?>%</span>
+        </div>
+        <div class="stat-line">
+          <span class="label">Marque en 1ère MT</span>
+          <span class="value <?= hot_class($tm['away_scores_ht'] ?? null, 45) ?>"><?= number_format($tm['away_scores_ht'] ?? 0, 0) ?>%</span>
+        </div>
+        <div class="stat-line">
+          <span class="label">Encaisse en 1ère MT</span>
+          <span class="value <?= hot_class($tm['away_concedes_ht'] ?? null, 50) ?>" style="color: var(--ef-yellow)"><?= number_format($tm['away_concedes_ht'] ?? 0, 0) ?>%</span>
+        </div>
+        <div class="stat-line">
+          <span class="label">Marque en 2ème MT</span>
+          <span class="value <?= hot_class($tm['away_scores_2h'] ?? null, 50) ?>"><?= number_format($tm['away_scores_2h'] ?? 0, 0) ?>%</span>
+        </div>
+        <div class="stat-line">
+          <span class="label">Encaisse en 2ème MT</span>
+          <span class="value <?= hot_class($tm['away_concedes_2h'] ?? null, 55) ?>" style="color: var(--ef-yellow)"><?= number_format($tm['away_concedes_2h'] ?? 0, 0) ?>%</span>
+        </div>
+      </div>
+
+    </div>
+    <p style="margin-top: 1rem; color: var(--ef-text-3); font-family: 'Share Tech Mono', monospace; font-size: 0.7rem;">
+      Pourcentages dérivés du modèle Dixon-Coles calibré sur les 540 derniers jours.
+      ≠ stats historiques réelles de l'équipe sur ses derniers matchs.
+    </p>
+  </div>
+  <?php endif ?>
+
   <div class="stats-grid">
 
     <!-- xG + PPG -->
@@ -427,6 +517,30 @@ try {
     <div class="stats-card">
       <h3>⏱ Mi-temps / 2nde période</h3>
       <div class="stat-line">
+        <span class="label">Over 0.5 buts 1ère MT</span>
+        <span class="value <?= hot_class($match['o05ht_potential'] ?? null, 60) ?>" style="color: <?= color_pct($match['o05ht_potential'] ?? null) ?>">
+          <?= pct_or_dash($match['o05ht_potential'] ?? null) ?>
+        </span>
+      </div>
+      <div class="stat-line">
+        <span class="label">Over 1.5 buts 1ère MT</span>
+        <span class="value <?= hot_class($match['o15ht_potential'] ?? null, 30) ?>" style="color: <?= color_pct($match['o15ht_potential'] ?? null) ?>">
+          <?= pct_or_dash($match['o15ht_potential'] ?? null) ?>
+        </span>
+      </div>
+      <div class="stat-line">
+        <span class="label">Over 0.5 buts 2ème MT</span>
+        <span class="value <?= hot_class($match['o05_2h_potential'] ?? null, 65) ?>" style="color: <?= color_pct($match['o05_2h_potential'] ?? null) ?>">
+          <?= pct_or_dash($match['o05_2h_potential'] ?? null) ?>
+        </span>
+      </div>
+      <div class="stat-line">
+        <span class="label">Over 1.5 buts 2ème MT</span>
+        <span class="value <?= hot_class($match['o15_2h_potential'] ?? null, 35) ?>" style="color: <?= color_pct($match['o15_2h_potential'] ?? null) ?>">
+          <?= pct_or_dash($match['o15_2h_potential'] ?? null) ?>
+        </span>
+      </div>
+      <div class="stat-line">
         <span class="label">BTTS 1ère MT</span>
         <span class="value <?= hot_class($match['btts_fhg_potential'], 30) ?>" style="color: <?= color_pct($match['btts_fhg_potential']) ?>">
           <?= pct_or_dash($match['btts_fhg_potential']) ?>
@@ -437,22 +551,6 @@ try {
         <span class="value <?= hot_class($match['btts_2hg_potential'], 30) ?>" style="color: <?= color_pct($match['btts_2hg_potential']) ?>">
           <?= pct_or_dash($match['btts_2hg_potential']) ?>
         </span>
-      </div>
-      <div class="stat-line">
-        <span class="label">λ <?= htmlspecialchars($match['home_name']) ?> 1<sup>ère</sup> MT</span>
-        <span class="value <?= hot_class((float)$match['lambda_home'] * 0.45, 0.8) ?>"><?= number_format((float)$match['lambda_home'] * 0.45, 2) ?></span>
-      </div>
-      <div class="stat-line">
-        <span class="label">λ <?= htmlspecialchars($match['away_name']) ?> 1<sup>ère</sup> MT</span>
-        <span class="value <?= hot_class((float)$match['lambda_away'] * 0.45, 0.8) ?>"><?= number_format((float)$match['lambda_away'] * 0.45, 2) ?></span>
-      </div>
-      <div class="stat-line">
-        <span class="label">λ <?= htmlspecialchars($match['home_name']) ?> 2<sup>ème</sup> MT</span>
-        <span class="value <?= hot_class((float)$match['lambda_home'] * 0.55, 1.0) ?>"><?= number_format((float)$match['lambda_home'] * 0.55, 2) ?></span>
-      </div>
-      <div class="stat-line">
-        <span class="label">λ <?= htmlspecialchars($match['away_name']) ?> 2<sup>ème</sup> MT</span>
-        <span class="value <?= hot_class((float)$match['lambda_away'] * 0.55, 1.0) ?>"><?= number_format((float)$match['lambda_away'] * 0.55, 2) ?></span>
       </div>
     </div>
 

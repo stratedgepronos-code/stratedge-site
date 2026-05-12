@@ -110,6 +110,7 @@ try {
 
         $fs = $m['footystats'] ?? [];
         $highlights = $m['highlights'] ?? [];
+        $team_metrics = $m['team_metrics'] ?? null;
 
         SE_Db::execute(
             "INSERT INTO pick_matches
@@ -120,10 +121,16 @@ try {
               btts_potential, o25_potential, o35_potential, avg_potential,
               btts_fhg_potential, btts_2hg_potential,
               corners_potential, corners_o85_potential, corners_o95_potential, corners_o105_potential,
-              cards_potential, highlights,
+              cards_potential,
+              o05ht_potential, o15ht_potential, o05_2h_potential, o15_2h_potential,
+              o05_potential, o15_potential, u05_potential, u15_potential, u25_potential,
+              offsides_potential,
+              highlights, team_metrics,
               n_auto, n_manual, n_warn, best_conviction)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-                     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                     ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                     ?, ?,
                      ?, ?, ?, ?)",
             [
                 $match_id,
@@ -155,7 +162,18 @@ try {
                 $fs['corners_o95_potential']  ?? null,
                 $fs['corners_o105_potential'] ?? null,
                 $fs['cards_potential']        ?? null,
+                $fs['o05ht_potential']        ?? null,
+                $fs['o15ht_potential']        ?? null,
+                $fs['o05_2h_potential']       ?? null,
+                $fs['o15_2h_potential']       ?? null,
+                $fs['o05_potential']          ?? null,
+                $fs['o15_potential']          ?? null,
+                $fs['u05_potential']          ?? null,
+                $fs['u15_potential']          ?? null,
+                $fs['u25_potential']          ?? null,
+                $fs['offsides_potential']     ?? null,
                 empty($highlights) ? null : json_encode($highlights, JSON_UNESCAPED_UNICODE),
+                $team_metrics ? json_encode($team_metrics, JSON_UNESCAPED_UNICODE) : null,
                 (int)($m['n_auto'] ?? 0),
                 (int)($m['n_manual'] ?? 0),
                 (int)($m['n_warn'] ?? 0),
