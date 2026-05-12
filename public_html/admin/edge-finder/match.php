@@ -328,11 +328,11 @@ try {
     <div class="stats-card">
       <h3>📈 xG & forme</h3>
       <div class="stat-line">
-        <span class="label">xG pré-match home</span>
+        <span class="label">xG pré-match <?= htmlspecialchars($match['home_name']) ?></span>
         <span class="value" style="color: var(--ef-cyan)"><?= num_or_dash($match['home_xg_prematch']) ?></span>
       </div>
       <div class="stat-line">
-        <span class="label">xG pré-match away</span>
+        <span class="label">xG pré-match <?= htmlspecialchars($match['away_name']) ?></span>
         <span class="value" style="color: var(--ef-cyan)"><?= num_or_dash($match['away_xg_prematch']) ?></span>
       </div>
       <div class="stat-line">
@@ -347,11 +347,11 @@ try {
         </span>
       </div>
       <div class="stat-line">
-        <span class="label">PPG home (forme)</span>
+        <span class="label">PPG <?= htmlspecialchars($match['home_name']) ?> (forme)</span>
         <span class="value"><?= num_or_dash($match['home_ppg']) ?></span>
       </div>
       <div class="stat-line">
-        <span class="label">PPG away (forme)</span>
+        <span class="label">PPG <?= htmlspecialchars($match['away_name']) ?> (forme)</span>
         <span class="value"><?= num_or_dash($match['away_ppg']) ?></span>
       </div>
     </div>
@@ -399,19 +399,19 @@ try {
         </span>
       </div>
       <div class="stat-line">
-        <span class="label">λ home HT (modèle)</span>
+        <span class="label">λ <?= htmlspecialchars($match['home_name']) ?> 1<sup>ère</sup> MT</span>
         <span class="value"><?= number_format((float)$match['lambda_home'] * 0.45, 2) ?></span>
       </div>
       <div class="stat-line">
-        <span class="label">λ away HT (modèle)</span>
+        <span class="label">λ <?= htmlspecialchars($match['away_name']) ?> 1<sup>ère</sup> MT</span>
         <span class="value"><?= number_format((float)$match['lambda_away'] * 0.45, 2) ?></span>
       </div>
       <div class="stat-line">
-        <span class="label">λ home 2H (modèle)</span>
+        <span class="label">λ <?= htmlspecialchars($match['home_name']) ?> 2<sup>ème</sup> MT</span>
         <span class="value"><?= number_format((float)$match['lambda_home'] * 0.55, 2) ?></span>
       </div>
       <div class="stat-line">
-        <span class="label">λ away 2H (modèle)</span>
+        <span class="label">λ <?= htmlspecialchars($match['away_name']) ?> 2<sup>ème</sup> MT</span>
         <span class="value"><?= number_format((float)$match['lambda_away'] * 0.55, 2) ?></span>
       </div>
     </div>
