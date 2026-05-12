@@ -186,8 +186,9 @@ try {
             SE_Db::execute(
                 "INSERT INTO pick_candidates
                  (match_id, market, market_group, model_proba, devig_proba,
-                  odds, ev, status, conviction, below_min_odds)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                  odds, ev, status, conviction, below_min_odds,
+                  conv_flags, conv_breakdown, conv_tier, conv_auto_eligible)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     $match_id,
                     $c['market'],
@@ -199,6 +200,10 @@ try {
                     $c['status'],
                     (int)$c['conviction'],
                     !empty($c['below_min_odds']) ? 1 : 0,
+                    !empty($c['conv_flags']) ? json_encode($c['conv_flags'], JSON_UNESCAPED_UNICODE) : null,
+                    !empty($c['conv_breakdown']) ? json_encode($c['conv_breakdown'], JSON_UNESCAPED_UNICODE) : null,
+                    $c['conv_tier'] ?? null,
+                    !empty($c['conv_auto_eligible']) ? 1 : 0,
                 ]
             );
             $n_candidates++;

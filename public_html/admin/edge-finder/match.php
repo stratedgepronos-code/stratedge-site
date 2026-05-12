@@ -677,11 +677,87 @@ try {
             <div style="color: var(--ef-text-3); font-size: 0.65rem;">M / D</div>
             <div style="font-size: 0.8rem;"><?= number_format((float)$c['model_proba'] * 100, 1) ?>% / <?= number_format((float)$c['devig_proba'] * 100, 1) ?>%</div>
           </div>
-          <div class="num">
-            <div style="color: var(--ef-text-3); font-size: 0.65rem;">CONV</div>
-            <div style="color: var(--ef-pink); font-family: 'Orbitron'; font-size: 1rem;"><?= (int)$c['conviction'] ?></div>
+          <div class="num" style="position: relative;">
+            <div style="color: var(--ef-text-3); font-size: 0.65rem;">CONV<?php if (!empty($c['conv_tier'])): ?> · <?= htmlspecialchars($c['conv_tier']) ?><?php endif ?></div>
+            <div
+              style="color: var(--ef-pink); font-family: 'Orbitron'; font-size: 1rem; cursor: pointer; <?php if (!empty($c['conv_auto_eligible'])): ?>text-shadow: 0 0 6px rgba(255,45,120,0.6);<?php endif ?>"
+              <?php if (!empty($c['conv_breakdown'])): ?>onclick="toggleBreakdown(this)"<?php endif ?>
+              title="<?php
+                if (!empty($c['conv_breakdown'])) {
+                  $bd = json_decode($c['conv_breakdown'], true);
+                  if (is_array($bd)) {
+                    $parts = [];
+                    foreach (['ev','coherence','odds','lambda','status'] as $k) {
+                      if (isset($bd[$k])) $parts[] = strtoupper($k) . " " . $bd[$k]['got'] . "/" . $bd[$k]['max'];
+                    }
+                    if (isset($bd['footystats'])) $parts[] = "FS " . $bd['footystats']['got'];
+                    echo htmlspecialchars(implode(' | ', $parts));
+                  }
+                }
+              ?>"
+            ><?= (int)$c['conviction'] ?></div>
+            <?php if (!empty($c['conv_flags'])):
+              $flags = json_decode($c['conv_flags'], true);
+              if (is_array($flags) && !empty($flags)):
+            ?>
+              <div style="font-size: 0.55rem; color: var(--ef-text-3); margin-top: 0.15rem; line-height: 1;">
+                <?php foreach ($flags as $f):
+                  $is_neg = strpos($f, 'divergent') !== false;
+                ?>
+                  <span style="color: <?= $is_neg ? 'var(--ef-yellow)' : 'var(--ef-green)' ?>; display: inline-block; margin-right: 0.3em;">
+                    <?= $is_neg ? '⚠' : '✓' ?>
+                  </span>
+                <?php endforeach ?>
+              </div>
+            <?php endif; endif ?>
           </div>
         </div>
+
+        <?php if (!empty($c['conv_breakdown'])):
+          $bd = json_decode($c['conv_breakdown'], true);
+          if (is_array($bd)):
+        ?>
+          <div class="conv-breakdown" style="display: none; margin: 0.4rem 0 0.6rem 0; padding: 0.7rem; background: rgba(0,0,0,0.4); border: 1px solid var(--ef-border); border-radius: 6px; font-family: 'Share Tech Mono', monospace; font-size: 0.75rem;">
+            <div style="color: var(--ef-cyan); margin-bottom: 0.4rem; font-weight: 600;">
+              📊 Breakdown conviction (tier <?= htmlspecialchars($c['conv_tier'] ?? '?') ?>)
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 0.35rem;">
+              <?php foreach ([
+                'ev' => 'EV',
+                'coherence' => 'Cohérence',
+                'odds' => 'Cote',
+                'lambda' => 'λ total',
+                'status' => 'Status',
+              ] as $key => $label):
+                if (!isset($bd[$key])) continue;
+                $got = $bd[$key]['got'];
+                $max = $bd[$key]['max'];
+                $pct = $max > 0 ? ($got / $max) : 0;
+                $color = $pct >= 0.9 ? '#00ff9d' : ($pct >= 0.6 ? '#00d4ff' : ($pct >= 0.3 ? '#ffd166' : '#ff5050'));
+              ?>
+                <div>
+                  <div style="color: var(--ef-text-3); font-size: 0.65rem;"><?= $label ?></div>
+                  <div style="color: <?= $color ?>; font-size: 0.95rem;"><?= $got ?><span style="color: var(--ef-text-3); font-size: 0.7rem;">/<?= $max ?></span></div>
+                </div>
+              <?php endforeach ?>
+              <?php if (isset($bd['footystats'])):
+                $fs_got = $bd['footystats']['got'];
+                $fs_color = $fs_got > 0 ? '#00ff9d' : ($fs_got < 0 ? '#ff5050' : 'var(--ef-text-3)');
+              ?>
+                <div>
+                  <div style="color: var(--ef-text-3); font-size: 0.65rem;">FootyStats</div>
+                  <div style="color: <?= $fs_color ?>; font-size: 0.95rem;"><?= $fs_got > 0 ? '+' : '' ?><?= $fs_got ?></div>
+                </div>
+              <?php endif ?>
+            </div>
+            <div style="margin-top: 0.5rem; color: var(--ef-text-3); font-size: 0.7rem;">
+              Base <?= $bd['base'] ?? '?' ?> + FS <?= $bd['footystats']['got'] ?? 0 ?> = total brut <?= $bd['total'] ?? '?' ?>
+              <?php if (!empty($c['conv_auto_eligible'])): ?>
+                · <span style="color: var(--ef-pink); font-weight: 600;">🎯 AUTO-ELIGIBLE</span>
+              <?php endif ?>
+            </div>
+          </div>
+        <?php endif; endif ?>
       <?php endforeach ?>
     <?php endif ?>
   </div>
@@ -690,5 +766,25 @@ try {
     <p>StratEdge Edge Finder · Page détail match</p>
   </footer>
 </div>
+
+<script>
+  // Toggle l'affichage du breakdown au clic sur le score CONV
+  function toggleBreakdown(scoreEl) {
+    // Trouve le parent .candidate-row et son .conv-breakdown frere
+    let row = scoreEl.closest('.candidate-row') || scoreEl.parentElement.parentElement;
+    if (!row) return;
+    let bd = row.nextElementSibling;
+    while (bd && !bd.classList.contains('conv-breakdown')) {
+      bd = bd.nextElementSibling;
+      if (!bd || bd.classList.contains('candidate-row')) {
+        bd = null;
+        break;
+      }
+    }
+    if (bd) {
+      bd.style.display = (bd.style.display === 'none' || !bd.style.display) ? 'block' : 'none';
+    }
+  }
+</script>
 </body>
 </html>
