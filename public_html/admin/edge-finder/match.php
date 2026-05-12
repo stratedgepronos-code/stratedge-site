@@ -89,6 +89,17 @@ function color_pct(mixed $v): string {
     return 'var(--ef-text-2)';
 }
 
+/**
+ * Retourne une classe CSS "stat-hot" si la valeur est notable (au-dessus du seuil).
+ * Sinon retourne string vide. Permet le pulse vert néon sur les chiffres importants.
+ */
+function hot_class(mixed $v, float $threshold, bool $reverse = false): string {
+    if ($v === null || !is_numeric($v)) return '';
+    $f = (float)$v;
+    if ($reverse) return $f <= $threshold ? 'stat-hot' : '';
+    return $f >= $threshold ? 'stat-hot' : '';
+}
+
 $highlights = $match['highlights'] ? json_decode($match['highlights'], true) : [];
 ?>
 <!DOCTYPE html>
@@ -219,6 +230,33 @@ $highlights = $match['highlights'] ? json_decode($match['highlights'], true) : [
       color: var(--ef-text);
     }
 
+    /* Stats hot — neon pulse pour valeurs notables */
+    .stat-line .value.stat-hot,
+    .stat-line .value .stat-hot {
+      color: #00ff9d !important;
+      text-shadow:
+        0 0 8px rgba(0, 255, 157, 0.7),
+        0 0 16px rgba(0, 255, 157, 0.5),
+        0 0 24px rgba(0, 255, 157, 0.3);
+      animation: stat-hot-pulse 1.8s ease-in-out infinite;
+    }
+
+    @keyframes stat-hot-pulse {
+      0%, 100% {
+        opacity: 1;
+        text-shadow:
+          0 0 8px rgba(0, 255, 157, 0.7),
+          0 0 16px rgba(0, 255, 157, 0.5);
+      }
+      50% {
+        opacity: 0.85;
+        text-shadow:
+          0 0 14px rgba(0, 255, 157, 1),
+          0 0 24px rgba(0, 255, 157, 0.7),
+          0 0 32px rgba(0, 255, 157, 0.4);
+      }
+    }
+
     /* Candidats list */
     .cands-card {
       background: var(--ef-bg-card);
@@ -329,17 +367,19 @@ try {
       <h3>📈 xG & forme</h3>
       <div class="stat-line">
         <span class="label">xG pré-match <?= htmlspecialchars($match['home_name']) ?></span>
-        <span class="value" style="color: var(--ef-cyan)"><?= num_or_dash($match['home_xg_prematch']) ?></span>
+        <span class="value <?= hot_class($match['home_xg_prematch'], 1.7) ?>" style="color: var(--ef-cyan)"><?= num_or_dash($match['home_xg_prematch']) ?></span>
       </div>
       <div class="stat-line">
         <span class="label">xG pré-match <?= htmlspecialchars($match['away_name']) ?></span>
-        <span class="value" style="color: var(--ef-cyan)"><?= num_or_dash($match['away_xg_prematch']) ?></span>
+        <span class="value <?= hot_class($match['away_xg_prematch'], 1.7) ?>" style="color: var(--ef-cyan)"><?= num_or_dash($match['away_xg_prematch']) ?></span>
       </div>
       <div class="stat-line">
         <span class="label">xG total</span>
         <span class="value">
-          <?php if ($match['home_xg_prematch'] && $match['away_xg_prematch']): ?>
-            <?= number_format((float)$match['home_xg_prematch'] + (float)$match['away_xg_prematch'], 2) ?>
+          <?php if ($match['home_xg_prematch'] && $match['away_xg_prematch']):
+            $xg_total_val = (float)$match['home_xg_prematch'] + (float)$match['away_xg_prematch'];
+          ?>
+            <span class="<?= hot_class($xg_total_val, 3.0) ?>"><?= number_format($xg_total_val, 2) ?></span>
             <span style="font-size: 0.7em; color: var(--ef-text-3);">
               vs DC <?= number_format((float)$match['lambda_total'], 2) ?>
             </span>
@@ -348,11 +388,11 @@ try {
       </div>
       <div class="stat-line">
         <span class="label">PPG <?= htmlspecialchars($match['home_name']) ?> (forme)</span>
-        <span class="value"><?= num_or_dash($match['home_ppg']) ?></span>
+        <span class="value <?= hot_class($match['home_ppg'], 2.0) ?>"><?= num_or_dash($match['home_ppg']) ?></span>
       </div>
       <div class="stat-line">
         <span class="label">PPG <?= htmlspecialchars($match['away_name']) ?> (forme)</span>
-        <span class="value"><?= num_or_dash($match['away_ppg']) ?></span>
+        <span class="value <?= hot_class($match['away_ppg'], 2.0) ?>"><?= num_or_dash($match['away_ppg']) ?></span>
       </div>
     </div>
 
@@ -361,23 +401,23 @@ try {
       <h3>⚽ Buts attendus</h3>
       <div class="stat-line">
         <span class="label">Moyenne buts (avg potential)</span>
-        <span class="value" style="color: var(--ef-pink)"><?= num_or_dash($match['avg_potential']) ?></span>
+        <span class="value <?= hot_class($match['avg_potential'], 3.0) ?>" style="color: var(--ef-pink)"><?= num_or_dash($match['avg_potential']) ?></span>
       </div>
       <div class="stat-line">
         <span class="label">BTTS potential</span>
-        <span class="value" style="color: <?= color_pct($match['btts_potential']) ?>">
+        <span class="value <?= hot_class($match['btts_potential'], 65) ?>" style="color: <?= color_pct($match['btts_potential']) ?>">
           <?= pct_or_dash($match['btts_potential']) ?>
         </span>
       </div>
       <div class="stat-line">
         <span class="label">Over 2.5 potential</span>
-        <span class="value" style="color: <?= color_pct($match['o25_potential']) ?>">
+        <span class="value <?= hot_class($match['o25_potential'], 65) ?>" style="color: <?= color_pct($match['o25_potential']) ?>">
           <?= pct_or_dash($match['o25_potential']) ?>
         </span>
       </div>
       <div class="stat-line">
         <span class="label">Over 3.5 potential</span>
-        <span class="value" style="color: <?= color_pct($match['o35_potential']) ?>">
+        <span class="value <?= hot_class($match['o35_potential'], 55) ?>" style="color: <?= color_pct($match['o35_potential']) ?>">
           <?= pct_or_dash($match['o35_potential']) ?>
         </span>
       </div>
@@ -388,31 +428,31 @@ try {
       <h3>⏱ Mi-temps / 2nde période</h3>
       <div class="stat-line">
         <span class="label">BTTS 1ère MT</span>
-        <span class="value" style="color: <?= color_pct($match['btts_fhg_potential']) ?>">
+        <span class="value <?= hot_class($match['btts_fhg_potential'], 30) ?>" style="color: <?= color_pct($match['btts_fhg_potential']) ?>">
           <?= pct_or_dash($match['btts_fhg_potential']) ?>
         </span>
       </div>
       <div class="stat-line">
         <span class="label">BTTS 2ème MT</span>
-        <span class="value" style="color: <?= color_pct($match['btts_2hg_potential']) ?>">
+        <span class="value <?= hot_class($match['btts_2hg_potential'], 30) ?>" style="color: <?= color_pct($match['btts_2hg_potential']) ?>">
           <?= pct_or_dash($match['btts_2hg_potential']) ?>
         </span>
       </div>
       <div class="stat-line">
         <span class="label">λ <?= htmlspecialchars($match['home_name']) ?> 1<sup>ère</sup> MT</span>
-        <span class="value"><?= number_format((float)$match['lambda_home'] * 0.45, 2) ?></span>
+        <span class="value <?= hot_class((float)$match['lambda_home'] * 0.45, 0.8) ?>"><?= number_format((float)$match['lambda_home'] * 0.45, 2) ?></span>
       </div>
       <div class="stat-line">
         <span class="label">λ <?= htmlspecialchars($match['away_name']) ?> 1<sup>ère</sup> MT</span>
-        <span class="value"><?= number_format((float)$match['lambda_away'] * 0.45, 2) ?></span>
+        <span class="value <?= hot_class((float)$match['lambda_away'] * 0.45, 0.8) ?>"><?= number_format((float)$match['lambda_away'] * 0.45, 2) ?></span>
       </div>
       <div class="stat-line">
         <span class="label">λ <?= htmlspecialchars($match['home_name']) ?> 2<sup>ème</sup> MT</span>
-        <span class="value"><?= number_format((float)$match['lambda_home'] * 0.55, 2) ?></span>
+        <span class="value <?= hot_class((float)$match['lambda_home'] * 0.55, 1.0) ?>"><?= number_format((float)$match['lambda_home'] * 0.55, 2) ?></span>
       </div>
       <div class="stat-line">
         <span class="label">λ <?= htmlspecialchars($match['away_name']) ?> 2<sup>ème</sup> MT</span>
-        <span class="value"><?= number_format((float)$match['lambda_away'] * 0.55, 2) ?></span>
+        <span class="value <?= hot_class((float)$match['lambda_away'] * 0.55, 1.0) ?>"><?= number_format((float)$match['lambda_away'] * 0.55, 2) ?></span>
       </div>
     </div>
 
@@ -421,29 +461,29 @@ try {
       <h3>🚩 Corners & cartons</h3>
       <div class="stat-line">
         <span class="label">Moyenne corners</span>
-        <span class="value" style="color: var(--ef-cyan)"><?= num_or_dash($match['corners_potential'], 1) ?></span>
+        <span class="value <?= hot_class($match['corners_potential'], 10) ?>" style="color: var(--ef-cyan)"><?= num_or_dash($match['corners_potential'], 1) ?></span>
       </div>
       <div class="stat-line">
         <span class="label">Corners Over 8.5</span>
-        <span class="value" style="color: <?= color_pct($match['corners_o85_potential']) ?>">
+        <span class="value <?= hot_class($match['corners_o85_potential'], 65) ?>" style="color: <?= color_pct($match['corners_o85_potential']) ?>">
           <?= pct_or_dash($match['corners_o85_potential']) ?>
         </span>
       </div>
       <div class="stat-line">
         <span class="label">Corners Over 9.5</span>
-        <span class="value" style="color: <?= color_pct($match['corners_o95_potential']) ?>">
+        <span class="value <?= hot_class($match['corners_o95_potential'], 55) ?>" style="color: <?= color_pct($match['corners_o95_potential']) ?>">
           <?= pct_or_dash($match['corners_o95_potential']) ?>
         </span>
       </div>
       <div class="stat-line">
         <span class="label">Corners Over 10.5</span>
-        <span class="value" style="color: <?= color_pct($match['corners_o105_potential']) ?>">
+        <span class="value <?= hot_class($match['corners_o105_potential'], 45) ?>" style="color: <?= color_pct($match['corners_o105_potential']) ?>">
           <?= pct_or_dash($match['corners_o105_potential']) ?>
         </span>
       </div>
       <div class="stat-line">
         <span class="label">Moyenne cartons</span>
-        <span class="value" style="color: var(--ef-yellow)"><?= num_or_dash($match['cards_potential'], 1) ?></span>
+        <span class="value <?= hot_class($match['cards_potential'], 5.5) ?>" style="color: var(--ef-yellow)"><?= num_or_dash($match['cards_potential'], 1) ?></span>
       </div>
     </div>
 
