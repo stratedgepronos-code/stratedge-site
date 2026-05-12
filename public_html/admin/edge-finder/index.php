@@ -229,6 +229,12 @@ try {
 
   <div class="ef-gradient-strip"></div>
 
+  <!-- TABS -->
+  <div class="ef-tabs">
+    <a href="./" class="ef-tab active">🎯 Dashboard</a>
+    <a href="stats.php" class="ef-tab">📊 Stats</a>
+  </div>
+
   <!-- ─────────────────────────────────────────────────────────── STATS -->
   <section class="ef-stats">
     <div class="ef-stat ef-stat-auto">

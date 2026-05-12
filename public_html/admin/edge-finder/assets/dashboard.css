@@ -146,6 +146,42 @@ body::before {
 }
 
 /* ────────────────────────────────────────────────────────────────────────
+   TABS NAVIGATION
+──────────────────────────────────────────────────────────────────────── */
+
+.ef-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.ef-tab {
+  padding: 0.6rem 1.3rem;
+  background: var(--ef-bg-card-2);
+  color: var(--ef-text-2);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  text-decoration: none;
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 0.1em;
+  transition: all 0.2s;
+  font-size: 0.95rem;
+}
+
+.ef-tab:hover {
+  color: var(--ef-cyan);
+  border-color: var(--ef-cyan);
+}
+
+.ef-tab.active {
+  background: linear-gradient(135deg, var(--ef-pink), var(--ef-pink-dim));
+  color: white;
+  border-color: var(--ef-pink);
+  box-shadow: 0 0 16px rgba(255, 45, 120, 0.3);
+}
+
+/* ────────────────────────────────────────────────────────────────────────
    STATS
 ──────────────────────────────────────────────────────────────────────── */
 
