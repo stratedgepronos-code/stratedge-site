@@ -169,18 +169,48 @@ function decision_pill(string $decision): string {
 
 function flag_emoji(string $country): string {
     $map = [
-        'England'     => '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
-        'France'      => '🇫🇷',
-        'Spain'       => '🇪🇸',
-        'Italy'       => '🇮🇹',
-        'Germany'     => '🇩🇪',
-        'Netherlands' => '🇳🇱',
-        'Belgium'     => '🇧🇪',
-        'Brazil'      => '🇧🇷',
-        'USA'         => '🇺🇸',
-        'Japan'       => '🇯🇵',
+        'England'     => 'gb-eng',
+        'France'      => 'fr',
+        'Spain'       => 'es',
+        'Italy'       => 'it',
+        'Germany'     => 'de',
+        'Netherlands' => 'nl',
+        'Belgium'     => 'be',
+        'Brazil'      => 'br',
+        'USA'         => 'us',
+        'Japan'       => 'jp',
+        'Argentina'   => 'ar',
+        'Portugal'    => 'pt',
+        'Scotland'    => 'gb-sct',
+        'Wales'       => 'gb-wls',
+        'Mexico'      => 'mx',
+        'Australia'   => 'au',
+        'South Korea' => 'kr',
+        'Saudi Arabia'=> 'sa',
+        'Turkey'      => 'tr',
+        'Greece'      => 'gr',
+        'Switzerland' => 'ch',
+        'Austria'     => 'at',
+        'Denmark'     => 'dk',
+        'Sweden'      => 'se',
+        'Norway'      => 'no',
+        'Poland'      => 'pl',
+        'Czech Republic' => 'cz',
+        'Croatia'     => 'hr',
+        'Serbia'      => 'rs',
+        'Romania'     => 'ro',
+        'Russia'      => 'ru',
+        'Ukraine'     => 'ua',
     ];
-    return $map[$country] ?? '🌍';
+    $code = $map[$country] ?? null;
+    if ($code === null) {
+        return '<span style="font-size: 0.9em; color: var(--ef-text-3);">🌍</span>';
+    }
+    return '<img src="https://flagcdn.com/24x18/' . htmlspecialchars($code) . '.png" '
+         . 'srcset="https://flagcdn.com/48x36/' . htmlspecialchars($code) . '.png 2x" '
+         . 'width="22" height="16" '
+         . 'alt="' . htmlspecialchars($country) . '" '
+         . 'style="display: inline-block; vertical-align: middle; border-radius: 2px;">';
 }
 ?>
 <!DOCTYPE html>
