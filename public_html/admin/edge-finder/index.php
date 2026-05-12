@@ -439,8 +439,8 @@ try {
                 <div class="ef-cand-conv">
                   <div class="ef-cand-conv-label">CONV</div>
                   <div class="ef-cand-conv-value">
-                    <span class="ef-cand-conv-num"><?= (int)$c['conviction'] ?></span>
-                    <span class="ef-cand-conv-bar"><span style="width:<?= (int)$c['conviction'] ?>%"></span></span>
+                    <span class="ef-cand-conv-num<?= (int)$c['conviction'] >= 100 ? ' ef-cand-conv-exceptional' : '' ?>"><?= (int)$c['conviction'] ?><?= (int)$c['conviction'] >= 100 ? ' 🔥' : '' ?></span>
+                    <span class="ef-cand-conv-bar"><span style="width:<?= min(100, (int)$c['conviction']) ?>%"></span></span>
                   </div>
                 </div>
                 <div class="ef-cand-actions">

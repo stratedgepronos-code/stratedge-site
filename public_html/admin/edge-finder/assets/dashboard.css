@@ -617,6 +617,17 @@ body::before {
   color: var(--ef-text);
 }
 
+.ef-cand-conv-num.ef-cand-conv-exceptional {
+  color: #ffd700;
+  text-shadow: 0 0 6px rgba(255, 215, 0, 0.6);
+  animation: pulse-gold 2s ease-in-out infinite;
+}
+
+@keyframes pulse-gold {
+  0%, 100% { text-shadow: 0 0 6px rgba(255, 215, 0, 0.6); }
+  50%      { text-shadow: 0 0 12px rgba(255, 215, 0, 0.9), 0 0 18px rgba(255, 100, 0, 0.4); }
+}
+
 .ef-cand-conv-bar {
   display: block;
   width: 60px;
