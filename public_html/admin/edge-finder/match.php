@@ -66,21 +66,26 @@ function status_emoji(string $status): string {
     };
 }
 
-function pct_or_dash(?float $v, int $decimals = 0): string {
-    if ($v === null) return '<span style="color: var(--ef-text-3)">—</span>';
-    return number_format((float)$v, $decimals) . '%';
+function pct_or_dash(mixed $v, int $decimals = 0): string {
+    if ($v === null || $v === '') return '<span style="color: var(--ef-text-3)">—</span>';
+    $f = is_numeric($v) ? (float)$v : null;
+    if ($f === null) return '<span style="color: var(--ef-text-3)">—</span>';
+    return number_format($f, $decimals) . '%';
 }
 
-function num_or_dash(?float $v, int $decimals = 2): string {
-    if ($v === null) return '<span style="color: var(--ef-text-3)">—</span>';
-    return number_format((float)$v, $decimals);
+function num_or_dash(mixed $v, int $decimals = 2): string {
+    if ($v === null || $v === '') return '<span style="color: var(--ef-text-3)">—</span>';
+    $f = is_numeric($v) ? (float)$v : null;
+    if ($f === null) return '<span style="color: var(--ef-text-3)">—</span>';
+    return number_format($f, $decimals);
 }
 
-function color_pct(?float $v): string {
-    if ($v === null) return 'var(--ef-text-3)';
-    if ($v >= 65) return 'var(--ef-green)';
-    if ($v >= 50) return 'var(--ef-cyan)';
-    if ($v >= 35) return 'var(--ef-yellow)';
+function color_pct(mixed $v): string {
+    if ($v === null || $v === '' || !is_numeric($v)) return 'var(--ef-text-3)';
+    $f = (float)$v;
+    if ($f >= 65) return 'var(--ef-green)';
+    if ($f >= 50) return 'var(--ef-cyan)';
+    if ($f >= 35) return 'var(--ef-yellow)';
     return 'var(--ef-text-2)';
 }
 
