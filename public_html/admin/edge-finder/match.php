@@ -94,6 +94,29 @@ function flag_emoji(string $country): string {
          . 'style="display: inline-block; vertical-align: middle; border-radius: 2px;">';
 }
 
+// Charge la base des logos football (centralisee)
+require_once __DIR__ . '/../../includes/football-logos-db.php';
+
+/**
+ * Retourne un <img> HTML pour le logo d'une équipe foot.
+ * Si pas trouvé dans la base, retourne un placeholder discret.
+ */
+function team_logo_img(string $teamName, int $size = 28): string {
+    if (function_exists('stratedge_football_logo')) {
+        $url = stratedge_football_logo($teamName);
+        if ($url && $url !== '') {
+            return '<img src="' . htmlspecialchars($url) . '" '
+                 . 'alt="' . htmlspecialchars($teamName) . '" '
+                 . 'width="' . $size . '" height="' . $size . '" '
+                 . 'style="display: inline-block; vertical-align: middle; '
+                 . 'object-fit: contain; margin-right: 0.4em; '
+                 . 'filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4));" '
+                 . 'onerror="this.style.display=\'none\'">';
+        }
+    }
+    return '';
+}
+
 function status_emoji(string $status): string {
     return match($status) {
         'auto'   => '🟢',
@@ -369,9 +392,9 @@ try {
     </div>
 
     <div class="match-teams-big">
-      <?= htmlspecialchars($match['home_name']) ?>
+      <?= team_logo_img($match['home_name'], 44) ?><?= htmlspecialchars($match['home_name']) ?>
       <span class="vs">vs</span>
-      <?= htmlspecialchars($match['away_name']) ?>
+      <?= team_logo_img($match['away_name'], 44) ?><?= htmlspecialchars($match['away_name']) ?>
     </div>
 
     <div class="match-lambdas">
@@ -412,7 +435,7 @@ try {
       <!-- HOME -->
       <div>
         <h4 style="font-family: 'Rajdhani', sans-serif; color: var(--ef-cyan); font-size: 1rem; margin-bottom: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em;">
-          🏠 <?= htmlspecialchars($match['home_name']) ?> (domicile)
+          <?= team_logo_img($match['home_name'], 28) ?>🏠 <?= htmlspecialchars($match['home_name']) ?> (domicile)
         </h4>
         <div class="stat-line">
           <span class="label">Marque ≥ 1 but (FT)</span>
@@ -447,7 +470,7 @@ try {
       <!-- AWAY -->
       <div>
         <h4 style="font-family: 'Rajdhani', sans-serif; color: var(--ef-cyan); font-size: 1rem; margin-bottom: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em;">
-          ✈️ <?= htmlspecialchars($match['away_name']) ?> (extérieur)
+          <?= team_logo_img($match['away_name'], 28) ?>✈️ <?= htmlspecialchars($match['away_name']) ?> (extérieur)
         </h4>
         <div class="stat-line">
           <span class="label">Marque ≥ 1 but (FT)</span>

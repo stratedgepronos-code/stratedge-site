@@ -212,6 +212,28 @@ function flag_emoji(string $country): string {
          . 'alt="' . htmlspecialchars($country) . '" '
          . 'style="display: inline-block; vertical-align: middle; border-radius: 2px;">';
 }
+
+// Charge la base des logos football (centralisee)
+require_once __DIR__ . '/../../includes/football-logos-db.php';
+
+/**
+ * Retourne un <img> HTML pour le logo d'une équipe foot.
+ */
+function team_logo_img(string $teamName, int $size = 24): string {
+    if (function_exists('stratedge_football_logo')) {
+        $url = stratedge_football_logo($teamName);
+        if ($url && $url !== '') {
+            return '<img src="' . htmlspecialchars($url) . '" '
+                 . 'alt="' . htmlspecialchars($teamName) . '" '
+                 . 'width="' . $size . '" height="' . $size . '" '
+                 . 'style="display: inline-block; vertical-align: middle; '
+                 . 'object-fit: contain; margin-right: 0.35em; '
+                 . 'filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4));" '
+                 . 'onerror="this.style.display=\'none\'">';
+        }
+    }
+    return '';
+}
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -378,9 +400,9 @@ try {
 
           <a href="match.php?id=<?= (int)$m['match_id'] ?>" class="ef-match-link" title="Voir le détail du match">
             <div class="ef-match-teams">
-              <span class="ef-match-team-home"><?= htmlspecialchars($m['home_name']) ?></span>
+              <span class="ef-match-team-home"><?= team_logo_img($m['home_name'], 22) ?><?= htmlspecialchars($m['home_name']) ?></span>
               <span class="ef-match-vs">vs</span>
-              <span class="ef-match-team-away"><?= htmlspecialchars($m['away_name']) ?></span>
+              <span class="ef-match-team-away"><?= team_logo_img($m['away_name'], 22) ?><?= htmlspecialchars($m['away_name']) ?></span>
             </div>
           </a>
 
