@@ -187,8 +187,8 @@ body::before {
 
 .ef-stats {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1rem;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.8rem;
   margin-bottom: 2rem;
 }
 
@@ -200,11 +200,20 @@ body::before {
   position: relative;
   overflow: hidden;
   transition: all 0.3s;
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  cursor: pointer;
 }
 
 .ef-stat:hover {
   border-color: rgba(255, 45, 120, 0.4);
   transform: translateY(-2px);
+}
+
+.ef-stat-active {
+  border-color: var(--ef-pink) !important;
+  box-shadow: 0 0 12px rgba(255, 45, 120, 0.4);
 }
 
 .ef-stat::before {
@@ -219,6 +228,7 @@ body::before {
 .ef-stat-auto::before     { background: var(--ef-green);  }
 .ef-stat-manual::before   { background: var(--ef-yellow); }
 .ef-stat-validated::before { background: var(--ef-cyan);  }
+.ef-stat-rejected::before  { background: var(--ef-red);   }
 .ef-stat-results::before  { background: linear-gradient(90deg, var(--ef-green), var(--ef-red)); }
 
 .ef-stat-label {
@@ -241,6 +251,7 @@ body::before {
 .ef-stat-auto .ef-stat-value     { color: var(--ef-green); }
 .ef-stat-manual .ef-stat-value   { color: var(--ef-yellow); }
 .ef-stat-validated .ef-stat-value { color: var(--ef-cyan); }
+.ef-stat-rejected .ef-stat-value  { color: var(--ef-red); }
 
 .ef-stat-sub {
   margin-top: 0.4rem;

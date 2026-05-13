@@ -290,22 +290,27 @@ try {
 
   <!-- ─────────────────────────────────────────────────────────── STATS -->
   <section class="ef-stats">
-    <div class="ef-stat ef-stat-auto">
+    <a href="?decision=pending&status=auto" class="ef-stat ef-stat-auto<?= ($filter_decision === 'pending' && $filter_status === 'auto') ? ' ef-stat-active' : '' ?>">
       <div class="ef-stat-label">SWEET 🟢 PENDING</div>
       <div class="ef-stat-value"><?= (int)($stats['n_auto_pending'] ?? 0) ?></div>
-      <div class="ef-stat-sub">en attente de décision</div>
-    </div>
-    <div class="ef-stat ef-stat-manual">
+      <div class="ef-stat-sub">cliquer pour filtrer</div>
+    </a>
+    <a href="?decision=pending&status=manual" class="ef-stat ef-stat-manual<?= ($filter_decision === 'pending' && $filter_status === 'manual') ? ' ef-stat-active' : '' ?>">
       <div class="ef-stat-label">MANUAL 🟡 PENDING</div>
       <div class="ef-stat-value"><?= (int)($stats['n_manual_pending'] ?? 0) ?></div>
       <div class="ef-stat-sub">à valider manuellement</div>
-    </div>
-    <div class="ef-stat ef-stat-validated">
-      <div class="ef-stat-label">VALIDÉS</div>
+    </a>
+    <a href="?decision=validated" class="ef-stat ef-stat-validated<?= ($filter_decision === 'validated') ? ' ef-stat-active' : '' ?>">
+      <div class="ef-stat-label">✅ VALIDÉS</div>
       <div class="ef-stat-value"><?= (int)($stats['n_validated'] ?? 0) ?></div>
       <div class="ef-stat-sub">prêts à publier</div>
-    </div>
-    <div class="ef-stat ef-stat-results">
+    </a>
+    <a href="?decision=rejected" class="ef-stat ef-stat-rejected<?= ($filter_decision === 'rejected') ? ' ef-stat-active' : '' ?>">
+      <div class="ef-stat-label">❌ REJETÉS</div>
+      <div class="ef-stat-value"><?= (int)($stats['n_rejected'] ?? 0) ?></div>
+      <div class="ef-stat-sub">passes</div>
+    </a>
+    <a href="?decision=won" class="ef-stat ef-stat-results<?= ($filter_decision === 'won' || $filter_decision === 'lost') ? ' ef-stat-active' : '' ?>">
       <div class="ef-stat-label">RÉSULTATS</div>
       <div class="ef-stat-value">
         <span style="color:#00ff9d"><?= (int)($stats['n_won'] ?? 0) ?></span>
@@ -313,7 +318,7 @@ try {
         <span style="color:#ff3b3b"><?= (int)($stats['n_lost'] ?? 0) ?></span>
       </div>
       <div class="ef-stat-sub">gagnés / perdus</div>
-    </div>
+    </a>
   </section>
 
   <!-- ─────────────────────────────────────────────────────────── FILTRES -->
