@@ -100,6 +100,7 @@ curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true,
     CURLOPT_FOLLOWLOCATION => false,
     CURLOPT_TIMEOUT        => 30,
+    CURLOPT_IPRESOLVE      => CURL_IPRESOLVE_V4,  // Force IPv4 (IP sortante stable: 178.16.128.35)
     CURLOPT_HTTPHEADER     => [
         "x-apisports-key: " . API_FOOTBALL_KEY,
         "Accept: application/json",
