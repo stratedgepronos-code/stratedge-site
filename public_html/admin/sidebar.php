@@ -214,7 +214,7 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 
   <div class="sidebar-label">Navigation</div>
   <nav>
-    <a href="index.php" <?= ($pageActive==='index') ?'class="active"':'' ?>>
+    <a href="/panel-x9k3m/index.php" <?= ($pageActive==='index') ?'class="active"':'' ?>>
       <span>📊</span> Tableau de bord
     </a>
 
@@ -231,19 +231,19 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
         <span class="chevron">›</span>
       </button>
       <div class="nav-group-inner">
-        <a href="valider-bets.php" <?= ($pageActive==='valider-bets') ?'class="active"':'' ?>><span>✅</span> Valider les bets</a>
-        <a href="creer-card.php" <?= ($pageActive==='creer-card') ?'class="active"':'' ?>><span>🎨</span> Créer une Card</a>
-        <a href="prono-commu-admin.php" <?= ($pageActive==='prono-commu-admin') ?'class="active"':'' ?>><span>⚽</span> Prono de la commu</a>
+        <a href="/panel-x9k3m/valider-bets.php" <?= ($pageActive==='valider-bets') ?'class="active"':'' ?>><span>✅</span> Valider les bets</a>
+        <a href="/panel-x9k3m/creer-card.php" <?= ($pageActive==='creer-card') ?'class="active"':'' ?>><span>🎨</span> Créer une Card</a>
+        <a href="/panel-x9k3m/prono-commu-admin.php" <?= ($pageActive==='prono-commu-admin') ?'class="active"':'' ?>><span>⚽</span> Prono de la commu</a>
         <?php if (isSuperAdmin() || getAdminRole() === 'admin_tennis'): ?>
-        <a href="montante-tennis.php" <?= ($pageActive==='montante-tennis') ?'class="active"':'' ?>><span>🎾</span> Montante Tennis</a>
+        <a href="/panel-x9k3m/montante-tennis.php" <?= ($pageActive==='montante-tennis') ?'class="active"':'' ?>><span>🎾</span> Montante Tennis</a>
         <?php endif; ?>
         <?php if (isSuperAdmin() || getAdminRole() === 'admin_foot'): ?>
-        <a href="montante-foot.php" <?= ($pageActive==='montante-foot') ?'class="active"':'' ?>><span>⚽</span> Montante Foot</a>
+        <a href="/panel-x9k3m/montante-foot.php" <?= ($pageActive==='montante-foot') ?'class="active"':'' ?>><span>⚽</span> Montante Foot</a>
         <?php endif; ?>
-        <a href="edit-bet-image.php" <?= ($pageActive==='edit-bet-image') ?'class="active"':'' ?>><span>🖼️</span> Modifier image bet</a>
-        <a href="ht-tracker.php" <?= ($pageActive==='ht-tracker') ?'class="active"':'' ?> style="<?= ($pageActive==='ht-tracker') ? '' : 'color:rgba(0,212,255,0.85);' ?>"><span>🎯</span> Bet Mi-Temps</a>
+        <a href="/panel-x9k3m/edit-bet-image.php" <?= ($pageActive==='edit-bet-image') ?'class="active"':'' ?>><span>🖼️</span> Modifier image bet</a>
+        <a href="/panel-x9k3m/ht-tracker.php" <?= ($pageActive==='ht-tracker') ?'class="active"':'' ?> style="<?= ($pageActive==='ht-tracker') ? '' : 'color:rgba(0,212,255,0.85);' ?>"><span>🎯</span> Bet Mi-Temps</a>
         <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
-        <a href="historique.php" <?= ($pageActive==='historique') ?'class="active"':'' ?>>
+        <a href="/panel-x9k3m/historique.php" <?= ($pageActive==='historique') ?'class="active"':'' ?>>
           <span>📂</span> Historique
           <?php if ($nbBetsHistorique > 0): ?><span class="badge-count"><?= $nbBetsHistorique ?></span><?php endif; ?>
         </a>
@@ -258,20 +258,20 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
         <span class="chevron">›</span>
       </button>
       <div class="nav-group-inner">
-        <a href="membres.php" <?= ($pageActive==='membres') ?'class="active"':'' ?>><span>👥</span> Membres</a>
-        <a href="gestion-admins.php" <?= ($pageActive==='admins') ?'class="active"':'' ?>><span>👑</span> Admins</a>
+        <a href="/panel-x9k3m/membres.php" <?= ($pageActive==='membres') ?'class="active"':'' ?>><span>👥</span> Membres</a>
+        <a href="/panel-x9k3m/gestion-admins.php" <?= ($pageActive==='admins') ?'class="active"':'' ?>><span>👑</span> Admins</a>
       </div>
     </div>
 
-    <a href="idees.php" <?= ($pageActive==='idees') ?'class="active"':'' ?>>
+    <a href="/panel-x9k3m/idees.php" <?= ($pageActive==='idees') ?'class="active"':'' ?>>
       <span>💡</span> Idées & Bugs
     </a>
 
-    <a href="code-promo.php" <?= ($pageActive==='code-promo') ?'class="active"':'' ?>>
+    <a href="/panel-x9k3m/code-promo.php" <?= ($pageActive==='code-promo') ?'class="active"':'' ?>>
       <span>🎟️</span> Code promo
     </a>
 
-    <a href="giveaway.php" <?= ($pageActive==='giveaway') ?'class="active"':'' ?> style="<?= ($pageActive==='giveaway') ? '' : 'color:rgba(255,45,120,0.92);' ?>">
+    <a href="/panel-x9k3m/giveaway.php" <?= ($pageActive==='giveaway') ?'class="active"':'' ?> style="<?= ($pageActive==='giveaway') ? '' : 'color:rgba(255,45,120,0.92);' ?>">
       <span>🎁</span> GiveAway
     </a>
 
@@ -283,19 +283,19 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
       </button>
       <div class="nav-group-inner">
         <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
-        <a href="messagerie-interne.php" <?= ($pageActive==='messagerie-interne') ?'class="active"':'' ?>>
+        <a href="/panel-x9k3m/messagerie-interne.php" <?= ($pageActive==='messagerie-interne') ?'class="active"':'' ?>>
           <span>📥</span> Messagerie interne
           <?php if (!empty($nbInboxNonLus)): ?><span class="badge-count"><?= $nbInboxNonLus ?></span><?php endif; ?>
         </a>
         <?php endif; ?>
-        <a href="messages.php" <?= ($pageActive==='messages') ?'class="active"':'' ?>>
+        <a href="/panel-x9k3m/messages.php" <?= ($pageActive==='messages') ?'class="active"':'' ?>>
           <span>💬</span> Messages
           <?php if ($nbMsgNonLus > 0): ?><span class="badge-count"><?= $nbMsgNonLus ?></span><?php endif; ?>
         </a>
       </div>
     </div>
 
-    <a href="tickets.php" <?= ($pageActive==='tickets') ?'class="active"':'' ?>>
+    <a href="/panel-x9k3m/tickets.php" <?= ($pageActive==='tickets') ?'class="active"':'' ?>>
       <span>🎫</span> Tickets SAV
       <?php if ($nbTicketsOpen > 0): ?><span class="badge-count"><?= $nbTicketsOpen ?></span><?php endif; ?>
     </a>
@@ -307,8 +307,8 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
         <span class="chevron">›</span>
       </button>
       <div class="nav-group-inner">
-        <a href="broadcast.php" <?= ($pageActive==='broadcast') ?'class="active"':'' ?>><span>📣</span> Broadcast</a>
-        <a href="twitter-post.php" <?= ($pageActive==='twitter-post') ?'class="active"':'' ?>>
+        <a href="/panel-x9k3m/broadcast.php" <?= ($pageActive==='broadcast') ?'class="active"':'' ?>><span>📣</span> Broadcast</a>
+        <a href="/panel-x9k3m/twitter-post.php" <?= ($pageActive==='twitter-post') ?'class="active"':'' ?>>
           <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.736-8.847L1.254 2.25H8.08l4.259 5.629L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg></span> Poster sur X
         </a>
       </div>
@@ -316,7 +316,7 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 
     <!-- Edge Finder (super admin uniquement) -->
     <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
-    <a href="edge-finder/" class="nav-item <?= ($pageActive==='edge-finder') ?'active':'' ?>" style="color:#ff2d78;">
+    <a href="/panel-x9k3m/edge-finder/" class="nav-item <?= ($pageActive==='edge-finder') ?'active':'' ?>" style="color:#ff2d78;">
       <span>🎯</span> Edge Finder
     </a>
     <?php endif; ?>
@@ -328,15 +328,15 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
       <span>Voir le site</span>
       <span style="margin-left:auto;font-size:0.7rem;opacity:0.6;">↗</span>
     </a>
-    <a href="../logout.php" class="btn-logout">🚪 Déconnexion</a>
+    <a href="/logout.php" class="btn-logout">🚪 Déconnexion</a>
   </div>
 </div>
 <nav class="admin-mob-tabs">
-  <a href="index.php" class="<?= ($pageActive==='index') ? 'active' : '' ?>"><span class="ico">📊</span><span>Dashboard</span></a>
-  <a href="valider-bets.php" class="<?= ($pageActive==='valider-bets') ? 'active' : '' ?>"><span class="ico">✅</span><span>Valider</span></a>
-  <a href="creer-card.php" class="<?= ($pageActive==='creer-card') ? 'active' : '' ?>"><span class="ico">🎨</span><span>Créer</span></a>
-  <a href="messages.php" class="<?= ($pageActive==='messages') ? 'active' : '' ?>"><span class="ico">💬</span><span>Messages</span></a>
-  <a href="tickets.php" class="<?= ($pageActive==='tickets') ? 'active' : '' ?>"><span class="ico">🎫</span><span>SAV</span></a>
+  <a href="/panel-x9k3m/index.php" class="<?= ($pageActive==='index') ? 'active' : '' ?>"><span class="ico">📊</span><span>Dashboard</span></a>
+  <a href="/panel-x9k3m/valider-bets.php" class="<?= ($pageActive==='valider-bets') ? 'active' : '' ?>"><span class="ico">✅</span><span>Valider</span></a>
+  <a href="/panel-x9k3m/creer-card.php" class="<?= ($pageActive==='creer-card') ? 'active' : '' ?>"><span class="ico">🎨</span><span>Créer</span></a>
+  <a href="/panel-x9k3m/messages.php" class="<?= ($pageActive==='messages') ? 'active' : '' ?>"><span class="ico">💬</span><span>Messages</span></a>
+  <a href="/panel-x9k3m/tickets.php" class="<?= ($pageActive==='tickets') ? 'active' : '' ?>"><span class="ico">🎫</span><span>SAV</span></a>
 </nav>
 
 <script>
