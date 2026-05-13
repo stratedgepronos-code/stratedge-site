@@ -315,7 +315,10 @@ function stratedge_football_logo(string $teamName): string {
             'houston dynamo' => 1608, 'dynamo houston' => 1608,
             'chicago fire' => 1610, 'chicago fire fc' => 1610,
             'sporting kc' => 1615, 'sporting kansas city' => 1615, 'kansas city mls' => 1615,
-            'minnesota united' => 9568, 'minnesota utd' => 9568,
+            // 'minnesota united' RETIRE: l'ID 9568 etait celui d'Inter Miami CF (api-sports),
+            // pas Minnesota. Bug confirme via card affichant le logo Miami au lieu Minnesota.
+            // Sans mapping ici, le lookup passe par le manifest slug-based qui resout
+            // correctement Minnesota United via son slug local/ESPN.
             'orlando city' => 1612, 'orlando city sc' => 1612,
             'nashville sc' => 18654, 'nashville mls' => 18654,
             'austin fc' => 18655, 'austin mls' => 18655,
@@ -324,7 +327,6 @@ function stratedge_football_logo(string $teamName): string {
             'new england revolution' => 1594, 'revolution' => 1594, 'new england mls' => 1594,
             'fc cincinnati' => 18648, 'cincinnati mls' => 18648,
             'colorado rapids' => 1613, 'rapids' => 1613,
-            'inter miami' => 18656,
         ];
     }
 
