@@ -762,6 +762,25 @@ try {
     <?php endif ?>
   </div>
 
+  <!-- ─────────────────────────────── ANALYSE BUTEURS PROBABLES (Claude Opus 4.7) ─── -->
+  <section class="ef-scorers-section">
+    <div class="ef-scorers-header">
+      <h2>🎯 BUTEURS PROBABLES</h2>
+      <p>Analyse par Claude Opus 4.7 - basee sur connaissances generales du modele</p>
+    </div>
+    <div id="ef-scorers-content">
+      <button id="ef-scorers-btn" class="ef-scorers-btn" onclick="analyzeScorers()">
+        ⚡ Lancer l'analyse buteurs
+      </button>
+      <div id="ef-scorers-loader" style="display:none;">
+        <div class="ef-scorers-loader-pulse">Analyse en cours...</div>
+        <p class="ef-scorers-loader-sub">Claude Opus 4.7 reflechit sur ce match (~5-10 sec)</p>
+      </div>
+      <div id="ef-scorers-result" style="display:none;"></div>
+      <div id="ef-scorers-error" style="display:none;" class="ef-scorers-error"></div>
+    </div>
+  </section>
+
   <footer class="ef-footer">
     <p>StratEdge Edge Finder · Page détail match</p>
   </footer>
@@ -785,6 +804,122 @@ try {
       bd.style.display = (bd.style.display === 'none' || !bd.style.display) ? 'block' : 'none';
     }
   }
+
+  // ===== Analyse buteurs via Claude Opus 4.7 =====
+  const MATCH_ID = <?= (int)$match_id ?>;
+
+  async function analyzeScorers(forceRefresh = false) {
+    const btn = document.getElementById('ef-scorers-btn');
+    const loader = document.getElementById('ef-scorers-loader');
+    const result = document.getElementById('ef-scorers-result');
+    const errBox = document.getElementById('ef-scorers-error');
+
+    btn.style.display = 'none';
+    loader.style.display = 'block';
+    result.style.display = 'none';
+    errBox.style.display = 'none';
+
+    try {
+      const r = await fetch('./api/analyze_scorers.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({match_id: MATCH_ID, force_refresh: forceRefresh})
+      });
+      const data = await r.json();
+      loader.style.display = 'none';
+
+      if (!r.ok || data.error) {
+        errBox.textContent = '❌ ' + (data.error || ('Erreur HTTP ' + r.status))
+          + (data.detail ? ' — ' + data.detail : '');
+        errBox.style.display = 'block';
+        btn.style.display = 'inline-block';
+        return;
+      }
+
+      renderScorers(data);
+    } catch (e) {
+      loader.style.display = 'none';
+      errBox.textContent = '❌ ' + e.message;
+      errBox.style.display = 'block';
+      btn.style.display = 'inline-block';
+    }
+  }
+
+  function confClass(c) {
+    if (c === 'Forte')   return 'ef-conf-strong';
+    if (c === 'Moyenne') return 'ef-conf-medium';
+    return 'ef-conf-weak';
+  }
+
+  function renderScorers(data) {
+    const result = document.getElementById('ef-scorers-result');
+    const s1 = data.scorer_1;
+    const s2 = data.scorer_2;
+    const warnings = (data.warnings || []).filter(w => w && w.trim());
+    const cached = data.cached;
+
+    let html = '';
+    if (cached) {
+      html += `<div class="ef-scorers-cached">📦 Analyse en cache (générée le ${data.generated_at})
+                 — <a href="#" onclick="event.preventDefault(); analyzeScorers(true)">Régénérer</a></div>`;
+    } else {
+      html += `<div class="ef-scorers-fresh">✨ Fraichement généré · ${data.tokens?.input || 0}+${data.tokens?.output || 0} tokens · ~$${data.cost_usd || 0}</div>`;
+    }
+
+    html += '<div class="ef-scorers-cards">';
+    for (const s of [s1, s2]) {
+      const teamLabel = s.team === 'home' ? '🏠 Domicile' : '✈️ Extérieur';
+      html += `
+        <div class="ef-scorer-card">
+          <div class="ef-scorer-top">
+            <div class="ef-scorer-name">${escapeHtml(s.name)}</div>
+            <span class="ef-scorer-conf ${confClass(s.confidence)}">${escapeHtml(s.confidence)}</span>
+          </div>
+          <div class="ef-scorer-team">${teamLabel}</div>
+          <div class="ef-scorer-reasoning">${escapeHtml(s.reasoning)}</div>
+        </div>`;
+    }
+    html += '</div>';
+
+    if (warnings.length) {
+      html += '<div class="ef-scorers-warnings"><strong>⚠️ Warnings :</strong><ul>';
+      for (const w of warnings) html += `<li>${escapeHtml(w)}</li>`;
+      html += '</ul></div>';
+    }
+
+    if (data.freshness_note) {
+      html += `<div class="ef-scorers-freshness">ℹ️ ${escapeHtml(data.freshness_note)}</div>`;
+    }
+
+    result.innerHTML = html;
+    result.style.display = 'block';
+  }
+
+  function escapeHtml(s) {
+    if (s == null) return '';
+    return String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  // Auto-load si analyse en cache (preload silencieux)
+  (async () => {
+    try {
+      const r = await fetch('./api/analyze_scorers.php', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({match_id: MATCH_ID, force_refresh: false, peek: true})
+      });
+      // Si reponse est OK et cached=true, on l'affiche d'office
+      if (r.ok) {
+        const data = await r.json();
+        if (data.cached) {
+          document.getElementById('ef-scorers-btn').style.display = 'none';
+          renderScorers(data);
+        }
+      }
+    } catch(e) { /* ignore */ }
+  })();
 </script>
 </body>
 </html>
