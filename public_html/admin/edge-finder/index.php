@@ -351,10 +351,39 @@ try {
       <option value="all"       <?= $filter_decision==='all'?'selected':'' ?>>Toutes décisions</option>
     </select>
 
-    <label class="ef-filter-conv">
-      Conviction min :
-      <input type="number" name="min_conv" min="0" max="100" step="5" value="<?= $filter_min_conv ?>" placeholder="0">
-    </label>
+    <div class="ef-filter-conv">
+      <span class="ef-filter-conv-label">CONV min :</span>
+      <div class="ef-conv-presets">
+        <?php
+          $current_min = $filter_min_conv;
+          $presets = [
+            ['v' => 0,   'label' => 'Tous',   'cls' => ''],
+            ['v' => 70,  'label' => '≥70',    'cls' => ''],
+            ['v' => 80,  'label' => '≥80',    'cls' => ''],
+            ['v' => 90,  'label' => '≥90',    'cls' => 'good'],
+            ['v' => 100, 'label' => '≥100🔥', 'cls' => 'exceptional'],
+          ];
+          // Reconstruit l'URL avec tous les filtres sauf min_conv pour les boutons preset
+          $base_qs = [];
+          if ($filter_league)   $base_qs['league'] = $filter_league;
+          if ($filter_group)    $base_qs['group'] = $filter_group;
+          if ($filter_status)   $base_qs['status'] = $filter_status;
+          if ($filter_decision) $base_qs['decision'] = $filter_decision;
+          foreach ($presets as $p):
+            $qs = $base_qs;
+            if ($p['v'] > 0) $qs['min_conv'] = $p['v'];
+            $url = '?' . http_build_query($qs);
+            $is_active = ($current_min == $p['v']);
+        ?>
+          <a href="<?= htmlspecialchars($url) ?>"
+             class="ef-conv-preset <?= $p['cls'] ?> <?= $is_active ? 'active' : '' ?>">
+            <?= $p['label'] ?>
+          </a>
+        <?php endforeach ?>
+      </div>
+      <input type="number" name="min_conv" min="0" max="150" step="5" value="<?= $filter_min_conv ?>"
+             placeholder="custom" class="ef-conv-custom" title="Valeur custom (0-150)">
+    </div>
 
     <button type="submit">Filtrer</button>
     <a href="?" class="ef-filter-reset">Reset</a>

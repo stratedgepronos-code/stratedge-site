@@ -302,12 +302,75 @@ body::before {
 .ef-filter-conv {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   font-size: 0.8rem;
   color: var(--ef-text-2);
+  flex-wrap: wrap;
 }
 
-.ef-filter-conv input {
+.ef-filter-conv-label {
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.ef-conv-presets {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.ef-conv-preset {
+  display: inline-block;
+  padding: 0.35rem 0.7rem;
+  font-family: 'Rajdhani', sans-serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  color: var(--ef-text-3);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 6px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.ef-conv-preset:hover {
+  background: rgba(255, 45, 120, 0.15);
+  border-color: var(--ef-pink);
+  color: var(--ef-text);
+}
+
+.ef-conv-preset.active {
+  background: linear-gradient(135deg, rgba(255,45,120,0.3), rgba(0,212,255,0.2));
+  border-color: var(--ef-pink);
+  color: var(--ef-text);
+  box-shadow: 0 0 8px rgba(255, 45, 120, 0.3);
+}
+
+.ef-conv-preset.good {
+  border-color: rgba(0, 255, 157, 0.3);
+}
+
+.ef-conv-preset.good.active {
+  background: linear-gradient(135deg, rgba(0, 255, 157, 0.25), rgba(0, 212, 255, 0.15));
+  border-color: #00ff9d;
+  color: #00ff9d;
+  box-shadow: 0 0 10px rgba(0, 255, 157, 0.4);
+}
+
+.ef-conv-preset.exceptional {
+  border-color: rgba(255, 215, 0, 0.4);
+}
+
+.ef-conv-preset.exceptional.active {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 100, 0, 0.2));
+  border-color: #ffd700;
+  color: #ffd700;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
+  animation: pulse-gold 2s ease-in-out infinite;
+}
+
+.ef-conv-custom {
   width: 70px;
 }
 
