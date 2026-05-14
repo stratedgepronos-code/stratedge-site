@@ -121,7 +121,7 @@ if ($btts)   $market_odds_lines[] = "  - BTTS Yes : cote " . number_format((floa
 $market_odds = implode("\n", $market_odds_lines) ?: "  (cotes non dispo en DB)";
 
 // Charge le prompt
-$prompt_path = __DIR__ . '/../../../../prompts/PROMPT_BUTEURS_v1_1.md';
+$prompt_path = __DIR__ . '/../prompts/PROMPT_BUTEURS_v1_1.md';
 if (!file_exists($prompt_path)) {
     sse_error('Prompt file not found: ' . $prompt_path);
 }
