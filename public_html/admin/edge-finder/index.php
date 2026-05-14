@@ -270,7 +270,25 @@ try {
   <!-- ─────────────────────────────────────────────────────────── HEADER -->
   <header class="ef-header">
     <div class="ef-title">
-      <h1>🎯 EDGE FINDER</h1>
+      <div class="ef-logo-row">
+        <svg class="ef-logo" viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="efLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ff2d78"/>
+              <stop offset="100%" stop-color="#00d4ff"/>
+            </linearGradient>
+          </defs>
+          <circle cx="28" cy="28" r="25" fill="none" stroke="url(#efLogoGrad)" stroke-width="2.5" opacity="0.35"/>
+          <circle cx="28" cy="28" r="17" fill="none" stroke="url(#efLogoGrad)" stroke-width="2.5" opacity="0.6"/>
+          <circle cx="28" cy="28" r="9" fill="none" stroke="url(#efLogoGrad)" stroke-width="2.5"/>
+          <circle cx="28" cy="28" r="3.5" fill="url(#efLogoGrad)"/>
+          <line x1="28" y1="1" x2="28" y2="11" stroke="url(#efLogoGrad)" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="28" y1="45" x2="28" y2="55" stroke="url(#efLogoGrad)" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="1" y1="28" x2="11" y2="28" stroke="url(#efLogoGrad)" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="45" y1="28" x2="55" y2="28" stroke="url(#efLogoGrad)" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>
+        <h1>EDGE FINDER</h1>
+      </div>
       <p class="ef-subtitle">Détecteur de candidats value bets — méthodologie v7.7</p>
     </div>
     <div class="ef-sync">
