@@ -190,7 +190,7 @@ $history = SE_Db::queryAll(
     "SELECT c.candidate_id, c.market, c.market_group, c.odds, c.ev,
             c.conviction, c.conv_tier, c.user_decision, c.decision_at,
             m.match_id, m.home_name, m.away_name, m.kickoff_utc,
-            m.league_name, m.league_country, m.home_goals, m.away_goals
+            m.league_name, m.league_country
      FROM pick_candidates c
      JOIN pick_matches m ON m.match_id = c.match_id
      WHERE c.user_decision IN ('tracked','won','lost')" . $date_filter . $status_filter . "
@@ -716,9 +716,6 @@ try {
           $status_label = '📌 EN COURS';
           $status_color = 'var(--ef-cyan)';
         }
-        $score = ($h['home_goals'] !== null && $h['away_goals'] !== null)
-          ? (int)$h['home_goals'] . '-' . (int)$h['away_goals']
-          : null;
         $kickoff = (new DateTime($h['kickoff_utc']))->format('d/m H:i');
       ?>
         <tr>
@@ -728,7 +725,6 @@ try {
             </a>
             <span class="ef-history-meta">
               <?= htmlspecialchars($h['league_name'] ?? '') ?> · <?= $kickoff ?>
-              <?php if ($score): ?> · <strong style="color: var(--ef-text)"><?= $score ?></strong><?php endif ?>
             </span>
           </td>
           <td><strong><?= htmlspecialchars($h['market']) ?></strong></td>
