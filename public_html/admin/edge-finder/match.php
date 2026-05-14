@@ -762,23 +762,48 @@ try {
     <?php endif ?>
   </div>
 
-  <!-- ─────────────────────────────── ANALYSE BUTEURS PROBABLES (Claude Opus 4.7) ─── -->
-  <section class="ef-scorers-section">
+  <!-- ─────────────────────────────── ANALYSE TOP 3 BUTEURS (Claude Opus 4.7 + Web Search) ─── -->
+  <section class="ef-scorers-section" id="ef-scorers-section">
     <div class="ef-scorers-header">
-      <h2>🎯 BUTEURS PROBABLES</h2>
-      <p>Analyse par Claude Opus 4.7 - basee sur connaissances generales du modele</p>
+      <h2><span class="ef-scorers-icon">🎯</span> TOP 3 BUTEURS PROBABLES</h2>
+      <p>Analyse SNIPER 100pts par Claude Opus 4.7 + recherches web en temps reel</p>
     </div>
-    <div id="ef-scorers-content">
-      <button id="ef-scorers-btn" class="ef-scorers-btn" onclick="analyzeScorers()">
-        ⚡ Lancer l'analyse buteurs
+
+    <!-- Init state : juste un gros bouton -->
+    <div id="ef-scorers-idle">
+      <button class="ef-scorers-launch-btn" onclick="launchScorersAnalysis(false)">
+        <span class="ef-scorers-launch-icon">⚡</span>
+        <span class="ef-scorers-launch-label">LANCER L'ANALYSE</span>
+        <span class="ef-scorers-launch-sub">Claude Opus 4.7 + web search · ~$0.15</span>
       </button>
-      <div id="ef-scorers-loader" style="display:none;">
-        <div class="ef-scorers-loader-pulse">Analyse en cours...</div>
-        <p class="ef-scorers-loader-sub">Claude Opus 4.7 reflechit sur ce match (~5-10 sec)</p>
-      </div>
-      <div id="ef-scorers-result" style="display:none;"></div>
-      <div id="ef-scorers-error" style="display:none;" class="ef-scorers-error"></div>
     </div>
+
+    <!-- Streaming state : panneau temps reel -->
+    <div id="ef-scorers-stream" style="display:none;">
+      <div class="ef-stream-grid">
+        <div class="ef-stream-status">
+          <div class="ef-stream-pulse"></div>
+          <div class="ef-stream-status-text" id="ef-stream-status-text">Initialisation...</div>
+          <div class="ef-stream-timer" id="ef-stream-timer">0s</div>
+        </div>
+        <div class="ef-stream-meter">
+          <div class="ef-stream-meter-label">TOKENS</div>
+          <div class="ef-stream-meter-value">
+            <span id="ef-stream-tokens-in">0</span> in / <span id="ef-stream-tokens-out">0</span> out
+          </div>
+        </div>
+      </div>
+      <div class="ef-stream-searches">
+        <div class="ef-stream-searches-label">🌐 RECHERCHES WEB</div>
+        <ul class="ef-stream-searches-list" id="ef-stream-searches-list"></ul>
+      </div>
+    </div>
+
+    <!-- Error state -->
+    <div id="ef-scorers-error" style="display:none;" class="ef-scorers-error"></div>
+
+    <!-- Result state -->
+    <div id="ef-scorers-result" style="display:none;"></div>
   </section>
 
   <footer class="ef-footer">
@@ -805,94 +830,335 @@ try {
     }
   }
 
-  // ===== Analyse buteurs via Claude Opus 4.7 =====
+  // ===== Analyse TOP 3 buteurs via Claude Opus 4.7 + Web Search (stream SSE) =====
   const MATCH_ID = <?= (int)$match_id ?>;
+  let streamTimer = null;
+  let streamStartTs = 0;
+  let eventSource = null;
 
-  async function analyzeScorers(forceRefresh = false) {
-    const btn = document.getElementById('ef-scorers-btn');
-    const loader = document.getElementById('ef-scorers-loader');
-    const result = document.getElementById('ef-scorers-result');
-    const errBox = document.getElementById('ef-scorers-error');
+  function launchScorersAnalysis(force) {
+    document.getElementById('ef-scorers-idle').style.display = 'none';
+    document.getElementById('ef-scorers-error').style.display = 'none';
+    document.getElementById('ef-scorers-result').style.display = 'none';
+    document.getElementById('ef-scorers-stream').style.display = 'block';
+    document.getElementById('ef-stream-searches-list').innerHTML = '';
+    document.getElementById('ef-stream-tokens-in').textContent = '0';
+    document.getElementById('ef-stream-tokens-out').textContent = '0';
+    setStatus('Connexion au flux...');
 
-    btn.style.display = 'none';
-    loader.style.display = 'block';
-    result.style.display = 'none';
-    errBox.style.display = 'none';
+    streamStartTs = Date.now();
+    streamTimer = setInterval(() => {
+      const sec = Math.floor((Date.now() - streamStartTs) / 1000);
+      document.getElementById('ef-stream-timer').textContent = sec + 's';
+    }, 250);
 
-    try {
-      const r = await fetch('./api/analyze_scorers.php', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({match_id: MATCH_ID, force_refresh: forceRefresh})
-      });
-      const data = await r.json();
-      loader.style.display = 'none';
+    const url = './api/analyze_scorers_stream.php?match_id=' + MATCH_ID + (force ? '&force=1' : '');
+    eventSource = new EventSource(url);
 
-      if (!r.ok || data.error) {
-        errBox.textContent = '❌ ' + (data.error || ('Erreur HTTP ' + r.status))
-          + (data.detail ? ' — ' + data.detail : '');
-        errBox.style.display = 'block';
-        btn.style.display = 'inline-block';
-        return;
+    eventSource.addEventListener('status', (e) => {
+      const d = JSON.parse(e.data);
+      setStatus(d.message || '');
+    });
+    eventSource.addEventListener('tokens', (e) => {
+      const d = JSON.parse(e.data);
+      document.getElementById('ef-stream-tokens-in').textContent = (d.input || 0).toLocaleString('fr-FR');
+      document.getElementById('ef-stream-tokens-out').textContent = (d.output_so_far || 0).toLocaleString('fr-FR');
+    });
+    eventSource.addEventListener('web_search', (e) => {
+      const d = JSON.parse(e.data);
+      const ul = document.getElementById('ef-stream-searches-list');
+      const li = document.createElement('li');
+      li.className = 'ef-stream-search-item';
+      li.innerHTML = '<span class="ef-stream-search-arrow">▸</span> <span class="ef-stream-search-q">' +
+        escapeHtml(d.query || 'recherche') + '</span>';
+      ul.appendChild(li);
+      requestAnimationFrame(() => li.classList.add('ef-stream-search-visible'));
+    });
+    eventSource.addEventListener('complete', (e) => {
+      const d = JSON.parse(e.data);
+      closeStream();
+      renderResult(d);
+    });
+    eventSource.addEventListener('error', (e) => {
+      let err = 'Erreur de connexion au stream';
+      if (e.data) {
+        try { const d = JSON.parse(e.data); err = d.message || err; } catch(_) {}
       }
-
-      renderScorers(data);
-    } catch (e) {
-      loader.style.display = 'none';
-      errBox.textContent = '❌ ' + e.message;
-      errBox.style.display = 'block';
-      btn.style.display = 'inline-block';
-    }
+      closeStream();
+      const box = document.getElementById('ef-scorers-error');
+      box.textContent = '❌ ' + err;
+      box.style.display = 'block';
+      document.getElementById('ef-scorers-idle').style.display = 'block';
+    });
   }
 
-  function confClass(c) {
-    if (c === 'Forte')   return 'ef-conf-strong';
-    if (c === 'Moyenne') return 'ef-conf-medium';
-    return 'ef-conf-weak';
+  function closeStream() {
+    if (eventSource) { eventSource.close(); eventSource = null; }
+    if (streamTimer) { clearInterval(streamTimer); streamTimer = null; }
+    document.getElementById('ef-scorers-stream').style.display = 'none';
   }
 
-  function renderScorers(data) {
+  function setStatus(text) {
+    document.getElementById('ef-stream-status-text').textContent = text;
+  }
+
+  // ===== Rendu du resultat =====
+  function renderResult(d) {
     const result = document.getElementById('ef-scorers-result');
-    const s1 = data.scorer_1;
-    const s2 = data.scorer_2;
-    const warnings = (data.warnings || []).filter(w => w && w.trim());
-    const cached = data.cached;
+    const scorers = d.scorers || [];
+    const warnings = (d.warnings || []).filter(w => w && (w.text || w));
+    const isCached = d.cached;
+    const cost = d.cost_usd || 0;
+    const duration = d.duration_seconds || 0;
+    const searches = d.searches || [];
 
     let html = '';
-    if (cached) {
-      html += `<div class="ef-scorers-cached">📦 Analyse en cache (générée le ${data.generated_at})
-                 — <a href="#" onclick="event.preventDefault(); analyzeScorers(true)">Régénérer</a></div>`;
-    } else {
-      html += `<div class="ef-scorers-fresh">✨ Fraichement généré · ${data.tokens?.input || 0}+${data.tokens?.output || 0} tokens · ~$${data.cost_usd || 0}</div>`;
-    }
 
-    html += '<div class="ef-scorers-cards">';
-    for (const s of [s1, s2]) {
-      const teamLabel = s.team === 'home' ? '🏠 Domicile' : '✈️ Extérieur';
-      html += `
-        <div class="ef-scorer-card">
-          <div class="ef-scorer-top">
-            <div class="ef-scorer-name">${escapeHtml(s.name)}</div>
-            <span class="ef-scorer-conf ${confClass(s.confidence)}">${escapeHtml(s.confidence)}</span>
-          </div>
-          <div class="ef-scorer-team">${teamLabel}</div>
-          <div class="ef-scorer-reasoning">${escapeHtml(s.reasoning)}</div>
-        </div>`;
+    // Bannière meta
+    html += '<div class="ef-result-meta">';
+    if (isCached) {
+      html += '<div class="ef-meta-cached">📦 Analyse cachee · genere le ' + escapeHtml(d.generated_at || '') +
+        ' · <a href="#" onclick="event.preventDefault(); launchScorersAnalysis(true)">⟳ Regenerer</a></div>';
+    } else {
+      html += '<div class="ef-meta-fresh">✨ Fraichement genere · ' +
+        (d.tokens_input || 0).toLocaleString('fr-FR') + ' in + ' +
+        (d.tokens_output || 0).toLocaleString('fr-FR') + ' out · ' +
+        (d.web_searches_count || 0) + ' recherches web · ' +
+        duration + 's · $' + (cost.toFixed(3)) + '</div>';
     }
     html += '</div>';
 
-    if (warnings.length) {
-      html += '<div class="ef-scorers-warnings"><strong>⚠️ Warnings :</strong><ul>';
-      for (const w of warnings) html += `<li>${escapeHtml(w)}</li>`;
+    // Match summary
+    if (d.match_summary) {
+      html += '<div class="ef-result-summary">' + escapeHtml(d.match_summary) + '</div>';
+    }
+
+    // Warnings critiques en bandeau (level=critical en premier)
+    const critWarnings = warnings.filter(w => (w.level || '').toLowerCase() === 'critical');
+    if (critWarnings.length) {
+      html += '<div class="ef-warnings-critical">';
+      html += '<div class="ef-warnings-critical-title">🚨 ALERTES CRITIQUES</div>';
+      html += '<ul>';
+      for (const w of critWarnings) html += '<li>' + escapeHtml(w.text || w) + '</li>';
       html += '</ul></div>';
     }
 
-    if (data.freshness_note) {
-      html += `<div class="ef-scorers-freshness">ℹ️ ${escapeHtml(data.freshness_note)}</div>`;
+    // TOP 3 buteurs - grid
+    html += '<div class="ef-scorers-podium">';
+    for (let i = 0; i < scorers.length; i++) {
+      html += renderScorerCard(scorers[i], i);
+    }
+    html += '</div>';
+
+    // Autres warnings (warning + info)
+    const otherWarnings = warnings.filter(w => (w.level || '').toLowerCase() !== 'critical');
+    if (otherWarnings.length) {
+      html += '<div class="ef-warnings-other">';
+      html += '<div class="ef-warnings-other-title">⚠️ Notes & avertissements</div>';
+      html += '<ul>';
+      for (const w of otherWarnings) {
+        const lvl = (w.level || 'info').toLowerCase();
+        const icon = lvl === 'warning' ? '⚠️' : 'ℹ️';
+        html += '<li class="ef-warn-' + lvl + '">' + icon + ' ' + escapeHtml(w.text || w) + '</li>';
+      }
+      html += '</ul></div>';
+    }
+
+    if (d.freshness_note) {
+      html += '<div class="ef-freshness-note">🕐 ' + escapeHtml(d.freshness_note) + '</div>';
+    }
+
+    // Searches recap (collapsable)
+    if (searches.length) {
+      html += '<details class="ef-searches-recap">';
+      html += '<summary>🌐 ' + searches.length + ' recherches web effectuees</summary>';
+      html += '<ul>';
+      for (const s of searches) {
+        html += '<li><code>' + escapeHtml(s.query || '') + '</code></li>';
+      }
+      html += '</ul></details>';
+    }
+
+    // Markdown full (collapsable)
+    if (d.markdown_full) {
+      html += '<details class="ef-markdown-full">';
+      html += '<summary>📜 Voir l\'analyse complete (markdown)</summary>';
+      html += '<pre>' + escapeHtml(d.markdown_full) + '</pre>';
+      html += '</details>';
     }
 
     result.innerHTML = html;
     result.style.display = 'block';
+  }
+
+  function renderScorerCard(s, idx) {
+    const teamLabel = s.team === 'home' ? '🏠 Domicile' : '✈️ Exterieur';
+    const teamColor = s.team === 'home' ? '#00ff9d' : '#00d4ff';
+    const podiumIcons = ['🥇', '🥈', '🥉'];
+    const stars = '⭐'.repeat(Math.max(1, Math.min(5, s.stars || 3)));
+    const sniperScore = s.sniper_score || 0;
+    const verdict = s.verdict || '';
+    const verdictClass = verdict.toLowerCase().includes('hot') || verdict.toLowerCase().includes('bet') ?
+      'ef-verdict-bet' : (verdict.toLowerCase().includes('skip') ? 'ef-verdict-skip' : 'ef-verdict-neutral');
+
+    // Speedomètre SVG du score SNIPER
+    const radarSvg = renderRadarChart(s.radar || {});
+    const scoreSpeedometer = renderScoreSpeedometer(sniperScore);
+
+    let html = '<div class="ef-scorer-card-pro ef-scorer-rank-' + (idx + 1) + '">';
+
+    // Header podium
+    html += '<div class="ef-scorer-podium-badge">' + (podiumIcons[idx] || ('#' + (idx+1))) + '</div>';
+
+    // Hero block
+    html += '<div class="ef-scorer-hero">';
+    html += '  <div class="ef-scorer-hero-info">';
+    html += '    <div class="ef-scorer-name-big">' + escapeHtml(s.name || '?') + '</div>';
+    html += '    <div class="ef-scorer-meta">';
+    html += '      <span class="ef-scorer-team-tag" style="color:' + teamColor + '">' + teamLabel + ' · ' + escapeHtml(s.team_label || '') + '</span>';
+    if (s.position) html += '      <span class="ef-scorer-position">' + escapeHtml(s.position) + '</span>';
+    html += '    </div>';
+    html += '    <div class="ef-scorer-stars">' + stars + '</div>';
+    if (verdict) html += '    <div class="ef-scorer-verdict ' + verdictClass + '">' + escapeHtml(verdict) + '</div>';
+    html += '  </div>';
+    html += '  <div class="ef-scorer-hero-score">' + scoreSpeedometer + '</div>';
+    html += '</div>';
+
+    // Stats marche
+    html += '<div class="ef-scorer-market">';
+    if (s.odds_estimated) html += '<div class="ef-market-cell"><div class="ef-market-label">COTE EST.</div><div class="ef-market-value">@' + Number(s.odds_estimated).toFixed(2) + '</div></div>';
+    if (s.p_buteur_pct != null) html += '<div class="ef-market-cell"><div class="ef-market-label">P BUTEUR</div><div class="ef-market-value">' + Math.round(s.p_buteur_pct) + '%</div></div>';
+    if (s.ev_estimated != null) {
+      const ev = Number(s.ev_estimated);
+      const evColor = ev >= 5 ? '#00ff9d' : (ev >= 0 ? '#ffd700' : '#ff5555');
+      html += '<div class="ef-market-cell"><div class="ef-market-label">EV</div><div class="ef-market-value" style="color:' + evColor + '">' + (ev >= 0 ? '+' : '') + ev.toFixed(1) + '%</div></div>';
+    }
+    if (s.stake_pct_bk != null) html += '<div class="ef-market-cell"><div class="ef-market-label">MISE</div><div class="ef-market-value">' + Number(s.stake_pct_bk).toFixed(1) + '% BK</div></div>';
+    html += '</div>';
+
+    // Radar chart
+    html += '<div class="ef-scorer-radar">' + radarSvg + '</div>';
+
+    // Key stats grid
+    const ks = s.key_stats || {};
+    html += '<div class="ef-scorer-keystats">';
+    html += statRow('npxG/90', ks.npxg_per90, '≥0.35');
+    html += statRow('Tirs/90', ks.shots_per90, '≥2.0');
+    html += statRow('TC/90', ks.sot_per90, '≥1.0');
+    html += statRow('Touches box', ks.touches_box, '≥5.0');
+    html += statRow('Big chances', ks.big_chances_per_match, '≥0.5');
+    html += statRow('Buts 5 derniers', ks.goals_last5, null);
+    if (ks.is_penalty_taker) html += '<div class="ef-keystat-flag ef-flag-pen">⚽ TIREUR DE PÉNO</div>';
+    if (ks.is_freekick_taker) html += '<div class="ef-keystat-flag ef-flag-fk">🎯 COUPS FRANCS</div>';
+    if (ks.loi_de_lex) html += '<div class="ef-keystat-flag ef-flag-ex">🔁 LOI DE L\'EX (+10 SNIPER)</div>';
+    html += '</div>';
+
+    // Reasoning + Devil
+    if (s.reasoning) html += '<div class="ef-scorer-reasoning"><div class="ef-section-label">📝 ANALYSE</div><p>' + escapeHtml(s.reasoning) + '</p></div>';
+    if (s.devil_advocate) html += '<div class="ef-scorer-devil"><div class="ef-section-label">😈 DEVIL\'S ADVOCATE</div><p>' + escapeHtml(s.devil_advocate) + '</p></div>';
+
+    // Matchup factors
+    const mf = s.matchup_factors;
+    if (mf) {
+      html += '<details class="ef-scorer-matchup"><summary>⚔️ Facteurs matchup</summary>';
+      html += '<ul>';
+      if (mf.adv_xga_per90 != null) html += '<li>xGA adverse / 90 : <strong>' + Number(mf.adv_xga_per90).toFixed(2) + '</strong></li>';
+      if (Array.isArray(mf.adv_dc_out) && mf.adv_dc_out.length) html += '<li>DC adverses out : <strong>' + mf.adv_dc_out.map(escapeHtml).join(', ') + '</strong></li>';
+      if (mf.adv_gk_out) html += '<li>⚠️ Gardien adverse titulaire absent</li>';
+      if (mf.adv_style) html += '<li>Style adverse : ' + escapeHtml(mf.adv_style) + '</li>';
+      html += '</ul></details>';
+    }
+
+    html += '</div>';
+    return html;
+  }
+
+  function statRow(label, value, threshold) {
+    if (value == null || value === '') return '';
+    const valStr = (typeof value === 'number') ? value.toFixed(2).replace(/\.00$/, '') : String(value);
+    return '<div class="ef-keystat-row"><span class="ef-keystat-label">' + label + '</span>' +
+      '<span class="ef-keystat-val">' + escapeHtml(valStr) + '</span>' +
+      (threshold ? '<span class="ef-keystat-th">' + escapeHtml(threshold) + '</span>' : '<span class="ef-keystat-th"></span>') +
+      '</div>';
+  }
+
+  function renderScoreSpeedometer(score) {
+    score = Math.max(0, Math.min(100, score));
+    const radius = 45;
+    const circ = 2 * Math.PI * radius;
+    const filled = circ * (score / 100);
+    const empty = circ - filled;
+    let color = '#ff5555';
+    if (score >= 90) color = '#ffd700';
+    else if (score >= 75) color = '#00ff9d';
+    else if (score >= 65) color = '#00d4ff';
+    else if (score >= 50) color = '#ffa500';
+    return `
+      <svg class="ef-speedo" viewBox="0 0 120 120" width="110" height="110">
+        <circle cx="60" cy="60" r="${radius}" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8"/>
+        <circle cx="60" cy="60" r="${radius}" fill="none" stroke="${color}" stroke-width="8"
+                stroke-dasharray="${filled} ${empty}" stroke-dashoffset="${circ/4}"
+                transform="rotate(-90 60 60)" stroke-linecap="round"
+                style="filter: drop-shadow(0 0 4px ${color});"/>
+        <text x="60" y="60" text-anchor="middle" dominant-baseline="central"
+              font-family="Orbitron,sans-serif" font-size="28" font-weight="900" fill="${color}">${score}</text>
+        <text x="60" y="86" text-anchor="middle" font-family="Share Tech Mono" font-size="9" fill="rgba(255,255,255,0.5)" letter-spacing="2">SNIPER</text>
+      </svg>`;
+  }
+
+  function renderRadarChart(radar) {
+    const axes = [
+      {label: 'VOLUME', value: radar.volume || 0, max: 25},
+      {label: 'QUALITÉ', value: radar.qualite || 0, max: 20},
+      {label: 'FORME', value: radar.forme || 0, max: 15},
+      {label: 'RÔLE', value: radar.role || 0, max: 15},
+      {label: 'MATCHUP', value: radar.matchup || 0, max: 15},
+      {label: 'PSYCHO', value: radar.psycho || 0, max: 10},
+      {label: 'AVANCÉS', value: radar.avances || 0, max: 5},
+    ];
+    const cx = 130, cy = 130, R = 100;
+    const n = axes.length;
+    const angleStep = (2 * Math.PI) / n;
+    // Polygones de fond (4 niveaux)
+    let polyBg = '';
+    for (let lvl = 1; lvl <= 4; lvl++) {
+      const r = R * (lvl / 4);
+      const pts = axes.map((_, i) => {
+        const a = -Math.PI/2 + i * angleStep;
+        return (cx + r*Math.cos(a)).toFixed(1) + ',' + (cy + r*Math.sin(a)).toFixed(1);
+      }).join(' ');
+      polyBg += `<polygon points="${pts}" fill="none" stroke="rgba(255,45,120,${0.05 + lvl*0.04})" stroke-width="1"/>`;
+    }
+    // Axes
+    let axesSvg = '';
+    let labelsSvg = '';
+    axes.forEach((ax, i) => {
+      const a = -Math.PI/2 + i * angleStep;
+      const x = cx + R*Math.cos(a);
+      const y = cy + R*Math.sin(a);
+      axesSvg += `<line x1="${cx}" y1="${cy}" x2="${x}" y2="${y}" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>`;
+      const lx = cx + (R+18)*Math.cos(a);
+      const ly = cy + (R+18)*Math.sin(a);
+      labelsSvg += `<text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" dominant-baseline="central"
+                          font-family="Share Tech Mono" font-size="9" fill="rgba(255,255,255,0.6)" letter-spacing="1">${ax.label}</text>`;
+      const vx = cx + (R+5)*Math.cos(a);
+      const vy = cy + (R-5)*Math.sin(a);
+      labelsSvg += `<text x="${(cx + (R-12)*Math.cos(a)).toFixed(1)}" y="${(cy + (R-12)*Math.sin(a)).toFixed(1)}"
+                          text-anchor="middle" dominant-baseline="central"
+                          font-family="Orbitron" font-size="10" font-weight="700" fill="#ff2d78">${ax.value}/${ax.max}</text>`;
+    });
+    // Polygone data
+    const dataPts = axes.map((ax, i) => {
+      const a = -Math.PI/2 + i * angleStep;
+      const ratio = ax.max > 0 ? Math.min(1, ax.value / ax.max) : 0;
+      const r = R * ratio;
+      return (cx + r*Math.cos(a)).toFixed(1) + ',' + (cy + r*Math.sin(a)).toFixed(1);
+    }).join(' ');
+    const dataPoly = `<polygon points="${dataPts}" fill="rgba(255,45,120,0.18)" stroke="#ff2d78" stroke-width="2"
+                      style="filter: drop-shadow(0 0 8px rgba(255,45,120,0.6));"/>`;
+    return `<svg class="ef-radar-svg" viewBox="0 0 260 260" width="100%" style="max-width: 320px;">
+              ${polyBg}${axesSvg}${dataPoly}${labelsSvg}
+            </svg>`;
   }
 
   function escapeHtml(s) {
@@ -902,7 +1168,7 @@ try {
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
-  // Auto-load si analyse en cache (preload silencieux)
+  // Auto-load si analyse en cache (preload silencieux non-stream)
   (async () => {
     try {
       const r = await fetch('./api/analyze_scorers.php', {
@@ -910,12 +1176,20 @@ try {
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({match_id: MATCH_ID, force_refresh: false, peek: true})
       });
-      // Si reponse est OK et cached=true, on l'affiche d'office
       if (r.ok) {
         const data = await r.json();
         if (data.cached) {
-          document.getElementById('ef-scorers-btn').style.display = 'none';
-          renderScorers(data);
+          document.getElementById('ef-scorers-idle').style.display = 'none';
+          renderResult({
+            cached: true,
+            generated_at: data.generated_at,
+            scorers: data.scorers ? [data.scorer_1, data.scorer_2].filter(Boolean) : [],
+            warnings: (data.warnings || []).map(w => typeof w === 'string' ? {level: 'info', text: w} : w),
+            freshness_note: data.freshness_note,
+            tokens_input: data.tokens?.input,
+            tokens_output: data.tokens?.output,
+            cost_usd: data.cost_usd,
+          });
         }
       }
     } catch(e) { /* ignore */ }
