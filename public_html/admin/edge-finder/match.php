@@ -853,7 +853,7 @@ try {
     }, 250);
 
     const url = './api/analyze_scorers_stream.php?match_id=' + MATCH_ID + (force ? '&force=1' : '');
-    eventSource = new EventSource(url);
+    eventSource = new EventSource(url, {withCredentials: true});
 
     eventSource.addEventListener('status', (e) => {
       const d = JSON.parse(e.data);
