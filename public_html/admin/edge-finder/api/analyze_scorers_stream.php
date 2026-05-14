@@ -22,7 +22,12 @@ require_once __DIR__ . '/../../../config-keys.php';
 require_once __DIR__ . '/../lib/db.php';
 require_once __DIR__ . '/../../../includes/auth.php';
 
-requireSuperAdmin();
+if (!isSuperAdmin()) {
+    http_response_code(401);
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['error' => 'Not authenticated (super-admin required)']);
+    exit;
+}
 
 // Headers SSE
 header('Content-Type: text/event-stream; charset=utf-8');

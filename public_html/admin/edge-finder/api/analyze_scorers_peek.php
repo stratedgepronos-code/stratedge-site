@@ -19,9 +19,13 @@ require_once __DIR__ . '/../../../config-keys.php';
 require_once __DIR__ . '/../lib/db.php';
 require_once __DIR__ . '/../../../includes/auth.php';
 
-requireSuperAdmin();
-
 header('Content-Type: application/json; charset=utf-8');
+
+if (!isSuperAdmin()) {
+    http_response_code(401);
+    echo json_encode(['error' => 'Not authenticated (super-admin required)']);
+    exit;
+}
 
 $match_id = (int)($_GET['match_id'] ?? 0);
 if ($match_id <= 0) {
