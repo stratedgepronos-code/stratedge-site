@@ -44,7 +44,7 @@ $candidate_id = (int)($payload['candidate_id'] ?? 0);
 $decision = $payload['decision'] ?? '';
 $note = $payload['note'] ?? null;
 
-$valid_decisions = ['pending', 'validated', 'rejected', 'published', 'won', 'lost', 'void'];
+$valid_decisions = ['pending', 'tracked', 'skipped', 'won', 'lost', 'void'];
 if ($candidate_id <= 0 || !in_array($decision, $valid_decisions, true)) {
     http_response_code(400);
     echo json_encode(['error' => 'candidate_id must be > 0 and decision must be one of: ' . implode(', ', $valid_decisions)]);

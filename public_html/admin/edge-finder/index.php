@@ -27,19 +27,26 @@ $lastImport = SE_Db::queryOne(
     "SELECT * FROM picks_imports ORDER BY imported_at DESC LIMIT 1"
 );
 
-// Compteurs candidats par statut (sur tous les matchs futurs uniquement)
+// Compteurs candidats par statut.
+// IMPORTANT : les picks PENDING/SUIVIS/SKIPPES sont comptes sur les matchs futurs.
+// Mais les RESULTATS (won/lost) sont comptes SANS limite de temps (30 derniers jours)
+// sinon ils disparaissent du dashboard des que le match a 6h+.
 $stats = SE_Db::queryOne(
     "SELECT
-        SUM(CASE WHEN c.status = 'auto'   AND c.user_decision='pending' THEN 1 ELSE 0 END) AS n_auto_pending,
-        SUM(CASE WHEN c.status = 'manual' AND c.user_decision='pending' THEN 1 ELSE 0 END) AS n_manual_pending,
-        SUM(CASE WHEN c.user_decision = 'validated' THEN 1 ELSE 0 END)                     AS n_validated,
-        SUM(CASE WHEN c.user_decision = 'rejected'  THEN 1 ELSE 0 END)                     AS n_rejected,
-        SUM(CASE WHEN c.user_decision = 'won'  THEN 1 ELSE 0 END)                          AS n_won,
-        SUM(CASE WHEN c.user_decision = 'lost' THEN 1 ELSE 0 END)                          AS n_lost,
-        COUNT(DISTINCT m.match_id)                                                          AS n_matches
+        SUM(CASE WHEN c.status = 'auto'   AND c.user_decision='pending'
+                 AND m.kickoff_utc >= UTC_TIMESTAMP() - INTERVAL 6 HOUR THEN 1 ELSE 0 END) AS n_auto_pending,
+        SUM(CASE WHEN c.status = 'manual' AND c.user_decision='pending'
+                 AND m.kickoff_utc >= UTC_TIMESTAMP() - INTERVAL 6 HOUR THEN 1 ELSE 0 END) AS n_manual_pending,
+        SUM(CASE WHEN c.user_decision = 'tracked' THEN 1 ELSE 0 END) AS n_tracked,
+        SUM(CASE WHEN c.user_decision = 'skipped'
+                 AND m.kickoff_utc >= UTC_TIMESTAMP() - INTERVAL 6 HOUR THEN 1 ELSE 0 END) AS n_skipped,
+        SUM(CASE WHEN c.user_decision = 'won'  THEN 1 ELSE 0 END) AS n_won,
+        SUM(CASE WHEN c.user_decision = 'lost' THEN 1 ELSE 0 END) AS n_lost,
+        COUNT(DISTINCT CASE WHEN m.kickoff_utc >= UTC_TIMESTAMP() - INTERVAL 6 HOUR
+                            THEN m.match_id END) AS n_matches
      FROM pick_candidates c
      JOIN pick_matches m ON m.match_id = c.match_id
-     WHERE m.kickoff_utc >= UTC_TIMESTAMP() - INTERVAL 6 HOUR"
+     WHERE m.kickoff_utc >= UTC_TIMESTAMP() - INTERVAL 30 DAY"
 );
 
 // =============================================================================
@@ -155,13 +162,12 @@ function status_emoji(string $status): string {
 
 function decision_pill(string $decision): string {
     $map = [
-        'pending'   => ['', ''],
-        'validated' => ['#00ff9d', 'VALIDÉ'],
-        'rejected'  => ['#ff3b3b', 'REJETÉ'],
-        'published' => ['#00d4ff', 'PUBLIÉ'],
-        'won'       => ['#00ff9d', '✓ GAGNÉ'],
-        'lost'      => ['#ff3b3b', '✗ PERDU'],
-        'void'      => ['#888', 'VOID'],
+        'pending'  => ['', ''],
+        'tracked'  => ['#00d4ff', '📌 SUIVI'],
+        'skipped'  => ['#888', '✗ PASSÉ'],
+        'won'      => ['#00ff9d', '✓ GAGNÉ'],
+        'lost'     => ['#ff3b3b', '✗ PERDU'],
+        'void'     => ['#888', 'VOID'],
     ];
     [$color, $label] = $map[$decision] ?? ['', ''];
     if (!$label) return '';
@@ -300,15 +306,15 @@ try {
       <div class="ef-stat-value"><?= (int)($stats['n_manual_pending'] ?? 0) ?></div>
       <div class="ef-stat-sub">à valider manuellement</div>
     </a>
-    <a href="?decision=validated" class="ef-stat ef-stat-validated<?= ($filter_decision === 'validated') ? ' ef-stat-active' : '' ?>">
-      <div class="ef-stat-label">✅ VALIDÉS</div>
-      <div class="ef-stat-value"><?= (int)($stats['n_validated'] ?? 0) ?></div>
-      <div class="ef-stat-sub">prêts à publier</div>
+    <a href="?decision=tracked" class="ef-stat ef-stat-validated<?= ($filter_decision === 'tracked') ? ' ef-stat-active' : '' ?>">
+      <div class="ef-stat-label">📌 SUIVIS</div>
+      <div class="ef-stat-value"><?= (int)($stats['n_tracked'] ?? 0) ?></div>
+      <div class="ef-stat-sub">paris en cours de suivi</div>
     </a>
-    <a href="?decision=rejected" class="ef-stat ef-stat-rejected<?= ($filter_decision === 'rejected') ? ' ef-stat-active' : '' ?>">
-      <div class="ef-stat-label">❌ REJETÉS</div>
-      <div class="ef-stat-value"><?= (int)($stats['n_rejected'] ?? 0) ?></div>
-      <div class="ef-stat-sub">passes</div>
+    <a href="?decision=skipped" class="ef-stat ef-stat-rejected<?= ($filter_decision === 'skipped') ? ' ef-stat-active' : '' ?>">
+      <div class="ef-stat-label">✗ PASSÉS</div>
+      <div class="ef-stat-value"><?= (int)($stats['n_skipped'] ?? 0) ?></div>
+      <div class="ef-stat-sub">picks écartés</div>
     </a>
     <a href="?decision=won" class="ef-stat ef-stat-results<?= ($filter_decision === 'won' || $filter_decision === 'lost') ? ' ef-stat-active' : '' ?>">
       <div class="ef-stat-label">RÉSULTATS</div>
@@ -347,13 +353,12 @@ try {
     </select>
 
     <select name="decision">
-      <option value="pending"   <?= $filter_decision==='pending'?'selected':'' ?>>⏳ En attente</option>
-      <option value="validated" <?= $filter_decision==='validated'?'selected':'' ?>>✓ Validés</option>
-      <option value="rejected"  <?= $filter_decision==='rejected'?'selected':'' ?>>✗ Rejetés</option>
-      <option value="published" <?= $filter_decision==='published'?'selected':'' ?>>📢 Publiés</option>
-      <option value="won"       <?= $filter_decision==='won'?'selected':'' ?>>🏆 Gagnés</option>
-      <option value="lost"      <?= $filter_decision==='lost'?'selected':'' ?>>💀 Perdus</option>
-      <option value="all"       <?= $filter_decision==='all'?'selected':'' ?>>Toutes décisions</option>
+      <option value="pending"  <?= $filter_decision==='pending'?'selected':'' ?>>⏳ En attente</option>
+      <option value="tracked"  <?= $filter_decision==='tracked'?'selected':'' ?>>📌 Suivis</option>
+      <option value="skipped"  <?= $filter_decision==='skipped'?'selected':'' ?>>✗ Passés</option>
+      <option value="won"      <?= $filter_decision==='won'?'selected':'' ?>>🏆 Gagnés</option>
+      <option value="lost"     <?= $filter_decision==='lost'?'selected':'' ?>>💀 Perdus</option>
+      <option value="all"      <?= $filter_decision==='all'?'selected':'' ?>>Toutes décisions</option>
     </select>
 
     <div class="ef-filter-conv">
@@ -479,19 +484,16 @@ try {
                 </div>
                 <div class="ef-cand-actions">
                   <?php if ($c['user_decision'] === 'pending'): ?>
-                    <button class="ef-btn ef-btn-validate" data-action="validated" title="Valider">✓</button>
-                    <button class="ef-btn ef-btn-reject" data-action="rejected" title="Rejeter">✗</button>
+                    <button class="ef-btn ef-btn-track" data-action="tracked" title="Suivre ce pick">📌 Suivre</button>
+                    <button class="ef-btn ef-btn-skip" data-action="skipped" title="Passer">✗</button>
                   <?php else: ?>
                     <?= decision_pill($c['user_decision']) ?>
-                    <?php if (in_array($c['user_decision'], ['validated','rejected'], true)): ?>
+                    <?php if (in_array($c['user_decision'], ['tracked','skipped'], true)): ?>
                       <button class="ef-btn ef-btn-undo" data-action="pending" title="Annuler">↩</button>
                     <?php endif ?>
-                    <?php if ($c['user_decision'] === 'validated'): ?>
-                      <button class="ef-btn ef-btn-publish" data-action="published" title="Marquer publié">📢</button>
-                    <?php endif ?>
-                    <?php if ($c['user_decision'] === 'published'): ?>
-                      <button class="ef-btn ef-btn-won"  data-action="won"  title="Gagné">🏆</button>
-                      <button class="ef-btn ef-btn-lost" data-action="lost" title="Perdu">💀</button>
+                    <?php if ($c['user_decision'] === 'tracked'): ?>
+                      <button class="ef-btn ef-btn-won"  data-action="won"  title="Marquer gagné">🏆</button>
+                      <button class="ef-btn ef-btn-lost" data-action="lost" title="Marquer perdu">💀</button>
                     <?php endif ?>
                   <?php endif ?>
                 </div>

@@ -105,6 +105,17 @@ try {
     foreach ($payload['matches'] as $m) {
         $match_id = (int)$m['match_id'];
 
+        // ── FIX CRITIQUE : preserver les decisions utilisateur a travers les re-imports ──
+        // Avant de supprimer le match (qui cascade sur pick_candidates), on sauvegarde
+        // l'etat de tout candidat deja decide (tracked/skipped/won/lost/void).
+        // Apres reinsertion, on re-applique ces decisions sur les marches correspondants.
+        $preserved_decisions = SE_Db::queryAll(
+            "SELECT market, user_decision, decision_at, decision_note
+             FROM pick_candidates
+             WHERE match_id = ? AND user_decision <> 'pending'",
+            [$match_id]
+        );
+
         // Delete éventuelle ligne existante (cascade sur pick_candidates)
         SE_Db::execute("DELETE FROM pick_matches WHERE match_id = ?", [$match_id]);
 
@@ -207,6 +218,25 @@ try {
                 ]
             );
             $n_candidates++;
+        }
+
+        // ── FIX CRITIQUE : re-appliquer les decisions preservees ──
+        // On matche par 'market' (le candidate_id a change apres reinsertion).
+        // Ainsi un pick que l'utilisateur a deja decide garde son etat meme
+        // si le pipeline re-importe le match avec des cotes a jour.
+        foreach ($preserved_decisions as $pd) {
+            SE_Db::execute(
+                "UPDATE pick_candidates
+                 SET user_decision = ?, decision_at = ?, decision_note = ?
+                 WHERE match_id = ? AND market = ?",
+                [
+                    $pd['user_decision'],
+                    $pd['decision_at'],
+                    $pd['decision_note'],
+                    $match_id,
+                    $pd['market'],
+                ]
+            );
         }
     }
 

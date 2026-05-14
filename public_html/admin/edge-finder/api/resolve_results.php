@@ -3,7 +3,7 @@
  * StratEdge Edge Finder — Auto-résolution won/lost
  *
  * Ce script est appelé par cron Hostinger (1x/heure ou toutes les 2h).
- * Pour chaque candidat avec user_decision='published' dont le match
+ * Pour chaque candidat avec user_decision='tracked' dont le match
  * est terminé depuis plus de 2h, on va chercher le score sur FootyStats
  * et on marque le candidat won/lost selon le résultat.
  *
@@ -57,7 +57,7 @@ $matches_to_resolve = SE_Db::queryAll(
         m.league_name
      FROM pick_matches m
      JOIN pick_candidates c ON c.match_id = m.match_id
-     WHERE c.user_decision = 'published'
+     WHERE c.user_decision = 'tracked'
        AND m.kickoff_utc < UTC_TIMESTAMP() - INTERVAL ? HOUR
      ORDER BY m.kickoff_utc DESC
      LIMIT ?",
@@ -261,7 +261,7 @@ foreach ($matches_to_resolve as $match) {
     $candidates = SE_Db::queryAll(
         "SELECT candidate_id, market, market_group, odds
          FROM pick_candidates
-         WHERE match_id = ? AND user_decision = 'published'",
+         WHERE match_id = ? AND user_decision = 'tracked'",
         [$matchId]
     );
 

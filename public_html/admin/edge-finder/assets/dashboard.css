@@ -743,6 +743,28 @@ body::before {
   box-shadow: var(--ef-glow-green);
 }
 
+/* Nouveau bouton "Suivre" : plus large, texte visible */
+.ef-btn-track {
+  background: rgba(0,212,255,0.1);
+  border-color: rgba(0,212,255,0.4);
+  color: var(--ef-cyan);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.ef-btn-track:hover {
+  background: rgba(0,212,255,0.22);
+  border-color: var(--ef-cyan);
+  color: var(--ef-cyan);
+  box-shadow: var(--ef-glow-cyan);
+}
+
+.ef-btn-skip:hover {
+  background: rgba(150,150,150,0.15);
+  border-color: #999;
+  color: #ccc;
+}
+
 .ef-btn-reject:hover {
   background: rgba(255,59,59,0.15);
   border-color: var(--ef-red);
