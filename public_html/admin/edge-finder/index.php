@@ -271,7 +271,7 @@ try {
   <header class="ef-header">
     <div class="ef-title">
       <div class="ef-logo-row">
-        <svg class="ef-logo" viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <svg class="ef-logo" width="48" height="48" viewBox="0 0 56 56" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <defs>
             <linearGradient id="efLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stop-color="#ff2d78"/>

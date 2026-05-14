@@ -93,6 +93,8 @@ body::before {
 .ef-logo {
   width: 48px;
   height: 48px;
+  max-width: 48px;
+  max-height: 48px;
   flex-shrink: 0;
   filter: drop-shadow(0 0 6px rgba(255, 45, 120, 0.4));
   animation: ef-logo-spin 12s linear infinite;
