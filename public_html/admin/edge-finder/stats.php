@@ -184,6 +184,21 @@ $by_ev = SE_Db::queryAll(
 );
 
 // =============================================================================
+// Historique detaille : tous les paris decides (tracked + won + lost)
+// =============================================================================
+$history = SE_Db::queryAll(
+    "SELECT c.candidate_id, c.market, c.market_group, c.odds, c.ev,
+            c.conviction, c.conv_tier, c.user_decision, c.decision_at,
+            m.match_id, m.home_name, m.away_name, m.kickoff_utc,
+            m.league_name, m.league_country, m.home_goals, m.away_goals
+     FROM pick_candidates c
+     JOIN pick_matches m ON m.match_id = c.match_id
+     WHERE c.user_decision IN ('tracked','won','lost')" . $date_filter . $status_filter . "
+     ORDER BY m.kickoff_utc DESC, c.decision_at DESC",
+    $params
+);
+
+// =============================================================================
 // Helpers d'affichage
 // =============================================================================
 
@@ -331,6 +346,58 @@ function flag_emoji(string $country): string {
     }
     @media (max-width: 768px) {
       .ef-global-stats { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* ── Historique détaillé ── */
+    .ef-history-sub {
+      color: var(--ef-text-3);
+      font-size: 0.85rem;
+      margin: -0.5rem 0 1rem;
+    }
+    .ef-history-empty {
+      text-align: center;
+      padding: 2rem;
+      color: var(--ef-text-3);
+    }
+    .ef-history-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .ef-history-table {
+      min-width: 720px;
+    }
+    .ef-history-match {
+      min-width: 240px;
+    }
+    .ef-history-link {
+      text-decoration: none;
+      display: block;
+    }
+    .ef-history-teams {
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: var(--ef-text);
+      transition: color 0.15s;
+    }
+    .ef-history-link:hover .ef-history-teams {
+      color: var(--ef-cyan);
+    }
+    .ef-history-vs {
+      color: var(--ef-text-3);
+      font-weight: 400;
+      font-size: 0.8rem;
+      margin: 0 0.2rem;
+    }
+    .ef-history-meta {
+      display: block;
+      font-size: 0.72rem;
+      color: var(--ef-text-3);
+      margin-top: 0.15rem;
+    }
+    @media (max-width: 768px) {
+      .ef-history-table { font-size: 0.78rem; }
+      .ef-history-teams { font-size: 0.85rem; }
     }
   </style>
 </head>
@@ -603,6 +670,80 @@ try {
       <?php endforeach ?>
       </tbody>
     </table>
+    <?php endif ?>
+  </div>
+
+  <!-- ─────────────────────────────────── HISTORIQUE DÉTAILLÉ ─── -->
+  <div class="ef-stats-block ef-history-block">
+    <h2>📋 Historique détaillé des paris</h2>
+    <p class="ef-history-sub">Tous les paris décidés : 📌 suivis (en cours) + 🏆 gagnés + 💀 perdus</p>
+
+    <?php if (empty($history)): ?>
+      <p class="ef-history-empty">Aucun pari décidé sur la période sélectionnée.</p>
+    <?php else: ?>
+    <div class="ef-history-scroll">
+    <table class="ef-data-table ef-history-table">
+      <thead>
+        <tr>
+          <th>Match</th>
+          <th>Marché</th>
+          <th class="num">Cote</th>
+          <th class="num">EV</th>
+          <th class="num">CONV</th>
+          <th class="num">Statut</th>
+          <th class="num">Gain/Perte</th>
+        </tr>
+      </thead>
+      <tbody>
+      <?php foreach ($history as $h):
+        $dec = $h['user_decision'];
+        // Calcul gain/perte en unites (mise 1u)
+        if ($dec === 'won') {
+          $pnl = (float)$h['odds'] - 1;
+          $pnl_color = '#00ff9d';
+          $pnl_str = '+' . number_format($pnl, 2) . 'u';
+          $status_label = '🏆 GAGNÉ';
+          $status_color = '#00ff9d';
+        } elseif ($dec === 'lost') {
+          $pnl = -1.0;
+          $pnl_color = '#ff3b3b';
+          $pnl_str = '-1.00u';
+          $status_label = '💀 PERDU';
+          $status_color = '#ff3b3b';
+        } else { // tracked
+          $pnl_color = 'var(--ef-text-3)';
+          $pnl_str = '—';
+          $status_label = '📌 EN COURS';
+          $status_color = 'var(--ef-cyan)';
+        }
+        $score = ($h['home_goals'] !== null && $h['away_goals'] !== null)
+          ? (int)$h['home_goals'] . '-' . (int)$h['away_goals']
+          : null;
+        $kickoff = (new DateTime($h['kickoff_utc']))->format('d/m H:i');
+      ?>
+        <tr>
+          <td class="ef-history-match">
+            <a href="match.php?id=<?= (int)$h['match_id'] ?>" class="ef-history-link">
+              <span class="ef-history-teams"><?= htmlspecialchars($h['home_name']) ?> <span class="ef-history-vs">vs</span> <?= htmlspecialchars($h['away_name']) ?></span>
+            </a>
+            <span class="ef-history-meta">
+              <?= htmlspecialchars($h['league_name'] ?? '') ?> · <?= $kickoff ?>
+              <?php if ($score): ?> · <strong style="color: var(--ef-text)"><?= $score ?></strong><?php endif ?>
+            </span>
+          </td>
+          <td><strong><?= htmlspecialchars($h['market']) ?></strong></td>
+          <td class="num"><?= number_format((float)$h['odds'], 2) ?></td>
+          <td class="num" style="color: <?= (float)$h['ev'] >= 0 ? 'var(--ef-green)' : 'var(--ef-red)' ?>">
+            <?= ((float)$h['ev'] >= 0 ? '+' : '') . number_format((float)$h['ev'] * 100, 1) ?>%
+          </td>
+          <td class="num"><?= (int)$h['conviction'] ?></td>
+          <td class="num"><span style="color: <?= $status_color ?>; font-weight: 700; font-size: 0.78rem;"><?= $status_label ?></span></td>
+          <td class="num" style="color: <?= $pnl_color ?>; font-weight: 700;"><?= $pnl_str ?></td>
+        </tr>
+      <?php endforeach ?>
+      </tbody>
+    </table>
+    </div>
     <?php endif ?>
   </div>
 
