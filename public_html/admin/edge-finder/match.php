@@ -1168,28 +1168,15 @@ try {
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
 
-  // Auto-load si analyse en cache (preload silencieux non-stream)
+  // Auto-load si analyse en cache (peek leger, ne declenche pas Claude)
   (async () => {
     try {
-      const r = await fetch('./api/analyze_scorers.php', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({match_id: MATCH_ID, force_refresh: false, peek: true})
-      });
+      const r = await fetch('./api/analyze_scorers_peek.php?match_id=' + MATCH_ID);
       if (r.ok) {
-        const data = await r.json();
-        if (data.cached) {
+        const d = await r.json();
+        if (d.cached) {
           document.getElementById('ef-scorers-idle').style.display = 'none';
-          renderResult({
-            cached: true,
-            generated_at: data.generated_at,
-            scorers: data.scorers ? [data.scorer_1, data.scorer_2].filter(Boolean) : [],
-            warnings: (data.warnings || []).map(w => typeof w === 'string' ? {level: 'info', text: w} : w),
-            freshness_note: data.freshness_note,
-            tokens_input: data.tokens?.input,
-            tokens_output: data.tokens?.output,
-            cost_usd: data.cost_usd,
-          });
+          renderResult(d);
         }
       }
     } catch(e) { /* ignore */ }
