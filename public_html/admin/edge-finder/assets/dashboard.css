@@ -265,6 +265,9 @@ body::before {
   .ef-stat-value { font-size: 1.7rem; }
   .ef-stat-label { font-size: 0.55rem; }
   .ef-stat-sub { font-size: 0.7rem; }
+  /* La 5e card (RESULTATS) se retrouve seule sur sa ligne en 2 colonnes :
+     on lui donne la pleine largeur pour un rendu propre. */
+  .ef-stat-results { grid-column: 1 / -1; }
 }
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -826,6 +829,24 @@ body::before {
   .ef-cand-conv   { grid-row: 3; grid-column: 1 / 4; }
   .ef-cand-conv-bar { width: 100%; }
   .ef-cand-conv-value { flex-direction: row; align-items: center; gap: 0.6rem; }
+
+  /* Boutons d'action : ligne dediee pleine largeur sur mobile.
+     Evite que le bouton "Suivre" (plus large) ne deborde de sa colonne. */
+  .ef-cand-actions {
+    grid-row: 4;
+    grid-column: 1 / 4;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+    padding-top: 0.3rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+  .ef-btn-track {
+    flex: 1;
+    min-width: 110px;
+  }
+  .ef-btn {
+    min-height: 38px;
+  }
 }
 
 /* ────────────────────────────────────────────────────────────────────────
@@ -1482,4 +1503,55 @@ body::before {
   word-wrap: break-word;
   max-height: 600px;
   overflow-y: auto;
+}
+
+/* ────────────────────────────────────────────────────────────────────────
+   SCORERS - RESPONSIVE MOBILE
+──────────────────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .ef-scorers-section { padding: 1.1rem; }
+  .ef-scorers-header h2 { font-size: 1.1rem; }
+
+  /* Bouton lancement : vertical, sub passe dessous */
+  .ef-scorers-launch-btn {
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 1.1rem 1rem;
+  }
+  .ef-scorers-launch-sub { margin-left: 0; }
+
+  /* Stream : passe en 1 colonne */
+  .ef-stream-grid {
+    grid-template-columns: 1fr;
+    gap: 0.8rem;
+    padding: 1rem;
+  }
+  .ef-stream-meter {
+    border-left: none;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding-left: 0;
+    padding-top: 0.8rem;
+    text-align: left;
+  }
+
+  /* Hero card : nom + speedometre l'un sous l'autre si trop serre */
+  .ef-scorer-hero {
+    flex-direction: column;
+    align-items: flex-start;
+    padding-right: 2rem;
+  }
+  .ef-scorer-hero-score { align-self: center; }
+  .ef-scorer-name-big { font-size: 1.1rem; }
+
+  /* Stats marche : 4 colonnes -> 2 colonnes sur mobile */
+  .ef-scorer-market {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
+  }
+
+  /* Radar : reduit un peu */
+  .ef-radar-svg { max-width: 260px; }
+
+  /* Recherches stream : hauteur reduite */
+  .ef-stream-searches-list { max-height: 180px; }
 }
