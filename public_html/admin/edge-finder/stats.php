@@ -411,6 +411,7 @@ try {
 } catch (Throwable $e) {}
 ?>
 
+<div class="main">
 <div class="ef-main">
 
   <!-- HEADER -->
@@ -749,6 +750,7 @@ try {
     <p>StratEdge Edge Finder v1.0 · Stats Analytics</p>
     <p class="ef-disclaimer">Mesure de performance basée sur les picks marqués won/lost. Validation humaine requise.</p>
   </footer>
+</div>
 </div>
 
 </body>

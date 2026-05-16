@@ -265,6 +265,7 @@ try {
 }
 ?>
 
+<div class="main">
 <div class="ef-main">
 
   <!-- ─────────────────────────────────────────────────────────── HEADER -->
@@ -527,6 +528,7 @@ try {
     <p>StratEdge Edge Finder v1.0 · Méthodologie v7.7 · Sweet spot [+3% ; +8%]</p>
     <p class="ef-disclaimer">Outil interne d'aide à la décision. Validation humaine requise. Le jeu peut être dangereux : 09 74 75 13 13.</p>
   </footer>
+</div>
 </div>
 
 <script src="assets/dashboard.js"></script>

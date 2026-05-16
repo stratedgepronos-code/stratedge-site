@@ -375,6 +375,7 @@ try {
 } catch (Throwable $e) {}
 ?>
 
+<div class="main">
 <div class="ef-main">
 
   <a href="./" class="match-back">← Retour au dashboard</a>
@@ -809,6 +810,7 @@ try {
   <footer class="ef-footer">
     <p>StratEdge Edge Finder · Page détail match</p>
   </footer>
+</div>
 </div>
 
 <script>
