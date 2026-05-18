@@ -35,8 +35,10 @@ header('Cache-Control: no-cache, no-store');
 header('X-Accel-Buffering: no');  // Disable nginx buffering
 header('Connection: keep-alive');
 
-// Pas de timeout PHP
-@set_time_limit(120);
+// Timeout PHP large : l'analyse buteurs peut faire 6+ recherches web
+// (10-20s chacune) AVANT de rediger le JSON. 120s etait trop court ->
+// la reponse etait coupee en plein milieu du JSON ("Reponse invalide").
+@set_time_limit(300);
 ignore_user_abort(false);
 
 // Force flush apres chaque echo
@@ -180,7 +182,7 @@ $current_search_query = null;
 $ch = curl_init('https://api.anthropic.com/v1/messages');
 curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => false,
-    CURLOPT_TIMEOUT => 120,
+    CURLOPT_TIMEOUT => 300,
     CURLOPT_POST => true,
     CURLOPT_POSTFIELDS => json_encode($payload),
     CURLOPT_HTTPHEADER => [
@@ -283,9 +285,16 @@ if ($first_brace !== false && $last_brace !== false && $last_brace > $first_brac
 
 $parsed = json_decode($json_str, true);
 if (!$parsed || !isset($parsed['scorers']) || !is_array($parsed['scorers']) || count($parsed['scorers']) === 0) {
-    sse_error('Reponse Claude invalide', [
+    // Detecte le cas "reponse tronquee" : du texte mais JSON incomplet.
+    $looks_truncated = (strlen($accumulated_text) > 200)
+        && (substr_count($json_str, '{') > substr_count($json_str, '}'));
+    $msg = $looks_truncated
+        ? 'Analyse interrompue (reponse tronquee) - relance l\'analyse'
+        : 'Reponse Claude invalide';
+    sse_error($msg, [
         'raw_excerpt' => substr($accumulated_text, 0, 1500),
         'json_error' => json_last_error_msg(),
+        'truncated' => $looks_truncated,
     ]);
 }
 
