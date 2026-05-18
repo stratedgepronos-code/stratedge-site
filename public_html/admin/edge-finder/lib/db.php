@@ -33,6 +33,16 @@ class SE_Db {
         return self::$pdo;
     }
 
+    /**
+     * Force une reconnexion fraîche.
+     * Utile après une opération longue (appel API de 60s+) durant laquelle
+     * MySQL a pu fermer la connexion inactive (erreur "server has gone away").
+     */
+    public static function reconnect(): void {
+        self::$pdo = null;
+        self::pdo();
+    }
+
     /** Exécute une requête préparée. */
     public static function execute(string $sql, array $params = []): PDOStatement {
         $stmt = self::pdo()->prepare($sql);

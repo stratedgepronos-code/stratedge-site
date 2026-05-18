@@ -226,6 +226,10 @@ if (!$parsed || !isset($parsed['scorer_1']) || !isset($parsed['scorer_2'])) {
 }
 
 // ===== 5. Cache en DB =====
+// Reconnexion : l'appel Claude a pu durer assez longtemps pour que MySQL
+// ferme la connexion inactive.
+SE_Db::reconnect();
+
 SE_Db::execute(
     "INSERT INTO match_scorer_analysis
      (match_id, scorer_1_name, scorer_1_team, scorer_1_conf, scorer_1_reason,

@@ -293,6 +293,11 @@ if (!$parsed || !isset($parsed['scorers']) || !is_array($parsed['scorers']) || c
 $cost = ($tokens_in / 1_000_000.0) * 15 + ($tokens_out / 1_000_000.0) * 75;
 
 // ===== Cache en DB =====
+// L'appel Anthropic + web searches a pu durer 60-120s : la connexion MySQL
+// ouverte en debut de script est probablement morte ("server has gone away").
+// On force une reconnexion fraiche avant d'ecrire le resultat.
+SE_Db::reconnect();
+
 SE_Db::execute(
     "INSERT INTO match_scorer_analysis
      (match_id, scorers_json, markdown_full, warnings_json, freshness_note,
