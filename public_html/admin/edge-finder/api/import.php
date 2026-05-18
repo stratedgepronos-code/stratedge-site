@@ -202,8 +202,9 @@ try {
                 "INSERT INTO pick_candidates
                  (match_id, market, market_group, model_proba, devig_proba,
                   odds, ev, status, conviction, below_min_odds,
-                  conv_flags, conv_breakdown, conv_tier, conv_auto_eligible)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                  conv_flags, conv_breakdown, conv_tier, conv_auto_eligible,
+                  recommended)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     $match_id,
                     $c['market'],
@@ -219,6 +220,7 @@ try {
                     !empty($c['conv_breakdown']) ? json_encode($c['conv_breakdown'], JSON_UNESCAPED_UNICODE) : null,
                     $c['conv_tier'] ?? null,
                     !empty($c['conv_auto_eligible']) ? 1 : 0,
+                    !empty($c['recommended']) ? 1 : 0,
                 ]
             );
             $n_candidates++;

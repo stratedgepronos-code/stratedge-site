@@ -643,6 +643,29 @@ body::before {
 .ef-cand-auto    { border-left-color: var(--ef-green);  }
 .ef-cand-manual  { border-left-color: var(--ef-yellow); }
 .ef-cand-warn    { border-left-color: var(--ef-red);    }
+
+/* ===== Pick recommande (anti-correlation : 1 pick/match) ===== */
+.ef-cand-recommended {
+  position: relative;
+  border-color: rgba(255, 215, 0, 0.45);
+  background: linear-gradient(180deg, rgba(255, 215, 0, 0.06), var(--ef-bg-cand));
+  box-shadow: 0 0 14px rgba(255, 215, 0, 0.1);
+  padding-top: 1.6rem;
+}
+
+.ef-cand-reco-badge {
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  padding: 0.2rem 0.7rem;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #1a1208;
+  background: linear-gradient(90deg, #ffd700, #ffb300);
+  border-radius: 8px 0 8px 0;
+}
 .ef-cand-neutral { border-left-color: rgba(255,255,255,0.15); }
 
 /* States selon décision */

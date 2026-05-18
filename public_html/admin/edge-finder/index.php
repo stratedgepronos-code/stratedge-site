@@ -111,7 +111,7 @@ if (!empty($matches)) {
     $all_candidates = SE_Db::queryAll(
         "SELECT c.* FROM pick_candidates c
          WHERE $cand_where_sql
-         ORDER BY c.conviction DESC, c.ev DESC",
+         ORDER BY c.recommended DESC, c.conviction DESC, c.ev DESC",
         $cand_params
     );
 
@@ -501,8 +501,12 @@ try {
 
           <div class="ef-candidates">
             <?php foreach ($candidates_by_match[$m['match_id']] as $c): ?>
-              <div class="ef-cand ef-cand-<?= htmlspecialchars($c['status']) ?> ef-cand-decision-<?= htmlspecialchars($c['user_decision']) ?>"
+              <?php $is_reco = !empty($c['recommended']); ?>
+              <div class="ef-cand ef-cand-<?= htmlspecialchars($c['status']) ?> ef-cand-decision-<?= htmlspecialchars($c['user_decision']) ?><?= $is_reco ? ' ef-cand-recommended' : '' ?>"
                    data-candidate-id="<?= (int)$c['candidate_id'] ?>">
+                <?php if ($is_reco): ?>
+                  <div class="ef-cand-reco-badge" title="Pick recommande pour ce match (anti-correlation : 1 seul pick/match)">⭐ PICK DU MATCH</div>
+                <?php endif ?>
                 <div class="ef-cand-status"><?= status_emoji($c['status']) ?></div>
                 <div class="ef-cand-market">
                   <div class="ef-cand-market-label"><?= htmlspecialchars($c['market']) ?></div>
