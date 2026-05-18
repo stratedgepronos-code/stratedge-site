@@ -127,6 +127,7 @@ try {
             "INSERT INTO pick_matches
              (match_id, import_id, season_id, league_name, league_tier, league_country,
               kickoff_utc, home_id, home_name, away_id, away_name,
+              home_logo, away_logo,
               lambda_home, lambda_away, lambda_total,
               home_xg_prematch, away_xg_prematch, home_ppg, away_ppg,
               btts_potential, o25_potential, o35_potential, avg_potential,
@@ -138,7 +139,8 @@ try {
               offsides_potential,
               highlights, team_metrics,
               n_auto, n_manual, n_warn, best_conviction)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                     ?, ?, ?,
                      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                      ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
                      ?, ?,
@@ -155,6 +157,8 @@ try {
                 $m['home']['name'] ?? '',
                 (int)($m['away']['id'] ?? 0),
                 $m['away']['name'] ?? '',
+                $m['home']['logo'] ?? null,
+                $m['away']['logo'] ?? null,
                 $m['lambda_home'] ?? null,
                 $m['lambda_away'] ?? null,
                 $m['lambda_total'] ?? null,

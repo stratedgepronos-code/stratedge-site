@@ -208,6 +208,12 @@ function flag_emoji(string $country): string {
         'Romania'     => 'ro',
         'Russia'      => 'ru',
         'Ukraine'     => 'ua',
+        'China'       => 'cn',
+        'Colombia'    => 'co',
+        'Finland'     => 'fi',
+        'Iceland'     => 'is',
+        'Republic of Ireland' => 'ie',
+        'Ireland'     => 'ie',
     ];
     $code = $map[$country] ?? null;
     if ($code === null) {
@@ -225,19 +231,39 @@ require_once __DIR__ . '/../../includes/football-logos-db.php';
 
 /**
  * Retourne un <img> HTML pour le logo d'une équipe foot.
+ *
+ * @param string $teamName  Nom de l'equipe (fallback de recherche)
+ * @param int    $size      Taille en px
+ * @param string $fsLogo    URL logo fournie par FootyStats (depuis pick_matches).
+ *                          Peut etre relative ("teams/xxx.png") ou absolue.
  */
-function team_logo_img(string $teamName, int $size = 24): string {
-    if (function_exists('stratedge_football_logo')) {
-        $url = stratedge_football_logo($teamName);
-        if ($url && $url !== '') {
-            return '<img src="' . htmlspecialchars($url) . '" '
-                 . 'alt="' . htmlspecialchars($teamName) . '" '
-                 . 'width="' . $size . '" height="' . $size . '" '
-                 . 'style="display: inline-block; vertical-align: middle; '
-                 . 'object-fit: contain; margin-right: 0.35em; '
-                 . 'filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4));" '
-                 . 'onerror="this.style.display=\'none\'">';
+function team_logo_img(string $teamName, int $size = 24, string $fsLogo = ''): string {
+    $url = '';
+
+    // 1) Priorite : le logo FootyStats fourni avec le match (couvre toutes les
+    //    equipes, y compris les ligues exotiques absentes de la DB locale).
+    if ($fsLogo !== '') {
+        if (preg_match('#^https?://#', $fsLogo)) {
+            $url = $fsLogo;                       // deja absolue
+        } else {
+            // relative -> prefixe CDN FootyStats
+            $url = 'https://cdn.footystats.org/img/' . ltrim($fsLogo, '/');
         }
+    }
+
+    // 2) Fallback : ancienne DB de logos centralisee
+    if ($url === '' && function_exists('stratedge_football_logo')) {
+        $url = stratedge_football_logo($teamName);
+    }
+
+    if ($url !== '') {
+        return '<img src="' . htmlspecialchars($url) . '" '
+             . 'alt="' . htmlspecialchars($teamName) . '" '
+             . 'width="' . $size . '" height="' . $size . '" '
+             . 'style="display: inline-block; vertical-align: middle; '
+             . 'object-fit: contain; margin-right: 0.35em; '
+             . 'filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4));" '
+             . 'onerror="this.style.display=\'none\'">';
     }
     return '';
 }
@@ -459,9 +485,9 @@ try {
 
           <a href="match.php?id=<?= (int)$m['match_id'] ?>" class="ef-match-link" title="Voir le détail du match">
             <div class="ef-match-teams">
-              <span class="ef-match-team-home"><?= team_logo_img($m['home_name'], 22) ?><?= htmlspecialchars($m['home_name']) ?></span>
+              <span class="ef-match-team-home"><?= team_logo_img($m['home_name'], 22, $m['home_logo'] ?? '') ?><?= htmlspecialchars($m['home_name']) ?></span>
               <span class="ef-match-vs">vs</span>
-              <span class="ef-match-team-away"><?= team_logo_img($m['away_name'], 22) ?><?= htmlspecialchars($m['away_name']) ?></span>
+              <span class="ef-match-team-away"><?= team_logo_img($m['away_name'], 22, $m['away_logo'] ?? '') ?><?= htmlspecialchars($m['away_name']) ?></span>
             </div>
           </a>
 
