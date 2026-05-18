@@ -1,6 +1,6 @@
 <?php
 /**
- * STRATEDGE - Edge Finder - Analyse buteurs probables via Claude Opus 4.7
+ * STRATEDGE - Edge Finder - Analyse buteurs probables via Claude Sonnet 4.6
  * =======================================================================
  * POST /panel-x9k3m/edge-finder/api/analyze_scorers.php
  * Body: { "match_id": N, "force_refresh": false }
@@ -9,7 +9,7 @@
  * 1. Si analyse en cache et !force_refresh -> retourne cache
  * 2. Sinon : recupere context match (equipes, ligue, lambda DC, cotes)
  * 3. Construit prompt structure
- * 4. Appelle Anthropic API (Claude Opus 4.7)
+ * 4. Appelle Anthropic API (Claude Sonnet 4.6)
  * 5. Parse JSON reponse, stocke en cache, retourne
  */
 
@@ -169,7 +169,7 @@ if (!defined('ANTHROPIC_API_KEY') || !ANTHROPIC_API_KEY) {
 }
 
 $payload = [
-    'model' => 'claude-opus-4-7',
+    'model' => 'claude-sonnet-4-6',
     'max_tokens' => 1500,
     'messages' => [
         ['role' => 'user', 'content' => $prompt]
@@ -207,8 +207,8 @@ $text_response = $data['content'][0]['text'] ?? '';
 $usage = $data['usage'] ?? [];
 $tokens_in = (int)($usage['input_tokens'] ?? 0);
 $tokens_out = (int)($usage['output_tokens'] ?? 0);
-// Pricing Opus 4.7 : $15/M input, $75/M output
-$cost = ($tokens_in / 1000000.0) * 15 + ($tokens_out / 1000000.0) * 75;
+// Pricing Sonnet 4.6 : $3/M input, $15/M output
+$cost = ($tokens_in / 1000000.0) * 3 + ($tokens_out / 1000000.0) * 15;
 
 // Parse JSON (le modele renvoie parfois du markdown ```json autour)
 $json_str = $text_response;
@@ -266,7 +266,7 @@ SE_Db::execute(
         json_encode($parsed['warnings'] ?? [], JSON_UNESCAPED_UNICODE),
         $parsed['freshness_note'] ?? null,
         $text_response,
-        'claude-opus-4-7',
+        'claude-sonnet-4-6',
         $tokens_in,
         $tokens_out,
         round($cost, 4),
@@ -280,7 +280,7 @@ echo json_encode([
     'scorer_2' => $parsed['scorer_2'],
     'warnings' => $parsed['warnings'] ?? [],
     'freshness_note' => $parsed['freshness_note'] ?? null,
-    'model_used' => 'claude-opus-4-7',
+    'model_used' => 'claude-sonnet-4-6',
     'cost_usd' => round($cost, 4),
     'tokens' => ['input' => $tokens_in, 'output' => $tokens_out],
 ], JSON_UNESCAPED_UNICODE);

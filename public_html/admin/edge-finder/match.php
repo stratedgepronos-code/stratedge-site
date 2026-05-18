@@ -763,11 +763,11 @@ try {
     <?php endif ?>
   </div>
 
-  <!-- ─────────────────────────────── ANALYSE TOP 3 BUTEURS (Claude Opus 4.7 + Web Search) ─── -->
+  <!-- ─────────────────────────────── ANALYSE TOP 3 BUTEURS (Claude Sonnet 4.6 + Web Search) ─── -->
   <section class="ef-scorers-section" id="ef-scorers-section">
     <div class="ef-scorers-header">
       <h2><span class="ef-scorers-icon">🎯</span> TOP 3 BUTEURS PROBABLES</h2>
-      <p>Analyse SNIPER 100pts par Claude Opus 4.7 + recherches web en temps reel</p>
+      <p>Analyse SNIPER 100pts par Claude Sonnet 4.6 + recherches web en temps reel</p>
     </div>
 
     <!-- Init state : juste un gros bouton -->
@@ -775,7 +775,7 @@ try {
       <button class="ef-scorers-launch-btn" onclick="launchScorersAnalysis(false)">
         <span class="ef-scorers-launch-icon">⚡</span>
         <span class="ef-scorers-launch-label">LANCER L'ANALYSE</span>
-        <span class="ef-scorers-launch-sub">Claude Opus 4.7 + web search · ~$0.15</span>
+        <span class="ef-scorers-launch-sub">Claude Sonnet 4.6 + web search · ~$0.03</span>
       </button>
     </div>
 
@@ -832,7 +832,7 @@ try {
     }
   }
 
-  // ===== Analyse TOP 3 buteurs via Claude Opus 4.7 + Web Search (stream SSE) =====
+  // ===== Analyse TOP 3 buteurs via Claude Sonnet 4.6 + Web Search (stream SSE) =====
   const MATCH_ID = <?= (int)$match_id ?>;
   let streamTimer = null;
   let streamStartTs = 0;

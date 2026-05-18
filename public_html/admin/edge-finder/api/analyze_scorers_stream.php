@@ -157,7 +157,7 @@ if (!defined('ANTHROPIC_API_KEY') || !ANTHROPIC_API_KEY) {
 }
 
 $payload = [
-    'model' => 'claude-opus-4-7',
+    'model' => 'claude-sonnet-4-6',
     'max_tokens' => 8000,
     'stream' => true,
     'tools' => [
@@ -289,8 +289,8 @@ if (!$parsed || !isset($parsed['scorers']) || !is_array($parsed['scorers']) || c
     ]);
 }
 
-// Pricing Opus 4.7
-$cost = ($tokens_in / 1_000_000.0) * 15 + ($tokens_out / 1_000_000.0) * 75;
+// Pricing Sonnet 4.6 : $3 input / $15 output par MTok
+$cost = ($tokens_in / 1_000_000.0) * 3 + ($tokens_out / 1_000_000.0) * 15;
 
 // ===== Cache en DB =====
 // L'appel Anthropic + web searches a pu durer 60-120s : la connexion MySQL
@@ -325,7 +325,7 @@ SE_Db::execute(
         $parsed['freshness_note'] ?? null,
         json_encode($searches_done, JSON_UNESCAPED_UNICODE),
         $accumulated_text,
-        'claude-opus-4-7',
+        'claude-sonnet-4-6',
         $tokens_in,
         $tokens_out,
         $web_search_count,
@@ -343,7 +343,7 @@ sse_send('complete', [
     'match_summary' => $parsed['match_summary'] ?? null,
     'markdown_full' => $parsed['markdown_full'] ?? null,
     'searches' => $searches_done,
-    'model_used' => 'claude-opus-4-7',
+    'model_used' => 'claude-sonnet-4-6',
     'tokens_input' => $tokens_in,
     'tokens_output' => $tokens_out,
     'web_searches_count' => $web_search_count,
