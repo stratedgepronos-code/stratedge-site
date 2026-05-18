@@ -90,9 +90,11 @@ Indice clé = CLASSEMENT des joueurs :
   • 13-19 avr : Barcelona Open (ATP 500) + ATP 250 Bucarest + Challengers divers
   • 20-26 avr : Madrid Masters Qualif/J1 + Challengers
   • 🔴 22 avr - 03 mai : **MADRID MASTERS 1000** (Mutua Madrid Open, terre battue)
-  • 04-17 mai : Rome Masters 1000 (Internazionali BNL d'Italia)
-  • 18-31 mai : Roland Garros qualifs puis main draw
-  • 01-14 juin : Roland Garros + Stuttgart ATP 250
+  • 04-17 mai : Rome Masters 1000 (Internazionali BNL d'Italia) — TERMINÉ le 17 mai
+  • 🔴 18-23 mai : **ROLAND-GARROS — QUALIFICATIONS** (lun→ven, 3 tours de qualif)
+    → Joueurs classés ~100-250 ATP/WTA. Format compétition : "Roland-Garros · Qualifications · [tour]"
+  • 🔴 24 mai - 07 juin : **ROLAND-GARROS — Tableau principal** (Grand Chelem, terre battue)
+  • 01-14 juin : Roland Garros main draw (suite) + Stuttgart ATP 250 (semaine 2)
   • 15-28 juin : Queen's (ATP 500) + Halle (ATP 500) + Mallorca + Eastbourne
   • 29 juin - 12 juil : Wimbledon
   • Juil-Août : Hamburg, Kitzbuhel, Atlanta, Washington, Toronto/Montreal Masters, Cincinnati Masters
@@ -109,10 +111,34 @@ Indice clé = CLASSEMENT des joueurs :
   • J9-J10 = 1/2 finale
   • J11-J12 = Finale
 
+🔴🔴 ÉTAPE 3bis — QUALIFICATIONS DE GRAND CHELEM (piège fréquent !) :
+Les 4 Grands Chelems (Australian Open, Roland-Garros, Wimbledon, US Open)
+ont une semaine de QUALIFICATIONS qui se joue AVANT le tableau principal.
+  • Les qualifs se jouent la semaine PRÉCÉDANT le tableau principal (lun→ven).
+  • Elles concernent les joueurs classés ~100-250 ATP/WTA (PAS le top 100).
+  • 3 tours de qualif : il faut gagner 3 matchs pour entrer dans le main draw.
+  • Format compétition à utiliser :
+    "Roland-Garros · Qualifications · 1er tour"
+    "Roland-Garros · Qualifications · 2e tour"
+    "Roland-Garros · Qualifications · Tour décisif"  (3e et dernier tour)
+  • badge_text dans ce cas : "Tennis · Grand Chelem" (PAS "Tennis · ATP" ni Challenger)
+
+⚠️ PIÈGE TYPIQUE — NE PAS CONFONDRE :
+Un match entre 2 joueurs classés ~100-250 à la mi-mai 2026 :
+  ❌ Ce n'est PAS le Rome Masters (Rome est TERMINÉ le 17 mai)
+  ❌ Ce n'est PAS un Challenger (les Challengers tournent mais pendant
+     la semaine de qualif d'un Grand Chelem, des joueurs classés 100-250
+     qui s'affrontent jouent quasi sûrement les QUALIFS du Grand Chelem)
+  ✅ C'est très probablement les QUALIFICATIONS de Roland-Garros
+Exemple concret : Martin Damm Jr (~115-177 ATP) vs un autre joueur classé
+~120-250 le 18-22 mai 2026 → Roland-Garros · Qualifications, PAS "ATP Rome".
+
 EXEMPLES CORRECTS :
   ✅ "ATP Madrid Masters 1000 · 1er tour" (match le 23 avril 2026 pendant Madrid)
   ✅ "Monte-Carlo Masters 1000 · 1/8 de finale" (J5 du tournoi)
-  ✅ "Roland Garros · 3e tour" (en fin de semaine 2)
+  ✅ "Roland Garros · 3e tour" (en fin de semaine 2 du tableau principal)
+  ✅ "Roland-Garros · Qualifications · 1er tour" (match le 18-19 mai 2026)
+  ✅ "Roland-Garros · Qualifications · Tour décisif" (match le 21-22 mai 2026)
   ✅ "ATP Barcelona Open 500 · Quart de finale"
   ✅ "ATP Challenger · Madrid · Demi-finale" (si vraiment Challenger)
   ✅ "ITF · M25 Santiago · 2nd tour"
@@ -229,7 +255,7 @@ RÈGLES CHAMPS :
   • Thiago Seyboth Wild → BR (Brésilien)
   • João Fonseca → BR (Brésilien, né à Rio de Janeiro 🇧🇷)
   • Martin Damm / Martin Damm Jr → US (Américain, né à Bradenton FL 🇺🇸) — PAS tchèque ! C'est le FILS de Martin Damm Sr (lui tchèque). Le Jr représente les USA. Même certaines sources se trompent.
-  • Samuel T. (Samuel) → GB (Britannique 🇬🇧) — PAS australien
+  • Toby Samuel (Samuel T.) → GB (Britannique 🇬🇧) — PAS australien. Joueur britannique présent aux qualifs de Roland-Garros.
   ⚠️ PIÈGE NOMS SLAVES/EUROPÉENS → nationalité US :
   Beaucoup de joueurs/joueuses US ont des noms d'origine serbe, russe, ukrainienne,
   polonaise, croate, etc. mais sont 100% américains (nés aux USA, représentent USA).
