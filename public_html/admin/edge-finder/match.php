@@ -1044,12 +1044,18 @@ try {
     // Key stats grid
     const ks = s.key_stats || {};
     html += '<div class="ef-scorer-keystats">';
-    html += statRow('npxG/90', ks.npxg_per90, '≥0.35');
-    html += statRow('Tirs/90', ks.shots_per90, '≥2.0');
-    html += statRow('TC/90', ks.sot_per90, '≥1.0');
-    html += statRow('Touches box', ks.touches_box, '≥5.0');
-    html += statRow('Big chances', ks.big_chances_per_match, '≥0.5');
-    html += statRow('Buts 5 derniers', ks.goals_last5, null);
+    let statsHtml = '';
+    statsHtml += statRow('npxG/90', ks.npxg_per90, '≥0.35');
+    statsHtml += statRow('Tirs/90', ks.shots_per90, '≥2.0');
+    statsHtml += statRow('TC/90', ks.sot_per90, '≥1.0');
+    statsHtml += statRow('Touches box', ks.touches_box, '≥5.0');
+    statsHtml += statRow('Big chances', ks.big_chances_per_match, '≥0.5');
+    statsHtml += statRow('Buts 5 derniers', ks.goals_last5, null);
+    if (statsHtml === '') {
+      html += '<div class="ef-keystat-empty">📊 Stats avancées non disponibles pour cette ligue</div>';
+    } else {
+      html += statsHtml;
+    }
     if (ks.is_penalty_taker) html += '<div class="ef-keystat-flag ef-flag-pen">⚽ TIREUR DE PÉNO</div>';
     if (ks.is_freekick_taker) html += '<div class="ef-keystat-flag ef-flag-fk">🎯 COUPS FRANCS</div>';
     if (ks.loi_de_lex) html += '<div class="ef-keystat-flag ef-flag-ex">🔁 LOI DE L\'EX (+10 SNIPER)</div>';
@@ -1077,6 +1083,12 @@ try {
 
   function statRow(label, value, threshold) {
     if (value == null || value === '') return '';
+    // Le modele renvoie parfois "NC" / "N/A" / "-" quand la stat est introuvable.
+    // On considere ces valeurs comme "donnee absente" et on masque la ligne.
+    if (typeof value === 'string') {
+      const v = value.trim().toUpperCase();
+      if (v === 'NC' || v === 'N/A' || v === 'NA' || v === '-' || v === '?' || v === '') return '';
+    }
     const valStr = (typeof value === 'number') ? value.toFixed(2).replace(/\.00$/, '') : String(value);
     return '<div class="ef-keystat-row"><span class="ef-keystat-label">' + label + '</span>' +
       '<span class="ef-keystat-val">' + escapeHtml(valStr) + '</span>' +
