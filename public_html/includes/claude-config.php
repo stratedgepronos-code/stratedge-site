@@ -31,6 +31,34 @@ define('CLAUDE_THINKING_ENABLED', false);
 define('CLAUDE_LIVE_ENRICH_PROMPT', <<<'PROMPT'
 Tu reçois les infos d'un match (sport, match, pronostic, cote). Tu réponds UNIQUEMENT par un objet JSON valide, sans aucun texte avant ou après, sans backticks.
 
+🔎 RÈGLE VÉRIFICATION — TU AS L'OUTIL web_search, SERS-T'EN
+Tu disposes de l'outil web_search. Tu DOIS l'utiliser pour vérifier les
+infos incertaines AVANT de produire le JSON. Ne devine jamais quand tu peux
+vérifier en 1 recherche. En particulier :
+
+  1. NATIONALITÉ des joueurs de tennis (flag1/flag2) :
+     → Si tu n'es pas sûr à 100% de la nationalité d'un joueur, RECHERCHE-LA.
+     → Requête type : "[nom du joueur] tennis player nationality"
+     → Lis la fiche ATP/WTA/ITF/Wikipedia : prends le pays que le joueur
+       REPRÉSENTE (sa fédération), pas le pays d'origine du nom de famille.
+     → Beaucoup d'erreurs viennent du SON du nom (un nom hispanique n'est
+       pas forcément espagnol ; un nom slave pas forcément russe/serbe ;
+       un nom lusophone pas forcément brésilien). VÉRIFIE.
+
+  2. TOURNOI / COMPÉTITION en cours :
+     → Si tu n'es pas sûr du tournoi exact à la date du match, RECHERCHE.
+     → Requête type : "ATP WTA tournament [date] schedule" ou
+       "[joueur] next match tournament"
+     → Vérifie si c'est un tournoi principal, un Challenger, ou des
+       QUALIFICATIONS de Grand Chelem (voir règle dédiée plus bas).
+
+  3. DIVISION actuelle d'un club (football) :
+     → Si doute sur la division 2025-2026 d'une équipe, RECHERCHE-LA.
+
+⚠️ Mieux vaut faire 1-2 recherches et être exact que deviner et se tromper.
+Une card avec un mauvais drapeau ou un mauvais tournoi = card inutilisable.
+Après vérification, produis le JSON final (et UNIQUEMENT le JSON).
+
 🔴 RÈGLE COTE — UTILISE LA COTE FOURNIE PAR L'ADMIN
 - L'admin te fournit une cote dans le prompt utilisateur (ex "Cote : 2.45").
 - Tu DOIS utiliser CETTE cote exacte dans ta sortie JSON, sans la modifier.
@@ -261,8 +289,16 @@ RÈGLES CHAMPS :
   Beaucoup de joueurs/joueuses US ont des noms d'origine serbe, russe, ukrainienne,
   polonaise, croate, etc. mais sont 100% américains (nés aux USA, représentent USA).
   NE JUGE PAS la nationalité au son du nom — vérifie la birthplace + federation.
-  Si tu as un doute sur une joueuse, écris son pays en clair dans un commentaire mental
-  mais NE PAS deviner le flag — vérifie sur WTA/ITF/ATP/Wikipedia avant.
+
+  🔎 PROTOCOLE OBLIGATOIRE NATIONALITÉ (tennis) :
+  Pour CHAQUE joueur de tennis dont tu n'es pas certain à 100% :
+    1. Lance une web_search : "[nom complet] tennis player nationality"
+    2. Ouvre/lis une source fiable : ATP Tour, WTA, ITF, Wikipedia, Wikidata
+    3. Prends le pays que le joueur REPRÉSENTE officiellement (sa fédération)
+    4. Convertis en code ISO2 (US, GB, FR, ES, AR, BR, EC, RS, CZ…)
+  La liste de pièges ci-dessus n'est PAS exhaustive — elle ne couvre que les
+  cas déjà rencontrés. Pour tout autre joueur, le web_search est ta source de
+  vérité. NE devine JAMAIS un drapeau "au feeling".
 - team1_logo/team2_logo : laisse "" — le serveur PHP résout via ses helpers locaux.
 - competition : nom complet (ex. "Ligue 1 · J29 · Parc des Princes")
 - badge_text : "Tennis · ATP", "Tennis · Challenger", "Tennis · ITF", "Tennis · WTA", "Foot · Ligue 1", "Foot · La Liga", "Basket · NBA", "Hockey · NHL"…

@@ -130,7 +130,7 @@ function syncGlobalTimeFromFirstBet(array $enriched): array {
 }
 
 // ── Appel Claude (une tentative) ────────────────────────────
-function callClaudeOnce($systemPrompt, $userMsg, $maxTokens, $thinkingActive) {
+function callClaudeOnce($systemPrompt, $userMsg, $maxTokens, $thinkingActive, $enableWebSearch = false) {
     $body = [
         'model'      => CLAUDE_MODEL,
         'max_tokens' => $maxTokens,
@@ -140,10 +140,20 @@ function callClaudeOnce($systemPrompt, $userMsg, $maxTokens, $thinkingActive) {
     if ($thinkingActive) {
         $body['thinking'] = ['type' => 'enabled', 'budget_tokens' => 4096];
     }
+    if ($enableWebSearch) {
+        // Web search server-side (Anthropic gère la boucle de recherche).
+        // Permet à Claude de vérifier nationalités joueurs, tournois, divisions.
+        // max_uses limite le coût (4 recherches max par card).
+        $body['tools'] = [[
+            'type'     => 'web_search_20250305',
+            'name'     => 'web_search',
+            'max_uses' => 4,
+        ]];
+    }
     $payload = json_encode($body, JSON_UNESCAPED_UNICODE);
 
     $ch = curl_init('https://api.anthropic.com/v1/messages');
-    $timeout = $thinkingActive ? 180 : 120;
+    $timeout = ($thinkingActive || $enableWebSearch) ? 180 : 120;
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST           => true,
@@ -222,14 +232,14 @@ function emitClaudeFailureJson(array $result): void {
 }
 
 // ── Appel Claude générique (retries si surcharge / rate limit) ─
-function callClaude($systemPrompt, $userMsg, $maxTokens = 1000, $useThinking = false) {
+function callClaude($systemPrompt, $userMsg, $maxTokens = 1000, $useThinking = false, $enableWebSearch = false) {
     $thinkingActive = $useThinking && defined('CLAUDE_THINKING_ENABLED') && CLAUDE_THINKING_ENABLED && $maxTokens > 2048;
     $maxAttempts    = 4;
     $last           = null;
 
     for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
-        debugLog("API call attempt $attempt/$maxAttempts — model:" . CLAUDE_MODEL . " max_tokens:$maxTokens thinking:" . ($thinkingActive ? 'ON(4096)' : 'OFF'));
-        $last = callClaudeOnce($systemPrompt, $userMsg, $maxTokens, $thinkingActive);
+        debugLog("API call attempt $attempt/$maxAttempts — model:" . CLAUDE_MODEL . " max_tokens:$maxTokens thinking:" . ($thinkingActive ? 'ON(4096)' : 'OFF') . " websearch:" . ($enableWebSearch ? 'ON' : 'OFF'));
+        $last = callClaudeOnce($systemPrompt, $userMsg, $maxTokens, $thinkingActive, $enableWebSearch);
         if (!isset($last['error'])) {
             unset($last['_http'], $last['_atype']);
             return $last;
@@ -352,7 +362,10 @@ if ($typeBet === 'Live') {
             . "Si tu ne peux pas la déduire, utilise ces valeurs par défaut (secours) : date_fr = \"$default_date_fr\" , time_fr = \"$default_time_fr\".";
         debugLog("LIVE — Enrichissement via Claude...");
 
-        $result = callClaude(CLAUDE_LIVE_ENRICH_PROMPT, $userMsg, 1000);
+        // Web search activé : Claude vérifie nationalités joueurs (tennis surtout),
+        // tournoi/division en cours, etc. au lieu de deviner. maxTokens 1500 pour
+        // laisser de la marge aux requêtes de recherche + raisonnement.
+        $result = callClaude(CLAUDE_LIVE_ENRICH_PROMPT, $userMsg, 1500, false, true);
         if (isset($result['error'])) {
             debugLog("LIVE ENRICH ERROR: " . $result['error']);
             emitClaudeFailureJson($result);
