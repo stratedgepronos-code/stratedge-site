@@ -1199,6 +1199,18 @@ body::before {
   border-radius: 10px;
 }
 
+.ef-stream-async-note {
+  margin-top: 0.9rem;
+  padding: 0.7rem 0.9rem;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  color: var(--ef-text-2);
+  background: rgba(0, 212, 255, 0.05);
+  border-left: 3px solid rgba(0, 212, 255, 0.4);
+  border-radius: 6px;
+}
+
 .ef-stream-searches-label {
   font-family: 'Share Tech Mono', monospace;
   font-size: 0.7rem;

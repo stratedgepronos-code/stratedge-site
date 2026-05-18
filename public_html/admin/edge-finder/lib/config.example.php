@@ -31,6 +31,12 @@ const SE_DB_CHARSET = 'utf8mb4';
 // Généré via : python -c "import secrets; print(secrets.token_hex(32))"
 const SE_IMPORT_TOKEN = 'TOKEN_HEX_64_CARACTERES';
 
+// Token interne pour l'analyse buteurs asynchrone : authentifie l'appel
+// du worker (analyze_scorers_worker.php) par le start. Generer une valeur
+// differente de SE_IMPORT_TOKEN, meme methode :
+//   python -c "import secrets; print(secrets.token_hex(32))"
+const SE_WORKER_TOKEN = 'AUTRE_TOKEN_HEX_64_CARACTERES';
+
 // =============================================================================
 // Paramètres dashboard
 // =============================================================================

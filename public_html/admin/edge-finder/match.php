@@ -787,16 +787,10 @@ try {
           <div class="ef-stream-status-text" id="ef-stream-status-text">Initialisation...</div>
           <div class="ef-stream-timer" id="ef-stream-timer">0s</div>
         </div>
-        <div class="ef-stream-meter">
-          <div class="ef-stream-meter-label">TOKENS</div>
-          <div class="ef-stream-meter-value">
-            <span id="ef-stream-tokens-in">0</span> in / <span id="ef-stream-tokens-out">0</span> out
-          </div>
-        </div>
       </div>
-      <div class="ef-stream-searches">
-        <div class="ef-stream-searches-label">🌐 RECHERCHES WEB</div>
-        <ul class="ef-stream-searches-list" id="ef-stream-searches-list"></ul>
+      <div class="ef-stream-async-note">
+        L'analyse tourne en tâche de fond (recherches web + rédaction).
+        Cette page se met à jour automatiquement dès que c'est prêt — tu peux patienter ici.
       </div>
     </div>
 
@@ -832,76 +826,98 @@ try {
     }
   }
 
-  // ===== Analyse TOP 3 buteurs via Claude Sonnet 4.6 + Web Search (stream SSE) =====
+  // ===== Analyse TOP 3 buteurs - architecture asynchrone (start + polling) =====
+  // L'analyse depasse la limite serveur Hostinger (~120s). On lance un worker
+  // en tache de fond et on interroge son statut toutes les 3s.
   const MATCH_ID = <?= (int)$match_id ?>;
-  let streamTimer = null;
-  let streamStartTs = 0;
-  let eventSource = null;
+  let pollTimer = null;
+  let elapsedTimer = null;
+  let analysisStartTs = 0;
 
   function launchScorersAnalysis(force) {
     document.getElementById('ef-scorers-idle').style.display = 'none';
     document.getElementById('ef-scorers-error').style.display = 'none';
     document.getElementById('ef-scorers-result').style.display = 'none';
     document.getElementById('ef-scorers-stream').style.display = 'block';
-    document.getElementById('ef-stream-searches-list').innerHTML = '';
-    document.getElementById('ef-stream-tokens-in').textContent = '0';
-    document.getElementById('ef-stream-tokens-out').textContent = '0';
-    setStatus('Connexion au flux...');
+    const searchesList = document.getElementById('ef-stream-searches-list');
+    if (searchesList) searchesList.innerHTML = '';
+    setStatus('Lancement de l\'analyse...');
 
-    streamStartTs = Date.now();
-    streamTimer = setInterval(() => {
-      const sec = Math.floor((Date.now() - streamStartTs) / 1000);
-      document.getElementById('ef-stream-timer').textContent = sec + 's';
+    analysisStartTs = Date.now();
+    if (elapsedTimer) clearInterval(elapsedTimer);
+    elapsedTimer = setInterval(() => {
+      const sec = Math.floor((Date.now() - analysisStartTs) / 1000);
+      const t = document.getElementById('ef-stream-timer');
+      if (t) t.textContent = sec + 's';
     }, 250);
 
-    const url = './api/analyze_scorers_stream.php?match_id=' + MATCH_ID + (force ? '&force=1' : '');
-    eventSource = new EventSource(url, {withCredentials: true});
-
-    eventSource.addEventListener('status', (e) => {
-      const d = JSON.parse(e.data);
-      setStatus(d.message || '');
-    });
-    eventSource.addEventListener('tokens', (e) => {
-      const d = JSON.parse(e.data);
-      document.getElementById('ef-stream-tokens-in').textContent = (d.input || 0).toLocaleString('fr-FR');
-      document.getElementById('ef-stream-tokens-out').textContent = (d.output_so_far || 0).toLocaleString('fr-FR');
-    });
-    eventSource.addEventListener('web_search', (e) => {
-      const d = JSON.parse(e.data);
-      const ul = document.getElementById('ef-stream-searches-list');
-      const li = document.createElement('li');
-      li.className = 'ef-stream-search-item';
-      li.innerHTML = '<span class="ef-stream-search-arrow">▸</span> <span class="ef-stream-search-q">' +
-        escapeHtml(d.query || 'recherche') + '</span>';
-      ul.appendChild(li);
-      requestAnimationFrame(() => li.classList.add('ef-stream-search-visible'));
-    });
-    eventSource.addEventListener('complete', (e) => {
-      const d = JSON.parse(e.data);
-      closeStream();
-      renderResult(d);
-    });
-    eventSource.addEventListener('error', (e) => {
-      let err = 'Erreur de connexion au stream';
-      if (e.data) {
-        try { const d = JSON.parse(e.data); err = d.message || err; } catch(_) {}
-      }
-      closeStream();
-      const box = document.getElementById('ef-scorers-error');
-      box.textContent = '❌ ' + err;
-      box.style.display = 'block';
-      document.getElementById('ef-scorers-idle').style.display = 'block';
-    });
+    // 1) Demarre le job
+    fetch('./api/analyze_scorers_start.php?match_id=' + MATCH_ID + (force ? '&force=1' : ''), {
+      credentials: 'same-origin'
+    })
+      .then(r => r.json())
+      .then(d => {
+        if (d.error) { showScorersError(d.error); return; }
+        // 'cached' / 'started' / 'running' -> dans tous les cas on poll
+        setStatus(d.status === 'cached'
+          ? 'Restauration de l\'analyse en cache...'
+          : 'Analyse en cours, recherches web... (~2 min)');
+        startPolling();
+      })
+      .catch(() => showScorersError('Impossible de lancer l\'analyse'));
   }
 
-  function closeStream() {
-    if (eventSource) { eventSource.close(); eventSource = null; }
-    if (streamTimer) { clearInterval(streamTimer); streamTimer = null; }
+  // 2) Polling du statut toutes les 3s
+  function startPolling() {
+    if (pollTimer) clearInterval(pollTimer);
+    let polls = 0;
+    pollTimer = setInterval(() => {
+      polls++;
+      // Garde-fou : apres 4 min (~80 polls) on abandonne
+      if (polls > 80) {
+        stopAnalysisTimers();
+        showScorersError('Analyse trop longue - relance l\'analyse');
+        return;
+      }
+      fetch('./api/analyze_scorers_status.php?match_id=' + MATCH_ID, {
+        credentials: 'same-origin'
+      })
+        .then(r => r.json())
+        .then(d => {
+          if (d.status === 'done') {
+            stopAnalysisTimers();
+            document.getElementById('ef-scorers-stream').style.display = 'none';
+            renderResult(d);
+          } else if (d.status === 'error') {
+            stopAnalysisTimers();
+            showScorersError(d.error_msg || 'Erreur lors de l\'analyse');
+          } else if (d.status === 'none') {
+            stopAnalysisTimers();
+            showScorersError('Job introuvable - relance l\'analyse');
+          }
+          // 'pending' / 'running' : on continue de poller
+        })
+        .catch(() => { /* erreur reseau ponctuelle : on retente au prochain poll */ });
+    }, 3000);
+  }
+
+  function stopAnalysisTimers() {
+    if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+    if (elapsedTimer) { clearInterval(elapsedTimer); elapsedTimer = null; }
+  }
+
+  function showScorersError(msg) {
+    stopAnalysisTimers();
     document.getElementById('ef-scorers-stream').style.display = 'none';
+    const box = document.getElementById('ef-scorers-error');
+    box.textContent = '❌ ' + msg;
+    box.style.display = 'block';
+    document.getElementById('ef-scorers-idle').style.display = 'block';
   }
 
   function setStatus(text) {
-    document.getElementById('ef-stream-status-text').textContent = text;
+    const el = document.getElementById('ef-stream-status-text');
+    if (el) el.textContent = text;
   }
 
   // ===== Rendu du resultat =====
