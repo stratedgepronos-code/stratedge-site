@@ -95,14 +95,14 @@ if (!$match) {
 
 // Recupere les cotes Over 2.5 / 3.5 du best candidate du match
 $over25 = SE_Db::queryOne(
-    "SELECT cote, model_p, devig_p
+    "SELECT odds, model_proba, devig_proba
      FROM pick_candidates
      WHERE match_id = ? AND market = 'Over 2.5'
      ORDER BY ev DESC LIMIT 1",
     [$match_id]
 );
 $over35 = SE_Db::queryOne(
-    "SELECT cote, model_p, devig_p
+    "SELECT odds, model_proba, devig_proba
      FROM pick_candidates
      WHERE match_id = ? AND market = 'Over 3.5'
      ORDER BY ev DESC LIMIT 1",
@@ -132,12 +132,12 @@ $prompt_parts = [
 ];
 
 if ($over25) {
-    $prompt_parts[] = "COTE MARCHE Over 2.5 : " . number_format((float)$over25['cote'], 2)
-        . " (proba modele " . round((float)$over25['model_p'] * 100) . "%)";
+    $prompt_parts[] = "COTE MARCHE Over 2.5 : " . number_format((float)$over25['odds'], 2)
+        . " (proba modele " . round((float)$over25['model_proba'] * 100) . "%)";
 }
 if ($over35) {
-    $prompt_parts[] = "COTE MARCHE Over 3.5 : " . number_format((float)$over35['cote'], 2)
-        . " (proba modele " . round((float)$over35['model_p'] * 100) . "%)";
+    $prompt_parts[] = "COTE MARCHE Over 3.5 : " . number_format((float)$over35['odds'], 2)
+        . " (proba modele " . round((float)$over35['model_proba'] * 100) . "%)";
 }
 
 $prompt_parts[] = "";

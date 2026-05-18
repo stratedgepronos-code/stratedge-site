@@ -106,22 +106,22 @@ if (!$match) {
 
 // Cotes Over 2.5 / 3.5
 $over25 = SE_Db::queryOne(
-    "SELECT cote, model_p FROM pick_candidates WHERE match_id = ? AND market = 'Over 2.5' ORDER BY ev DESC LIMIT 1",
+    "SELECT odds, model_proba FROM pick_candidates WHERE match_id = ? AND market = 'Over 2.5' ORDER BY ev DESC LIMIT 1",
     [$match_id]
 );
 $over35 = SE_Db::queryOne(
-    "SELECT cote, model_p FROM pick_candidates WHERE match_id = ? AND market = 'Over 3.5' ORDER BY ev DESC LIMIT 1",
+    "SELECT odds, model_proba FROM pick_candidates WHERE match_id = ? AND market = 'Over 3.5' ORDER BY ev DESC LIMIT 1",
     [$match_id]
 );
 $btts = SE_Db::queryOne(
-    "SELECT cote, model_p FROM pick_candidates WHERE match_id = ? AND market = 'BTTS Yes' ORDER BY ev DESC LIMIT 1",
+    "SELECT odds, model_proba FROM pick_candidates WHERE match_id = ? AND market = 'BTTS Yes' ORDER BY ev DESC LIMIT 1",
     [$match_id]
 );
 
 $market_odds_lines = [];
-if ($over25) $market_odds_lines[] = "  - Over 2.5 buts : cote " . number_format((float)$over25['cote'], 2) . " (modele " . round((float)$over25['model_p']*100) . "%)";
-if ($over35) $market_odds_lines[] = "  - Over 3.5 buts : cote " . number_format((float)$over35['cote'], 2) . " (modele " . round((float)$over35['model_p']*100) . "%)";
-if ($btts)   $market_odds_lines[] = "  - BTTS Yes : cote " . number_format((float)$btts['cote'], 2) . " (modele " . round((float)$btts['model_p']*100) . "%)";
+if ($over25) $market_odds_lines[] = "  - Over 2.5 buts : cote " . number_format((float)$over25['odds'], 2) . " (modele " . round((float)$over25['model_proba']*100) . "%)";
+if ($over35) $market_odds_lines[] = "  - Over 3.5 buts : cote " . number_format((float)$over35['odds'], 2) . " (modele " . round((float)$over35['model_proba']*100) . "%)";
+if ($btts)   $market_odds_lines[] = "  - BTTS Yes : cote " . number_format((float)$btts['odds'], 2) . " (modele " . round((float)$btts['model_proba']*100) . "%)";
 $market_odds = implode("\n", $market_odds_lines) ?: "  (cotes non dispo en DB)";
 
 // Charge le prompt
