@@ -82,9 +82,8 @@ if ($peek_only) {
 // ===== 2. Recupere context match =====
 $match = SE_Db::queryOne(
     "SELECT m.home_name, m.away_name, m.kickoff_utc, m.lambda_home, m.lambda_away,
-            l.league_name, l.country
+            m.league_name, m.league_country AS country
      FROM pick_matches m
-     LEFT JOIN leagues l ON l.season_id = m.season_id
      WHERE m.match_id = ?",
     [$match_id]
 );
