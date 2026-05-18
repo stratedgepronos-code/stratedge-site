@@ -472,10 +472,55 @@ body::before {
   border: 1px solid var(--ef-border);
   border-radius: 14px;
   padding: 1.25rem 1.5rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 0;
   position: relative;
   overflow: hidden;
   transition: all 0.3s;
+}
+
+/* ===== Grille 2 colonnes des matchs ===== */
+.ef-matches-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+  align-items: start;
+}
+
+/* Sous 1100px : retour a 1 colonne (cards trop serrees autrement) */
+@media (max-width: 1100px) {
+  .ef-matches-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* En grille 2 colonnes, les cartes sont a demi-largeur : les candidats
+   passent en layout compact pour rester lisibles (7 colonnes -> empile). */
+@media (min-width: 1101px) {
+  .ef-matches-grid .ef-cand {
+    grid-template-columns: auto 1fr auto;
+    grid-auto-rows: auto;
+    gap: 0.5rem 0.7rem;
+    row-gap: 0.5rem;
+  }
+  /* Ligne 1 : statut + marche + conviction */
+  .ef-matches-grid .ef-cand-status  { grid-row: 1; grid-column: 1; }
+  .ef-matches-grid .ef-cand-market  { grid-row: 1; grid-column: 2; }
+  .ef-matches-grid .ef-cand-conv    { grid-row: 1; grid-column: 3; }
+  /* Ligne 2 : cote + ev + probas, repartis */
+  .ef-matches-grid .ef-cand-odds    { grid-row: 2; grid-column: 1; }
+  .ef-matches-grid .ef-cand-ev      { grid-row: 2; grid-column: 2; }
+  .ef-matches-grid .ef-cand-probas  { grid-row: 2; grid-column: 3; }
+  /* Ligne 3 : actions, pleine largeur */
+  .ef-matches-grid .ef-cand-actions {
+    grid-row: 3;
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    padding-top: 0.4rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
 }
 
 .ef-match::before {

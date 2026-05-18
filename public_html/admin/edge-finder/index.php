@@ -454,6 +454,7 @@ try {
     <?php foreach ($matches_by_day as $day => $day_matches): ?>
       <h2 class="ef-day-header"><?= fmt_day($day) ?> — <?= count($day_matches) ?> match<?= count($day_matches) > 1 ? 's' : '' ?></h2>
 
+      <div class="ef-matches-grid">
       <?php foreach ($day_matches as $m):
         $match_highlights = [];
         if (!empty($m['highlights'])) {
@@ -551,6 +552,7 @@ try {
           </div>
         </article>
       <?php endforeach ?>
+      </div>
     <?php endforeach ?>
   <?php endif ?>
 
