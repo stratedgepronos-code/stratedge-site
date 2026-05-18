@@ -151,6 +151,15 @@ $prompt = strtr($prompt_template, [
     '{{market_odds}}' => $market_odds,
 ]);
 
+// Contrainte de budget : 4 recherches web max (limite de temps serveur).
+// Injectee en tete pour que le modele priorise ses recherches.
+$search_budget = "⚠️ BUDGET RECHERCHE STRICT : tu as droit a 4 recherches web MAXIMUM. "
+    . "Utilise-les sur l'ESSENTIEL en priorite : (1) compos probables + blessures/suspensions des 2 equipes, "
+    . "(2) stats du buteur le plus probable de l'equipe favorite, (3) stats du buteur le plus probable de l'autre equipe, "
+    . "(4) une recherche libre selon le besoin. Ne gaspille AUCUNE recherche. "
+    . "Apres 4 recherches, tu DOIS rediger directement le JSON final complet sans recherche supplementaire.\n\n";
+$prompt = $search_budget . $prompt;
+
 sse_send('status', ['step' => 'phase0', 'message' => 'Analyse PHASE 0 - Compos & blessures...']);
 
 // ===== Appel Anthropic en streaming avec web_search =====
@@ -162,8 +171,11 @@ $payload = [
     'model' => 'claude-sonnet-4-6',
     'max_tokens' => 8000,
     'stream' => true,
+    // max_uses limite a 4 : Hostinger coupe les scripts longs (~120s).
+    // 6+ recherches web faisaient depasser cette limite -> stream tue,
+    // JSON tronque. 4 recherches ciblees tiennent dans le budget temps.
     'tools' => [
-        ['type' => 'web_search_20250305', 'name' => 'web_search', 'max_uses' => 10]
+        ['type' => 'web_search_20250305', 'name' => 'web_search', 'max_uses' => 4]
     ],
     'messages' => [
         ['role' => 'user', 'content' => $prompt]
