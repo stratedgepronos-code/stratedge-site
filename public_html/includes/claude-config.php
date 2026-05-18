@@ -256,6 +256,7 @@ RÈGLES CHAMPS :
   • João Fonseca → BR (Brésilien, né à Rio de Janeiro 🇧🇷)
   • Martin Damm / Martin Damm Jr → US (Américain, né à Bradenton FL 🇺🇸) — PAS tchèque ! C'est le FILS de Martin Damm Sr (lui tchèque). Le Jr représente les USA. Même certaines sources se trompent.
   • Toby Samuel (Samuel T.) → GB (Britannique 🇬🇧) — PAS australien. Joueur britannique présent aux qualifs de Roland-Garros.
+  • Álvaro Guillén Meza (Guillén Meza A. / Guillen Maeza) → EC (Équatorien 🇪🇨) — PAS espagnol malgré le nom hispanique. Représente l'Équateur.
   ⚠️ PIÈGE NOMS SLAVES/EUROPÉENS → nationalité US :
   Beaucoup de joueurs/joueuses US ont des noms d'origine serbe, russe, ukrainienne,
   polonaise, croate, etc. mais sont 100% américains (nés aux USA, représentent USA).
