@@ -1,19 +1,19 @@
 <?php
 /**
- * STRATEDGE - Edge Finder - WORKER analyse buteurs (asynchrone)
+ * STRATEDGE - Edge Finder - WORKER ETAPE 1 (research)
  * ================================================================================
  *
- * Ce script fait l'analyse longue (recherches web + redaction JSON) et ecrit
- * le resultat dans match_scorer_analysis. Il ne produit AUCUNE sortie pour le
- * navigateur : il tourne en tache de fond, declenche par analyze_scorers_start.php.
+ * Etape 1/2 de l'analyse buteurs asynchrone.
+ *   - Recoit le contexte match
+ *   - Fait 4 recherches web ciblees (compos/blessures + stats 2 buteurs cles)
+ *   - Renvoie une SYNTHESE STRUCTUREE (mini-JSON brut) avec :
+ *       compos, blessures, buteurs candidats avec stats brutes, notes contexte
+ *   - Stocke la synthese en base, passe le job a status='researched'
  *
- * Appel interne uniquement (pas d'auth super-admin : protege par un token
- * partage genere par le start). Param :
+ * Le polling (status.php) detecte ce statut et declenche le worker etape 2.
+ *
+ * Appel interne uniquement (token partage SE_WORKER_TOKEN).
  *   GET ?match_id=N&worker_token=XXX
- *
- * Cycle de vie du job dans match_scorer_analysis.status :
- *   pending  -> running -> done   (succes)
- *                       -> error  (echec)
  */
 
 declare(strict_types=1);
@@ -21,15 +21,12 @@ declare(strict_types=1);
 require_once __DIR__ . '/../../../config-keys.php';
 require_once __DIR__ . '/../lib/db.php';
 
-// Pas de sortie navigateur : le worker tourne en fond.
 ignore_user_abort(true);
 @set_time_limit(300);
 
 $match_id = (int)($_GET['match_id'] ?? 0);
 $worker_token = (string)($_GET['worker_token'] ?? '');
 
-// Auth interne : le token doit correspondre a celui defini en config.
-// (SE_WORKER_TOKEN : constante partagee, ajoutee a config.php)
 if (!defined('SE_WORKER_TOKEN') || !hash_equals(SE_WORKER_TOKEN, $worker_token)) {
     http_response_code(403);
     exit('forbidden');
@@ -39,23 +36,18 @@ if ($match_id <= 0) {
     exit('match_id required');
 }
 
-/**
- * Marque le job en erreur et termine.
- */
-function worker_fail(int $match_id, string $msg): void {
+function research_fail(int $match_id, string $msg): void {
     try {
         SE_Db::reconnect();
         SE_Db::execute(
             "UPDATE match_scorer_analysis SET status = 'error', error_msg = ? WHERE match_id = ?",
             [mb_substr($msg, 0, 490), $match_id]
         );
-    } catch (Throwable $e) {
-        // best effort
-    }
+    } catch (Throwable $e) { /* best effort */ }
     exit;
 }
 
-// ===== Marque le job 'running' =====
+// Marque 'running' (etape 1 demarre)
 SE_Db::execute(
     "UPDATE match_scorer_analysis SET status = 'running', started_at = NOW() WHERE match_id = ?",
     [$match_id]
@@ -70,74 +62,100 @@ $match = SE_Db::queryOne(
     [$match_id]
 );
 if (!$match) {
-    worker_fail($match_id, 'Match introuvable dans pick_matches');
+    research_fail($match_id, 'Match introuvable dans pick_matches');
 }
-
-// Cotes Over 2.5 / 3.5 / BTTS
-$over25 = SE_Db::queryOne(
-    "SELECT odds, model_proba FROM pick_candidates WHERE match_id = ? AND market = 'Over 2.5' ORDER BY ev DESC LIMIT 1",
-    [$match_id]
-);
-$over35 = SE_Db::queryOne(
-    "SELECT odds, model_proba FROM pick_candidates WHERE match_id = ? AND market = 'Over 3.5' ORDER BY ev DESC LIMIT 1",
-    [$match_id]
-);
-$btts = SE_Db::queryOne(
-    "SELECT odds, model_proba FROM pick_candidates WHERE match_id = ? AND market = 'BTTS Yes' ORDER BY ev DESC LIMIT 1",
-    [$match_id]
-);
-
-$market_odds_lines = [];
-if ($over25) $market_odds_lines[] = "  - Over 2.5 buts : cote " . number_format((float)$over25['odds'], 2) . " (modele " . round((float)$over25['model_proba']*100) . "%)";
-if ($over35) $market_odds_lines[] = "  - Over 3.5 buts : cote " . number_format((float)$over35['odds'], 2) . " (modele " . round((float)$over35['model_proba']*100) . "%)";
-if ($btts)   $market_odds_lines[] = "  - BTTS Yes : cote " . number_format((float)$btts['odds'], 2) . " (modele " . round((float)$btts['model_proba']*100) . "%)";
-$market_odds = implode("\n", $market_odds_lines) ?: "  (cotes non dispo en DB)";
-
-// ===== Charge le prompt =====
-$prompt_path = __DIR__ . '/../prompts/PROMPT_BUTEURS_v1_1.md';
-if (!file_exists($prompt_path)) {
-    worker_fail($match_id, 'Fichier prompt introuvable');
-}
-$prompt_template = file_get_contents($prompt_path);
 
 $lambda_home = (float)($match['lambda_home'] ?? 1.4);
 $lambda_away = (float)($match['lambda_away'] ?? 1.2);
-$lambda_total = $lambda_home + $lambda_away;
 $kickoff_paris = (new DateTime($match['kickoff_utc']))->format('d/m/Y H:i');
 
-$prompt = strtr($prompt_template, [
-    '{{home_name}}' => $match['home_name'],
-    '{{away_name}}' => $match['away_name'],
-    '{{league_name}}' => $match['league_name'] ?? 'inconnue',
-    '{{country}}' => $match['country'] ?? '',
-    '{{kickoff_paris}}' => $kickoff_paris,
-    '{{lambda_home}}' => number_format($lambda_home, 2),
-    '{{lambda_away}}' => number_format($lambda_away, 2),
-    '{{lambda_total}}' => number_format($lambda_total, 2),
-    '{{market_odds}}' => $market_odds,
-]);
+// ===== Construit le prompt etape 1 (recherches + synthese structuree) =====
+$research_prompt = <<<PROMPT
+Tu es un scout football. On t'a confie l'analyse buteurs du match :
 
-// Budget recherche : 4 max (le worker a aussi la limite serveur ~120s)
-$search_budget = "⚠️ BUDGET RECHERCHE STRICT : tu as droit a 4 recherches web MAXIMUM. "
-    . "Utilise-les sur l'ESSENTIEL en priorite : (1) compos probables + blessures/suspensions des 2 equipes, "
-    . "(2) stats du buteur le plus probable de l'equipe favorite, (3) stats du buteur le plus probable de l'autre equipe, "
-    . "(4) une recherche libre selon le besoin. Ne gaspille AUCUNE recherche. "
-    . "Apres 4 recherches, tu DOIS rediger directement le JSON final complet sans recherche supplementaire.\n\n";
-$prompt = $search_budget . $prompt;
+MATCH : {$match['home_name']} (domicile) vs {$match['away_name']} (exterieur)
+COMPETITION : {$match['league_name']} ({$match['country']})
+COUP D'ENVOI : {$kickoff_paris} (heure de Paris)
+LAMBDA POISSON (buts attendus) : home={$lambda_home}, away={$lambda_away}
 
-// ===== Appel Anthropic (non-stream : le worker n'a personne a qui streamer) =====
+TA MISSION (etape 1/2) :
+Tu vas faire MAXIMUM 4 recherches web ciblees pour collecter les infos brutes,
+puis tu renvoies une SYNTHESE STRUCTUREE en JSON.
+
+BUDGET RECHERCHE (strict) :
+  1. Compos probables + blessures/suspensions des 2 equipes
+  2. Stats du buteur le plus probable de {$match['home_name']}
+  3. Stats du buteur le plus probable de {$match['away_name']}
+  4. Recherche libre selon le besoin (3eme buteur potentiel, contexte particulier)
+
+Ne gaspille AUCUNE recherche. Apres 4 recherches, tu DOIS rediger la synthese.
+
+FORMAT DE SORTIE (JSON STRICT, rien autour) :
+
+```json
+{
+  "compos": {
+    "home": {
+      "lineup_status": "probable" | "confirmed" | "unknown",
+      "formation": "4-3-3" | "..." | null,
+      "key_starters": ["nom1", "nom2", "..."],
+      "absences": [{"name": "...", "reason": "blessure|suspension|covid|autre", "impact": "majeur|moyen|mineur"}]
+    },
+    "away": { ... meme structure ... }
+  },
+  "buteurs_candidats": [
+    {
+      "name": "Nom complet du joueur",
+      "team": "home" | "away",
+      "team_label": "Nom de l'equipe",
+      "position": "Attaquant axial" | "Ailier" | "Milieu offensif" | "...",
+      "is_starter_probable": true | false,
+      "is_injured_or_doubtful": false | true,
+      "is_penalty_taker": true | false,
+      "is_freekick_taker": true | false,
+      "stats_brutes": {
+        "goals_recent": 6,
+        "goals_per_match": 0.45,
+        "xg_recent": "N/D" | 4.2,
+        "shots_per90": "N/D" | 3.1,
+        "sot_per90": "N/D" | 1.2,
+        "minutes_recent": "regulier" | "intermittent" | "remplacant",
+        "form_last5": "1G0A 2G1A 0G0A 1G0A 2G0A" | "N/D"
+      },
+      "role_offensif": "principal" | "secondaire" | "support",
+      "notes": "Texte libre sur ce qu'il faut savoir (cf source, fiabilite, contexte)"
+    }
+    // 3 a 5 candidats max
+  ],
+  "context_notes": "Texte libre sur le contexte global du match : enjeu, dynamique, infos importantes non capturees ci-dessus",
+  "freshness_warning": null | "Texte si les infos sont vieilles/peu fiables",
+  "sources_used": ["source1", "source2", "..."]
+}
+```
+
+REGLES :
+- Si une stat n'est pas trouvee : mets "N/D" (string) pour les nombres, ou null pour les autres champs
+- Reste FACTUEL : pas de sniper_score ni de proba ni de verdict ici (c'est l'etape 2 qui fait ca)
+- buteurs_candidats : liste 3 a 5 joueurs MAX (1-3 par equipe selon ce qu'ils valent)
+- Si un joueur est blesse/suspendu : is_injured_or_doubtful=true, et explique dans "notes"
+- Ne mentionne PAS de joueurs dont tu n'as pas trouve d'infos solides
+
+Tu peux maintenant lancer tes recherches.
+PROMPT;
+
+// ===== Appel Anthropic =====
 if (!defined('ANTHROPIC_API_KEY') || !ANTHROPIC_API_KEY) {
-    worker_fail($match_id, 'ANTHROPIC_API_KEY non configure');
+    research_fail($match_id, 'ANTHROPIC_API_KEY non configure');
 }
 
 $payload = [
     'model' => 'claude-sonnet-4-6',
-    'max_tokens' => 8000,
+    'max_tokens' => 4000,
     'tools' => [
         ['type' => 'web_search_20250305', 'name' => 'web_search', 'max_uses' => 4]
     ],
     'messages' => [
-        ['role' => 'user', 'content' => $prompt]
+        ['role' => 'user', 'content' => $research_prompt]
     ],
 ];
 
@@ -146,7 +164,7 @@ $start_time = microtime(true);
 $ch = curl_init('https://api.anthropic.com/v1/messages');
 curl_setopt_array($ch, [
     CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_TIMEOUT => 280,
+    CURLOPT_TIMEOUT => 115,   // strict : on coupe AVANT la limite serveur de 122s
     CURLOPT_POST => true,
     CURLOPT_POSTFIELDS => json_encode($payload),
     CURLOPT_HTTPHEADER => [
@@ -161,15 +179,15 @@ $curl_err = curl_error($ch);
 curl_close($ch);
 
 if ($http_code !== 200 || !$response) {
-    worker_fail($match_id, "Anthropic API HTTP $http_code : " . mb_substr($curl_err ?: (string)$response, 0, 300));
+    research_fail($match_id, "Etape 1 (research) - Anthropic HTTP $http_code : " . mb_substr($curl_err ?: (string)$response, 0, 250));
 }
 
 $resp = json_decode($response, true);
 if (!is_array($resp)) {
-    worker_fail($match_id, 'Reponse Anthropic non parsable');
+    research_fail($match_id, 'Etape 1 - reponse Anthropic non parsable');
 }
 
-// ===== Extrait le texte + compte les recherches web =====
+// Extrait texte + comptage recherches
 $accumulated_text = '';
 $searches_done = [];
 foreach (($resp['content'] ?? []) as $block) {
@@ -184,10 +202,9 @@ foreach (($resp['content'] ?? []) as $block) {
 
 $tokens_in = (int)($resp['usage']['input_tokens'] ?? 0);
 $tokens_out = (int)($resp['usage']['output_tokens'] ?? 0);
-$web_search_count = count($searches_done);
 $duration = (int)round(microtime(true) - $start_time);
 
-// ===== Parse le JSON final =====
+// ===== Parse le mini-JSON de synthese =====
 $json_str = trim($accumulated_text);
 if (preg_match('/```(?:json)?\s*(\{.+\})\s*```/s', $json_str, $mm)) {
     $json_str = $mm[1];
@@ -198,53 +215,35 @@ if ($first_brace !== false && $last_brace !== false && $last_brace > $first_brac
     $json_str = substr($json_str, $first_brace, $last_brace - $first_brace + 1);
 }
 
-$parsed = json_decode($json_str, true);
-if (!$parsed || !isset($parsed['scorers']) || !is_array($parsed['scorers']) || count($parsed['scorers']) === 0) {
+$summary = json_decode($json_str, true);
+if (!$summary || !isset($summary['buteurs_candidats']) || !is_array($summary['buteurs_candidats']) || count($summary['buteurs_candidats']) === 0) {
     $looks_truncated = (strlen($accumulated_text) > 200)
         && (substr_count($json_str, '{') > substr_count($json_str, '}'));
-    worker_fail($match_id, $looks_truncated
-        ? 'Analyse interrompue (reponse tronquee) - relance l\'analyse'
-        : 'Reponse Claude invalide (' . json_last_error_msg() . ')');
+    research_fail($match_id, $looks_truncated
+        ? 'Etape 1 interrompue (synthese tronquee) - relance l\'analyse'
+        : 'Etape 1 - synthese invalide (' . json_last_error_msg() . ')');
 }
 
-// Pricing Sonnet 4.6 : $3 input / $15 output par MTok
-$cost = ($tokens_in / 1_000_000.0) * 3 + ($tokens_out / 1_000_000.0) * 15;
-
-// ===== Ecrit le resultat, status 'done' =====
+// ===== Ecrit la synthese, passe a 'researched' =====
 SE_Db::reconnect();
 SE_Db::execute(
     "UPDATE match_scorer_analysis SET
-       status = 'done',
-       error_msg = NULL,
-       scorers_json = ?,
-       markdown_full = ?,
-       warnings_json = ?,
-       freshness_note = ?,
+       status = 'researched',
+       started_at = NOW(),
+       research_summary = ?,
        searches_json = ?,
-       raw_response = ?,
-       model_used = ?,
-       tokens_input = ?,
-       tokens_output = ?,
-       web_searches_count = ?,
-       cost_usd = ?,
-       duration_seconds = ?,
-       generated_at = NOW()
+       research_tokens_input = ?,
+       research_tokens_output = ?,
+       research_duration_seconds = ?
      WHERE match_id = ?",
     [
-        json_encode($parsed['scorers'], JSON_UNESCAPED_UNICODE),
-        $parsed['markdown_full'] ?? null,
-        json_encode($parsed['warnings'] ?? [], JSON_UNESCAPED_UNICODE),
-        $parsed['freshness_note'] ?? null,
+        json_encode($summary, JSON_UNESCAPED_UNICODE),
         json_encode($searches_done, JSON_UNESCAPED_UNICODE),
-        $accumulated_text,
-        'claude-sonnet-4-6',
         $tokens_in,
         $tokens_out,
-        $web_search_count,
-        round($cost, 4),
         $duration,
         $match_id,
     ]
 );
 
-exit('ok');
+exit('research ok');
