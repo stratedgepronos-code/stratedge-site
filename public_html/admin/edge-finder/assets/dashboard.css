@@ -1022,6 +1022,12 @@ body::before {
   animation: ef-alts-slide-in 0.3s cubic-bezier(.4, 0, .2, 1);
 }
 
+/* IMPORTANT : l'attribut HTML 'hidden' doit override display:flex.
+   Sinon le bloc reste visible alors qu'il devrait etre masque. */
+.ef-alts-container[hidden] {
+  display: none !important;
+}
+
 @keyframes ef-alts-slide-in {
   from {
     opacity: 0;
