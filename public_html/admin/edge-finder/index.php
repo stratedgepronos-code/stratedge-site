@@ -650,54 +650,50 @@ function ef_format_single_match_intro(): string {
           </div>
 
           <div class="ef-candidates">
-            <?php foreach ($candidates_by_match[$m['match_id']] as $c): ?>
-              <?php $is_reco = !empty($c['recommended']); ?>
-              <div class="ef-cand ef-cand-<?= htmlspecialchars($c['status']) ?> ef-cand-decision-<?= htmlspecialchars($c['user_decision']) ?><?= $is_reco ? ' ef-cand-recommended' : '' ?>"
-                   data-candidate-id="<?= (int)$c['candidate_id'] ?>">
-                <?php if ($is_reco): ?>
-                  <div class="ef-cand-reco-badge" title="Pick recommande pour ce match (anti-correlation : 1 seul pick/match)">⭐ PICK DU MATCH</div>
-                <?php endif ?>
-                <div class="ef-cand-status"><?= status_emoji($c['status']) ?></div>
-                <div class="ef-cand-market">
-                  <div class="ef-cand-market-label"><?= htmlspecialchars($c['market']) ?></div>
-                  <div class="ef-cand-market-group"><?= htmlspecialchars($c['market_group']) ?></div>
-                </div>
-                <div class="ef-cand-odds">
-                  <div class="ef-cand-odds-label">COTE</div>
-                  <div class="ef-cand-odds-value"><?= number_format((float)$c['odds'], 2) ?></div>
-                </div>
-                <div class="ef-cand-ev">
-                  <div class="ef-cand-ev-label">EV</div>
-                  <div class="ef-cand-ev-value"><?= ((float)$c['ev'] >= 0 ? '+' : '') . number_format((float)$c['ev'] * 100, 1) ?>%</div>
-                </div>
-                <div class="ef-cand-probas">
-                  <div class="ef-cand-proba" title="Proba modèle">M <?= number_format((float)$c['model_proba'] * 100, 1) ?>%</div>
-                  <div class="ef-cand-proba" title="Proba marché dévigée">D <?= number_format((float)$c['devig_proba'] * 100, 1) ?>%</div>
-                </div>
-                <div class="ef-cand-conv">
-                  <div class="ef-cand-conv-label">CONV</div>
-                  <div class="ef-cand-conv-value">
-                    <span class="ef-cand-conv-num<?= (int)$c['conviction'] >= 100 ? ' ef-cand-conv-exceptional' : '' ?>"><?= (int)$c['conviction'] ?><?= (int)$c['conviction'] >= 100 ? ' 🔥' : '' ?></span>
-                    <span class="ef-cand-conv-bar"><span style="width:<?= min(100, (int)$c['conviction']) ?>%"></span></span>
-                  </div>
-                </div>
-                <div class="ef-cand-actions">
-                  <?php if ($c['user_decision'] === 'pending'): ?>
-                    <button class="ef-btn ef-btn-track" data-action="tracked" title="Suivre ce pick">📌 Suivre</button>
-                    <button class="ef-btn ef-btn-skip" data-action="skipped" title="Passer">✗</button>
-                  <?php else: ?>
-                    <?= decision_pill($c['user_decision']) ?>
-                    <?php if (in_array($c['user_decision'], ['tracked','skipped'], true)): ?>
-                      <button class="ef-btn ef-btn-undo" data-action="pending" title="Annuler">↩</button>
-                    <?php endif ?>
-                    <?php if ($c['user_decision'] === 'tracked'): ?>
-                      <button class="ef-btn ef-btn-won"  data-action="won"  title="Marquer gagné">🏆</button>
-                      <button class="ef-btn ef-btn-lost" data-action="lost" title="Marquer perdu">💀</button>
-                    <?php endif ?>
-                  <?php endif ?>
-                </div>
+            <?php
+              // Pre-tri : on separe le pick recommande (ou le 1er si pas de reco)
+              // des autres picks dits "alternatives".
+              $cands = $candidates_by_match[$m['match_id']];
+              $reco_idx = -1;
+              foreach ($cands as $i => $cc) {
+                  if (!empty($cc['recommended'])) { $reco_idx = $i; break; }
+              }
+              if ($reco_idx < 0) $reco_idx = 0; // fallback : le 1er du tri
+              $reco_cand = $cands[$reco_idx];
+              $alt_cands = [];
+              foreach ($cands as $i => $cc) {
+                  if ($i !== $reco_idx) $alt_cands[] = $cc;
+              }
+              $has_alts = count($alt_cands) > 0;
+            ?>
+
+            <?php
+              // ===== Pick principal (toujours visible) =====
+              $c = $reco_cand;
+              $is_reco = !empty($c['recommended']);
+            ?>
+            <?php include __DIR__ . '/partials/_candidate_card.php'; ?>
+
+            <?php if ($has_alts): ?>
+              <button type="button"
+                      class="ef-alts-toggle"
+                      aria-expanded="false"
+                      aria-controls="ef-alts-<?= (int)$m['match_id'] ?>">
+                <span class="ef-alts-toggle-arrow">▾</span>
+                <span class="ef-alts-toggle-label">
+                  + <?= count($alt_cands) ?> alternative<?= count($alt_cands) > 1 ? 's' : '' ?>
+                </span>
+                <span class="ef-alts-toggle-hint">cliquer pour voir</span>
+              </button>
+
+              <div class="ef-alts-container" id="ef-alts-<?= (int)$m['match_id'] ?>" hidden>
+                <?php foreach ($alt_cands as $c):
+                  $is_reco = false; // par definition les alts ne sont pas reco
+                ?>
+                  <?php include __DIR__ . '/partials/_candidate_card.php'; ?>
+                <?php endforeach ?>
               </div>
-            <?php endforeach ?>
+            <?php endif ?>
           </div>
         </article>
       <?php endforeach ?>

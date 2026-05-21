@@ -931,6 +931,121 @@ body::before {
   gap: 0.5rem;
 }
 
+/* ===== Toggle "+ X alternatives" + bloc accordeon ===== */
+/* Affiche les picks non-recommandes seulement au clic */
+
+.ef-alts-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  margin-top: 0.25rem;
+  padding: 0.5rem 0.9rem;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ef-text-3);
+  background:
+    linear-gradient(180deg,
+      rgba(255, 45, 120, 0.03) 0%,
+      rgba(0, 212, 255, 0.03) 100%),
+    transparent;
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.22s ease;
+  text-align: left;
+}
+
+.ef-alts-toggle:hover {
+  color: var(--ef-cyan);
+  border-color: rgba(0, 212, 255, 0.4);
+  border-style: solid;
+  background:
+    linear-gradient(180deg,
+      rgba(255, 45, 120, 0.05) 0%,
+      rgba(0, 212, 255, 0.08) 100%),
+    transparent;
+}
+
+.ef-alts-toggle-arrow {
+  display: inline-block;
+  font-size: 0.85rem;
+  color: var(--ef-pink);
+  transition: transform 0.25s cubic-bezier(.4, 0, .2, 1);
+  text-shadow: 0 0 6px rgba(255, 45, 120, 0.5);
+}
+
+.ef-alts-toggle[aria-expanded="true"] .ef-alts-toggle-arrow {
+  transform: rotate(180deg);
+}
+
+.ef-alts-toggle-label {
+  flex: 1;
+  font-weight: 700;
+  color: var(--ef-text-2);
+}
+
+.ef-alts-toggle:hover .ef-alts-toggle-label {
+  color: var(--ef-cyan);
+}
+
+.ef-alts-toggle-hint {
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--ef-text-3);
+  opacity: 0.7;
+}
+
+.ef-alts-toggle[aria-expanded="true"] .ef-alts-toggle-hint::before {
+  content: 'cliquer pour masquer';
+}
+
+.ef-alts-toggle[aria-expanded="true"] .ef-alts-toggle-hint {
+  font-size: 0;
+}
+
+.ef-alts-toggle[aria-expanded="true"] .ef-alts-toggle-hint::before {
+  font-size: 0.68rem;
+}
+
+/* Conteneur des alternatives - animation d'ouverture */
+.ef-alts-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  /* hidden -> display:none par defaut. Quand on retire l'attribut on l'anime */
+  animation: ef-alts-slide-in 0.3s cubic-bezier(.4, 0, .2, 1);
+}
+
+@keyframes ef-alts-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Pico style "vintage" pour distinguer visuellement que ce sont des alternatives */
+.ef-alts-container .ef-cand {
+  opacity: 0.85;
+  background:
+    linear-gradient(180deg,
+      rgba(255, 255, 255, 0.01) 0%,
+      var(--ef-bg-cand) 100%);
+}
+
+.ef-alts-container .ef-cand:hover {
+  opacity: 1;
+}
+
 .ef-cand {
   display: grid;
   grid-template-columns:

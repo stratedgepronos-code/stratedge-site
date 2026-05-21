@@ -122,6 +122,28 @@
   updateLiveCounters();
 
   // ──────────────────────────────────────────────────────────────────────
+  // Toggle "+ X alternatives" : developpe/replie les picks non-recommandes
+  // de la card match. Etat ferme par defaut.
+  // ──────────────────────────────────────────────────────────────────────
+
+  document.addEventListener('click', (e) => {
+    const toggle = e.target.closest('.ef-alts-toggle');
+    if (!toggle) return;
+    const targetId = toggle.getAttribute('aria-controls');
+    const container = targetId ? document.getElementById(targetId) : null;
+    if (!container) return;
+
+    const isOpen = toggle.getAttribute('aria-expanded') === 'true';
+    if (isOpen) {
+      toggle.setAttribute('aria-expanded', 'false');
+      container.hidden = true;
+    } else {
+      toggle.setAttribute('aria-expanded', 'true');
+      container.hidden = false;
+    }
+  });
+
+  // ──────────────────────────────────────────────────────────────────────
   // Boutons "Copier les picks" (pour analyse Claude)
   // 2 variantes : .ef-copy-btn-day (un jour entier) et .ef-copy-btn-match (1 match)
   // ──────────────────────────────────────────────────────────────────────
