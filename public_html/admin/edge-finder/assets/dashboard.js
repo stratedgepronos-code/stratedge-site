@@ -121,4 +121,68 @@
 
   updateLiveCounters();
 
+  // ──────────────────────────────────────────────────────────────────────
+  // Boutons "Copier les picks" (pour analyse Claude)
+  // 2 variantes : .ef-copy-btn-day (un jour entier) et .ef-copy-btn-match (1 match)
+  // ──────────────────────────────────────────────────────────────────────
+
+  function showCopyToast(message, isError) {
+    const t = document.createElement('div');
+    t.className = 'ef-copy-toast' + (isError ? ' ef-copy-toast-error' : '');
+    t.textContent = message;
+    document.body.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('ef-copy-toast-visible'));
+    setTimeout(() => {
+      t.classList.remove('ef-copy-toast-visible');
+      setTimeout(() => t.remove(), 300);
+    }, 2200);
+  }
+
+  async function copyTextToClipboard(text) {
+    // navigator.clipboard ne marche QUE sur HTTPS ou localhost. En HTTP, on retombe sur execCommand.
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.top = '-9999px';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } finally { ta.remove(); }
+  }
+
+  document.addEventListener('click', async (e) => {
+    const btn = e.target.closest('.ef-copy-btn');
+    if (!btn) return;
+    const text = btn.getAttribute('data-copy-text') || '';
+    if (!text) {
+      showCopyToast('❌ Aucun contenu a copier', true);
+      return;
+    }
+    try {
+      await copyTextToClipboard(text);
+      const isDayBtn = btn.classList.contains('ef-copy-btn-day');
+      const nbMatches = (text.match(/^### /gm) || []).length;
+      showCopyToast(
+        isDayBtn
+          ? `📋 ${nbMatches} match${nbMatches > 1 ? 's' : ''} copie${nbMatches > 1 ? 's' : ''} - colle dans Claude`
+          : '📋 Match copie - colle dans Claude'
+      );
+      // Feedback visuel sur le bouton
+      const original = btn.textContent;
+      btn.textContent = '✓ Copie !';
+      btn.classList.add('ef-copy-btn-success');
+      setTimeout(() => {
+        btn.textContent = original;
+        btn.classList.remove('ef-copy-btn-success');
+      }, 1500);
+    } catch (err) {
+      console.error('Copy failed:', err);
+      showCopyToast('❌ Erreur de copie - reessaie', true);
+    }
+  });
+
 })();

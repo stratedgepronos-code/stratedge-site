@@ -289,8 +289,127 @@ try {
 } catch (Throwable $e) {
     // Si la sidebar plante, on continue sans (le dashboard reste accessible)
 }
-?>
+// =============================================================================
+// EXPORT PICKS EN MARKDOWN POUR ANALYSE CLAUDE
+// =============================================================================
+// Genere un markdown structure decrivant un match + ses picks, pour que tu
+// puisses coller dans une conversation Claude et lui demander une analyse.
+// =============================================================================
 
+function ef_format_match_for_claude(array $m, array $candidates): string {
+    $home = $m['home_name'] ?? '?';
+    $away = $m['away_name'] ?? '?';
+    $league = $m['league_name'] ?? '?';
+    $country = $m['league_country'] ?? '';
+    $tier = $m['league_tier'] ?? '';
+    $kickoff = !empty($m['kickoff_utc']) ? fmt_kickoff($m['kickoff_utc']) : '?';
+
+    // Lambdas Poisson
+    $lh = isset($m['lambda_home']) ? round((float)$m['lambda_home'], 2) : null;
+    $la = isset($m['lambda_away']) ? round((float)$m['lambda_away'], 2) : null;
+    $lt = ($lh !== null && $la !== null) ? round($lh + $la, 2) : null;
+
+    // xG FootyStats
+    $xg_h = isset($m['home_xg']) ? round((float)$m['home_xg'], 2) : null;
+    $xg_a = isset($m['away_xg']) ? round((float)$m['away_xg'], 2) : null;
+
+    // Stats marche
+    $o25 = isset($m['o25_potential']) ? (float)$m['o25_potential'] : null;
+    $o35 = isset($m['o35_potential']) ? (float)$m['o35_potential'] : null;
+    $btts = isset($m['btts_potential']) ? (float)$m['btts_potential'] : null;
+    $avg = isset($m['avg_potential']) ? round((float)$m['avg_potential'], 2) : null;
+
+    $out = [];
+    $out[] = "### {$home} vs {$away}";
+    $out[] = "- **Ligue** : {$league}" . ($country ? " ({$country})" : '') . ($tier ? " · *{$tier}*" : '');
+    $out[] = "- **Coup d'envoi** : {$kickoff} (heure Paris)";
+
+    if ($lh !== null) {
+        $out[] = "- **Dixon-Coles** : λ_home={$lh}, λ_away={$la}, λ_total={$lt}";
+    }
+    if ($xg_h !== null) {
+        $out[] = "- **xG FootyStats** : home={$xg_h}, away={$xg_a}";
+    }
+
+    $stats_parts = [];
+    if ($o25 !== null) $stats_parts[] = "O2.5 potential **" . round($o25) . "%**";
+    if ($o35 !== null) $stats_parts[] = "O3.5 potential **" . round($o35) . "%**";
+    if ($btts !== null) $stats_parts[] = "BTTS potential **" . round($btts) . "%**";
+    if ($avg !== null)  $stats_parts[] = "Avg goals attendu **{$avg}**";
+    if (!empty($stats_parts)) {
+        $out[] = "- **Stats marche** : " . implode(' · ', $stats_parts);
+    }
+
+    // Highlights eventuels
+    if (!empty($m['highlights'])) {
+        $hl = json_decode($m['highlights'], true);
+        if (is_array($hl) && !empty($hl)) {
+            $hl_lines = [];
+            foreach ($hl as $h) {
+                $icon = $h['icon'] ?? '•';
+                $label = $h['label'] ?? '';
+                $reason = $h['reason'] ?? '';
+                $level = $h['level'] ?? 'info';
+                $level_tag = match($level) {
+                    'strong' => '🔥', 'warning' => '⚠️', default => ''
+                };
+                $hl_lines[] = "  - {$icon} **{$label}** : {$reason} {$level_tag}";
+            }
+            $out[] = "- **Signaux** :";
+            $out = array_merge($out, $hl_lines);
+        }
+    }
+
+    // Picks (les candidats)
+    if (!empty($candidates)) {
+        $out[] = "";
+        $out[] = "**Picks candidats :**";
+        $out[] = "";
+        $out[] = "| Pick | Marche | Cote | EV | Modele | De-vig | Conviction | Statut | Reco |";
+        $out[] = "|------|--------|-----:|---:|-------:|-------:|-----------:|--------|:----:|";
+
+        foreach ($candidates as $i => $c) {
+            $market = $c['market'] ?? '?';
+            $group = $c['market_group'] ?? '';
+            $market_full = $market . ($group ? " ({$group})" : '');
+            $odds = isset($c['odds']) ? number_format((float)$c['odds'], 2) : '-';
+            $ev_raw = isset($c['ev']) ? (float)$c['ev'] * 100 : null;
+            $ev = $ev_raw !== null ? sprintf('+%.1f%%', $ev_raw) : '-';
+            $model_p = isset($c['model_proba']) ? round((float)$c['model_proba'] * 100) . '%' : '-';
+            $devig_p = isset($c['devig_proba']) ? round((float)$c['devig_proba'] * 100) . '%' : '-';
+            $conv = isset($c['conviction']) ? (int)$c['conviction'] : '-';
+            $status = $c['status'] ?? '?';
+            $status_label = match($status) {
+                'auto' => '🟢 auto', 'manual' => '🟡 manual', 'warn' => '🔴 warn', default => $status
+            };
+            $reco = !empty($c['recommended']) ? '⭐' : '';
+            $idx = $i + 1;
+
+            $out[] = "| #{$idx} | {$market_full} | {$odds} | {$ev} | {$model_p} | {$devig_p} | {$conv} | {$status_label} | {$reco} |";
+        }
+    }
+
+    return implode("\n", $out);
+}
+
+function ef_format_day_intro(string $day_label, int $nb_matches): string {
+    return "# Picks Edge Finder — {$day_label}\n\n"
+         . "Analyse demande : ci-dessous {$nb_matches} match" . ($nb_matches > 1 ? 's' : '') . " avec leurs picks candidats issus de mon Edge Finder StratEdge (methodologie v7.7, Dixon-Coles + power de-vigging + Kelly).\n\n"
+         . "Pour chaque match, **critique les picks** : sont-ils coherents avec le profil du match ? "
+         . "Y a-t-il des signaux contradictoires ? Quel pick est le plus solide ? Les modeles (xG vs Dixon-Coles) sont-ils alignes ? "
+         . "Le pick ⭐ est mon pick recommande par anti-correlation (1/match).\n\n"
+         . "---\n";
+}
+
+function ef_format_single_match_intro(): string {
+    return "# Pick Edge Finder — Analyse demande\n\n"
+         . "Voici un match avec ses picks candidats issus de mon Edge Finder StratEdge (methodologie v7.7).\n\n"
+         . "**Critique les picks** : sont-ils coherents ? Y a-t-il des signaux contradictoires ? "
+         . "Quel pick recommandes-tu, et lesquels eviter ? Les modeles (xG vs Dixon-Coles) sont-ils alignes ?\n\n"
+         . "---\n";
+}
+
+?>
 <div class="main">
 <div class="ef-main">
 
@@ -452,7 +571,25 @@ try {
     </div>
   <?php else: ?>
     <?php foreach ($matches_by_day as $day => $day_matches): ?>
-      <h2 class="ef-day-header"><?= fmt_day($day) ?> — <?= count($day_matches) ?> match<?= count($day_matches) > 1 ? 's' : '' ?></h2>
+      <?php
+        // Pre-calcule le markdown de tous les matchs du jour pour le bouton "copier ce jour"
+        $day_md_parts = [ef_format_day_intro(fmt_day($day), count($day_matches))];
+        foreach ($day_matches as $mm) {
+            $cands_mm = $candidates_by_match[$mm['match_id']] ?? [];
+            $day_md_parts[] = ef_format_match_for_claude($mm, $cands_mm);
+            $day_md_parts[] = "";
+        }
+        $day_md = implode("\n", $day_md_parts);
+      ?>
+      <div class="ef-day-header-row">
+        <h2 class="ef-day-header"><?= fmt_day($day) ?> — <?= count($day_matches) ?> match<?= count($day_matches) > 1 ? 's' : '' ?></h2>
+        <button type="button"
+                class="ef-copy-btn ef-copy-btn-day"
+                data-copy-text="<?= htmlspecialchars($day_md, ENT_QUOTES) ?>"
+                title="Copier tous les picks de ce jour au format markdown (pret pour Claude)">
+          📋 Copier tous les picks
+        </button>
+      </div>
 
       <div class="ef-matches-grid">
       <?php foreach ($day_matches as $m):
@@ -482,6 +619,16 @@ try {
               <?php endif ?>
             </div>
             <div class="ef-match-time">⏱ <?= fmt_kickoff($m['kickoff_utc']) ?></div>
+            <?php
+              // Markdown pour ce match seul + intro courte
+              $single_md = ef_format_single_match_intro() . "\n" . ef_format_match_for_claude($m, $candidates_by_match[$m['match_id']]);
+            ?>
+            <button type="button"
+                    class="ef-copy-btn ef-copy-btn-match"
+                    data-copy-text="<?= htmlspecialchars($single_md, ENT_QUOTES) ?>"
+                    title="Copier ce match au format markdown (pret pour Claude)">
+              📋
+            </button>
           </header>
 
           <a href="match.php?id=<?= (int)$m['match_id'] ?>" class="ef-match-link" title="Voir le détail du match">

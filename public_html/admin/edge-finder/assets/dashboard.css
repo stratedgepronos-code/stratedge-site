@@ -451,6 +451,93 @@ body::before {
    DAY HEADER
 ──────────────────────────────────────────────────────────────────────── */
 
+.ef-day-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 2rem 0 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--ef-border-2);
+  flex-wrap: wrap;
+}
+
+.ef-day-header-row .ef-day-header {
+  margin: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+/* ===== Boutons "Copier picks" (pour analyse Claude) ===== */
+.ef-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.9rem;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: var(--ef-cyan);
+  background: rgba(0, 212, 255, 0.08);
+  border: 1px solid rgba(0, 212, 255, 0.35);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.ef-copy-btn:hover {
+  background: rgba(0, 212, 255, 0.18);
+  border-color: var(--ef-cyan);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 12px rgba(0, 212, 255, 0.25);
+}
+
+.ef-copy-btn-success {
+  color: var(--ef-green) !important;
+  background: rgba(50, 215, 75, 0.15) !important;
+  border-color: var(--ef-green) !important;
+}
+
+.ef-copy-btn-match {
+  padding: 0.2rem 0.45rem;
+  font-size: 0.8rem;
+  background: transparent;
+  border-color: rgba(0, 212, 255, 0.25);
+  margin-left: 0.5rem;
+}
+
+/* Toast de confirmation copie */
+.ef-copy-toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(20px);
+  padding: 0.7rem 1.4rem;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #0a0a12;
+  background: linear-gradient(90deg, #00d4ff, #ff2d78);
+  border-radius: 8px;
+  box-shadow: 0 4px 30px rgba(0, 212, 255, 0.4);
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 9999;
+  pointer-events: none;
+}
+
+.ef-copy-toast-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.ef-copy-toast-error {
+  background: linear-gradient(90deg, #ff2d78, #ff5470);
+  color: #fff;
+}
+
 .ef-day-header {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 1.4rem;
