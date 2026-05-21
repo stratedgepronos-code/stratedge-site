@@ -130,7 +130,7 @@ function stratedge_card_theme($tipster) {
 function stratedge_card_promo($tipster) {
     $t = strtolower(trim((string)$tipster));
     if ($t === 'tennis') return ['eyebrow'=>'Tennis Premium · Accès total','title'=>'Abonnement Semaine','price'=>'15€','url'=>'stratedgepronos.fr/offre-tennis'];
-    if ($t === 'fun')    return ['eyebrow'=>"Fun Week-End · Délire grosses cotes",'title'=>'Abonnement Week-End','price'=>'10€','url'=>'stratedgepronos.fr/offre-fun'];
+    if ($t === 'fun')    return ['eyebrow'=>"Fun · Délire grosses cotes",'title'=>'Abonnement','price'=>'10€ / semaine','url'=>'stratedgepronos.fr/offre-fun'];
     return                 ['eyebrow'=>'StratEdge Multi · Packs crédits','title'=>'Pack Trio · 3 paris','price'=>'12€','url'=>'stratedgepronos.fr/packs-daily'];
 }
 
