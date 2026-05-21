@@ -172,13 +172,19 @@
           : '📋 Match copie - colle dans Claude'
       );
       // Feedback visuel sur le bouton
-      const original = btn.textContent;
-      btn.textContent = '✓ Copie !';
+      const labelEl = btn.querySelector('.ef-copy-btn-label');
+      const originalLabel = labelEl ? labelEl.textContent : btn.textContent;
+      const originalHTML = btn.innerHTML;
+      if (labelEl) {
+        labelEl.textContent = '✓ Copie !';
+      } else {
+        btn.textContent = '✓';
+      }
       btn.classList.add('ef-copy-btn-success');
       setTimeout(() => {
-        btn.textContent = original;
+        btn.innerHTML = originalHTML;
         btn.classList.remove('ef-copy-btn-success');
-      }, 1500);
+      }, 1600);
     } catch (err) {
       console.error('Copy failed:', err);
       showCopyToast('❌ Erreur de copie - reessaie', true);

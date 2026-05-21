@@ -587,7 +587,9 @@ function ef_format_single_match_intro(): string {
                 class="ef-copy-btn ef-copy-btn-day"
                 data-copy-text="<?= htmlspecialchars($day_md, ENT_QUOTES) ?>"
                 title="Copier tous les picks de ce jour au format markdown (pret pour Claude)">
-          📋 Copier tous les picks
+          <span class="ef-copy-btn-icon">⚡</span>
+          <span class="ef-copy-btn-label">Export pour Claude</span>
+          <span class="ef-copy-btn-count"><?= count($day_matches) ?></span>
         </button>
       </div>
 
