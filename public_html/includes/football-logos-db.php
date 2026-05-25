@@ -391,19 +391,26 @@ function stratedge_football_logo(string $teamName): string {
     };
 
     // ═══════════════════════════════════════════════════════
-    // J-LEAGUE: mapping direct slug → ESPN ID
+    // ESPN SLUG FALLBACK : équipes pour lesquelles l'ID api-sports est
+    // peu fiable OU dont le fichier local api-{id}.png est manquant.
+    // On sert l'URL ESPN directe (ou le fichier local si déjà scrapé).
     // IDs ESPN vérifiés via espn.com/soccer/team/_/id/{id}
-    // On sert l'URL ESPN directe (ou le fichier local si téléchargé via Phase 3)
     // ═══════════════════════════════════════════════════════
-    $j_league_espn = [
+    $espn_slug_fallback = [
+        // J-League
         'kashima-antlers'       => 7115,
         'kashima'               => 7115,
         'kashiwa-reysol'        => 7476,
         'kashiwa'               => 7476,
         'reysol'                => 7476,
+        // Ligue 1/2 France
+        'saint-etienne'         => 178,
+        'as-saint-etienne'      => 178,
+        'st-etienne'            => 178,
+        'asse'                  => 178,
     ];
-    if (isset($j_league_espn[$slug])) {
-        $espnId = $j_league_espn[$slug];
+    if (isset($espn_slug_fallback[$slug])) {
+        $espnId = $espn_slug_fallback[$slug];
         // 1) Fichier local ESPN (si déjà scrapé)
         $localPath = __DIR__ . '/../assets/logos/football/espn-' . $espnId . '.png';
         if (is_file($localPath) && filesize($localPath) > 500) {
