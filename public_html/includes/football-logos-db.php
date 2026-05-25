@@ -13,8 +13,15 @@ if (!function_exists('stratedge_football_logo')) {
 
 function stratedge_football_logo(string $teamName): string {
     $name = mb_strtolower(trim($teamName), 'UTF-8');
+    // Strip accents : 'saint-étienne' -> 'saint-etienne', 'málaga' -> 'malaga', etc.
+    // Crucial pour matcher quand Claude renvoie le nom avec accents alors que
+    // le mapping ci-dessous est sans accents.
+    if (function_exists('iconv')) {
+        $stripped = @iconv('UTF-8', 'ASCII//TRANSLIT//IGNORE', $name);
+        if ($stripped !== false && $stripped !== '') $name = $stripped;
+    }
     // Nettoyer
-    $name = preg_replace('/[^\w\s\-àâäéèêëïîôùûüçñ]/u', '', $name);
+    $name = preg_replace('/[^\w\s\-]/u', '', $name);
     $name = preg_replace('/\s+/', ' ', $name);
 
     // Base de données des IDs vérifiés (nom_lowercase → api_football_id)
@@ -39,7 +46,7 @@ function stratedge_football_logo(string $teamName): string {
             'le havre' => 99, 'le havre ac' => 99,
             'auxerre' => 98, 'aj auxerre' => 98,
             'angers' => 77, 'angers sco' => 77,
-            'saint-etienne' => 1063, 'st etienne' => 1063, 'asse' => 1063, 'as saint-etienne' => 1063,
+            'saint-etienne' => 1063, 'saint etienne' => 1063, 'st etienne' => 1063, 'st-etienne' => 1063, 'asse' => 1063, 'as saint-etienne' => 1063, 'as saint etienne' => 1063, 'association sportive de saint-etienne' => 1063,
             // Ligue 2
             'lorient' => 97, 'fc lorient' => 97,
             'metz' => 112, 'fc metz' => 112,
