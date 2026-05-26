@@ -78,11 +78,20 @@ function notifQueueEnqueueNouveauBet(PDO $db, string $categorie, string $betType
         $db->prepare($sql)->execute([$batch, $betType, $betTitre]);
     }
     notifQueueEnqueueSuperAdmin($db, $batch, $betType, $betTitre);
+
+    // 📱 Annonce sur le canal Telegram public (1 seul message, pas 1 par membre)
+    if (file_exists(__DIR__ . '/telegram.php')) {
+        require_once __DIR__ . '/telegram.php';
+        if (function_exists('telegramAnnonceNouveauBet')) {
+            @telegramAnnonceNouveauBet($categorie, $betType, $betTitre);
+        }
+    }
+
     return $batch;
 }
 
 /**
- * Enfile comme l’admin poster-bet « tous abonnés actifs » (toutes formules).
+ * Enfile comme l'admin poster-bet « tous abonnés actifs » (toutes formules).
  */
 function notifQueueEnqueueNouveauBetTousAbonnes(PDO $db, string $betType, string $betTitre): string {
     notifQueueEnsureTable($db);
@@ -94,6 +103,15 @@ function notifQueueEnqueueNouveauBetTousAbonnes(PDO $db, string $betType, string
     WHERE (m.accepte_emails IS NULL OR m.accepte_emails = 1)";
     $db->prepare($sql)->execute([$batch, $betType, $betTitre]);
     notifQueueEnqueueSuperAdmin($db, $batch, $betType, $betTitre);
+
+    // 📱 Annonce sur le canal Telegram (catégorie 'multi' par défaut pour cette branche)
+    if (file_exists(__DIR__ . '/telegram.php')) {
+        require_once __DIR__ . '/telegram.php';
+        if (function_exists('telegramAnnonceNouveauBet')) {
+            @telegramAnnonceNouveauBet('multi', $betType, $betTitre);
+        }
+    }
+
     return $batch;
 }
 
@@ -126,13 +144,11 @@ function notifQueueProcessBatch(PDO $db, int $limit = 100): array {
 
     foreach ($rows as $r) {
         $errs = [];
-        $okMail = @emailNouveauBet($r['email'], $r['nom'], $r['bet_type'], $r['bet_titre']);
-        if ($okMail) {
-            $stats['emails_ok']++;
-        } else {
-            $stats['emails_fail']++;
-            $errs[] = 'email';
-        }
+        // 📧 Email d'alerte bet DÉSACTIVÉ (mai 2026) — migré vers Telegram canal public
+        // L'annonce Telegram est envoyée 1 seule fois lors de l'enqueue (pas par membre).
+        // On garde la queue active pour les push notifications mobiles uniquement.
+        $okMail = true;  // no-op, on ne traite plus l'email
+        $stats['emails_ok']++;
 
         $label = $typeLabels[$r['bet_type']] ?? $r['bet_type'];
         $title = '🔥 Nouveau bet disponible !';
@@ -216,6 +232,15 @@ function resultatQueueEnqueue(PDO $db, string $titre, string $resCode): string {
     INNER JOIN abonnements a ON a.membre_id = m.id AND a.actif = 1";
     $db->prepare($sql)->execute([$batch, $titre, $resCode]);
     resultatQueueEnqueueSuperAdmin($db, $batch, $titre, $resCode);
+
+    // 📱 Annonce résultat sur le canal Telegram (1 seul message pour le canal)
+    if (file_exists(__DIR__ . '/telegram.php')) {
+        require_once __DIR__ . '/telegram.php';
+        if (function_exists('telegramAnnonceResultatBet')) {
+            @telegramAnnonceResultatBet($titre, $resCode);
+        }
+    }
+
     return $batch;
 }
 
@@ -238,13 +263,10 @@ function resultatQueueProcessBatch(PDO $db, int $limit = 100): array {
     $upd = $db->prepare('UPDATE notif_queue_resultat SET sent_at = NOW(), last_error = ? WHERE id = ?');
     foreach ($rows as $r) {
         $errs = [];
-        $okMail = @emailResultatBet($r['email'], $r['nom'], $r['bet_titre'], $r['res_code'], $r['type_abo'] ?? '');
-        if ($okMail) {
-            $stats['emails_ok']++;
-        } else {
-            $stats['emails_fail']++;
-            $errs[] = 'email';
-        }
+        // 📧 Email résultat bet DÉSACTIVÉ (mai 2026) — migré vers Telegram canal public
+        // Annonce envoyée 1 seule fois lors de l'enqueue. Queue conservée pour push mobile.
+        $okMail = true;
+        $stats['emails_ok']++;
         try {
             $n = pushResultatBet((int)$r['membre_id'], $r['type_abo'] ?? '', $r['bet_titre'], $r['res_code']);
             if ($n > 0) {

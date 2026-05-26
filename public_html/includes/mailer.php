@@ -426,6 +426,11 @@ function emailConfirmationAbonnement(string $email, string $nom, string $type): 
 
 // ── Email 3 : Nouveau bet disponible ─────────────────────
 function emailNouveauBet(string $email, string $nom, string $typeBet, string $titrebet = ''): bool {
+    // 📵 DEPRECATED (mai 2026) — alertes bet migrées vers canal Telegram public.
+    // Voir /includes/telegram.php :: telegramAnnonceNouveauBet()
+    // Cette fonction est laissée en place pour rétrocompat mais ne fait plus rien.
+    return true;
+    // ↓↓↓ code legacy conservé pour référence ↓↓↓
     $typeLabels = ['safe' => '🛡️ Safe', 'fun' => '🎯 Fun', 'live' => '⚡ Live', 'safe,fun' => '🛡️+🎯 Safe+Fun', 'safe,live' => '🛡️+⚡ Safe+Live'];
     $typeLabel  = $typeLabels[$typeBet] ?? $typeBet;
     $titreLine  = $titrebet ? '<strong style="color:#ff2d78;">' . htmlspecialchars($titrebet) . '</strong>' : 'une nouvelle analyse';
@@ -508,6 +513,10 @@ function emailAbonnementExpire(string $email, string $nom, string $type): bool {
 
 // ── Email 5 : Résultat d'un bet ───────────────────────────
 function emailResultatBet(string $email, string $nom, string $titre, string $resultat, string $typeBet): bool {
+    // 📵 DEPRECATED (mai 2026) — résultats bet migrés vers canal Telegram public.
+    // Voir /includes/telegram.php :: telegramAnnonceResultatBet()
+    return true;
+    // ↓↓↓ code legacy conservé pour référence ↓↓↓
     $icons  = ['win' => '✅', 'lose' => '❌', 'void' => '↩️'];
     $labels = ['win' => 'GAGNANT', 'lose' => 'PERDANT', 'void' => 'ANNULÉ'];
     $colors = ['win' => '#00d46a', 'lose' => '#ff2d78', 'void' => '#ffc107'];
@@ -683,6 +692,10 @@ function emailAnniversaireCodePromo(string $email, string $nom, string $codeProm
 
 // ── Montante : démarrage (tennis OU multi-sport selon $context) ──
 function emailMontanteDemarrage(string $email, string $nom, array $config, string $context = 'tennis'): bool {
+    // 📵 DEPRECATED (mai 2026) — migré vers canal Telegram public.
+    // Voir /includes/telegram.php :: telegramAnnonceMontanteDemarrage()
+    return true;
+    // ↓↓↓ code legacy conservé pour référence ↓↓↓
     $isTennis = ($context === 'tennis');
     $emoji    = $isTennis ? '🎾' : '⚽';
     $label    = $isTennis ? 'Montante Tennis' : 'Montante Multi-sport';
@@ -705,6 +718,10 @@ function emailMontanteDemarrage(string $email, string $nom, array $config, strin
 
 // ── Montante : nouvelle étape ───────────────────────
 function emailMontanteNouvelleEtape(string $email, string $nom, array $step, array $config, string $context = 'tennis'): bool {
+    // 📵 DEPRECATED (mai 2026) — migré vers canal Telegram public.
+    // Voir /includes/telegram.php :: telegramAnnonceMontanteNouvelleEtape()
+    return true;
+    // ↓↓↓ code legacy conservé pour référence ↓↓↓
     $isTennis = ($context === 'tennis');
     $label    = $isTennis ? 'Montante Tennis' : 'Montante Multi-sport';
     $url      = $isTennis ? 'https://stratedgepronos.fr/montante-tennis.php' : 'https://stratedgepronos.fr/montante-foot.php';
@@ -725,8 +742,12 @@ function emailMontanteNouvelleEtape(string $email, string $nom, array $step, arr
     return envoyerEmail($email, '⚡ Step ' . $stepNum . ' ' . $label . ' — StratEdge', emailTemplate($label, $contenu, $email));
 }
 
-// ── Montante : résultat d\'une étape ─────────────────
+// ── Montante : résultat d'une étape ─────────────────
 function emailMontanteResultat(string $email, string $nom, array $step, array $config, string $resultat, string $context = 'tennis'): bool {
+    // 📵 DEPRECATED (mai 2026) — migré vers canal Telegram public.
+    // Voir /includes/telegram.php :: telegramAnnonceMontanteResultat()
+    return true;
+    // ↓↓↓ code legacy conservé pour référence ↓↓↓
     $isTennis = ($context === 'tennis');
     $label    = $isTennis ? 'Montante Tennis' : 'Montante Multi-sport';
     $url      = $isTennis ? 'https://stratedgepronos.fr/montante-tennis.php' : 'https://stratedgepronos.fr/montante-foot.php';

@@ -49,7 +49,7 @@ function getTousMembresPourNotifications(): array {
 }
 
 /**
- * Notifications (push + email) pour le démarrage d'une montante.
+ * Notifications (push + Telegram) pour le démarrage d'une montante.
  * @param array  $config   Config de la montante (nom, bankroll_initial, etc.)
  * @param string $context  'tennis' ou 'multi-sport'
  */
@@ -61,13 +61,17 @@ function notifyMontanteDemarrage(array $config, string $context = 'tennis'): voi
     $body = $nom . ' — Montant visé : ' . $montant . ' €';
     envoyerPush(null, $title, $body, $ctx['url'], $ctx['tag_pfx'] . '-demarrage', true);
 
-    foreach (getTousMembresPourNotifications() as $m) {
-        emailMontanteDemarrage($m['email'], $m['nom'] ?? 'Membre', $config, $context);
+    // 📱 Annonce Telegram canal public (1 seul message, pas N emails — mai 2026)
+    if (file_exists(__DIR__ . '/telegram.php')) {
+        require_once __DIR__ . '/telegram.php';
+        if (function_exists('telegramAnnonceMontanteDemarrage')) {
+            @telegramAnnonceMontanteDemarrage($config, $context);
+        }
     }
 }
 
 /**
- * Notifications (push + email) pour une nouvelle étape.
+ * Notifications (push + Telegram) pour une nouvelle étape.
  */
 function notifyMontanteNouvelleEtape(array $step, array $config, string $context = 'tennis'): void {
     $ctx = _montanteContextConfig($context);
@@ -77,13 +81,17 @@ function notifyMontanteNouvelleEtape(array $step, array $config, string $context
     $body = $match;
     envoyerPush(null, $title, $body, $ctx['url'], $ctx['tag_pfx'] . '-step', true);
 
-    foreach (getTousMembresPourNotifications() as $m) {
-        emailMontanteNouvelleEtape($m['email'], $m['nom'] ?? 'Membre', $step, $config, $context);
+    // 📱 Annonce Telegram canal public
+    if (file_exists(__DIR__ . '/telegram.php')) {
+        require_once __DIR__ . '/telegram.php';
+        if (function_exists('telegramAnnonceMontanteNouvelleEtape')) {
+            @telegramAnnonceMontanteNouvelleEtape($step, $config, $context);
+        }
     }
 }
 
 /**
- * Notifications (push + email) pour un résultat d'étape.
+ * Notifications (push + Telegram) pour un résultat d'étape.
  */
 function notifyMontanteResultat(array $step, array $config, string $resultat, string $context = 'tennis'): void {
     $ctx = _montanteContextConfig($context);
@@ -94,7 +102,11 @@ function notifyMontanteResultat(array $step, array $config, string $resultat, st
     $body = ($step['match_desc'] ?? 'Prono') . ' → ' . $label;
     envoyerPush(null, $title, $body, $ctx['url'], $ctx['tag_pfx'] . '-resultat', true);
 
-    foreach (getTousMembresPourNotifications() as $m) {
-        emailMontanteResultat($m['email'], $m['nom'] ?? 'Membre', $step, $config, $resultat, $context);
+    // 📱 Annonce Telegram canal public
+    if (file_exists(__DIR__ . '/telegram.php')) {
+        require_once __DIR__ . '/telegram.php';
+        if (function_exists('telegramAnnonceMontanteResultat')) {
+            @telegramAnnonceMontanteResultat($step, $config, $resultat, $context);
+        }
     }
 }
