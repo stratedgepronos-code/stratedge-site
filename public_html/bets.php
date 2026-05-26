@@ -327,7 +327,6 @@ nav{background:rgba(5,8,16,0.95);backdrop-filter:blur(20px);border-bottom:1px so
       <div class="hstat hstat-live"><span class="dot"></span> <strong><?= $nbTotal ?></strong> <span class="lbl">en cours</span></div>
       <?php endif; ?>
       <?php if ($liveStats['gagnes'] + $liveStats['perdus'] > 0): ?>
-      <div class="hstat"><strong><?= $liveStats['taux'] ?>%</strong> <span class="lbl">de réussite · 30j</span></div>
       <div class="hstat hstat-w"><strong>+<?= $liveStats['gagnes'] ?></strong> <span class="lbl">gagnés</span></div>
       <?php endif; ?>
     </div>
