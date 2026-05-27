@@ -9,6 +9,7 @@ require_once __DIR__ . '/../includes/auth.php';
 require_once __DIR__ . '/../includes/mailer.php';
 require_once __DIR__ . '/../includes/push.php';
 require_once __DIR__ . '/../includes/tweet-ai.php';
+require_once __DIR__ . '/../includes/notif-queue.php';
 requireAdmin();
 $pageActive = 'valider-bets';
 
