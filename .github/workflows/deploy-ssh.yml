@@ -39,6 +39,8 @@ jobs:
               --filter 'P admin/edge-finder/lib/config.php' \
               --filter 'P admin/edge-finder/data/imports/' \
               --filter 'P admin/edge-finder/data/import.log' \
+              --filter 'P assets/fonts/cache/*' \
+              --filter 'P admin/debug-card.log' \
               --timeout=60 \
               -e "ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -p ${{ env.SSH_PORT }}" \
               public_html/ \

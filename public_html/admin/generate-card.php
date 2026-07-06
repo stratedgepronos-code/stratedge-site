@@ -326,7 +326,7 @@ elseif (in_array($adminRole, ['admin_fun'], true))        $forceTipster = 'fun';
 // Derniere ligne de defense : si le sport s'est perdu en route mais que
 // l'enrichissement Claude mentionne une competition tennis, on force le theme tennis.
 function resolveTipster($forceTipster, $enriched) {
-    if ($forceTipster !== null) return $forceTipster;
+    if ($forceTipster !== null) { debugLog("TIPSTER force: $forceTipster"); return $forceTipster; }
     $hay = strtolower(($enriched['competition'] ?? '') . ' ' . ($enriched['badge_text'] ?? '') . ' ' . ($enriched['sport'] ?? ''));
     if (preg_match('/tennis|wimbledon|roland[- ]garros|us open|australian open|\batp\b|\bwta\b|challenger|\bitf\b/', $hay)) {
         debugLog("TIPSTER: tennis detecte via enrichissement ($hay)");
@@ -477,7 +477,7 @@ if ($typeBet === 'Live') {
         ]);
 
         debugLog("LIVE OK! normal=" . strlen($cards['html_normal']) . " locked=" . strlen($cards['html_locked']));
-        echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Live', 'card_width' => 1080, 'cote' => $cote]);
+        echo json_encode(['success' => true, 'code_version' => 'tennisfix-v3', 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Live', 'card_width' => 1080, 'cote' => $cote]);
     } catch (Throwable $e) {
         debugLog("LIVE EXCEPTION: " . $e->getMessage());
         http_response_code(500);
@@ -601,7 +601,7 @@ if ($typeBet === 'Fun') {
     }
 
     debugLog("FUN OK! normal=" . strlen($cards['html_normal']) . " locked=" . strlen($cards['html_locked']));
-    echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Fun', 'card_width' => 1080, 'cote' => $coteTotale]);
+    echo json_encode(['success' => true, 'code_version' => 'tennisfix-v3', 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Fun', 'card_width' => 1080, 'cote' => $coteTotale]);
     exit;
 }
 
@@ -704,7 +704,7 @@ if ($typeBet === 'Safe Combiné') {
     }
 
     debugLog("SAFE_COMBI OK! normal=" . strlen($cards['html_normal']) . " locked=" . strlen($cards['html_locked']));
-    echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Safe Combiné', 'card_width' => 1440, 'cote' => $coteTotale]);
+    echo json_encode(['success' => true, 'code_version' => 'tennisfix-v3', 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Safe Combiné', 'card_width' => 1440, 'cote' => $coteTotale]);
     exit;
 }
 
@@ -813,7 +813,7 @@ try {
 }
 
 debugLog("SAFE V2 OK! 1080px compact");
-echo json_encode(['success' => true, 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Safe', 'card_width' => 1080, 'cote' => $finalCote]);
+echo json_encode(['success' => true, 'code_version' => 'tennisfix-v3', 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Safe', 'card_width' => 1080, 'cote' => $finalCote]);
 
 } catch (Throwable $e) {
     debugLog("FATAL: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());
