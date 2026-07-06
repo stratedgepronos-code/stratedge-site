@@ -584,19 +584,21 @@ function fillFormFromDetection(data) {
   // 1. Sport: prendre celui du 1er match, MAIS respecter les restrictions admin
   // Admin Fun Sport: jamais tennis (force football si tennis detecte)
   // Admin Tennis: toujours tennis
-  let sport = matchs[0].sport || 'football';
-  // Determiner si admin restreint au sport (admin Fun: pas de tennis)
+  // FIX design tennis: si la detection ne renvoie pas de sport, GARDER la valeur
+  // actuelle du select (jamais forcer 'football' en silence), et matcher sans casse.
   const sportSel = document.getElementById('f-sport');
+  let sport = (matchs[0].sport || '').toLowerCase().trim();
+  if (!sport && sportSel) sport = sportSel.value; // detection muette -> on ne change rien
   if (sportSel) {
-    // Verifier si le sport detecte est disponible dans le select
+    // Verifier si le sport detecte est disponible dans le select (insensible a la casse)
     let sportAvailable = false;
     for (const opt of sportSel.options) {
-      if (opt.value === sport) { sportAvailable = true; break; }
+      if (opt.value.toLowerCase() === sport) { sport = opt.value; sportAvailable = true; break; }
     }
-    // Si pas dispo (ex: admin Fun + tennis detecte), prendre le 1er option du select
+    // Si pas dispo (ex: admin Fun + tennis detecte), garder la valeur actuelle du select
     if (!sportAvailable) {
-      sport = sportSel.options[0].value;
-      console.warn('Sport detecte (' + (matchs[0].sport || '?') + ') non autorise pour cet admin, fallback sur ' + sport);
+      console.warn('Sport detecte (' + (matchs[0].sport || '?') + ') non autorise/inconnu, on garde ' + sportSel.value);
+      sport = sportSel.value;
     }
     sportSel.value = sport;
   }

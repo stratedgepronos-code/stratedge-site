@@ -286,6 +286,12 @@ if (!$data) {
 $sport   = $data['sport']    ?? '';
 $typeBet = $data['type_bet'] ?? 'Safe';
 
+// FIX design tennis: normaliser les alias/casse du sport (Tennis, ATP, WTA -> tennis)
+$sportNorm = strtolower(trim($sport));
+$sportAliases = ['tennis'=>'tennis','atp'=>'tennis','wta'=>'tennis','tenis'=>'tennis',
+                 'foot'=>'football','soccer'=>'football','nba'=>'basket','nhl'=>'hockey','mlb'=>'baseball'];
+if (isset($sportAliases[$sportNorm])) $sport = $sportAliases[$sportNorm];
+
 // Diagnostic POST : type_bet=_ping → 200 OK sans appeler Claude (vérifie auth + config)
 if ($typeBet === '_ping') {
     debugLog("POST _ping OK");
@@ -310,6 +316,12 @@ if ($adminRole === 'admin_tennis') {
         $sport = 'tennis';
     }
 }
+
+// FIX design tennis (defense en profondeur): le THEME de la card suit la division
+// de l'admin, independamment de la string sport. Transmis aux 4 generateurs.
+$forceTipster = null;
+if ($adminRole === 'admin_tennis' || $sport === 'tennis') $forceTipster = 'tennis';
+elseif (in_array($adminRole, ['admin_fun'], true))        $forceTipster = 'fun';
 
 debugLog("Sport: $sport | Type: $typeBet | Role: $adminRole | Model: " . CLAUDE_MODEL);
 
@@ -419,6 +431,7 @@ if ($typeBet === 'Live') {
 
         $cards = generateLiveCards([
             'sport'       => $sport,
+            'tipster'     => $forceTipster,
             'date_fr'     => $enriched['date_fr'],
             'time_fr'     => $enriched['time_fr'],
             'player1'     => $enriched['player1']    ?? 'JOUEUR 1',
@@ -552,6 +565,7 @@ if ($typeBet === 'Fun') {
     try {
         $cards = generateFunCards([
             'sport'       => $sport,
+            'tipster'     => $forceTipster,
             'date_fr'     => $enriched['date_fr']    ?? date('d/m/Y'),
             'time_fr'     => $enriched['time_fr']    ?? date('H:i'),
             'bets'        => $enriched['bets'],
@@ -654,6 +668,7 @@ if ($typeBet === 'Safe Combiné') {
     try {
         $cards = generateSafeCombiCards([
             'sport'              => $sport,
+            'tipster'     => $forceTipster,
             'date_fr'            => $enriched['date_fr']    ?? date('d/m/Y'),
             'time_fr'            => $enriched['time_fr']    ?? date('H:i'),
             'bets'               => $enriched['bets'],
@@ -743,6 +758,7 @@ try {
 
     $cards = generateSafeCards([
         'sport'       => $sport,
+            'tipster'     => $forceTipster,
         'date_fr'     => $enriched['date_fr']     ?? date('d/m/Y'),
         'time_fr'     => $enriched['time_fr']     ?? date('H:i'),
         'match'       => $enriched['match']       ?? $rawMatch,
