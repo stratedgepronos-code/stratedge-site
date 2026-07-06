@@ -1,0 +1,49 @@
+# Déploiement vers le VPS Hostinger (31.97.196.145) — LE serveur qui sert
+# stratedgepronos.fr depuis la migration du 21/05/2026.
+# Principe : le code est déjà un clone git sur le VPS (deploy key read-only)
+# -> on SSH et on fait un git pull. Simple, atomique, pas de rsync --delete.
+#
+# SECRETS À CRÉER (Settings -> Secrets and variables -> Actions) :
+#   VPS_HOST     = 31.97.196.145
+#   VPS_USER     = alex
+#   VPS_PASSWORD = mot de passe SSH du user alex
+name: Deploy to VPS (stratedgepronos.fr)
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: git pull sur le VPS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get update -q && sudo apt-get install -y -q sshpass
+
+      - name: Pull sur le VPS
+        run: |
+          sshpass -p "${{ secrets.VPS_PASSWORD }}" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 \
+            ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} bash -s << 'REMOTE'
+          set -e
+          cd /var/www/stratedgepronos.fr/public_html
+          echo "── Etat local avant pull ──"
+          git status --porcelain | head -10
+          # Mettre de côté les modifs locales (ex: includes/db.php adapté VPS)
+          git stash push -m "deploy-autostash $(date +%F-%H%M)" || true
+          git pull --ff-only origin master
+          # Ré-appliquer les modifs locales (db.php etc.)
+          git stash pop || echo "(pas de stash à réappliquer ou conflit -> vérifier manuellement)"
+          echo "── HEAD déployé ──"
+          git log --oneline -1
+          REMOTE
+
+      - name: Vérification code_version en prod
+        run: |
+          sleep 2
+          curl -s -o /dev/null -w "HTTP %{http_code}\n" https://stratedgepronos.fr/ || true

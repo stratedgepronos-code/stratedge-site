@@ -2,9 +2,10 @@
 # Déclenché à chaque push sur master — tu n'as rien à faire.
 name: Deploy to Hostinger (SSH)
 
+# ⚠️ OBSOLÈTE depuis la migration VPS du 21/05/2026 : ce workflow déployait
+# vers l'ancien hébergement mutualisé qui ne sert plus stratedgepronos.fr
+# (DNS -> VPS 31.97.196.145). Conservé en manuel au cas où.
 on:
-  push:
-    branches: [master]
   workflow_dispatch:
 
 env:
