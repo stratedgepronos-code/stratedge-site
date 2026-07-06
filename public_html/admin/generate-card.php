@@ -323,6 +323,18 @@ $forceTipster = null;
 if ($adminRole === 'admin_tennis' || $sport === 'tennis') $forceTipster = 'tennis';
 elseif (in_array($adminRole, ['admin_fun'], true))        $forceTipster = 'fun';
 
+// Derniere ligne de defense : si le sport s'est perdu en route mais que
+// l'enrichissement Claude mentionne une competition tennis, on force le theme tennis.
+function resolveTipster($forceTipster, $enriched) {
+    if ($forceTipster !== null) return $forceTipster;
+    $hay = strtolower(($enriched['competition'] ?? '') . ' ' . ($enriched['badge_text'] ?? '') . ' ' . ($enriched['sport'] ?? ''));
+    if (preg_match('/tennis|wimbledon|roland[- ]garros|us open|australian open|\batp\b|\bwta\b|challenger|\bitf\b/', $hay)) {
+        debugLog("TIPSTER: tennis detecte via enrichissement ($hay)");
+        return 'tennis';
+    }
+    return null;
+}
+
 debugLog("Sport: $sport | Type: $typeBet | Role: $adminRole | Model: " . CLAUDE_MODEL);
 
 try {
@@ -431,7 +443,7 @@ if ($typeBet === 'Live') {
 
         $cards = generateLiveCards([
             'sport'       => $sport,
-            'tipster'     => $forceTipster,
+            'tipster'     => resolveTipster($forceTipster, $enriched),
             'date_fr'     => $enriched['date_fr'],
             'time_fr'     => $enriched['time_fr'],
             'player1'     => $enriched['player1']    ?? 'JOUEUR 1',
@@ -565,7 +577,7 @@ if ($typeBet === 'Fun') {
     try {
         $cards = generateFunCards([
             'sport'       => $sport,
-            'tipster'     => $forceTipster,
+            'tipster'     => resolveTipster($forceTipster, $enriched),
             'date_fr'     => $enriched['date_fr']    ?? date('d/m/Y'),
             'time_fr'     => $enriched['time_fr']    ?? date('H:i'),
             'bets'        => $enriched['bets'],
@@ -668,7 +680,7 @@ if ($typeBet === 'Safe Combiné') {
     try {
         $cards = generateSafeCombiCards([
             'sport'              => $sport,
-            'tipster'     => $forceTipster,
+            'tipster'     => resolveTipster($forceTipster, $enriched),
             'date_fr'            => $enriched['date_fr']    ?? date('d/m/Y'),
             'time_fr'            => $enriched['time_fr']    ?? date('H:i'),
             'bets'               => $enriched['bets'],
@@ -758,7 +770,7 @@ try {
 
     $cards = generateSafeCards([
         'sport'       => $sport,
-            'tipster'     => $forceTipster,
+            'tipster'     => resolveTipster($forceTipster, $enriched),
         'date_fr'     => $enriched['date_fr']     ?? date('d/m/Y'),
         'time_fr'     => $enriched['time_fr']     ?? date('H:i'),
         'match'       => $enriched['match']       ?? $rawMatch,
