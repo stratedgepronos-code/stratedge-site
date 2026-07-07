@@ -1153,7 +1153,7 @@ function buildXText() {
     // A — le classique éditorial
     emoji + ' ' + (comp || 'Le pick du jour') + (heure ? ' · ' + heure : '') + '\n\n' +
       match + '\n\n💡 Notre prono : ' + prono + (cote ? ' @' + cote : '') + '\n' +
-      (conf ? '📊 Confiance ' + conf + '\n' : '') + '\nAnalyse complète sur la card 👇\n\n' + tags,
+      (conf ? '📊 Confiance ' + conf + '\n' : '') + '\nTout est sur la card 👇\n\n' + tags,
     // B — l'angle transparence
     'Le pick du jour, en clair 🔓\n\n' + emoji + ' ' + match + (comp ? ' (' + comp + ')' : '') + '\n' +
       '➡️ ' + prono + '\n' + (cote ? '📈 Cote retenue : ' + cote + '\n' : '') + '\nDétails en image 👇\n\n' + tags,
