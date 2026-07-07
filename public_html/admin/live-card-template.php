@@ -134,13 +134,51 @@ function stratedge_card_promo($tipster) {
     return                 ['eyebrow'=>'StratEdge Multi · Packs crédits','title'=>'Pack Trio · 3 paris','price'=>'12€','url'=>'stratedgepronos.fr/packs-daily'];
 }
 
+/**
+ * Polices V18 (Bebas Neue, Instrument Serif, Inter, Archivo Narrow, Share Tech Mono)
+ * embarquées en base64. Le cache se construit tout seul au premier appel
+ * (téléchargement Google côté SERVEUR, une seule fois), puis est servi depuis
+ * le disque. Fallback @import si la construction échoue (jamais de card sans CSS).
+ */
+function stratedge_fonts_css_v18(): string {
+    $cacheFile = __DIR__ . '/../assets/fonts/cache/fonts-embedded-v18.css';
+    if (is_file($cacheFile) && filesize($cacheFile) > 50000) {
+        return file_get_contents($cacheFile);
+    }
+    $gUrl = 'https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;700;800;900&family=Archivo+Narrow:wght@400;500;700&family=Share+Tech+Mono&display=swap';
+    $import = "@import url('$gUrl');";
+    // Construction du cache (best effort, silencieux)
+    try {
+        $ctx = stream_context_create(['http' => [
+            'timeout' => 12,
+            // UA moderne => Google renvoie du woff2
+            'header' => "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36\r\n",
+        ]]);
+        $gcss = @file_get_contents($gUrl, false, $ctx);
+        if (!$gcss || strlen($gcss) < 1000) return $import;
+        // Embarquer chaque woff2 en base64
+        $embedded = preg_replace_callback('/url\((https:\/\/fonts\.gstatic\.com[^)]+)\)/', function ($m) use ($ctx) {
+            $bin = @file_get_contents($m[1], false, $ctx);
+            if (!$bin) return $m[0]; // on garde l'URL distante si le téléchargement rate
+            return 'url(data:font/woff2;base64,' . base64_encode($bin) . ')';
+        }, $gcss);
+        if ($embedded && strlen($embedded) > 50000 && strpos($embedded, 'base64') !== false) {
+            @file_put_contents($cacheFile, $embedded);
+            return $embedded;
+        }
+    } catch (Throwable $e) { /* fallback */ }
+    return $import;
+}
+
 /** Generate the full CSS for the card. No heredoc PHP vars inside — pre-filled by sprintf-style. */
 function stratedge_card_css($theme, $conf_pct) {
     $accent = $theme['accent']; $rgb = $theme['rgb']; $bg_dark = $theme['bg_dark'];
     $bg = $theme['bg']; $grad = $theme['accent_gradient']; $grad2 = $theme['accent_gradient_2'];
     $conf_bar = $theme['conf_bar'];
     $c = (int)$conf_pct;
-    $css = "@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Instrument+Serif:ital@0;1&family=Inter:wght@400;700;800;900&family=Archivo+Narrow:wght@400;500;700&family=Share+Tech+Mono&display=swap');";
+    // Polices V18 embarquées en local (base64) : rendu identique en preview, en
+    // export JPEG et sous CSP stricte — plus de dépendance à Google au runtime.
+    $css = stratedge_fonts_css_v18();
     $css .= "*{margin:0;padding:0;box-sizing:border-box}";
     $css .= "html,body{background:#050505;margin:0;padding:0}";
     $css .= ".card{position:relative;width:1080px;height:1080px;background:$bg;overflow:hidden;isolation:isolate;font-family:'Inter',sans-serif;color:#ede8e0;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}";
