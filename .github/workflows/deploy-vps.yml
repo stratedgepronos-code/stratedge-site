@@ -34,13 +34,11 @@ jobs:
           cd /var/www/stratedgepronos.fr/public_html
           echo "── Etat local avant pull ──"
           git status --porcelain | head -10
-          # Mettre de côté les modifs locales (ex: includes/db.php adapté VPS)
-          git stash push -m "deploy-autostash $(date +%F-%H%M)" || true
-          git pull --ff-only origin master
-          # Ré-appliquer les modifs locales (db.php etc.)
-          git stash pop || echo "(pas de stash à réappliquer ou conflit -> vérifier manuellement)"
+          # --rebase : tolère les commits locaux faits sur le VPS (rejoués par-dessus)
+          # --autostash : tolère les modifs locales non commitées
+          git pull --rebase --autostash origin master
           echo "── HEAD déployé ──"
-          git log --oneline -1
+          git log --oneline -3
           REMOTE
 
       - name: Vérification code_version en prod
