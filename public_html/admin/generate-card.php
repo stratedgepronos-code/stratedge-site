@@ -477,7 +477,7 @@ if ($typeBet === 'Live') {
         ]);
 
         debugLog("LIVE OK! normal=" . strlen($cards['html_normal']) . " locked=" . strlen($cards['html_locked']));
-        echo json_encode(['success' => true, 'meta' => ['sport' => $sport, 'tipster' => resolveTipster($forceTipster, $enriched), 'competition' => ($enriched['competition'] ?? ''), 'match' => ($enriched['match'] ?? ($data['match'] ?? '')), 'prono' => ($enriched['prono'] ?? ($data['prono'] ?? '')), 'time_fr' => ($enriched['time_fr'] ?? ''), 'date_fr' => ($enriched['date_fr'] ?? ''), 'confidence' => ($enriched['confidence'] ?? null)], 'code_version' => 'tennisfix-v3', 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Live', 'card_width' => 1080, 'cote' => $cote]);
+        echo json_encode(['success' => true, 'meta' => ['sport' => $sport, 'type_bet' => $typeBet, 'bets' => ($enriched['bets'] ?? ($data['bets'] ?? null)), 'tipster' => resolveTipster($forceTipster, $enriched), 'competition' => ($enriched['competition'] ?? ''), 'match' => ($enriched['match'] ?? ($data['match'] ?? '')), 'prono' => ($enriched['prono'] ?? ($data['prono'] ?? '')), 'time_fr' => ($enriched['time_fr'] ?? ''), 'date_fr' => ($enriched['date_fr'] ?? ''), 'confidence' => ($enriched['confidence'] ?? null)], 'code_version' => 'tennisfix-v3', 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Live', 'card_width' => 1080, 'cote' => $cote]);
     } catch (Throwable $e) {
         debugLog("LIVE EXCEPTION: " . $e->getMessage());
         http_response_code(500);
@@ -601,7 +601,7 @@ if ($typeBet === 'Fun') {
     }
 
     debugLog("FUN OK! normal=" . strlen($cards['html_normal']) . " locked=" . strlen($cards['html_locked']));
-    echo json_encode(['success' => true, 'meta' => ['sport' => $sport, 'tipster' => resolveTipster($forceTipster, $enriched), 'competition' => ($enriched['competition'] ?? ''), 'match' => ($enriched['match'] ?? ($data['match'] ?? '')), 'prono' => ($enriched['prono'] ?? ($data['prono'] ?? '')), 'time_fr' => ($enriched['time_fr'] ?? ''), 'date_fr' => ($enriched['date_fr'] ?? ''), 'confidence' => ($enriched['confidence'] ?? null)], 'code_version' => 'tennisfix-v3', 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Fun', 'card_width' => 1080, 'cote' => $coteTotale]);
+    echo json_encode(['success' => true, 'meta' => ['sport' => $sport, 'type_bet' => $typeBet, 'bets' => ($enriched['bets'] ?? ($data['bets'] ?? null)), 'tipster' => resolveTipster($forceTipster, $enriched), 'competition' => ($enriched['competition'] ?? ''), 'match' => ($enriched['match'] ?? ($data['match'] ?? '')), 'prono' => ($enriched['prono'] ?? ($data['prono'] ?? '')), 'time_fr' => ($enriched['time_fr'] ?? ''), 'date_fr' => ($enriched['date_fr'] ?? ''), 'confidence' => ($enriched['confidence'] ?? null)], 'code_version' => 'tennisfix-v3', 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Fun', 'card_width' => 1080, 'cote' => $coteTotale]);
     exit;
 }
 
@@ -704,7 +704,7 @@ if ($typeBet === 'Safe Combiné') {
     }
 
     debugLog("SAFE_COMBI OK! normal=" . strlen($cards['html_normal']) . " locked=" . strlen($cards['html_locked']));
-    echo json_encode(['success' => true, 'meta' => ['sport' => $sport, 'tipster' => resolveTipster($forceTipster, $enriched), 'competition' => ($enriched['competition'] ?? ''), 'match' => ($enriched['match'] ?? ($data['match'] ?? '')), 'prono' => ($enriched['prono'] ?? ($data['prono'] ?? '')), 'time_fr' => ($enriched['time_fr'] ?? ''), 'date_fr' => ($enriched['date_fr'] ?? ''), 'confidence' => ($enriched['confidence'] ?? null)], 'code_version' => 'tennisfix-v3', 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Safe Combiné', 'card_width' => 1440, 'cote' => $coteTotale]);
+    echo json_encode(['success' => true, 'meta' => ['sport' => $sport, 'type_bet' => $typeBet, 'bets' => ($enriched['bets'] ?? ($data['bets'] ?? null)), 'tipster' => resolveTipster($forceTipster, $enriched), 'competition' => ($enriched['competition'] ?? ''), 'match' => ($enriched['match'] ?? ($data['match'] ?? '')), 'prono' => ($enriched['prono'] ?? ($data['prono'] ?? '')), 'time_fr' => ($enriched['time_fr'] ?? ''), 'date_fr' => ($enriched['date_fr'] ?? ''), 'confidence' => ($enriched['confidence'] ?? null)], 'code_version' => 'tennisfix-v3', 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Safe Combiné', 'card_width' => 1440, 'cote' => $coteTotale]);
     exit;
 }
 
@@ -813,7 +813,7 @@ try {
 }
 
 debugLog("SAFE V2 OK! 1080px compact");
-echo json_encode(['success' => true, 'meta' => ['sport' => $sport, 'tipster' => resolveTipster($forceTipster, $enriched), 'competition' => ($enriched['competition'] ?? ''), 'match' => ($enriched['match'] ?? ($data['match'] ?? '')), 'prono' => ($enriched['prono'] ?? ($data['prono'] ?? '')), 'time_fr' => ($enriched['time_fr'] ?? ''), 'date_fr' => ($enriched['date_fr'] ?? ''), 'confidence' => ($enriched['confidence'] ?? null)], 'code_version' => 'tennisfix-v3', 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Safe', 'card_width' => 1080, 'cote' => $finalCote]);
+echo json_encode(['success' => true, 'meta' => ['sport' => $sport, 'type_bet' => $typeBet, 'bets' => ($enriched['bets'] ?? ($data['bets'] ?? null)), 'tipster' => resolveTipster($forceTipster, $enriched), 'competition' => ($enriched['competition'] ?? ''), 'match' => ($enriched['match'] ?? ($data['match'] ?? '')), 'prono' => ($enriched['prono'] ?? ($data['prono'] ?? '')), 'time_fr' => ($enriched['time_fr'] ?? ''), 'date_fr' => ($enriched['date_fr'] ?? ''), 'confidence' => ($enriched['confidence'] ?? null)], 'code_version' => 'tennisfix-v3', 'html_normal' => $cards['html_normal'], 'html_locked' => $cards['html_locked'], 'type_bet' => 'Safe', 'card_width' => 1080, 'cote' => $finalCote]);
 
 } catch (Throwable $e) {
     debugLog("FATAL: " . $e->getMessage() . " in " . $e->getFile() . ":" . $e->getLine());

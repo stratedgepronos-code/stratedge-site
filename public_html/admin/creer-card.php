@@ -773,6 +773,7 @@ async function generateCard() {
 
     lastGeneratedHtml = data.html_normal || '';
     window.lastCardMeta = data.meta || null; // pour le partage X (shareOnX)
+    window.lastCardCote = data.cote || '';   // cote totale (combinés Fun/Safe)
     lastGeneratedCote = data.cote || '';
     // Utiliser la largeur retournée par le backend (au cas où)
     const w = data.card_width || cardW;
@@ -1103,6 +1104,37 @@ function xSportEmoji(meta) {
 
 function buildXText() {
   const m = window.lastCardMeta || {};
+  const emoji = xSportEmoji(m);
+  const tag2  = xContextHashtag(m);
+  const tags  = '#teamparieur ' + tag2;
+
+  // ── CAS COMBINÉ (Fun ou Safe Combiné : plusieurs paris sur la card) ──
+  const bets = Array.isArray(m.bets) ? m.bets.filter(b => b && (b.prono || b.marche)) : [];
+  if (bets.length > 1) {
+    const isFun = (m.type_bet || '').toLowerCase().includes('fun');
+    const coteTotale = window.lastCardCote || (document.getElementById('f-fun-cote') && document.getElementById('f-fun-cote').value) || '';
+    const numeros = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣','6️⃣','7️⃣','8️⃣'];
+    // Une ligne par pari : "1️⃣ Équipe A - Équipe B : prono"
+    let legs = bets.slice(0, 6).map((b, i) => {
+      const duel = b.match || ((b.player1 && b.player2) ? (b.player1 + ' - ' + b.player2) : '');
+      const pick = b.prono || b.marche || '';
+      return numeros[i] + ' ' + (duel ? duel + ' : ' : '') + pick;
+    });
+    let txt = (isFun ? '🎰 Le combiné FUN du jour ' + emoji : emoji + ' Notre combiné du jour') + '\n\n' +
+      legs.join('\n') + '\n\n' +
+      (coteTotale ? '💥 Cote totale : ' + coteTotale + '\n\n' : '') +
+      (isFun ? 'On tente ou pas ? 💬\n\n' : 'Le détail sur la card 👇\n\n') + tags;
+    // Si trop long : on retire les noms de matchs, on garde les pronos
+    if (txt.length > 275) {
+      legs = bets.slice(0, 6).map((b, i) => numeros[i] + ' ' + (b.prono || b.marche || ''));
+      txt = (isFun ? '🎰 Combiné FUN du jour ' + emoji : emoji + ' Combiné du jour') + '\n\n' +
+        legs.join('\n') + '\n\n' + (coteTotale ? '💥 Cote : ' + coteTotale + '\n\n' : '') + tags;
+    }
+    if (txt.length > 275) txt = txt.substring(0, 260).trimEnd() + '…\n' + tags;
+    return txt;
+  }
+
+  // ── CAS PARI SIMPLE ──
   // Fallback sur les champs du formulaire si le meta est incomplet
   const match = m.match || (document.getElementById('f-match') && document.getElementById('f-match').value) || (document.getElementById('f-live-match') && document.getElementById('f-live-match').value) || '';
   const prono = m.prono || (document.getElementById('f-prono') && document.getElementById('f-prono').value) || (document.getElementById('f-live-prono') && document.getElementById('f-live-prono').value) || '';
@@ -1110,14 +1142,11 @@ function buildXText() {
   const comp  = m.competition || '';
   const heure = m.time_fr ? (m.time_fr + ' (heure FR)') : '';
   const conf  = m.confidence ? (m.confidence + '/100') : '';
-  const emoji = xSportEmoji(m);
-  const tag2  = xContextHashtag(m);
-  const tags  = '#teamparieur ' + tag2;
 
   const gabarits = [
     // A — le classique éditorial
     emoji + ' ' + (comp || 'Le pick du jour') + (heure ? ' · ' + heure : '') + '\n\n' +
-      match + '\n\n💡 Notre lecture : ' + prono + (cote ? ' @' + cote : '') + '\n' +
+      match + '\n\n💡 Notre prono : ' + prono + (cote ? ' @' + cote : '') + '\n' +
       (conf ? '📊 Confiance ' + conf + '\n' : '') + '\nAnalyse complète sur la card 👇\n\n' + tags,
     // B — l'angle transparence
     'Le pick du jour, en clair 🔓\n\n' + emoji + ' ' + match + (comp ? ' (' + comp + ')' : '') + '\n' +
@@ -1127,7 +1156,7 @@ function buildXText() {
       (heure ? '\n🕐 ' + heure : '') + (comp ? '\n🏆 ' + comp : '') + '\n\nOn vous montre tout 👇\n\n' + tags,
     // D — la question d'engagement (le reply-bait léger booste le reach)
     emoji + ' ' + (comp || 'Match du jour') + (heure ? ' — ' + heure : '') + '\n' + match + '\n\n' +
-      'Notre pick : ' + prono + (cote ? ' @' + cote : '') + '\n\nVous le sentez comment, vous ? 💬\n\n' + tags
+      'Notre prono : ' + prono + (cote ? ' @' + cote : '') + '\n\nVous le sentez comment, vous ? 💬\n\n' + tags
   ];
   // Rotation persistante (jamais 2x le même gabarit d'affilée)
   let idx = parseInt(localStorage.getItem('x_tpl_idx') || '-1', 10);
