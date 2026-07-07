@@ -141,6 +141,12 @@ function stratedge_card_promo($tipster) {
  * le disque. Fallback @import si la construction échoue (jamais de card sans CSS).
  */
 function stratedge_fonts_css_v18(): string {
+    // 1) Build statique versionné dans git (la source de vérité, toujours présente)
+    $staticFile = __DIR__ . '/fonts-embedded-v18.css';
+    if (is_file($staticFile) && filesize($staticFile) > 50000) {
+        return file_get_contents($staticFile);
+    }
+    // 2) Cache construit au runtime (legacy)
     $cacheFile = __DIR__ . '/../assets/fonts/cache/fonts-embedded-v18.css';
     if (is_file($cacheFile) && filesize($cacheFile) > 50000) {
         return file_get_contents($cacheFile);
