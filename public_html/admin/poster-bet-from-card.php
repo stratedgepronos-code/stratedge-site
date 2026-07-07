@@ -175,6 +175,36 @@ if (file_exists($twitterConfigFile)) {
         $texte = ($xClear && $xText !== '' && mb_strlen($xText) <= 280)
                ? $xText
                : twitterPhrase($type, $titre, $roleForTweet, $sport);
+        // ── API X officielle si configurée : permet le THREAD (résultat en réponse) ──
+        require_once __DIR__ . '/../includes/x-api.php';
+        $xPosted = false;
+        if (xApiActif()) {
+            $localImg = __DIR__ . '/../' . ltrim($imageChoisie, '/');
+            $mediaId  = xApiUploadMedia($localImg);
+            $res = xApiPostTweet($texte, null, $mediaId);
+            if ($res['ok']) {
+                $xPosted = true;
+                // Mémoriser l'ID du tweet sur le bet (pour répondre au résultat)
+                try {
+                    $db->prepare("UPDATE bets SET x_tweet_id=? WHERE id=?")->execute([$res['id'], $betId]);
+                } catch (Throwable $e) {
+                    try { // colonne absente → migration à la volée puis retry
+                        $db->exec("ALTER TABLE bets ADD COLUMN x_tweet_id VARCHAR(30) NULL DEFAULT NULL");
+                        $db->prepare("UPDATE bets SET x_tweet_id=? WHERE id=?")->execute([$res['id'], $betId]);
+                    } catch (Throwable $e2) { /* non bloquant */ }
+                }
+                try {
+                    $db->prepare("INSERT INTO tweets_log (texte, tweet_id, image_path, statut, erreur_msg) VALUES (?,?,?,?,?)")
+                       ->execute([$texte, $res['id'], $imageChoisie, 'envoye', null]);
+                } catch (Throwable $e) {}
+            } else {
+                try {
+                    $db->prepare("INSERT INTO tweets_log (texte, tweet_id, image_path, statut, erreur_msg) VALUES (?,?,?,?,?)")
+                       ->execute([$texte, null, $imageChoisie, 'erreur', 'X API HTTP ' . $res['code'] . ' — ' . $res['raw']]);
+                } catch (Throwable $e) {}
+            }
+        }
+        if (!$xPosted) {
         $webhookUrl = !empty($twitterConfig['webhook_url_image']) ? $twitterConfig['webhook_url_image'] : $twitterConfig['webhook_url'];
         $payload = json_encode([
             'value1' => $texte,
@@ -198,6 +228,7 @@ if (file_exists($twitterConfigFile)) {
             $db->prepare("INSERT INTO tweets_log (texte, tweet_id, image_path, statut, erreur_msg) VALUES (?,?,?,?,?)")
                ->execute([$texte, null, $imageChoisie, $ok ? 'envoye' : 'erreur', $ok ? null : "HTTP $xCode — " . mb_substr((string)$xResp, 0, 180)]);
         } catch (Throwable $e) { /* table absente = non bloquant */ }
+        } // fin fallback IFTTT (!$xPosted)
     }
 }
 

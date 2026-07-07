@@ -60,8 +60,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 // Tweet de résultat avec image de la card
                 // (sauf pour les bets perdus : évite sur-exposition des pertes)
+                // ── PRIORITÉ : réponse dans le THREAD du tweet d'origine (API X) ──
+                $threadReplied = false;
                 try {
-                    if ($twitterActif && !empty($twitterConfig['webhook_url']) && $bet && $resultat !== 'perdu') {
+                    require_once __DIR__ . '/../includes/x-api.php';
+                    $xTweetId = $bet['x_tweet_id'] ?? '';
+                    if ($bet && $xTweetId !== '' && xApiActif()) {
+                        $coteAtR = !empty($bet['cote']) ? ' @' . $bet['cote'] : '';
+                        $repliesTxt = [
+                            'gagne'  => "✅ RÉSULTAT : GAGNÉ" . $coteAtR . " 🎯\n\nMerci à ceux qui ont suivi. On enchaîne.",
+                            'perdu'  => "❌ Résultat : perdu. Ça fait partie du jeu — on assume, on analyse, on repart.",
+                            'annule' => "↺ Résultat : bet annulé, mise remboursée.",
+                        ];
+                        $txtReply = $repliesTxt[$resultat] ?? '';
+                        if ($txtReply !== '') {
+                            $resX = xApiPostTweet($txtReply, $xTweetId);
+                            if ($resX['ok']) {
+                                $threadReplied = true;
+                                try {
+                                    $db->prepare("INSERT INTO tweets_log (texte, tweet_id, image_path, statut, erreur_msg) VALUES (?,?,?,?,?)")
+                                       ->execute([$txtReply, $resX['id'], null, 'envoye', null]);
+                                } catch (Throwable $e) {}
+                            }
+                        }
+                    }
+                } catch (Throwable $e) { /* fallback IFTTT ci-dessous */ }
+
+                try {
+                    if (!$threadReplied && $twitterActif && !empty($twitterConfig['webhook_url']) && $bet && $resultat !== 'perdu') {
                         $titre = !empty($bet['titre']) ? ' — ' . $bet['titre'] : '';
                         $coteStr = !empty($bet['cote']) ? ' (cote ' . $bet['cote'] . ')' : '';
                         $roleOriginal = $bet['posted_by_role'] ?? 'superadmin';
