@@ -178,6 +178,18 @@ if ($seAdminFetchPrefix === '/admin' || preg_match('#/admin$#', $seAdminFetchPre
     .btn-dl-normal:hover { box-shadow:0 0 20px rgba(255,45,120,0.4); transform:translateY(-2px); }
     .btn-dl-locked { background:linear-gradient(135deg, #f5c842, #c8960c); color:#050810; }
     .btn-dl-locked:hover { box-shadow:0 0 20px rgba(245,200,66,0.4); transform:translateY(-2px); }
+    .btn-share-x {
+      background:#000; color:#fff; position:relative; border:1px solid #2f3336 !important;
+      font-weight:700; letter-spacing:0.5px;
+    }
+    .btn-share-x::before {
+      content:''; position:absolute; inset:-2px; border-radius:inherit; padding:2px; opacity:0;
+      background:linear-gradient(135deg, var(--neon-pink, #ff2d78), var(--neon-cyan, #00d4ff));
+      -webkit-mask:linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite:xor; mask-composite:exclude; transition:opacity .25s;
+    }
+    .btn-share-x:hover { transform:translateY(-2px); box-shadow:0 0 22px rgba(0,212,255,0.35); }
+    .btn-share-x:hover::before { opacity:1; }
     .btn-dl-both { background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.15); color:var(--text-secondary); }
     .btn-dl-both:hover { background:rgba(255,255,255,0.12); transform:translateY(-2px); }
     .error-box {
@@ -398,6 +410,7 @@ if ($seAdminFetchPrefix === '/admin' || preg_match('#/admin$#', $seAdminFetchPre
           <a class="btn-dl btn-dl-locked" id="dl-locked" download>⬇️ Locked (.jpg)</a>
           <button class="btn-dl btn-dl-both" onclick="downloadBoth()">⬇️ Les Deux</button>
           <button class="btn-dl btn-dl-both" type="button" id="btn-copy-html" onclick="copyHtmlToClipboard()" title="Copie le HTML pour le coller dans Poster bet (analyse page bet)">📋 Copier le HTML</button>
+          <button class="btn-dl btn-share-x" type="button" id="btn-share-x" onclick="shareOnX()" title="Prono en clair sur X : télécharge la card + ouvre le tweet pré-rédigé (ajoute l'image et publie)">𝕏 Partager en clair</button>
           <button class="btn-dl btn-dl-normal" type="button" id="btn-poster-bet" onclick="posterBetFromCard()" title="Enregistre le bet avec cette card + analyse HTML (tout automatique)">🚀 Poster le bet</button>
         </div>
         <p id="poster-bet-status" style="display:none; margin-top:0.8rem; font-size:0.9rem; color:var(--text-muted);"></p>
@@ -759,6 +772,7 @@ async function generateCard() {
     }
 
     lastGeneratedHtml = data.html_normal || '';
+    window.lastCardMeta = data.meta || null; // pour le partage X (shareOnX)
     lastGeneratedCote = data.cote || '';
     // Utiliser la largeur retournée par le backend (au cas où)
     const w = data.card_width || cardW;
@@ -1045,6 +1059,94 @@ function setGenerateBtn(loading) {
   btn.disabled = loading;
   document.getElementById('btn-icon').textContent = loading ? '⏳' : '✨';
   document.getElementById('btn-text').textContent = loading ? 'Génération en cours (~2-3 min)...' : 'Générer les Cards';
+}
+
+// ── 𝕏 Partager le prono en clair sur X ──────────────────────
+// Règles anti-shadowban appliquées :
+//  • 2 hashtags MAX (plus = signal spam), #teamparieur toujours + 1 contextuel
+//  • AUCUN lien dans le tweet (les liens réduisent le reach ; site en réponse)
+//  • Rotation de 4 gabarits pour ne jamais poster 2x le même squelette de texte
+//  • Pas de vocabulaire racoleur (« gratuit !!! », « garanti »), pas de tout-MAJ
+function xContextHashtag(meta) {
+  const comp = ((meta && meta.competition) || '').toLowerCase();
+  const sport = ((meta && meta.sport) || '').toLowerCase();
+  // Compétition d'abord (le + précis = le + de reach sur la commu concernée)
+  if (comp.includes('wimbledon')) return '#Wimbledon';
+  if (comp.includes('roland')) return '#RolandGarros';
+  if (comp.includes('us open')) return '#USOpen';
+  if (comp.includes('australian')) return '#AusOpen';
+  if (comp.includes('ligue 1')) return '#Ligue1';
+  if (comp.includes('premier league')) return '#PremierLeague';
+  if (comp.includes('liga')) return '#LaLiga';
+  if (comp.includes('serie a')) return '#SerieA';
+  if (comp.includes('bundesliga')) return '#Bundesliga';
+  if (comp.includes('champions')) return '#UCL';
+  if (comp.includes('coupe du monde') || comp.includes('world cup')) return '#WorldCup2026';
+  if (comp.includes('nba') || sport.includes('basket')) return '#NBA';
+  if (comp.includes('nhl') || sport.includes('hockey')) return '#NHL';
+  if (comp.includes('mlb') || sport.includes('baseball')) return '#MLB';
+  if (comp.includes('cs2') || comp.includes('counter') || sport.includes('esport')) return '#CS2';
+  if (sport.includes('tennis')) return '#Tennis';
+  if (sport.includes('foot')) return '#TeamFoot';
+  return '#PariSportif';
+}
+
+function xSportEmoji(meta) {
+  const s = ((meta && meta.sport) || '').toLowerCase();
+  if (s.includes('tennis')) return '🎾';
+  if (s.includes('basket')) return '🏀';
+  if (s.includes('hockey')) return '🏒';
+  if (s.includes('baseball')) return '⚾';
+  if (s.includes('esport') || s.includes('cs2')) return '🎮';
+  return '⚽';
+}
+
+function buildXText() {
+  const m = window.lastCardMeta || {};
+  // Fallback sur les champs du formulaire si le meta est incomplet
+  const match = m.match || (document.getElementById('f-match') && document.getElementById('f-match').value) || (document.getElementById('f-live-match') && document.getElementById('f-live-match').value) || '';
+  const prono = m.prono || (document.getElementById('f-prono') && document.getElementById('f-prono').value) || (document.getElementById('f-live-prono') && document.getElementById('f-live-prono').value) || '';
+  let cote = (document.getElementById('f-cote') && document.getElementById('f-cote').value) || (document.getElementById('f-live-cote') && document.getElementById('f-live-cote').value) || '';
+  const comp  = m.competition || '';
+  const heure = m.time_fr ? (m.time_fr + ' (heure FR)') : '';
+  const conf  = m.confidence ? (m.confidence + '/100') : '';
+  const emoji = xSportEmoji(m);
+  const tag2  = xContextHashtag(m);
+  const tags  = '#teamparieur ' + tag2;
+
+  const gabarits = [
+    // A — le classique éditorial
+    emoji + ' ' + (comp || 'Le pick du jour') + (heure ? ' · ' + heure : '') + '\n\n' +
+      match + '\n\n💡 Notre lecture : ' + prono + (cote ? ' @' + cote : '') + '\n' +
+      (conf ? '📊 Confiance ' + conf + '\n' : '') + '\nAnalyse complète sur la card 👇\n\n' + tags,
+    // B — l'angle transparence
+    'Le pick du jour, en clair 🔓\n\n' + emoji + ' ' + match + (comp ? ' (' + comp + ')' : '') + '\n' +
+      '➡️ ' + prono + '\n' + (cote ? '📈 Cote retenue : ' + cote + '\n' : '') + '\nDétails en image 👇\n\n' + tags,
+    // C — le teaser court
+    emoji + ' ' + match + '\n\n' + prono + (cote ? ' @' + cote : '') + '\n' +
+      (heure ? '\n🕐 ' + heure : '') + (comp ? '\n🏆 ' + comp : '') + '\n\nOn vous montre tout 👇\n\n' + tags,
+    // D — la question d'engagement (le reply-bait léger booste le reach)
+    emoji + ' ' + (comp || 'Match du jour') + (heure ? ' — ' + heure : '') + '\n' + match + '\n\n' +
+      'Notre pick : ' + prono + (cote ? ' @' + cote : '') + '\n\nVous le sentez comment, vous ? 💬\n\n' + tags
+  ];
+  // Rotation persistante (jamais 2x le même gabarit d'affilée)
+  let idx = parseInt(localStorage.getItem('x_tpl_idx') || '-1', 10);
+  idx = (idx + 1) % gabarits.length;
+  localStorage.setItem('x_tpl_idx', String(idx));
+  let txt = gabarits[idx];
+  if (txt.length > 275) txt = gabarits[2]; // le teaser court passe toujours
+  return txt;
+}
+
+function shareOnX() {
+  const btn = document.getElementById('btn-share-x');
+  const txt = buildXText();
+  // 1. Télécharger la card normale (à joindre au tweet — l'image EST le contenu)
+  const dl = document.getElementById('dl-normal');
+  if (dl && dl.href) dl.click();
+  // 2. Ouvrir le composeur X pré-rempli
+  window.open('https://x.com/intent/post?text=' + encodeURIComponent(txt), '_blank', 'width=600,height=650');
+  if (btn) { btn.textContent = '✓ Ajoute l\'image téléchargée !'; setTimeout(function(){ btn.textContent = '𝕏 Partager en clair'; }, 4000); }
 }
 
 // ── Animation des étapes de chargement ──────────────────────
