@@ -179,9 +179,14 @@ if (file_exists($twitterConfigFile)) {
         require_once __DIR__ . '/../includes/x-api.php';
         $xPosted = false;
         if (xApiActif()) {
+            // ÉCONOMIE : un post contenant un lien coûte 0,20$ via l'API (vs 0,015$ sans).
+            // On retire toute URL du texte posté par l'API (le site est en bio).
+            $texteApi = preg_replace('/📲?\s*(https?:\/\/)?(www\.)?stratedgepronos\.fr\S*/iu', '', $texte);
+            $texteApi = preg_replace('/https?:\/\/\S+/iu', '', $texteApi);
+            $texteApi = trim(preg_replace("/\n{3,}/", "\n\n", $texteApi));
             $localImg = __DIR__ . '/../' . ltrim($imageChoisie, '/');
             $mediaId  = xApiUploadMedia($localImg);
-            $res = xApiPostTweet($texte, null, $mediaId);
+            $res = xApiPostTweet($texteApi, null, $mediaId);
             if ($res['ok']) {
                 $xPosted = true;
                 // Mémoriser l'ID du tweet sur le bet (pour répondre au résultat)
@@ -195,12 +200,12 @@ if (file_exists($twitterConfigFile)) {
                 }
                 try {
                     $db->prepare("INSERT INTO tweets_log (texte, tweet_id, image_path, statut, erreur_msg) VALUES (?,?,?,?,?)")
-                       ->execute([$texte, $res['id'], $imageChoisie, 'envoye', null]);
+                       ->execute([$texteApi, $res['id'], $imageChoisie, 'envoye', null]);
                 } catch (Throwable $e) {}
             } else {
                 try {
                     $db->prepare("INSERT INTO tweets_log (texte, tweet_id, image_path, statut, erreur_msg) VALUES (?,?,?,?,?)")
-                       ->execute([$texte, null, $imageChoisie, 'erreur', 'X API HTTP ' . $res['code'] . ' — ' . $res['raw']]);
+                       ->execute([$texteApi, null, $imageChoisie, 'erreur', 'X API HTTP ' . $res['code'] . ' — ' . $res['raw']]);
                 } catch (Throwable $e) {}
             }
         }
