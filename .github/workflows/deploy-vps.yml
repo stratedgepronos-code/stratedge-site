@@ -41,7 +41,7 @@ jobs:
             SSH_CMD="sshpass -e ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o PreferredAuthentications=password -o PubkeyAuthentication=no"
             export SSHPASS="$VPS_PASSWORD"
           fi
-          $SSH_CMD ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} bash -s << 'REMOTE'
+          $SSH_CMD alex@31.97.196.145 bash -s << 'REMOTE'
           set -e
           cd /var/www/stratedgepronos.fr/public_html
           echo "── Etat local avant pull ──"
