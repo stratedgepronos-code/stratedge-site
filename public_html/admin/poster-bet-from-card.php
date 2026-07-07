@@ -158,18 +158,23 @@ try {
 
 // Twitter (IFTTT) si configuré
 $twitterMsg = '';
+$xClear = ($_POST['x_clear'] ?? '') === '1';          // mode "prono en clair" (bouton 𝕏)
+$xText  = trim((string)($_POST['x_text'] ?? ''));      // texte optimisé construit côté client
 $twitterConfigFile = __DIR__ . '/../includes/twitter_keys.php';
 if (file_exists($twitterConfigFile)) {
     $twitterConfig = include $twitterConfigFile;
     if (!empty($twitterConfig['actif']) && !empty($twitterConfig['webhook_url'])) {
         require_once __DIR__ . '/../includes/twitter.php';
-        $imageChoisie = $lastLockedPath ?: $lastImagePath;
+        // En clair : la card NORMALE (prono visible). Teaser classique : la locked.
+        $imageChoisie = $xClear ? $lastImagePath : ($lastLockedPath ?: $lastImagePath);
         $imageDir = (strpos($imageChoisie, 'locked') !== false) ? 'locked' : 'bets';
         $imageUrl = (defined('SITE_URL') ? rtrim(SITE_URL, '/') : '') . '/restore-image.php?dir=' . rawurlencode($imageDir) . '&file=' . rawurlencode(basename($imageChoisie));
         // Determine role pour hashtags (variable $adminRole existante en haut du fichier)
         $roleForTweet = ($adminRole === 'admin_tennis') ? 'admin_tennis'
                       : (($adminRole === 'admin_fun' || $adminRole === 'admin_fun_sport') ? 'admin_fun' : 'superadmin');
-        $texte = twitterPhrase($type, $titre, $roleForTweet, $sport);
+        $texte = ($xClear && $xText !== '' && mb_strlen($xText) <= 280)
+               ? $xText
+               : twitterPhrase($type, $titre, $roleForTweet, $sport);
         $webhookUrl = !empty($twitterConfig['webhook_url_image']) ? $twitterConfig['webhook_url_image'] : $twitterConfig['webhook_url'];
         $payload = json_encode([
             'value1' => $texte,
@@ -184,8 +189,15 @@ if (file_exists($twitterConfigFile)) {
             CURLOPT_HTTPHEADER => ['Content-Type: application/json'],
             CURLOPT_TIMEOUT => 10,
         ]);
-        curl_exec($ch);
+        $xResp = curl_exec($ch);
+        $xCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
+        // Log du tweet (même table que twitter-post.php)
+        try {
+            $ok = ($xCode >= 200 && $xCode < 300);
+            $db->prepare("INSERT INTO tweets_log (texte, tweet_id, image_path, statut, erreur_msg) VALUES (?,?,?,?,?)")
+               ->execute([$texte, null, $imageChoisie, $ok ? 'envoye' : 'erreur', $ok ? null : "HTTP $xCode — " . mb_substr((string)$xResp, 0, 180)]);
+        } catch (Throwable $e) { /* table absente = non bloquant */ }
     }
 }
 

@@ -979,14 +979,16 @@ function copyHtmlToClipboard() {
 }
 
 // ── Poster le bet automatiquement (image + HTML + infos) ──
-async function posterBetFromCard() {
+async function posterBetFromCard(xClear) {
+  xClear = xClear === true;
   if (!jpegNormalUrl || !jpegLockedUrl) {
     alert('Génère d\'abord une card avant de poster le bet.');
     return;
   }
-  const btn = document.getElementById('btn-poster-bet');
+  const btn = document.getElementById(xClear ? 'btn-share-x' : 'btn-poster-bet');
+  const btnLabel = xClear ? '𝕏 Partager en clair' : '🚀 Poster le bet';
   const statusEl = document.getElementById('poster-bet-status');
-  if (btn) { btn.disabled = true; btn.textContent = '⏳ Envoi…'; }
+  if (btn) { btn.disabled = true; btn.textContent = xClear ? '⏳ Post + tweet en clair…' : '⏳ Envoi…'; }
   if (statusEl) { statusEl.style.display = 'block'; statusEl.textContent = 'Envoi du bet en cours…'; statusEl.style.color = 'var(--text-muted)'; }
 
   // Titre = match name clean (sans underscores)
@@ -1020,6 +1022,10 @@ async function posterBetFromCard() {
     form.append('sport', sport);
     form.append('analyse_html', analyseHtml);
     form.append('cote', cote);
+    if (xClear) {
+      form.append('x_clear', '1');
+      form.append('x_text', buildXText());
+    }
 
     const resp = await fetch(adminFetchUrl('poster-bet-from-card.php'), { method: 'POST', body: form, credentials: 'same-origin' });
     const text = await resp.text();
@@ -1027,14 +1033,14 @@ async function posterBetFromCard() {
     try { data = JSON.parse(text); } catch (_) {}
 
     if (resp.ok && data.success) {
-      if (statusEl) { statusEl.textContent = 'Bet posté avec succès ! Redirection…'; statusEl.style.color = '#00c864'; }
-      setTimeout(function() { window.location.href = 'valider-bets.php?msg=' + encodeURIComponent('Bet posté depuis Créer une Card ✅') + '&msg_type=success'; }, 1200);
+      if (statusEl) { statusEl.textContent = xClear ? 'Bet posté + tweet en clair envoyé sur X ! Redirection…' : 'Bet posté avec succès ! Redirection…'; statusEl.style.color = '#00c864'; }
+      setTimeout(function() { window.location.href = 'valider-bets.php?msg=' + encodeURIComponent(xClear ? 'Bet posté + prono en clair tweeté ✅' : 'Bet posté depuis Créer une Card ✅') + '&msg_type=success'; }, 1200);
     } else {
-      if (btn) { btn.disabled = false; btn.textContent = '🚀 Poster le bet'; }
+      if (btn) { btn.disabled = false; btn.textContent = btnLabel; }
       if (statusEl) { statusEl.textContent = data.error || 'Erreur lors de l\'envoi.'; statusEl.style.color = '#ff6b9d'; }
     }
   } catch (e) {
-    if (btn) { btn.disabled = false; btn.textContent = '🚀 Poster le bet'; }
+    if (btn) { btn.disabled = false; btn.textContent = btnLabel; }
     if (statusEl) { statusEl.textContent = 'Erreur : ' + e.message; statusEl.style.color = '#ff6b9d'; }
   }
 }
@@ -1168,14 +1174,9 @@ function buildXText() {
 }
 
 function shareOnX() {
-  const btn = document.getElementById('btn-share-x');
-  const txt = buildXText();
-  // 1. Télécharger la card normale (à joindre au tweet — l'image EST le contenu)
-  const dl = document.getElementById('dl-normal');
-  if (dl && dl.href) dl.click();
-  // 2. Ouvrir le composeur X pré-rempli
-  window.open('https://x.com/intent/post?text=' + encodeURIComponent(txt), '_blank', 'width=600,height=650');
-  if (btn) { btn.textContent = '✓ Ajoute l\'image téléchargée !'; setTimeout(function(){ btn.textContent = '𝕏 Partager en clair'; }, 4000); }
+  // Flux 100% automatique : enregistre le bet (=> valider-bets) + tweete la
+  // card NORMALE avec le texte optimisé, via le même canal IFTTT que Poster le bet.
+  posterBetFromCard(true);
 }
 
 // ── Animation des étapes de chargement ──────────────────────
