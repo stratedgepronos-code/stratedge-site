@@ -243,9 +243,6 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
         <a href="/panel-x9k3m/edit-bet-image.php" <?= ($pageActive==='edit-bet-image') ?'class="active"':'' ?>><span>🖼️</span> Modifier image bet</a>
         <a href="/panel-x9k3m/ht-tracker.php" <?= ($pageActive==='ht-tracker') ?'class="active"':'' ?> style="<?= ($pageActive==='ht-tracker') ? '' : 'color:rgba(0,212,255,0.85);' ?>"><span>🎯</span> Bet Mi-Temps</a>
         <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
-        <a href="/panel-x9k3m/engine-control.php" <?= ($pageActive==='engine') ?'class="active"':'' ?> style="<?= ($pageActive==='engine') ? '' : 'color:rgba(45,229,167,0.9);' ?>"><span>🤖</span> Engine Control</a>
-        <?php endif; ?>
-        <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
         <a href="/panel-x9k3m/historique.php" <?= ($pageActive==='historique') ?'class="active"':'' ?>>
           <span>📂</span> Historique
           <?php if ($nbBetsHistorique > 0): ?><span class="badge-count"><?= $nbBetsHistorique ?></span><?php endif; ?>
@@ -321,6 +318,9 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
     <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
     <a href="/panel-x9k3m/edge-finder/" class="nav-item <?= ($pageActive==='edge-finder') ?'active':'' ?>" style="color:#ff2d78;">
       <span>🎯</span> Edge Finder
+    </a>
+    <a href="/panel-x9k3m/engine-control.php" class="nav-item <?= ($pageActive==='engine') ?'active':'' ?>" style="color:#2de5a7;">
+      <span>🤖</span> Engine Control
     </a>
     <?php endif; ?>
   </nav>
