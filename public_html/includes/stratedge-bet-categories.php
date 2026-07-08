@@ -21,6 +21,9 @@ function stratedge_avg_cote_for_bets(array $arr): ?float {
 
 /**
  * Cotes moyennes par tipster (meme logique que historique.php)
+ * v2 : agregation faite EN SQL — l'ancienne version chargeait TOUTE la table
+ * bets en memoire PHP (fetchAll) et a fini par exploser memory_limit (256M)
+ * quand la table a grossi -> erreur 500 sur la home le 08/07/2026.
  *
  * @return array{multisport: ?float, tennis: ?float, fun: ?float}
  */
@@ -30,39 +33,39 @@ function stratedge_cotes_moyennes_par_categorie(?PDO $db = null): array {
         $db = getDB();
     }
 
-    // Meme filtre que historique.php (bets avec resultat connu OU en attente, pas en_cours)
-    $bets = $db->query("
-        SELECT * FROM bets
-        WHERE (resultat IS NULL OR resultat NOT IN ('en_cours','pending'))
-        ORDER BY COALESCE(date_resultat, date_post) DESC
-    ")->fetchAll(PDO::FETCH_ASSOC);
+    $out = ['multisport' => null, 'tennis' => null, 'fun' => null];
 
-    // Helper routage tipster (identique a historique.php)
-    $tipsterOf = static function (array $b): string {
-        $role = $b['posted_by_role'] ?? '';
-        if ($role === 'admin_tennis') return 'tennis';
-        if ($role === 'admin_fun') return 'fun';
-        if ($role === 'superadmin') return 'multisport';
-        // Fallback bets pre-migration
-        if (($b['categorie'] ?? '') === 'tennis') return 'tennis';
-        return 'multisport';
-    };
+    try {
+        // Meme filtre + meme routage tipster que historique.php, mais agrege
+        // cote base : 3 lignes retournees au maximum, memoire constante.
+        $rows = $db->query("
+            SELECT
+                CASE
+                    WHEN posted_by_role = 'admin_tennis' THEN 'tennis'
+                    WHEN posted_by_role = 'admin_fun'    THEN 'fun'
+                    WHEN posted_by_role = 'superadmin'   THEN 'multisport'
+                    WHEN categorie = 'tennis'            THEN 'tennis'
+                    ELSE 'multisport'
+                END AS tipster,
+                AVG(CAST(REPLACE(cote, ',', '.') AS DECIMAL(10,4))) AS avg_cote
+            FROM bets
+            WHERE (resultat IS NULL OR resultat NOT IN ('en_cours','pending'))
+              AND CAST(REPLACE(cote, ',', '.') AS DECIMAL(10,4)) > 0
+            GROUP BY tipster
+        ")->fetchAll(PDO::FETCH_ASSOC);
 
-    $multi = [];
-    $tennis = [];
-    $fun = [];
-    foreach ($bets as $b) {
-        $t = $tipsterOf($b);
-        if ($t === 'tennis')     $tennis[] = $b;
-        elseif ($t === 'fun')    $fun[] = $b;
-        else                     $multi[] = $b;
+        foreach ($rows as $r) {
+            $k = $r['tipster'];
+            if (array_key_exists($k, $out) && $r['avg_cote'] !== null) {
+                $out[$k] = round((float)$r['avg_cote'], 2);
+            }
+        }
+    } catch (Throwable $e) {
+        // La home ne doit JAMAIS tomber pour un widget de cotes moyennes.
+        error_log('stratedge_cotes_moyennes_par_categorie: ' . $e->getMessage());
     }
 
-    return [
-        'multisport' => stratedge_avg_cote_for_bets($multi),
-        'tennis'     => stratedge_avg_cote_for_bets($tennis),
-        'fun'        => stratedge_avg_cote_for_bets($fun),
-    ];
+    return $out;
 }
 
 // Legacy: ces fonctions etaient utilisees avant, on les garde pour backward-compat
