@@ -51,7 +51,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? 
                 );
                 $success = "Transaction rejetée — {$pay['nom']} notifié.";
             }
-            }
         }
     }
 }
