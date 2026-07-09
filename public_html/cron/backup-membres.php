@@ -5,31 +5,28 @@
  * 0 3 * * * /usr/bin/php /chemin/vers/public_html/cron/backup-membres.php
  *
  * Sauvegarde : membres, abonnements, push_subscriptions
- * Fichiers dans public_html/backups/ (accès web refusé via .htaccess)
+ * Fichiers HORS webroot (private-backups/membres) — CLI uniquement
  * Conservation : 30 jours
  */
 
 $baseDir = dirname(__DIR__);
 require_once $baseDir . '/includes/db.php';
 
-// Exécution en CLI uniquement (ou via URL avec clé secrète pour cron hébergeur)
-$key = getenv('CRON_BACKUP_KEY') ?: ($_GET['key'] ?? '');
-$secret = 'backup_membres_' . (defined('SECRET_KEY') ? SECRET_KEY : 'changez_moi');
-if (php_sapi_name() !== 'cli' && $key !== $secret) {
+// CLI STRICT : un dump de comptes membres ne doit JAMAIS être déclenchable par HTTP.
+if (php_sapi_name() !== 'cli') {
     http_response_code(403);
     exit('Accès refusé.');
 }
 
-$backupDir = $baseDir . '/backups';
+// Dossier de backup HORS webroot (nginx ignore les .htaccess -> jamais dans public_html).
+// Surchargeable via BACKUP_MEMBRES_DIR dans config-keys.php.
+$backupDir = defined('BACKUP_MEMBRES_DIR')
+    ? BACKUP_MEMBRES_DIR
+    : dirname($baseDir) . '/private-backups/membres';
 if (!is_dir($backupDir)) {
-    mkdir($backupDir, 0750, true);
+    mkdir($backupDir, 0700, true);
 }
-
-// Protéger le dossier backups (interdire accès web)
-$htaccess = $backupDir . '/.htaccess';
-if (!file_exists($htaccess)) {
-    file_put_contents($htaccess, "Require all denied\n");
-}
+@chmod($backupDir, 0700);
 
 $date = date('Y-m-d');
 $file = $backupDir . '/membres_' . $date . '.sql';
