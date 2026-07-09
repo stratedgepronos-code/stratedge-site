@@ -15,42 +15,61 @@
  */
 declare(strict_types=1);
 
-// Charge d'abord le loader secret-free du site (peut définir SE_DB_PASS)
+// Charge le loader secret-free du site : définit DB_HOST/DB_NAME/DB_USER/
+// DB_PASS (À JOUR, mdp rotaté) + éventuellement des SE_DB_*.
 $__ck = __DIR__ . '/../../../config-keys.php';
 if (is_file($__ck)) require_once $__ck;
 
-// Complète avec le config local si des constantes manquent encore
-if (!defined('SE_DB_PASS') || !defined('SE_DB_NAME')) {
-    $__local = __DIR__ . '/config.php';
-    if (is_file($__local)) require_once $__local;
-}
+// Complète avec le config local si présent (peut définir SE_DB_* dédiés)
+$__local = __DIR__ . '/config.php';
+if (is_file($__local)) require_once $__local;
 
-// Derniers filets de sécurité pour les identifiants non sensibles
-if (!defined('SE_DB_HOST'))    define('SE_DB_HOST', 'localhost');
-if (!defined('SE_DB_CHARSET')) define('SE_DB_CHARSET', 'utf8mb4');
+// ── Résolution des credentials ──
+// L'Edge Finder a sa PROPRE base (stratedge_edge) mais y accède avec le
+// MÊME user que le site ('stratedge'). Ce user a un mot de passe unique,
+// rotaté périodiquement (durcissement sécu). On garde donc le NOM de base
+// local (SE_DB_NAME = base dédiée) mais on prend le MOT DE PASSE central
+// (DB_PASS, toujours à jour) quand le user local == le user central.
+// -> une rotation de mdp est suivie automatiquement, plus de désync.
+if (!defined('SE_DB_HOST'))    define('SE_DB_HOST',    defined('DB_HOST') ? DB_HOST : 'localhost');
+if (!defined('SE_DB_CHARSET')) define('SE_DB_CHARSET', defined('DB_CHARSET') ? DB_CHARSET : 'utf8mb4');
 if (!defined('SE_DEBUG'))      define('SE_DEBUG', false);
+
+$__edge_name = defined('SE_DB_NAME') ? SE_DB_NAME : (defined('DB_NAME') ? DB_NAME : null);
+$__edge_user = defined('SE_DB_USER') ? SE_DB_USER : (defined('DB_USER') ? DB_USER : null);
+// mot de passe : si le user Edge == user central, on prend le mdp central
+// (à jour) ; sinon on garde le SE_DB_PASS local (base réellement séparée).
+if (defined('DB_USER') && defined('DB_PASS') && $__edge_user === DB_USER) {
+    $__edge_pass = DB_PASS;                        // même user -> mdp central à jour
+} elseif (defined('SE_DB_PASS')) {
+    $__edge_pass = SE_DB_PASS;                     // user distinct -> mdp local
+} elseif (defined('DB_PASS')) {
+    $__edge_pass = DB_PASS;                        // dernier recours
+} else {
+    $__edge_pass = null;
+}
 
 class SE_Db {
     private static ?PDO $pdo = null;
 
     public static function pdo(): PDO {
         if (self::$pdo === null) {
-            if (!defined('SE_DB_NAME') || !defined('SE_DB_USER') || !defined('SE_DB_PASS')) {
-                error_log('Edge Finder: credentials DB manquants (ni config-keys.php ni lib/config.php ne les définissent).');
+            global $__edge_name, $__edge_user, $__edge_pass;
+            if ($__edge_name === null || $__edge_user === null || $__edge_pass === null) {
+                error_log('Edge Finder: credentials DB introuvables (ni DB_* central ni SE_DB_* local).');
                 http_response_code(500);
                 exit('Database connection error');
             }
             $dsn = sprintf('mysql:host=%s;dbname=%s;charset=%s',
-                           SE_DB_HOST, SE_DB_NAME, SE_DB_CHARSET);
+                           SE_DB_HOST, $__edge_name, SE_DB_CHARSET);
             try {
-                self::$pdo = new PDO($dsn, SE_DB_USER, SE_DB_PASS, [
+                self::$pdo = new PDO($dsn, $__edge_user, $__edge_pass, [
                     PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                     PDO::ATTR_EMULATE_PREPARES   => false,
                     PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci",
                 ]);
             } catch (PDOException $e) {
-                // log la vraie cause (mdp périmé après rotation, DB absente...)
                 error_log('Edge Finder DB connection error: ' . $e->getMessage());
                 if (SE_DEBUG) throw $e;
                 http_response_code(500);
