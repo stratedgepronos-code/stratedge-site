@@ -1,23 +1,29 @@
 <?php
 // ============================================================
 // STRATEDGE — Configuration base de données
-// ⚠️ Ne JAMAIS partager ce fichier / ne pas le mettre sur GitHub
+// ⚠️ Ce fichier ne contient PLUS aucun secret.
+//    DB_PASS et SECRET_KEY vivent dans config-keys.php (hors Git,
+//    préservé par le déploiement). Ce loader peut rester versionné.
 // ============================================================
 
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'u527192911_stratedge');
-define('DB_USER', 'u527192911_admin');
-define('DB_PASS', 'StrEdge2024!xK');
-define('DB_CHARSET', 'utf8mb4');
+// Secrets hors-Git (DB_PASS, SECRET_KEY, clés API, Turnstile, HMAC…)
+$__ck = __DIR__ . '/../config-keys.php';
+if (is_file($__ck)) require_once $__ck;
 
-// URL de base du site
-define('SITE_URL', 'https://stratedgepronos.fr');
+// Identifiants non sensibles — fallback dev via if(!defined())
+if (!defined('DB_HOST'))     define('DB_HOST', 'localhost');
+if (!defined('DB_NAME'))     define('DB_NAME', 'u527192911_stratedge');
+if (!defined('DB_USER'))     define('DB_USER', 'u527192911_admin');
+if (!defined('DB_CHARSET'))  define('DB_CHARSET', 'utf8mb4');
+if (!defined('SITE_URL'))    define('SITE_URL', 'https://stratedgepronos.fr');
+if (!defined('ADMIN_EMAIL')) define('ADMIN_EMAIL', 'stratedgepronos@gmail.com');
 
-// Email admin
-define('ADMIN_EMAIL', 'stratedgepronos@gmail.com');
-
-// Clé secrète pour les tokens (CHANGE cette valeur en prod !)
-define('SECRET_KEY', 'X9k2mP7vQ3nR8sT1uW4yZ6a0bC5dE2fG');
+// Secrets OBLIGATOIRES — doivent provenir de config-keys.php
+if (!defined('DB_PASS') || !defined('SECRET_KEY')) {
+    error_log('db.php: DB_PASS/SECRET_KEY manquants — config-keys.php absent ou incomplet.');
+    http_response_code(500);
+    die('Erreur de configuration serveur.');
+}
 
 // ── Connexion PDO ─────────────────────────────────────────
 function getDB(): PDO {
@@ -32,7 +38,6 @@ function getDB(): PDO {
         try {
             $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
         } catch (PDOException $e) {
-            // En prod, ne jamais afficher l'erreur
             error_log("DB Error: " . $e->getMessage());
             die("Erreur de connexion à la base de données. Réessayez plus tard.");
         }
