@@ -51,16 +51,16 @@ if ($existing && $existing['status'] === 'done' && !$force) {
     exit;
 }
 
-// Un worker tourne deja (job 'running' recent < 5 min) : ne pas relancer
+// Un worker tourne deja (job 'running' recent < 20 min) : ne pas relancer
 if ($existing && $existing['status'] === 'running' && !$force) {
     $age = $existing['started_at']
         ? (time() - strtotime($existing['started_at']))
         : 9999;
-    if ($age < 300) {
+    if ($age < 1200) {
         echo json_encode(['status' => 'running']);
         exit;
     }
-    // sinon : worker zombie (>5min), on relance
+    // sinon : worker zombie (>20min), on relance
 }
 
 // ===== Cree / reset le job en 'pending' =====
@@ -71,31 +71,37 @@ SE_Db::execute(
     [$match_id]
 );
 
-// ===== Lance le worker en tache de fond (HTTP non-bloquant a soi-meme) =====
+// ===== Lance le worker en tache de fond =====
 if (!defined('SE_WORKER_TOKEN')) {
     http_response_code(500);
     echo json_encode(['error' => 'SE_WORKER_TOKEN non configure']);
     exit;
 }
 
-$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$host = $_SERVER['HTTP_HOST'] ?? 'stratedgepronos.fr';
-$base = dirname($_SERVER['REQUEST_URI'] ?? '/panel-x9k3m/edge-finder/api/start');
-$worker_url = $scheme . '://' . $host . $base . '/analyze_scorers_worker.php'
-    . '?match_id=' . $match_id
-    . '&worker_token=' . urlencode(SE_WORKER_TOKEN);
+require_once __DIR__ . '/_worker_common.php';
 
-// curl non-bloquant : timeout tres court, on n'attend PAS la reponse du worker.
-// Le worker continue de tourner cote serveur apres qu'on a coupe.
-$ch = curl_init($worker_url);
-curl_setopt_array($ch, [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_TIMEOUT_MS => 800,        // on coupe vite : le worker est lance, il continue
-    CURLOPT_NOSIGNAL => true,
-    CURLOPT_FRESH_CONNECT => true,
-]);
-curl_exec($ch);
-curl_close($ch);
-// On ne verifie pas le retour : un timeout ici est NORMAL et attendu.
+// Prefere le CLI : aucune limite FPM/nginx (~122s) sur le worker.
+$spawned_cli = se_spawn_background(__DIR__ . '/analyze_scorers_worker.php', $match_id);
+
+if (!$spawned_cli) {
+    // Repli legacy : HTTP non-bloquant a soi-meme (limite serveur ~122s).
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $host = $_SERVER['HTTP_HOST'] ?? 'stratedgepronos.fr';
+    $base = dirname($_SERVER['REQUEST_URI'] ?? '/panel-x9k3m/edge-finder/api/start');
+    $worker_url = $scheme . '://' . $host . $base . '/analyze_scorers_worker.php'
+        . '?match_id=' . $match_id
+        . '&worker_token=' . urlencode(SE_WORKER_TOKEN);
+
+    $ch = curl_init($worker_url);
+    curl_setopt_array($ch, [
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_TIMEOUT_MS => 800,        // on coupe vite : le worker est lance, il continue
+        CURLOPT_NOSIGNAL => true,
+        CURLOPT_FRESH_CONNECT => true,
+    ]);
+    curl_exec($ch);
+    curl_close($ch);
+    // On ne verifie pas le retour : un timeout ici est NORMAL et attendu.
+}
 
 echo json_encode(['status' => 'started']);

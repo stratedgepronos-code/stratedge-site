@@ -20,9 +20,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../../config-keys.php';
 require_once __DIR__ . '/../lib/db.php';
+require_once __DIR__ . '/_worker_common.php';
 
 ignore_user_abort(true);
-@set_time_limit(300);
+@set_time_limit(900);
+se_cli_bootstrap(); // lancable en CLI (aucune limite FPM/nginx)
 
 $match_id = (int)($_GET['match_id'] ?? 0);
 $worker_token = (string)($_GET['worker_token'] ?? '');
@@ -161,22 +163,10 @@ $payload = [
 
 $start_time = microtime(true);
 
-$ch = curl_init('https://api.anthropic.com/v1/messages');
-curl_setopt_array($ch, [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_TIMEOUT => 115,   // strict : on coupe AVANT la limite serveur de 122s
-    CURLOPT_POST => true,
-    CURLOPT_POSTFIELDS => json_encode($payload),
-    CURLOPT_HTTPHEADER => [
-        'x-api-key: ' . ANTHROPIC_API_KEY,
-        'anthropic-version: 2023-06-01',
-        'content-type: application/json',
-    ],
-]);
-$response = curl_exec($ch);
-$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-$curl_err = curl_error($ch);
-curl_close($ch);
+// Appel robuste : timeout 600s (etape research = web_search, potentiellement long),
+// retry x3 avec backoff sur erreurs transitoires. Plus de couperet 115s :
+// le worker tourne en CLI, hors des limites FPM/nginx.
+[$response, $http_code, $curl_err] = se_anthropic_call($payload, 600, 3);
 
 if ($http_code !== 200 || !$response) {
     research_fail($match_id, "Etape 1 (research) - Anthropic HTTP $http_code : " . mb_substr($curl_err ?: (string)$response, 0, 250));

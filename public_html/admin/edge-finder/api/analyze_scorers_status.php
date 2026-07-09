@@ -50,10 +50,10 @@ if (!$row) {
 $status = $row['status'] ?? 'done';
 
 // Job zombie : 'running' depuis trop longtemps (worker mort sans finir).
-// On detecte sur 'running' (etape 1 ou 2) ET 'researched' (etape 1 finie
-// mais etape 2 pas lancee correctement) si > 5 min.
+// Fenetre 1200s : les workers CLI peuvent legitimement tourner plusieurs
+// minutes (timeout Anthropic 600s + retries). 300s tuait des analyses saines.
 if (($status === 'running' || $status === 'researched') && !empty($row['started_at'])) {
-    if (time() - strtotime($row['started_at']) > 300) {
+    if (time() - strtotime($row['started_at']) > 1200) {
         echo json_encode([
             'status' => 'error',
             'error_msg' => 'Analyse expiree (worker interrompu) - relance l\'analyse',
@@ -80,21 +80,26 @@ if ($status === 'researched') {
             ['writer_kicked@' . $now, $match_id]
         );
 
-        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        $host = $_SERVER['HTTP_HOST'] ?? 'stratedgepronos.fr';
-        $base = dirname($_SERVER['REQUEST_URI'] ?? '/panel-x9k3m/edge-finder/api/status');
-        $writer_url = $scheme . '://' . $host . $base . '/analyze_scorers_worker_writer.php'
-            . '?match_id=' . $match_id
-            . '&worker_token=' . urlencode(SE_WORKER_TOKEN);
-        $ch = curl_init($writer_url);
-        curl_setopt_array($ch, [
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT_MS => 800,
-            CURLOPT_NOSIGNAL => true,
-            CURLOPT_FRESH_CONNECT => true,
-        ]);
-        curl_exec($ch);
-        curl_close($ch);
+        require_once __DIR__ . '/_worker_common.php';
+        // Prefere le CLI : aucune limite FPM/nginx (~122s) sur le writer.
+        if (!se_spawn_background(__DIR__ . '/analyze_scorers_worker_writer.php', $match_id)) {
+            // Repli legacy : HTTP non-bloquant (limite serveur ~122s).
+            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+            $host = $_SERVER['HTTP_HOST'] ?? 'stratedgepronos.fr';
+            $base = dirname($_SERVER['REQUEST_URI'] ?? '/panel-x9k3m/edge-finder/api/status');
+            $writer_url = $scheme . '://' . $host . $base . '/analyze_scorers_worker_writer.php'
+                . '?match_id=' . $match_id
+                . '&worker_token=' . urlencode(SE_WORKER_TOKEN);
+            $ch = curl_init($writer_url);
+            curl_setopt_array($ch, [
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT_MS => 800,
+                CURLOPT_NOSIGNAL => true,
+                CURLOPT_FRESH_CONNECT => true,
+            ]);
+            curl_exec($ch);
+            curl_close($ch);
+        }
     }
     // Pour le navigateur : on continue d'afficher "en cours"
     echo json_encode(['status' => 'running']);

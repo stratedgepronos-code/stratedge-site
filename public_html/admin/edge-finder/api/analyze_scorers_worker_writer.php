@@ -20,9 +20,11 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../../config-keys.php';
 require_once __DIR__ . '/../lib/db.php';
+require_once __DIR__ . '/_worker_common.php';
 
 ignore_user_abort(true);
-@set_time_limit(300);
+@set_time_limit(900);
+se_cli_bootstrap(); // lancable en CLI (aucune limite FPM/nginx)
 
 $match_id = (int)($_GET['match_id'] ?? 0);
 $worker_token = (string)($_GET['worker_token'] ?? '');
@@ -61,10 +63,25 @@ if (!$job) {
     writer_fail($match_id, 'Job ou match introuvable pour etape 2');
 }
 if ($job['status'] !== 'researched') {
-    writer_fail($match_id, 'Etape 2 appelee sur un job en status ' . $job['status'] . ' (attendu: researched)');
+    // Un autre writer a deja pris (ou fini) ce job : on sort SILENCIEUSEMENT.
+    // Surtout ne pas writer_fail() ici : ca ecraserait le travail en cours.
+    exit('writer deja actif ou job traite (status ' . $job['status'] . ')');
 }
 if (empty($job['research_summary'])) {
     writer_fail($match_id, 'Synthese etape 1 vide - relance l\'analyse');
+}
+
+// ===== CLAIM ATOMIQUE : un seul writer peut prendre le job =====
+// Evite les doublons (polling qui re-kick pendant une redaction longue)
+// -> appels Anthropic factures en double et resultats ecrases.
+$claim = SE_Db::execute(
+    "UPDATE match_scorer_analysis
+     SET status = 'running', started_at = NOW(), error_msg = NULL
+     WHERE match_id = ? AND status = 'researched'",
+    [$match_id]
+);
+if ($claim->rowCount() !== 1) {
+    exit('claim perdu : un autre writer a pris le job');
 }
 
 $summary = json_decode($job['research_summary'], true);
@@ -161,22 +178,9 @@ $payload = [
 
 $start_time = microtime(true);
 
-$ch = curl_init('https://api.anthropic.com/v1/messages');
-curl_setopt_array($ch, [
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_TIMEOUT => 115,
-    CURLOPT_POST => true,
-    CURLOPT_POSTFIELDS => json_encode($payload),
-    CURLOPT_HTTPHEADER => [
-        'x-api-key: ' . ANTHROPIC_API_KEY,
-        'anthropic-version: 2023-06-01',
-        'content-type: application/json',
-    ],
-]);
-$response = curl_exec($ch);
-$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-$curl_err = curl_error($ch);
-curl_close($ch);
+// Appel robuste : timeout 600s (redaction 8000 tokens = long), retry x3 backoff.
+// Plus de couperet 115s : le writer tourne en CLI, hors des limites FPM/nginx.
+[$response, $http_code, $curl_err] = se_anthropic_call($payload, 600, 3);
 
 if ($http_code !== 200 || !$response) {
     writer_fail($match_id, "Etape 2 (writer) - Anthropic HTTP $http_code : " . mb_substr($curl_err ?: (string)$response, 0, 250));
