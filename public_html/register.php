@@ -3,6 +3,9 @@ error_reporting(E_ALL);
 ini_set("display_errors", 1);
 require_once __DIR__ . '/includes/auth.php';
 require_once __DIR__ . '/includes/mailer.php';
+$ck = __DIR__ . '/config-keys.php';
+if (is_file($ck)) require_once $ck; // clés Turnstile / ANTIBOT_HMAC_KEY (hors Git)
+require_once __DIR__ . '/includes/antibot/AntiBot.php';
 
 if (isLoggedIn()) { header('Location: dashboard.php'); exit; }
 
@@ -13,13 +16,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
         $error = 'Erreur de sécurité. Rechargez la page.';
     } else {
+        // ── ANTI-BOT (avant toute chose) ──────────────────────────
+        $antibot  = new AntiBot(getDB());
+        $abIp     = $_SERVER['HTTP_CF_CONNECTING_IP'] ?? ($_SERVER['REMOTE_ADDR'] ?? '');
+        $abOk     = $antibot->validate($_POST, $abIp);
+        $abErrors = $antibot->getErrors();
+        if (!$abOk && empty($abErrors)) {
+            // Couche silencieuse (honeypot/timing) : succès simulé, AUCUN compte créé
+            header('Location: dashboard.php?welcome=1');
+            exit;
+        }
+        if (!$abOk) { $error = $abErrors[0]; }
+        // ──────────────────────────────────────────────────────────
         $nom      = trim($_POST['nom'] ?? '');
         $email    = trim($_POST['email'] ?? '');
         $password = $_POST['password'] ?? '';
         $confirm  = $_POST['confirm'] ?? '';
         $date_naissance = trim($_POST['date_naissance'] ?? '');
 
-        if (empty($nom) || empty($email) || empty($password)) {
+        if ($error !== '') {
+            // anti-bot a déjà positionné $error : on n'affiche que ça
+        } elseif (empty($nom) || empty($email) || empty($password)) {
             $error = 'Veuillez remplir tous les champs.';
         } elseif ($date_naissance !== '' && (($t = strtotime($date_naissance)) === false || $t > time())) {
             $error = 'Date de naissance invalide.';
@@ -154,6 +171,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <input type="checkbox" id="accepte_emails" name="accepte_emails" value="1" <?= !empty($_POST['accepte_emails']) ? 'checked' : '' ?> style="margin-top:0.35rem;width:auto;">
           <label for="accepte_emails" style="margin:0;font-size:0.9rem;font-weight:400;color:var(--text-secondary);">J'accepte de recevoir les notifications par email (nouveaux bets, résultats). Vous pourrez vous désinscrire à tout moment.</label>
         </div>
+
+        <?= AntiBot::formFields() ?>
+        <?php $abWidget = AntiBot::turnstileWidget(); if ($abWidget !== ''): ?>
+        <div class="form-group" style="display:flex;justify-content:center;"><?= $abWidget ?></div>
+        <?php endif; ?>
 
         <button type="submit" class="btn-submit">Créer mon compte →</button>
       </form>

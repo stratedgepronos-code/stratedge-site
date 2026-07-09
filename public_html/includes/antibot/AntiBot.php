@@ -1,13 +1,12 @@
 <?php
 /**
- * StratEdge AntiBot v1.0 — protection inscription multi-couches
- * Couches : 1) Cloudflare Turnstile  2) Honeypot  3) Timing minimal
- *           4) Rate limit IP  5) Blocklist emails jetables
+ * StratEdge AntiBot v1.1 — protection inscription multi-couches
+ * Couches : 1) Honeypot  2) Timing signé (HMAC)  3) Rate limit IP
+ *           4) Blocklist emails jetables  5) Cloudflare Turnstile (optionnel)
  *
+ * v1.1 : dégradation gracieuse Turnstile (actif seulement si clés configurées),
+ *        auto-création de la table antibot_log, clé HMAC repliée sur SECRET_KEY.
  * Intégration : voir INTEGRATION.md
- * IMPORTANT : définir les clés dans config (jamais en dur) :
- *   define('TURNSTILE_SITE_KEY',   getenv('TURNSTILE_SITE_KEY'));
- *   define('TURNSTILE_SECRET_KEY', getenv('TURNSTILE_SECRET_KEY'));
  */
 
 class AntiBot
@@ -25,10 +24,13 @@ class AntiBot
     public function __construct(PDO $db)
     {
         $this->db = $db;
+        $this->ensureSchema(); // crée antibot_log si absente — zéro action manuelle
     }
 
     /** À appeler AU DÉBUT du traitement du POST d'inscription.
-     *  Retourne true si humain, false sinon ($this->getErrors() pour le détail). */
+     *  Retourne true si humain, false sinon ($this->getErrors() pour le détail).
+     *  Si false ET getErrors() vide → couche silencieuse (honeypot/timing) :
+     *  l'appelant doit simuler un succès sans créer le compte. */
     public function validate(array $post, string $ip): bool
     {
         $this->errors = [];
@@ -36,18 +38,18 @@ class AntiBot
         // --- Couche 1 : Honeypot (champ caché, un humain ne le remplit jamais)
         if (!empty($post[self::HONEYPOT_FIELD])) {
             $this->fail('honeypot', $ip);
-            return false; // silencieux : on répond "OK" au bot sans créer le compte
+            return false; // silencieux
         }
 
         // --- Couche 2 : Timing (timestamp signé injecté au rendu du formulaire)
         if (!$this->checkTiming($post['fts'] ?? '')) {
             $this->fail('timing', $ip);
-            return false;
+            return false; // silencieux
         }
 
         // --- Couche 3 : Rate limit par IP
         if (!$this->checkRateLimit($ip)) {
-            $this->errors[] = "Trop de tentatives. Réessaie dans une heure.";
+            $this->errors[] = "Trop de tentatives depuis ta connexion. Réessaie dans une heure.";
             $this->fail('ratelimit', $ip);
             return false;
         }
@@ -60,7 +62,7 @@ class AntiBot
             return false;
         }
 
-        // --- Couche 5 : Cloudflare Turnstile (challenge invisible)
+        // --- Couche 5 : Cloudflare Turnstile (challenge invisible, si configuré)
         if (!$this->verifyTurnstile($post['cf-turnstile-response'] ?? '', $ip)) {
             $this->errors[] = "Vérification de sécurité échouée. Recharge la page et réessaie.";
             $this->fail('turnstile', $ip);
@@ -86,10 +88,12 @@ class AntiBot
         HTML;
     }
 
-    /** Widget Turnstile à placer avant le bouton submit. */
+    /** Widget Turnstile à placer avant le bouton submit.
+     *  Retourne '' tant que Turnstile n'est pas configuré (dégradation gracieuse). */
     public static function turnstileWidget(): string
     {
-        $siteKey = TURNSTILE_SITE_KEY;
+        if (!self::turnstileEnabled()) return '';
+        $siteKey = htmlspecialchars(TURNSTILE_SITE_KEY, ENT_QUOTES);
         return <<<HTML
         <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
         <div class="cf-turnstile" data-sitekey="{$siteKey}" data-theme="dark"></div>
@@ -97,6 +101,13 @@ class AntiBot
     }
 
     // ------------------------------------------------------------------ privé
+
+    private static function turnstileEnabled(): bool
+    {
+        return defined('TURNSTILE_SITE_KEY') && defined('TURNSTILE_SECRET_KEY')
+            && TURNSTILE_SITE_KEY   !== '' && TURNSTILE_SITE_KEY   !== 'REPLACE-ME'
+            && TURNSTILE_SECRET_KEY !== '' && TURNSTILE_SECRET_KEY !== 'REPLACE-ME';
+    }
 
     private function checkTiming(string $fts): bool
     {
@@ -111,7 +122,8 @@ class AntiBot
     {
         $stmt = $this->db->prepare(
             "SELECT COUNT(*) FROM antibot_log
-             WHERE ip = ? AND created_at > (NOW() - INTERVAL " . self::RATE_LIMIT_WINDOW . " SECOND)"
+             WHERE ip = ? AND result = 'pass'
+               AND created_at > (NOW() - INTERVAL " . self::RATE_LIMIT_WINDOW . " SECOND)"
         );
         $stmt->execute([$ip]);
         return (int)$stmt->fetchColumn() < self::RATE_LIMIT_MAX;
@@ -119,6 +131,10 @@ class AntiBot
 
     private function verifyTurnstile(string $token, string $ip): bool
     {
+        // Dégradation gracieuse : tant que Turnstile n'est pas configuré,
+        // on n'exige pas cette couche (les 4 autres restent actives).
+        if (!self::turnstileEnabled()) return true;
+
         if ($token === '') return false;
         $ch = curl_init('https://challenges.cloudflare.com/turnstile/v0/siteverify');
         curl_setopt_array($ch, [
@@ -143,8 +159,7 @@ class AntiBot
         $at = strrchr($email, '@');
         if ($at === false) return true; // email invalide → rejet
         $domain = substr($at, 1);
-        $blocklist = self::loadBlocklist();
-        return in_array($domain, $blocklist, true);
+        return in_array($domain, self::loadBlocklist(), true);
     }
 
     private static function loadBlocklist(): array
@@ -153,7 +168,7 @@ class AntiBot
         if ($list === null) {
             $file = __DIR__ . '/disposable_domains.txt';
             $list = is_file($file)
-                ? array_filter(array_map('trim', file($file)))
+                ? array_values(array_filter(array_map('trim', file($file))))
                 : [];
         }
         return $list;
@@ -166,17 +181,45 @@ class AntiBot
 
     private function logAttempt(string $ip, string $result): void
     {
-        $stmt = $this->db->prepare(
-            "INSERT INTO antibot_log (ip, result, user_agent, created_at)
-             VALUES (?, ?, ?, NOW())"
-        );
-        $stmt->execute([$ip, $result, substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255)]);
+        try {
+            $stmt = $this->db->prepare(
+                "INSERT INTO antibot_log (ip, result, user_agent, created_at)
+                 VALUES (?, ?, ?, NOW())"
+            );
+            $stmt->execute([$ip, $result, substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255)]);
+        } catch (\Throwable $e) {
+            error_log('antibot logAttempt: ' . $e->getMessage());
+        }
+    }
+
+    private function ensureSchema(): void
+    {
+        try {
+            $this->db->exec(
+                "CREATE TABLE IF NOT EXISTS antibot_log (
+                    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+                    ip VARCHAR(45) NOT NULL,
+                    result VARCHAR(20) NOT NULL,
+                    user_agent VARCHAR(255) DEFAULT NULL,
+                    created_at DATETIME NOT NULL,
+                    INDEX idx_ip_time (ip, created_at),
+                    INDEX idx_result (result)
+                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+            );
+        } catch (\Throwable $e) {
+            error_log('antibot ensureSchema: ' . $e->getMessage());
+        }
     }
 
     private static function hmacKey(): string
     {
-        // Réutiliser une clé secrète serveur existante (config), jamais en dur
-        return defined('ANTIBOT_HMAC_KEY') ? ANTIBOT_HMAC_KEY : 'CHANGE_ME_IN_CONFIG';
+        if (defined('ANTIBOT_HMAC_KEY') && ANTIBOT_HMAC_KEY !== '' && ANTIBOT_HMAC_KEY !== 'REPLACE-ME') {
+            return ANTIBOT_HMAC_KEY;
+        }
+        if (defined('SECRET_KEY') && SECRET_KEY !== '') {
+            return SECRET_KEY; // clé serveur existante (db.php)
+        }
+        return 'stratedge-antibot-fallback-key';
     }
 
     public function getErrors(): array
