@@ -157,6 +157,9 @@ h1{font-family:'Orbitron';font-weight:700;font-size:1.85rem;letter-spacing:.06em
 
 /* KPI cards */
 .kgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1.1rem;margin-bottom:1.3rem}
+.ksection{font-family:'Rajdhani',sans-serif;font-weight:600;font-size:.95rem;letter-spacing:.06em;text-transform:uppercase;color:var(--cyan);margin:.4rem 0 .8rem;display:flex;align-items:center;gap:.5rem}
+.ksection .ksub{color:var(--muted);font-weight:400;font-size:.8rem;text-transform:none;letter-spacing:0}
+.kgrid-bot{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))}
 .kcard{background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:1.3rem 1.4rem;position:relative;overflow:hidden}
 .kcard::after{content:"";position:absolute;left:0;top:0;bottom:0;width:2px;background:linear-gradient(180deg,var(--pink),var(--cyan))}
 .kcard .kv{font-family:'JetBrains Mono';font-weight:700;font-size:2.1rem;letter-spacing:-.01em;line-height:1}
@@ -269,7 +272,30 @@ h1{font-family:'Orbitron';font-weight:700;font-size:1.85rem;letter-spacing:.06em
     </div>
   </div>
 
-  <!-- KPIs bets réels -->
+  <!-- ═══ ACTIVITÉ DU BOT (moteur autonome) ═══ -->
+  <div class="ksection">🤖 Activité du moteur (session en cours)</div>
+  <div class="kgrid kgrid-bot">
+    <div class="kcard">
+      <div class="kv cy"><?= isset($engine['stats']['matches_analyzed']) ? (int)$engine['stats']['matches_analyzed'] : 0 ?></div>
+      <div class="kl">Matchs analysés</div>
+      <div class="kd">à la mi-temps</div>
+    </div>
+    <div class="kcard">
+      <div class="kv cy"><?= isset($engine['stats']['alerts_sent']) ? (int)$engine['stats']['alerts_sent'] : 0 ?></div>
+      <div class="kl">Alertes émises</div>
+      <div class="kd">picks envoyés</div>
+    </div>
+    <div class="kcard">
+      <div class="kv <?= (!empty($engine['stats']['errors'])) ? 'neg' : 'pos' ?>">
+        <?= isset($engine['stats']['errors']) ? (int)$engine['stats']['errors'] : 0 ?>
+      </div>
+      <div class="kl">Erreurs</div>
+      <div class="kd">boucle moteur</div>
+    </div>
+  </div>
+
+  <!-- ═══ BILAN DES TIPSTERS (table bets — humains, PAS le bot) ═══ -->
+  <div class="ksection">📊 Bilan des tipsters <span class="ksub">(historique global — indépendant du bot)</span></div>
   <div class="kgrid">
     <div class="kcard">
       <div class="kv cy"><?= $betStats['total'] ?></div>
@@ -292,18 +318,6 @@ h1{font-family:'Orbitron';font-weight:700;font-size:1.85rem;letter-spacing:.06em
       <div class="kv am"><?= $betStats['avg_cote'] !== null ? number_format($betStats['avg_cote'],2,',','') : '—' ?></div>
       <div class="kl">Cote moyenne</div>
       <div class="kd">tous tipsters</div>
-    </div>
-    <div class="kcard">
-      <div class="kv cy"><?= isset($engine['stats']['matches_analyzed']) ? (int)$engine['stats']['matches_analyzed'] : 0 ?></div>
-      <div class="kl">Matchs analysés</div>
-      <div class="kd">par le bot (session)</div>
-    </div>
-    <div class="kcard">
-      <div class="kv <?= (!empty($engine['stats']['errors'])) ? 'neg' : 'pos' ?>">
-        <?= isset($engine['stats']['errors']) ? (int)$engine['stats']['errors'] : 0 ?>
-      </div>
-      <div class="kl">Erreurs</div>
-      <div class="kd">boucle moteur</div>
     </div>
   </div>
 
