@@ -239,8 +239,8 @@ function stratedge_card_css($theme, $conf_pct) {
     $css .= ".pick{position:relative;z-index:2;max-width:540px;border:1px solid rgba(237,232,224,.2);padding:16px 22px;margin-bottom:0}";
     $css .= ".pick.combi{max-width:620px;border:none;border-top:1px solid rgba(237,232,224,.25);border-bottom:1px solid rgba(237,232,224,.25);padding:16px 0}";
     $css .= ".pick-eyebrow{font-family:'Archivo Narrow',sans-serif;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:#ede8e0;opacity:.45;margin-bottom:10px}";
-    $css .= ".pick-main{font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1.1;letter-spacing:0;color:#ede8e0;margin-bottom:6px;word-spacing:.2em;word-wrap:break-word;overflow-wrap:break-word;display:inline-block;padding:0 4px}";
-    $css .= ".pick-accent{font-family:'Bebas Neue',sans-serif;font-size:30px;color:$accent;text-shadow:0 0 10px rgba($rgb,.5);word-spacing:.15em;display:inline-block;padding:0 2px}";
+    $css .= ".pick-main{font-family:'Bebas Neue',sans-serif;font-size:30px;line-height:1.1;letter-spacing:0;color:#ede8e0;margin-bottom:6px;word-wrap:break-word;overflow-wrap:break-word;display:flex;flex-wrap:wrap;align-items:baseline;gap:0 .32em}";
+    $css .= ".pick-accent{font-family:'Bebas Neue',sans-serif;font-size:30px;color:$accent;text-shadow:0 0 10px rgba($rgb,.5);display:inline-block}";
     $css .= ".pick-market{font-family:'Archivo Narrow',sans-serif;font-size:11px;letter-spacing:3px;word-spacing:6px;text-transform:uppercase;color:#ede8e0;opacity:.45;margin-top:8px}";
     $css .= ".combi-list{display:flex;flex-direction:column;gap:14px;margin-top:8px}";
     $css .= ".combi-row{display:flex;flex-direction:column;padding:10px 0;border-top:1px dashed rgba($rgb,.2);gap:4px}";
@@ -435,8 +435,8 @@ function _stratedge_gradient_dark($hex) {
     return sprintf('#%02x%02x%02x', $r, $g, $b);
 }
 
-/** htmlspecialchars + remplace espaces normaux par U+00A0 (non-breaking space littéral)
-    → html2canvas préserve U+00A0 alors qu'il peut collapse &nbsp; entity */
+/** htmlspecialchars + nettoyage des espaces.
+    ⚠️ NE convertit PLUS en U+00A0 : Bebas Neue n'a pas ce glyphe -> mots collés. */
 function stratedge_nbsp_esc($text) {
     $text = (string)$text;
     // Pré-nettoyage: corriger les écarts d'espacement causés par l'IA
@@ -446,9 +446,11 @@ function stratedge_nbsp_esc($text) {
     $text = preg_replace('/(\d)\s+\+/', '$1+', $text);
     $text = preg_replace('/(\d)\s+\.(\d)/', '$1.$2', $text);
     $text = preg_replace('/\s{2,}/', ' ', $text);
-    $safe = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
-    // Remplacer espaces simples par U+00A0 LITTÉRAL (pas l'entité HTML)
-    return str_replace(' ', "\xC2\xA0", $safe);
+    // ⚠️ NE PAS convertir les espaces en U+00A0 : Bebas Neue (et Archivo Narrow)
+    // n'ont PAS de glyphe pour l'espace insécable -> le caractère n'est pas
+    // dessiné et les mots se COLLENT ("Espagnecumule4.5corners").
+    // L'anti-retour-à-la-ligne est géré en CSS (white-space:nowrap) là où il faut.
+    return htmlspecialchars(trim($text), ENT_QUOTES, 'UTF-8');
 }
 
 function stratedge_normalize_data($d, $type) {

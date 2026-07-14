@@ -75,13 +75,79 @@ function getEmbeddedFontsCss() {
             'style'  => 'normal',
             'api'    => 'https://fonts.googleapis.com/css2?family=Rajdhani:wght@700&display=swap',
         ],
+        // ── Inter 400/700/800/900 (corps + gros chiffres .time/.combi-count) ──
+        [
+            'family' => 'Inter',
+            'weight' => 400,
+            'style'  => 'normal',
+            'api'    => 'https://fonts.googleapis.com/css2?family=Inter:wght@400&display=swap',
+        ],
+        [
+            'family' => 'Inter',
+            'weight' => 700,
+            'style'  => 'normal',
+            'api'    => 'https://fonts.googleapis.com/css2?family=Inter:wght@700&display=swap',
+        ],
+        [
+            'family' => 'Inter',
+            'weight' => 800,
+            'style'  => 'normal',
+            'api'    => 'https://fonts.googleapis.com/css2?family=Inter:wght@800&display=swap',
+        ],
+        [
+            'family' => 'Inter',
+            'weight' => 900,
+            'style'  => 'normal',
+            'api'    => 'https://fonts.googleapis.com/css2?family=Inter:wght@900&display=swap',
+        ],
+        // ── Archivo Narrow 400/500/700 (labels, eyebrows, meta) ──
+        [
+            'family' => 'Archivo Narrow',
+            'weight' => 400,
+            'style'  => 'normal',
+            'api'    => 'https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@400&display=swap',
+        ],
+        [
+            'family' => 'Archivo Narrow',
+            'weight' => 500,
+            'style'  => 'normal',
+            'api'    => 'https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@500&display=swap',
+        ],
+        [
+            'family' => 'Archivo Narrow',
+            'weight' => 700,
+            'style'  => 'normal',
+            'api'    => 'https://fonts.googleapis.com/css2?family=Archivo+Narrow:wght@700&display=swap',
+        ],
+        // ── Instrument Serif 400 normal + ITALIQUE (.kicker, .vs) ──
+        [
+            'family' => 'Instrument Serif',
+            'weight' => 400,
+            'style'  => 'normal',
+            'api'    => 'https://fonts.googleapis.com/css2?family=Instrument+Serif&display=swap',
+        ],
+        [
+            'family' => 'Instrument Serif',
+            'weight' => 400,
+            'style'  => 'italic',
+            'slug'   => 'instrument-serif-400-italic', // slug distinct : sinon écrase le romain
+            'api'    => 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&display=swap',
+        ],
+        // ── Share Tech Mono 400 (.combi-cote, cotes) ──
+        [
+            'family' => 'Share Tech Mono',
+            'weight' => 400,
+            'style'  => 'normal',
+            'api'    => 'https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap',
+        ],
     ];
 
     $cssBlocks = [];
     $errors    = [];
 
     foreach ($fonts as $font) {
-        $slug      = strtolower(str_replace([' ', ':'], ['-', ''], $font['family'])) . '-' . $font['weight'];
+        $slug      = $font['slug']
+            ?? (strtolower(str_replace([' ', ':'], ['-', ''], $font['family'])) . '-' . $font['weight']);
         $cacheWoff = FONT_CACHE_DIR . $slug . '.woff2';
         $woff2Data = null;
 
