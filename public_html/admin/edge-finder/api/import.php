@@ -197,14 +197,29 @@ try {
         );
         $n_matches++;
 
+        // v8.2 — flags de coherence au niveau MATCH (P1.3 / P1.4 / P1.6)
+        $coh = $m['coherence'] ?? null;
+        if (is_array($coh)) {
+            SE_Db::execute(
+                "UPDATE pick_matches SET data_suspect = ?, quarantine = ?, coherence_json = ?
+                 WHERE match_id = ?",
+                [
+                    !empty($coh['data_suspect']) ? 1 : 0,
+                    !empty($coh['quarantine']) ? 1 : 0,
+                    json_encode($coh, JSON_UNESCAPED_UNICODE),
+                    $match_id,
+                ]
+            );
+        }
+
         foreach ($m['candidates'] ?? [] as $c) {
             SE_Db::execute(
                 "INSERT INTO pick_candidates
                  (match_id, market, market_group, model_proba, devig_proba,
                   odds, ev, status, conviction, below_min_odds,
                   conv_flags, conv_breakdown, conv_tier, conv_auto_eligible,
-                  recommended)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                  recommended, recommendable, tracking_only, rejections)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 [
                     $match_id,
                     $c['market'],
