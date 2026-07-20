@@ -236,6 +236,10 @@ try {
                     $c['conv_tier'] ?? null,
                     !empty($c['conv_auto_eligible']) ? 1 : 0,
                     !empty($c['recommended']) ? 1 : 0,
+                    // v8.2 — verdict des filtres de coherence (audit)
+                    array_key_exists('recommendable', $c) ? (!empty($c['recommendable']) ? 1 : 0) : 1,
+                    !empty($c['tracking_only']) ? 1 : 0,
+                    !empty($c['rejections']) ? json_encode($c['rejections'], JSON_UNESCAPED_UNICODE) : null,
                 ]
             );
             $n_candidates++;
