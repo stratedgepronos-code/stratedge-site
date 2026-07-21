@@ -1,6 +1,6 @@
 <?php
 /**
- * StratEdge Quant Engine — Page Stats Analytics
+ * StratEdge Edge Finder — Page Stats Analytics
  * URL : /panel-x9k3m/edge-finder/stats.php
  *
  * Analyse ROI par marché, ligue, cote, conviction, EV.
@@ -267,7 +267,7 @@ function flag_emoji(string $country): string {
   <meta charset="UTF-8">
   <link rel="icon" type="image/png" href="/assets/images/mascotte.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>📊 Analytics — Quant Engine</title>
+  <title>📊 Stats — Edge Finder</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Bebas+Neue&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/dashboard.css">
   <style>
@@ -747,7 +747,7 @@ try {
   <?php endif ?>
 
   <footer class="ef-footer">
-    <p>StratEdge Quant Engine · Performance Analytics</p>
+    <p>StratEdge Edge Finder v1.0 · Stats Analytics</p>
     <p class="ef-disclaimer">Mesure de performance basée sur les picks marqués won/lost. Validation humaine requise.</p>
   </footer>
 </div>
