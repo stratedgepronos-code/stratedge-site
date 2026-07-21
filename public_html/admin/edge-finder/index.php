@@ -1,6 +1,6 @@
 <?php
 /**
- * StratEdge Quant Engine — Dashboard principal
+ * StratEdge Edge Finder — Dashboard principal
  * URL : /panel-x9k3m/edge-finder/
  */
 declare(strict_types=1);
@@ -48,126 +48,6 @@ $stats = SE_Db::queryOne(
      JOIN pick_matches m ON m.match_id = c.match_id
      WHERE m.kickoff_utc >= UTC_TIMESTAMP() - INTERVAL 30 DAY"
 );
-
-
-// =============================================================================
-// QUANT ENGINE KPI SNAPSHOT
-// =============================================================================
-// Les indicateurs de performance sont calculés à mise plate de 1 unité.
-// Aucun CLV, closing odds ou historique de bankroll n'est simulé ici.
-$quantKpis = [];
-
-try {
-    $quantKpis = SE_Db::queryOne(
-        "SELECT
-            SUM(
-                CASE
-                    WHEN m.kickoff_utc >= UTC_TIMESTAMP() - INTERVAL 6 HOUR
-                     AND c.user_decision = 'pending'
-                     AND c.recommendable = 1
-                     AND c.tracking_only = 0
-                    THEN 1 ELSE 0
-                END
-            ) AS exploitable_candidates,
-
-            COUNT(
-                DISTINCT CASE
-                    WHEN m.kickoff_utc >= UTC_TIMESTAMP() - INTERVAL 6 HOUR
-                     AND (m.data_suspect = 1 OR m.quarantine = 1)
-                    THEN m.match_id
-                END
-            ) AS flagged_matches,
-
-            SUM(CASE WHEN c.user_decision = 'won'  THEN 1 ELSE 0 END) AS n_won,
-            SUM(CASE WHEN c.user_decision = 'lost' THEN 1 ELSE 0 END) AS n_lost,
-
-            SUM(
-                CASE
-                    WHEN c.user_decision = 'won'  THEN c.odds - 1
-                    WHEN c.user_decision = 'lost' THEN -1
-                    ELSE 0
-                END
-            ) AS net_units,
-
-            AVG(
-                CASE WHEN c.user_decision IN ('won','lost')
-                     THEN c.odds END
-            ) AS avg_odds,
-
-            AVG(
-                CASE WHEN c.user_decision IN ('won','lost')
-                     THEN c.ev END
-            ) AS avg_ev,
-
-            AVG(
-                CASE WHEN c.user_decision IN ('won','lost')
-                     THEN c.conviction END
-            ) AS avg_conviction
-
-         FROM pick_candidates c
-         JOIN pick_matches m ON m.match_id = c.match_id
-         WHERE m.kickoff_utc >= UTC_TIMESTAMP() - INTERVAL 30 DAY"
-    ) ?? [];
-
-} catch (Throwable $e) {
-    // Fallback compatible si la migration de cohérence v8.2 n'est pas encore active.
-    $quantKpis = SE_Db::queryOne(
-        "SELECT
-            SUM(
-                CASE
-                    WHEN m.kickoff_utc >= UTC_TIMESTAMP() - INTERVAL 6 HOUR
-                     AND c.user_decision = 'pending'
-                     AND c.status IN ('auto','manual')
-                    THEN 1 ELSE 0
-                END
-            ) AS exploitable_candidates,
-
-            0 AS flagged_matches,
-
-            SUM(CASE WHEN c.user_decision = 'won'  THEN 1 ELSE 0 END) AS n_won,
-            SUM(CASE WHEN c.user_decision = 'lost' THEN 1 ELSE 0 END) AS n_lost,
-
-            SUM(
-                CASE
-                    WHEN c.user_decision = 'won'  THEN c.odds - 1
-                    WHEN c.user_decision = 'lost' THEN -1
-                    ELSE 0
-                END
-            ) AS net_units,
-
-            AVG(
-                CASE WHEN c.user_decision IN ('won','lost')
-                     THEN c.odds END
-            ) AS avg_odds,
-
-            AVG(
-                CASE WHEN c.user_decision IN ('won','lost')
-                     THEN c.ev END
-            ) AS avg_ev,
-
-            AVG(
-                CASE WHEN c.user_decision IN ('won','lost')
-                     THEN c.conviction END
-            ) AS avg_conviction
-
-         FROM pick_candidates c
-         JOIN pick_matches m ON m.match_id = c.match_id
-         WHERE m.kickoff_utc >= UTC_TIMESTAMP() - INTERVAL 30 DAY"
-    ) ?? [];
-}
-
-$qWon          = (int)($quantKpis['n_won'] ?? 0);
-$qLost         = (int)($quantKpis['n_lost'] ?? 0);
-$qResolved     = $qWon + $qLost;
-$qNetUnits     = (float)($quantKpis['net_units'] ?? 0);
-$qWinRate      = $qResolved > 0 ? ($qWon * 100 / $qResolved) : 0.0;
-$qRoi          = $qResolved > 0 ? ($qNetUnits * 100 / $qResolved) : 0.0;
-$qAvgOdds      = (float)($quantKpis['avg_odds'] ?? 0);
-$qAvgEv        = (float)($quantKpis['avg_ev'] ?? 0);
-$qAvgConv      = (float)($quantKpis['avg_conviction'] ?? 0);
-$qExploitable  = (int)($quantKpis['exploitable_candidates'] ?? 0);
-$qFlagged      = (int)($quantKpis['flagged_matches'] ?? 0);
-$qAnalysed     = (int)($lastImport['matchs_analyses'] ?? 0);
 
 // =============================================================================
 // Liste des ligues distinctes (pour le filtre)
@@ -394,7 +274,7 @@ function team_logo_img(string $teamName, int $size = 24, string $fsLogo = ''): s
   <meta charset="UTF-8">
   <link rel="icon" type="image/png" href="/assets/images/mascotte.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🎯 Quant Engine — Admin StratEdge</title>
+  <title>🎯 Edge Finder — Admin StratEdge</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Bebas+Neue&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/dashboard.css">
 </head>
@@ -513,8 +393,8 @@ function ef_format_match_for_claude(array $m, array $candidates): string {
 }
 
 function ef_format_day_intro(string $day_label, int $nb_matches): string {
-    return "# Picks Quant Engine — {$day_label}\n\n"
-         . "Analyse demande : ci-dessous {$nb_matches} match" . ($nb_matches > 1 ? 's' : '') . " avec leurs picks candidats issus de mon Quant Engine StratEdge (methodologie v7.7, Dixon-Coles + power de-vigging + Kelly).\n\n"
+    return "# Picks Edge Finder — {$day_label}\n\n"
+         . "Analyse demande : ci-dessous {$nb_matches} match" . ($nb_matches > 1 ? 's' : '') . " avec leurs picks candidats issus de mon Edge Finder StratEdge (methodologie v7.7, Dixon-Coles + power de-vigging + Kelly).\n\n"
          . "Pour chaque match, **critique les picks** : sont-ils coherents avec le profil du match ? "
          . "Y a-t-il des signaux contradictoires ? Quel pick est le plus solide ? Les modeles (xG vs Dixon-Coles) sont-ils alignes ? "
          . "Le pick ⭐ est mon pick recommande par anti-correlation (1/match).\n\n"
@@ -522,8 +402,8 @@ function ef_format_day_intro(string $day_label, int $nb_matches): string {
 }
 
 function ef_format_single_match_intro(): string {
-    return "# Pick Quant Engine — Analyse demande\n\n"
-         . "Voici un match avec ses picks candidats issus de mon Quant Engine StratEdge (methodologie v7.7).\n\n"
+    return "# Pick Edge Finder — Analyse demande\n\n"
+         . "Voici un match avec ses picks candidats issus de mon Edge Finder StratEdge (methodologie v7.7).\n\n"
          . "**Critique les picks** : sont-ils coherents ? Y a-t-il des signaux contradictoires ? "
          . "Quel pick recommandes-tu, et lesquels eviter ? Les modeles (xG vs Dixon-Coles) sont-ils alignes ?\n\n"
          . "---\n";
@@ -553,7 +433,7 @@ function ef_format_single_match_intro(): string {
           <line x1="1" y1="28" x2="11" y2="28" stroke="url(#efLogoGrad)" stroke-width="2.5" stroke-linecap="round"/>
           <line x1="45" y1="28" x2="55" y2="28" stroke="url(#efLogoGrad)" stroke-width="2.5" stroke-linecap="round"/>
         </svg>
-        <h1>QUANT ENGINE</h1>
+        <h1>EDGE FINDER</h1>
       </div>
       <p class="ef-subtitle">Détecteur de candidats value bets — méthodologie v7.7</p>
     </div>
@@ -577,78 +457,6 @@ function ef_format_single_match_intro(): string {
     <a href="./" class="ef-tab active">🎯 Dashboard</a>
     <a href="stats.php" class="ef-tab">📊 Stats</a>
   </div>
-
-
-  <!-- QUANT ENGINE KPI SNAPSHOT -->
-  <section class="qe-kpis" aria-label="Indicateurs Quant Engine">
-
-    <div class="qe-kpi" data-tone="cyan">
-      <div class="qe-kpi-label">⚽ Matchs analysés</div>
-      <div class="qe-kpi-value"><?= number_format($qAnalysed, 0, ',', ' ') ?></div>
-      <div class="qe-kpi-sub">dernier import moteur</div>
-    </div>
-
-    <div class="qe-kpi" data-tone="green">
-      <div class="qe-kpi-label">🎯 Exploitables</div>
-      <div class="qe-kpi-value"><?= number_format($qExploitable, 0, ',', ' ') ?></div>
-      <div class="qe-kpi-sub">pending et recommandables</div>
-    </div>
-
-    <div class="qe-kpi" data-tone="<?= $qFlagged > 0 ? 'red' : 'muted' ?>">
-      <div class="qe-kpi-label">⚠️ Alertes cohérence</div>
-      <div class="qe-kpi-value"><?= number_format($qFlagged, 0, ',', ' ') ?></div>
-      <div class="qe-kpi-sub">suspects ou quarantaine</div>
-    </div>
-
-    <div class="qe-kpi" data-tone="purple">
-      <div class="qe-kpi-label">📋 Picks résolus</div>
-      <div class="qe-kpi-value"><?= number_format($qResolved, 0, ',', ' ') ?></div>
-      <div class="qe-kpi-sub"><?= $qWon ?> gagnés · <?= $qLost ?> perdus</div>
-    </div>
-
-    <div class="qe-kpi" data-tone="<?= $qWinRate >= 50 ? 'green' : 'yellow' ?>">
-      <div class="qe-kpi-label">🏆 Win rate</div>
-      <div class="qe-kpi-value"><?= number_format($qWinRate, 1, ',', ' ') ?>%</div>
-      <div class="qe-kpi-sub">sur les picks tranchés</div>
-    </div>
-
-    <div class="qe-kpi" data-tone="<?= $qNetUnits >= 0 ? 'green' : 'red' ?>">
-      <div class="qe-kpi-label">💰 Unités nettes</div>
-      <div class="qe-kpi-value">
-        <?= ($qNetUnits >= 0 ? '+' : '') . number_format($qNetUnits, 2, ',', ' ') ?>u
-      </div>
-      <div class="qe-kpi-sub">mise plate de 1 unité</div>
-    </div>
-
-    <div class="qe-kpi" data-tone="<?= $qRoi >= 0 ? 'green' : 'red' ?>">
-      <div class="qe-kpi-label">📈 ROI réel</div>
-      <div class="qe-kpi-value">
-        <?= ($qRoi >= 0 ? '+' : '') . number_format($qRoi, 1, ',', ' ') ?>%
-      </div>
-      <div class="qe-kpi-sub">profit / picks résolus</div>
-    </div>
-
-    <div class="qe-kpi" data-tone="cyan">
-      <div class="qe-kpi-label">🎲 Cote moyenne</div>
-      <div class="qe-kpi-value"><?= number_format($qAvgOdds, 2, ',', ' ') ?></div>
-      <div class="qe-kpi-sub">picks gagnés et perdus</div>
-    </div>
-
-    <div class="qe-kpi" data-tone="<?= $qAvgEv >= 0 ? 'green' : 'red' ?>">
-      <div class="qe-kpi-label">⚡ EV moyenne</div>
-      <div class="qe-kpi-value">
-        <?= ($qAvgEv >= 0 ? '+' : '') . number_format($qAvgEv * 100, 1, ',', ' ') ?>%
-      </div>
-      <div class="qe-kpi-sub">estimation pré-match</div>
-    </div>
-
-    <div class="qe-kpi" data-tone="pink">
-      <div class="qe-kpi-label">🧠 Conviction moyenne</div>
-      <div class="qe-kpi-value"><?= number_format($qAvgConv, 0, ',', ' ') ?></div>
-      <div class="qe-kpi-sub">score interne du modèle</div>
-    </div>
-
-  </section>
 
   <!-- ─────────────────────────────────────────────────────────── STATS -->
   <section class="ef-stats">
@@ -894,7 +702,7 @@ function ef_format_single_match_intro(): string {
   <?php endif ?>
 
   <footer class="ef-footer">
-    <p>StratEdge Quant Engine · Méthodologie v7.7 · Sweet spot EV [+3% ; +8%]</p>
+    <p>StratEdge Edge Finder v1.0 · Méthodologie v7.7 · Sweet spot [+3% ; +8%]</p>
     <p class="ef-disclaimer">Outil interne d'aide à la décision. Validation humaine requise. Le jeu peut être dangereux : 09 74 75 13 13.</p>
   </footer>
 </div>
