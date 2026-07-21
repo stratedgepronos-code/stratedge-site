@@ -49,6 +49,126 @@ $stats = SE_Db::queryOne(
      WHERE m.kickoff_utc >= UTC_TIMESTAMP() - INTERVAL 30 DAY"
 );
 
+
+// =============================================================================
+// QUANT ENGINE KPI SNAPSHOT
+// =============================================================================
+// Les indicateurs de performance sont calculés à mise plate de 1 unité.
+// Aucun CLV, closing odds ou historique de bankroll n'est simulé ici.
+$quantKpis = [];
+
+try {
+    $quantKpis = SE_Db::queryOne(
+        "SELECT
+            SUM(
+                CASE
+                    WHEN m.kickoff_utc >= UTC_TIMESTAMP() - INTERVAL 6 HOUR
+                     AND c.user_decision = 'pending'
+                     AND c.recommendable = 1
+                     AND c.tracking_only = 0
+                    THEN 1 ELSE 0
+                END
+            ) AS exploitable_candidates,
+
+            COUNT(
+                DISTINCT CASE
+                    WHEN m.kickoff_utc >= UTC_TIMESTAMP() - INTERVAL 6 HOUR
+                     AND (m.data_suspect = 1 OR m.quarantine = 1)
+                    THEN m.match_id
+                END
+            ) AS flagged_matches,
+
+            SUM(CASE WHEN c.user_decision = 'won'  THEN 1 ELSE 0 END) AS n_won,
+            SUM(CASE WHEN c.user_decision = 'lost' THEN 1 ELSE 0 END) AS n_lost,
+
+            SUM(
+                CASE
+                    WHEN c.user_decision = 'won'  THEN c.odds - 1
+                    WHEN c.user_decision = 'lost' THEN -1
+                    ELSE 0
+                END
+            ) AS net_units,
+
+            AVG(
+                CASE WHEN c.user_decision IN ('won','lost')
+                     THEN c.odds END
+            ) AS avg_odds,
+
+            AVG(
+                CASE WHEN c.user_decision IN ('won','lost')
+                     THEN c.ev END
+            ) AS avg_ev,
+
+            AVG(
+                CASE WHEN c.user_decision IN ('won','lost')
+                     THEN c.conviction END
+            ) AS avg_conviction
+
+         FROM pick_candidates c
+         JOIN pick_matches m ON m.match_id = c.match_id
+         WHERE m.kickoff_utc >= UTC_TIMESTAMP() - INTERVAL 30 DAY"
+    ) ?? [];
+
+} catch (Throwable $e) {
+    // Fallback compatible si la migration de cohérence v8.2 n'est pas encore active.
+    $quantKpis = SE_Db::queryOne(
+        "SELECT
+            SUM(
+                CASE
+                    WHEN m.kickoff_utc >= UTC_TIMESTAMP() - INTERVAL 6 HOUR
+                     AND c.user_decision = 'pending'
+                     AND c.status IN ('auto','manual')
+                    THEN 1 ELSE 0
+                END
+            ) AS exploitable_candidates,
+
+            0 AS flagged_matches,
+
+            SUM(CASE WHEN c.user_decision = 'won'  THEN 1 ELSE 0 END) AS n_won,
+            SUM(CASE WHEN c.user_decision = 'lost' THEN 1 ELSE 0 END) AS n_lost,
+
+            SUM(
+                CASE
+                    WHEN c.user_decision = 'won'  THEN c.odds - 1
+                    WHEN c.user_decision = 'lost' THEN -1
+                    ELSE 0
+                END
+            ) AS net_units,
+
+            AVG(
+                CASE WHEN c.user_decision IN ('won','lost')
+                     THEN c.odds END
+            ) AS avg_odds,
+
+            AVG(
+                CASE WHEN c.user_decision IN ('won','lost')
+                     THEN c.ev END
+            ) AS avg_ev,
+
+            AVG(
+                CASE WHEN c.user_decision IN ('won','lost')
+                     THEN c.conviction END
+            ) AS avg_conviction
+
+         FROM pick_candidates c
+         JOIN pick_matches m ON m.match_id = c.match_id
+         WHERE m.kickoff_utc >= UTC_TIMESTAMP() - INTERVAL 30 DAY"
+    ) ?? [];
+}
+
+$qWon          = (int)($quantKpis['n_won'] ?? 0);
+$qLost         = (int)($quantKpis['n_lost'] ?? 0);
+$qResolved     = $qWon + $qLost;
+$qNetUnits     = (float)($quantKpis['net_units'] ?? 0);
+$qWinRate      = $qResolved > 0 ? ($qWon * 100 / $qResolved) : 0.0;
+$qRoi          = $qResolved > 0 ? ($qNetUnits * 100 / $qResolved) : 0.0;
+$qAvgOdds      = (float)($quantKpis['avg_odds'] ?? 0);
+$qAvgEv        = (float)($quantKpis['avg_ev'] ?? 0);
+$qAvgConv      = (float)($quantKpis['avg_conviction'] ?? 0);
+$qExploitable  = (int)($quantKpis['exploitable_candidates'] ?? 0);
+$qFlagged      = (int)($quantKpis['flagged_matches'] ?? 0);
+$qAnalysed     = (int)($lastImport['matchs_analyses'] ?? 0);
+
 // =============================================================================
 // Liste des ligues distinctes (pour le filtre)
 // =============================================================================
@@ -457,6 +577,78 @@ function ef_format_single_match_intro(): string {
     <a href="./" class="ef-tab active">🎯 Dashboard</a>
     <a href="stats.php" class="ef-tab">📊 Stats</a>
   </div>
+
+
+  <!-- QUANT ENGINE KPI SNAPSHOT -->
+  <section class="qe-kpis" aria-label="Indicateurs Quant Engine">
+
+    <div class="qe-kpi" data-tone="cyan">
+      <div class="qe-kpi-label">⚽ Matchs analysés</div>
+      <div class="qe-kpi-value"><?= number_format($qAnalysed, 0, ',', ' ') ?></div>
+      <div class="qe-kpi-sub">dernier import moteur</div>
+    </div>
+
+    <div class="qe-kpi" data-tone="green">
+      <div class="qe-kpi-label">🎯 Exploitables</div>
+      <div class="qe-kpi-value"><?= number_format($qExploitable, 0, ',', ' ') ?></div>
+      <div class="qe-kpi-sub">pending et recommandables</div>
+    </div>
+
+    <div class="qe-kpi" data-tone="<?= $qFlagged > 0 ? 'red' : 'muted' ?>">
+      <div class="qe-kpi-label">⚠️ Alertes cohérence</div>
+      <div class="qe-kpi-value"><?= number_format($qFlagged, 0, ',', ' ') ?></div>
+      <div class="qe-kpi-sub">suspects ou quarantaine</div>
+    </div>
+
+    <div class="qe-kpi" data-tone="purple">
+      <div class="qe-kpi-label">📋 Picks résolus</div>
+      <div class="qe-kpi-value"><?= number_format($qResolved, 0, ',', ' ') ?></div>
+      <div class="qe-kpi-sub"><?= $qWon ?> gagnés · <?= $qLost ?> perdus</div>
+    </div>
+
+    <div class="qe-kpi" data-tone="<?= $qWinRate >= 50 ? 'green' : 'yellow' ?>">
+      <div class="qe-kpi-label">🏆 Win rate</div>
+      <div class="qe-kpi-value"><?= number_format($qWinRate, 1, ',', ' ') ?>%</div>
+      <div class="qe-kpi-sub">sur les picks tranchés</div>
+    </div>
+
+    <div class="qe-kpi" data-tone="<?= $qNetUnits >= 0 ? 'green' : 'red' ?>">
+      <div class="qe-kpi-label">💰 Unités nettes</div>
+      <div class="qe-kpi-value">
+        <?= ($qNetUnits >= 0 ? '+' : '') . number_format($qNetUnits, 2, ',', ' ') ?>u
+      </div>
+      <div class="qe-kpi-sub">mise plate de 1 unité</div>
+    </div>
+
+    <div class="qe-kpi" data-tone="<?= $qRoi >= 0 ? 'green' : 'red' ?>">
+      <div class="qe-kpi-label">📈 ROI réel</div>
+      <div class="qe-kpi-value">
+        <?= ($qRoi >= 0 ? '+' : '') . number_format($qRoi, 1, ',', ' ') ?>%
+      </div>
+      <div class="qe-kpi-sub">profit / picks résolus</div>
+    </div>
+
+    <div class="qe-kpi" data-tone="cyan">
+      <div class="qe-kpi-label">🎲 Cote moyenne</div>
+      <div class="qe-kpi-value"><?= number_format($qAvgOdds, 2, ',', ' ') ?></div>
+      <div class="qe-kpi-sub">picks gagnés et perdus</div>
+    </div>
+
+    <div class="qe-kpi" data-tone="<?= $qAvgEv >= 0 ? 'green' : 'red' ?>">
+      <div class="qe-kpi-label">⚡ EV moyenne</div>
+      <div class="qe-kpi-value">
+        <?= ($qAvgEv >= 0 ? '+' : '') . number_format($qAvgEv * 100, 1, ',', ' ') ?>%
+      </div>
+      <div class="qe-kpi-sub">estimation pré-match</div>
+    </div>
+
+    <div class="qe-kpi" data-tone="pink">
+      <div class="qe-kpi-label">🧠 Conviction moyenne</div>
+      <div class="qe-kpi-value"><?= number_format($qAvgConv, 0, ',', ' ') ?></div>
+      <div class="qe-kpi-sub">score interne du modèle</div>
+    </div>
+
+  </section>
 
   <!-- ─────────────────────────────────────────────────────────── STATS -->
   <section class="ef-stats">
