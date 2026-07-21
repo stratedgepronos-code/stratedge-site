@@ -1,4 +1,4 @@
-# StratEdge Edge Finder — Admin Dashboard
+# StratEdge Quant Engine — Admin Dashboard
 
 Dashboard interne pour visualiser et valider les candidats de paris détectés
 par le moteur Python `stratedge_edge_finder` (sur PC local).
