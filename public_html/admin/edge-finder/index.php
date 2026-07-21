@@ -1,6 +1,6 @@
 <?php
 /**
- * StratEdge Edge Finder — Dashboard principal
+ * StratEdge Quant Engine — Dashboard principal
  * URL : /panel-x9k3m/edge-finder/
  */
 declare(strict_types=1);
@@ -274,7 +274,7 @@ function team_logo_img(string $teamName, int $size = 24, string $fsLogo = ''): s
   <meta charset="UTF-8">
   <link rel="icon" type="image/png" href="/assets/images/mascotte.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🎯 Edge Finder — Admin StratEdge</title>
+  <title>🎯 Quant Engine — Admin StratEdge</title>
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Bebas+Neue&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/dashboard.css">
 </head>
@@ -393,8 +393,8 @@ function ef_format_match_for_claude(array $m, array $candidates): string {
 }
 
 function ef_format_day_intro(string $day_label, int $nb_matches): string {
-    return "# Picks Edge Finder — {$day_label}\n\n"
-         . "Analyse demande : ci-dessous {$nb_matches} match" . ($nb_matches > 1 ? 's' : '') . " avec leurs picks candidats issus de mon Edge Finder StratEdge (methodologie v7.7, Dixon-Coles + power de-vigging + Kelly).\n\n"
+    return "# Picks Quant Engine — {$day_label}\n\n"
+         . "Analyse demande : ci-dessous {$nb_matches} match" . ($nb_matches > 1 ? 's' : '') . " avec leurs picks candidats issus de mon Quant Engine StratEdge (methodologie v7.7, Dixon-Coles + power de-vigging + Kelly).\n\n"
          . "Pour chaque match, **critique les picks** : sont-ils coherents avec le profil du match ? "
          . "Y a-t-il des signaux contradictoires ? Quel pick est le plus solide ? Les modeles (xG vs Dixon-Coles) sont-ils alignes ? "
          . "Le pick ⭐ est mon pick recommande par anti-correlation (1/match).\n\n"
@@ -402,8 +402,8 @@ function ef_format_day_intro(string $day_label, int $nb_matches): string {
 }
 
 function ef_format_single_match_intro(): string {
-    return "# Pick Edge Finder — Analyse demande\n\n"
-         . "Voici un match avec ses picks candidats issus de mon Edge Finder StratEdge (methodologie v7.7).\n\n"
+    return "# Pick Quant Engine — Analyse demande\n\n"
+         . "Voici un match avec ses picks candidats issus de mon Quant Engine StratEdge (methodologie v7.7).\n\n"
          . "**Critique les picks** : sont-ils coherents ? Y a-t-il des signaux contradictoires ? "
          . "Quel pick recommandes-tu, et lesquels eviter ? Les modeles (xG vs Dixon-Coles) sont-ils alignes ?\n\n"
          . "---\n";
@@ -433,7 +433,7 @@ function ef_format_single_match_intro(): string {
           <line x1="1" y1="28" x2="11" y2="28" stroke="url(#efLogoGrad)" stroke-width="2.5" stroke-linecap="round"/>
           <line x1="45" y1="28" x2="55" y2="28" stroke="url(#efLogoGrad)" stroke-width="2.5" stroke-linecap="round"/>
         </svg>
-        <h1>EDGE FINDER</h1>
+        <h1>QUANT ENGINE</h1>
       </div>
       <p class="ef-subtitle">Détecteur de candidats value bets — méthodologie v7.7</p>
     </div>
@@ -702,7 +702,7 @@ function ef_format_single_match_intro(): string {
   <?php endif ?>
 
   <footer class="ef-footer">
-    <p>StratEdge Edge Finder v1.0 · Méthodologie v7.7 · Sweet spot [+3% ; +8%]</p>
+    <p>StratEdge Quant Engine · Méthodologie v7.7 · Sweet spot EV [+3% ; +8%]</p>
     <p class="ef-disclaimer">Outil interne d'aide à la décision. Validation humaine requise. Le jeu peut être dangereux : 09 74 75 13 13.</p>
   </footer>
 </div>
