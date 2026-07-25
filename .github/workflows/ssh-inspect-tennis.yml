@@ -1,4 +1,4 @@
-name: SSH inspect exact tennis patch points
+name: SSH inspect tennis odds pipeline
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ jobs:
   inspect:
     runs-on: ubuntu-latest
     steps:
-      - name: Inspect exact PHP and CSS patch points
+      - name: Inspect live tennis odds pipeline
         env:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
@@ -18,26 +18,57 @@ jobs:
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o IdentitiesOnly=yes alex@31.97.196.145 'bash -s' <<'REMOTE'
-          set -eu
-          MOD=/var/www/stratedgepronos.fr/public_html/admin/edge-finder-tennis
-          echo '=== COCKPIT HEAD 1-90 ==='
-          sed -n '1,90p' "$MOD/cockpit.php"
-          echo '=== PLAYER MARKUP 312-330 ==='
-          sed -n '312,330p' "$MOD/cockpit.php"
-          echo '=== TOOLBAR RULES ==='
-          python3 - "$MOD/assets/tennis-v4.css" <<'PY'
-          import re, sys
-          from pathlib import Path
-          text = Path(sys.argv[1]).read_text(encoding='utf-8', errors='replace').replace('}', '}\n')
-          for line in text.splitlines():
-              if re.search(r'(^|[,{])\s*\.toolbar|filter-form|@media', line, re.I):
-                  print(line[:3000])
-          PY
-          echo '=== STATIC ASSET URLS ==='
-          for url in \
-            'https://stratedgepronos.fr/panel-x9k3m/assets/tennis-ui-force.js?v=20260725-force3' \
-            'https://stratedgepronos.fr/admin/assets/tennis-ui-force.js?v=20260725-force3'; do
-            code=$(curl -L -sS -o /tmp/asset.out -w '%{http_code}' "$url" || true)
-            echo "$code $url size=$(wc -c </tmp/asset.out 2>/dev/null || echo 0)"
+          set -u
+          WEB=/var/www/stratedgepronos.fr/public_html/admin/edge-finder-tennis
+
+          echo '=== TENNIS SYSTEMD TIMERS ==='
+          systemctl list-timers --all --no-pager 2>/dev/null | grep -i tennis || true
+
+          echo '=== TENNIS SYSTEMD SERVICES ==='
+          systemctl list-units --all --type=service --no-pager 2>/dev/null | grep -i tennis || true
+
+          echo '=== TENNIS UNIT DETAILS ==='
+          systemctl list-unit-files --type=service --no-legend 2>/dev/null \
+            | awk 'tolower($1) ~ /tennis/ {print $1}' \
+            | while read -r unit; do
+                echo "--- $unit ---"
+                systemctl show "$unit" \
+                  -p FragmentPath -p WorkingDirectory -p ExecStart -p EnvironmentFiles \
+                  --no-pager 2>/dev/null || true
+              done
+
+          echo '=== COCKPIT ODDS SQL REFERENCES ==='
+          grep -nEi 'odds|price|book|cote|FROM |JOIN |player1_|player2_' "$WEB/cockpit.php" \
+            | head -260 || true
+
+          echo '=== RELEVANT TENNIS FILES ==='
+          find /home/alex /opt /var/www/stratedgepronos.fr \
+            -maxdepth 6 -type f \
+            \( -iname '*tennis*' -o -iname '*odds*' -o -iname '*baseline*' \) \
+            -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/vendor/*' \
+            -printf '%TY-%Tm-%Td %TH:%TM %p\n' 2>/dev/null \
+            | sort -r | head -240 || true
+
+          echo '=== ODDS INGESTION CODE REFERENCES ==='
+          for root in /home/alex /opt /var/www/stratedgepronos.fr/public_html/admin/edge-finder-tennis; do
+            [ -d "$root" ] || continue
+            grep -RniE \
+              'price_missing|prix manquant|cotes en attente|bookmaker|odds|moneyline|player1_odds|player2_odds|tennis_odds|market_key|event_id|match_id' \
+              "$root" \
+              --include='*.py' --include='*.php' --include='*.sh' --include='*.service' --include='*.timer' \
+              --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=vendor --exclude-dir=.venv \
+              2>/dev/null | head -550 || true
           done
+
+          echo '=== RECENT TENNIS LOGS ==='
+          systemctl list-unit-files --type=service --no-legend 2>/dev/null \
+            | awk 'tolower($1) ~ /tennis/ {print $1}' \
+            | while read -r unit; do
+                echo "--- journal $unit ---"
+                journalctl -u "$unit" -n 120 --no-pager 2>/dev/null \
+                  | grep -Ei 'odds|cote|price|match|missing|reject|skip|error|warning|import|upsert|pair' \
+                  | tail -70 || true
+              done
+
+          echo 'INSPECT_ODDS_OK'
           REMOTE
