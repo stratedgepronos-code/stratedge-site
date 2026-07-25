@@ -15,11 +15,20 @@ jobs:
 
       - name: Inspect live tennis module
         env:
-          VPS_HOST: ${{ secrets.VPS_HOST }}
-          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
           VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
         run: |
-          sshpass -p "$VPS_PASSWORD" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 "$VPS_USER@$VPS_HOST" 'bash -s' <<'REMOTE'
+          if [ -n "$VPS_SSH_KEY" ]; then
+            mkdir -p ~/.ssh
+            printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+            chmod 600 ~/.ssh/deploy_key
+            SSH_CMD="ssh -i $HOME/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o IdentitiesOnly=yes"
+          else
+            export SSHPASS="$VPS_PASSWORD"
+            SSH_CMD="sshpass -e ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o PreferredAuthentications=password -o PubkeyAuthentication=no"
+          fi
+
+          $SSH_CMD alex@31.97.196.145 'bash -s' <<'REMOTE'
           set -eu
           BASE=/var/www/stratedgepronos.fr/public_html/admin
           MOD="$BASE/edge-finder-tennis"
@@ -32,5 +41,5 @@ jobs:
           echo "=== FILTER / PLAYER REFERENCES ==="
           grep -RniE 'filter|filtre|player|joueur|country|national|sticky|position:' "$MOD" --include='*.php' --include='*.css' --include='*.js' | head -240 || true
           echo "=== INDEX HEAD ==="
-          sed -n '1,260p' "$MOD/index.php" 2>/dev/null || true
+          sed -n '1,320p' "$MOD/index.php" 2>/dev/null || true
           REMOTE
