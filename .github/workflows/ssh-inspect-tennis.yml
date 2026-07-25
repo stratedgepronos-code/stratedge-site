@@ -1,4 +1,4 @@
-name: SSH verify tennis UI
+name: SSH inspect exact tennis DOM
 
 on:
   pull_request:
@@ -7,10 +7,10 @@ on:
       - '.github/ssh-inspect-trigger.txt'
 
 jobs:
-  verify:
+  inspect:
     runs-on: ubuntu-latest
     steps:
-      - name: Verify live tennis UI
+      - name: Inspect exact live tennis DOM
         env:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
@@ -18,18 +18,26 @@ jobs:
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o IdentitiesOnly=yes alex@31.97.196.145 'bash -s' <<'REMOTE'
-          set -euo pipefail
+          set -eu
           BASE=/var/www/stratedgepronos.fr/public_html/admin
-          SIDEBAR="$BASE/sidebar.php"
-          FLAGS="$BASE/assets/tennis-country-flags.js"
-          BOOTSTRAP="$BASE/assets/tennis-ui-bootstrap.js"
-
-          grep -n 'STRATEDGE_TENNIS_UI_BOOTSTRAP_START' "$SIDEBAR"
-          grep -n 'tennis-ui-bootstrap.js?v=20260725-2' "$SIDEBAR"
-          grep -n 'setupDocument' "$FLAGS" | head -2
-          grep -n 'stratedge-tennis-mobile-filter-static' "$BOOTSTRAP"
-          grep -n 'position: static !important' "$BOOTSTRAP"
-          php -l "$SIDEBAR"
-          stat -c '%n %s bytes %U:%G %a' "$SIDEBAR" "$FLAGS" "$BOOTSTRAP"
-          echo VERIFY_OK
+          MOD="$BASE/edge-finder-tennis"
+          echo '=== WRAPPER PAGE ACTIVE / IFRAME ==='
+          grep -nE 'pageActive|iframe|cockpit' "$MOD/index.php" || true
+          echo '=== LIVE SIDEBAR BOOTSTRAP ==='
+          grep -nA8 -B4 'STRATEDGE_TENNIS_UI_BOOTSTRAP' "$BASE/sidebar.php" || true
+          echo '=== COCKPIT MARKUP CLASSES ==='
+          grep -nEi 'toolbar|filter|filtre|player|joueur|competitor|sticky|position:' "$MOD/cockpit.php" | head -180 || true
+          echo '=== COCKPIT HTML CLASS VALUES ==='
+          grep -oE 'class="[^"]+"' "$MOD/cockpit.php" | sort -u | grep -Ei 'filter|toolbar|player|match|card|name' | head -120 || true
+          echo '=== CSS RELEVANT RULES ==='
+          python3 - "$MOD/assets/tennis-v4.css" <<'PY'
+          import re, sys
+          from pathlib import Path
+          text = Path(sys.argv[1]).read_text(encoding='utf-8', errors='replace').replace('}', '}\n')
+          for line in text.splitlines():
+              if re.search(r'toolbar|filter|sticky|position:fixed|position:sticky|player-name|match-card', line, re.I):
+                  print(line[:2200])
+          PY
+          echo '=== ASSET LOADS IN WRAPPER/COCKPIT ==='
+          grep -nEi '<script|stylesheet|tennis-ui-bootstrap|tennis-country-flags' "$MOD/index.php" "$MOD/cockpit.php" | tail -100 || true
           REMOTE
