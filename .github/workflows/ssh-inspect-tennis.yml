@@ -1,4 +1,4 @@
-name: SSH apply tennis UI patch
+name: SSH inspect tennis permissions
 
 on:
   pull_request:
@@ -7,10 +7,10 @@ on:
       - '.github/ssh-inspect-trigger.txt'
 
 jobs:
-  patch:
+  inspect:
     runs-on: ubuntu-latest
     steps:
-      - name: Apply live tennis UI patch
+      - name: Inspect live tennis permissions
         env:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
@@ -18,8 +18,23 @@ jobs:
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o IdentitiesOnly=yes alex@31.97.196.145 'bash -s' <<'REMOTE'
-          set -euo pipefail
-          curl -fsSL "https://raw.githubusercontent.com/stratedgepronos-code/stratedge-site/master/ops/patch-tennis-ui-vps.sh?ts=$(date +%s)" -o /tmp/patch-tennis-ui-vps.sh
-          chmod +x /tmp/patch-tennis-ui-vps.sh
-          sudo -n /tmp/patch-tennis-ui-vps.sh
+          set -eu
+          BASE=/var/www/stratedgepronos.fr/public_html/admin
+          MOD="$BASE/edge-finder-tennis"
+          WRAPPER="$MOD/index.php"
+          CSS="$MOD/assets/tennis-v4.css"
+          JS="$BASE/assets/tennis-country-flags.js"
+          echo "=== ID ==="
+          id
+          echo "=== PATHS ==="
+          namei -l "$WRAPPER"
+          namei -l "$CSS"
+          echo "=== STATS ==="
+          stat -c '%A %a %U:%G %n -> %N' "$BASE" "$MOD" "$MOD/assets" "$WRAPPER" "$CSS" "$BASE/assets" "$JS"
+          echo "=== WRITABLE ==="
+          for f in "$BASE" "$MOD" "$MOD/assets" "$WRAPPER" "$CSS" "$BASE/assets" "$JS"; do
+            if [ -w "$f" ]; then echo "WRITE YES $f"; else echo "WRITE NO  $f"; fi
+          done
+          echo "=== IFRAME SOURCE ==="
+          grep -nE '<iframe|src=' "$WRAPPER" | tail -12 || true
           REMOTE
