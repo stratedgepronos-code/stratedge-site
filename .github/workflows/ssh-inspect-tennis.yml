@@ -1,4 +1,4 @@
-name: SSH inspect tennis module
+name: SSH apply tennis UI patch
 
 on:
   pull_request:
@@ -7,35 +7,89 @@ on:
       - '.github/ssh-inspect-trigger.txt'
 
 jobs:
-  inspect:
+  patch:
     runs-on: ubuntu-latest
     steps:
-      - name: Inspect live tennis module
+      - uses: actions/checkout@v4
+
+      - name: Configure SSH key
         env:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
           mkdir -p ~/.ssh
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
+
+      - name: Upload iframe-aware flag decorator
+        run: |
+          scp -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o IdentitiesOnly=yes \
+            public_html/admin/assets/tennis-country-flags.js \
+            alex@31.97.196.145:/tmp/tennis-country-flags.js
+
+      - name: Patch live wrapper and mobile CSS
+        run: |
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o IdentitiesOnly=yes alex@31.97.196.145 'bash -s' <<'REMOTE'
-          set -eu
-          MOD=/var/www/stratedgepronos.fr/public_html/admin/edge-finder-tennis
-          INDEX="$MOD/index.php"
+          set -euo pipefail
+          BASE=/var/www/stratedgepronos.fr/public_html/admin
+          MOD="$BASE/edge-finder-tennis"
+          WRAPPER="$MOD/index.php"
           CSS="$MOD/assets/tennis-v4.css"
-          echo "=== INDEX 45-115 ==="
-          sed -n '45,115p' "$INDEX"
-          echo "=== TOOLBAR MARKUP ==="
-          grep -n -A28 -B8 'class="toolbar' "$INDEX" | head -90 || true
-          echo "=== TOOLBAR CSS RULES ==="
-          python3 - "$CSS" <<'PY'
+          FLAG_JS="$BASE/assets/tennis-country-flags.js"
+          STAMP=$(date +%Y%m%d-%H%M%S)
+          BACKUP="$MOD/.backups/ui-fix-$STAMP"
+          mkdir -p "$BACKUP" "$BASE/assets"
+          cp -a "$WRAPPER" "$BACKUP/index.php"
+          cp -a "$CSS" "$BACKUP/tennis-v4.css"
+          [ ! -f "$FLAG_JS" ] || cp -a "$FLAG_JS" "$BACKUP/tennis-country-flags.js"
+          install -m 0644 /tmp/tennis-country-flags.js "$FLAG_JS"
+
+          python3 - "$WRAPPER" "$CSS" <<'PY'
           import re, sys
           from pathlib import Path
-          text = Path(sys.argv[1]).read_text(encoding='utf-8', errors='replace')
-          text = text.replace('}', '}\n')
-          for line in text.splitlines():
-              if re.search(r'toolbar|filter|@media', line, re.I):
-                  print(line[:1800])
+
+          wrapper = Path(sys.argv[1])
+          css = Path(sys.argv[2])
+
+          script_tag = '<script src="/panel-x9k3m/assets/tennis-country-flags.js?v=20260725-iframe3"></script>'
+          text = wrapper.read_text(encoding='utf-8')
+          text = re.sub(r'\s*<script[^>]+tennis-country-flags\.js\?v=[^"\']+["\'][^>]*></script>', '', text)
+          if '</body>' not in text:
+              raise SystemExit('Balise </body> introuvable dans le wrapper Tennis')
+          text = text.replace('</body>', f'    {script_tag}\n</body>', 1)
+          wrapper.write_text(text, encoding='utf-8')
+
+          marker_start = '/* STRATEDGE_MOBILE_FILTER_STATIC_START */'
+          marker_end = '/* STRATEDGE_MOBILE_FILTER_STATIC_END */'
+          block = '''/* STRATEDGE_MOBILE_FILTER_STATIC_START */
+@media (max-width: 760px) {
+  .toolbar,
+  .filter-panel,
+  .filters-panel,
+  [class*="filter-panel"] {
+    position: static !important;
+    inset: auto !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    left: auto !important;
+    z-index: auto !important;
+    transform: none !important;
+    max-height: none !important;
+    overflow: visible !important;
+    margin-bottom: 18px !important;
+  }
+}
+/* STRATEDGE_MOBILE_FILTER_STATIC_END */'''
+          css_text = css.read_text(encoding='utf-8')
+          pattern = re.compile(re.escape(marker_start) + r'.*?' + re.escape(marker_end), re.S)
+          css_text = pattern.sub(block, css_text) if pattern.search(css_text) else css_text.rstrip() + '\n\n' + block + '\n'
+          css.write_text(css_text, encoding='utf-8')
           PY
-          echo "=== SCRIPT TAIL ==="
-          tail -55 "$INDEX"
+
+          php -l "$WRAPPER"
+          grep -q 'tennis-country-flags.js?v=20260725-iframe3' "$WRAPPER"
+          grep -q 'STRATEDGE_MOBILE_FILTER_STATIC_START' "$CSS"
+          grep -q 'setupDocument' "$FLAG_JS"
+          echo "PATCH_OK backup=$BACKUP"
+          echo "wrapper=$(stat -c%s "$WRAPPER") css=$(stat -c%s "$CSS") js=$(stat -c%s "$FLAG_JS")"
           REMOTE
