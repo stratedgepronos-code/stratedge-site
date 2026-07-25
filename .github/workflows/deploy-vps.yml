@@ -51,6 +51,11 @@ jobs:
           git pull --rebase --autostash origin master
           echo "── HEAD déployé ──"
           git log --oneline -3
+
+          echo "── Patch Tennis UI ──"
+          curl -fsSL "https://raw.githubusercontent.com/stratedgepronos-code/stratedge-site/master/ops/patch-tennis-ui-vps.sh?ts=$(date +%s)" -o /tmp/patch-tennis-ui-vps.sh
+          chmod +x /tmp/patch-tennis-ui-vps.sh
+          /tmp/patch-tennis-ui-vps.sh
           REMOTE
 
       - name: Vérification code_version en prod
