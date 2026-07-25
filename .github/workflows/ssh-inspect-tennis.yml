@@ -1,4 +1,4 @@
-name: SSH verify tennis UI
+name: SSH apply tennis UI patch
 
 on:
   pull_request:
@@ -7,10 +7,10 @@ on:
       - '.github/ssh-inspect-trigger.txt'
 
 jobs:
-  verify:
+  patch:
     runs-on: ubuntu-latest
     steps:
-      - name: Verify live tennis UI
+      - name: Apply live tennis UI patch
         env:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
@@ -18,17 +18,8 @@ jobs:
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o IdentitiesOnly=yes alex@31.97.196.145 'bash -s' <<'REMOTE'
-          set -eu
-          BASE=/var/www/stratedgepronos.fr/public_html/admin
-          WRAPPER="$BASE/edge-finder-tennis/index.php"
-          CSS="$BASE/edge-finder-tennis/assets/tennis-v4.css"
-          JS="$BASE/assets/tennis-country-flags.js"
-          echo "=== TENNIS UI VERIFY ==="
-          grep -n 'tennis-country-flags.js?v=20260725-iframe4' "$WRAPPER" || true
-          grep -n 'STRATEDGE_MOBILE_FILTER_STATIC_START' "$CSS" || true
-          grep -n 'setupDocument' "$JS" | head -2 || true
-          echo "=== BACKUPS ==="
-          find "$BASE/edge-finder-tennis/.backups" -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | tail -5 || true
-          echo "=== SIZES ==="
-          stat -c '%n %s bytes' "$WRAPPER" "$CSS" "$JS"
+          set -euo pipefail
+          curl -fsSL "https://raw.githubusercontent.com/stratedgepronos-code/stratedge-site/master/ops/patch-tennis-ui-vps.sh?ts=$(date +%s)" -o /tmp/patch-tennis-ui-vps.sh
+          chmod +x /tmp/patch-tennis-ui-vps.sh
+          /tmp/patch-tennis-ui-vps.sh
           REMOTE
