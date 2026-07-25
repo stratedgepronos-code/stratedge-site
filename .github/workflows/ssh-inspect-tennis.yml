@@ -32,14 +32,32 @@ jobs:
           set -eu
           BASE=/var/www/stratedgepronos.fr/public_html/admin
           MOD="$BASE/edge-finder-tennis"
-          echo "=== HOST ==="
-          hostname
-          echo "=== MODULE FILES ==="
-          find "$MOD" -maxdepth 2 -type f -printf '%p\n' | sort | head -80
-          echo "=== FLAG PATCH FILES ==="
-          ls -la "$BASE/.user.ini" "$BASE/tennis-flags-append.php" "$BASE/assets/tennis-country-flags.js" 2>&1 || true
-          echo "=== FILTER / PLAYER REFERENCES ==="
-          grep -RniE 'filter|filtre|player|joueur|country|national|sticky|position:' "$MOD" --include='*.php' --include='*.css' --include='*.js' | head -240 || true
-          echo "=== INDEX HEAD ==="
-          sed -n '1,320p' "$MOD/index.php" 2>/dev/null || true
+          INDEX="$MOD/index.php"
+          echo "=== FILES ==="
+          find "$MOD" -maxdepth 2 -type f -printf '%f\n' | sort
+          echo "=== PATCH FILES ==="
+          for f in "$BASE/.user.ini" "$BASE/tennis-flags-append.php" "$BASE/assets/tennis-country-flags.js"; do
+            if [ -f "$f" ]; then echo "OK $f $(stat -c%s "$f") bytes"; else echo "MISSING $f"; fi
+          done
+          echo "=== INDEX MATCHES ==="
+          grep -nEi 'filter|filtre|player|joueur|country|national|sticky|position:' "$INDEX" | head -120 || true
+          echo "=== CSS MATCHES ==="
+          find "$MOD" -maxdepth 2 -type f -name '*.css' -print0 | xargs -0 -r grep -nEi 'filter|filtre|sticky|position:' | head -120 || true
+          echo "=== CONTEXTS ==="
+          python3 - "$INDEX" <<'PY'
+          import re, sys
+          from pathlib import Path
+          p = Path(sys.argv[1])
+          lines = p.read_text(encoding='utf-8', errors='replace').splitlines()
+          rx = re.compile(r'filter|filtre|player|joueur|country|national|sticky|position:', re.I)
+          hits = [i for i, line in enumerate(lines) if rx.search(line)]
+          chosen=[]
+          for i in hits:
+              if not chosen or i-chosen[-1] > 12:
+                  chosen.append(i)
+          for i in chosen[:18]:
+              print(f'--- around line {i+1} ---')
+              for j in range(max(0,i-5), min(len(lines),i+9)):
+                  print(f'{j+1:04d}: {lines[j]}')
+          PY
           REMOTE
