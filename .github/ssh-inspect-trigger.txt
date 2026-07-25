@@ -1,1 +1,1 @@
-apply-writable-bootstrap 2026-07-25T01:56Z
+verify-bootstrap 2026-07-25T02:02Z
