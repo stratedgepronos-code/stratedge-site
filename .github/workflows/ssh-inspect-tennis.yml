@@ -1,0 +1,36 @@
+name: SSH inspect tennis module
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - '.github/ssh-inspect-trigger.txt'
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install sshpass
+        run: sudo apt-get update -q && sudo apt-get install -y -q sshpass
+
+      - name: Inspect live tennis module
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          sshpass -p "$VPS_PASSWORD" ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 "$VPS_USER@$VPS_HOST" 'bash -s' <<'REMOTE'
+          set -eu
+          BASE=/var/www/stratedgepronos.fr/public_html/admin
+          MOD="$BASE/edge-finder-tennis"
+          echo "=== HOST ==="
+          hostname
+          echo "=== MODULE FILES ==="
+          find "$MOD" -maxdepth 2 -type f -printf '%p\n' | sort | head -80
+          echo "=== FLAG PATCH FILES ==="
+          ls -la "$BASE/.user.ini" "$BASE/tennis-flags-append.php" "$BASE/assets/tennis-country-flags.js" 2>&1 || true
+          echo "=== FILTER / PLAYER REFERENCES ==="
+          grep -RniE 'filter|filtre|player|joueur|country|national|sticky|position:' "$MOD" --include='*.php' --include='*.css' --include='*.js' | head -240 || true
+          echo "=== INDEX HEAD ==="
+          sed -n '1,260p' "$MOD/index.php" 2>/dev/null || true
+          REMOTE
