@@ -19,31 +19,23 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o IdentitiesOnly=yes alex@31.97.196.145 'bash -s' <<'REMOTE'
           set -eu
-          BASE=/var/www/stratedgepronos.fr/public_html/admin
-          MOD="$BASE/edge-finder-tennis"
+          MOD=/var/www/stratedgepronos.fr/public_html/admin/edge-finder-tennis
           INDEX="$MOD/index.php"
-          echo "=== PATCH FILES ==="
-          for f in "$BASE/.user.ini" "$BASE/tennis-flags-append.php" "$BASE/assets/tennis-country-flags.js"; do
-            if [ -f "$f" ]; then echo "OK $f $(stat -c%s "$f") bytes"; else echo "MISSING $f"; fi
-          done
-          echo "=== INDEX MATCHES ==="
-          grep -nEi 'filter|filtre|player|joueur|country|national|sticky|position:' "$INDEX" | head -90 || true
-          echo "=== CSS MATCHES ==="
-          find "$MOD" -maxdepth 2 -type f -name '*.css' -print0 | xargs -0 -r grep -nEi 'filter|filtre|sticky|position:' | head -90 || true
-          echo "=== TARGET CONTEXTS ==="
-          python3 - "$INDEX" <<'PY'
+          CSS="$MOD/assets/tennis-v4.css"
+          echo "=== INDEX 45-115 ==="
+          sed -n '45,115p' "$INDEX"
+          echo "=== TOOLBAR MARKUP ==="
+          grep -n -A28 -B8 'class="toolbar' "$INDEX" | head -90 || true
+          echo "=== TOOLBAR CSS RULES ==="
+          python3 - "$CSS" <<'PY'
           import re, sys
           from pathlib import Path
-          lines = Path(sys.argv[1]).read_text(encoding='utf-8', errors='replace').splitlines()
-          rx = re.compile(r'filter|filtre|player|joueur|country|national|sticky|position:', re.I)
-          hits = [i for i, line in enumerate(lines) if rx.search(line)]
-          chosen=[]
-          for i in hits:
-              if not chosen or i-chosen[-1] > 18:
-                  chosen.append(i)
-          for i in chosen[:12]:
-              print(f'--- around line {i+1} ---')
-              for j in range(max(0,i-4), min(len(lines),i+7)):
-                  print(f'{j+1:04d}: {lines[j]}')
+          text = Path(sys.argv[1]).read_text(encoding='utf-8', errors='replace')
+          text = text.replace('}', '}\n')
+          for line in text.splitlines():
+              if re.search(r'toolbar|filter|@media', line, re.I):
+                  print(line[:1800])
           PY
+          echo "=== SCRIPT TAIL ==="
+          tail -55 "$INDEX"
           REMOTE
