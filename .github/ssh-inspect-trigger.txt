@@ -1,1 +1,1 @@
-inspect-permissions 2026-07-25T01:48Z
+apply-writable-bootstrap 2026-07-25T01:56Z
