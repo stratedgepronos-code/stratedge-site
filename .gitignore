@@ -49,3 +49,6 @@ public_html/config-keys.php
 public_html/admin/edge-finder/lib/config.php
 public_html/admin/edge-finder/data/imports/
 public_html/admin/edge-finder/data/import.log
+
+# StratEdge Lab — configuration API propre au serveur
+public_html/admin/football-lab/config.local.php

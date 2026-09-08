@@ -1,0 +1,30 @@
+name: StratEdge Lab checks
+on:
+  pull_request:
+    paths:
+      - 'public_html/admin/football-lab/**'
+      - 'public_html/admin/sidebar.php'
+      - 'tests/football-lab/**'
+      - '.github/workflows/football-lab-checks.yml'
+  push:
+    branches: ['codex/stratedge-lab']
+permissions:
+  contents: read
+jobs:
+  php:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: PHP and SQLite
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq php-cli php-sqlite3
+      - name: PHP syntax
+        run: |
+          find public_html/admin/football-lab tests/football-lab -name '*.php' -print0 | xargs -0 -n1 php -l
+          php -l public_html/admin/sidebar.php
+      - name: Import, probabilities, storage and tracking
+        run: php tests/football-lab/run.php
+      - name: JavaScript syntax
+        run: node --check public_html/admin/football-lab/assets/lab.js

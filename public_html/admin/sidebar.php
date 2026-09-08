@@ -316,6 +316,17 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 
     <!-- Edge Finder (super admin uniquement) -->
     <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
+    <div class="nav-group <?= strpos((string)$pageActive, 'football-lab-') === 0 ? 'open' : '' ?>" data-group="football-lab">
+      <button type="button" class="nav-group-toggle" onclick="toggleNavGroup(this)" style="color:#00d4ff;">
+        <span aria-hidden="true">⚽</span> StratEdge Lab
+        <span class="chevron">›</span>
+      </button>
+      <div class="nav-group-inner">
+        <a href="/panel-x9k3m/football-lab/import.php" <?= ($pageActive==='football-lab-import') ? 'class="active"' : '' ?>>Importer PackBall</a>
+        <a href="/panel-x9k3m/football-lab/index.php" <?= ($pageActive==='football-lab-analyses') ? 'class="active"' : '' ?>>Analyses football</a>
+        <a href="/panel-x9k3m/football-lab/history.php" <?= ($pageActive==='football-lab-history') ? 'class="active"' : '' ?>>Suivi des résultats</a>
+      </div>
+    </div>
     <a href="/panel-x9k3m/edge-finder/" class="nav-item <?= ($pageActive==='edge-finder') ?'active':'' ?>" style="color:#ff2d78;">
       <span>🎯</span> Edge Finder
     </a>
