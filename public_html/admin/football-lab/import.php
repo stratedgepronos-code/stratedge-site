@@ -23,9 +23,9 @@ if ($labError) { lab_end(); exit; }
     <p class="lab-muted" id="lab-upload-help">Ton format PackBall est configuré. L’analyse se lance dès que tu choisis le fichier, sans réglage supplémentaire.</p>
 </section>
 <div class="lab-steps lab-import-steps">
-    <div class="lab-step"><b><?= lab_icon('check', 15) ?></b><div><strong>Statistiques reconnues</strong><p>Équipes, horaires et moyennes domicile / extérieur.</p></div></div>
-    <div class="lab-step"><b><?= lab_icon('check', 15) ?></b><div><strong>Cotes déjà incluses</strong><p>Seuils de 1,5 / 2,5 / 3,5 buts et les deux équipes marquent.</p></div></div>
-    <div class="lab-step"><b><?= lab_icon('check', 15) ?></b><div><strong>Résultats directement</strong><p>Les matchs commencés sont écartés du prématch.</p></div></div>
+    <div class="lab-step"><b><?= lab_icon('check', 15) ?></b><div><strong>Statistiques croisées</strong><p>Buts, échantillons, fréquences et contrôles de cohérence.</p></div></div>
+    <div class="lab-step"><b><?= lab_icon('check', 15) ?></b><div><strong>Cotes de 1,60 à 3,50</strong><p>Comparaison aux prix et résistance à un scénario défavorable.</p></div></div>
+    <div class="lab-step"><b><?= lab_icon('check', 15) ?></b><div><strong>Résultats directement</strong><p>Pistes à examiner ou aucun pari si les critères ne sont pas réunis.</p></div></div>
 </div>
 <p class="lab-muted">Garde le même ordre de colonnes dans ton export PackBall. Les horaires sont lus en heure de Paris.</p>
 <?php lab_end(); ?>

@@ -18,5 +18,5 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o IdentitiesOnly=yes alex@31.97.196.145 'bash -s' <<'REMOTE'
           cd /var/www/stratedgepronos.fr/public_html/admin/football-lab
-          php -r 'require "lib/Context.php"; $c = \\StratEdgeLab\\Context::config(); echo "LAB_KEY_CONFIGURED=" . ($c["key"] !== "" ? "yes" : "no") . PHP_EOL; echo "LAB_MODEL_CONFIGURED=" . ($c["model"] !== "" ? "yes" : "no") . PHP_EOL; echo "LAB_LOCAL_CONFIG=" . (is_file("config.local.php") ? "yes" : "no") . PHP_EOL;'
+          php -r 'require "lib/Context.php"; $c = \StratEdgeLab\Context::config(); echo "LAB_KEY_CONFIGURED=" . ($c["key"] !== "" ? "yes" : "no") . PHP_EOL; echo "LAB_MODEL_CONFIGURED=" . ($c["model"] !== "" ? "yes" : "no") . PHP_EOL; echo "LAB_LOCAL_CONFIG=" . (is_file("config.local.php") ? "yes" : "no") . PHP_EOL;'
           REMOTE

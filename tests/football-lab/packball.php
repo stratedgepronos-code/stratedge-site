@@ -19,14 +19,15 @@ $prepared = PackBall::prepare($csv, 'PackBall Custom GPT 01-01-2000(1).csv');
 $match = $prepared['analysis']['matches'][0];
 check(count($prepared['tables']) === 1 && count($prepared['tables']['stats']['headers']) === 46, 'Single 46-column PackBall file');
 check(count($prepared['analysis']['matches']) === 1 && !$prepared['analysis']['errors'], 'Automatic PackBall analysis without posted settings');
-near($match['lambdas']['ft']['home'], 1.0, 'Cross home GF with away GA');
-near($match['lambdas']['ft']['away'], 2.65, 'Cross away GF with home GA');
+near($match['lambdas']['ft']['home'], 1.1, 'Home aggregate shrunk toward league average');
+near($match['lambdas']['ft']['away'], 31.9 / 14, 'Away aggregate shrunk toward league average');
 check($match['stats']['home_n'] === 10 && $match['stats']['away_n'] === 10, 'Samples from export, no default prompt');
 $byId = array_column($match['candidates'], null, 'id');
 foreach (['ft_over_25' => 1.42, 'ft_under_25' => 2.74, 'ft_under_15' => 5.89, 'ft_over_15' => 1.11, 'ft_over_35' => 2.10, 'ft_under_35' => 1.72, 'ft_btts_yes' => 2.13, 'ft_btts_no' => 1.65] as $market => $odds) {
     near($byId[$market]['odds'], $odds, 'Correct repeated Odds column: ' . $market);
 }
-check(count(array_filter($byId, static function ($c) { return $c['eligible']; })) === 8, 'Only the eight supplied markets are selectable');
+check(count($byId) === 8, 'Only the eight supplied markets are analyzed by V2');
+foreach ($byId as $c) { check(!$c['eligible'] || ($c['odds'] >= 1.60 && $c['odds'] <= 3.50 && $c['ev'] >= 0.04 && $c['stress_ev'] >= 0), 'Selection requires useful price and robust model edge'); }
 check($prepared['import']['timezone'] === 'Europe/Paris' && strtotime($match['kickoff']) > time(), 'Date read from row, not old export filename');
 $winter = $exportRow; $winter[3] = '15-01-2030 21:45';
 $summer = $exportRow; $summer[3] = '15-07-2030 21:45';
@@ -87,3 +88,5 @@ try {
     [, $headers] = $upload($csv, 'fixture-token', 'file.txt');
     check(count($fixtureStore->recent(123)) === $before + 1, 'Non-CSV extension rejected');
 } finally { proc_terminate($process); proc_close($process); }
+
+require __DIR__ . '/decision-engine.php';
