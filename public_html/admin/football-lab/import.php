@@ -22,17 +22,18 @@ try {
         }
     }
 } catch (Throwable $e) { $labError = 'Import introuvable ou inaccessible.'; $draft = null; }
-lab_start('Importer les matchs', 'import');
+lab_start('Une nouvelle journée', 'import');
 if ($labError) { lab_end(); exit; }
 if (!$draft): ?>
-<section class="lab-panel"><h2>Nouvelle journée</h2><p>Ajoute ton export de statistiques. Les cotes peuvent être dans ce fichier ou dans un second export.</p>
+<div class="lab-steps"><div class="lab-step"><b>01</b><div><strong>Ajoute tes exports</strong><p>Statistiques et cotes PackBall</p></div></div><div class="lab-step"><b>02</b><div><strong>Vérifie les colonnes</strong><p>Équipes, périodes, échantillons</p></div></div><div class="lab-step"><b>03</b><div><strong>Lance l’analyse</strong><p>Compare les marchés de la journée</p></div></div></div>
+<section class="lab-panel"><div class="lab-section-head"><div><div class="lab-eyebrow">Import de données</div><h2>Tes fichiers, prêts à être analysés.</h2><p>Ajoute les statistiques. Les cotes peuvent être incluses ou provenir d’un second export.</p></div><span class="lab-section-icon"><?= lab_icon('import', 21) ?></span></div>
 <form action="<?= lab_h($labBase) ?>action.php" method="post" enctype="multipart/form-data" class="lab-form">
 <?= lab_token() ?><input type="hidden" name="action" value="upload"><input type="hidden" name="MAX_FILE_SIZE" value="2097152">
 <div class="lab-grid"><?php foreach (['stats' => 'Statistiques PackBall', 'odds' => 'Cotes · facultatif'] as $role => $label): ?>
 <fieldset><legend><?= lab_h($label) ?></legend><label>Fichier CSV UTF-8<input type="file" name="<?= $role ?>" accept=".csv,text/csv" <?= $role === 'stats' ? 'required' : '' ?>></label>
 <label>Séparateur<select name="separator[<?= $role ?>]"><option value="auto">Détecter</option value=";">Point-virgule ;</option><option value=",">Virgule ,</option><option value="&#9;">Tabulation</option></select></label>
 <label class="lab-check"><input type="checkbox" name="header[<?= $role ?>]" value="1" checked> La première ligne contient les noms des colonnes</label></fieldset><?php endforeach; ?></div>
-<p class="lab-muted">2 Mo et 1 000 matchs maximum par fichier. Tu vérifieras les colonnes avant tout calcul.</p><button class="lab-button">Vérifier les fichiers</button></form></section>
+<p class="lab-muted">2 Mo et 1 000 matchs maximum par fichier. Tu vérifieras les colonnes avant tout calcul.</p><button class="lab-button">Vérifier les fichiers <?= lab_icon('arrow', 16) ?></button></form></section>
 <?php $drafts = $labStore->recent($labOwner, 'draft', 5); if ($drafts): ?><section class="lab-panel"><h2>Imports à reprendre</h2><ul class="lab-list"><?php foreach ($drafts as $r): ?><li><a href="<?= lab_h($labBase . 'import.php?id=' . $r['id']) ?>">Import du <?= lab_h($r['created_at']) ?></a></li><?php endforeach; ?></ul></section><?php endif; ?>
 <?php else: $tables = $draft['data']['tables']; ?>
 <p class="lab-notice">Vérifie les exemples de cellules. « Partie gauche / droite » correspond à une valeur au format A | B. Les numéros affichés commencent à 1.</p>

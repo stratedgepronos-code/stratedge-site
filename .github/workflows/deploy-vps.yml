@@ -46,9 +46,24 @@ jobs:
           cd /var/www/stratedgepronos.fr/public_html
           echo "── Etat local avant pull ──"
           git status --porcelain | head -10
+          # Repair the reviewed Lab/slate conflict before pull, preserving all other VPS edits.
+          REPAIR_SCRIPT=$(mktemp /tmp/lab-sidebar-repair.XXXXXX.py)
+          curl -fsSL "https://raw.githubusercontent.com/stratedgepronos-code/stratedge-site/${{ github.sha }}/ops/repair-lab-sidebar.py" -o "$REPAIR_SCRIPT"
+          python3 "$REPAIR_SCRIPT" --root "$(git rev-parse --show-toplevel)"
           # --rebase : tolère les commits locaux faits sur le VPS (rejoués par-dessus)
           # --autostash : tolère les modifs locales non commitées
           git pull --rebase --autostash origin master
+          python3 "$REPAIR_SCRIPT" --root "$(git rev-parse --show-toplevel)"
+          rm -f "$REPAIR_SCRIPT"
+          if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
+            echo "DEPLOY_ERROR: unresolved conflicts; deployment is not healthy" >&2
+            git diff --name-only --diff-filter=U
+            exit 1
+          fi
+          if grep -nE '^(<<<<<<<|=======|>>>>>>>)( |$)' admin/sidebar.php; then
+            echo "DEPLOY_ERROR: sidebar contains conflict markers" >&2
+            exit 1
+          fi
           echo "── HEAD déployé ──"
           git log --oneline -3
 
@@ -56,6 +71,14 @@ jobs:
           curl -fsSL "https://raw.githubusercontent.com/stratedgepronos-code/stratedge-site/master/ops/patch-tennis-ui-vps.sh?ts=$(date +%s)" -o /tmp/patch-tennis-ui-vps.sh
           chmod +x /tmp/patch-tennis-ui-vps.sh
           /tmp/patch-tennis-ui-vps.sh
+          # Check the actual public assets, including bytes: a login page with HTTP 200 is not CSS.
+          LAB_CHECK_DIR=$(mktemp -d /tmp/lab-assets.XXXXXX)
+          for asset in lab.css lab.js; do
+            curl --fail --silent --show-error --max-time 20 "https://stratedgepronos.fr/admin/football-lab/assets/$asset?v=${{ github.sha }}" -o "$LAB_CHECK_DIR/$asset"
+            cmp "admin/football-lab/assets/$asset" "$LAB_CHECK_DIR/$asset"
+          done
+          rm -rf "$LAB_CHECK_DIR"
+          echo "LAB_ASSETS_OK"
           REMOTE
 
       - name: Vérification code_version en prod

@@ -146,13 +146,26 @@ $request = static function (string $page, array $data = []) use ($fixture): arra
     check($exit === 0 && strpos($body . $err, 'Fatal error') === false, 'Request executes: ' . $page . ' ' . $err);
     return [$body, $err];
 };
+// Optional synthetic previews for visual review; never load a production database.
+$renderDir = getenv('LAB_RENDER_DIR') ?: '';
+$savePreview = static function (string $name, string $html) use ($renderDir): void {
+    if (!$renderDir) { return; }
+    if (!is_dir($renderDir)) { mkdir($renderDir, 0700, true); }
+    $html = preg_replace('~(/panel-x9k3m/football-lab/)([a-z]+)\.php(?:\?[^" ]*)?~', '$2.html', $html);
+    file_put_contents($renderDir . '/' . $name . '.html', $html);
+};
 foreach (['import.php', 'index.php', 'history.php'] as $page) {
     [$body] = $request($page);
+    $savePreview(basename($page, '.php'), $body);
+    check(strpos($body, '/admin/football-lab/assets/lab.css?v=') !== false, 'Real CSS path in ' . $page);
+    check(strpos($body, '/panel-x9k3m/football-lab/assets/') === false, 'No broken rewritten asset path');
     check(strpos($body, 'StratEdge Lab') !== false && strpos($body, '</html>') !== false, 'Complete rendered page: ' . $page);
 }
 [$body] = $request('import.php', ['get' => ['id' => $draftId]]);
+$savePreview('mapping', $body);
 check(strpos($body, 'confirm_mapping') !== false && strpos($body, 'Club A') !== false, 'Mapping preview renders');
 [$body] = $request('match.php', ['get' => ['id' => $fixtureId, 'match' => $m['key']]]);
+$savePreview('match', $body);
 check(strpos($body, 'Marchés comparés') !== false && strpos($body, 'Recherche web non configurée') !== false, 'Match detail and honest API state');
 [$body, $err] = $request('index.php', ['session' => []]);
 check($body === '' && strpos($err, 'HTTP_STATUS=302') !== false, 'Unauthenticated user redirected by actual auth');
@@ -166,4 +179,16 @@ check(strpos($err, 'HTTP_STATUS=303') !== false && count($fixtureStore->events($
 check(strpos($body, '<script>alert(1)</script>') === false && strpos($body, '&lt;script&gt;alert(1)&lt;/script&gt;') !== false, 'Stored note escaped in template');
 [$body, $err] = $request('action.php', ['post' => ['action' => 'analyze', 'csrf' => 'fixture-token', 'id' => $draftId, 'confirm_mapping' => '1', 'mapping' => $maps, 'options' => $opts]]);
 check(strpos($err, 'HTTP_STATUS=303') !== false && count($fixtureStore->recent(123)) === 2, 'Mapping-to-analysis controller persists new run');
+// Empty states must not imply measured performance before results exist.
+$emptyOwner = ['session' => ['membre_id' => 999, 'membre_email' => 'lab-test@example.test', 'is_admin' => true, 'csrf_token' => 'fixture-token']];
+[$body] = $request('history.php', $emptyOwner);
+check(strpos($body, 'Le premier résultat lance le suivi.') !== false && strpos($body, '0,00') === false, 'No simulated profit shown without settled prices');
+$savePreview('history-empty', $body);
+[$body] = $request('index.php', $emptyOwner);
+$savePreview('analyses-empty', $body);
+check(strpos($body, 'Chaque sélection commence') !== false, 'Useful empty analysis state');
+$fixtureStore->event($fixtureId, $m['key'], 'result', ['outcome' => 'won'], 123);
+[$body] = $request('history.php'); $savePreview('history-settled', $body);
+check(strpos($body, 'lab-status-won') !== false, 'Settled outcome badge renders');
+check(!preg_match('/^(<{7}|={7}|>{7})(?: |$)/m', file_get_contents(__DIR__ . '/../../public_html/admin/sidebar.php')), 'Sidebar has no merge markers');
 echo "OK — $checks checks\n";

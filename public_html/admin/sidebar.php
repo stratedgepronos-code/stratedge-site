@@ -327,18 +327,8 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
         <a href="/panel-x9k3m/football-lab/history.php" <?= ($pageActive==='football-lab-history') ? 'class="active"' : '' ?>>Suivi des résultats</a>
       </div>
     </div>
-    <a href="/panel-x9k3m/edge-finder/" class="nav-item <?= ($pageActive==='edge-finder') ?'active':'' ?>" style="color:#ff2d78;">
+    <a href="/panel-x9k3m/slate/" class="nav-item <?= ($pageActive==='slate') ?'active':'' ?>" style="color:#ff2d78;">
       <span>🎯</span> Edge Finder
-    </a>
-    <a href="/panel-x9k3m/edge-finder-tennis/" class="nav-item <?= ($pageActive==='edge-finder-tennis') ?'active':'' ?>" style="color:#ff2d78;">
-      <span>🎾</span> Edge Finder Tennis
-    </a>
-
-    <a href="/panel-x9k3m/quant-engine/" class="nav-item <?= ($pageActive==='quant-engine') ?'active':'' ?>" style="color:#00d4ff;">
-      <span>📐</span> Quant Engine
-    </a>
-    <a href="/panel-x9k3m/engine-control.php" class="nav-item <?= ($pageActive==='engine') ?'active':'' ?>" style="color:#2de5a7;">
-      <span>🤖</span> Engine Control
     </a>
     <?php endif; ?>
   </nav>
