@@ -18,7 +18,7 @@ function lab_asset(string $file): string {
 function lab_start(string $title, string $active): void {
     global $db, $labBase, $labError;
     $pageActive = 'football-lab-' . $active;
-    $descriptions = ['import' => 'Tes exports PackBall, le point de départ de chaque analyse.', 'analyses' => 'Compare les marchés. Examine le contexte. Construis ta sélection.', 'history' => 'Confronte les probabilités aux résultats, match après match.'];
+    $descriptions = ['import' => 'Ton export PackBall suffit. Charge le fichier, retrouve tes analyses.', 'analyses' => 'Compare les marchés. Examine le contexte. Construis ta sélection.', 'history' => 'Confronte les probabilités aux résultats, match après match.'];
     ?><!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0a0a12"><title><?= lab_h($title) ?> · StratEdge Lab</title><meta name="robots" content="noindex,nofollow"><style>body{margin:0;background:#0a0a12;color:#f3f5fb;font-family:system-ui,-apple-system,"Segoe UI",sans-serif}</style><link rel="stylesheet" href="<?= lab_h(lab_asset('lab.css')) ?>"></head><body class="lab-body">
     <?php require __DIR__ . '/../sidebar.php'; ?>
     <main class="main lab"><div class="lab-topline"><div class="lab-brand"><?= lab_icon('lab', 21) ?> StratEdge Lab <span>Football</span></div><span class="lab-badge">Modèle expérimental</span></div>

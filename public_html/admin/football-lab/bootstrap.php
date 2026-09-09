@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../includes/auth.php';
 requireAdmin();
 requireSuperAdmin();
 require_once __DIR__ . '/lib/Engine.php';
+require_once __DIR__ . '/lib/PackBall.php';
 require_once __DIR__ . '/lib/Store.php';
 require_once __DIR__ . '/lib/Context.php';
 

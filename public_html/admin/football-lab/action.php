@@ -8,7 +8,23 @@ $redirect = 'import.php';
 try {
     if ($labError) { throw new RuntimeException($labError); }
     $action = (string)($_POST['action'] ?? '');
-    if ($action === 'upload') {
+    if ($action === 'packball_upload') {
+        $file = $_FILES['packball'] ?? null;
+        if (!is_array($file) || !isset($file['error'], $file['tmp_name'], $file['name'], $file['size'])
+            || !is_int($file['error']) || $file['error'] !== UPLOAD_ERR_OK
+            || !is_string($file['tmp_name']) || !is_string($file['name']) || !is_uploaded_file($file['tmp_name'])) {
+            throw new InvalidArgumentException('Le CSV n’a pas été reçu. Choisis un fichier PackBall de 2 Mo maximum.');
+        }
+        if ($file['size'] > 2097152 || strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)) !== 'csv') {
+            throw new InvalidArgumentException('Choisis un fichier CSV PackBall de 2 Mo maximum.');
+        }
+        // One file, one saved analysis. No draft or user-supplied column settings.
+        $prepared = \StratEdgeLab\PackBall::prepare(file_get_contents($file['tmp_name']), $file['name']);
+        $id = $labStore->create('analysis', $prepared, $labOwner);
+        $redirect = 'index.php?id=' . $id;
+        unset($_SESSION['lab_form'], $_SESSION['lab_import_errors']);
+        $_SESSION['lab_success'] = count($prepared['analysis']['matches']) . ' matchs analysés sur ' . $prepared['import']['rows'] . ' lignes. Statistiques et cotes lues dans ton fichier PackBall.';
+    } elseif ($action === 'upload') {
         $tables = [];
         foreach (['stats', 'odds'] as $role) {
             $file = $_FILES[$role] ?? null;

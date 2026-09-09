@@ -9,7 +9,7 @@ on:
       - '.github/workflows/deploy-vps.yml'
       - '.github/workflows/football-lab-checks.yml'
   push:
-    branches: ['codex/stratedge-lab', 'codex/lab-design']
+    branches: ['codex/stratedge-lab', 'codex/lab-design', 'codex/packball-one-file']
 permissions:
   contents: read
 jobs:
