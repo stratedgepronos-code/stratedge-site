@@ -163,7 +163,7 @@ foreach (['import.php', 'index.php', 'history.php'] as $page) {
 }
 [$body] = $request('import.php', ['get' => ['id' => $draftId]]);
 $savePreview('mapping', $body);
-check(strpos($body, 'confirm_mapping') !== false && strpos($body, 'Club A') !== false, 'Mapping preview renders');
+check(substr_count($body, 'type="file"') === 1 && strpos($body, 'name="packball"') !== false && strpos($body, 'confirm_mapping') === false && strpos($body, '<select') === false, 'One file and no mapping/settings, including old draft links');
 [$body] = $request('match.php', ['get' => ['id' => $fixtureId, 'match' => $m['key']]]);
 $savePreview('match', $body);
 check(strpos($body, 'Marchés comparés') !== false && strpos($body, 'Recherche web non configurée') !== false, 'Match detail and honest API state');
@@ -191,4 +191,5 @@ $fixtureStore->event($fixtureId, $m['key'], 'result', ['outcome' => 'won'], 123)
 [$body] = $request('history.php'); $savePreview('history-settled', $body);
 check(strpos($body, 'lab-status-won') !== false, 'Settled outcome badge renders');
 check(!preg_match('/^(<{7}|={7}|>{7})(?: |$)/m', file_get_contents(__DIR__ . '/../../public_html/admin/sidebar.php')), 'Sidebar has no merge markers');
+require __DIR__ . '/packball.php';
 echo "OK — $checks checks\n";

@@ -5,10 +5,13 @@ Accès limité au super administrateur existant. Toutes les actions utilisent PO
 
 ## Fonctionnement
 
-- Import de statistiques et, facultativement, d’un deuxième CSV de cotes. UTF-8, maximum 2 Mo et 1 000 lignes chacun. Les exports restent en base ; aucun fichier utilisateur n’est exécutable sur le serveur.
-- Mapping explicite avec exemples de cellules, sélection de la partie gauche/droite des cellules `A | B`, format de date et fuseau. Les fichiers avec en-tête identique peuvent reprendre le dernier mapping, toujours soumis à confirmation.
-- Croisement des moyennes de buts puis référence Poisson indépendante. Totaux, BTTS, buts par équipe et périodes disposant de leurs quatre moyennes. Pas d’anciens coefficients Claude.
-- Classement par probabilité, filtre de cote facultatif. Un choix initial par match ; absence de candidat possible. Cotes affichées comme exportées, jamais prétendues actualisées.
+- Un seul CSV PackBall avec statistiques et cotes. UTF-8, maximum 2 Mo et 1 000 lignes. La sélection ou le dépôt déclenche directement l’analyse ; aucun second fichier, mapping ou paramètre n’est demandé. Sans JavaScript, un bouton permet de soumettre le même fichier.
+- Profil `packball-custom-gpt-46-v1`, défini à partir du CSV et de la capture fournis le 9 septembre 2026. Vérification des 46 en-têtes ordonnés, séparateur détecté, dates complètes `d-m-Y H:i`, fuseau Europe/Paris. Le nom du fichier ne détermine jamais la date des matchs.
+- Colonnes (numérotation à partir de 1) : cotes 12/13 = +/−2,5 ; 14/15 = −/+1,5 (ordre inversé dans cet export) ; 16/17 = +/−3,5 ; 18/19 = BTTS oui/non. Échantillons 20/21 ; buts marqués 22/23 ; buts encaissés 24/25, domicile puis extérieur.
+- Les en-têtes répétés restent associés à leur position. Une permutation de deux colonnes portant toutes deux « Odds » ne peut pas être détectée par ces seuls en-têtes : conserver l’ordre du tableau fourni. Une autre structure de colonnes est refusée, sans deviner les marchés.
+- Croisement des moyennes de buts puis référence Poisson indépendante. L’import automatique compare les huit marchés du match entier présents dans cet export, uniquement avec une cote exploitable. Les autres statistiques sont conservées dans le tableau source ; cette version du calcul utilise les moyennes de buts et les échantillons, sans transformer les tirs ou les scores HT en moyennes de mi-temps.
+- Classement par probabilité. Un choix initial par match ; absence de candidat possible. Cotes affichées comme exportées, jamais prétendues actualisées. L’import enregistre un rapport même si tous les matchs sont déjà commencés, avec les motifs d’exclusion.
+- Les anciens imports et analyses restent accessibles dans le stockage. Les anciennes actions POST restent compatibles ; la page d’import n’expose plus leur configuration.
 - Signalement des données invalides, collisions, matchs commencés et incohérences entre périodes.
 - Fiche de match, contrôle contextuel, décisions et résultats append-only. Les probabilités initiales restent figées.
 - Suivi des premiers choix par match dans les 100 dernières analyses : réussite, Brier, log-loss, calibration descriptive et ROI fictif sur les seules cotes connues. Les marchés ne sont pas présentés comme rentables ni calibrés.

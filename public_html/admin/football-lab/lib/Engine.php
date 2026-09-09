@@ -264,6 +264,7 @@ final class Engine
                     } catch (\InvalidArgumentException $e) { $warnings[] = $e->getMessage(); }
                     if ($candidate['odds'] !== null) { $candidate['ev'] = $candidate['probability'] * $candidate['odds'] - 1; }
                     if ($minOdds !== null && ($candidate['odds'] === null || $candidate['odds'] < $minOdds)) { $candidate['eligible'] = false; }
+                    if (!empty($options['require_odds']) && $candidate['odds'] === null) { $candidate['eligible'] = false; }
                     if ($candidate['eligible']) { $eligible[] = $candidate; }
                 }
                 unset($candidate);
