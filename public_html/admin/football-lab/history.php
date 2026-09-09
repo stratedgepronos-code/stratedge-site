@@ -3,23 +3,27 @@ declare(strict_types=1);
 require __DIR__ . '/bootstrap.php';
 require __DIR__ . '/layout.php';
 require_once __DIR__ . '/lib/Metrics.php';
-$entries = [];
+$entries = []; $versions = [];
 try {
     if (!$labError) {
         foreach ($labStore->recent($labOwner, 'analysis', 100) as $r) {
             $run = $labStore->get($r['id'], $labOwner); $events = lab_latest($labStore->events($r['id'], $labOwner));
+            $version = $run['data']['analysis']['version']; $versions[$version] = true;
             foreach ($run['data']['analysis']['matches'] as $m) {
                 // Do not retain raw tables and every candidate while aggregating a hundred runs.
                 $summary = array_intersect_key($m, array_flip(['key', 'home', 'away', 'kickoff', 'pick']));
-                $entries[] = ['run_id' => $run['id'], 'created_at' => $run['created_at'], 'match' => $summary, 'result' => $events[$m['key']]['result']['data'] ?? null];
+                $entries[] = ['version' => $version, 'run_id' => $run['id'], 'created_at' => $run['created_at'], 'match' => $summary, 'result' => $events[$m['key']]['result']['data'] ?? null];
             }
         }
     }
 } catch (Throwable $e) { $labError = 'Le suivi est temporairement indisponible.'; }
+$selectedVersion = (string)($_GET['version'] ?? (isset($versions[\StratEdgeLab\DecisionEngine::VERSION]) ? \StratEdgeLab\DecisionEngine::VERSION : (array_key_first($versions) ?? '')));
+$entries = array_values(array_filter($entries, static function ($entry) use ($selectedVersion) { return $entry['version'] === $selectedVersion; }));
 $metrics = \StratEdgeLab\Metrics::summarize($entries);
 lab_start('Le suivi des résultats', 'history');
 if ($labError) { lab_end(); exit; }
 ?>
+<?php if ($versions): ?><form method="get" class="lab-run-select"><label>Version du modèle<select name="version"><?php foreach ($versions as $version => $_): ?><option value="<?= lab_h($version) ?>" <?= $version === $selectedVersion ? 'selected' : '' ?>><?= lab_h($version) ?></option><?php endforeach; ?></select></label><button class="lab-button lab-secondary">Afficher ce suivi</button></form><p class="lab-muted">Les résultats des versions différentes sont séparés. Les prévisions initiales restent conservées.</p><?php endif; ?>
 <div class="lab-stats"><div><small>Échantillon</small><strong><?= $metrics['n'] ?></strong><span>choix réglés hors annulations</span></div><div><small>Précision observée</small><strong><?= $metrics['n'] ? lab_p($metrics['wins'] / $metrics['n']) : '—' ?></strong><span>de choix gagnants</span></div><div><small>Calibration</small><strong><?= $metrics['brier'] === null ? '—' : number_format($metrics['brier'], 4, ',', ' ') ?></strong><span>score de Brier · plus bas = meilleur</span></div></div>
 <div class="lab-two-column">
 <section class="lab-panel"><div class="lab-section-head"><div><div class="lab-eyebrow">La réalité du terrain</div><h2>Prévisions & résultats</h2><p>Les probabilités annoncées face à la réussite observée.</p></div><span class="lab-section-icon"><?= lab_icon('analyses', 21) ?></span></div>

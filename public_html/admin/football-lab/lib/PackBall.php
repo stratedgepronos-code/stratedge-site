@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace StratEdgeLab;
+require_once __DIR__ . '/DecisionEngine.php';
 
 /** The 46-column custom export supplied on 2026-09-09, paired with its column screenshot. */
 final class PackBall
@@ -52,6 +53,7 @@ final class PackBall
             'odds_source' => 'Export PackBall',
         ];
         $result = Engine::analyze(['stats' => $table], ['stats' => $mapping], $options, $now);
+        $result = DecisionEngine::review($result, $table);
         foreach ($result['errors'] as &$error) {
             $row = $table['rows'][$error['row'] - 1] ?? null;
             if ($row) { $error['message'] = $row[5] . ' — ' . $row[8] . ' : ' . $error['message']; }

@@ -1,0 +1,22 @@
+name: Lab context configuration check
+on:
+  push:
+    branches: ['codex/lab-engine-v2']
+    paths: ['.github/workflows/lab-context-check.yml']
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check whether the Lab research connector is configured
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o IdentitiesOnly=yes alex@31.97.196.145 'bash -s' <<'REMOTE'
+          cd /var/www/stratedgepronos.fr/public_html/admin/football-lab
+          php -r 'require "lib/Context.php"; $c = \StratEdgeLab\Context::config(); echo "LAB_KEY_CONFIGURED=" . ($c["key"] !== "" ? "yes" : "no") . PHP_EOL; echo "LAB_MODEL_CONFIGURED=" . ($c["model"] !== "" ? "yes" : "no") . PHP_EOL; echo "LAB_LOCAL_CONFIG=" . (is_file("config.local.php") ? "yes" : "no") . PHP_EOL;'
+          REMOTE
