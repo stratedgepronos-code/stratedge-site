@@ -20,6 +20,6 @@ jobs:
           cd /var/www/stratedgepronos.fr/public_html
           git rev-parse --show-toplevel
           git diff --name-only --diff-filter=U
-          git diff -- public_html/admin/sidebar.php
+          git -C .. diff -- public_html/admin/sidebar.php
           ls -ld admin admin/football-lab public_html/admin/football-lab 2>/dev/null || true
           REMOTE
