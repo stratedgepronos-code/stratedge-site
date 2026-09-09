@@ -5,6 +5,8 @@ on:
       - 'public_html/admin/football-lab/**'
       - 'public_html/admin/sidebar.php'
       - 'tests/football-lab/**'
+      - 'ops/repair-lab-sidebar.py'
+      - '.github/workflows/deploy-vps.yml'
       - '.github/workflows/football-lab-checks.yml'
   push:
     branches: ['codex/stratedge-lab', 'codex/lab-design']
@@ -38,3 +40,5 @@ jobs:
           PY
       - name: JavaScript syntax
         run: node --check public_html/admin/football-lab/assets/lab.js
+      - name: Preserve local sidebar changes during repair
+        run: python3 tests/football-lab/test_sidebar_repair.py
