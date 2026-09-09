@@ -82,8 +82,8 @@ final class DecisionEngine
             foreach ($probabilities as $id => $probability) {
                 $c = $old[$id]; $c['poisson_probability'] = $c['probability']; $c['probability'] = $probability;
                 $c['stress_probability'] = min(array_merge([$probability], array_column($scenarios, $id)));
-                $c['fair_odds'] = 1 / $probability;
-                $c['minimum_price'] = ceil(max(1.04 / $probability, 1 / $c['stress_probability']) * 100) / 100;
+                $c['fair_odds'] = $probability > 0 ? 1 / $probability : null;
+                $c['minimum_price'] = $c['stress_probability'] > 0 ? ceil(max(1.04 / $probability, 1 / $c['stress_probability']) * 100) / 100 : null;
                 $c['ev'] = $c['odds'] === null ? null : $probability * $c['odds'] - 1;
                 $c['stress_ev'] = $c['odds'] === null ? null : $c['stress_probability'] * $c['odds'] - 1;
                 $opposite = str_replace(['_over_', '_under_'], ['_UNDER_', '_OVER_'], $id);

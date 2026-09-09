@@ -1,5 +1,6 @@
 <?php
 use StratEdgeLab\DecisionEngine;
+use StratEdgeLab\PackBall;
 // Exact known NB probabilities: Gamma(2, rate=1) predicts p0=.25, p1=.25, p2=.1875.
 $pmf = DecisionEngine::pmf(2, 1, 200);
 near($pmf[0], 0.25, 'Gamma-Poisson zero probability');
