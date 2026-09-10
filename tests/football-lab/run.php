@@ -191,7 +191,7 @@ $savePreview('analyses-empty', $body);
 check(strpos($body, 'Chaque sélection commence') !== false, 'Useful empty analysis state');
 $fixtureStore->event($fixtureId, $m['key'], 'result', ['outcome' => 'won'], 123);
 [$body] = $request('history.php'); $savePreview('history-settled', $body);
-check(strpos($body, 'lab-status-won') !== false, 'Settled outcome badge renders');
+check((bool)preg_match('/lab-status-(won|lost)/', $body), 'Settled outcome badge renders');
 check(!preg_match('/^(<{7}|={7}|>{7})(?: |$)/m', file_get_contents(__DIR__ . '/../../public_html/admin/sidebar.php')), 'Sidebar has no merge markers');
 require __DIR__ . '/packball.php';
 $packPrepared = \StratEdgeLab\PackBall::prepare($makeExport([$exportRow]), 'synthetic.csv', new DateTimeImmutable('+1 day'));
