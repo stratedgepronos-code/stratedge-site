@@ -137,6 +137,17 @@ $fixtureDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 $fixtureStore = new Store($fixtureDb); $fixtureStore->install();
 $draftId = $fixtureStore->create('draft', ['tables' => ['stats' => $table + ['name' => 'synthetic.csv']]], 123);
 $fixtureId = $fixtureStore->create('analysis', ['analysis' => $run, 'maps' => $maps, 'tables' => ['stats' => $table]], 123);
+$packPrepared = \StratEdgeLab\PackBall::prepare($makeExport([$exportRow]), 'synthetic.csv', new DateTimeImmutable('+1 day'));
+$packRunId = $fixtureStore->create('analysis', $packPrepared, 123);
+$resultRow = $exportRow;
+$resultRow[4] = 'FT'; $resultRow[6] = '2'; $resultRow[7] = '1';
+$resultReport = \StratEdgeLab\ResultsImport::apply($fixtureStore, 123, $makeExport([$resultRow]), 'results.csv', new DateTimeImmutable('+4 days'));
+check($resultReport['recorded'] === 1 && $resultReport['existing'] === 0, 'Finished PackBall import settles the matching analysis');
+$resultReportAgain = \StratEdgeLab\ResultsImport::apply($fixtureStore, 123, $makeExport([$resultRow]), 'results.csv', new DateTimeImmutable('+4 days'));
+check($resultReportAgain['existing'] === 1 && $resultReportAgain['conflict'] === 0, 'Repeated result import is idempotent');
+$conflictRow = $resultRow; $conflictRow[6] = '0'; $conflictRow[7] = '0';
+$conflictReport = \StratEdgeLab\ResultsImport::apply($fixtureStore, 123, $makeExport([$conflictRow]), 'conflict.csv', new DateTimeImmutable('+4 days'));
+check($conflictReport['conflict'] === 1, 'Contradictory score is never silently overwritten');
 $request = static function (string $page, array $data = []) use ($fixture): array {
     $command = escapeshellarg(PHP_BINARY) . ' -d display_errors=1 ' . escapeshellarg(__DIR__ . '/render-child.php') . ' ' . escapeshellarg($fixture) . ' ' . escapeshellarg($page) . ' ' . escapeshellarg(Store::encode($data));
     $pipes = []; $process = proc_open($command, [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
@@ -163,7 +174,7 @@ foreach (['import.php', 'index.php', 'history.php'] as $page) {
 }
 [$body] = $request('import.php', ['get' => ['id' => $draftId]]);
 $savePreview('mapping', $body);
-check(substr_count($body, 'type="file"') === 1 && strpos($body, 'name="packball"') !== false && strpos($body, 'confirm_mapping') === false && strpos($body, '<select') === false, 'One file and no mapping/settings, including old draft links');
+check(substr_count($body, 'type="file"') === 2 && substr_count($body, 'name="packball"') === 2 && strpos($body, 'confirm_mapping') === false && strpos($body, '<select') === false, 'Analysis and result imports have no mapping/settings');
 [$body] = $request('match.php', ['get' => ['id' => $fixtureId, 'match' => $m['key']]]);
 $savePreview('match', $body);
 check(strpos($body, 'Marchés comparés') !== false && strpos($body, 'Recherche web non configurée') !== false, 'Match detail and honest API state');

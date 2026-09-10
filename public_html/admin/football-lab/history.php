@@ -22,7 +22,10 @@ $entries = array_values(array_filter($entries, static function ($entry) use ($se
 $metrics = \StratEdgeLab\Metrics::summarize($entries);
 lab_start('Le suivi des résultats', 'history');
 if ($labError) { lab_end(); exit; }
+$resultsReport = $_SESSION['lab_results_report'] ?? null;
+unset($_SESSION['lab_results_report']);
 ?>
+<?php if (is_array($resultsReport)): ?><section class="lab-panel lab-import-report"><div class="lab-eyebrow">Import des scores</div><h2><?= (int)$resultsReport['recorded'] ?> résultat(s) enregistré(s)</h2><p><?= (int)$resultsReport['existing'] ?> déjà présent(s), <?= (int)$resultsReport['conflict'] ?> contradiction(s). Les lignes non FT restent en attente.</p><?php if (!empty($resultsReport['messages'])): ?><details><summary>Voir les contrôles</summary><ul><?php foreach (array_slice($resultsReport['messages'], 0, 30) as $message): ?><li><?= lab_h($message) ?></li><?php endforeach; ?></ul></details><?php endif; ?></section><?php endif; ?>
 <?php if ($versions): ?><form method="get" class="lab-run-select"><label>Version du modèle<select name="version"><?php foreach ($versions as $version => $_): ?><option value="<?= lab_h($version) ?>" <?= $version === $selectedVersion ? 'selected' : '' ?>><?= lab_h($version) ?></option><?php endforeach; ?></select></label><button class="lab-button lab-secondary">Afficher ce suivi</button></form><p class="lab-muted">Les résultats des versions différentes sont séparés. Les prévisions initiales restent conservées.</p><?php endif; ?>
 <div class="lab-stats"><div><small>Échantillon</small><strong><?= $metrics['n'] ?></strong><span>choix réglés hors annulations</span></div><div><small>Précision observée</small><strong><?= $metrics['n'] ? lab_p($metrics['wins'] / $metrics['n']) : '—' ?></strong><span>de choix gagnants</span></div><div><small>Calibration</small><strong><?= $metrics['brier'] === null ? '—' : number_format($metrics['brier'], 4, ',', ' ') ?></strong><span>score de Brier · plus bas = meilleur</span></div></div>
 <div class="lab-two-column">

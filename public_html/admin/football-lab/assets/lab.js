@@ -68,3 +68,10 @@ if (packballForm) {
     status.hidden = true;
   });
 }
+const resultsForm = document.querySelector('#lab-results-upload');
+if (resultsForm) {
+  const input = resultsForm.querySelector('#lab-results-file');
+  input.addEventListener('change', () => {
+    if (input.files.length === 1 && /\.csv$/i.test(input.files[0].name) && input.files[0].size <= 2097152) resultsForm.requestSubmit();
+  });
+}

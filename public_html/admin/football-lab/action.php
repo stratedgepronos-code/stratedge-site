@@ -8,7 +8,8 @@ $redirect = 'import.php';
 try {
     if ($labError) { throw new RuntimeException($labError); }
     $action = (string)($_POST['action'] ?? '');
-    if ($action === 'packball_upload') {
+    if (in_array($action, ['packball_upload', 'packball_results'], true)) {
+        if ($action === 'packball_results') { $redirect = 'history.php'; unset($_SESSION['lab_results_report']); }
         $file = $_FILES['packball'] ?? null;
         if (!is_array($file) || !isset($file['error'], $file['tmp_name'], $file['name'], $file['size'])
             || !is_int($file['error']) || $file['error'] !== UPLOAD_ERR_OK
@@ -17,6 +18,13 @@ try {
         }
         if ($file['size'] > 2097152 || strtolower(pathinfo($file['name'], PATHINFO_EXTENSION)) !== 'csv') {
             throw new InvalidArgumentException('Choisis un fichier CSV PackBall de 2 Mo maximum.');
+        }
+        if ($action === 'packball_results') {
+            require_once __DIR__ . '/lib/ResultsImport.php';
+            $_SESSION['lab_results_report'] = \StratEdgeLab\ResultsImport::apply($labStore, $labOwner, file_get_contents($file['tmp_name']), $file['name']);
+            $_SESSION['lab_success'] = 'Import des scores terminé. Les prévisions et les cotes initiales sont conservées.';
+            header('Location: ' . $labBase . 'history.php', true, 303);
+            exit;
         }
         // One file, one saved analysis. No draft or user-supplied column settings.
         $prepared = \StratEdgeLab\PackBall::prepare(file_get_contents($file['tmp_name']), $file['name']);
