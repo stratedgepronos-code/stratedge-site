@@ -4,6 +4,8 @@ require __DIR__ . '/../../public_html/admin/football-lab/lib/Engine.php';
 require __DIR__ . '/../../public_html/admin/football-lab/lib/Store.php';
 require __DIR__ . '/../../public_html/admin/football-lab/lib/Metrics.php';
 require __DIR__ . '/../../public_html/admin/football-lab/lib/Context.php';
+require __DIR__ . '/../../public_html/admin/football-lab/lib/PackBall.php';
+require __DIR__ . '/../../public_html/admin/football-lab/lib/ResultsImport.php';
 use StratEdgeLab\Engine;
 use StratEdgeLab\Store;
 use StratEdgeLab\Metrics;
