@@ -1,7 +1,9 @@
 <?php
 // Loaded by run.php: synthetic export in the exact supplied PackBall layout.
 require_once __DIR__ . '/../../public_html/admin/football-lab/lib/PackBall.php';
+require_once __DIR__ . '/../../public_html/admin/football-lab/lib/ResultsImport.php';
 use StratEdgeLab\PackBall;
+use StratEdgeLab\ResultsImport;
 
 $exportRow = ['Portugal', 'POR', 'Test League', (new DateTimeImmutable('+2 days', new DateTimeZone('Europe/Paris')))->format('d-m-Y') . ' 21:45', 'NS', 'Club Test D', '', '', 'Club Test E', '', '',
     '1.42', '2.74', '5.89', '1.11', '2.10', '1.72', '2.13', '1.65',

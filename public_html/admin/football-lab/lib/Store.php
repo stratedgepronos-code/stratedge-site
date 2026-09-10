@@ -62,6 +62,26 @@ final class Store
         return $out;
     }
 
+    public function resultIfAbsent(string $runId, string $key, array $data, int $owner): string
+    {
+        $this->db->beginTransaction();
+        try {
+            // Serialize simultaneous imports for this analysis in production.
+            $lock = $this->db->prepare('SELECT id FROM se_lab_runs WHERE id = ? AND owner_id = ?' . ($this->db->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'sqlite' ? '' : ' FOR UPDATE'));
+            $lock->execute([$runId, $owner]);
+            if (!$lock->fetchColumn()) { throw new \InvalidArgumentException('Import introuvable.'); }
+            $previous = null;
+            foreach ($this->events($runId, $owner) as $event) { if ($event['kind'] === 'result' && $event['match_key'] === $key) { $previous = $event['data']; } }
+            $status = 'recorded';
+            if ($previous !== null) {
+                $status = 'existing';
+                foreach (['home', 'away', 'period', 'outcome'] as $field) { if (($previous[$field] ?? null) !== $data[$field]) { $status = 'conflict'; } }
+            } else { $this->event($runId, $key, 'result', $data, $owner); }
+            $this->db->commit();
+            return $status;
+        } catch (\Throwable $e) { if ($this->db->inTransaction()) { $this->db->rollBack(); } throw $e; }
+    }
+
     public function event(string $runId, string $key, string $kind, array $data, int $owner): void
     {
         if (!in_array($kind, ['context', 'research', 'result'], true)) { throw new \InvalidArgumentException('Événement invalide.'); }

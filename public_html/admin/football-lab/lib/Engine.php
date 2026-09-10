@@ -138,7 +138,7 @@ final class Engine
         return $date->setTimezone(new \DateTimeZone('UTC'));
     }
 
-    private static function identity(array $row, array $map, array $options): array
+    public static function identity(array $row, array $map, array $options): array
     {
         $home = self::cell($row, $map, 'home');
         $away = self::cell($row, $map, 'away');

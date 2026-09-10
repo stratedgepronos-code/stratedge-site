@@ -22,6 +22,15 @@ if ($labError) { lab_end(); exit; }
     </form>
     <p class="lab-muted" id="lab-upload-help">Ton format PackBall est configuré. L’analyse se lance dès que tu choisis le fichier, sans réglage supplémentaire.</p>
 </section>
+<section class="lab-panel lab-import-panel">
+    <div class="lab-section-head"><div><div class="lab-eyebrow">Fin de journée</div><h2>Valider les scores automatiquement</h2><p>Réexporte le même CSV PackBall après les matchs. Les lignes en statut FT seront rapprochées des analyses existantes par date, domicile et extérieur.</p></div><span class="lab-section-icon"><?= lab_icon('history', 21) ?></span></div>
+    <form action="<?= lab_h($labBase) ?>action.php" method="post" enctype="multipart/form-data" class="lab-form" id="lab-results-upload">
+        <?= lab_token() ?><input type="hidden" name="action" value="packball_results"><input type="hidden" name="MAX_FILE_SIZE" value="2097152">
+        <label class="lab-dropzone lab-dropzone-compact" for="lab-results-file"><span class="lab-empty-icon"><?= lab_icon('check', 25) ?></span><strong>Choisir le CSV terminé</strong><span>Les scores FT seront validés dans l’historique</span><input type="file" id="lab-results-file" name="packball" accept=".csv,text/csv" required><small>Le même format PackBall · aucun réglage</small></label>
+        <noscript><button class="lab-button">Importer les scores</button></noscript>
+    </form>
+    <p class="lab-muted">Un score déjà enregistré n’est jamais écrasé. Une contradiction ou une ligne ambiguë est signalée pour validation manuelle.</p>
+</section>
 <div class="lab-steps lab-import-steps">
     <div class="lab-step"><b><?= lab_icon('check', 15) ?></b><div><strong>Statistiques croisées</strong><p>Buts, échantillons, fréquences et contrôles de cohérence.</p></div></div>
     <div class="lab-step"><b><?= lab_icon('check', 15) ?></b><div><strong>Cotes de 1,60 à 3,50</strong><p>Comparaison aux prix et résistance à un scénario défavorable.</p></div></div>
