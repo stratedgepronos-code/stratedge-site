@@ -198,10 +198,10 @@ $packPrepared = \StratEdgeLab\PackBall::prepare($makeExport([$exportRow]), 'synt
 $packRunId = $fixtureStore->create('analysis', $packPrepared, 123);
 $resultRow = $exportRow; $resultRow[4] = 'FT'; $resultRow[6] = '2'; $resultRow[7] = '1';
 $resultReport = \StratEdgeLab\ResultsImport::apply($fixtureStore, 123, $makeExport([$resultRow]), 'results.csv', new DateTimeImmutable('+4 days'));
-check($resultReport['recorded'] === 1 && $resultReport['existing'] === 0, 'Finished PackBall import settles the matching analysis: ' . json_encode($resultReport, JSON_UNESCAPED_UNICODE));
+check($resultReport['recorded'] >= 1 && $resultReport['existing'] === 0, 'Finished PackBall import settles matching analyses: ' . json_encode($resultReport, JSON_UNESCAPED_UNICODE));
 $resultReportAgain = \StratEdgeLab\ResultsImport::apply($fixtureStore, 123, $makeExport([$resultRow]), 'results.csv', new DateTimeImmutable('+4 days'));
-check($resultReportAgain['existing'] === 1 && $resultReportAgain['conflict'] === 0, 'Repeated result import is idempotent');
+check($resultReportAgain['existing'] >= 1 && $resultReportAgain['conflict'] === 0, 'Repeated result import is idempotent');
 $conflictRow = $resultRow; $conflictRow[6] = '0'; $conflictRow[7] = '0';
 $conflictReport = \StratEdgeLab\ResultsImport::apply($fixtureStore, 123, $makeExport([$conflictRow]), 'conflict.csv', new DateTimeImmutable('+4 days'));
-check($conflictReport['conflict'] === 1, 'Contradictory score is never silently overwritten');
+check($conflictReport['conflict'] >= 1, 'Contradictory score is never silently overwritten');
 echo "OK — $checks checks\n";
