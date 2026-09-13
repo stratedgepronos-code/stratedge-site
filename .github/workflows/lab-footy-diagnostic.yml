@@ -21,11 +21,17 @@ jobs:
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 -o IdentitiesOnly=yes alex@31.97.196.145 'bash -s' <<'REMOTE'
           set -e
           cd /var/www/stratedgepronos.fr/public_html
+          DIAG_FILE=$(mktemp /tmp/lab-footy-check.XXXXXX.php)
+          trap 'rm -f "$DIAG_FILE"' EXIT
+          curl -fsSL "https://raw.githubusercontent.com/stratedgepronos-code/stratedge-site/90bb6442d9273495bd31fbe00fab9a8dad0a7314/public_html/admin/football-lab/lib/FootyStats.php" -o "$DIAG_FILE"
+          export FOOTY_DIAG_LIBRARY="$DIAG_FILE"
           php <<'PHP'
           <?php
           try {
               require 'includes/db.php';
-              require 'admin/football-lab/lib/FootyStats.php';
+              if (is_readable('config-keys.php')) { require_once 'config-keys.php'; }
+              require 'admin/football-lab/lib/Store.php';
+              require getenv('FOOTY_DIAG_LIBRARY');
               $db = getDB();
               $q = $db->prepare("SELECT r.payload FROM se_lab_runs r JOIN membres m ON m.id = r.owner_id WHERE m.email = ? AND r.kind = 'analysis' ORDER BY r.created_at DESC LIMIT 1");
               $q->execute([ADMIN_EMAIL]);
@@ -33,29 +39,19 @@ jobs:
               if (!$payload) { echo "LAB_DIAG_NO_ANALYSIS\n"; exit; }
               $data = json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
               $analysis = $data['analysis'];
-              $cache = $db->query("SELECT payload FROM se_lab_api_cache WHERE expires_at > UNIX_TIMESTAMP()")->fetchAll(PDO::FETCH_COLUMN);
-              $seenTeams = 0; $fixtures = [];
-              foreach ($cache as $entry) {
-                  $response = json_decode($entry, true);
-                  $rows = $response['data'] ?? [];
-                  $first = $rows[0] ?? [];
-                  if (isset($first['stats']) && $seenTeams++ < 4) {
-                      echo 'LAB_TEAM_SCHEMA ' . json_encode(['keys'=>array_keys($first), 'id'=>$first['id']??null, 'competition_id'=>$first['competition_id']??null, 'season'=>$first['season']??null, 'stats_keys'=>array_slice(array_keys($first['stats']),0,18), 'team_count'=>count($rows), 'unique_ids'=>count(array_unique(array_column($rows,'id'))), 'competition_ids'=>array_values(array_unique(array_column($rows,'competition_id')))], JSON_UNESCAPED_UNICODE) . "\n";
-                  }
-                  if (isset($first['homeID'])) { foreach ($rows as $row) { $fixtures[$row['id']] = $row; } }
+              foreach ($analysis['matches'] as &$m) { $m['country'] = trim((string)($data['tables']['stats']['rows'][$m['row']-1][0]??'')); } unset($m);
+              $fresh = \StratEdgeLab\FootyStats::configured(new \StratEdgeLab\Store($db))->enrich($analysis);
+              echo 'LAB_FIXED_COUNTS ' . json_encode($fresh['footystats'], JSON_UNESCAPED_UNICODE) . "\n";
+              foreach ($fresh['matches'] as $i=>$m) {
+                  if ($i<3 || $m['footystats']['status']!=='enriched') { echo 'LAB_FIXED_ROW ' . json_encode(['row'=>$i+1,'home'=>$m['home'],'away'=>$m['away'],'status'=>$m['footystats']['status'],'message'=>$m['footystats']['message'],'home_n'=>$m['footystats']['home']['n']??null,'away_n'=>$m['footystats']['away']['n']??null],JSON_UNESCAPED_UNICODE) . "\n"; }
               }
-              foreach ($analysis['matches'] as $i=>$match) {
-                  $near = [];
-                  foreach ($fixtures as $f) {
-                      if (abs((int)($f['date_unix']??0)-strtotime($match['kickoff'])) <= 900 && (
-                          \StratEdgeLab\FootyStats::normalizedName($match['home'])===\StratEdgeLab\FootyStats::normalizedName($f['home_name']??'')
-                          || \StratEdgeLab\FootyStats::normalizedName($match['away'])===\StratEdgeLab\FootyStats::normalizedName($f['away_name']??'')
-                          || $i < 3)) {
-                          $near[] = array_intersect_key($f, array_flip(['id','homeID','awayID','home_name','away_name','competition_id','date_unix']));
+              $cache = $db->query("SELECT payload FROM se_lab_api_cache WHERE expires_at > UNIX_TIMESTAMP()")->fetchAll(PDO::FETCH_COLUMN);
+              foreach ($cache as $entry) {
+                  $response = json_decode($entry,true);
+                  foreach ($response['data']??[] as $f) {
+                      if (isset($f['homeID']) && preg_match('/Midtjylland|Br.ndby|Pe.arol|Albion|Barcelona|Delfin|Libertad|del Valle/i', ($f['home_name']??'').' '.($f['away_name']??''))) {
+                          echo 'LAB_REMAINING_NAMES ' . json_encode(array_intersect_key($f,array_flip(['id','homeID','awayID','home_name','away_name','date_unix','competition_id'])),JSON_UNESCAPED_UNICODE) . "\n";
                       }
-                  }
-                  if ($i<3 || ($match['footystats']['message']??'')==='Match non rapproché sur FootyStats : compétition couverte, noms et horaire à vérifier.') {
-                      echo 'LAB_NAME_MATCH ' . json_encode(['row'=>$i+1,'home'=>$match['home'],'away'=>$match['away'],'near'=>$near], JSON_UNESCAPED_UNICODE) . "\n";
                   }
               }
           } catch (Throwable $e) { echo "LAB_DIAG_FAILED\n"; exit(2); }
