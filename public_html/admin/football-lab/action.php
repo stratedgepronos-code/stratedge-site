@@ -36,6 +36,19 @@ try {
         unset($_SESSION['lab_form'], $_SESSION['lab_import_errors']);
         $fs = $prepared['analysis']['footystats'];
         $_SESSION['lab_success'] = count($prepared['analysis']['matches']) . ' matchs analysés sur ' . $prepared['import']['rows'] . ' lignes. FootyStats : ' . $fs['enriched'] . ' enrichis, ' . $fs['unavailable'] . ' indisponibles. Cotes conservées depuis PackBall.';
+    } elseif ($action === 'packball_retry') {
+        $sourceId = (string)($_POST['id'] ?? '');
+        $source = $labStore->get($sourceId, $labOwner);
+        if ($source['kind'] !== 'analysis') { throw new InvalidArgumentException('Analyse introuvable.'); }
+        if (($_SESSION['lab_retry_at'] ?? 0) > time() - 45) { throw new InvalidArgumentException('Une analyse vient d’être relancée. Attends quelques secondes.'); }
+        $_SESSION['lab_retry_at'] = time();
+        session_write_close();
+        $prepared = \StratEdgeLab\PackBall::replay($source['data'], \StratEdgeLab\FootyStats::configured($labStore));
+        $prepared['retry_of'] = $sourceId;
+        $id = $labStore->create('analysis', $prepared, $labOwner);
+        session_start();
+        $redirect = 'index.php?id=' . $id;
+        $_SESSION['lab_success'] = 'Nouvelle analyse créée : ' . $prepared['analysis']['footystats']['enriched'] . ' matchs enrichis. L’analyse précédente est conservée.';
     } elseif ($action === 'footystats_check') {
         if (($_SESSION['lab_footy_checked_at'] ?? 0) > time() - 30) { throw new InvalidArgumentException('Attends trente secondes avant un nouveau test.'); }
         $_SESSION['lab_footy_checked_at'] = time();

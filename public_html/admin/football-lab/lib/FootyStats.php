@@ -5,6 +5,17 @@ namespace StratEdgeLab;
 /** Server-side enrichment. Provider failures never turn missing statistics into zero. */
 final class FootyStats
 {
+    // Verified against the supplied PackBall export and the provider's fixture IDs.
+    // Country scopes prevent short names such as Inter from matching another club abroad.
+    private const PACKBALL_TEAM_IDS = [
+        'Romania' => ['Otelul' => 6633],
+        'Norway' => ['Bodø / Glimt' => 332],
+        'Turkey' => ['Gaziantep F.K.' => 355],
+        'Spain' => ['Celta Fortuna' => 4515],
+        'Republic of Ireland' => ["St Patrick's" => 981, 'Waterford United' => 2064],
+        'Italy' => ['Inter' => 470],
+        'Portugal' => ['Marítimo' => 177, 'Estoril' => 164],
+    ];
     private $key;
     private $transport;
     private $store;
@@ -111,13 +122,19 @@ final class FootyStats
         return self::normalizedName((string)($this->aliases[$name] ?? $name));
     }
 
+    private function teamMatches(array $match, array $fixture, string $side): bool
+    {
+        if ($this->name((string)($fixture[$side . '_name'] ?? '')) === $this->name($match[$side])) { return true; }
+        $expected = self::PACKBALL_TEAM_IDS[$match['country'] ?? ''][$match[$side]] ?? null;
+        return $expected !== null && (int)($fixture[$side . 'ID'] ?? 0) === $expected;
+    }
+
     public function findFixture(array $match, array $fixtures): array
     {
         $found = [];
         foreach ($fixtures as $fixture) {
             if (!is_numeric($fixture['date_unix'] ?? null) || abs((int)$fixture['date_unix'] - strtotime($match['kickoff'])) > 900) { continue; }
-            if ($this->name((string)($fixture['home_name'] ?? '')) !== $this->name($match['home'])
-                || $this->name((string)($fixture['away_name'] ?? '')) !== $this->name($match['away'])) { continue; }
+            if (!$this->teamMatches($match, $fixture, 'home') || !$this->teamMatches($match, $fixture, 'away')) { continue; }
             foreach (['id', 'homeID', 'awayID', 'competition_id'] as $field) {
                 if (filter_var($fixture[$field] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]) === false) {
                     throw new \RuntimeException('Identifiants FootyStats incomplets.');
@@ -126,7 +143,7 @@ final class FootyStats
             if (isset($found[(int)$fixture['id']]) && $found[(int)$fixture['id']] !== $fixture) { throw new \RuntimeException('Fiches FootyStats contradictoires pour le même match.'); }
             $found[(int)$fixture['id']] = $fixture;
         }
-        if (count($found) !== 1) { throw new \RuntimeException(count($found) ? 'Correspondance FootyStats ambiguë : contrôle des équipes nécessaire.' : 'Match non rapproché sur FootyStats : compétition couverte, noms et horaire à vérifier.'); }
+        if (count($found) !== 1) { throw new \RuntimeException(count($found) ? 'Correspondance FootyStats ambiguë : contrôle des équipes nécessaire.' : 'Match absent des correspondances FootyStats : vérifier la couverture de la compétition, les noms et l’horaire.'); }
         $fixture = reset($found);
         if (!in_array(strtolower((string)($fixture['status'] ?? '')), ['incomplete', 'not started', 'scheduled', 'ns'], true)
             || (int)$fixture['date_unix'] <= time()) { throw new \RuntimeException('FootyStats indique un match commencé, terminé ou reporté.'); }
@@ -178,7 +195,10 @@ final class FootyStats
                     $teams = $this->pages('league-teams', ['season_id' => $season, 'include' => 'stats', 'max_time' => $cutoff]);
                     $byId = []; $goals = 0; $played = 0; $complete = true;
                     foreach ($teams as $team) {
-                        if ((int)($team['competition_id'] ?? 0) !== $season || empty($team['id']) || isset($byId[(int)$team['id']])) { throw new \RuntimeException('Saison ou équipes FootyStats incohérentes.'); }
+                        // /league-teams is already scoped by season_id. Production responses
+                        // may omit competition_id even though the documentation example has it.
+                        if ((isset($team['competition_id']) && (int)$team['competition_id'] !== $season)
+                            || empty($team['id']) || isset($byId[(int)$team['id']])) { throw new \RuntimeException('Saison ou équipes FootyStats incohérentes.'); }
                         $byId[(int)$team['id']] = $team;
                         $s = $team['stats'] ?? [];
                         if (!is_array($s)) { throw new \RuntimeException('Statistiques de ligue FootyStats invalides.'); }

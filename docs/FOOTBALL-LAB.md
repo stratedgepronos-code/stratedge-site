@@ -69,3 +69,11 @@ Le nouveau profil `packball-custom-gpt-28-20260914` conserve les 28 en-têtes or
 Validation : `php tests/football-lab/run.php` inclut les réponses API simulées, le schéma 28 colonnes, les vrais dénominateurs par lieu, le changement de date UTC, la pagination, l’archivage sans clé, le cache, les ambiguïtés, l’abstention sans données et le rendu de la fiche. `php ops/check-lab-footystats.php` vérifie séparément l’accès réel du serveur. Une réussite des tests logiciels ne démontre aucune rentabilité.
 
 Documentation fournisseur : [matchs par date](https://footystats.org/api/documentations/todays-matches-matches-by-day), [équipes et statistiques de saison](https://footystats.org/api/documentations/league-teams), [définition des statistiques](https://footystats.org/api/documentations/team).
+
+### Correctif 2.1.1 — contrat de réponse et refus lisibles
+
+Le diagnostic de production a révélé que `/league-teams` omet `competition_id` dans les objets équipe. La saison reste déterminée par la requête `season_id` issue de la rencontre. Un champ absent est accepté ; un identifiant fourni mais contradictoire ou une équipe dupliquée reste rejeté. Les tests reproduisent maintenant ce schéma réel.
+
+Des correspondances PackBall vers les identifiants FootyStats vérifiés sont bornées par pays. Elles conservent les contrôles de l’adversaire, de l’orientation et de l’horaire ; aucun rapprochement flou n’est effectué. Les rencontres absentes de la couverture API restent indisponibles.
+
+Les listes et les fiches distinguent données manquantes, échantillon insuffisant et critères de prix non atteints. Le nombre de marchés cotés correspond aux prix réellement présents. Cette présentation s’applique également aux anciennes analyses, sans modifier leurs prévisions. Le bouton « Relancer avec FootyStats » reconstruit le CSV archivé et crée une nouvelle analyse, en conservant l’originale. Les matchs déjà commencés restent exclus. La politique de prix et de sélection ne change pas.

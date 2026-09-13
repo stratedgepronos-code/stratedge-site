@@ -6,10 +6,28 @@ namespace StratEdgeLab;
 final class DecisionEngine
 {
     public const VERSION = '2.0.0-gamma-poisson-experimental';
-    public const FOOTY_VERSION = '2.1.0-footystats-venue-experimental';
+    public const FOOTY_VERSION = '2.1.1-footystats-venue-experimental';
     public const MIN_ODDS = 1.60;
     public const MAX_ODDS = 3.50;
     public const PRIOR_MATCHES = 4.0;
+
+    /** Explain saved decisions without recalculating or changing archived forecasts. */
+    public static function diagnostic(array $match): array
+    {
+        if ($match['pick'] ?? null) { return ['state' => 'candidate', 'title' => $match['pick']['label'], 'message' => 'Prix et statistiques passent les contrôles. Le contexte reste à vérifier.']; }
+        if (isset($match['footystats']) && ($match['footystats']['status'] ?? '') !== 'enriched') {
+            return ['state' => 'data_missing', 'title' => 'Statistiques FootyStats indisponibles', 'message' => $match['footystats']['message'] ?? 'Enrichissement à compléter.'];
+        }
+        $issues = array_values(array_unique($match['assessment']['issues'] ?? []));
+        if ($issues) { return ['state' => 'data_missing', 'title' => 'Données insuffisantes pour sélectionner', 'message' => implode(' ', array_slice($issues, 0, 2))]; }
+        $priced = array_values(array_filter($match['candidates'] ?? [], static function ($c) { return isset($c['odds']) && $c['odds'] > 1; }));
+        if (!$priced) { return ['state' => 'price_missing', 'title' => 'Cotes manquantes', 'message' => 'Aucun marché ne possède une cote exploitable dans cet export.']; }
+        usort($priced, static function ($a, $b) { return (count($a['reasons'] ?? []) <=> count($b['reasons'] ?? [])) ?: (($b['stress_ev'] ?? -INF) <=> ($a['stress_ev'] ?? -INF)); });
+        $closest = $priced[0];
+        $why = implode(' ', array_slice($closest['reasons'] ?? [], 0, 2));
+        return ['state' => 'no_bet', 'title' => 'Aucun pari retenu aux cotes importées',
+            'message' => count($priced) . ' marchés cotés examinés. ' . ($closest['label'] ?? '') . ' : ' . ($why ?: 'Les critères de sélection ne sont pas réunis.')];
+    }
 
     public static function features(array $row): array
     {
@@ -160,7 +178,8 @@ final class DecisionEngine
             $match['lambdas']['ft'] = ['home' => $posterior['home']['shape'] / $posterior['home']['rate'], 'away' => $posterior['away']['shape'] / $posterior['away']['rate']];
             $match['assessment'] = ['features' => $f, 'issues' => $issues, 'posterior' => $posterior,
                 'status' => $match['pick'] ? 'context_pending' : 'no_bet', 'version' => isset($analysis['footystats']) ? self::FOOTY_VERSION : self::VERSION,
-                'explanation' => $match['pick'] ? 'Prix et statistiques passent les contrôles. Les effectifs et le contexte restent à vérifier.' : 'Aucun des huit marchés ne passe tous les contrôles. Aucun pari proposé.'];
+                'explanation' => ''];
+            $match['assessment']['explanation'] = self::diagnostic($match)['message'];
             $match['warnings'] = array_values(array_unique(array_merge($match['warnings'], $issues)));
         }
         unset($match);
