@@ -6,11 +6,11 @@ on:
 permissions:
   contents: read
 jobs:
-  inspect:
+  repair:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Read sanitized Lab rejection diagnostics
+      - name: Reanalyze the affected PackBall import and report coverage
         env:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
@@ -21,39 +21,32 @@ jobs:
           ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 -o IdentitiesOnly=yes alex@31.97.196.145 'bash -s' <<'REMOTE'
           set -e
           cd /var/www/stratedgepronos.fr/public_html
-          DIAG_FILE=$(mktemp /tmp/lab-footy-check.XXXXXX.php)
-          trap 'rm -f "$DIAG_FILE"' EXIT
-          curl -fsSL "https://raw.githubusercontent.com/stratedgepronos-code/stratedge-site/90bb6442d9273495bd31fbe00fab9a8dad0a7314/public_html/admin/football-lab/lib/FootyStats.php" -o "$DIAG_FILE"
-          export FOOTY_DIAG_LIBRARY="$DIAG_FILE"
           php <<'PHP'
           <?php
           try {
               require 'includes/db.php';
-              if (is_readable('config-keys.php')) { require_once 'config-keys.php'; }
+              require 'admin/football-lab/lib/Engine.php';
+              require 'admin/football-lab/lib/PackBall.php';
               require 'admin/football-lab/lib/Store.php';
-              require getenv('FOOTY_DIAG_LIBRARY');
               $db = getDB();
-              $q = $db->prepare("SELECT r.payload FROM se_lab_runs r JOIN membres m ON m.id = r.owner_id WHERE m.email = ? AND r.kind = 'analysis' ORDER BY r.created_at DESC LIMIT 1");
-              $q->execute([ADMIN_EMAIL]);
-              $payload = $q->fetchColumn();
-              if (!$payload) { echo "LAB_DIAG_NO_ANALYSIS\n"; exit; }
-              $data = json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
-              $analysis = $data['analysis'];
-              foreach ($analysis['matches'] as &$m) { $m['country'] = trim((string)($data['tables']['stats']['rows'][$m['row']-1][0]??'')); } unset($m);
-              $fresh = \StratEdgeLab\FootyStats::configured(new \StratEdgeLab\Store($db))->enrich($analysis);
-              echo 'LAB_FIXED_COUNTS ' . json_encode($fresh['footystats'], JSON_UNESCAPED_UNICODE) . "\n";
-              foreach ($fresh['matches'] as $i=>$m) {
-                  if ($i<3 || $m['footystats']['status']!=='enriched') { echo 'LAB_FIXED_ROW ' . json_encode(['row'=>$i+1,'home'=>$m['home'],'away'=>$m['away'],'status'=>$m['footystats']['status'],'message'=>$m['footystats']['message'],'home_n'=>$m['footystats']['home']['n']??null,'away_n'=>$m['footystats']['away']['n']??null],JSON_UNESCAPED_UNICODE) . "\n"; }
+              $q = $db->prepare("SELECT r.id, r.owner_id, r.payload FROM se_lab_runs r JOIN membres m ON m.id = r.owner_id WHERE m.email = ? AND r.kind = 'analysis' ORDER BY r.created_at DESC LIMIT 1");
+              $q->execute([ADMIN_EMAIL]); $source = $q->fetch(PDO::FETCH_ASSOC);
+              if (!$source) { echo "LAB_REPLAY_NO_SOURCE\n"; exit(2); }
+              $data = json_decode($source['payload'], true, 512, JSON_THROW_ON_ERROR);
+              $store = new \StratEdgeLab\Store($db);
+              $created = false;
+              if (($data['analysis']['version']??'') === '2.1.0-footystats-venue-experimental' && ($data['analysis']['footystats']['enriched']??null) === 0) {
+                  $prepared = \StratEdgeLab\PackBall::replay($data, \StratEdgeLab\FootyStats::configured($store));
+                  if (($prepared['analysis']['footystats']['enriched']??0) < 1) { echo "LAB_REPLAY_NO_ENRICHMENT\n"; exit(3); }
+                  $prepared['retry_of'] = $source['id'];
+                  $store->create('analysis', $prepared, (int)$source['owner_id']);
+                  $data = $prepared; $created = true;
               }
-              $cache = $db->query("SELECT payload FROM se_lab_api_cache WHERE expires_at > UNIX_TIMESTAMP()")->fetchAll(PDO::FETCH_COLUMN);
-              foreach ($cache as $entry) {
-                  $response = json_decode($entry,true);
-                  foreach ($response['data']??[] as $f) {
-                      if (isset($f['homeID']) && preg_match('/Midtjylland|Br.ndby|Pe.arol|Albion|Barcelona|Delfin|Libertad|del Valle/i', ($f['home_name']??'').' '.($f['away_name']??''))) {
-                          echo 'LAB_REMAINING_NAMES ' . json_encode(array_intersect_key($f,array_flip(['id','homeID','awayID','home_name','away_name','date_unix','competition_id'])),JSON_UNESCAPED_UNICODE) . "\n";
-                      }
-                  }
+              $a = $data['analysis'];
+              echo 'LAB_REPLAY_RESULT ' . json_encode(['new_analysis'=>$created,'matches'=>count($a['matches']),'enriched'=>$a['footystats']['enriched']??0,'unavailable'=>$a['footystats']['unavailable']??0,'picks'=>count(array_filter($a['matches'],static function ($m) { return $m['pick']!==null; }))],JSON_UNESCAPED_UNICODE) . "\n";
+              foreach ($a['matches'] as $m) {
+                  if (($m['footystats']['status']??'') !== 'enriched') { echo 'LAB_REMAINING ' . json_encode(['home'=>$m['home'],'away'=>$m['away'],'message'=>$m['footystats']['message']??''],JSON_UNESCAPED_UNICODE) . "\n"; }
               }
-          } catch (Throwable $e) { echo "LAB_DIAG_FAILED\n"; exit(2); }
+          } catch (Throwable $e) { echo "LAB_REPLAY_FAILED\n"; exit(2); }
           PHP
           REMOTE
