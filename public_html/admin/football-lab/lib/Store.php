@@ -13,6 +13,24 @@ final class Store
         $suffix = $sqlite ? '' : ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4';
         $this->db->exec('CREATE TABLE IF NOT EXISTS se_lab_runs (id VARCHAR(32) PRIMARY KEY, owner_id INTEGER NOT NULL, kind VARCHAR(20) NOT NULL, created_at VARCHAR(32) NOT NULL, payload ' . ($sqlite ? 'TEXT' : 'LONGTEXT') . ' NOT NULL)' . $suffix);
         $this->db->exec('CREATE TABLE IF NOT EXISTS se_lab_events (id ' . ($sqlite ? 'INTEGER PRIMARY KEY AUTOINCREMENT' : 'BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY') . ', run_id VARCHAR(32) NOT NULL, match_key VARCHAR(64) NOT NULL, owner_id INTEGER NOT NULL, kind VARCHAR(20) NOT NULL, created_at VARCHAR(32) NOT NULL, payload TEXT NOT NULL)' . $suffix);
+        $this->db->exec('CREATE TABLE IF NOT EXISTS se_lab_api_cache (cache_key VARCHAR(64) PRIMARY KEY, expires_at INTEGER NOT NULL, payload ' . ($sqlite ? 'TEXT' : 'LONGTEXT') . ' NOT NULL)' . $suffix);
+    }
+
+    public function cacheGet(string $key): ?array
+    {
+        $q = $this->db->prepare('SELECT payload FROM se_lab_api_cache WHERE cache_key = ? AND expires_at > ?');
+        $q->execute([$key, time()]); $value = $q->fetchColumn();
+        return $value === false ? null : json_decode($value, true, 512, JSON_THROW_ON_ERROR);
+    }
+
+    public function cachePut(string $key, array $data, int $expiry): void
+    {
+        $this->db->prepare('DELETE FROM se_lab_api_cache WHERE expires_at <= ?')->execute([time()]);
+        $sqlite = $this->db->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'sqlite';
+        $q = $this->db->prepare('INSERT INTO se_lab_api_cache (cache_key, expires_at, payload) VALUES (?, ?, ?) ' . ($sqlite
+            ? 'ON CONFLICT(cache_key) DO UPDATE SET expires_at = excluded.expires_at, payload = excluded.payload'
+            : 'ON DUPLICATE KEY UPDATE expires_at = VALUES(expires_at), payload = VALUES(payload)'));
+        $q->execute([$key, $expiry, self::encode($data)]);
     }
 
     public static function encode(array $data): string
@@ -25,7 +43,9 @@ final class Store
         if (!in_array($kind, ['draft', 'analysis'], true)) { throw new \InvalidArgumentException('Type d’import invalide.'); }
         $id = bin2hex(random_bytes(16));
         $stmt = $this->db->prepare('INSERT INTO se_lab_runs (id, owner_id, kind, created_at, payload) VALUES (?, ?, ?, ?, ?)');
-        $stmt->execute([$id, $owner, $kind, gmdate('c'), self::encode($data)]);
+        // Preserve import order within the same second; random IDs are not a chronology.
+        $created = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d\TH:i:s.uP');
+        $stmt->execute([$id, $owner, $kind, $created, self::encode($data)]);
         return $id;
     }
 

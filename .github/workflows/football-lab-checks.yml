@@ -26,6 +26,7 @@ jobs:
         run: |
           find public_html/admin/football-lab tests/football-lab -name '*.php' -print0 | xargs -0 -n1 php -l
           php -l public_html/admin/sidebar.php
+          php -l ops/check-lab-footystats.php
       - name: Import, probabilities, storage and tracking
         env:
           LAB_RENDER_DIR: /tmp/lab-render

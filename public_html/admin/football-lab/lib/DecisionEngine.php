@@ -6,12 +6,29 @@ namespace StratEdgeLab;
 final class DecisionEngine
 {
     public const VERSION = '2.0.0-gamma-poisson-experimental';
+    public const FOOTY_VERSION = '2.1.0-footystats-venue-experimental';
     public const MIN_ODDS = 1.60;
     public const MAX_ODDS = 3.50;
     public const PRIOR_MATCHES = 4.0;
 
     public static function features(array $row): array
     {
+        if (count($row) === 28) {
+            $values = self::features(array_fill(0, 46, ''))['values']; $issues = [];
+            // Global is an aggregate of both teams' histories, never a venue split.
+            try {
+                $values['over25'] = Engine::number($row[20], 'fréquence +2,5', 0, 100);
+                $values['under25'] = $values['over25'] === null ? null : 100 - $values['over25'];
+                $previous = 100;
+                foreach ([19, 18, 20, 21, 22] as $column) {
+                    $v = Engine::number($row[$column], 'fréquence de buts', 0, 100);
+                    if ($v !== null && $v > $previous) { $issues[] = 'Fréquences de buts non décroissantes : vérifier les colonnes.'; }
+                    if ($v !== null) { $previous = $v; }
+                }
+            } catch (\InvalidArgumentException $e) { $issues[] = 'Fréquences PackBall invalides.'; }
+            // The two shots icons are not sufficiently identified; keep their raw cells only.
+            return ['values' => $values, 'issues' => $issues];
+        }
         $columns = ['match_avg' => [25,20], 'league_avg' => [26,20], 'over25' => [27,100], 'under25' => [28,100], 'btts' => [29,100],
             'home_cs' => [30,100], 'away_cs' => [31,100], 'home_fts' => [32,100], 'away_fts' => [33,100],
             'home_shots_against' => [34,100], 'away_shots_against' => [35,100], 'home_shots' => [36,100], 'away_shots' => [37,100],
@@ -71,6 +88,24 @@ final class DecisionEngine
         foreach ($analysis['matches'] as &$match) {
             $data = self::features($table['rows'][$match['row'] - 1]); $f = $data['values']; $s = $match['stats'];
             $issues = $data['issues'];
+            if (isset($match['footystats'])) {
+                $fs = $match['footystats'];
+                if ($fs['status'] !== 'enriched') { $issues[] = 'FootyStats : ' . $fs['message']; }
+                else {
+                    // Keep the original PackBall features separately. Do not mix sample periods.
+                    $match['packball_features'] = $f;
+                    $f = self::features(array_fill(0, 46, ''))['values'];
+                    $f['league_avg'] = $fs['league_average'];
+                    foreach (['home', 'away'] as $side) {
+                        foreach (['cs', 'fts', 'shots', 'sot', 'possession', 'ppg'] as $key) { $f[$side . '_' . $key] = $fs[$side][$key]; }
+                    }
+                    foreach (['over25', 'btts'] as $key) {
+                        $h = $fs['home'][$key]; $a = $fs['away'][$key];
+                        $f[$key] = $h !== null && $a !== null ? ($h * $s['home_n'] + $a * $s['away_n']) / ($s['home_n'] + $s['away_n']) : null;
+                    }
+                    $f['under25'] = $f['over25'] === null ? null : 100 - $f['over25'];
+                }
+            }
             if ($f['league_avg'] === null || $f['league_avg'] <= 0) { $issues[] = 'Moyenne de buts de la ligue manquante.'; }
             if (min($s['home_n'], $s['away_n']) < 8) { $issues[] = 'Moins de huit matchs dans un des échantillons.'; }
             // Fallback allows a descriptive report, but a missing league reference blocks selections.
@@ -124,13 +159,13 @@ final class DecisionEngine
             $match['baseline_lambdas'] = $match['lambdas'];
             $match['lambdas']['ft'] = ['home' => $posterior['home']['shape'] / $posterior['home']['rate'], 'away' => $posterior['away']['shape'] / $posterior['away']['rate']];
             $match['assessment'] = ['features' => $f, 'issues' => $issues, 'posterior' => $posterior,
-                'status' => $match['pick'] ? 'context_pending' : 'no_bet', 'version' => self::VERSION,
+                'status' => $match['pick'] ? 'context_pending' : 'no_bet', 'version' => isset($analysis['footystats']) ? self::FOOTY_VERSION : self::VERSION,
                 'explanation' => $match['pick'] ? 'Prix et statistiques passent les contrôles. Les effectifs et le contexte restent à vérifier.' : 'Aucun des huit marchés ne passe tous les contrôles. Aucun pari proposé.'];
             $match['warnings'] = array_values(array_unique(array_merge($match['warnings'], $issues)));
         }
         unset($match);
         usort($analysis['matches'], static function ($a, $b) { return (($b['pick']['stress_ev'] ?? -INF) <=> ($a['pick']['stress_ev'] ?? -INF)) ?: strcmp($a['kickoff'], $b['kickoff']); });
-        $analysis['version'] = self::VERSION;
+        $analysis['version'] = isset($analysis['footystats']) ? self::FOOTY_VERSION : self::VERSION;
         $analysis['selection_policy'] = ['min_odds' => self::MIN_ODDS, 'max_odds' => self::MAX_ODDS, 'min_ev' => 0.04, 'min_edge' => 0.025, 'stress_factor' => 0.15, 'prior_matches' => self::PRIOR_MATCHES];
         return $analysis;
     }

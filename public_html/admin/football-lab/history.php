@@ -17,7 +17,8 @@ try {
         }
     }
 } catch (Throwable $e) { $labError = 'Le suivi est temporairement indisponible.'; }
-$selectedVersion = (string)($_GET['version'] ?? (isset($versions[\StratEdgeLab\DecisionEngine::VERSION]) ? \StratEdgeLab\DecisionEngine::VERSION : (array_key_first($versions) ?? '')));
+$defaultVersion = isset($versions[\StratEdgeLab\DecisionEngine::FOOTY_VERSION]) ? \StratEdgeLab\DecisionEngine::FOOTY_VERSION : (isset($versions[\StratEdgeLab\DecisionEngine::VERSION]) ? \StratEdgeLab\DecisionEngine::VERSION : (array_key_first($versions) ?? ''));
+$selectedVersion = (string)($_GET['version'] ?? $defaultVersion);
 $entries = array_values(array_filter($entries, static function ($entry) use ($selectedVersion) { return $entry['version'] === $selectedVersion; }));
 $metrics = \StratEdgeLab\Metrics::summarize($entries);
 lab_start('Le suivi des résultats', 'history');
