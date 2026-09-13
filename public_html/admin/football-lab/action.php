@@ -27,11 +27,23 @@ try {
             exit;
         }
         // One file, one saved analysis. No draft or user-supplied column settings.
-        $prepared = \StratEdgeLab\PackBall::prepare(file_get_contents($file['tmp_name']), $file['name']);
+        $footy = \StratEdgeLab\FootyStats::configured($labStore);
+        session_write_close();
+        $prepared = \StratEdgeLab\PackBall::prepare(file_get_contents($file['tmp_name']), $file['name'], null, $footy);
         $id = $labStore->create('analysis', $prepared, $labOwner);
+        session_start();
         $redirect = 'index.php?id=' . $id;
         unset($_SESSION['lab_form'], $_SESSION['lab_import_errors']);
-        $_SESSION['lab_success'] = count($prepared['analysis']['matches']) . ' matchs analysés sur ' . $prepared['import']['rows'] . ' lignes. Statistiques et cotes lues dans ton fichier PackBall.';
+        $fs = $prepared['analysis']['footystats'];
+        $_SESSION['lab_success'] = count($prepared['analysis']['matches']) . ' matchs analysés sur ' . $prepared['import']['rows'] . ' lignes. FootyStats : ' . $fs['enriched'] . ' enrichis, ' . $fs['unavailable'] . ' indisponibles. Cotes conservées depuis PackBall.';
+    } elseif ($action === 'footystats_check') {
+        if (($_SESSION['lab_footy_checked_at'] ?? 0) > time() - 30) { throw new InvalidArgumentException('Attends trente secondes avant un nouveau test.'); }
+        $_SESSION['lab_footy_checked_at'] = time();
+        $footy = \StratEdgeLab\FootyStats::configured($labStore);
+        session_write_close();
+        $check = $footy->checkConnection();
+        session_start();
+        $_SESSION['lab_success'] = 'Connexion FootyStats vérifiée : ' . $check['leagues'] . ' compétitions sélectionnées. Les bilans domicile/extérieur seront récupérés à chaque import couvert.';
     } elseif ($action === 'upload') {
         $tables = [];
         foreach (['stats', 'odds'] as $role) {

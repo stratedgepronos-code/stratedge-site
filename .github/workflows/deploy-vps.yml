@@ -79,6 +79,8 @@ jobs:
           done
           rm -rf "$LAB_CHECK_DIR"
           echo "LAB_ASSETS_OK"
+          REPO_ROOT=$(git rev-parse --show-toplevel)
+          php "$REPO_ROOT/ops/check-lab-footystats.php" "$REPO_ROOT"
           REMOTE
 
       - name: Vérification code_version en prod

@@ -2,11 +2,27 @@
 declare(strict_types=1);
 namespace StratEdgeLab;
 require_once __DIR__ . '/DecisionEngine.php';
+require_once __DIR__ . '/FootyStats.php';
 
 /** The 46-column custom export supplied on 2026-09-09, paired with its column screenshot. */
 final class PackBall
 {
     public const PROFILE = 'packball-custom-gpt-46-v1';
+    public const PROFILE_28 = 'packball-custom-gpt-28-20260914';
+
+    public static function headers28(): array
+    {
+        return array_merge(array_slice(self::headers(), 0, 9), array_fill(0, 6, 'Odds'),
+            array_fill(0, 3, 'Domicile | Extérieur'), array_fill(0, 5, 'Global'),
+            array_fill(0, 3, 'Domicile | Extérieur'), ['Global', 'Global']);
+    }
+
+    public static function profile(array $headers): string
+    {
+        if ($headers === self::headers()) { return self::PROFILE; }
+        if ($headers === self::headers28()) { return self::PROFILE_28; }
+        throw new \InvalidArgumentException('Format PackBall non reconnu : conserver l’ordre des colonnes de ton export à 28 ou 46 colonnes.');
+    }
 
     public static function headers(): array
     {
@@ -19,8 +35,15 @@ final class PackBall
         );
     }
 
-    public static function mapping(): array
+    public static function mapping(string $profile = self::PROFILE): array
     {
+        if ($profile === self::PROFILE_28) {
+            return ['league' => '2:value', 'kickoff' => '3:value', 'status' => '4:value', 'home' => '5:value', 'away' => '8:value',
+                'ft_over_15' => '9:value', 'ft_over_25' => '10:value', 'ft_over_35' => '11:value',
+                'ft_under_15' => '12:value', 'ft_under_25' => '13:value', 'ft_under_35' => '14:value',
+                'home_n' => '15:first', 'away_n' => '15:second', 'home_gf' => '16:first', 'away_gf' => '16:second',
+                'home_ga' => '17:first', 'away_ga' => '17:second'];
+        }
         // Zero-based indices. Keep repeated headers positional; do not deduplicate them.
         return [
             'league' => '2:value', 'kickoff' => '3:value', 'status' => '4:value',
@@ -36,16 +59,14 @@ final class PackBall
         ];
     }
 
-    public static function prepare(string $csv, string $filename, ?\DateTimeImmutable $now = null): array
+    public static function prepare(string $csv, string $filename, ?\DateTimeImmutable $now = null, ?FootyStats $footy = null): array
     {
         $table = Engine::csv($csv, 'auto', true);
-        if ($table['headers'] !== self::headers()) {
-            throw new \InvalidArgumentException('Ce fichier ne correspond pas au format PackBall configuré (46 colonnes). Réexporte le même tableau avec les statistiques et les cotes.');
-        }
+        $profile = self::profile($table['headers']);
         $table['name'] = substr(basename($filename), 0, 180);
         $table['sha256'] = hash('sha256', $csv);
-        $table['profile'] = self::PROFILE;
-        $mapping = self::mapping();
+        $table['profile'] = $profile;
+        $mapping = self::mapping($profile);
         $options = [
             'date_format' => 'd-m-Y H:i', 'timezone' => 'Europe/Paris',
             'markets' => array_values(array_filter(array_keys($mapping), static function ($key) { return strpos($key, 'ft_') === 0; })),
@@ -53,6 +74,7 @@ final class PackBall
             'odds_source' => 'Export PackBall',
         ];
         $result = Engine::analyze(['stats' => $table], ['stats' => $mapping], $options, $now);
+        if ($footy !== null) { $result = $footy->enrich($result); }
         $result = DecisionEngine::review($result, $table);
         foreach ($result['errors'] as &$error) {
             $row = $table['rows'][$error['row'] - 1] ?? null;
@@ -62,7 +84,7 @@ final class PackBall
         return [
             'analysis' => $result, 'maps' => ['stats' => $mapping], 'tables' => ['stats' => $table],
             'options' => $options,
-            'import' => ['profile' => self::PROFILE, 'filename' => $table['name'], 'rows' => count($table['rows']), 'timezone' => 'Europe/Paris'],
+            'import' => ['profile' => $profile, 'filename' => $table['name'], 'rows' => count($table['rows']), 'timezone' => 'Europe/Paris'],
         ];
     }
 }

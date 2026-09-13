@@ -6,6 +6,17 @@ lab_start('Ta journée commence ici.', 'import');
 if ($labError) { lab_end(); exit; }
 ?>
 <section class="lab-panel lab-import-panel">
+    <div class="lab-eyebrow">FootyStats</div><h2>Les vrais bilans domicile et extérieur</h2>
+    <p>À chaque import, le Lab retrouve les matchs et complète PackBall avec le bilan à domicile de l’équipe qui reçoit et le bilan à l’extérieur de son adversaire.</p>
+    <?php if (\StratEdgeLab\FootyStats::configured()->ready()): ?>
+    <p class="lab-muted">Clé présente sur le serveur. Le test ci-dessous vérifie l’accès à ton compte ; la couverture de chaque match est contrôlée à l’import.</p>
+    <form method="post" action="<?= lab_h($labBase) ?>action.php"><?= lab_token() ?><input type="hidden" name="action" value="footystats_check"><button class="lab-button lab-secondary">Tester la connexion FootyStats</button></form>
+    <?php else: ?>
+    <p class="lab-notice">La clé FootyStats n’est pas disponible pour le Lab. L’import reste accessible, mais les sélections attendront l’enrichissement.</p>
+    <details><summary>Configurer l’accès FootyStats</summary><p>Renseigne la clé dans la configuration serveur existante <code>FOOTYSTATS_API_KEY</code>, ou dans <code>STRATEDGE_LAB_FOOTYSTATS_KEY</code>. Le Lab la réutilisera automatiquement.</p></details>
+    <?php endif; ?>
+</section>
+<section class="lab-panel lab-import-panel">
     <div class="lab-section-head"><div><div class="lab-eyebrow">Import automatique</div><h2>Un fichier. Toute ta journée.</h2><p>Charge ton export PackBall : les statistiques et les cotes sont déjà dedans.</p></div><span class="lab-section-icon"><?= lab_icon('import', 21) ?></span></div>
     <form action="<?= lab_h($labBase) ?>action.php" method="post" enctype="multipart/form-data" class="lab-form" id="lab-packball-upload">
         <?= lab_token() ?><input type="hidden" name="action" value="packball_upload"><input type="hidden" name="MAX_FILE_SIZE" value="2097152">
@@ -20,7 +31,7 @@ if ($labError) { lab_end(); exit; }
         <p id="lab-upload-error" class="lab-alert" role="alert" hidden></p>
         <noscript><button class="lab-button">Importer et analyser</button></noscript>
     </form>
-    <p class="lab-muted" id="lab-upload-help">Ton format PackBall est configuré. L’analyse se lance dès que tu choisis le fichier, sans réglage supplémentaire.</p>
+    <p class="lab-muted" id="lab-upload-help">Tes exports à 28 et 46 colonnes sont reconnus. L’enrichissement FootyStats se lance avec l’analyse et peut prendre jusqu’à 45 secondes.</p>
 </section>
 <section class="lab-panel lab-import-panel">
     <div class="lab-section-head"><div><div class="lab-eyebrow">Fin de journée</div><h2>Valider les scores automatiquement</h2><p>Réexporte le même CSV PackBall après les matchs. Les lignes en statut FT seront rapprochées des analyses existantes par date, domicile et extérieur.</p></div><span class="lab-section-icon"><?= lab_icon('history', 21) ?></span></div>

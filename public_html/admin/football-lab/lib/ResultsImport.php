@@ -7,12 +7,12 @@ final class ResultsImport
     public static function apply(Store $store, int $owner, string $csv, string $filename, ?\DateTimeImmutable $now = null): array
     {
         $table = Engine::csv($csv, 'auto', true);
-        if ($table['headers'] !== PackBall::headers()) { throw new \InvalidArgumentException('Le format attendu est le même export PackBall à 46 colonnes.'); }
+        $profile = PackBall::profile($table['headers']);
         $now = $now ?? new \DateTimeImmutable('now');
         $index = []; $duplicates = []; $messages = []; $report = ['recorded' => 0, 'existing' => 0, 'conflict' => 0, 'messages' => []];
         foreach ($table['rows'] as $i => $row) {
             try {
-                $identity = Engine::identity($row, PackBall::mapping(), ['date_format' => 'd-m-Y H:i', 'timezone' => 'Europe/Paris']);
+                $identity = Engine::identity($row, PackBall::mapping($profile), ['date_format' => 'd-m-Y H:i', 'timezone' => 'Europe/Paris']);
                 $key = $identity['key'];
                 if (isset($index[$key])) { $duplicates[$key] = true; }
                 $index[$key] = ['identity' => $identity, 'row' => $row, 'line' => $i + 1];
