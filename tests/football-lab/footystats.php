@@ -110,7 +110,7 @@ $noValue = $fm; $noValue['pick'] = null; $noValue['assessment']['issues'] = [];
 check(strpos(\StratEdgeLab\DecisionEngine::diagnostic($noValue)['message'], '6 marchés cotés') !== false, 'Diagnostics count six real prices, not eight markets');
 $missingId = $fixtureStore->create('analysis', $missingRun, 123);
 [$body] = $request('index.php', ['get'=>['id'=>$missingId]]);
-check(strpos($body, 'Statistiques FootyStats indisponibles') !== false && strpos($body, 'Clé FootyStats absente') !== false && strpos($body, 'Relancer avec FootyStats') !== false, 'Saved missing-data card shows actionable cause and replay button');
+check(strpos($body, 'Aucun pari ne passe les critères') !== false && strpos($body, 'class="lab-match"') === false && strpos($body, 'Relancer avec FootyStats') !== false, 'Missing-data matches hidden while replay remains available');
 check(strpos($body, 'Aucun des huit marchés') === false && strpos($body, '<span>Contexte à examiner</span>') === false, 'Unanalyzed match is not shown as reviewed or context-ready');
 $savePreview('index-footystats-missing', $body);
 [$body, $err] = $request('action.php', ['post'=>['action'=>'packball_retry', 'id'=>$missingId, 'csrf'=>'wrong']]);

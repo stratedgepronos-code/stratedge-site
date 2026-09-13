@@ -39,3 +39,15 @@ $halfId = $fixtureStore->create('analysis',$halfData,123);
 check(strpos($body,'name="score_home"') === false, 'Halftime market does not expose final-score card inputs');
 $request('action.php',['post'=>array_replace($postScore,['id'=>$halfId])]);
 check(!$fixtureStore->events($halfId,123), 'Forged card request cannot settle halftime from FT scores');
+
+// Filtering and confidence order must not discard the archived matches.
+$listData = $scoreData;
+$low = $scoreMatch; $low['key'] = str_repeat('a', 64); $low['pick']['probability'] = 0.61;
+$high = $scoreMatch; $high['key'] = str_repeat('b', 64); $high['pick']['probability'] = 0.82;
+$hidden = $scoreMatch; $hidden['key'] = str_repeat('c', 64); $hidden['pick'] = null;
+$listData['analysis']['matches'] = [$low, $hidden, $high];
+$listId = $fixtureStore->create('analysis', $listData, 123);
+[$body] = $request('index.php', ['get'=>['id'=>$listId]]);
+check(substr_count($body, 'class="lab-match"') === 2 && strpos($body, 'id="match-' . $hidden['key']) === false, 'Only selected bets appear on analysis cards');
+check(strpos($body, 'id="match-' . $high['key']) < strpos($body, 'id="match-' . $low['key']), 'Cards sorted by descending model probability');
+check(count($fixtureStore->get($listId,123)['data']['analysis']['matches']) === 3, 'Filtering preserves full archived analysis');
