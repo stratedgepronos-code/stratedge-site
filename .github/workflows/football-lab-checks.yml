@@ -7,7 +7,7 @@ on:
       - 'tests/football-lab/**'
       - 'ops/repair-lab-sidebar.py'
       - '.github/workflows/deploy-vps.yml'
-      - '.github/workflows/football-lab-checks.yml'
+      - '.github/workflows/**'
   push:
     branches: ['codex/stratedge-lab', 'codex/lab-design', 'codex/packball-one-file', 'codex/lab-engine-v2']
 permissions:
@@ -21,7 +21,16 @@ jobs:
       - name: PHP and SQLite
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq php-cli php-sqlite3
+          sudo apt-get install -y -qq php-cli php-sqlite3 python3-yaml
+      - name: Validate GitHub workflow YAML
+        run: |
+          /usr/bin/python3 - <<'PYTHON'
+          from pathlib import Path
+          import yaml
+          for path in Path('.github/workflows').glob('*.yml'):
+              yaml.safe_load(path.read_text())
+              print(str(path) + ': YAML OK')
+          PYTHON
       - name: PHP syntax
         run: |
           find public_html/admin/football-lab tests/football-lab -name '*.php' -print0 | xargs -0 -n1 php -l
