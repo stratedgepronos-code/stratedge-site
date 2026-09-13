@@ -62,27 +62,27 @@ jobs:
           marker_start = '/* STRATEDGE_MOBILE_FILTER_STATIC_START */'
           marker_end = '/* STRATEDGE_MOBILE_FILTER_STATIC_END */'
           block = '''
-/* STRATEDGE_MOBILE_FILTER_STATIC_START */
-@media (max-width: 760px) {
-  .toolbar,
-  .filter-panel,
-  .filters-panel,
-  [class*="filter-panel"] {
-    position: static !important;
-    inset: auto !important;
-    top: auto !important;
-    right: auto !important;
-    bottom: auto !important;
-    left: auto !important;
-    z-index: auto !important;
-    transform: none !important;
-    max-height: none !important;
-    overflow: visible !important;
-    margin-bottom: 18px !important;
-  }
-}
-/* STRATEDGE_MOBILE_FILTER_STATIC_END */
-'''
+          /* STRATEDGE_MOBILE_FILTER_STATIC_START */
+          @media (max-width: 760px) {
+            .toolbar,
+            .filter-panel,
+            .filters-panel,
+            [class*="filter-panel"] {
+              position: static !important;
+              inset: auto !important;
+              top: auto !important;
+              right: auto !important;
+              bottom: auto !important;
+              left: auto !important;
+              z-index: auto !important;
+              transform: none !important;
+              max-height: none !important;
+              overflow: visible !important;
+              margin-bottom: 18px !important;
+            }
+          }
+          /* STRATEDGE_MOBILE_FILTER_STATIC_END */
+          '''
           css_text = css.read_text(encoding='utf-8', errors='strict')
           pattern = re.compile(re.escape(marker_start) + r'.*?' + re.escape(marker_end), re.S)
           if pattern.search(css_text):
