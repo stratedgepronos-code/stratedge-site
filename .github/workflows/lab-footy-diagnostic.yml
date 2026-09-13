@@ -1,0 +1,50 @@
+name: Lab FootyStats diagnostic
+on:
+  push:
+    branches: ['codex/lab-footy-diagnostics']
+    paths: ['.github/workflows/lab-footy-diagnostic.yml']
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read sanitized Lab rejection diagnostics
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          set -e
+          mkdir -p ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=20 -o IdentitiesOnly=yes alex@31.97.196.145 'bash -s' <<'REMOTE'
+          set -e
+          cd /var/www/stratedgepronos.fr/public_html
+          php <<'PHP'
+          <?php
+          try {
+              require 'includes/db.php';
+              require 'admin/football-lab/lib/FootyStats.php';
+              $db = getDB();
+              $q = $db->prepare("SELECT r.payload FROM se_lab_runs r JOIN membres m ON m.id = r.owner_id WHERE m.email = ? AND r.kind = 'analysis' ORDER BY r.created_at DESC LIMIT 1");
+              $q->execute([ADMIN_EMAIL]);
+              $payload = $q->fetchColumn();
+              if (!$payload) { echo "LAB_DIAG_NO_ANALYSIS\n"; exit; }
+              $data = json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
+              $analysis = $data['analysis'];
+              $counts = [];
+              foreach ($analysis['matches'] as $match) {
+                  foreach ($match['assessment']['issues'] ?? [] as $issue) { $counts[$issue] = ($counts[$issue] ?? 0) + 1; }
+              }
+              echo 'LAB_DIAG_COUNTS ' . json_encode(['matches'=>count($analysis['matches']), 'picks'=>count(array_filter($analysis['matches'], static function ($m) { return $m['pick'] !== null; })), 'footystats'=>$analysis['footystats'] ?? null, 'issues'=>$counts], JSON_UNESCAPED_UNICODE) . "\n";
+              foreach (array_slice($analysis['matches'], 0, 3) as $i=>$match) {
+                  $candidates = array_map(static function ($c) { return ['id'=>$c['id'], 'reasons'=>$c['reasons'] ?? []]; }, $match['candidates']);
+                  echo 'LAB_DIAG_ROW ' . json_encode(['row'=>$i+1, 'footystats_status'=>$match['footystats']['status'] ?? null, 'message'=>$match['footystats']['message'] ?? null, 'candidates'=>$candidates], JSON_UNESCAPED_UNICODE) . "\n";
+              }
+              $probe = ['matches'=>array_slice($analysis['matches'], 0, 3)];
+              $fresh = \StratEdgeLab\FootyStats::configured()->enrich($probe);
+              foreach ($fresh['matches'] as $i=>$m) { echo 'LAB_DIAG_FRESH ' . json_encode(['row'=>$i+1,'status'=>$m['footystats']['status'],'message'=>$m['footystats']['message']], JSON_UNESCAPED_UNICODE) . "\n"; }
+          } catch (Throwable $e) { echo "LAB_DIAG_FAILED\n"; exit(2); }
+          PHP
+          REMOTE
