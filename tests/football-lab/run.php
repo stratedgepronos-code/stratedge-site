@@ -205,4 +205,5 @@ $conflictRow = $resultRow; $conflictRow[6] = '0'; $conflictRow[7] = '0';
 $conflictReport = \StratEdgeLab\ResultsImport::apply($fixtureStore, 123, $makeExport([$conflictRow]), 'conflict.csv', new DateTimeImmutable('+4 days'));
 check($conflictReport['conflict'] >= 1, 'Contradictory score is never silently overwritten');
 require __DIR__ . '/footystats.php';
+require __DIR__ . '/card-scores.php';
 echo "OK — $checks checks\n";

@@ -94,6 +94,8 @@ try {
         $id = (string)($_POST['id'] ?? ''); $key = (string)($_POST['match'] ?? '');
         $run = $labStore->get($id, $labOwner); $match = lab_find_match($run, $key);
         $redirect = 'match.php?id=' . $id . '&match=' . $key;
+        $fromCard = $action === 'result' && ($_POST['return_to'] ?? '') === 'analyses';
+        if ($fromCard) { $redirect = 'index.php?id=' . $id . '#match-' . $key; }
         if ($action === 'context') {
             $decision = (string)($_POST['decision'] ?? '');
             if (!in_array($decision, ['pending', 'retained', 'excluded'], true)) { throw new InvalidArgumentException('Décision invalide.'); }
@@ -113,8 +115,9 @@ try {
             $labStore->event($id, $key, 'research', $research, $labOwner);
             session_start();
         } else {
-            if (!$match['pick']) { throw new InvalidArgumentException('Aucun pari à régler.'); }
-            $earliest = (new DateTimeImmutable($match['kickoff']))->modify('+45 minutes');
+            $period = $match['pick']['period'] ?? 'ft';
+            if ($fromCard && $period !== 'ft') { throw new InvalidArgumentException('Utilise la fiche pour saisir le score de la mi-temps concernée.'); }
+            $earliest = (new DateTimeImmutable($match['kickoff']))->modify($period === 'h1' ? '+45 minutes' : '+90 minutes');
             if (new DateTimeImmutable('now') < $earliest) { throw new InvalidArgumentException('Attendez la fin de la période concernée avant de saisir le score.'); }
             $source = trim((string)($_POST['result_source'] ?? ''));
             if (strlen($source) > 2000 || ($source !== '' && !lab_url($source))) { throw new InvalidArgumentException('Lien du résultat invalide.'); }
@@ -125,7 +128,8 @@ try {
                 $h = filter_var($_POST['score_home'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 0, 'max_range' => 30]]);
                 $a = filter_var($_POST['score_away'] ?? '', FILTER_VALIDATE_INT, ['options' => ['min_range' => 0, 'max_range' => 30]]);
                 if ($h === false || $a === false) { throw new InvalidArgumentException('Saisissez les deux scores de la période concernée.'); }
-                $data = ['outcome' => \StratEdgeLab\Engine::settle($match['pick'], $h, $a) ? 'won' : 'lost', 'home' => $h, 'away' => $a, 'period' => $match['pick']['period'], 'source' => $source, 'note' => $note];
+                $outcome = $match['pick'] ? (\StratEdgeLab\Engine::settle($match['pick'], $h, $a) ? 'won' : 'lost') : 'no_bet';
+                $data = ['outcome' => $outcome, 'home' => $h, 'away' => $a, 'period' => $period, 'source' => $source, 'note' => $note];
             }
             $labStore->event($id, $key, 'result', $data, $labOwner);
         }
