@@ -33,18 +33,31 @@ jobs:
               if (!$payload) { echo "LAB_DIAG_NO_ANALYSIS\n"; exit; }
               $data = json_decode($payload, true, 512, JSON_THROW_ON_ERROR);
               $analysis = $data['analysis'];
-              $counts = [];
-              foreach ($analysis['matches'] as $match) {
-                  foreach ($match['assessment']['issues'] ?? [] as $issue) { $counts[$issue] = ($counts[$issue] ?? 0) + 1; }
+              $cache = $db->query("SELECT payload FROM se_lab_api_cache WHERE expires_at > UNIX_TIMESTAMP()")->fetchAll(PDO::FETCH_COLUMN);
+              $seenTeams = 0; $fixtures = [];
+              foreach ($cache as $entry) {
+                  $response = json_decode($entry, true);
+                  $rows = $response['data'] ?? [];
+                  $first = $rows[0] ?? [];
+                  if (isset($first['stats']) && $seenTeams++ < 4) {
+                      echo 'LAB_TEAM_SCHEMA ' . json_encode(['keys'=>array_keys($first), 'id'=>$first['id']??null, 'competition_id'=>$first['competition_id']??null, 'season'=>$first['season']??null, 'stats_keys'=>array_slice(array_keys($first['stats']),0,18), 'team_count'=>count($rows), 'unique_ids'=>count(array_unique(array_column($rows,'id'))), 'competition_ids'=>array_values(array_unique(array_column($rows,'competition_id')))], JSON_UNESCAPED_UNICODE) . "\n";
+                  }
+                  if (isset($first['homeID'])) { foreach ($rows as $row) { $fixtures[$row['id']] = $row; } }
               }
-              echo 'LAB_DIAG_COUNTS ' . json_encode(['matches'=>count($analysis['matches']), 'picks'=>count(array_filter($analysis['matches'], static function ($m) { return $m['pick'] !== null; })), 'footystats'=>$analysis['footystats'] ?? null, 'issues'=>$counts], JSON_UNESCAPED_UNICODE) . "\n";
-              foreach (array_slice($analysis['matches'], 0, 3) as $i=>$match) {
-                  $candidates = array_map(static function ($c) { return ['id'=>$c['id'], 'reasons'=>$c['reasons'] ?? []]; }, $match['candidates']);
-                  echo 'LAB_DIAG_ROW ' . json_encode(['row'=>$i+1, 'footystats_status'=>$match['footystats']['status'] ?? null, 'message'=>$match['footystats']['message'] ?? null, 'candidates'=>$candidates], JSON_UNESCAPED_UNICODE) . "\n";
+              foreach ($analysis['matches'] as $i=>$match) {
+                  $near = [];
+                  foreach ($fixtures as $f) {
+                      if (abs((int)($f['date_unix']??0)-strtotime($match['kickoff'])) <= 900 && (
+                          \StratEdgeLab\FootyStats::normalizedName($match['home'])===\StratEdgeLab\FootyStats::normalizedName($f['home_name']??'')
+                          || \StratEdgeLab\FootyStats::normalizedName($match['away'])===\StratEdgeLab\FootyStats::normalizedName($f['away_name']??'')
+                          || $i < 3)) {
+                          $near[] = array_intersect_key($f, array_flip(['id','homeID','awayID','home_name','away_name','competition_id','date_unix']));
+                      }
+                  }
+                  if ($i<3 || ($match['footystats']['message']??'')==='Match non rapproché sur FootyStats : compétition couverte, noms et horaire à vérifier.') {
+                      echo 'LAB_NAME_MATCH ' . json_encode(['row'=>$i+1,'home'=>$match['home'],'away'=>$match['away'],'near'=>$near], JSON_UNESCAPED_UNICODE) . "\n";
+                  }
               }
-              $probe = ['matches'=>array_slice($analysis['matches'], 0, 3)];
-              $fresh = \StratEdgeLab\FootyStats::configured()->enrich($probe);
-              foreach ($fresh['matches'] as $i=>$m) { echo 'LAB_DIAG_FRESH ' . json_encode(['row'=>$i+1,'status'=>$m['footystats']['status'],'message'=>$m['footystats']['message']], JSON_UNESCAPED_UNICODE) . "\n"; }
           } catch (Throwable $e) { echo "LAB_DIAG_FAILED\n"; exit(2); }
           PHP
           REMOTE
