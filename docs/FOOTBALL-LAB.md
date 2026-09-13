@@ -77,3 +77,9 @@ Le diagnostic de production a révélé que `/league-teams` omet `competition_id
 Des correspondances PackBall vers les identifiants FootyStats vérifiés sont bornées par pays. Elles conservent les contrôles de l’adversaire, de l’orientation et de l’horaire ; aucun rapprochement flou n’est effectué. Les rencontres absentes de la couverture API restent indisponibles.
 
 Les listes et les fiches distinguent données manquantes, échantillon insuffisant et critères de prix non atteints. Le nombre de marchés cotés correspond aux prix réellement présents. Cette présentation s’applique également aux anciennes analyses, sans modifier leurs prévisions. Le bouton « Relancer avec FootyStats » reconstruit le CSV archivé et crée une nouvelle analyse, en conservant l’originale. Les matchs déjà commencés restent exclus. La politique de prix et de sélection ne change pas.
+
+### Saisie du score sur les cartes
+
+Chaque carte de la page Analyses propose deux champs domicile/extérieur et un bouton « Enregistrer le score final ». Le score reste visible et peut être corrigé ; chaque correction ajoute un événement sans effacer le précédent. Le contrôleur existant calcule gagné/perdu pour le pari FT sélectionné. Sans pari, le score est conservé avec le statut `no_bet`, exclu des métriques de paris. Les anciens paris par mi-temps se règlent dans leur fiche pour éviter de leur appliquer un score final.
+
+POST, CSRF et propriétaire contrôlés. La saisie FT est bloquée côté serveur avant 90 minutes après le coup d’envoi ; l’utilisateur doit attendre la fin effective du match, hors prolongations. Après enregistrement, retour à la carte de la même analyse.
