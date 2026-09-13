@@ -74,6 +74,8 @@ final class PackBall
             'odds_source' => 'Export PackBall',
         ];
         $result = Engine::analyze(['stats' => $table], ['stats' => $mapping], $options, $now);
+        foreach ($result['matches'] as &$match) { $match['country'] = trim((string)($table['rows'][$match['row'] - 1][0] ?? '')); }
+        unset($match);
         if ($footy !== null) { $result = $footy->enrich($result); }
         $result = DecisionEngine::review($result, $table);
         foreach ($result['errors'] as &$error) {
@@ -86,5 +88,17 @@ final class PackBall
             'options' => $options,
             'import' => ['profile' => $profile, 'filename' => $table['name'], 'rows' => count($table['rows']), 'timezone' => 'Europe/Paris'],
         ];
+    }
+
+    public static function replay(array $saved, FootyStats $footy): array
+    {
+        $table = $saved['tables']['stats'] ?? null;
+        if (!is_array($table) || !is_array($table['headers'] ?? null) || !is_array($table['rows'] ?? null)) { throw new \InvalidArgumentException('CSV d’origine indisponible : importe de nouveau ton fichier.'); }
+        self::profile($table['headers']);
+        $stream = fopen('php://temp', 'r+');
+        fputcsv($stream, $table['headers'], ';', '"', '');
+        foreach ($table['rows'] as $row) { fputcsv($stream, $row, ';', '"', ''); }
+        rewind($stream); $csv = stream_get_contents($stream); fclose($stream);
+        return self::prepare($csv, $saved['import']['filename'] ?? 'PackBall.csv', null, $footy);
     }
 }
