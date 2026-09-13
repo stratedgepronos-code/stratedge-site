@@ -206,4 +206,5 @@ $conflictReport = \StratEdgeLab\ResultsImport::apply($fixtureStore, 123, $makeEx
 check($conflictReport['conflict'] >= 1, 'Contradictory score is never silently overwritten');
 require __DIR__ . '/footystats.php';
 require __DIR__ . '/card-scores.php';
+require __DIR__ . '/auto-context.php';
 echo "OK — $checks checks\n";
