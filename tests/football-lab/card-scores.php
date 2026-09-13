@@ -52,5 +52,5 @@ check(substr_count($body, 'class="lab-match"') === 2 && strpos($body, 'id="match
 check(strpos($body, 'id="match-' . $high['key']) < strpos($body, 'id="match-' . $low['key']), 'Cards sorted by descending model probability');
 check(count($fixtureStore->get($listId,123)['data']['analysis']['matches']) === 3, 'Filtering preserves full archived analysis');
 
-check(strpos($body, 'id="lab-copy-chat"') !== false && strpos($body, 'id="lab-chat-export"') !== false, 'Selected matches can be copied with their conversation prompt');
+check(strpos($body, 'id="lab-copy-chat"') !== false && strpos($body, 'id="lab-chat-export"') !== false, 'Selected match data can be copied');
 check(!\StratEdgeLab\Context::ready(), 'GPT API disabled even if a server key exists');
