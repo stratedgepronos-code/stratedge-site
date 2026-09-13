@@ -14,8 +14,8 @@ final class Context
 
     public static function ready(): bool
     {
-        $config = self::config();
-        return $config['key'] !== '' && $config['model'] !== '' && function_exists('curl_init');
+        // API research disabled: analyses are now performed in a ChatGPT conversation.
+        return false;
     }
 
     public static function request(array $match): array

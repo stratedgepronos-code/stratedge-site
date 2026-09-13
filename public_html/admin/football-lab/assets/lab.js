@@ -75,3 +75,17 @@ if (resultsForm) {
     if (input.files.length === 1 && /\.csv$/i.test(input.files[0].name) && input.files[0].size <= 2097152) resultsForm.requestSubmit();
   });
 }
+
+const copyChat = document.querySelector('#lab-copy-chat');
+copyChat?.addEventListener('click', async () => {
+  const field = document.querySelector('#lab-chat-export');
+  const status = document.querySelector('#lab-copy-status');
+  try {
+    await navigator.clipboard.writeText(field.value);
+    status.textContent = ' Copié ! Colle ce texte dans ta conversation ChatGPT.';
+  } catch {
+    field.closest('details').open = true;
+    field.focus(); field.select();
+    status.textContent = ' Texte sélectionné : utilise Copier ou Ctrl+C.';
+  }
+});
