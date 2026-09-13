@@ -10,6 +10,7 @@ final class FootyStats
     private const PACKBALL_TEAM_IDS = [
         'Romania' => ['Otelul' => 6633],
         'Norway' => ['Bodø / Glimt' => 332],
+        'Denmark' => ['FC Midtjylland' => 955, 'Brøndby IF' => 2517],
         'Turkey' => ['Gaziantep F.K.' => 355],
         'Spain' => ['Celta Fortuna' => 4515],
         'Republic of Ireland' => ["St Patrick's" => 981, 'Waterford United' => 2064],

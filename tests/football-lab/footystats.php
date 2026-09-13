@@ -115,5 +115,7 @@ check(strpos($body, 'Aucun des huit marchés') === false && strpos($body, '<span
 $savePreview('index-footystats-missing', $body);
 [$body, $err] = $request('action.php', ['post'=>['action'=>'packball_retry', 'id'=>$missingId, 'csrf'=>'wrong']]);
 check(strpos($err, 'HTTP_STATUS=403') !== false, 'Replay requires CSRF');
+$storedBeforeRetry = $fixtureStore->get($missingId,123)['data'];
+$runsBeforeRetry = count($fixtureStore->recent(123));
 [$body, $err] = $request('action.php', ['post'=>['action'=>'packball_retry', 'id'=>$missingId, 'csrf'=>'fixture-token']]);
-check(strpos($err, 'HTTP_STATUS=303') !== false && $fixtureStore->get($missingId,123)['data'] === $missingRun, 'Replay controller preserves original saved report');
+check(strpos($err, 'HTTP_STATUS=303') !== false && $fixtureStore->get($missingId,123)['data'] === $storedBeforeRetry && count($fixtureStore->recent(123)) === $runsBeforeRetry + 1, 'Replay controller creates a new run and preserves original saved report');
