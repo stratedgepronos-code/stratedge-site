@@ -1,5 +1,6 @@
 <?php
 $gpt = $events[$m['key']]['research']['data'] ?? null;
+if (!$gpt) { return; }
 $gptDecision = $gpt['decision'] ?? 'pending';
 ?>
 <div class="lab-notice"><strong>GPT · <?= lab_h(['retained'=>'Retenu après analyse', 'excluded'=>'Écarté après analyse', 'pending'=>'À attendre'][$gptDecision] ?? 'À attendre') ?></strong>

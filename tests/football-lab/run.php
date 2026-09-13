@@ -168,7 +168,7 @@ $savePreview('mapping', $body);
 check(substr_count($body, 'type="file"') === 2 && substr_count($body, 'name="packball"') === 2 && strpos($body, 'confirm_mapping') === false && strpos($body, '<select') === false, 'Analysis and result imports have no mapping/settings');
 [$body] = $request('match.php', ['get' => ['id' => $fixtureId, 'match' => $m['key']]]);
 $savePreview('match', $body);
-check(strpos($body, 'Marchés comparés') !== false && strpos($body, 'Recherche web non configurée') !== false, 'Match detail and honest API state');
+check(strpos($body, 'Marchés comparés') !== false && strpos($body, 'Copie les sélections depuis Analyses') !== false && strpos($body, 'name="action" value="research"') === false, 'Match detail directs to ChatGPT without API action');
 [$body, $err] = $request('index.php', ['session' => []]);
 check($body === '' && strpos($err, 'HTTP_STATUS=302') !== false, 'Unauthenticated user redirected by actual auth');
 [$body, $err] = $request('index.php', ['session' => ['membre_id' => 124, 'membre_email' => 'other@example.test', 'is_admin' => true]]);

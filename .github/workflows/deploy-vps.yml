@@ -81,14 +81,12 @@ jobs:
           echo "LAB_ASSETS_OK"
           REPO_ROOT=$(git rev-parse --show-toplevel)
           php "$REPO_ROOT/ops/check-lab-footystats.php" "$REPO_ROOT"
-          # Server-side queue: serialized, continues when the browser is closed.
+          # Remove only the discontinued GPT API job; preserve every other cron entry.
           GPT_CRON=$(mktemp /tmp/lab-gpt-cron.XXXXXX)
           (crontab -l 2>/dev/null || true) | sed '/# stratedge-lab-auto-context$/d' > "$GPT_CRON"
-          echo "* * * * * /usr/bin/flock -n /tmp/stratedge-lab-auto-context.lock /usr/bin/php $REPO_ROOT/ops/lab-auto-context.php $REPO_ROOT >/dev/null 2>&1 # stratedge-lab-auto-context" >> "$GPT_CRON"
           crontab "$GPT_CRON"
           rm -f "$GPT_CRON"
-          php "$REPO_ROOT/ops/lab-auto-context.php" "$REPO_ROOT" --check
-          echo "GPT_CONTEXT_CRON_INSTALLED"
+          echo "GPT_CONTEXT_CRON_REMOVED"
           REMOTE
 
       - name: Vérification code_version en prod
