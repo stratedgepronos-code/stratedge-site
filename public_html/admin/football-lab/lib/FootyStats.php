@@ -195,6 +195,10 @@ final class FootyStats
                 foreach (['home' => $home, 'away' => $away] as $side => $stats) {
                     foreach (['n', 'gf', 'ga'] as $field) { $match['stats'][$side . '_' . $field] = $stats[$field]; }
                 }
+                $match['warnings'] = array_values(array_filter($match['warnings'], static function ($warning) { return !preg_match('/^(Domicile|Extérieur) : échantillon limité/', $warning); }));
+                foreach (['home' => 'à domicile', 'away' => 'à l’extérieur'] as $side => $label) {
+                    if ($match['stats'][$side . '_n'] < 20) { $match['warnings'][] = 'FootyStats ' . $label . ' : échantillon limité à ' . $match['stats'][$side . '_n'] . ' matchs.'; }
+                }
                 $match['footystats'] = ['status' => 'enriched', 'match_id' => (int)$fixture['id'], 'season_id' => $season,
                     'home_id' => (int)$fixture['homeID'], 'away_id' => (int)$fixture['awayID'], 'as_of' => gmdate('c', $cutoff),
                     'home' => $home, 'away' => $away, 'league_average' => $league['average'], 'message' => 'Bilans de saison : domicile pour le recevant, extérieur pour le visiteur.'];

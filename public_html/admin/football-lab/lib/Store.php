@@ -43,7 +43,9 @@ final class Store
         if (!in_array($kind, ['draft', 'analysis'], true)) { throw new \InvalidArgumentException('Type d’import invalide.'); }
         $id = bin2hex(random_bytes(16));
         $stmt = $this->db->prepare('INSERT INTO se_lab_runs (id, owner_id, kind, created_at, payload) VALUES (?, ?, ?, ?, ?)');
-        $stmt->execute([$id, $owner, $kind, gmdate('c'), self::encode($data)]);
+        // Preserve import order within the same second; random IDs are not a chronology.
+        $created = (new \DateTimeImmutable('now', new \DateTimeZone('UTC')))->format('Y-m-d\TH:i:s.uP');
+        $stmt->execute([$id, $owner, $kind, $created, self::encode($data)]);
         return $id;
     }
 
