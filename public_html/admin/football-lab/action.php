@@ -8,7 +8,27 @@ $redirect = 'import.php';
 try {
     if ($labError) { throw new RuntimeException($labError); }
     $action = (string)($_POST['action'] ?? '');
-    if (in_array($action, ['packball_upload', 'packball_results'], true)) {
+    if ($action === 'packball_pair') {
+        $upload = $_FILES['packball'] ?? [];
+        if (!is_array($upload['name'] ?? null) || count($upload['name']) !== 2) { throw new InvalidArgumentException('Choisis les deux fichiers GPT et GPT-2.'); }
+        $files = [];
+        foreach ([0,1] as $i) {
+            $name = $upload['name'][$i] ?? null; $tmp = $upload['tmp_name'][$i] ?? null;
+            if (!is_string($name) || !is_string($tmp) || ($upload['error'][$i] ?? -1) !== UPLOAD_ERR_OK
+                || !is_uploaded_file($tmp) || ($upload['size'][$i] ?? PHP_INT_MAX) > 2097152
+                || strtolower(pathinfo($name, PATHINFO_EXTENSION)) !== 'csv') {
+                throw new InvalidArgumentException('Chaque fichier doit être un CSV valide de 2 Mo maximum.');
+            }
+            $files[] = ['name'=>$name,'csv'=>file_get_contents($tmp)];
+        }
+        $footy = \StratEdgeLab\FootyStats::configured($labStore);
+        session_write_close();
+        $prepared = \StratEdgeLab\PackBall::preparePair($files, null, $footy);
+        $id = $labStore->create('analysis', $prepared, $labOwner);
+        session_start();
+        $redirect = 'index.php?id=' . $id;
+        $_SESSION['lab_success'] = 'Deux fichiers réunis : ' . $prepared['import']['rows'] . ' matchs uniques, ' . count($prepared['analysis']['matches']) . ' analysés. Statuts non admissibles signalés ci-dessous.';
+    } elseif (in_array($action, ['packball_upload', 'packball_results'], true)) {
         if ($action === 'packball_results') { $redirect = 'history.php'; unset($_SESSION['lab_results_report']); }
         $file = $_FILES['packball'] ?? null;
         if (!is_array($file) || !isset($file['error'], $file['tmp_name'], $file['name'], $file['size'])

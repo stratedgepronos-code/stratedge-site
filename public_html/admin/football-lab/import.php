@@ -17,24 +17,24 @@ if ($labError) { lab_end(); exit; }
     <?php endif; ?>
 </section>
 <section class="lab-panel lab-import-panel">
-    <div class="lab-section-head"><div><div class="lab-eyebrow">Import automatique</div><h2>Un fichier. Toute ta journée.</h2><p>Charge ton export PackBall : les statistiques et les cotes sont déjà dedans.</p></div><span class="lab-section-icon"><?= lab_icon('import', 21) ?></span></div>
+    <div class="lab-section-head"><div><div class="lab-eyebrow">Import automatique</div><h2>Deux fichiers. Une seule analyse.</h2><p>Charge ensemble les exports GPT (33 colonnes) et GPT-2 (28 colonnes) pour la même journée.</p></div><span class="lab-section-icon"><?= lab_icon('import', 21) ?></span></div>
     <form action="<?= lab_h($labBase) ?>action.php" method="post" enctype="multipart/form-data" class="lab-form" id="lab-packball-upload">
-        <?= lab_token() ?><input type="hidden" name="action" value="packball_upload"><input type="hidden" name="MAX_FILE_SIZE" value="2097152">
+        <?= lab_token() ?><input type="hidden" name="action" value="packball_pair"><input type="hidden" name="MAX_FILE_SIZE" value="2097152">
         <label class="lab-dropzone" id="lab-dropzone" for="lab-packball-file">
             <span class="lab-empty-icon"><?= lab_icon('import', 28) ?></span>
-            <strong>Dépose ton CSV PackBall ici</strong>
-            <span>ou clique pour choisir le fichier</span>
-            <input type="file" id="lab-packball-file" name="packball" accept=".csv,text/csv" required aria-describedby="lab-upload-help lab-upload-status">
-            <small>CSV · 2 Mo maximum · 1 000 matchs maximum</small>
+            <strong>Dépose tes deux CSV PackBall ici</strong>
+            <span>ou clique pour sélectionner GPT et GPT-2 ensemble</span>
+            <input type="file" id="lab-packball-file" name="packball[]" multiple accept=".csv,text/csv" required aria-describedby="lab-upload-help lab-upload-status">
+            <small>2 CSV · 2 Mo par fichier · 1 000 matchs maximum</small>
         </label>
         <p id="lab-upload-status" class="lab-upload-status" role="status" aria-live="polite" hidden></p>
         <p id="lab-upload-error" class="lab-alert" role="alert" hidden></p>
         <noscript><button class="lab-button">Importer et analyser</button></noscript>
     </form>
-    <p class="lab-muted" id="lab-upload-help">Tes exports à 28 et 46 colonnes sont reconnus. L’enrichissement FootyStats se lance avec l’analyse et peut prendre jusqu’à 45 secondes.</p>
+    <p class="lab-muted" id="lab-upload-help">L’ordre des deux fichiers est libre. Les colonnes et les matchs sont rapprochés automatiquement. L’enrichissement FootyStats se lance avec l’analyse et peut prendre jusqu’à 45 secondes.</p>
 </section>
 <section class="lab-panel lab-import-panel">
-    <div class="lab-section-head"><div><div class="lab-eyebrow">Fin de journée</div><h2>Valider les scores automatiquement</h2><p>Réexporte le même CSV PackBall après les matchs. Les lignes en statut FT seront rapprochées des analyses existantes par date, domicile et extérieur.</p></div><span class="lab-section-icon"><?= lab_icon('history', 21) ?></span></div>
+    <div class="lab-section-head"><div><div class="lab-eyebrow">Fin de journée</div><h2>Valider les scores automatiquement</h2><p>Pour les scores, un seul des deux CSV réexporté après les matchs suffit. Les lignes en statut FT seront rapprochées des analyses existantes par date, domicile et extérieur.</p></div><span class="lab-section-icon"><?= lab_icon('history', 21) ?></span></div>
     <form action="<?= lab_h($labBase) ?>action.php" method="post" enctype="multipart/form-data" class="lab-form" id="lab-results-upload">
         <?= lab_token() ?><input type="hidden" name="action" value="packball_results"><input type="hidden" name="MAX_FILE_SIZE" value="2097152">
         <label class="lab-dropzone lab-dropzone-compact" for="lab-results-file"><span class="lab-empty-icon"><?= lab_icon('check', 25) ?></span><strong>Choisir le CSV terminé</strong><span>Les scores FT seront validés dans l’historique</span><input type="file" id="lab-results-file" name="packball" accept=".csv,text/csv" required><small>Le même format PackBall · aucun réglage</small></label>

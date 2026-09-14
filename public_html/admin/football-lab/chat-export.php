@@ -1,7 +1,7 @@
 <?php if ($selectedMatches):
 $chatMatches = [];
 foreach ($selectedMatches as $item) {
-    $chatMatches[] = array_intersect_key($item, array_flip(['home', 'away', 'league', 'kickoff', 'pick', 'stats', 'footystats']));
+    $chatMatches[] = array_intersect_key($item, array_flip(['home', 'away', 'league', 'kickoff', 'pick', 'stats', 'footystats', 'packball']));
 }
 $chatExport = json_encode(['exported_at' => gmdate('c'), 'matches' => $chatMatches], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
 ?>
