@@ -12,15 +12,14 @@ try {
             foreach ($run['data']['analysis']['matches'] as $m) {
                 // Do not retain raw tables and every candidate while aggregating a hundred runs.
                 $summary = array_intersect_key($m, array_flip(['key', 'home', 'away', 'kickoff', 'pick']));
-                $entries[] = ['version' => $version, 'run_id' => $run['id'], 'created_at' => $run['created_at'], 'match' => $summary, 'result' => $events[$m['key']]['result']['data'] ?? null];
+                $entries[] = ['version' => $version, 'run_id' => $run['id'], 'created_at' => $run['created_at'], 'match' => $summary, 'result_event_id' => (int)($events[$m['key']]['result']['id'] ?? 0), 'result' => $events[$m['key']]['result']['data'] ?? null];
             }
         }
     }
 } catch (Throwable $e) { $labError = 'Le suivi est temporairement indisponible.'; }
 $defaultVersion = isset($versions[\StratEdgeLab\DecisionEngine::FOOTY_VERSION]) ? \StratEdgeLab\DecisionEngine::FOOTY_VERSION : (isset($versions[\StratEdgeLab\DecisionEngine::VERSION]) ? \StratEdgeLab\DecisionEngine::VERSION : (array_key_first($versions) ?? ''));
 $selectedVersion = (string)($_GET['version'] ?? $defaultVersion);
-$entries = array_values(array_filter($entries, static function ($entry) use ($selectedVersion) { return $entry['version'] === $selectedVersion; }));
-$metrics = \StratEdgeLab\Metrics::summarize($entries);
+$metrics = \StratEdgeLab\Metrics::summarize($entries, $selectedVersion);
 lab_start('Le suivi des résultats', 'history');
 if ($labError) { lab_end(); exit; }
 $resultsReport = $_SESSION['lab_results_report'] ?? null;
@@ -37,6 +36,6 @@ unset($_SESSION['lab_results_report']);
 </div>
 <section class="lab-panel"><div class="lab-section-head"><div><div class="lab-eyebrow">Journal des choix initiaux</div><h2>Chaque match laisse une trace.</h2></div><span class="lab-status"><?= count($metrics['rows']) ?> matchs</span></div>
 <?php if (!$metrics['rows']): ?><div class="lab-howto"><div class="lab-step"><b>01</b><div><strong>Importe une journée</strong><p>Ajoute les statistiques et, si tu les as, les cotes PackBall.</p></div></div><div class="lab-step"><b>02</b><div><strong>Examine les choix proposés</strong><p>Chaque fiche conserve le premier choix statistique et tes contrôles.</p></div></div><div class="lab-step"><b>03</b><div><strong>Renseigne les résultats</strong><p>Le suivi se met à jour après l’enregistrement des scores.</p></div></div></div>
-<?php else: ?><div class="lab-table-scroll"><table><thead><tr><th>Match</th><th>Pari initial</th><th>Probabilité</th><th>Résultat</th></tr></thead><tbody><?php foreach (array_reverse($metrics['rows']) as $entry): $m = $entry['match']; $outcome = $entry['result']['outcome'] ?? ''; ?><tr><td><a href="<?= lab_h($labBase . 'match.php?id=' . $entry['run_id'] . '&match=' . $m['key']) ?>"><?= lab_h($m['home'] . ' — ' . $m['away']) ?></a></td><td><?= lab_h($m['pick']['label']) ?></td><td><?= lab_p($m['pick']['probability']) ?></td><td><span class="lab-status <?= in_array($outcome, ['won', 'lost'], true) ? 'lab-status-' . $outcome : '' ?>"><?= lab_h(['won' => 'Gagné', 'lost' => 'Perdu', 'void' => 'Annulé'][$outcome] ?? 'À renseigner') ?></span></td></tr><?php endforeach; ?></tbody></table></div><?php endif; ?></section>
+<?php else: ?><div class="lab-table-scroll"><table><thead><tr><th>Match</th><th>Pari initial</th><th>Probabilité</th><th>Score</th><th>Résultat</th></tr></thead><tbody><?php foreach (array_reverse($metrics['rows']) as $entry): $m = $entry['match']; $outcome = $entry['result']['outcome'] ?? ''; ?><tr><td><a href="<?= lab_h($labBase . 'match.php?id=' . $entry['run_id'] . '&match=' . $m['key']) ?>"><?= lab_h($m['home'] . ' — ' . $m['away']) ?></a></td><td><?= lab_h($m['pick']['label']) ?></td><td><?= lab_p($m['pick']['probability']) ?></td><td><?= isset($entry['result']['home'], $entry['result']['away']) ? lab_h($entry['result']['home'] . ' – ' . $entry['result']['away']) : '—' ?></td><td><span class="lab-status <?= in_array($outcome, ['won', 'lost'], true) ? 'lab-status-' . $outcome : '' ?>"><?= lab_h(['won' => 'Gagné', 'lost' => 'Perdu', 'void' => 'Annulé'][$outcome] ?? 'À renseigner') ?></span></td></tr><?php endforeach; ?></tbody></table></div><?php endif; ?></section>
 <details class="lab-method"><summary>Comprendre ce suivi</summary><p>Premier choix statistique de chaque match dans les 100 dernières analyses. Les réimports ne multiplient pas les paris. Tous les choix initiaux sont suivis, y compris ceux écartés ensuite. Les résultats sont saisis et vérifiés par toi.</p></details>
 <?php lab_end(); ?>

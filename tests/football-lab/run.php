@@ -120,6 +120,24 @@ check(Metrics::summarize([$entry])['n'] === 0, 'Voids excluded from accuracy');
 $parsed = Context::parse(['status' => 'completed', 'output' => [['type' => 'message', 'content' => [['type' => 'output_text', 'text' => 'Texte sourcé', 'annotations' => [['type' => 'url_citation', 'url' => 'https://example.com/club', 'title' => 'Club'], ['type' => 'url_citation', 'url' => 'javascript:alert(1)', 'title' => 'Unsafe']]]]]]], 'test-model');
 check(count($parsed['sources']) === 1 && $parsed['status'] === 'review_required', 'Source URLs filtered, no automatic validation');
 try { Context::parse(['status' => 'completed', 'output' => []], 'test'); throw new Exception('Should reject'); } catch (RuntimeException $e) { check(true, 'No fabricated context on empty response'); }
+// Recover fixture scores without replacing the first prediction.
+$initial = ['version'=>'v1', 'run_id'=>'first', 'created_at'=>'2030-01-01', 'match'=>$m, 'result'=>null, 'result_event_id'=>0];
+$initial['match']['pick'] = $p['ft_over_25'];
+$later = $initial; $later['version']='v2'; $later['run_id']='second'; $later['created_at']='2030-01-02';
+$later['match']['pick'] = $p['ft_under_25'];
+$later['result'] = ['home'=>2,'away'=>1,'period'=>'ft','outcome'=>'lost']; $later['result_event_id']=5;
+$recovered = Metrics::summarize([$later,$initial], 'v1');
+check($recovered['n']===1 && $recovered['wins']===1 && $recovered['rows'][0]['run_id']==='first', 'Reimport score settles original market across versions');
+check($recovered['rows'][0]['match']['pick']===$initial['match']['pick'], 'Recovery preserves original probability and odds');
+$corrected = $later; $corrected['run_id']='third'; $corrected['result_event_id']=6; $corrected['result']['home']=0; $corrected['result']['away']=0;
+check(Metrics::summarize([$corrected,$initial,$later], 'v1')['wins']===0, 'Newest correction used independently of import order');
+$half = $later; $half['result']['period']='h1';
+check(Metrics::summarize([$initial,$half], 'v1')['n']===0, 'Halftime score never settles full-time prediction');
+$other = $later; $other['match']['key']='different-fixture';
+check(Metrics::summarize([$initial,$other], 'v1')['n']===0, 'Scores cannot cross fixture identity');
+$voidInitial = $initial; $voidInitial['result']=['outcome'=>'void'];
+check(Metrics::summarize([$voidInitial,$later], 'v1')['n']===0, 'Explicit original void preserved');
+check(Metrics::summarize([$initial,$later])['n']===1, 'Reimport recovery does not double count bets');
 // Render actual templates and execute the action controller in isolated PHP requests.
 $fixture = sys_get_temp_dir() . '/stratedge-lab-test-' . bin2hex(random_bytes(8));
 mkdir($fixture . '/public_html/includes', 0700, true);
