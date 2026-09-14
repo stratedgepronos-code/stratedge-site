@@ -63,13 +63,17 @@ try {
         if ($probe) { fclose($probe); break; }
         usleep(50000);
     }
-    $upload = static function (string $bytes, string $token = 'fixture-token', string $filename = 'PackBall.csv') use ($address): array {
+    $upload = static function (string $bytes, string $token = 'fixture-token', string $filename = 'PackBall.csv', ?string $second = null) use ($address): array {
         $boundary = 'LabFixtureBoundary8192634';
         $body = '';
-        foreach (['action' => 'packball_upload', 'csrf' => $token] as $key => $value) {
+        foreach (['action' => $second === null ? 'packball_upload' : 'packball_pair', 'csrf' => $token] as $key => $value) {
             $body .= '--' . $boundary . "\r\nContent-Disposition: form-data; name=\"$key\"\r\n\r\n$value\r\n";
         }
-        $body .= '--' . $boundary . "\r\nContent-Disposition: form-data; name=\"packball\"; filename=\"$filename\"\r\nContent-Type: text/csv\r\n\r\n" . $bytes . "\r\n--" . $boundary . "--\r\n";
+        $field = $second === null ? 'packball' : 'packball[]';
+        foreach ($second === null ? [$bytes] : [$bytes,$second] as $part) {
+            $body .= '--' . $boundary . "\r\nContent-Disposition: form-data; name=\"$field\"; filename=\"$filename\"\r\nContent-Type: text/csv\r\n\r\n" . $part . "\r\n";
+        }
+        $body .= '--' . $boundary . "--\r\n";
         $ctx = stream_context_create(['http' => ['method' => 'POST', 'header' => 'Content-Type: multipart/form-data; boundary=' . $boundary, 'content' => $body, 'ignore_errors' => true, 'follow_location' => 0, 'timeout' => 10]]);
         $response = file_get_contents('http://' . $address . '/panel-x9k3m/football-lab/action.php', false, $ctx);
         return [$response, $http_response_header];
@@ -89,6 +93,14 @@ try {
     check(strpos(implode("\n", $headers), '/football-lab/import.php') !== false && count($fixtureStore->recent(123)) === $before + 1, 'Invalid upload does not create an analysis');
     [, $headers] = $upload($csv, 'fixture-token', 'file.txt');
     check(count($fixtureStore->recent(123)) === $before + 1, 'Non-CSV extension rejected');
+    $futureDay = (new DateTimeImmutable('+3 days'))->format('d-m-Y');
+    $a = str_replace('15-09-2026',$futureDay,file_get_contents(__DIR__.'/pair-gpt-33.csv'));
+    $b = str_replace('15-09-2026',$futureDay,file_get_contents(__DIR__.'/pair-gpt2-28.csv'));
+    $beforePair = count($fixtureStore->recent(123));
+    [, $headers] = $upload($a,'fixture-token','pair.csv',$b);
+    check(strpos(implode("\n",$headers),'index.php?id=')!==false && count($fixtureStore->recent(123))===$beforePair+1,'Real paired multipart upload creates exactly one analysis');
+    [, $headers] = $upload($a,'wrong','pair.csv',$b);
+    check(strpos($headers[0],'403')!==false && count($fixtureStore->recent(123))===$beforePair+1,'Paired upload enforces CSRF');
 } finally { proc_terminate($process); proc_close($process); }
 
 require __DIR__ . '/decision-engine.php';

@@ -183,7 +183,7 @@ foreach (['import.php', 'index.php', 'history.php'] as $page) {
 }
 [$body] = $request('import.php', ['get' => ['id' => $draftId]]);
 $savePreview('mapping', $body);
-check(substr_count($body, 'type="file"') === 2 && substr_count($body, 'name="packball"') === 2 && strpos($body, 'confirm_mapping') === false && strpos($body, '<select') === false, 'Analysis and result imports have no mapping/settings');
+check(substr_count($body, 'type="file"') === 2 && substr_count($body, 'name="packball"') === 1 && strpos($body, 'name="packball[]" multiple') !== false && strpos($body, 'confirm_mapping') === false && strpos($body, '<select') === false, 'Analysis and result imports have no mapping/settings');
 [$body] = $request('match.php', ['get' => ['id' => $fixtureId, 'match' => $m['key']]]);
 $savePreview('match', $body);
 check(strpos($body, 'Marchés comparés') !== false && strpos($body, 'Copie les sélections depuis Analyses') !== false && strpos($body, 'name="action" value="research"') === false, 'Match detail directs to ChatGPT without API action');
@@ -225,4 +225,5 @@ check($conflictReport['conflict'] >= 1, 'Contradictory score is never silently o
 require __DIR__ . '/footystats.php';
 require __DIR__ . '/card-scores.php';
 require __DIR__ . '/auto-context.php';
+require __DIR__ . '/paired-import.php';
 echo "OK — $checks checks\n";

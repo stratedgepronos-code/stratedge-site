@@ -25,47 +25,37 @@ if (packballForm) {
   const status = packballForm.querySelector('#lab-upload-status');
   const error = packballForm.querySelector('#lab-upload-error');
   let sending = false;
-  const showError = (message) => { error.textContent = message; error.hidden = false; };
-  const sendFile = () => {
-    if (sending || !fileInput.files.length) return;
+  const sendFiles = () => {
+    if (sending) return;
+    const files = Array.from(fileInput.files);
     error.hidden = true;
-    const file = fileInput.files[0];
-    if (fileInput.files.length !== 1 || !/\.csv$/i.test(file.name)) {
-      showError('Choisis un seul fichier CSV PackBall.'); fileInput.value = ''; return;
-    }
-    if (!file.size || file.size > 2097152) {
-      showError('Le CSV doit contenir des données et ne pas dépasser 2 Mo.'); fileInput.value = ''; return;
+    if (files.length !== 2 || files.some(file => !/\.csv$/i.test(file.name) || !file.size || file.size > 2097152)) {
+      error.textContent = 'Sélectionne ensemble les deux CSV GPT et GPT-2, de 2 Mo maximum chacun.';
+      error.hidden = false; return;
     }
     packballForm.requestSubmit();
   };
-  fileInput.addEventListener('change', sendFile);
-  packballForm.addEventListener('submit', (event) => {
+  fileInput.addEventListener('change', sendFiles);
+  packballForm.addEventListener('submit', event => {
     if (sending) { event.preventDefault(); return; }
     sending = true;
     packballForm.setAttribute('aria-busy', 'true');
     dropzone.classList.add('is-loading');
-    status.textContent = 'Lecture de ' + fileInput.files[0].name + ' et analyse des matchs…';
+    status.textContent = 'Rapprochement des deux fichiers et analyse des matchs…';
     status.hidden = false;
-    // Keep the file input enabled so its bytes are included in the multipart request.
   });
-  ['dragenter', 'dragover'].forEach((type) => dropzone.addEventListener(type, (event) => {
+  ['dragenter','dragover'].forEach(type => dropzone.addEventListener(type, event => {
     event.preventDefault(); if (!sending) dropzone.classList.add('is-dragging');
   }));
-  ['dragleave', 'drop'].forEach((type) => dropzone.addEventListener(type, () => dropzone.classList.remove('is-dragging')));
-  dropzone.addEventListener('drop', (event) => {
-    event.preventDefault();
-    if (sending) return;
-    if (event.dataTransfer.files.length !== 1) { showError('Dépose un seul fichier CSV PackBall.'); return; }
-    fileInput.files = event.dataTransfer.files;
-    sendFile();
+  ['dragleave','drop'].forEach(type => dropzone.addEventListener(type, () => dropzone.classList.remove('is-dragging')));
+  dropzone.addEventListener('drop', event => {
+    event.preventDefault(); if (sending) return;
+    fileInput.files = event.dataTransfer.files; sendFiles();
   });
-  window.addEventListener('pageshow', (event) => {
+  window.addEventListener('pageshow', event => {
     if (!event.persisted) return;
-    sending = false;
-    fileInput.value = '';
-    packballForm.removeAttribute('aria-busy');
-    dropzone.classList.remove('is-loading');
-    status.hidden = true;
+    sending = false; fileInput.value = '';
+    packballForm.removeAttribute('aria-busy'); dropzone.classList.remove('is-loading'); status.hidden = true;
   });
 }
 const resultsForm = document.querySelector('#lab-results-upload');
