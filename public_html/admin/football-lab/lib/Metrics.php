@@ -4,13 +4,36 @@ namespace StratEdgeLab;
 
 final class Metrics
 {
-    public static function summarize(array $entries): array
+    public static function summarize(array $entries, ?string $version = null): array
     {
         // First timestamped prediction per fixture: repeated imports are not additional bets.
         usort($entries, static function ($a, $b) { return strcmp($a['created_at'], $b['created_at']) ?: strcmp($a['run_id'], $b['run_id']); });
+        // Recover fixture scores before selecting a model version.
+        $scores = [];
+        foreach ($entries as $source) {
+            $result = $source['result'] ?? null;
+            if (!is_array($result) || ($result['outcome'] ?? '') === 'void') { continue; }
+            $period = $result['period'] ?? null;
+            if (!in_array($period, ['ft', 'h1', 'h2'], true)) { continue; }
+            if (!isset($result['home'], $result['away']) || !is_int($result['home']) || !is_int($result['away'])
+                || $result['home'] < 0 || $result['home'] > 30 || $result['away'] < 0 || $result['away'] > 30) { continue; }
+            $scoreKey = $source['match']['key'] . ':' . $period;
+            if (!isset($scores[$scoreKey]) || ($source['result_event_id'] ?? 0) > ($scores[$scoreKey]['result_event_id'] ?? 0)) {
+                $scores[$scoreKey] = $source;
+            }
+        }
         $seen = []; $rows = []; $n = 0; $wins = 0; $priced = 0; $units = 0.0; $brier = 0.0; $logloss = 0.0; $bands = [];
         foreach ($entries as $entry) {
+            if ($version !== null && ($entry['version'] ?? '') !== $version) { continue; }
             $m = $entry['match'];
+            $source = $scores[$m['key'] . ':' . ($m['pick']['period'] ?? '')] ?? null;
+            // Preserve explicit voids and any newer result on the original prediction.
+            if ($m['pick'] && $source && ($entry['result']['outcome'] ?? '') !== 'void'
+                && (!$entry['result'] || ($source['result_event_id'] ?? 0) > ($entry['result_event_id'] ?? 0))) {
+                $entry['result'] = $source['result'];
+                $entry['result']['outcome'] = Engine::settle($m['pick'], $entry['result']['home'], $entry['result']['away']) ? 'won' : 'lost';
+                $entry['result_run_id'] = $source['run_id'];
+            }
             if (!$m['pick'] || isset($seen[$m['key']])) { continue; }
             $seen[$m['key']] = true;
             $rows[] = $entry;
