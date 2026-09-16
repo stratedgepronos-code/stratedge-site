@@ -1,0 +1,20 @@
+Country;Short;League;Hour;Status;Home Team;Result Home;Result Visitor;Visitor Team;Odds;Odds;Odds;Odds;Odds;Odds;Domicile | Extérieur;Domicile | Extérieur;Domicile | Extérieur;Global;Global;Global;Global;Global;Domicile | Extérieur;Domicile | Extérieur;Domicile | Extérieur;Global;Global
+Spain;ESP;La Liga;17-09-2026 21:30;NS;Málaga;;;Villarreal;1.18;1.64;2.55;4.45;2.32;1.50;10 | 10;1.4 | 1.6;1.9 | 1.8;85;95;70;55;20;50 | 60;11.2 | 15.3;4.8 | 4.6;65;50
+Europe;EUR;Europa League;17-09-2026 21:00;NS;Viktoria Plzeň;;;Union Saint-Gilloise;1.22;1.79;2.90;4.04;2.05;1.39;10 | 10;2 | 2.7;1.9 | 1;90;90;75;50;40;50 | 50;16.1 | 16.3;4.4 | 4;85;70
+Europe;EUR;Europa League;17-09-2026 21:00;NS;Crystal Palace;;;Lech Poznań;1.17;1.59;2.49;4.82;2.38;1.50;10 | 10;2 | 2.7;1.7 | 0.8;85;100;80;45;35;50 | 40;12.3 | 17.8;4.5 | 3;100;55
+Europe;EUR;Europa League;17-09-2026 21:00;NS;Lillestrøm;;;Torreense;1.17;1.60;2.45;4.75;2.37;1.52;10 | 10;1.1 | 0.8;1.5 | 1.3;80;85;45;20;5;50 | 40;11.6 | 12.2;5.4 | 4.4;80;40
+Europe;EUR;Europa League;17-09-2026 21:00;NS;Celtic;;;Ferencvárosi;1.14;1.54;2.39;5.15;2.42;1.60;10 | 10;2.2 | 2.3;1 | 0.6;75;100;70;30;15;30 | 60;17.8 | 16;4.5 | 3;85;50
+Europe;EUR;Europa League;17-09-2026 21:00;NS;Juventus;;;NEC Nijmegen;1.10;1.41;2.09;6.07;2.82;1.78;10 | 10;1.3 | 1.3;0.6 | 1.9;75;90;50;30;10;60 | 50;14.4 | 14.3;3.2 | 4.5;85;50
+Europe;EUR;Europa League;17-09-2026 21:00;NS;Beşiktaş;;;Olympique Marseille;1.17;1.58;2.43;4.90;2.42;1.54;10 | 10;1.9 | 1.8;0.5 | 1.3;70;100;60;20;10;40 | 30;17.9 | 12.6;2.6 | 3.6;90;30
+Europe;EUR;Europa League;17-09-2026 21:00;NS;Real Sociedad;;;AFC Bournemouth;1.20;1.72;2.77;4.37;2.15;1.43;10 | 10;1.3 | 3.2;2 | 1.6;90;95;85;55;30;40 | 30;11.6 | 16;5.3 | 3.8;90;60
+England;ENG;Carabao Cup;17-09-2026 20:30;NS;Manchester City;;;Norwich City;1.06;1.26;1.69;8.15;3.78;2.14;10 | 10;1.8 | 1.9;1 | 1.5;80;95;70;35;20;60 | 40;16.2 | 16.3;2.9 | 4.3;75;50
+Spain;ESP;La Liga;17-09-2026 19:00;NS;Real Betis;;;Getafe;1.37;2.20;4.00;3.07;1.70;1.22;10 | 10;1.6 | 0.9;1.2 | 1.5;60;100;45;30;15;50 | 40;14.9 | 9.3;5.1 | 3.4;85;45
+Europe;EUR;Europa League;17-09-2026 18:45;NS;Levski Sofia;;;Salzburg;1.19;1.67;2.60;4.49;2.22;1.47;10 | 10;1.7 | 2.5;1 | 0.7;70;90;55;35;25;50 | 30;11.7 | 17.4;3.3 | 3.6;85;50
+Europe;EUR;Europa League;17-09-2026 18:45;NS;OFI;;;TSG Hoffenheim;1.14;1.52;2.33;5.36;2.46;1.62;10 | 10;1.7 | 1.9;0.6 | 1.7;85;95;70;35;10;50 | 60;10.2 | 15.1;5.1 | 4.2;80;50
+Colombia;COL;Liga BetPlay;17-09-2026 03:20;NS;Internacional de Bogotá;;;Atlético Nacional;1.28;1.94;3.30;3.40;1.84;1.30;10 | 10;1.5 | 2.2;1.2 | 0.4;80;95;55;20;10;60 | 50;13.9 | 17.8;4.3 | 3.5;75;50
+South America;SOU;Copa Libertadores;17-09-2026 02:30;NS;Corinthians;;;Estudiantes;1.66;3.09;6.44;2.23;1.36;1.10;10 | 10;1 | 1.4;1.1 | 0.9;75;90;45;10;0;50 | 40;12.2 | 14.4;4 | 2.9;80;40
+Colombia;COL;Liga BetPlay;17-09-2026 01:15;NS;Once Caldas;;;Deportes Tolima;1.34;2.10;3.74;3.09;1.71;1.25;10 | 10;1.6 | 1.2;1.1 | 1.4;75;95;60;20;10;50 | 70;17.1 | 13.4;3.5 | 3.7;80;50
+Canada;CAN;Championship;17-09-2026 01:00;NS;CF Montréal;;;Vancouver Whitecaps;1.14;1.48;2.22;4.90;2.43;1.58;10 | 10;1 | 1.8;2 | 1.1;85;100;55;30;10;50 | 60;12.2 | 17.8;5.2 | 2.9;85;50
+Brazil;BRA;Serie A;17-09-2026 00:30;NS;Botafogo;;;Grêmio;1.23;1.76;2.94;3.92;2.06;1.38;10 | 10;0.7 | 1.1;1.5 | 1.1;55;85;40;20;10;30 | 50;17.8 | 11.5;5.3 | 4.6;65;35
+South America;SOU;Copa Libertadores;17-09-2026 00:00;NS;LDU Quito;;;Palmeiras;1.45;2.49;4.79;2.62;1.52;1.16;10 | 10;1 | 1.5;0.6 | 0.6;55;80;25;15;10;50 | 30;11.5 | 16.9;3.6 | 3.1;55;30
+South America;SOU;Copa Sudamericana;17-09-2026 00:00;NS;Atlético Mineiro;;;Santos;1.36;2.16;3.96;3.00;1.70;1.22;10 | 10;1.4 | 1.4;1 | 0.8;75;85;50;15;5;50 | 50;13.1 | 13.6;4.3 | 3.4;80;45

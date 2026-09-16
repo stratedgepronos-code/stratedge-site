@@ -226,4 +226,5 @@ require __DIR__ . '/footystats.php';
 require __DIR__ . '/card-scores.php';
 require __DIR__ . '/auto-context.php';
 require __DIR__ . '/paired-import.php';
+require __DIR__ . '/diagnostics.php';
 echo "OK — $checks checks\n";

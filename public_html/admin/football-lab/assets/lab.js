@@ -79,3 +79,24 @@ copyChat?.addEventListener('click', async () => {
     status.textContent = ' Texte sélectionné : utilise Copier ou Ctrl+C.';
   }
 });
+
+const copyDiagnostic = document.querySelector('#lab-copy-diagnostic');
+copyDiagnostic?.addEventListener('click', async () => {
+  const field = document.querySelector('#lab-diagnostic-export');
+  const status = document.querySelector('#lab-diagnostic-status');
+  try {
+    await navigator.clipboard.writeText(field.value);
+    status.textContent = ' Diagnostic copié.';
+  } catch {
+    field.closest('details').open = true;
+    field.focus(); field.select();
+    status.textContent = ' Texte sélectionné : utilise Copier ou Ctrl+C.';
+  }
+});
+document.querySelector('#lab-download-diagnostic')?.addEventListener('click', () => {
+  const blob = new Blob([document.querySelector('#lab-diagnostic-export').value], {type: 'application/json;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url; link.download = 'football-lab-diagnostic.json'; link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});

@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace StratEdgeLab;
+require_once __DIR__ . '/HistoricalContext.php';
 
 /** Server-side enrichment. Provider failures never turn missing statistics into zero. */
 final class FootyStats
@@ -8,6 +9,9 @@ final class FootyStats
     // Verified against the supplied PackBall export and the provider's fixture IDs.
     // Country scopes prevent short names such as Inter from matching another club abroad.
     private const PACKBALL_TEAM_IDS = [
+        // Verified September 17 fixture identities; both sides and kickoff still checked.
+        'Canada' => ['CF Montréal' => 1],
+        'Europe' => ['TSG Hoffenheim' => 49, 'Ferencvárosi' => 119, 'NEC Nijmegen' => 379],
         'Romania' => ['Otelul' => 6633],
         'Norway' => ['Bodø / Glimt' => 332],
         'Denmark' => ['FC Midtjylland' => 955, 'Brøndby IF' => 2517],
@@ -180,6 +184,87 @@ final class FootyStats
         return $out;
     }
 
+    /** Exact league names only; unrecognized domestic competitions stay unresolved. */
+    private const DOMESTIC_LEAGUES = [
+        'Brazil' => ['Serie A'], 'Argentina' => ['Primera División', 'Primera Division'],
+        'Ecuador' => ['Primera Categoría Serie A'], 'Colombia' => ['Categoria Primera A'],
+        'Greece' => ['Super League'], 'Poland' => ['Ekstraklasa'], 'Bulgaria' => ['First League'],
+        'England' => ['Premier League'], 'Spain' => ['La Liga'], 'France' => ['Ligue 1'],
+        'Germany' => ['Bundesliga'], 'Italy' => ['Serie A'], 'Portugal' => ['Liga NOS', 'Primeira Liga'],
+        'Belgium' => ['Pro League', 'First Division A'], 'Czech Republic' => ['First League'],
+        'Czechia' => ['First League'], 'Netherlands' => ['Eredivisie'], 'Scotland' => ['Premiership'],
+        'Austria' => ['Bundesliga'], 'Switzerland' => ['Super League'], 'Denmark' => ['Superliga'],
+        'Norway' => ['Eliteserien'], 'Sweden' => ['Allsvenskan'], 'Turkey' => ['Süper Lig', 'Super Lig'],
+    ];
+
+    private function history(array $match, int $cutoff): array
+    {
+        $out = ['version' => HistoricalContext::VERSION, 'status' => 'unavailable', 'sources' => [], 'issues' => [],
+            'message' => 'Historique complémentaire descriptif uniquement ; aucune fusion entre compétitions ou saisons.'];
+        $fs = $match['footystats'];
+        if (empty($fs['home_id']) || empty($fs['away_id'])) {
+            $out['issues'][] = 'Identités API non établies : aucun historique associé automatiquement.';
+            return $out;
+        }
+        try { $catalog = $this->request('league-list', ['chosen_leagues_only' => 'true'])['data']; }
+        catch (\Throwable $e) { $out['issues'][] = 'Catalogue des compétitions indisponible.'; return $out; }
+        foreach (['home', 'away'] as $venue) {
+            try {
+                $teamId = (int)$fs[$venue . '_id']; $candidateLeagues = [];
+                foreach ($catalog as $league) {
+                    foreach ($league['season'] ?? [] as $season) {
+                        if ((int)($season['id'] ?? 0) === (int)$fs['season_id']) { $candidateLeagues[] = $league; break; }
+                    }
+                }
+                // Discover the team's country by its verified provider ID, never by a fuzzy name.
+                try { $teams = !empty($fs['team_countries'][$venue]) ? [['id' => $teamId, 'country' => $fs['team_countries'][$venue]]] : $this->request('team', ['team_id' => $teamId])['data']; }
+                catch (\Throwable $e) { $teams = []; $out['issues'][] = $venue . ' : pays du club non confirmé ; championnat non associé.'; }
+                $countries = []; $teamSeasons = [];
+                foreach ($teams as $team) {
+                    if ((int)($team['id'] ?? 0) === $teamId && !empty($team['country'])) { $countries[(string)$team['country']] = true; if (!empty($team['competition_id'])) { $teamSeasons[(int)$team['competition_id']] = true; } }
+                }
+                if (count($countries) === 1) {
+                    $country = (string)key($countries); $domesticFound = false;
+                    foreach ($catalog as $league) {
+                        $leagueName = $league['league_name'] ?? '';
+                        if ($leagueName === '' && strpos($league['name'] ?? '', $country . ' ') === 0) { $leagueName = substr($league['name'], strlen($country) + 1); }
+                        if (($league['country'] ?? '') === $country && in_array($leagueName, self::DOMESTIC_LEAGUES[$country] ?? [], true)) { $candidateLeagues[] = $league; $domesticFound = true; }
+                    }
+                    if (!$domesticFound) { $out['issues'][] = $venue . ' : championnat de ' . $country . ' non identifié dans les compétitions accessibles.'; }
+                }
+                $seen = []; $sourceCount = 0;
+                // The current competition's previous season and the domestic current/previous seasons
+                // remain separate records. Membership is established from actual historical fixtures.
+                foreach ($candidateLeagues as $league) {
+                    $seasons = array_filter($league['season'] ?? [], static function ($season) use ($cutoff) {
+                        $year = (int)substr((string)($season['year'] ?? ''), 0, 4);
+                        return $year >= (int)gmdate('Y', $cutoff) - 1 && $year <= (int)gmdate('Y', $cutoff) && !empty($season['id']);
+                    });
+                    usort($seasons, static function ($a, $b) { return strcmp((string)$b['year'], (string)$a['year']); });
+                    foreach (array_slice($seasons, 0, 2) as $season) {
+                        $id = (int)$season['id'];
+                        if ($id === (int)$fs['season_id'] || isset($seen[$id]) || ($teamSeasons && !isset($teamSeasons[$id]))) { continue; }
+                        $seen[$id] = true;
+                        $rows = $this->pages('league-matches', ['season_id' => $id, 'max_time' => $cutoff, 'max_per_page' => 1000]);
+                        $history = HistoricalContext::summarize($rows, $teamId, $venue, $id, $cutoff);
+                        $history['competition'] = $league['name'] ?? $league['league_name'] ?? ('Saison ' . $id);
+                        $history['season'] = $season['year']; $history['provider'] = 'FootyStats'; $history['endpoint'] = 'league-matches';
+                        $out['sources'][$venue][] = $history; $sourceCount++;
+                    }
+                }
+                if (!$sourceCount) { $out['issues'][] = $venue . ' : aucune saison alternative identifiée dans les compétitions accessibles.'; }
+            } catch (\Throwable $e) {
+                // Never include raw upstream/SQL errors; partial successful sources remain visible.
+                $reason = $e instanceof \PDOException ? 'Cache FootyStats indisponible.' : ($e instanceof \RuntimeException ? $e->getMessage() : 'Réponse historique inexploitable.');
+                $out['issues'][] = $venue . ' : ' . $reason;
+            }
+        }
+        foreach ($out['sources'] as $sources) {
+            foreach ($sources as $source) { if ($source['n'] > 0) { $out['status'] = 'descriptive_only'; } }
+        }
+        return $out;
+    }
+
     public function enrich(array $analysis): array
     {
         $summary = ['enriched' => 0, 'unavailable' => 0, 'configured' => $this->ready(), 'checked_at' => gmdate('c')];
@@ -188,12 +273,23 @@ final class FootyStats
         $leagueCache = [];
         foreach ($analysis['matches'] as &$match) {
             $match['packball_stats'] = $match['stats'];
+            $evidence = ['status' => 'unavailable', 'as_of' => gmdate('c', $cutoff), 'sample' => ['home_n' => null, 'away_n' => null]];
+            $stage = 'api_unavailable';
             try {
                 $date = (new \DateTimeImmutable($match['kickoff']))->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d');
-                $fixture = $this->findFixture($match, $this->pages('todays-matches', ['date' => $date, 'timezone' => 'Etc/UTC']));
+                $fixtures = $this->pages('todays-matches', ['date' => $date, 'timezone' => 'Etc/UTC']);
+                $stage = 'api_match_missing';
+                $fixture = $this->findFixture($match, $fixtures);
                 $season = (int)$fixture['competition_id'];
+                $evidence += ['match_id' => (int)$fixture['id'], 'season_id' => $season,
+                    'home_id' => (int)$fixture['homeID'], 'away_id' => (int)$fixture['awayID'],
+                    'source' => ['provider' => 'FootyStats', 'endpoint' => 'league-teams', 'season_id' => $season,
+                        'competition' => $match['league'], 'season' => $fixture['season'] ?? null, 'period' => 'Saison de cette compétition ; dates des matchs non fournies par cet agrégat',
+                        'period_start' => null, 'as_of' => gmdate('c', $cutoff), 'scope' => 'home_for_host_away_for_visitor']];
+                $stage = 'api_unavailable';
                 if (!isset($leagueCache[$season])) {
                     $teams = $this->pages('league-teams', ['season_id' => $season, 'include' => 'stats', 'max_time' => $cutoff]);
+                    $stage = 'data_incomplete';
                     $byId = []; $goals = 0; $played = 0; $complete = true;
                     foreach ($teams as $team) {
                         // /league-teams is already scoped by season_id. Production responses
@@ -211,6 +307,18 @@ final class FootyStats
                     $leagueCache[$season] = ['teams' => $byId, 'average' => $complete && $played > 0 ? $goals / $played : null];
                 }
                 $league = $leagueCache[$season];
+                $stage = 'data_incomplete';
+                foreach (['home', 'away'] as $side) {
+                    $teamRow = $league['teams'][(int)$fixture[$side . 'ID']] ?? [];
+                    $evidence['team_countries'][$side] = $teamRow['country'] ?? null;
+                    $raw = $teamRow['stats'] ?? [];
+                    $n = is_array($raw) ? self::number($raw, 'seasonMatchesPlayed_' . $side) : null;
+                    $evidence['sample'][$side . '_n'] = $n !== null && floor($n) === $n ? (int)$n : null;
+                }
+                if ($evidence['sample']['home_n'] === 0 || $evidence['sample']['away_n'] === 0) {
+                    $stage = 'sample_insufficient';
+                    throw new \RuntimeException('Échantillon FootyStats nul dans la compétition du match : domicile ' . ($evidence['sample']['home_n'] ?? 'inconnu') . ', extérieur ' . ($evidence['sample']['away_n'] ?? 'inconnu') . '.');
+                }
                 $home = self::split($league['teams'][(int)$fixture['homeID']] ?? [], 'home');
                 $away = self::split($league['teams'][(int)$fixture['awayID']] ?? [], 'away');
                 foreach (['home' => $home, 'away' => $away] as $side => $stats) {
@@ -220,19 +328,27 @@ final class FootyStats
                 foreach (['home' => 'à domicile', 'away' => 'à l’extérieur'] as $side => $label) {
                     if ($match['stats'][$side . '_n'] < 20) { $match['warnings'][] = 'FootyStats ' . $label . ' : échantillon limité à ' . $match['stats'][$side . '_n'] . ' matchs.'; }
                 }
-                $match['footystats'] = ['status' => 'enriched', 'match_id' => (int)$fixture['id'], 'season_id' => $season,
+                $match['footystats'] = ['source' => $evidence['source'], 'team_countries' => $evidence['team_countries'], 'sample' => $evidence['sample'], 'status' => 'enriched', 'match_id' => (int)$fixture['id'], 'season_id' => $season,
                     'home_id' => (int)$fixture['homeID'], 'away_id' => (int)$fixture['awayID'], 'as_of' => gmdate('c', $cutoff),
                     'home' => $home, 'away' => $away, 'league_average' => $league['average'], 'message' => 'Bilans de saison : domicile pour le recevant, extérieur pour le visiteur.'];
                 $summary['enriched']++;
             } catch (\PDOException $e) {
-                $match['footystats'] = ['status' => 'unavailable', 'message' => 'Cache FootyStats indisponible. Vérifie le stockage du Lab.'];
+                $match['footystats'] = array_merge($evidence, ['failure_code' => 'api_unavailable', 'status' => 'unavailable', 'message' => 'Cache FootyStats indisponible. Vérifie le stockage du Lab.']);
                 $summary['unavailable']++;
             } catch (\RuntimeException $e) {
-                $match['footystats'] = ['status' => 'unavailable', 'message' => $e->getMessage()];
+                $match['footystats'] = array_merge($evidence, ['failure_code' => $stage, 'status' => 'unavailable', 'message' => $e->getMessage()]);
                 $summary['unavailable']++;
             } catch (\Throwable $e) {
-                $match['footystats'] = ['status' => 'unavailable', 'message' => 'Réponse FootyStats inexploitable. Aucun enrichissement utilisé.'];
+                $match['footystats'] = array_merge($evidence, ['failure_code' => 'data_incomplete', 'status' => 'unavailable', 'message' => 'Réponse FootyStats inexploitable. Aucun enrichissement utilisé.']);
                 $summary['unavailable']++;
+            }
+        }
+        unset($match);
+        // Complete primary enrichment first so optional histories cannot starve later fixtures.
+        foreach ($analysis['matches'] as &$match) {
+            $fs = $match['footystats'];
+            if ($fs['status'] !== 'enriched' || min($fs['home']['n'], $fs['away']['n']) < 8) {
+                $match['historical_context'] = $this->history($match, $cutoff);
             }
         }
         unset($match);
