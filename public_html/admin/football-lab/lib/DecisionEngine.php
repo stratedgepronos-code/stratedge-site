@@ -6,27 +6,84 @@ namespace StratEdgeLab;
 final class DecisionEngine
 {
     public const VERSION = '2.0.0-gamma-poisson-experimental';
-    public const FOOTY_VERSION = '2.1.1-footystats-venue-experimental';
+    public const FOOTY_VERSION = '2.2.0-footystats-diagnostics-experimental';
     public const MIN_ODDS = 1.60;
     public const MAX_ODDS = 3.50;
     public const PRIOR_MATCHES = 4.0;
 
-    /** Explain saved decisions without recalculating or changing archived forecasts. */
+    /** Read saved decisions only: viewing an archive never reruns a model or API. */
     public static function diagnostic(array $match): array
     {
-        if ($match['pick'] ?? null) { return ['state' => 'candidate', 'title' => $match['pick']['label'], 'message' => 'Prix et statistiques passent les contrôles. Le contexte reste à vérifier.']; }
-        if (isset($match['footystats']) && ($match['footystats']['status'] ?? '') !== 'enriched') {
-            return ['state' => 'data_missing', 'title' => 'Statistiques FootyStats indisponibles', 'message' => $match['footystats']['message'] ?? 'Enrichissement à compléter.'];
-        }
+        $fs = $match['footystats'] ?? null;
         $issues = array_values(array_unique($match['assessment']['issues'] ?? []));
-        if ($issues) { return ['state' => 'data_missing', 'title' => 'Données insuffisantes pour sélectionner', 'message' => implode(' ', array_slice($issues, 0, 2))]; }
-        $priced = array_values(array_filter($match['candidates'] ?? [], static function ($c) { return isset($c['odds']) && $c['odds'] > 1; }));
-        if (!$priced) { return ['state' => 'price_missing', 'title' => 'Cotes manquantes', 'message' => 'Aucun marché ne possède une cote exploitable dans cet export.']; }
-        usort($priced, static function ($a, $b) { return (count($a['reasons'] ?? []) <=> count($b['reasons'] ?? [])) ?: (($b['stress_ev'] ?? -INF) <=> ($a['stress_ev'] ?? -INF)); });
-        $closest = $priced[0];
-        $why = implode(' ', array_slice($closest['reasons'] ?? [], 0, 2));
-        return ['state' => 'no_bet', 'title' => 'Aucun pari retenu aux cotes importées',
-            'message' => count($priced) . ' marchés cotés examinés. ' . ($closest['label'] ?? '') . ' : ' . ($why ?: 'Les critères de sélection ne sont pas réunis.')];
+        $state = 'no_bet'; $category = 'criteria_not_met';
+        $title = 'Pari analysé, critères non atteints';
+        $message = '';
+        if ($match['pick'] ?? null) {
+            $state = 'candidate'; $category = 'selected'; $title = $match['pick']['label'];
+            $message = 'Prix et statistiques passent les contrôles. Le contexte reste à vérifier.';
+        } elseif ($fs !== null && ($fs['status'] ?? '') !== 'enriched') {
+            $state = 'data_missing'; $category = $fs['failure_code'] ?? self::failureCategory($fs['message'] ?? '');
+            $title = 'Analyse impossible faute de données';
+            $message = $fs['message'] ?? 'Enrichissement FootyStats à compléter.';
+        } elseif ($issues) {
+            $state = 'data_missing'; $category = 'data_incomplete';
+            if (min($fs['home']['n'] ?? $match['stats']['home_n'] ?? 0, $fs['away']['n'] ?? $match['stats']['away_n'] ?? 0) < 8) { $category = 'sample_insufficient'; }
+            $title = 'Analyse impossible faute de données'; $message = implode(' ', $issues);
+        } else {
+            $priced = array_values(array_filter($match['candidates'] ?? [], static function ($c) { return isset($c['odds']) && $c['odds'] > 1; }));
+            if (!$priced) {
+                $state = 'price_missing'; $category = 'price_missing'; $title = 'Analyse impossible : cotes manquantes';
+                $message = 'Aucun marché ne possède une cote exploitable dans cet export.';
+            } else {
+                usort($priced, static function ($a, $b) { return (count($a['reasons'] ?? []) <=> count($b['reasons'] ?? [])) ?: (($b['stress_ev'] ?? -INF) <=> ($a['stress_ev'] ?? -INF)); });
+                $closest = $priced[0];
+                $message = count($priced) . ' marchés cotés examinés. ' . ($closest['label'] ?? '') . ' : ' . implode(' ', $closest['reasons'] ?? []);
+            }
+        }
+        return ['state' => $state, 'category' => $category, 'title' => $title, 'message' => $message,
+            'issues' => $issues, 'probability_scope' => $state === 'data_missing' ? 'descriptive_only' : 'experimental_model'];
+    }
+
+    /** Compatibility classification for archives predating structured failure codes. */
+    public static function failureCategory(string $message): string
+    {
+        if (strpos($message, 'correspondance') !== false || strpos($message, 'Correspondance') !== false) { return 'api_match_missing'; }
+        // Older message conflated zero samples with missing goal totals: do not invent which occurred.
+        if (strpos($message, 'Échantillon FootyStats vide ou') !== false) { return 'sample_or_data_incomplete'; }
+        if (strpos($message, 'échantillon') !== false || strpos($message, 'Échantillon') !== false) { return 'sample_insufficient'; }
+        if (strpos($message, 'incomplet') !== false || strpos($message, 'incohérent') !== false || strpos($message, 'inexploitable') !== false) { return 'data_incomplete'; }
+        return 'api_unavailable';
+    }
+
+    public static function diagnosticExport(array $analysis): array
+    {
+        $out = ['schema_version' => '1.0', 'method_version' => $analysis['version'] ?? null,
+            'generated_at' => $analysis['generated_at'] ?? null, 'exported_at' => gmdate('c'),
+            'selection_policy' => $analysis['selection_policy'] ?? null, 'import_errors' => $analysis['errors'] ?? [], 'matches' => []];
+        foreach ($analysis['matches'] ?? [] as $match) {
+            $fs = $match['footystats'] ?? []; $diagnostic = self::diagnostic($match);
+            $item = array_intersect_key($match, array_flip(['key','home','away','league','kickoff','pick','packball','packball_stats','historical_context']));
+            $item['diagnostic'] = $diagnostic;
+            $item['sample'] = ['scope' => 'home_for_host_away_for_visitor',
+                'home_n' => $fs['home']['n'] ?? $fs['sample']['home_n'] ?? null,
+                'away_n' => $fs['away']['n'] ?? $fs['sample']['away_n'] ?? null,
+                'minimum_each' => 8];
+            $item['source'] = $fs['source'] ?? ['provider' => 'FootyStats', 'competition' => isset($fs['season_id']) ? ($match['league'] ?? null) : null,
+                'season_id' => $fs['season_id'] ?? null, 'as_of' => $fs['as_of'] ?? null,
+                'period' => 'Saison de la compétition ; dates détaillées non archivées'];
+            $item['footystats'] = $fs;
+            $item['markets'] = [];
+            foreach ($match['candidates'] ?? [] as $candidate) {
+                $c = array_intersect_key($candidate, array_flip(['id','label','odds','probability','stress_probability','fair_odds','minimum_price','ev','stress_ev','market_probability','overround','edge','eligible','reasons']));
+                $c['probability_scope'] = $diagnostic['probability_scope'];
+                // Retain older computations, but explicitly label them unusable for betting if data failed.
+                $c['usable_for_selection'] = $diagnostic['state'] !== 'data_missing';
+                $item['markets'][] = $c;
+            }
+            $out['matches'][] = $item;
+        }
+        return $out;
     }
 
     public static function features(array $row): array
