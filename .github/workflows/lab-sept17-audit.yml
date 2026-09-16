@@ -22,7 +22,7 @@ jobs:
           timeout 65 php -d memory_limit=128M -d max_execution_time=30 -d display_errors=0 -d log_errors=0 <<'PHP'
           <?php
           register_shutdown_function(static function(){ $e=error_get_last();$kind='none';if($e){foreach(['Allowed memory size','Maximum execution time','Fatal'] as $k){if(strpos($e['message'],$k)!==false){$kind=$k;break;}}if($kind==='none')$kind='other';}echo 'LAB_SHUTDOWN '.json_encode(['category'=>$kind,'file'=>$e?basename($e['file']):null,'line'=>$e['line']??null,'peak_mb'=>round(memory_get_peak_usage(true)/1048576,1)]).PHP_EOL;});
-          require '../../../includes/db.php';require 'lib/Engine.php';require 'lib/Store.php';require 'lib/PackBall.php';
+          require '/var/www/stratedgepronos.fr/public_html/includes/db.php';require 'lib/Engine.php';require 'lib/Store.php';require 'lib/PackBall.php';
           $q=getDB()->prepare('SELECT payload FROM se_lab_runs WHERE id=?');$q->execute(['a57fb13a60a9f2f11e94395f5984f6f8']);$d=json_decode($q->fetchColumn(),true);
           $r=\StratEdgeLab\PackBall::replay($d,\StratEdgeLab\FootyStats::configured());
           echo 'LAB_REPRO '.json_encode(['matches'=>count($r['analysis']['matches']),'errors'=>count($r['analysis']['errors'])]).PHP_EOL;
