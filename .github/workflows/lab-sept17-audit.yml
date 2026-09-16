@@ -8,6 +8,7 @@ permissions:
 jobs:
   audit:
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     steps:
       - name: Lire les diagnostics sportifs archivés
         env:
@@ -16,7 +17,9 @@ jobs:
           mkdir -p ~/.ssh
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o IdentitiesOnly=yes alex@31.97.196.145 'php' <<'PHP'
+          timeout 100 ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=2 -o StrictHostKeyChecking=no -o ConnectTimeout=20 -o IdentitiesOnly=yes alex@31.97.196.145 'bash -s' <<'REMOTE'
+          echo LAB_CONNECTED
+          timeout 60 php <<'PHP'
           <?php
           require '/var/www/stratedgepronos.fr/public_html/includes/db.php';
           $q=getDB()->query("SELECT id,created_at,payload FROM se_lab_runs WHERE kind='analysis' ORDER BY created_at DESC LIMIT 60");
@@ -30,3 +33,4 @@ jobs:
           }
           
           PHP
+          REMOTE
