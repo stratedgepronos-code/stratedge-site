@@ -104,3 +104,24 @@ fournisseur, adversaire, horaire et IDs ; les alias sont bornés au pays/périm�
 de l'export. Le rapprochement n'utilise aucune recherche approximative de nom.
 Internacional de Bogotá/La Equidad reste à vérifier ; Manchester City–Norwich
 ne possède pas de correspondance au créneau demandé dans la réponse consultée.
+
+
+## Effet vérifié de la correction
+
+Relecture avec le code corrigé le 16 septembre à 21:28 UTC, sur les deux tables
+originales et avec des données fournisseur actualisées : 19 matchs, zéro erreur,
+zéro sélection. Les correspondances passent de 13 à 17 ; 8 bilans courants sont
+calculables, 9 autres ont au moins un échantillon nul. Le diagnostic final donne
+15 échantillons insuffisants, 2 refus après analyse et 2 identités encore non
+résolues. L'empreinte de l'archive originale est identique avant et après l'essai.
+
+Les historiques descriptifs existent pour 13 matchs, parfois d'un seul côté.
+Sociedad : 3 rencontres à domicile en Liga actuelle, 17 en saison précédente
+dans la fenêtre ; Bournemouth : 2 à l'extérieur en Premier League actuelle,
+17 en saison précédente. Union : 3 à l'extérieur en championnat belge actuel,
+11 en saison précédente. Le championnat tchèque de Plzeň n'est pas présent
+au catalogue accessible : aucune moyenne domestique n'est inventée.
+
+La limite globale d'appels peut laisser certaines sources complémentaires
+incomplètes ; leur échec est affiché, les sources déjà obtenues sont conservées.
+Un nouvel import utilise le cache et crée une nouvelle archive datée.

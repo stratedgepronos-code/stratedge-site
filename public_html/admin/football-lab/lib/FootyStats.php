@@ -255,7 +255,8 @@ final class FootyStats
                 if (!$sourceCount) { $out['issues'][] = $venue . ' : aucune saison alternative identifiée dans les compétitions accessibles.'; }
             } catch (\Throwable $e) {
                 // Never include raw upstream/SQL errors; partial successful sources remain visible.
-                $out['issues'][] = $venue . ' : historique incomplet ou indisponible (couverture, quota, délai ou données invalides).';
+                $reason = $e instanceof \PDOException ? 'Cache FootyStats indisponible.' : ($e instanceof \RuntimeException ? $e->getMessage() : 'Réponse historique inexploitable.');
+                $out['issues'][] = $venue . ' : ' . $reason;
             }
         }
         foreach ($out['sources'] as $sources) {
@@ -283,7 +284,7 @@ final class FootyStats
                 $evidence += ['match_id' => (int)$fixture['id'], 'season_id' => $season,
                     'home_id' => (int)$fixture['homeID'], 'away_id' => (int)$fixture['awayID'],
                     'source' => ['provider' => 'FootyStats', 'endpoint' => 'league-teams', 'season_id' => $season,
-                        'competition' => $match['league'], 'period' => 'Saison courante de cette compétition',
+                        'competition' => $match['league'], 'season' => $fixture['season'] ?? null, 'period' => 'Saison de cette compétition ; dates des matchs non fournies par cet agrégat',
                         'period_start' => null, 'as_of' => gmdate('c', $cutoff), 'scope' => 'home_for_host_away_for_visitor']];
                 $stage = 'api_unavailable';
                 if (!isset($leagueCache[$season])) {
