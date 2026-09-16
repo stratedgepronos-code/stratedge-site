@@ -39,7 +39,9 @@ jobs:
       - name: Import, probabilities, storage and tracking
         env:
           LAB_RENDER_DIR: /tmp/lab-render
-        run: php tests/football-lab/run.php
+        run: php -d memory_limit=128M tests/football-lab/run.php
+      - name: Historical payload memory regression
+        run: php -d memory_limit=128M tests/football-lab/memory-regression.php
       - name: Synthetic preview exports
         run: |
           python3 - <<'PY'
