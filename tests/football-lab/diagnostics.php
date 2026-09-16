@@ -40,3 +40,58 @@ check($history['n'] === 1 && $history['gf'] === 2 && $history['ga'] === 1, 'Deta
 check($history['scope'] === 'descriptive_only' && $history['period_start'] === gmdate('c',$cutoff-86400), 'Historical source explicitly dated and descriptive');
 $contradictory=$hFixture; $contradictory['homeGoalCount']=5;
 $runtimeReject(static function () use ($hFixture,$contradictory,$cutoff) { \StratEdgeLab\HistoricalContext::summarize([$hFixture,$contradictory],9001,'home',8000,$cutoff); }, 'Contradictory historical score blocks that source');
+
+// Reconstructed CSV cells and original provider snapshot from the real archived import.
+$realFiles = [];
+foreach (['sept17-gpt-33.csv','sept17-gpt2-28.csv'] as $file) { $realFiles[] = ['name'=>$file,'csv'=>file_get_contents(__DIR__ . '/' . $file)]; }
+$real = \StratEdgeLab\PackBall::preparePair($realFiles, new DateTimeImmutable('2026-09-16T20:52:11Z'));
+$recorded = json_decode(file_get_contents(__DIR__ . '/sept17-snapshot.json'), true, 512, JSON_THROW_ON_ERROR);
+$byKey = array_column($recorded['matches'], null, 'key');
+foreach ($real['analysis']['matches'] as &$rm) {
+    $rm['packball_stats'] = $rm['stats'];
+    $rm['stats'] = $byKey[$rm['key']]['stats']; $rm['footystats'] = $byKey[$rm['key']]['footystats'];
+}
+unset($rm);
+$real['analysis']['footystats'] = $recorded['footystats'];
+$reviewed = \StratEdgeLab\DecisionEngine::review($real['analysis'], $real['tables']['stats']);
+$counts = [];
+foreach ($reviewed['matches'] as $rm) {
+    $category = \StratEdgeLab\DecisionEngine::diagnostic($rm)['category'];
+    $counts[$category] = ($counts[$category] ?? 0) + 1;
+}
+check(count($reviewed['matches']) === 19 && !$reviewed['errors'], 'Both real September 17 CSV tables import 19 matches without errors');
+check($counts === ['sample_insufficient'=>5,'criteria_not_met'=>2,'api_match_missing'=>6,'sample_or_data_incomplete'=>6] ||
+    ($counts['sample_insufficient'] === 5 && $counts['criteria_not_met'] === 2 && $counts['api_match_missing'] === 6 && $counts['sample_or_data_incomplete'] === 6), 'Real archived failures: 5 small samples, 2 price rejections, 6 missing mappings, 6 ambiguous incomplete samples');
+foreach (['Real Sociedad'=>1.72,'Viktoria Plzeň'=>1.79] as $team=>$price) {
+    $rm = array_values(array_filter($reviewed['matches'], static function ($m) use ($team) { return $m['home'] === $team; }))[0];
+    $c = array_column($rm['candidates'],null,'id')['ft_over_25'];
+    near($c['odds'], $price, 'Real proposed over-2.5 price remains unchanged');
+    check($rm['pick'] === null && count($c['reasons']) === 1 && strpos($c['reasons'][0], 'FootyStats') !== false, 'Real qualitative lead blocked only by provider data, never forced');
+}
+check(!array_filter($reviewed['matches'], static function ($m) { return $m['pick'] !== null; }), 'Original provider snapshot still produces zero selections with unchanged thresholds');
+
+$historyTransport = static function ($endpoint, $params) use ($earlyTransport, $hFixture): array {
+    if ($endpoint === 'league-list') { return ['success'=>true,'data'=>[
+        ['name'=>'Europe UEFA Europa League','country'=>'Europe','season'=>[['id'=>8001,'year'=>date('Y').(date('Y')+1)]]],
+        // Production league-list omits league_name: full country-prefixed name is supported.
+        ['name'=>'England Premier League','country'=>'England','season'=>[['id'=>8000,'year'=>(date('Y')-1).date('Y')]]]
+    ]]; }
+    if ($endpoint === 'team') { return ['success'=>true,'data'=>[['id'=>$params['team_id'],'country'=>'England','competition_id'=>8000]]]; }
+    if ($endpoint === 'league-matches') {
+        $rows=[];
+        for($i=1;$i<=10;$i++) { $r=$hFixture; $r['id']=$i; $r['date_unix']=time()-86400*$i; $rows[]=$r; }
+        return ['success'=>true,'data'=>$rows,'pager'=>['max_page'=>1]];
+    }
+    return $earlyTransport($endpoint,$params);
+};
+$historyRun=\StratEdgeLab\PackBall::prepare($csv28,'domestic-history.csv',null,new \StratEdgeLab\FootyStats('test',$historyTransport));
+$hm=$historyRun['analysis']['matches'][0];
+check($hm['historical_context']['status'] === 'descriptive_only' && $hm['historical_context']['sources']['home'][0]['n'] === 10, 'Domestic previous-season detailed history discovered and venue counts computed');
+check($hm['historical_context']['sources']['away'][0]['n'] === 10 && $hm['pick'] === null, 'Sufficient alternative history never silently promotes a European bet');
+check($hm['footystats']['sample']['home_n'] === 0, 'Historical descriptive sample does not overwrite primary competition evidence');
+
+$aliasMatch=$base28; $aliasMatch['country']='Europe'; $aliasMatch['away']='NEC Nijmegen';
+$aliasFixture=$fixtureFooty; $aliasFixture['away_name']='NEC'; $aliasFixture['awayID']=379;
+check($client->findFixture($aliasMatch,[$aliasFixture])['awayID'] === 379, 'Verified September 17 NEC provider identity resolves in European scope');
+$aliasMatch['country']='Brazil';
+$runtimeReject(static function () use ($client,$aliasMatch,$aliasFixture) { $client->findFixture($aliasMatch,[$aliasFixture]); }, 'European verified alias cannot resolve an unrelated scope');

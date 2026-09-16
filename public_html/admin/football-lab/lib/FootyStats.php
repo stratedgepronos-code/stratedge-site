@@ -9,6 +9,9 @@ final class FootyStats
     // Verified against the supplied PackBall export and the provider's fixture IDs.
     // Country scopes prevent short names such as Inter from matching another club abroad.
     private const PACKBALL_TEAM_IDS = [
+        // Verified September 17 fixture identities; both sides and kickoff still checked.
+        'Canada' => ['CF Montréal' => 1],
+        'Europe' => ['TSG Hoffenheim' => 49, 'Ferencvárosi' => 119, 'NEC Nijmegen' => 379],
         'Romania' => ['Otelul' => 6633],
         'Norway' => ['Bodø / Glimt' => 332],
         'Denmark' => ['FC Midtjylland' => 955, 'Brøndby IF' => 2517],
@@ -183,6 +186,9 @@ final class FootyStats
 
     /** Exact league names only; unrecognized domestic competitions stay unresolved. */
     private const DOMESTIC_LEAGUES = [
+        'Brazil' => ['Serie A'], 'Argentina' => ['Primera División', 'Primera Division'],
+        'Ecuador' => ['Primera Categoría Serie A'], 'Colombia' => ['Categoria Primera A'],
+        'Greece' => ['Super League'], 'Poland' => ['Ekstraklasa'], 'Bulgaria' => ['First League'],
         'England' => ['Premier League'], 'Spain' => ['La Liga'], 'France' => ['Ligue 1'],
         'Germany' => ['Bundesliga'], 'Italy' => ['Serie A'], 'Portugal' => ['Liga NOS', 'Primeira Liga'],
         'Belgium' => ['Pro League', 'First Division A'], 'Czech Republic' => ['First League'],
@@ -211,16 +217,20 @@ final class FootyStats
                     }
                 }
                 // Discover the team's country by its verified provider ID, never by a fuzzy name.
-                $teams = $this->request('team', ['team_id' => $teamId])['data'];
-                $countries = [];
+                try { $teams = !empty($fs['team_countries'][$venue]) ? [['id' => $teamId, 'country' => $fs['team_countries'][$venue]]] : $this->request('team', ['team_id' => $teamId])['data']; }
+                catch (\Throwable $e) { $teams = []; $out['issues'][] = $venue . ' : pays du club non confirmé ; championnat non associé.'; }
+                $countries = []; $teamSeasons = [];
                 foreach ($teams as $team) {
-                    if ((int)($team['id'] ?? 0) === $teamId && !empty($team['country'])) { $countries[(string)$team['country']] = true; }
+                    if ((int)($team['id'] ?? 0) === $teamId && !empty($team['country'])) { $countries[(string)$team['country']] = true; if (!empty($team['competition_id'])) { $teamSeasons[(int)$team['competition_id']] = true; } }
                 }
                 if (count($countries) === 1) {
-                    $country = (string)key($countries);
+                    $country = (string)key($countries); $domesticFound = false;
                     foreach ($catalog as $league) {
-                        if (($league['country'] ?? '') === $country && in_array($league['league_name'] ?? '', self::DOMESTIC_LEAGUES[$country] ?? [], true)) { $candidateLeagues[] = $league; }
+                        $leagueName = $league['league_name'] ?? '';
+                        if ($leagueName === '' && strpos($league['name'] ?? '', $country . ' ') === 0) { $leagueName = substr($league['name'], strlen($country) + 1); }
+                        if (($league['country'] ?? '') === $country && in_array($leagueName, self::DOMESTIC_LEAGUES[$country] ?? [], true)) { $candidateLeagues[] = $league; $domesticFound = true; }
                     }
+                    if (!$domesticFound) { $out['issues'][] = $venue . ' : championnat de ' . $country . ' non identifié dans les compétitions accessibles.'; }
                 }
                 $seen = []; $sourceCount = 0;
                 // The current competition's previous season and the domestic current/previous seasons
@@ -233,7 +243,7 @@ final class FootyStats
                     usort($seasons, static function ($a, $b) { return strcmp((string)$b['year'], (string)$a['year']); });
                     foreach (array_slice($seasons, 0, 2) as $season) {
                         $id = (int)$season['id'];
-                        if ($id === (int)$fs['season_id'] || isset($seen[$id])) { continue; }
+                        if ($id === (int)$fs['season_id'] || isset($seen[$id]) || ($teamSeasons && !isset($teamSeasons[$id]))) { continue; }
                         $seen[$id] = true;
                         $rows = $this->pages('league-matches', ['season_id' => $id, 'max_time' => $cutoff, 'max_per_page' => 1000]);
                         $history = HistoricalContext::summarize($rows, $teamId, $venue, $id, $cutoff);
@@ -278,6 +288,7 @@ final class FootyStats
                 $stage = 'api_unavailable';
                 if (!isset($leagueCache[$season])) {
                     $teams = $this->pages('league-teams', ['season_id' => $season, 'include' => 'stats', 'max_time' => $cutoff]);
+                    $stage = 'data_incomplete';
                     $byId = []; $goals = 0; $played = 0; $complete = true;
                     foreach ($teams as $team) {
                         // /league-teams is already scoped by season_id. Production responses
@@ -297,7 +308,9 @@ final class FootyStats
                 $league = $leagueCache[$season];
                 $stage = 'data_incomplete';
                 foreach (['home', 'away'] as $side) {
-                    $raw = $league['teams'][(int)$fixture[$side . 'ID']]['stats'] ?? [];
+                    $teamRow = $league['teams'][(int)$fixture[$side . 'ID']] ?? [];
+                    $evidence['team_countries'][$side] = $teamRow['country'] ?? null;
+                    $raw = $teamRow['stats'] ?? [];
                     $n = is_array($raw) ? self::number($raw, 'seasonMatchesPlayed_' . $side) : null;
                     $evidence['sample'][$side . '_n'] = $n !== null && floor($n) === $n ? (int)$n : null;
                 }
@@ -314,7 +327,7 @@ final class FootyStats
                 foreach (['home' => 'à domicile', 'away' => 'à l’extérieur'] as $side => $label) {
                     if ($match['stats'][$side . '_n'] < 20) { $match['warnings'][] = 'FootyStats ' . $label . ' : échantillon limité à ' . $match['stats'][$side . '_n'] . ' matchs.'; }
                 }
-                $match['footystats'] = ['source' => $evidence['source'], 'sample' => $evidence['sample'], 'status' => 'enriched', 'match_id' => (int)$fixture['id'], 'season_id' => $season,
+                $match['footystats'] = ['source' => $evidence['source'], 'team_countries' => $evidence['team_countries'], 'sample' => $evidence['sample'], 'status' => 'enriched', 'match_id' => (int)$fixture['id'], 'season_id' => $season,
                     'home_id' => (int)$fixture['homeID'], 'away_id' => (int)$fixture['awayID'], 'as_of' => gmdate('c', $cutoff),
                     'home' => $home, 'away' => $away, 'league_average' => $league['average'], 'message' => 'Bilans de saison : domicile pour le recevant, extérieur pour le visiteur.'];
                 $summary['enriched']++;

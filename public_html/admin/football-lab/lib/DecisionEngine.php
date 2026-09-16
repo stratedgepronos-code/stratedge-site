@@ -242,7 +242,7 @@ final class DecisionEngine
         unset($match);
         usort($analysis['matches'], static function ($a, $b) { return (($b['pick']['stress_ev'] ?? -INF) <=> ($a['pick']['stress_ev'] ?? -INF)) ?: strcmp($a['kickoff'], $b['kickoff']); });
         $analysis['version'] = isset($analysis['footystats']) ? self::FOOTY_VERSION : self::VERSION;
-        $analysis['selection_policy'] = ['min_odds' => self::MIN_ODDS, 'max_odds' => self::MAX_ODDS, 'min_ev' => 0.04, 'min_edge' => 0.025, 'stress_factor' => 0.15, 'prior_matches' => self::PRIOR_MATCHES];
+        $analysis['selection_policy'] = ['min_odds' => self::MIN_ODDS, 'max_odds' => self::MAX_ODDS, 'min_ev' => 0.04, 'min_edge' => 0.025, 'stress_factor' => 0.15, 'prior_matches' => self::PRIOR_MATCHES, 'min_samples_each' => 8, 'historical_context' => 'descriptive_only'];
         return $analysis;
     }
 }
