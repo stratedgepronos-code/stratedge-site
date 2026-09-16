@@ -1,0 +1,32 @@
+name: Audit lecture seule Football Lab
+on:
+  push:
+    branches: ['codex/lab-sept17-audit']
+    paths: ['.github/workflows/lab-sept17-audit.yml']
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Lire les diagnostics sportifs archivés
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o IdentitiesOnly=yes alex@31.97.196.145 'php' <<'PHP'
+          <?php
+          require '/var/www/stratedgepronos.fr/public_html/includes/db.php';
+          $q=getDB()->query("SELECT id,created_at,payload FROM se_lab_runs WHERE kind='analysis' ORDER BY created_at DESC LIMIT 60");
+          while($r=$q->fetch(PDO::FETCH_ASSOC)){
+          $d=json_decode($r['payload'],true);$a=$d['analysis']??[];$ms=$a['matches']??[];
+          $target=array_filter($ms,static function($m){return strpos($m['kickoff']??'','2026-09-17')===0;});
+          echo "LAB_RUN ".json_encode(['id'=>$r['id'],'created_at'=>$r['created_at'],'count'=>count($ms),'target'=>count($target)]).PHP_EOL;
+          if(!$target)continue;
+          $out=['id'=>$r['id'],'created_at'=>$r['created_at'],'analysis'=>array_intersect_key($a,array_flip(['version','matches','errors','footystats','selection_policy'])),'sources'=>$d['sources']??null,'tables'=>$d['tables']??null,'maps'=>$d['maps']??null,'options'=>$d['options']??null,'import'=>$d['import']??null];
+          echo "LAB_DATA ".base64_encode(json_encode($out)).PHP_EOL;
+          }
+          
+          PHP
