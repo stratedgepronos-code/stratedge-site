@@ -1,4 +1,4 @@
-name: Audit lecture seule Football Lab
+name: Enregistrer la nouvelle analyse diagnostiquée du Football Lab
 on:
   push:
     branches: ['codex/lab-sept17-audit']
@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - name: Lire les diagnostics sportifs archivés
+      - name: Créer une nouvelle version sans modifier l’archive originale
         env:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
         run: |
@@ -18,33 +18,29 @@ jobs:
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           timeout 100 ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o ServerAliveInterval=10 -o ServerAliveCountMax=2 -o StrictHostKeyChecking=no -o ConnectTimeout=20 -o IdentitiesOnly=yes alex@31.97.196.145 'bash -s' <<'REMOTE'
-          echo LAB_CONNECTED
-          LAB_REPLAY_ROOT=$(mktemp -d /tmp/lab-replay.XXXXXX)
-          trap 'rm -rf "$LAB_REPLAY_ROOT"' EXIT
-          export LAB_REPLAY_ROOT
-          for f in PackBall.php DecisionEngine.php FootyStats.php HistoricalContext.php; do
-            curl -fsSL --max-time 15 "https://raw.githubusercontent.com/stratedgepronos-code/stratedge-site/a95b70a28e36dfd2752cdd28ef859750c195982e/public_html/admin/football-lab/lib/$f" -o "$LAB_REPLAY_ROOT/$f"
-            php -l "$LAB_REPLAY_ROOT/$f"
-          done
           timeout 65 php <<'PHP'
           <?php
           $orig='/var/www/stratedgepronos.fr/public_html/admin/football-lab';
           require '/var/www/stratedgepronos.fr/public_html/includes/db.php';
-          require $orig.'/lib/Engine.php';require $orig.'/lib/Store.php';
-          require getenv('LAB_REPLAY_ROOT').'/PackBall.php';
-          $q=getDB()->prepare('SELECT payload FROM se_lab_runs WHERE id=?');$q->execute(['a57fb13a60a9f2f11e94395f5984f6f8']);$raw=$q->fetchColumn();$d=json_decode($raw,true);
-          $local=is_readable($orig.'/config.local.php')?require $orig.'/config.local.php':[];
-          $key=getenv('STRATEDGE_LAB_FOOTYSTATS_KEY')?:getenv('FOOTYSTATS_API_KEY')?:($local['footystats_api_key']??'');
-          if($key===''&&defined('FOOTYSTATS_API_KEY'))$key=(string)constant('FOOTYSTATS_API_KEY');
-          $client=new \StratEdgeLab\FootyStats(trim($key),null,null,$local['footystats_team_aliases']??[]);
-          $r=\StratEdgeLab\PackBall::replay($d,$client);$a=$r['analysis'];
-          echo 'LAB_REPLAY '.json_encode(['version'=>$a['version'],'count'=>count($a['matches']),'errors'=>$a['errors'],'summary'=>$a['footystats'],'picks'=>count(array_filter($a['matches'],static function($m){return !empty($m['pick']);}))]).PHP_EOL;
-          foreach($a['matches'] as $m){
-          $hc=$m['historical_context']??[];$sources=[];
-          foreach($hc['sources']??[] as $venue=>$ss){foreach($ss as $s){$sources[]=array_merge(['venue'=>$venue],array_intersect_key($s,array_flip(['competition','season_id','period_start','period_end','n','gf','ga','over25_percent'])));}}
-          echo 'LAB_EFFECT '.json_encode(['home'=>$m['home'],'away'=>$m['away'],'diagnostic'=>\StratEdgeLab\DecisionEngine::diagnostic($m),'sample'=>$m['footystats']['sample']??null,'history_status'=>$hc['status']??null,'history_issues'=>$hc['issues']??[],'sources'=>$sources]).PHP_EOL;
+          require $orig.'/lib/Engine.php';require $orig.'/lib/Store.php';require $orig.'/lib/PackBall.php';
+          if(\StratEdgeLab\DecisionEngine::FOOTY_VERSION!=='2.2.0-footystats-diagnostics-experimental'){echo "LAB_SAVE deployment_not_ready\n";exit(1);}
+          $id='a57fb13a60a9f2f11e94395f5984f6f8';
+          $q=getDB()->prepare('SELECT owner_id,payload FROM se_lab_runs WHERE id=?');$q->execute([$id]);$row=$q->fetch(PDO::FETCH_ASSOC);$raw=$row['payload'];$d=json_decode($raw,true);$owner=(int)$row['owner_id'];
+          $store=new \StratEdgeLab\Store(getDB());
+          foreach($store->recent($owner) as $recent){
+           $old=$store->get($recent['id'],$owner)['data'];
+           if(($old['reanalysis_of']??'')===$id&&($old['analysis']['version']??'')===\StratEdgeLab\DecisionEngine::FOOTY_VERSION){echo 'LAB_SAVED '.json_encode(['id'=>$recent['id'],'already_exists'=>true]).PHP_EOL;exit;}
           }
-          $q->execute(['a57fb13a60a9f2f11e94395f5984f6f8']);echo 'LAB_ARCHIVE_UNCHANGED '.(hash('sha256',$raw)===hash('sha256',$q->fetchColumn())?'yes':'no').PHP_EOL;
+          $prepared=\StratEdgeLab\PackBall::replay($d,\StratEdgeLab\FootyStats::configured($store));
+          $prepared['reanalysis_of']=$id;
+          $newId=$store->create('analysis',$prepared,$owner);
+          $counts=[];$historical=0;
+          foreach($prepared['analysis']['matches'] as $m){
+           $category=\StratEdgeLab\DecisionEngine::diagnostic($m)['category'];$counts[$category]=($counts[$category]??0)+1;
+           if(($m['historical_context']['status']??'')==='descriptive_only')$historical++;
+          }
+          $q->execute([$id]);$again=$q->fetch(PDO::FETCH_ASSOC);
+          echo 'LAB_SAVED '.json_encode(['id'=>$newId,'count'=>count($prepared['analysis']['matches']),'categories'=>$counts,'history_count'=>$historical,'version'=>$prepared['analysis']['version'],'archive_unchanged'=>hash('sha256',$raw)===hash('sha256',$again['payload'])]).PHP_EOL;
           
           PHP
           REMOTE
