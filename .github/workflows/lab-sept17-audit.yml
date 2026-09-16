@@ -18,33 +18,13 @@ jobs:
           printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           timeout 100 ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=20 -o IdentitiesOnly=yes alex@31.97.196.145 'bash -s' <<'REMOTE'
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          paths=[Path('/var/www/stratedgepronos.fr/public_html/error_log'),Path('/var/www/stratedgepronos.fr/public_html/admin/football-lab/error_log'),Path('/var/log/apache2/error.log'),Path('/var/log/nginx/error.log')]
-          paths+=list(Path('/var/log').glob('php*-fpm.log'))
-          for p in paths:
-           try:
-            with p.open('rb') as f:
-             f.seek(max(0,p.stat().st_size-2000000)); lines=f.read().decode(errors='replace').splitlines()
-           except OSError: continue
-           for l in lines[-4000:]:
-            if 'football-lab' not in l: continue
-            kind=next((x for x in ['Allowed memory size','Maximum execution time','Fatal error','Parse error','upstream timed out'] if x in l),None)
-            if kind:
-             numbers=re.findall(r'(?:Allowed memory size of|allocate|Maximum execution time of) [0-9]+',l)
-             files=re.findall(r'football-lab/[A-Za-z0-9_./-]+',l)
-             lineno=re.findall(r'(?:on line |:)([0-9]+)',l)
-             print('LAB_ERROR',kind,numbers,files,lineno[-2:])
-          PY
-          php -r 'echo "LAB_CLI memory=".ini_get("memory_limit")." time=".ini_get("max_execution_time").PHP_EOL;'
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          for p in Path('/etc/php').glob('*/fpm/php.ini'):
-           try:
-            s=p.read_text()
-            print('LAB_FPM',str(p),re.findall(r'^(?:memory_limit|max_execution_time)\s*=\s*[^\n]+',s,re.M))
-           except OSError: pass
-          PY
+          cd /var/www/stratedgepronos.fr/public_html/admin/football-lab
+          timeout 65 php -d memory_limit=128M -d max_execution_time=30 -d display_errors=0 -d log_errors=0 <<'PHP'
+          <?php
+          register_shutdown_function(static function(){ $e=error_get_last();$kind='none';if($e){foreach(['Allowed memory size','Maximum execution time','Fatal'] as $k){if(strpos($e['message'],$k)!==false){$kind=$k;break;}}if($kind==='none')$kind='other';}echo 'LAB_SHUTDOWN '.json_encode(['category'=>$kind,'file'=>$e?basename($e['file']):null,'line'=>$e['line']??null,'peak_mb'=>round(memory_get_peak_usage(true)/1048576,1)]).PHP_EOL;});
+          require '../../../includes/db.php';require 'lib/Engine.php';require 'lib/Store.php';require 'lib/PackBall.php';
+          $q=getDB()->prepare('SELECT payload FROM se_lab_runs WHERE id=?');$q->execute(['a57fb13a60a9f2f11e94395f5984f6f8']);$d=json_decode($q->fetchColumn(),true);
+          $r=\StratEdgeLab\PackBall::replay($d,\StratEdgeLab\FootyStats::configured());
+          echo 'LAB_REPRO '.json_encode(['matches'=>count($r['analysis']['matches']),'errors'=>count($r['analysis']['errors'])]).PHP_EOL;
+          PHP
           REMOTE
