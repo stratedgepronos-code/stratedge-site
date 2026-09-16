@@ -22,15 +22,31 @@ jobs:
           timeout 60 php <<'PHP'
           <?php
           require '/var/www/stratedgepronos.fr/public_html/includes/db.php';
-          $q=getDB()->query("SELECT id,created_at,payload FROM se_lab_runs WHERE kind='analysis' ORDER BY created_at DESC LIMIT 60");
-          while($r=$q->fetch(PDO::FETCH_ASSOC)){
-          $d=json_decode($r['payload'],true);$a=$d['analysis']??[];$ms=$a['matches']??[];
-          $target=array_filter($ms,static function($m){return strpos($m['kickoff']??'','2026-09-17')===0;});
-          echo "LAB_RUN ".json_encode(['id'=>$r['id'],'created_at'=>$r['created_at'],'count'=>count($ms),'target'=>count($target)]).PHP_EOL;
-          if(!$target)continue;
-          $out=['id'=>$r['id'],'created_at'=>$r['created_at'],'analysis'=>array_intersect_key($a,array_flip(['version','matches','errors','footystats','selection_policy'])),'sources'=>$d['sources']??null,'tables'=>$d['tables']??null,'maps'=>$d['maps']??null,'options'=>$d['options']??null,'import'=>$d['import']??null];
-          echo "LAB_DATA ".base64_encode(json_encode($out)).PHP_EOL;
+          require '/var/www/stratedgepronos.fr/public_html/admin/football-lab/lib/FootyStats.php';
+          $q=getDB()->prepare('SELECT payload FROM se_lab_runs WHERE id=?');$q->execute(['a57fb13a60a9f2f11e94395f5984f6f8']);$d=json_decode($q->fetchColumn(),true);
+          $c=\StratEdgeLab\FootyStats::configured();$pages=new ReflectionMethod($c,'pages');$pages->setAccessible(true);$req=new ReflectionMethod($c,'request');$req->setAccessible(true);
+          $cutoff=strtotime('2026-09-16T20:45:00Z');
+          foreach($d['analysis']['matches'] as $m){
+           if(($m['footystats']['status']??'')==='enriched')continue;
+           try{
+            $fixtures=$pages->invoke($c,'todays-matches',['date'=>gmdate('Y-m-d',strtotime($m['kickoff'])),'timezone'=>'Etc/UTC']);
+            try{$f=$c->findFixture($m,$fixtures);}catch(Throwable $e){
+             $near=[];foreach($fixtures as $f){if(abs(($f['date_unix']??0)-strtotime($m['kickoff']))>900)continue;
+              $hn=\StratEdgeLab\FootyStats::normalizedName($f['home_name']??'');$an=\StratEdgeLab\FootyStats::normalizedName($f['away_name']??'');
+              if($hn===\StratEdgeLab\FootyStats::normalizedName($m['home'])||$an===\StratEdgeLab\FootyStats::normalizedName($m['away']))$near[]=array_intersect_key($f,array_flip(['id','homeID','awayID','home_name','away_name','competition_id','date_unix']));
+             }
+             echo 'LAB_DETAIL '.json_encode(['home'=>$m['home'],'away'=>$m['away'],'state'=>'unmatched','near'=>$near]).PHP_EOL;continue;
+            }
+            $ts=$pages->invoke($c,'league-teams',['season_id'=>(int)$f['competition_id'],'include'=>'stats','max_time'=>$cutoff]);
+            $out=['home'=>$m['home'],'away'=>$m['away'],'fixture'=>array_intersect_key($f,array_flip(['id','homeID','awayID','home_name','away_name','competition_id','date_unix'])),'samples'=>[]];
+            foreach($ts as $t){foreach(['home','away'] as $v){if((int)$t['id']===(int)$f[$v.'ID']){$s=$t['stats']??[];$out['samples'][$v]=['team_id'=>$t['id'],'country'=>$t['country']??null,'n'=>$s['seasonMatchesPlayed_'.$v]??null,'total'=>$s['seasonGoalsTotal_'.$v]??null,'conceded'=>$s['seasonConcededNum_'.$v]??null];}}}
+            echo 'LAB_DETAIL '.json_encode($out).PHP_EOL;
+            if(in_array($m['home'],['Real Sociedad','Viktoria Plzeň'],true)){
+             foreach(['home','away'] as $v){$tr=$req->invoke($c,'team',['team_id'=>(int)$f[$v.'ID']]);echo 'LAB_TEAM '.json_encode(array_map(static function($t){return array_intersect_key($t,array_flip(['id','name','country','competition_id','season']));},$tr['data'])).PHP_EOL;}
+            }
+           }catch(Throwable $e){echo 'LAB_DETAIL '.json_encode(['home'=>$m['home'],'error'=>'Provider audit unavailable']).PHP_EOL;}
           }
+          try{$cat=$req->invoke($c,'league-list',['chosen_leagues_only'=>'true']);foreach($cat['data'] as $l){if(in_array($l['country']??'',['Spain','England','Belgium','Czech Republic','Czechia'],true)){echo 'LAB_LEAGUE '.json_encode($l).PHP_EOL;}}}catch(Throwable $e){}
           
           PHP
           REMOTE
