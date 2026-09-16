@@ -51,6 +51,20 @@ final class FootyStats
 
     public function ready(): bool { return $this->key !== '' && $this->key !== 'REPLACE-ME'; }
 
+    /** Keep only consumed fixture fields: full season payloads otherwise accumulate in PHP memory. */
+    private static function compact(string $endpoint, array $response): array
+    {
+        if (!in_array($endpoint, ['league-matches', 'todays-matches'], true)) { return $response; }
+        $fields = array_flip(['id', 'competition_id', 'homeID', 'awayID', 'date_unix', 'status',
+            'no_home_away', 'homeGoalCount', 'awayGoalCount', 'home_name', 'away_name', 'season']);
+        $rows = [];
+        foreach ($response['data'] as $row) {
+            if (!is_array($row)) { throw new \RuntimeException('Liste FootyStats invalide.'); }
+            $rows[] = array_intersect_key($row, $fields);
+        }
+        return ['data' => $rows, 'pager' => $response['pager'] ?? []];
+    }
+
     private function request(string $endpoint, array $params): array
     {
         if (!$this->ready()) { throw new \RuntimeException('Clé FootyStats absente de la configuration serveur.'); }
@@ -58,7 +72,7 @@ final class FootyStats
         if (isset($this->memo[$cacheKey])) { return $this->memo[$cacheKey]; }
         if ($this->store) {
             $cached = $this->store->cacheGet($cacheKey);
-            if ($cached !== null) { return $this->memo[$cacheKey] = $cached; }
+            if ($cached !== null) { return $this->memo[$cacheKey] = self::compact($endpoint, $cached); }
         }
         if (++$this->calls > 40 || microtime(true) >= $this->deadline) { throw new \RuntimeException('Enrichissement partiel : délai ou limite d’appels atteint. Réimporte le fichier pour compléter les données grâce au cache.'); }
         if ($this->transport) {
@@ -82,12 +96,14 @@ final class FootyStats
             if ($status === 429) { throw new \RuntimeException('Quota FootyStats atteint. Réessaie après son renouvellement.'); }
             if (!$ok || $status !== 200) { throw new \RuntimeException('FootyStats indisponible : connexion ou réponse HTTP invalide.'); }
             $response = json_decode($raw, true);
+            unset($raw);
         }
         if (!is_array($response) || ($response['success'] ?? null) !== true || !is_array($response['data'] ?? null)) {
             throw new \RuntimeException('Réponse FootyStats invalide ou accès non autorisé.');
         }
         // Never persist provider messages, request URLs, quota details or credentials.
-        $safe = ['data' => $response['data'], 'pager' => $response['pager'] ?? []];
+        $safe = self::compact($endpoint, ['data' => $response['data'], 'pager' => $response['pager'] ?? []]);
+        unset($response);
         if ($this->store) { $this->store->cachePut($cacheKey, $safe, time() + 900); }
         return $this->memo[$cacheKey] = $safe;
     }
