@@ -19,12 +19,21 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           timeout 100 ssh -i ~/.ssh/deploy_key -o BatchMode=yes -o StrictHostKeyChecking=no -o ConnectTimeout=20 -o IdentitiesOnly=yes alex@31.97.196.145 'bash -s' <<'REMOTE'
           cd /var/www/stratedgepronos.fr/public_html/admin/football-lab
+          LAB_MEMORY_TEST=$(mktemp -d /tmp/lab-memory.XXXXXX)
+          trap 'rm -rf "$LAB_MEMORY_TEST"' EXIT
+          export LAB_MEMORY_TEST
+          for f in PackBall.php DecisionEngine.php FootyStats.php HistoricalContext.php; do
+            curl -fsSL --max-time 15 "https://raw.githubusercontent.com/stratedgepronos-code/stratedge-site/a108d8606f0e3160661fb15cbb087e2e73ee048e/public_html/admin/football-lab/lib/$f" -o "$LAB_MEMORY_TEST/$f"
+          done
           timeout 65 php -d memory_limit=128M -d max_execution_time=30 -d display_errors=0 -d log_errors=0 <<'PHP'
           <?php
           register_shutdown_function(static function(){ $e=error_get_last();$kind='none';if($e){foreach(['Allowed memory size','Maximum execution time','Fatal'] as $k){if(strpos($e['message'],$k)!==false){$kind=$k;break;}}if($kind==='none')$kind='other';}echo 'LAB_SHUTDOWN '.json_encode(['category'=>$kind,'file'=>$e?basename($e['file']):null,'line'=>$e['line']??null,'peak_mb'=>round(memory_get_peak_usage(true)/1048576,1)]).PHP_EOL;});
-          require '/var/www/stratedgepronos.fr/public_html/includes/db.php';require 'lib/Engine.php';require 'lib/Store.php';require 'lib/PackBall.php';
+          require '/var/www/stratedgepronos.fr/public_html/includes/db.php';require 'lib/Engine.php';require 'lib/Store.php';require getenv('LAB_MEMORY_TEST').'/PackBall.php';
           $q=getDB()->prepare('SELECT payload FROM se_lab_runs WHERE id=?');$q->execute(['a57fb13a60a9f2f11e94395f5984f6f8']);$d=json_decode($q->fetchColumn(),true);
-          $r=\StratEdgeLab\PackBall::replay($d,\StratEdgeLab\FootyStats::configured());
+          $local=is_readable('config.local.php')?require 'config.local.php':[];
+          $key=getenv('STRATEDGE_LAB_FOOTYSTATS_KEY')?:getenv('FOOTYSTATS_API_KEY')?:($local['footystats_api_key']??'');
+          if($key===''&&defined('FOOTYSTATS_API_KEY'))$key=(string)constant('FOOTYSTATS_API_KEY');
+          $r=\StratEdgeLab\PackBall::replay($d,new \StratEdgeLab\FootyStats(trim($key),null,null,$local['footystats_team_aliases']??[]));
           echo 'LAB_REPRO '.json_encode(['matches'=>count($r['analysis']['matches']),'errors'=>count($r['analysis']['errors'])]).PHP_EOL;
           PHP
           REMOTE
