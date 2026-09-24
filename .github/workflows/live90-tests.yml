@@ -1,0 +1,26 @@
+name: Live90 tests
+on:
+  pull_request:
+    paths: ['ops/live90/**', 'public_html/admin/slate/live90/**', 'public_html/api/live90/**', '.github/workflows/live90-tests.yml']
+  push:
+    branches: [master]
+    paths: ['ops/live90/**', 'public_html/admin/slate/live90/**', 'public_html/api/live90/**', '.github/workflows/live90-tests.yml']
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -q && sudo apt-get install -y php-cli php-sqlite3
+      - name: Vérifier PHP, le moteur et les parseurs
+        run: |
+          set -e
+          find public_html/admin/slate/live90 public_html/api/live90 -name '*.php' -print0 | xargs -0 -n1 php -l
+          bash -n ops/live90/install.sh
+          python3 -m unittest discover -s ops/live90/tests -v
+          node ops/live90/tests/test_parsers.cjs
+          test_dir=$(mktemp -d)
+          printf 'SE90_DB="%s/live90.sqlite"\n' "$test_dir" > "$test_dir/test.env"
+          SE90_ENV="$test_dir/test.env" php -r 'require "public_html/api/live90/core.php"; $db=db90(); if ($db->query("SELECT COUNT(*) FROM signals")->fetchColumn() !== 0) exit(1); echo "Initialisation SQLite OK\n";'
+          python3 ops/live90/server/engine.py --once --db "$test_dir/live90.sqlite"

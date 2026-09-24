@@ -325,6 +325,7 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
         <a href="/panel-x9k3m/football-lab/import.php" <?= ($pageActive==='football-lab-import') ? 'class="active"' : '' ?>>Importer PackBall</a>
         <a href="/panel-x9k3m/football-lab/index.php" <?= ($pageActive==='football-lab-analyses') ? 'class="active"' : '' ?>>Analyses football</a>
         <a href="/panel-x9k3m/football-lab/history.php" <?= ($pageActive==='football-lab-history') ? 'class="active"' : '' ?>>Suivi des résultats</a>
+        <a href="/panel-x9k3m/slate/live90/">SEUIL 90 · Console live</a>
       </div>
     </div>
     <a href="/panel-x9k3m/slate/" class="nav-item <?= ($pageActive==='slate') ?'active':'' ?>" style="color:#ff2d78;">
