@@ -52,3 +52,13 @@ public_html/admin/edge-finder/data/import.log
 
 # StratEdge Lab — configuration API propre au serveur
 public_html/admin/football-lab/config.local.php
+public_html/admin/slate/data/
+public_html/private/outsider/*.csv
+public_html/private/outsider/*.txt
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.bak*
+*.orig
+*.avant-*
+_bak_*/

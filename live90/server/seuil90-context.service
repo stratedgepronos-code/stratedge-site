@@ -1,0 +1,17 @@
+[Unit]
+Description=SEUIL 90 - recherche avant-match et lecture IA live
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+EnvironmentFile=/etc/stratedge/live.env
+WorkingDirectory=/opt/stratedge/live90
+ExecStart=/usr/bin/python3 /opt/stratedge/live90/context_worker.py
+TimeoutStartSec=180
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/stratedge

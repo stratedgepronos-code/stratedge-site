@@ -1,0 +1,77 @@
+{
+  "schema": "seuil90.scenarios.v1",
+  "generated_at": "2026-09-24T22:06:03+00:00",
+  "matches": [
+    {
+      "match_id": "123",
+      "home": "Équipe Démo A",
+      "away": "Équipe Démo B",
+      "kickoff": "2026-09-25T00:06:03+00:00",
+      "prematch": {
+        "n_h": 10,
+        "n_a": 10,
+        "gf_h": 1.6,
+        "gf_a": 1.2,
+        "ga_h": 1.2,
+        "ga_a": 1.5,
+        "shots_h": 10,
+        "shots_a": 8,
+        "sot_h": 4,
+        "sot_a": 3
+      },
+      "context": {
+        "summary": "EXEMPLE FICTIF — ne pas importer pour une analyse réelle. Format de scénario de réaction à un but encaissé tôt.",
+        "unknowns": [
+          "Compositions non recherchées"
+        ],
+        "sources": []
+      },
+      "scenarios": [
+        {
+          "id": "reaction-h",
+          "title": "Réaction de A",
+          "hypothesis": "Hypothèse sans fréquence historique mesurée",
+          "evidence_status": "hypothesis",
+          "rationale": "Comparer la réaction observée aux moyennes de tirs avant-match",
+          "team": "h",
+          "trigger": {
+            "kind": "conceded_early",
+            "before_minute": 15
+          },
+          "window": {
+            "from": 15,
+            "to": 40,
+            "period": "HT"
+          },
+          "score": {
+            "min_total": 1,
+            "max_total": 1,
+            "relation": "trailing_one"
+          },
+          "conditions": [
+            {
+              "metric": "sot5",
+              "min": 2
+            },
+            {
+              "metric": "shots5",
+              "min": 3
+            },
+            {
+              "metric": "activity_ratio",
+              "min": 1.2
+            }
+          ],
+          "market": {
+            "type": "team_goals",
+            "period": "HT",
+            "side": "over",
+            "line": "next_half",
+            "min_odds": 1.8,
+            "max_odds": 2.5
+          }
+        }
+      ]
+    }
+  ]
+}

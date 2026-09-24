@@ -330,6 +330,9 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
     <a href="/panel-x9k3m/slate/" class="nav-item <?= ($pageActive==='slate') ?'active':'' ?>" style="color:#ff2d78;">
       <span>🎯</span> Edge Finder
     </a>
+    <a href="/panel-x9k3m/slate/live90/" class="nav-item <?= ($pageActive==='live90') ?'active':'' ?>" style="<?= ($pageActive==='live90') ? '' : 'color:#00d4ff;' ?>">
+      <span>📡</span> Live
+    </a>
     <?php endif; ?>
   </nav>
 
@@ -395,3 +398,9 @@ document.addEventListener('keydown', function(e){
   if (o) o.classList.remove('open');
 });
 </script>
+
+<!-- STRATEDGE_TENNIS_UI_BOOTSTRAP_START -->
+<?php if (($pageActive ?? '') === 'edge-finder-tennis'): ?>
+<script defer src="/panel-x9k3m/assets/tennis-ui-bootstrap.js?v=20260725-2"></script>
+<?php endif; ?>
+<!-- STRATEDGE_TENNIS_UI_BOOTSTRAP_END -->

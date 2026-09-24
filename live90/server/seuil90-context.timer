@@ -1,0 +1,10 @@
+[Unit]
+Description=SEUIL 90 - file des analyses contextuelles
+
+[Timer]
+OnBootSec=40s
+OnUnitActiveSec=20s
+Unit=seuil90-context.service
+
+[Install]
+WantedBy=timers.target
