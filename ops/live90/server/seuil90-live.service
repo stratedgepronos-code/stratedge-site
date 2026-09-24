@@ -1,0 +1,22 @@
+[Unit]
+Description=SEUIL 90 - moteur d'observation live
+After=network-online.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+EnvironmentFile=/etc/stratedge/live.env
+Environment=PYTHONUNBUFFERED=1
+WorkingDirectory=/opt/stratedge/live90
+ExecStart=/usr/bin/env SE90_TELEGRAM=0 /usr/bin/python3 /opt/stratedge/live90/engine.py
+Restart=on-failure
+RestartSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/stratedge
+
+[Install]
+WantedBy=multi-user.target
