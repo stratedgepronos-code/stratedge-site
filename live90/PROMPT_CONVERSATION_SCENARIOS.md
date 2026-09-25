@@ -61,3 +61,7 @@ Les contrôles globaux (données fraîches, zéro expulsion, deux relevés conco
 4. Pour une mise à jour de compositions, régénère seulement les matchs concernés encore à venir, avec les sources et une nouvelle heure de génération. Le serveur n’accepte pas de réécriture après le coup d’envoi.
 
 L’exemple joint est fictif et démontre le format, pas une stratégie validée. Les seuils doivent être discutés à partir des données du jour et évalués ensuite sur des observations conservées hors de leur période de conception.
+
+
+## Parcours deux CSV — priorité sur les anciennes consignes d’identification
+Le site fournit désormais `StratEdge-a-analyser.json`, schéma `stratedge.analysis.v1`, après import des deux CSV. Il contient timezone, sample, les en-têtes et, pour chaque match, prematch et packball.export_a/export_b : tableaux complets dont les positions correspondent aux deux CSV. Exploite toutes les données, pas seulement prematch. Effectue les recherches même sans ID. Le résultat doit être un fichier `StratEdge_scenarios_AAAA-MM-JJ.json`, schéma `seuil90.scenarios.v1`, avec uniquement les champs du contrat de scénarios. Exception de préparation : conserve match_id:null lorsque l’ID manque ; le site le résoudra ou demandera sa saisie avant de transmettre le dossier au validateur strict. Dis clairement que ces matchs ne sont pas activables tant que leur association n’est pas terminée. Ne crée aucun faux ID. Cette exception ne change aucune exigence sur les profils, les dates, les marchés ou les scénarios.

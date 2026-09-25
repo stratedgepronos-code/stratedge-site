@@ -13,6 +13,7 @@ header('Cache-Control: no-store');
 $read = static fn(string $f): string => (string)@file_get_contents(__DIR__.'/assets/'.$f);
 $css  = str_ireplace('</style', '<\/style', $read('style.css'));
 $app  = str_ireplace('</script', '<\/script', $read('app.js'));
+$flow = str_ireplace('</script', '<\/script', $read('packball.js'));
 $ctx  = str_ireplace('</script', '<\/script', $read('context.js'));
 /* Sidebar du panel, comme sur les autres pages admin. Elle attend $db et
    $pageActive, et se place en position fixe à gauche : le contenu doit donc
@@ -43,4 +44,6 @@ try {
 <?= $app ?>
 </script><script>
 <?= $ctx ?>
+</script><script>
+<?= $flow ?>
 </script></body></html>

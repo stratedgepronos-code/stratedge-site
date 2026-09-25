@@ -13,6 +13,7 @@ function context90(PDO $db,array $r): array {
 }
 try {
 $db=db90();
+$db->exec('CREATE TABLE IF NOT EXISTS preparation(id INTEGER PRIMARY KEY CHECK(id=1), data TEXT NOT NULL)');
 if(($_SERVER['REQUEST_METHOD']??'GET')==='GET') {
  $matches=[];
  foreach($db->query('SELECT s.* FROM samples s JOIN (SELECT match_id,MAX(id) id FROM samples GROUP BY match_id) l ON s.id=l.id ORDER BY s.id DESC LIMIT 500') as $s){
@@ -27,11 +28,17 @@ if(($_SERVER['REQUEST_METHOD']??'GET')==='GET') {
  foreach($signals as &$s)$s['context']=json_decode($s['context'],true); unset($s);
  $cycle=$db->query('SELECT received_at FROM cycles ORDER BY rowid DESC LIMIT 1')->fetch();
  $ai=['enabled'=>false,'calls_today'=>0,'limit'=>0,'mode'=>'local_scenarios'];
- reply90(['ai'=>$ai,'matches'=>$matches,'signals'=>$signals,'last_cycle'=>$cycle['received_at']??null,'server_time'=>gmdate('c')]);
+ reply90(['ai'=>$ai,'matches'=>$matches,'signals'=>$signals,'last_cycle'=>$cycle['received_at']??null,'preparation'=>json_decode($db->query('SELECT data FROM preparation WHERE id=1')->fetchColumn()?:'null',true),'server_time'=>gmdate('c')]);
 }
 if(($_SERVER['REQUEST_METHOD']??'')!=='POST')reply90(['error'=>'Méthode non autorisée'],405);
 if(!hash_equals((string)($_SESSION['live90_csrf']??''),(string)($_SERVER['HTTP_X_CSRF_TOKEN']??'')) || empty($_SESSION['live90_csrf']))reply90(['error'=>'Session expirée, recharge la page'],403);
 $x=body90();
+if(($x['action']??'')==='preparation') {
+ $b=$x['bundle']??null;
+ if(!is_array($b)||($b['schema']??'')!=='stratedge.analysis.v1'||!is_array($b['matches']??null)||count($b['matches'])<1||count($b['matches'])>200)reply90(['error'=>'Dossier de préparation invalide'],422);
+ foreach($b['matches'] as $m)if(!is_array($m)||!is_string($m['home']??null)||!is_string($m['away']??null)||!is_array($m['prematch']??null))reply90(['error'=>'Match de préparation invalide'],422);
+ $q=$db->prepare('INSERT OR REPLACE INTO preparation(id,data) VALUES(1,?)');$q->execute([json_encode($b,JSON_THROW_ON_ERROR)]);reply90(['ok'=>true,'imported'=>count($b['matches'])]);
+}
 if(($x['action']??'')==='prematch') {
  if(!is_array($x['rows']??null)||count($x['rows'])>1000)reply90(['error'=>'Import invalide'],422);
  $accepted=[];$errors=[];$now=gmdate('Y-m-d\TH:i:s\Z');
