@@ -7,3 +7,11 @@ assert.throws(()=>pbJoin([A[0],a,a],B,'2099-09-25','UTC'));
 assert.equal(pbKickoff('2099-01-25','20:45','Europe/Paris'),'2099-01-25T19:45:00.000Z');
 const known={home:'Equipe A',away:'Equipe B',kickoff_ts:m.kickoff,packball_id:'123'};assert.equal(pbResolve(m,[known]),'123');assert.equal(pbResolve(m,[known,{...known,packball_id:'124'}]),null);assert.equal(pbResolve(m,[{...known,kickoff_ts:'2099-09-26T18:45:00Z'}]),null);
 console.log('Packball workflow: 9 checks passed');
+const {pbNormalize}=require('../../public_html/admin/slate/live90/assets/packball.js');
+// Compact Packball: nine administrative fields, 13 odds and paired statistics.
+const pairedA=new Set([23,24,25,26,27,28,29,30,31,38,39,40,41,42,43,44,45,46,47,48,49]);
+const compactHeader=Array.from({length:49},(_,i)=>pairedA.has(i+1)?'Domicile | Extérieur':'Global');
+const compact=compactHeader.map(h=>h.includes('|')?'10 | 10':'1');compact[3]='26-09-2099 20:45';
+const normalized=pbNormalize([compactHeader,compact]);assert.equal(normalized[0].length,72);assert.equal(normalized[1][24],'10');assert.equal(normalized[1][9],'');assert.equal(normalized[1][3],'26-09-2099 20:45');
+assert.throws(()=>pbNormalize([compactHeader,compact.map((v,i)=>i===22?'10':v)]));
+console.log('Compact export: 5 additional checks passed');
