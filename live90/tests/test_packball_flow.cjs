@@ -15,3 +15,11 @@ const compact=compactHeader.map(h=>h.includes('|')?'10 | 10':'1');compact[3]='26
 const normalized=pbNormalize([compactHeader,compact]);assert.equal(normalized[0].length,72);assert.equal(normalized[1][24],'10');assert.equal(normalized[1][9],'');assert.equal(normalized[1][3],'26-09-2099 20:45');
 assert.throws(()=>pbNormalize([compactHeader,compact.map((v,i)=>i===22?'10':v)]));
 console.log('Compact export: 5 additional checks passed');
+
+// Le nom du fichier ne prouve pas que les deux groupes ont été exportés.
+assert.throws(()=>pbJoin(A,A,'2099-09-25','Europe/Paris'),/deux fichiers sont identiques/);
+const secondA=[A[0],[...a]];secondA[1][11]='2.10';
+assert.throws(()=>pbJoin(A,secondA,'2099-09-25','Europe/Paris'),/même groupe.*deuxième/);
+const secondB=[B[0],[...b]];secondB[1][11]='2.20';
+assert.throws(()=>pbJoin(B,secondB,'2099-09-25','Europe/Paris'),/même groupe.*premier/);
+console.log('3 contrôles : doublon exact et groupe complémentaire manquant.');
