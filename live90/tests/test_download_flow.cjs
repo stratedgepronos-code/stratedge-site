@@ -1,0 +1,8 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const elements=new Map(),el=k=>{if(!elements.has(k))elements.set(k,{value:'2099-09-25',close(){},showModal(){},click(){this.onclick?.()}});return elements.get(k)};
+let downloaded,posted;
+const a=Array(72).fill('1'),b=Array(47).fill('1');for(const r of [a,b]){r[0]='France';r[2]='Ligue';r[3]='20:45';r[4]='NS';r[5]='Equipe A';r[8]='Equipe B'}a[24]=a[25]='10';a[26]=a[27]='12';a[30]=a[31]='4';
+el('#packball-files').files=[{size:100,text:async()=>JSON.stringify([Array(72).fill('h'),a])},{size:100,text:async()=>JSON.stringify([Array(47).fill('h'),b])}];
+const c=vm.createContext({console,Intl,Date,window:{},document:{createElement:()=>({click(){}})},$:el,parseCSV:JSON.parse,data:{matches:[],preparation:{matches:[]}},request:async x=>{posted=x;return {ok:true}},refresh:async()=>{throw Error('Concurrent refresh must not decide the download')},notice(){},setTimeout(){},Blob:class{constructor(parts){downloaded=JSON.parse(parts[0])}},URL:{createObjectURL(){return 'blob:test'},revokeObjectURL(){}}});
+vm.runInContext(fs.readFileSync('public_html/admin/slate/live90/assets/packball.js','utf8'),c);
+(async()=>{await el('#packball-save').onclick();assert.equal(posted.action,'preparation');assert.equal(downloaded.matches[0].home,'Equipe A');assert.equal(downloaded.matches[0].match_id,null);assert.equal(downloaded.timezone,'Europe/Paris');assert.equal(downloaded.matches[0].kickoff,'2099-09-25T18:45:00.000Z');console.log('Import → téléchargement : dossier nouvellement enregistré, sans dépendance au rafraîchissement.');})().catch(e=>{console.error(e);process.exitCode=1});

@@ -20,7 +20,7 @@ Objet racine :
 - matches : liste de 1 à 200 objets.
 
 Chaque match :
-- match_id : ID Packball numérique sous forme de chaîne.
+- match_id : ID Packball numérique sous forme de chaîne, ou null si absent ; ne demande aucune saisie manuelle.
 - home, away : noms exacts.
 - kickoff : ISO 8601 avec fuseau ; obligatoirement futur à l’import.
 - prematch : objet exact n_h, n_a, gf_h, gf_a, ga_h, ga_a, shots_h, shots_a, sot_h, sot_a. Tous numériques, échantillons entiers >=8 ; chiffres tirés des données fournies. Aucun champ absent ou null admis pour les profils importables ; ne pas remplacer une inconnue par zéro.
@@ -64,8 +64,10 @@ L’exemple joint est fictif et démontre le format, pas une stratégie validée
 
 
 ## Parcours deux CSV — priorité sur les anciennes consignes d’identification
-Le site fournit désormais `StratEdge-a-analyser.json`, schéma `stratedge.analysis.v1`, après import des deux CSV. Il contient timezone, sample, les en-têtes et, pour chaque match, prematch et packball.export_a/export_b : tableaux complets dont les positions correspondent aux deux CSV. Exploite toutes les données, pas seulement prematch. Effectue les recherches même sans ID. Le résultat doit être un fichier `StratEdge_scenarios_AAAA-MM-JJ.json`, schéma `seuil90.scenarios.v1`, avec uniquement les champs du contrat de scénarios. Exception de préparation : conserve match_id:null lorsque l’ID manque ; le site le résoudra ou demandera sa saisie avant de transmettre le dossier au validateur strict. Dis clairement que ces matchs ne sont pas activables tant que leur association n’est pas terminée. Ne crée aucun faux ID. Cette exception ne change aucune exigence sur les profils, les dates, les marchés ou les scénarios.
+Le site fournit désormais `StratEdge-a-analyser.json`, schéma `stratedge.analysis.v1`, après import des deux CSV. Il contient timezone, sample, les en-têtes et, pour chaque match, prematch et packball.export_a/export_b : tableaux complets dont les positions correspondent aux deux CSV. Exploite toutes les données, pas seulement prematch. Effectue les recherches même sans ID. Le résultat doit être un fichier `StratEdge_scenarios_AAAA-MM-JJ.json`, schéma `seuil90.scenarios.v1`, avec uniquement les champs du contrat de scénarios. Exception de préparation : conserve match_id:null lorsque l’ID manque ; le site conservera le dossier validé en attente et résoudra cet ID automatiquement à réception du collecteur. Dis clairement que ces matchs ne sont pas activables tant que leur association n’est pas terminée. Ne crée aucun faux ID. Cette exception ne change aucune exigence sur les profils, les dates, les marchés ou les scénarios.
 
 
 ## Association automatique (mise à jour du 26/09/2026)
 Ne demande plus d’ID à l’utilisateur. Conserve match_id:null si Packball ne le fournit pas. Les dossiers complets sont validés et enregistrés avant le coup d’envoi, puis associés par les équipes et l’horaire exact à réception du collecteur. Les cas ambigus restent inactifs. Cette association peut se terminer pendant le match, sans modifier l’analyse pré-match ni antidater une nouvelle analyse. Les profils incomplets et les nouveaux imports après le coup d’envoi restent refusés.
+
+Exclus du JSON de retour les matchs au profil prematch incomplet, même si scenarios est vide. Explique ces exclusions dans la réponse, sans inventer de valeur. Si tous les matchs sont exclus, ne génère pas de fichier vide. Le fuseau Packball est toujours Europe/Paris.
