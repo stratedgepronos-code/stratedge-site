@@ -18,5 +18,11 @@ try {
    if(!is_array($r) || !preg_match('/^\d{1,20}$/',(string)($r['packball_id']??''))) continue;
    $s->execute([$x['cycle_id'],(string)$r['packball_id'],$now,json_encode($r,JSON_UNESCAPED_UNICODE)]); $n++;
  }
- $db->commit(); reply90(['ok'=>true,'inserted'=>$n,'received_at'=>$now]);
+ $db->commit();
+ // Binding does not depend on the admin browser being open.
+ try {
+  $proc=proc_open(['/usr/bin/python3',dirname(__DIR__,3).'/live90/server/scenarios.py',$env['SE90_DB']??'/var/lib/stratedge/live90.sqlite','--resolve'],[0=>['file','/dev/null','r'],1=>['file','/dev/null','w'],2=>['file','/dev/null','a']],$pipes);
+  if(is_resource($proc)&&proc_close($proc)!==0)error_log('Live90: association en attente, nouvelle tentative au prochain relevé');
+ }catch(Throwable $e){error_log('Live90: association indisponible');}
+ reply90(['ok'=>true,'inserted'=>$n,'received_at'=>$now]);
 } catch(Throwable $e){if(isset($db)&&$db->inTransaction())$db->rollBack(); error_log('Live90 ingest: '.$e->getMessage()); reply90(['error'=>'Stockage indisponible'],500);}

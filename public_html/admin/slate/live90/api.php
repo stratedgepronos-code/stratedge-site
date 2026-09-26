@@ -28,7 +28,7 @@ if(($_SERVER['REQUEST_METHOD']??'GET')==='GET') {
  foreach($signals as &$s)$s['context']=json_decode($s['context'],true); unset($s);
  $cycle=$db->query('SELECT received_at FROM cycles ORDER BY rowid DESC LIMIT 1')->fetch();
  $ai=['enabled'=>false,'calls_today'=>0,'limit'=>0,'mode'=>'local_scenarios'];
- reply90(['ai'=>$ai,'matches'=>$matches,'signals'=>$signals,'last_cycle'=>$cycle['received_at']??null,'preparation'=>json_decode($db->query('SELECT data FROM preparation WHERE id=1')->fetchColumn()?:'null',true),'server_time'=>gmdate('c')]);
+ reply90(['ai'=>$ai,'matches'=>$matches,'signals'=>$signals,'last_cycle'=>$cycle['received_at']??null,'preparation'=>json_decode($db->query('SELECT data FROM preparation WHERE id=1')->fetchColumn()?:'null',true),'pending_scenarios'=>$db->query("SELECT state,data FROM pending_playbooks WHERE state!='linked'")->fetchAll(),'server_time'=>gmdate('c')]);
 }
 if(($_SERVER['REQUEST_METHOD']??'')!=='POST')reply90(['error'=>'Méthode non autorisée'],405);
 if(!hash_equals((string)($_SESSION['live90_csrf']??''),(string)($_SERVER['HTTP_X_CSRF_TOKEN']??'')) || empty($_SESSION['live90_csrf']))reply90(['error'=>'Session expirée, recharge la page'],403);
@@ -64,7 +64,7 @@ if(($x['action']??'')==='scenarios') {
  if(!is_array($x['bundle']??null))reply90(['error'=>'Dossier JSON attendu'],422);
  $env=config90();$path=$env['SE90_DB']??'/var/lib/stratedge/live90.sqlite';
  // Fixed executable and argument array: uploaded text is stdin only, never shell code.
- $proc=proc_open(['/usr/bin/python3','/opt/stratedge/live90/scenarios.py',$path],[0=>['pipe','r'],1=>['pipe','w'],2=>['file','/dev/null','a']],$pipes);
+ $proc=proc_open(['/usr/bin/python3',dirname(__DIR__,4).'/live90/server/scenarios.py',$path],[0=>['pipe','r'],1=>['pipe','w'],2=>['file','/dev/null','a']],$pipes);
  if(!is_resource($proc))reply90(['error'=>'Validateur indisponible'],503);
  $payload=json_encode($x['bundle'],JSON_THROW_ON_ERROR);$offset=0;
  while($offset<strlen($payload)){ $written=fwrite($pipes[0],substr($payload,$offset));if($written===false||$written===0)break;$offset+=$written; }

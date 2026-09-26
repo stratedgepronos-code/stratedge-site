@@ -25,6 +25,7 @@ function db90(): PDO {
     $db->exec("CREATE TABLE IF NOT EXISTS playbooks(id INTEGER PRIMARY KEY, match_id TEXT NOT NULL, prematch_id INTEGER NOT NULL, imported_at TEXT NOT NULL, generated_at TEXT NOT NULL, data TEXT NOT NULL, digest TEXT NOT NULL);
     CREATE INDEX IF NOT EXISTS playbooks_match ON playbooks(match_id,id);
     CREATE TABLE IF NOT EXISTS playbook_imports(digest TEXT PRIMARY KEY, imported_at TEXT NOT NULL);");
+    $db->exec("CREATE TABLE IF NOT EXISTS pending_playbooks(fixture TEXT PRIMARY KEY, accepted_at TEXT NOT NULL, generated_at TEXT NOT NULL, data TEXT NOT NULL, state TEXT NOT NULL DEFAULT 'waiting', match_id TEXT)");
     return $db;
 }
 function reply90(array $data, int $code=200): never {
