@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS v4_contexts(fixture TEXT PRIMARY KEY,imported_at TEXT
 CREATE TABLE IF NOT EXISTS v4_decisions(match_id TEXT,market TEXT,team TEXT,sample_id INTEGER,updated_at TEXT,status TEXT,data TEXT,PRIMARY KEY(match_id,market,team));
 CREATE TABLE IF NOT EXISTS v4_signals(id INTEGER PRIMARY KEY,signal_key TEXT UNIQUE,match_id TEXT,fixture TEXT,market TEXT,team TEXT,line REAL,odds REAL,created_at TEXT,sample_id INTEGER,data TEXT,delivery TEXT,delivery_error TEXT,telegram_id INTEGER,outcome TEXT DEFAULT 'pending',settled_at TEXT);
 CREATE TABLE IF NOT EXISTS v4_results(id INTEGER PRIMARY KEY,signal_id INTEGER,created_at TEXT,previous TEXT,outcome TEXT,source TEXT,data TEXT);
+CREATE TABLE IF NOT EXISTS v4_result_notifications(result_id INTEGER PRIMARY KEY,signal_id INTEGER,created_at TEXT,message TEXT,delivery TEXT,delivery_error TEXT,telegram_id INTEGER,attempted_at TEXT);
 CREATE TABLE IF NOT EXISTS v4_settings(key TEXT PRIMARY KEY,value TEXT);
 CREATE TABLE IF NOT EXISTS v4_runtime(key TEXT PRIMARY KEY,value TEXT);
 CREATE INDEX IF NOT EXISTS v4_signal_created ON v4_signals(created_at);
@@ -299,6 +300,31 @@ def deliver(c, now):
             state,error,mid=notify('\n'.join(lines))
         c.execute('UPDATE v4_signals SET delivery=?,delivery_error=?,telegram_id=? WHERE id=?',(state,error,mid,s['id']));c.commit()
 
+def result_message(s, previous, outcome, source):
+    z=dec(s['data'],{});names={'won':'✅ GAGNANT','lost':'❌ PERDANT','void':'⚪ ANNULÉ / REMBOURSÉ','pending':'⏳ À VÉRIFIER — validation retirée'}
+    correction=previous!='pending'
+    title='STRATEDGE · '+('CORRECTION DU RÉSULTAT' if correction else 'RÉSULTAT CONFIRMÉ')+' · LIVE #'+str(s['id'])
+    lines=[title,names[outcome],z.get('home','?')+' — '+z.get('away','?'),z.get('label',LABELS.get(s['market'],s['market'])),'Cote du signal : '+str(s['odds'])]
+    if correction: lines.append('Ancien résultat : '+names[previous])
+    profit=s['odds']-1 if outcome=='won' else -1 if outcome=='lost' else 0 if outcome=='void' else None
+    if profit is not None: lines.append('Bilan simulé pour 1 unité : '+format(profit,'+.2f')+' u')
+    lines.extend(['Confirmation dans l’historique StratEdge.','Source : '+source,'Aucune mise automatique ; vérifier le règlement du bookmaker.'])
+    return '\n'.join(lines)
+
+def deliver_results(c,now,enabled=True):
+    # Result events are persisted atomically with settlement. No historical
+    # backfill and no blind retry after an ambiguous Telegram response.
+    c.execute("UPDATE v4_result_notifications SET delivery='uncertain',delivery_error='Processus interrompu pendant l’envoi ; aucun renvoi automatique' WHERE delivery='sending' AND attempted_at<?",(iso(now-dt.timedelta(minutes=3)),))
+    if not enabled or not options(c)['telegram_enabled']:
+        c.execute("UPDATE v4_result_notifications SET delivery='disabled',delivery_error='Envoi désactivé' WHERE delivery='queued'");c.commit();return
+    c.commit()
+    for event in c.execute("SELECT * FROM v4_result_notifications WHERE delivery='queued' ORDER BY result_id LIMIT 10").fetchall():
+        claimed=c.execute("UPDATE v4_result_notifications SET delivery='sending',attempted_at=? WHERE result_id=? AND delivery='queued'",(iso(now),event['result_id'])).rowcount
+        c.commit()
+        if not claimed:continue
+        state,error,mid=notify(event['message'])
+        c.execute('UPDATE v4_result_notifications SET delivery=?,delivery_error=?,telegram_id=? WHERE result_id=?',(state,error,mid,event['result_id']));c.commit()
+
 def auto_results(c,now):
     # Suggested verdict only: official period score and bookmaker settlement
     # still require confirmation (VAR, abandonment and card rules differ).
@@ -346,22 +372,30 @@ def run(path,send=True,now=None):
     if send and settings['telegram_enabled']: deliver(c,now)
     else:
         c.execute("UPDATE v4_signals SET delivery='disabled',delivery_error='Envoi désactivé' WHERE delivery='queued'");c.commit()
+    deliver_results(c,now,send and settings['telegram_enabled'])
     c.close()
 
 def settle(c,x,now):
     sid=x.get('id'); outcome=x.get('outcome');source=x.get('source')
     if type(sid) is not int or outcome not in ('won','lost','void','pending') or not text_ok(source,600): raise ValueError('Résultat et source de vérification requis')
-    s=c.execute('SELECT * FROM v4_signals WHERE id=?',(sid,)).fetchone()
-    if not s: raise ValueError('Signal introuvable')
+    # Serialize concurrent confirmation clicks before reading the old verdict.
     with c:
-        c.execute('INSERT INTO v4_results(signal_id,created_at,previous,outcome,source,data) VALUES(?,?,?,?,?,?)',(sid,iso(now),s['outcome'],outcome,source,enc({'market':s['market'],'team':s['team'],'line':s['line']})))
+        if not c.in_transaction:c.execute('BEGIN IMMEDIATE')
+        s=c.execute('SELECT * FROM v4_signals WHERE id=?',(sid,)).fetchone()
+        if not s: raise ValueError('Signal introuvable')
+        if s['outcome']==outcome:return {'ok':True,'unchanged':True}
+        event=c.execute('INSERT INTO v4_results(signal_id,created_at,previous,outcome,source,data) VALUES(?,?,?,?,?,?)',(sid,iso(now),s['outcome'],outcome,source,enc({'market':s['market'],'team':s['team'],'line':s['line']})))
         c.execute('UPDATE v4_signals SET outcome=?,settled_at=? WHERE id=?',(outcome,iso(now) if outcome!='pending' else None,sid))
-    return {'ok':True}
+        # A correction before delivery supersedes only unsent queued events.
+        c.execute("UPDATE v4_result_notifications SET delivery='superseded',delivery_error='Résultat corrigé avant envoi' WHERE signal_id=? AND delivery='queued'",(sid,))
+        state='queued' if options(c)['telegram_enabled'] else 'disabled'
+        c.execute('INSERT INTO v4_result_notifications(result_id,signal_id,created_at,message,delivery) VALUES(?,?,?,?,?)',(event.lastrowid,sid,iso(now),result_message(s,s['outcome'],outcome,source),state))
+    return {'ok':True,'result_delivery':state}
 
 def history(c,limit=100,offset=0):
     out=[]
     for s in c.execute('SELECT * FROM v4_signals ORDER BY id DESC LIMIT ? OFFSET ?',(limit,offset)):
-        row=dict(s);row['data']=dec(s['data'],{});row['profit_units']=s['odds']-1 if s['outcome']=='won' else -1 if s['outcome']=='lost' else 0 if s['outcome']=='void' else None;out.append(row)
+        row=dict(s);row['data']=dec(s['data'],{});row['profit_units']=s['odds']-1 if s['outcome']=='won' else -1 if s['outcome']=='lost' else 0 if s['outcome']=='void' else None;event=c.execute('SELECT delivery,delivery_error,telegram_id,created_at FROM v4_result_notifications WHERE signal_id=? ORDER BY result_id DESC LIMIT 1',(s['id'],)).fetchone();row['result_notification']=dict(event) if event else None;out.append(row)
     return out
 
 def board(c,now):

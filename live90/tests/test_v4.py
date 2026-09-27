@@ -135,6 +135,45 @@ class LiveV4Tests(unittest.TestCase):
   self.prepared();V.run(self.db,False,self.now);sid=self.c.execute('SELECT id FROM v4_signals').fetchone()[0]
   for out in ('won','void'):V.settle(self.c,{'id':sid,'outcome':out,'source':'Source officielle contrôlée'},self.now)
   self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v4_results').fetchone()[0],2);self.assertEqual(V.history(self.c)[0]['profit_units'],0)
+ def result_signal(self):
+  self.prepared();V.run(self.db,False,self.now)
+  return self.c.execute('SELECT id FROM v4_signals').fetchone()[0]
+ def test_result_notification_sent_once_after_confirmation(self):
+  sid=self.result_signal();x={'id':sid,'outcome':'won','source':'Résultat officiel contrôlé'}
+  self.assertEqual(V.settle(self.c,x,self.now)['result_delivery'],'queued');self.assertTrue(V.settle(self.c,x,self.now)['unchanged'])
+  with patch.object(V,'notify',return_value=('sent',None,77)) as send:
+   V.run(self.db,True,self.now);V.run(self.db,True,self.now);self.assertEqual(send.call_count,1)
+   msg=send.call_args.args[0];self.assertIn('GAGNANT',msg);self.assertIn('LIVE #'+str(sid),msg);self.assertIn('Bilan simulé pour 1 unité : +0.90 u',msg)
+  event=V.history(self.c)[0]['result_notification'];self.assertEqual(event['delivery'],'sent');self.assertEqual(event['telegram_id'],77)
+  self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v4_results').fetchone()[0],1)
+ def test_result_corrections_and_withdrawal_announced(self):
+  sid=self.result_signal()
+  with patch.object(V,'notify',return_value=('sent',None,78)) as send:
+   for outcome in ('won','lost','void','pending'):
+    V.settle(self.c,{'id':sid,'outcome':outcome,'source':'Correction officielle contrôlée'},self.now);V.deliver_results(self.c,self.now)
+   self.assertEqual(send.call_count,4);texts=[x.args[0] for x in send.call_args_list]
+   self.assertIn('CORRECTION',texts[1]);self.assertIn('PERDANT',texts[1]);self.assertIn('-1.00 u',texts[1]);self.assertIn('ANNULÉ',texts[2]);self.assertIn('validation retirée',texts[3])
+ def test_queued_result_superseded_before_sending(self):
+  sid=self.result_signal()
+  for outcome in ('won','lost'):V.settle(self.c,{'id':sid,'outcome':outcome,'source':'Contrôle'},self.now)
+  with patch.object(V,'notify',return_value=('sent',None,79)) as send:
+   V.deliver_results(self.c,self.now);self.assertEqual(send.call_count,1);self.assertIn('PERDANT',send.call_args.args[0])
+  self.assertEqual([r[0] for r in self.c.execute('SELECT delivery FROM v4_result_notifications ORDER BY result_id')],['superseded','sent'])
+ def test_result_notifications_respect_disabled_setting(self):
+  sid=self.result_signal();self.c.execute("INSERT OR REPLACE INTO v4_settings VALUES('telegram_enabled','false')");self.c.commit()
+  result=V.settle(self.c,{'id':sid,'outcome':'void','source':'Annulation officielle'},self.now);self.assertEqual(result['result_delivery'],'disabled')
+  with patch.object(V,'notify',side_effect=AssertionError('Disabled')):V.deliver_results(self.c,self.now)
+ def test_result_network_uncertainty_is_not_retried(self):
+  sid=self.result_signal();V.settle(self.c,{'id':sid,'outcome':'lost','source':'Score final'},self.now)
+  with patch.object(V,'notify',return_value=('uncertain','Timeout',None)) as send:
+   V.deliver_results(self.c,self.now);V.deliver_results(self.c,self.now);self.assertEqual(send.call_count,1)
+  self.assertEqual(V.history(self.c)[0]['result_notification']['delivery'],'uncertain')
+ def test_result_crash_recovery_and_no_historical_backfill(self):
+  sid=self.result_signal();self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v4_result_notifications').fetchone()[0],0)
+  V.settle(self.c,{'id':sid,'outcome':'won','source':'Score vérifié'},self.now)
+  self.c.execute("UPDATE v4_result_notifications SET delivery='sending',attempted_at=?",(V.iso(self.now-dt.timedelta(minutes=4)),));self.c.commit()
+  with patch.object(V,'notify',side_effect=AssertionError('No ambiguous retry')):V.deliver_results(self.c,self.now)
+  self.assertEqual(V.history(self.c)[0]['result_notification']['delivery'],'uncertain')
  def test_history_keeps_legacy_and_all_new_rows(self):
   self.c.execute('INSERT INTO signals VALUES(1,?,?)',(V.enc({'home':'Ancien'}),V.iso(self.before)));self.c.commit();b=V.board(self.c,self.now);self.assertEqual(b['legacy'][0]['context']['home'],'Ancien')
  def test_clock_or_missing_profile_never_invents(self):

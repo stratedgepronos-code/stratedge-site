@@ -49,3 +49,11 @@ Le script ops/deploy-live90-v4.sh sauvegarde le code et la base par l’API de s
 Un jaune ne termine plus la surveillance : le moteur cherche la ligne suivante (0,5 puis 1,5 puis 2,5…), avec une cote exacte par équipe. Après un changement de compteur observé dans les dix dernières minutes, les fautes antérieures ne déclenchent pas immédiatement un nouveau signal. Chaque ligne reste dédupliquée dans l’historique. Les expulsions restent suspendues car le modèle est à onze contre onze.
 
 Le prompt collecte avant-match les statistiques arbitre disponibles sur StatsHub et la source de sa désignation. Le JSON peut contenir `referee` ; les anciens fichiers restent compatibles. Ces statistiques sont affichées dans le dossier et jointes au contexte des signaux cartons si la désignation est confirmée. Elles ne modifient pas arbitrairement le score d’intensité : aucun poids prédictif n’a été validé. Il n’y a pas de scraping serveur périodique ni d’appel IA live.
+
+## Notification Telegram des résultats
+
+Une confirmation dans l’historique (gagnant, perdant, annulé) crée une notification durable, envoyée au prochain cycle moteur (environ 20 secondes hors file d’attente). Les corrections, y compris une remise « À vérifier », sont annoncées. Deux confirmations identiques ne produisent pas de doublon. Une correction remplace un message encore en attente ; les envois déjà partis restent audités.
+
+Le message reprend le numéro du signal, les équipes, le marché et la ligne exacts, la cote, le verdict, la source et le bilan simulé pour 1 unité. L’historique affiche séparément l’envoi du signal et l’envoi du résultat. Les refus HTTP sont `failed`, une interruption réseau `uncertain` ; aucune répétition automatique après réponse ambiguë. Le réglage Telegram désactivé est respecté. Les anciens résultats ne sont pas renvoyés rétroactivement.
+
+La suggestion Packball n’est pas une validation : aucun résultat n’est envoyé sur la seule base d’un but observé ou d’un carton susceptible d’être corrigé. Le fonctionnement actuel exige la confirmation du verdict dans l’historique, notamment pour le règlement des cartons.
