@@ -21,9 +21,16 @@ def health(r,b,now,received):
     if r.get('quality_errors'):return 'missing','Colonnes ambiguës dans la collecte'
     sc=r.get('score')
     if not isinstance(sc,dict) or any(type(sc.get(t)) is not int or sc[t]<0 for t in ('h','a')):return 'missing','Score illisible'
-    for k in ('red_cards','second_yellow','shots','sot'):
+    # Packball's red_cards includes dismissals after a second yellow (confirmed
+    # by the operator on 2026-09-27). Keep second_yellow as optional evidence:
+    # its absent/null value is not converted to zero, and any known dismissal
+    # excludes the match, even if the other side or another counter is missing.
+    for k in ('red_cards','second_yellow'):
+        cards=r.get('stats',{}).get(k)
+        if isinstance(cards,dict) and any(num(cards.get(t)) and cards[t]>0 for t in ('h','a')):
+            return 'excluded','Expulsion : scénario annulé'
+    for k in ('red_cards','shots','sot'):
         if pair(r,'stats',k) is None:return 'missing','Statistique absente : '+k
-    if any(sum(pair(r,'stats',k).values()) for k in ('red_cards','second_yellow')):return 'excluded','Expulsion : scénario annulé'
     for t in ('h','a'):
         if r['stats']['sot'][t]>r['stats']['shots'][t]:return 'missing','Compteurs incohérents'
     return None,None

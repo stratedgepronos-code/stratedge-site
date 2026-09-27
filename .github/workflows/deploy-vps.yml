@@ -87,6 +87,10 @@ jobs:
           crontab "$GPT_CRON"
           rm -f "$GPT_CRON"
           echo "GPT_CONTEXT_CRON_REMOVED"
+          # Live90 s'exécute depuis /opt, hors du dépôt servi par nginx.
+          # Tester, sauvegarder et actualiser uniquement le correctif des cartons.
+          python3 -m unittest discover -s "$REPO_ROOT/live90/tests" -p 'test_*.py'
+          sudo -n bash "$REPO_ROOT/ops/deploy-live90-card-fix.sh" "$REPO_ROOT"
           REMOTE
 
       - name: Vérification code_version en prod

@@ -70,6 +70,35 @@ class ScenarioTests(unittest.TestCase):
   self.prepare_live();self.r['score']['h']=1;self.assertEqual(self.evaluate()[0],'watch')
  def test_red_card_cancels(self):
   self.prepare_live();self.r['stats']['red_cards']['a']=1;self.assertEqual(self.evaluate()[0],'excluded')
+ def test_optional_second_yellow_does_not_block_or_invent_zero(self):
+  self.prepare_live()
+  for value in (None,{'h':None,'a':None},{'h':0,'a':None}):
+   with self.subTest(value=value):
+    self.r['stats']['second_yellow']=value;before=copy.deepcopy(self.r)
+    self.assertEqual(self.evaluate()[0],'candidate');self.assertEqual(self.r,before)
+  del self.r['stats']['second_yellow'];self.assertEqual(self.evaluate()[0],'candidate')
+ def test_total_red_cards_remain_mandatory(self):
+  self.prepare_live();self.r['stats']['second_yellow']={'h':0,'a':0}
+  for value in (None,{'h':None,'a':None},{'h':0,'a':None},{'h':-1,'a':0}):
+   with self.subTest(value=value):
+    self.r['stats']['red_cards']=value
+    self.assertEqual(self.evaluate()[:2],('missing','Statistique absente : red_cards'))
+  del self.r['stats']['red_cards'];self.assertEqual(self.evaluate()[0],'missing')
+ def test_known_dismissal_excludes_even_with_other_counters_missing(self):
+  self.prepare_live()
+  for key in ('red_cards','second_yellow'):
+   for side in ('h','a'):
+    with self.subTest(key=key,side=side):
+     self.r['stats']={'red_cards':{'h':None,'a':None},'second_yellow':None}
+     self.r['stats'][key]={'h':None,'a':None};self.r['stats'][key][side]=1
+     self.assertEqual(self.evaluate()[:2],('excluded','Expulsion : scénario annulé'))
+ def test_optional_second_yellow_allows_one_signal_after_two_samples(self):
+  self.prepare_live();self.r['stats']['second_yellow']={'h':None,'a':None}
+  self.add(dict(self.r,minute=19),self.now-dt.timedelta(seconds=45),'previous')
+  self.add(self.r,self.now,'current')
+  with patch('urllib.request.urlopen',side_effect=AssertionError('No API calls allowed')):
+   engine.run(self.path);engine.run(self.path)
+  self.assertEqual(self.c.execute('SELECT COUNT(*) FROM signals').fetchone()[0],1)
  def test_missing_stats(self):
   self.prepare_live();self.r['ind5']['sot5']=None;self.assertEqual(self.evaluate()[0],'missing')
  def test_incoherent_window(self):
