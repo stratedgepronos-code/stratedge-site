@@ -34,16 +34,16 @@ try {
     $sidebar = '<!-- sidebar non chargée : '.htmlspecialchars(get_class($e).' · '.$e->getMessage(),ENT_QUOTES).' -->';
 }
 ?><!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="csrf-token" content="<?=htmlspecialchars($_SESSION['live90_csrf'],ENT_QUOTES)?>"><title>SEUIL 90 · Live intelligence</title><style>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="csrf-token" content="<?=htmlspecialchars($_SESSION['live90_csrf'],ENT_QUOTES)?>"><title>StratEdge · Live Intelligence</title><style>
 <?= $css ?>
 </style></head><body>
 <?= $sidebar ?>
 <div class="main">
 <?php readfile(__DIR__.'/assets/shell.html'); ?>
 </div><script>
-<?= $app ?>
+<?= $flow ?>
 </script><script>
 <?= $ctx ?>
 </script><script>
-<?= $flow ?>
+<?= $app ?>
 </script></body></html>

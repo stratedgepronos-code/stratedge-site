@@ -14,8 +14,8 @@ assert.equal(value('status("Terminé").state'),'FT');
 assert.equal(value('status("\'").state'),'OTHER');
 assert.equal(value('number("1,5")'),1.5);
 assert.equal(value('number("1.5,2")'),null);
-const app=fs.readFileSync(path.join(root,'public/admin/slate/live90/assets/app.js'),'utf8');
-vm.runInContext(app.slice(app.indexOf('function parseCSV('),app.indexOf('const fields=')),c);
+const app=fs.readFileSync(path.join(root,'public/admin/slate/live90/assets/packball.js'),'utf8');
+vm.runInContext(app.slice(app.indexOf('function parseCSV('),app.indexOf("if(typeof module")),c);
 const csv='home;away;shots\r\n"A; United";"B ""FC""";"12,4-10,7"\r\n';c.csv=csv;
 assert.deepEqual(value('parseCSV(csv)'),[['home','away','shots'],['A; United','B "FC"','12,4-10,7']]);
 assert.throws(()=>vm.runInContext('parseCSV(\'a;b\\n"unfinished\')',c));
@@ -29,3 +29,12 @@ assert.equal(value('quoteMeta("Plus Corners - Première ligne", "inp-7").verifie
 assert.equal(value('quoteMeta("", "inp-7").verified'),false);
 assert.equal(value('quoteMeta("Plus Buts marqués par équipe", "inp-7").verified'),false);
 console.log('8 assertions marchés supplémentaires réussies.');
+
+assert.deepEqual(value('field("Fautes Temps plein")'),{group:'stats',key:'fouls'});
+assert.deepEqual(value('field("Cartons jaunes Temps plein")'),{group:'stats',key:'yellow_cards'});
+assert.equal(value('quoteMeta("Plus Cartons équipe à domicile", "inp-90").market'),'team_cards');
+assert.equal(value('quoteMeta("Plus Cartons équipe à domicile", "inp-90").unit'),'cards');
+assert.equal(value('quoteMeta("Plus Cartons - Première ligne", "inp-90").verified'),false);
+assert.equal(value('quoteMeta("Plus points de cartons domicile", "inp-90").verified'),false);
+assert.equal(value('quoteMeta("Plus Buts domicile première mi-temps", "inp-90").period'),'HT');
+console.log('7 assertions V4 : cartons par équipe, fautes et refus des marchés ambigus.');

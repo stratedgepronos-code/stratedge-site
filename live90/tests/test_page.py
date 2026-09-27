@@ -30,7 +30,7 @@ class PageTests(unittest.TestCase):
         # plusieurs dossiers JSON le même jour : un par championnat, par exemple
         shell=(ASSETS/'shell.html').read_text(encoding='utf-8')
         self.assertRegex(shell,r'<input[^>]*id="scenario-file"[^>]*\bmultiple\b')
-        ctx=(ASSETS/'context.js').read_text(encoding='utf-8')
+        ctx=(ASSETS/'app.js').read_text(encoding='utf-8')
         self.assertIn('[...(e.target.files||[])]',ctx)
-        self.assertNotIn("e.target.files[0]",ctx.split("scenario-file')")[1].split("save-scenarios")[0])
+        self.assertNotIn("e.target.files[0]",ctx)
 if __name__=='__main__':unittest.main()

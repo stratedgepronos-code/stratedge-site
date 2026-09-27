@@ -1,0 +1,408 @@
+"""StratEdge Live V4 — deterministic observations, no LLM or bet placement."""
+import argparse, datetime as dt, hashlib, json, math, os, re, sqlite3, sys, unicodedata
+import urllib.error, urllib.request
+UTC = dt.timezone.utc
+VERSION = 'live4.0'
+MARKETS = ('goal_ht', 'goal_ft', 'card_ft')
+LABELS = {'goal_ht': 'But avant la mi-temps', 'goal_ft': 'But avant la fin du match', 'card_ft': 'Équipe +0,5 carton · match'}
+SCHEMA = '''
+CREATE TABLE IF NOT EXISTS v4_imports(id INTEGER PRIMARY KEY,kind TEXT,digest TEXT UNIQUE,created_at TEXT,data TEXT);
+CREATE TABLE IF NOT EXISTS v4_fixtures(fixture TEXT PRIMARY KEY,home TEXT,away TEXT,kickoff TEXT,league TEXT,match_id TEXT);
+CREATE TABLE IF NOT EXISTS v4_profiles(fixture TEXT PRIMARY KEY,imported_at TEXT,data TEXT);
+CREATE TABLE IF NOT EXISTS v4_contexts(fixture TEXT PRIMARY KEY,imported_at TEXT,generated_at TEXT,data TEXT);
+CREATE TABLE IF NOT EXISTS v4_decisions(match_id TEXT,market TEXT,team TEXT,sample_id INTEGER,updated_at TEXT,status TEXT,data TEXT,PRIMARY KEY(match_id,market,team));
+CREATE TABLE IF NOT EXISTS v4_signals(id INTEGER PRIMARY KEY,signal_key TEXT UNIQUE,match_id TEXT,fixture TEXT,market TEXT,team TEXT,line REAL,odds REAL,created_at TEXT,sample_id INTEGER,data TEXT,delivery TEXT,delivery_error TEXT,telegram_id INTEGER,outcome TEXT DEFAULT 'pending',settled_at TEXT);
+CREATE TABLE IF NOT EXISTS v4_results(id INTEGER PRIMARY KEY,signal_id INTEGER,created_at TEXT,previous TEXT,outcome TEXT,source TEXT,data TEXT);
+CREATE TABLE IF NOT EXISTS v4_settings(key TEXT PRIMARY KEY,value TEXT);
+CREATE TABLE IF NOT EXISTS v4_runtime(key TEXT PRIMARY KEY,value TEXT);
+CREATE INDEX IF NOT EXISTS v4_signal_created ON v4_signals(created_at);
+'''
+def now_utc(): return dt.datetime.now(UTC)
+def iso(t=None): return (t or now_utc()).isoformat()
+def enc(x): return json.dumps(x, ensure_ascii=False, allow_nan=False, separators=(',', ':'))
+def dec(x, default=None):
+    try: return json.loads(x)
+    except (ValueError, TypeError): return default
+
+def num(x): return type(x) in (int, float) and math.isfinite(x)
+def date(x):
+    try:
+        t = dt.datetime.fromisoformat(x.replace('Z', '+00:00'))
+        return t.astimezone(UTC) if t.tzinfo else None
+    except (ValueError, TypeError, AttributeError): return None
+
+def norm(x): return ' '.join(''.join(c for c in unicodedata.normalize('NFKD', str(x).casefold()) if not unicodedata.combining(c)).split())
+def key(m): return hashlib.sha256(enc([norm(m['home']), norm(m['away']), iso(date(m['kickoff']))]).encode()).hexdigest()[:32]
+def connect(path):
+    c = sqlite3.connect(path, timeout=15); c.row_factory = sqlite3.Row
+    c.execute('PRAGMA busy_timeout=15000'); c.execute('PRAGMA journal_mode=WAL'); c.executescript(SCHEMA)
+    return c
+
+def setting(c, name, default):
+    row = c.execute('SELECT value FROM v4_settings WHERE key=?', (name,)).fetchone()
+    return dec(row[0], default) if row else default
+
+def options(c): return {'telegram_enabled': setting(c, 'telegram_enabled', True), 'min_odds': setting(c, 'min_odds', 1.65)}
+def runtime(c, name, value): c.execute('INSERT OR REPLACE INTO v4_runtime VALUES(?,?)', (name, enc(value)))
+def text_ok(v, limit=300): return isinstance(v, str) and 0 < len(v.strip()) <= limit
+
+def identity(m):
+    if not isinstance(m, dict) or not all(text_ok(m.get(k), 160) for k in ('home','away')) or norm(m['home']) == norm(m['away']): raise ValueError('Noms des équipes invalides')
+    if not date(m.get('kickoff')): raise ValueError('Heure ISO avec fuseau requise ; le site utilise Europe/Paris')
+    mid = m.get('match_id')
+    if mid is not None and (not isinstance(mid, str) or not re.fullmatch(r'\d{1,20}', mid)): raise ValueError('ID Packball invalide : conserver null s’il manque')
+    return key(m)
+
+def validate_context(m, generated):
+    if m.get('watch') is not True: raise ValueError('Chaque match doit conserver watch:true')
+    if not text_ok(m.get('summary'), 2500): raise ValueError('Résumé du contexte requis')
+    sources = m.get('sources')
+    if not isinstance(sources, list) or len(sources)>30: raise ValueError('Sources invalides')
+    ids = set()
+    for s in sources:
+        if not isinstance(s,dict) or not text_ok(s.get('id'),40) or s['id'] in ids or not text_ok(s.get('title'),250) or not re.match(r'^https://[^\s/]+(?:/[^\s]*)?$',s.get('url','')) or len(s['url'])>1200 or not date(s.get('checked_at')) or date(s['checked_at'])>generated: raise ValueError('Source invalide ou date de consultation future')
+        ids.add(s['id'])
+    if not isinstance(m.get('unknowns'),list) or len(m['unknowns'])>30 or not all(text_ok(v,500) for v in m['unknowns']): raise ValueError('Liste des inconnues invalide')
+    teams=m.get('teams')
+    if not isinstance(teams,dict) or set(teams)!={'h','a'}: raise ValueError('Contexte h/a requis')
+    for t in teams.values():
+        if not isinstance(t,dict) or not text_ok(t.get('note'),1800) or not isinstance(t.get('flags'),list) or len(t['flags'])>12: raise ValueError('Note et facteurs par équipe requis')
+        for f in t['flags']:
+            if not isinstance(f,dict) or f.get('kind') not in ('attack_absences','defence_absences','fatigue','rotation','schedule','discipline','weather','other') or f.get('severity') not in ('low','medium','high') or f.get('certainty') not in ('confirmed','reported','unknown') or not text_ok(f.get('detail'),1000) or not isinstance(f.get('source_ids'),list) or any(v not in ids for v in f['source_ids']): raise ValueError('Facteur contextuel invalide')
+            if f['certainty']!='unknown' and not f['source_ids']: raise ValueError('Un fait confirmé/rapporté exige une source')
+
+STATS=('n_h','n_a','gf_h','gf_a','ga_h','ga_a','shots_h','shots_a','sot_h','sot_a')
+def import_bundle(c, kind, bundle, now=None):
+    now=now or now_utc()
+    expected='stratedge.context.v4' if kind=='analyst' else 'stratedge.packball.v4'
+    if not isinstance(bundle,dict) or bundle.get('schema')!=expected or bundle.get('timezone')!='Europe/Paris': raise ValueError('Schéma attendu : '+expected+' ; timezone Europe/Paris')
+    matches=bundle.get('matches'); generated=date(bundle.get('generated_at' if kind=='analyst' else 'exported_at'))
+    if not generated or generated>now+dt.timedelta(seconds=60) or generated<now-dt.timedelta(days=7): raise ValueError('Date du dossier absente, future ou vieille de plus de 7 jours')
+    if not isinstance(matches,list) or not 1<=len(matches)<=1000: raise ValueError('Dossier attendu : de 1 à 1000 matchs, sans sélection préalable')
+    digest=hashlib.sha256((kind+enc(bundle)).encode()).hexdigest()
+    if c.execute('SELECT 1 FROM v4_imports WHERE digest=?',(digest,)).fetchone(): return {'ok':True,'duplicate':True,'imported':0}
+    seen=set(); prepared=[]
+    for m in matches:
+        fk=identity(m)
+        if fk in seen: raise ValueError('Match dupliqué dans le dossier : '+m['home'])
+        seen.add(fk)
+        if not now-dt.timedelta(days=7)<=date(m['kickoff'])<=now+dt.timedelta(days=14): raise ValueError('Rencontre hors plage de dates (−7 / +14 jours)')
+        if kind=='analyst': validate_context(m,generated)
+        else:
+            p=m.get('prematch')
+            if not isinstance(p,dict): raise ValueError('Statistiques Packball requises')
+            for k in STATS:
+                v=p.get(k)
+                if v is not None and (not num(v) or not 0<=v<=200): raise ValueError('Statistique invalide : '+k)
+                if k.startswith('n_') and v is not None and int(v)!=v: raise ValueError('Échantillon non entier')
+            for t in ('h','a'):
+                if num(p.get('sot_'+t)) and num(p.get('shots_'+t)) and p['sot_'+t]>p['shots_'+t]: raise ValueError('Cadrés supérieurs aux tirs')
+        prepared.append((fk,m))
+    kept=0
+    with c:
+        c.execute('INSERT INTO v4_imports(kind,digest,created_at,data) VALUES(?,?,?,?)',(kind,digest,iso(now),enc(bundle)))
+        for fk,m in prepared:
+            c.execute('INSERT OR IGNORE INTO v4_fixtures VALUES(?,?,?,?,?,?)',(fk,m['home'],m['away'],iso(date(m['kickoff'])),m.get('league',''),None))
+            table='v4_contexts' if kind=='analyst' else 'v4_profiles'
+            old=c.execute('SELECT * FROM '+table+' WHERE fixture=?',(fk,)).fetchone()
+            # Freeze a valid prematch version once kickoff has passed; late data can
+            # still be viewed when nothing was imported, never backdated for signals.
+            if old and date(m['kickoff'])<=now: kept+=1; continue
+            if kind=='analyst': c.execute('INSERT OR REPLACE INTO v4_contexts VALUES(?,?,?,?)',(fk,iso(now),iso(generated),enc(m)))
+            else: c.execute('INSERT OR REPLACE INTO v4_profiles VALUES(?,?,?)',(fk,iso(now),enc(m)))
+    return {'ok':True,'imported':len(matches)-kept,'preserved':kept,'late':sum(date(m['kickoff'])<=now for _,m in prepared)}
+
+def bind(c,r):
+    ko=date(r.get('kickoff_ts'))
+    if not ko: return None
+    rows=[f for f in c.execute('SELECT * FROM v4_fixtures') if norm(f['home'])==norm(r.get('home')) and norm(f['away'])==norm(r.get('away')) and abs((date(f['kickoff'])-ko).total_seconds())<=60]
+    if len(rows)!=1: return None
+    f=rows[0]; mid=str(r.get('packball_id',''))
+    conflict=c.execute('SELECT fixture FROM v4_fixtures WHERE match_id=? AND fixture!=?',(mid,f['fixture'])).fetchone()
+    if conflict or f['match_id'] not in (None,mid): return None
+    c.execute('UPDATE v4_fixtures SET match_id=? WHERE fixture=?',(mid,f['fixture']))
+    return dict(f,match_id=mid)
+
+def inputs(c,f,now):
+    if not f: return None,None
+    p=c.execute('SELECT * FROM v4_profiles WHERE fixture=?',(f['fixture'],)).fetchone()
+    ctx=c.execute('SELECT * FROM v4_contexts WHERE fixture=?',(f['fixture'],)).fetchone()
+    profile=dec(p['data']) if p else None; context=dec(ctx['data']) if ctx else None
+    if profile: profile['usable']=date(p['imported_at'])<date(f['kickoff']); profile['imported_at']=p['imported_at']
+    if context: context['usable']=date(ctx['imported_at'])<date(f['kickoff']) and date(ctx['generated_at'])>=date(f['kickoff'])-dt.timedelta(hours=48); context['generated_at']=ctx['generated_at']
+    return profile,context
+
+def stat(r,k,t,group='stats'):
+    p=r.get(group,{}).get(k)
+    v=p.get(t) if isinstance(p,dict) else None
+    return v if num(v) and v>=0 else None
+
+def dismissal(r): return any((stat(r,k,t) or 0)>0 for k in ('red_cards','second_yellow') for t in ('h','a'))
+def recent(r,hist,k,t,minutes):
+    minute=r.get('minute')
+    if not num(minute) or minute<minutes or 45<minute<45+minutes: return None
+    # After a goal, require a full new window. This avoids celebrating a
+    # completed attack as evidence that the team is about to score again.
+    sample_time=date(r.get('collected_at'))
+    if not sample_time: return None
+    window_start=sample_time-dt.timedelta(minutes=minutes)
+    usable=[]
+    for h in hist:
+        old=dec(h['data'],{}); at=date(old.get('collected_at') or h['received_at'])
+        if not at or old.get('state')!='LIVE' or not num(old.get('minute')): continue
+        if (old['minute']<=45)!=(minute<=45): continue
+        if window_start<=at<=sample_time and old.get('score')!=r.get('score'): return None
+        if at<=window_start and 0<=(window_start-at).total_seconds()<=100 and minutes-.5<=minute-old['minute']<=minutes+2: usable.append((at,old))
+    supplied=stat(r,k+str(minutes),t,'ind'+str(minutes))
+    total=stat(r,k,t)
+    if supplied is not None:
+        if total is None or supplied>total: return None
+        return supplied
+    if not usable or total is None: return None
+    old=max(usable,key=lambda z:z[0])[1]; before=stat(old,k,t)
+    return total-before if before is not None and total>=before else None
+
+def base_decision(market,team): return {'market':market,'team':team,'status':'watch','reason':'Observation en cours','intensity':0,'metrics':{},'context_notes':[],'quote':None,'line':None,'threshold':70}
+def evaluate(r,profile,context,market,team,now,hist,settings):
+    d=base_decision(market,team)
+    def finish(state,reason): d.update(status=state,reason=reason); return d
+    at=date(r.get('collected_at')); received=date(r.get('received_at'))
+    if not at or not received or not 0<=(now-at).total_seconds()<=100 or not 0<=(now-received).total_seconds()<=100: return finish('stale','Collecte interrompue ou relevé de plus de 100 secondes')
+    if r.get('state')!='LIVE': return finish('waiting','À venir, pause ou rencontre terminée')
+    minute=r.get('minute'); score=r.get('score')
+    if not num(minute) or not 0<minute<=90 or r.get('minute_extra',0): return finish('waiting','Minute absente ou temps additionnel non modélisé')
+    if not isinstance(score,dict) or any(type(score.get(t)) is not int or not 0<=score[t]<=30 for t in ('h','a')): return finish('missing','Score non vérifié')
+    if r.get('quality_errors'): return finish('missing','Colonnes de collecte ambiguës')
+    if dismissal(r): return finish('suspended','Expulsion : reprise après vérification, modèle à 11 contre 11')
+    if any(stat(r,'red_cards',t) is None for t in ('h','a')): return finish('missing','Compteur des expulsions absent')
+    other='a' if team=='h' else 'h'
+    p=profile.get('prematch',{}) if profile and profile.get('usable') else {}
+    if context and context.get('usable'):
+        flags=context.get('teams',{}).get(team,{}).get('flags',[])
+        d['context_notes']=[f['detail'] for f in flags]
+        # Context makes verification stricter, never excludes a fixture or
+        # manufactures a probability. Strong live evidence can still qualify.
+        penalty=sum((6 if f['severity']=='high' else 3) for f in flags if f['kind'] in ('attack_absences','fatigue','rotation','weather') and f['certainty']!='unknown') if market!='card_ft' else 0
+        d['threshold']+=min(penalty,12)
+    else: d['context_notes']=['Contexte GPT absent, tardif ou trop ancien : lecture neutre']
+    if market=='card_ft':
+        d['line']=.5
+        yc=stat(r,'yellow_cards',team); fouls=stat(r,'fouls',team); poss=stat(r,'possession',team)
+        f10=recent(r,hist,'fouls',team,10); oppshots=recent(r,hist,'shots',other,10)
+        d['metrics']={'yellow_cards':yc,'fouls':fouls,'fouls10':f10,'possession':poss,'opponent_shots10':oppshots}
+        if yc is None: return finish('missing','Cartons jaunes de l’équipe absents')
+        if yc>0: return finish('covered','Équipe déjà avertie : +0,5 carton déjà atteint')
+        if not 15<=minute<=78: return finish('waiting','Fenêtre cartons : 15e à 78e minute')
+        if fouls is None or f10 is None or poss is None or not 0<=poss<=100: return finish('missing','Fautes, fenêtre de 10 minutes ou possession manquantes')
+        d['intensity']=min(100,round(min(f10/4,1)*40+min(fouls/9,1)*20+(15 if poss<=45 else 5 if poss<=52 else 0)+(15 if (oppshots or 0)>=3 else 0)+(10 if score[team]<=score[other] else 0)))
+        if fouls<5 or f10<3 or not (poss<=48 or (oppshots or 0)>=3): return finish('watch','Attendre fautes répétées et pression subie confirmée')
+    else:
+        d['line']=score[team]+.5
+        if not (12<=minute<=42 if market=='goal_ht' else 15<=minute<=82): return finish('waiting','Hors fenêtre de recherche de but')
+        shots=stat(r,'shots',team); sot=stat(r,'sot',team)
+        sh10=recent(r,hist,'shots',team,10); so10=recent(r,hist,'sot',team,10)
+        sh5=recent(r,hist,'shots',team,5); so5=recent(r,hist,'sot',team,5)
+        expected=p.get('shots_'+team); sample=p.get('n_'+team)
+        ratio=shots/(expected*minute/90) if num(shots) and num(expected) and expected>0 and num(sample) and sample>=1 else None
+        d['metrics']={'shots':shots,'sot':sot,'shots10':sh10,'sot10':so10,'shots5':sh5,'sot5':so5,'activity_ratio':round(ratio,3) if ratio is not None else None,'baseline_shots':expected,'sample':sample}
+        if shots is None or sot is None or sot>shots: return finish('missing','Tirs cumulés absents ou incohérents')
+        if sh10 is None or so10 is None or so10>sh10 or so10>sot: return finish('missing','Fenêtre tirs/cadrés de 10 minutes indisponible ou interrompue par un but')
+        if ratio is None: return finish('missing','Profil Packball avant-match nécessaire pour comparer le rythme de tirs')
+        d['intensity']=min(100,round(min(sh10/6,1)*25+min(so10/3,1)*30+min(ratio/1.8,1)*25+(10 if (so5 or 0)>=1 else 0)+(10 if score[team]<=score[other] else 0)))
+        if sh10<4 or so10<2 or ratio<1.15: return finish('watch','Attendre tirs cadrés répétés et rythme supérieur à l’avant-match')
+    if d['intensity']<d['threshold']: return finish('watch','Intensité encore insuffisante compte tenu du contexte')
+    qs=[]
+    for q in r.get('quotes',[]):
+        qt=date(q.get('observed_at'))
+        if q.get('market')!=('team_cards' if market=='card_ft' else 'team_goals') or q.get('team')!=team or q.get('period')!=('HT' if market=='goal_ht' else 'FT') or q.get('side')!='over' or q.get('line')!=d['line'] or q.get('verified') is not True: continue
+        if market=='card_ft' and q.get('unit')!='cards': continue
+        if not qt or not 0<=(now-qt).total_seconds()<=90 or not num(q.get('odds')) or not 1<q['odds']<=100 or q.get('bookmaker')!='bet365': continue
+        qs.append(q)
+    if not qs: return finish('price','Dynamique intéressante · cote du marché exact manquante')
+    d['quote']=max(qs,key=lambda q:q['odds'])
+    if not settings['min_odds']<=d['quote']['odds']<=5: return finish('price','Cote hors plage de surveillance '+str(settings['min_odds'])+'–5,00')
+    return finish('candidate','Dynamique, comparaison et cote concordantes')
+
+def safe_evaluate(*args):
+    try: return evaluate(*args)
+    except (ValueError,TypeError,KeyError,AttributeError,OverflowError):
+        d=base_decision(args[3],args[4]);d.update(status='missing',reason='Structure de collecte invalide');return d
+
+def label(r,d):
+    name=r['home'] if d['team']=='h' else r['away']
+    if d['market']=='card_ft': return name+' · +0,5 carton dans le match'
+    return name+' · plus de '+str(d['line']).replace('.',',')+' but(s) '+('en première mi-temps' if d['market']=='goal_ht' else 'dans le match')
+
+def latest(c):
+    return c.execute('SELECT s.* FROM samples s JOIN (SELECT match_id,MAX(id) id FROM samples GROUP BY match_id) m ON s.id=m.id ORDER BY s.id DESC LIMIT 1500').fetchall()
+def sample_data(s):
+    r=dec(s['data'],{}); r['received_at']=s['received_at'];r.setdefault('collected_at',s['received_at']);r['sample_id']=s['id'];return r
+
+def notify(message):
+    token=os.environ.get('TELEGRAM_BOT_TOKEN'); chat=os.environ.get('TELEGRAM_CHAT_ID')
+    if not token or not chat: return 'failed','Bot ou destinataire Telegram non configuré',None
+    try:
+        req=urllib.request.Request('https://api.telegram.org/bot'+token+'/sendMessage',data=enc({'chat_id':chat,'text':message[:4000]}).encode(),headers={'Content-Type':'application/json'})
+        with urllib.request.urlopen(req,timeout=8) as response: x=json.load(response)
+        if isinstance(x,dict) and x.get('ok') is True: return 'sent',None,x.get('result',{}).get('message_id')
+        if isinstance(x,dict) and x.get('ok') is False: return 'failed','Refus Telegram',None
+        return 'uncertain','Réponse Telegram illisible ; aucun renvoi automatique',None
+    except urllib.error.HTTPError as e: return 'failed','Refus HTTP '+str(e.code),None
+    except Exception: return 'uncertain','Connexion interrompue ; livraison inconnue, aucun renvoi automatique',None
+
+def deliver(c, now):
+    # Recover ambiguous sends after a process crash; never resend blindly.
+    c.execute("UPDATE v4_signals SET delivery='uncertain',delivery_error='Processus interrompu pendant l’envoi' WHERE delivery='sending' AND created_at<?",(iso(now-dt.timedelta(minutes=3)),));c.commit()
+    for s in c.execute("SELECT * FROM v4_signals WHERE delivery='queued' ORDER BY id LIMIT 10").fetchall():
+        if not c.execute("UPDATE v4_signals SET delivery='sending' WHERE id=? AND delivery='queued'",(s['id'],)).rowcount: continue
+        c.commit(); saved=dec(s['data'],{}); row=c.execute('SELECT * FROM samples WHERE match_id=? ORDER BY id DESC LIMIT 1',(s['match_id'],)).fetchone()
+        valid=bool(row and 0<=(now-date(s['created_at'])).total_seconds()<=90)
+        if valid:
+            r=sample_data(row); f=bind(c,r);p,ctx=inputs(c,f,now);hist=c.execute('SELECT * FROM samples WHERE match_id=? AND id<=? ORDER BY id DESC LIMIT 80',(s['match_id'],row['id'])).fetchall()
+            d=safe_evaluate(r,p,ctx,s['market'],s['team'],now,hist,options(c));valid=d['status']=='candidate' and r.get('score')==saved.get('score') and d['line']==s['line'] and d['quote']['odds']==s['odds']
+        if not valid: state,error,mid='expired','Conditions ou cote modifiées avant envoi',None
+        else:
+            lines=['STRATEDGE · LIVE #'+str(s['id']),saved['home']+' — '+saved['away'],str(saved['minute'])+'′ · '+str(saved['score']['h'])+'–'+str(saved['score']['a']),saved['label'],'Cote observée '+str(s['odds'])+' · bet365 via Packball','Intensité '+str(saved['decision']['intensity'])+'/100 (pas une probabilité)']
+            lines += [k+' : '+str(v) for k,v in saved['decision']['metrics'].items() if v is not None]
+            lines += saved['decision']['context_notes'][:2]
+            lines += ['Vérifier la cote et le règlement chez ton bookmaker.','Signal en observation · aucune mise automatique.']
+            state,error,mid=notify('\n'.join(lines))
+        c.execute('UPDATE v4_signals SET delivery=?,delivery_error=?,telegram_id=? WHERE id=?',(state,error,mid,s['id']));c.commit()
+
+def auto_results(c,now):
+    # Suggested verdict only: official period score and bookmaker settlement
+    # still require confirmation (VAR, abandonment and card rules differ).
+    for s in c.execute("SELECT * FROM v4_signals WHERE outcome='pending'").fetchall():
+        row=c.execute('SELECT * FROM samples WHERE match_id=? ORDER BY id DESC LIMIT 1',(s['match_id'],)).fetchone()
+        if not row: continue
+        r=sample_data(row); value=None
+        if s['market']=='goal_ht':
+            ht=c.execute('SELECT * FROM samples WHERE match_id=? ORDER BY id DESC LIMIT 600',(s['match_id'],)).fetchall()
+            for h in ht:
+                hr=dec(h['data'],{})
+                if hr.get('state')=='HT' and isinstance(hr.get('score'),dict): value=hr['score'].get(s['team']);break
+        elif r.get('state')=='FT': value=r.get('score',{}).get(s['team']) if s['market']=='goal_ft' else stat(r,'yellow_cards',s['team'])
+        if num(value) and s['market']!='card_ft':
+            data=dec(s['data'],{});data['suggested_outcome']='won' if value>s['line'] else 'lost';data['suggested_source']='Packball · score '+('HT' if s['market']=='goal_ht' else 'FT')
+            c.execute('UPDATE v4_signals SET data=? WHERE id=?',(enc(data),s['id']))
+
+def run(path,send=True,now=None):
+    now=now or now_utc(); c=connect(path);settings=options(c)
+    for sample in latest(c):
+        r=sample_data(sample)
+        if not isinstance(r.get('packball_id'),str): continue
+        f=bind(c,r);p,ctx=inputs(c,f,now)
+        hist=c.execute('SELECT * FROM samples WHERE match_id=? AND id<=? ORDER BY id DESC LIMIT 80',(sample['match_id'],sample['id'])).fetchall()
+        previous=hist[1] if len(hist)>1 else None
+        for market in MARKETS:
+            for team in ('h','a'):
+                d=safe_evaluate(r,p,ctx,market,team,now,hist,settings)
+                if d['status']=='candidate':
+                    sustained=False
+                    if previous:
+                        old=sample_data(previous);gap=(date(r['received_at'])-date(old['received_at'])).total_seconds()
+                        pd=safe_evaluate(old,p,ctx,market,team,now,hist[1:],settings)
+                        sustained=20<=gap<=100 and pd['status']=='candidate' and old.get('score')==r.get('score') and 0<=r['minute']-old.get('minute',999)<=2 and pd['line']==d['line']
+                    d['status']='confirming';d['reason']='Attente de deux relevés concordants espacés de 20 à 100 secondes'
+                    if sustained:
+                        # One team/market/line signal per fixture; FT/HT overlap remains
+                        # visible as correlated exposure, never a multiplied stake.
+                        sk=enc([str(r['packball_id']),market,team,d['line']])
+                        data={'home':r['home'],'away':r['away'],'kickoff':r.get('kickoff_ts'),'minute':r['minute'],'score':r['score'],'label':label(r,d),'decision':d.copy(),'profile':p,'context':ctx,'version':VERSION,'mode':'observation'}
+                        c.execute('INSERT OR IGNORE INTO v4_signals(signal_key,match_id,fixture,market,team,line,odds,created_at,sample_id,data,delivery) VALUES(?,?,?,?,?,?,?,?,?,?,?)',(sk,r['packball_id'],f['fixture'] if f else None,market,team,d['line'],d['quote']['odds'],iso(now),sample['id'],enc(data),'queued' if send and settings['telegram_enabled'] else 'disabled'))
+                        d.update(status='signal',reason='Signal conservé dans l’historique')
+                c.execute('INSERT OR REPLACE INTO v4_decisions VALUES(?,?,?,?,?,?,?)',(r['packball_id'],market,team,sample['id'],iso(now),d['status'],enc(d)))
+    auto_results(c,now);runtime(c,'engine',{'at':iso(now),'version':VERSION,'telegram_active':bool(send and settings['telegram_enabled'])});c.commit()
+    if send and settings['telegram_enabled']: deliver(c,now)
+    else:
+        c.execute("UPDATE v4_signals SET delivery='disabled',delivery_error='Envoi désactivé' WHERE delivery='queued'");c.commit()
+    c.close()
+
+def settle(c,x,now):
+    sid=x.get('id'); outcome=x.get('outcome');source=x.get('source')
+    if type(sid) is not int or outcome not in ('won','lost','void','pending') or not text_ok(source,600): raise ValueError('Résultat et source de vérification requis')
+    s=c.execute('SELECT * FROM v4_signals WHERE id=?',(sid,)).fetchone()
+    if not s: raise ValueError('Signal introuvable')
+    with c:
+        c.execute('INSERT INTO v4_results(signal_id,created_at,previous,outcome,source,data) VALUES(?,?,?,?,?,?)',(sid,iso(now),s['outcome'],outcome,source,enc({'market':s['market'],'team':s['team'],'line':s['line']})))
+        c.execute('UPDATE v4_signals SET outcome=?,settled_at=? WHERE id=?',(outcome,iso(now) if outcome!='pending' else None,sid))
+    return {'ok':True}
+
+def history(c,limit=100,offset=0):
+    out=[]
+    for s in c.execute('SELECT * FROM v4_signals ORDER BY id DESC LIMIT ? OFFSET ?',(limit,offset)):
+        row=dict(s);row['data']=dec(s['data'],{});row['profit_units']=s['odds']-1 if s['outcome']=='won' else -1 if s['outcome']=='lost' else 0 if s['outcome']=='void' else None;out.append(row)
+    return out
+
+def board(c,now):
+    records=[];seen=set()
+    for s in latest(c):
+        r=sample_data(s)
+        ko=date(r.get('kickoff_ts'))
+        if ko and ko<now-dt.timedelta(days=1): continue
+        f=bind(c,r);p,ctx=inputs(c,f,now)
+        if f: seen.add(f['fixture'])
+        r.update(profile=p,analyst=ctx,fixture=f['fixture'] if f else None,decisions=[])
+        for d in c.execute('SELECT * FROM v4_decisions WHERE match_id=?',(s['match_id'],)):
+            detail=dec(d['data'],{});detail['updated_at']=d['updated_at'];detail['sample_id']=d['sample_id'];r['decisions'].append(detail)
+        # Do not leak raw HTML or entire historical payloads into the UI.
+        r.pop('raw_cells',None);records.append(r)
+    for f in c.execute('SELECT * FROM v4_fixtures ORDER BY kickoff'):
+        if f['fixture'] in seen or date(f['kickoff'])<now-dt.timedelta(days=1):continue
+        p,ctx=inputs(c,f,now);records.append({'fixture':f['fixture'],'packball_id':f['match_id'],'home':f['home'],'away':f['away'],'league':f['league'],'kickoff_ts':f['kickoff'],'state':'NS','profile':p,'analyst':ctx,'decisions':[]})
+    cycle=c.execute('SELECT received_at,payload FROM cycles ORDER BY rowid DESC LIMIT 1').fetchone()
+    feed=dec(cycle['payload'],{}) if cycle else {}
+    totals=dict(c.execute("SELECT COUNT(*) total, SUM(outcome='won') won, SUM(outcome='lost') lost, SUM(outcome='void') void, SUM(outcome='pending') pending, COALESCE(SUM(CASE outcome WHEN 'won' THEN odds-1 WHEN 'lost' THEN -1 ELSE 0 END),0) units FROM v4_signals").fetchone())
+    legacy=[]
+    try:
+        for s in c.execute('SELECT * FROM signals ORDER BY id DESC LIMIT 200'):
+            z=dict(s);z['context']=dec(z['context'],{});legacy.append(z)
+    except sqlite3.OperationalError:pass
+    c.commit()
+    return {'ok':True,'version':VERSION,'server_time':iso(now),'matches':records,'signals':history(c),'history_total':totals['total'],'totals':totals,'legacy':legacy,'feed':{'received_at':cycle['received_at'] if cycle else None,'rows':feed.get('page_rows'), 'collector_version':feed.get('collector_version'),'headers':feed.get('stat_headers',[]),'odds_meta':feed.get('odds_meta',{})},'engine':dec((c.execute("SELECT value FROM v4_runtime WHERE key='engine'").fetchone() or [None])[0]),'settings':options(c),'telegram':{'configured':bool(os.environ.get('TELEGRAM_BOT_TOKEN') and os.environ.get('TELEGRAM_CHAT_ID'))}}
+
+def export_analysis(c,now):
+    matches=[]
+    for f in c.execute('SELECT * FROM v4_fixtures ORDER BY kickoff'):
+        if not now-dt.timedelta(hours=12)<=date(f['kickoff'])<=now+dt.timedelta(days=2):continue
+        p,_=inputs(c,f,now)
+        m={k:f[k] for k in ('fixture','match_id','home','away','kickoff','league')}
+        m.update(prematch=p.get('prematch',{}) if p else {},packball=p.get('packball') if p else None);matches.append(m)
+    return {'schema':'stratedge.research.v4','exported_at':iso(now),'timezone':'Europe/Paris','matches':matches,'instructions':'Tous les matchs doivent figurer dans le résultat stratedge.context.v4 avec watch:true. Aucun scénario éliminatoire. Utiliser PROMPT_ANALYSTE_V4.md.'}
+
+def dispatch(c,x,now):
+    action=x.get('action','board')
+    if action=='board': return board(c,now)
+    if action in ('analyst','packball'): return import_bundle(c,action,x.get('bundle'),now)
+    if action=='export_analysis': return export_analysis(c,now)
+    if action=='history':
+        offset=x.get('offset',0)
+        if type(offset) is not int or not 0<=offset<=1000000:raise ValueError('Pagination invalide')
+        return {'ok':True,'signals':history(c,100,offset)}
+    if action=='export_history': return {'schema':'stratedge.history.v4','exported_at':iso(now),'signals':history(c,100000)}
+    if action=='settle': return settle(c,x,now)
+    if action=='settings':
+        s=x.get('settings',{})
+        if type(s.get('telegram_enabled')) is not bool or not num(s.get('min_odds')) or not 1.2<=s['min_odds']<=3: raise ValueError('Paramètres invalides')
+        with c:
+            for k in ('telegram_enabled','min_odds'):c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,enc(s[k])))
+        return {'ok':True}
+    if action=='telegram_test':
+        prev=dec((c.execute("SELECT value FROM v4_runtime WHERE key='telegram_test'").fetchone() or [None])[0],{})
+        if date(prev.get('at')) and (now-date(prev['at'])).total_seconds()<60:raise ValueError('Attendre une minute entre deux tests Telegram')
+        state,error,mid=notify('STRATEDGE LIVE V4 · Test de connexion\nLe canal reçoit les messages. Ceci n’est pas un pari.')
+        with c: runtime(c,'telegram_test',{'at':iso(now),'state':state})
+        return {'ok':state=='sent','state':state,'error':error,'message_id':mid}
+    raise ValueError('Action inconnue')
+
+if __name__=='__main__':
+    ap=argparse.ArgumentParser();ap.add_argument('db');ap.add_argument('--init',action='store_true');ap.add_argument('--diagnostic',action='store_true');args=ap.parse_args()
+    try:
+        c=connect(args.db)
+        if args.init: result={'ok':True,'version':VERSION}
+        elif args.diagnostic:
+            b=board(c,now_utc());result={k:b[k] for k in ('version','feed','engine','telegram','totals')};result['feed'].pop('headers',None);result['feed'].pop('odds_meta',None)
+        else: result=dispatch(c,json.load(sys.stdin),now_utc())
+        print(enc(result));c.close()
+    except (ValueError,TypeError,KeyError) as e: print(enc({'error':str(e)}));sys.exit(2)
+    except Exception as e: print(enc({'error':'Service Live V4 indisponible','type':type(e).__name__}));sys.exit(1)

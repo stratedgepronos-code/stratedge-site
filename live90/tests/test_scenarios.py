@@ -97,7 +97,7 @@ class ScenarioTests(unittest.TestCase):
   self.add(dict(self.r,minute=19),self.now-dt.timedelta(seconds=45),'previous')
   self.add(self.r,self.now,'current')
   with patch('urllib.request.urlopen',side_effect=AssertionError('No API calls allowed')):
-   engine.run(self.path);engine.run(self.path)
+   E.run(self.path);E.run(self.path)
   self.assertEqual(self.c.execute('SELECT COUNT(*) FROM signals').fetchone()[0],1)
  def test_missing_stats(self):
   self.prepare_live();self.r['ind5']['sot5']=None;self.assertEqual(self.evaluate()[0],'missing')
@@ -115,18 +115,18 @@ class ScenarioTests(unittest.TestCase):
   self.prepare_live();self.add(dict(self.r,minute=19),self.now-dt.timedelta(seconds=45),'previous')
   self.add(self.r,self.now,'current')
   with patch('urllib.request.urlopen',side_effect=AssertionError('No API calls allowed')):
-   engine.run(self.path);engine.run(self.path)
+   E.run(self.path);E.run(self.path)
   rows=self.c.execute('SELECT * FROM signals').fetchall();self.assertEqual(len(rows),1);ctx=json.loads(rows[0]['context']);self.assertEqual(ctx['period'],'HT');self.assertEqual(ctx['team'],'h');self.assertEqual(ctx['comparison']['trigger']['minute'],10)
  def test_no_scenarios_no_legacy_fallback(self):
-  self.prepare_live();self.c.execute('DELETE FROM playbooks');self.c.commit();self.add(self.r,self.now,'current');engine.run(self.path)
+  self.prepare_live();self.c.execute('DELETE FROM playbooks');self.c.commit();self.add(self.r,self.now,'current');E.run(self.path)
   self.assertEqual(self.c.execute('SELECT COUNT(*) FROM signals').fetchone()[0],0)
  def test_reimport_profile_invalidates_playbook(self):
-  self.prepare_live();self.c.execute('INSERT INTO prematch(match_id,recorded_at,kickoff,data) SELECT match_id,recorded_at,kickoff,data FROM prematch');self.c.commit();self.add(self.r,self.now,'current');engine.run(self.path)
+  self.prepare_live();self.c.execute('INSERT INTO prematch(match_id,recorded_at,kickoff,data) SELECT match_id,recorded_at,kickoff,data FROM prematch');self.c.commit();self.add(self.r,self.now,'current');E.run(self.path)
   self.assertIn('remplacé',self.c.execute('SELECT reasons FROM decisions').fetchone()[0])
  def test_telegram_once_and_no_openai(self):
   self.prepare_live();self.add(dict(self.r,minute=19),self.now-dt.timedelta(seconds=45),'previous');self.add(self.r,self.now,'current')
   with patch.dict('os.environ',{'TELEGRAM_BOT_TOKEN':'fake','TELEGRAM_CHAT_ID':'fake'}),patch('urllib.request.urlopen',return_value=io.StringIO('{"ok":true}')) as send:
-   engine.run(self.path,True);engine.run(self.path,True);self.assertEqual(send.call_count,1);self.assertTrue(send.call_args.args[0].full_url.startswith('https://api.telegram.org/'))
+   E.run(self.path,True);E.run(self.path,True);self.assertEqual(send.call_count,1);self.assertTrue(send.call_args.args[0].full_url.startswith('https://api.telegram.org/'))
   self.assertEqual(self.c.execute('SELECT delivery FROM signals').fetchone()[0],'sent')
  def test_pressure_total_ft(self):
   self.prepare_live();self.s.update(team='total',trigger={'kind':'pressure','before_minute':None},window={'from':55,'to':75,'period':'FT'},score={'min_total':0,'max_total':2,'relation':'any'},conditions=[{'metric':'sot5','min':1},{'metric':'activity_ratio','min':.1}]);self.s['market'].update(type='total_goals',period='FT');self.r['minute']=60;self.r['quotes'][0].update(market='total_goals',period='FT',team=None,line=1.5);self.assertEqual(self.evaluate()[0],'candidate')
@@ -137,7 +137,7 @@ class ScenarioTests(unittest.TestCase):
  def _deliver(self,**mock):
   self.prepare_live();self.add(dict(self.r,minute=19),self.now-dt.timedelta(seconds=45),'previous');self.add(self.r,self.now,'current')
   with patch.dict('os.environ',{'TELEGRAM_BOT_TOKEN':'fake','TELEGRAM_CHAT_ID':'fake'}),patch('urllib.request.urlopen',**mock) as send:
-   engine.run(self.path,True);engine.run(self.path,True)
+   E.run(self.path,True);E.run(self.path,True)
   return self.c.execute('SELECT delivery FROM signals').fetchone()[0],send.call_count
  def _http(self,code):return urllib.error.HTTPError('https://api.telegram.org/',code,'refus',{},io.BytesIO(b'{"ok":false}'))
  def test_telegram_http_400_is_failed(self):self.assertEqual(self._deliver(side_effect=self._http(400)),('failed',1))
@@ -149,6 +149,6 @@ class ScenarioTests(unittest.TestCase):
  def test_telegram_missing_config_is_failed_without_call(self):
   self.prepare_live();self.add(dict(self.r,minute=19),self.now-dt.timedelta(seconds=45),'previous');self.add(self.r,self.now,'current')
   with patch.dict('os.environ',{'TELEGRAM_BOT_TOKEN':'','TELEGRAM_CHAT_ID':''}),patch('urllib.request.urlopen') as send:
-   engine.run(self.path,True)
+   E.run(self.path,True)
   self.assertEqual((self.c.execute('SELECT delivery FROM signals').fetchone()[0],send.call_count),('failed',0))
 if __name__=='__main__':unittest.main()
