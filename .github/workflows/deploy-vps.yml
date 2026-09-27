@@ -28,6 +28,7 @@ jobs:
         run: |
           python3 -m unittest discover -s live90/tests -p 'test_*.py'
           node live90/tests/test_parsers.cjs
+          node live90/tests/test_collector.cjs
           node live90/tests/test_packball_flow.cjs
           node live90/tests/test_download_flow.cjs
       - name: Recette interface desktop et mobile

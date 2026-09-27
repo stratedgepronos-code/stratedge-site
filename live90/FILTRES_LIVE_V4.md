@@ -1,6 +1,6 @@
 # StratEdge Live V4 — colonnes du tableau Packball
 
-Conserve les deux exports avant-match actuels (groupes A/B reconnus : 49/39 colonnes compactes ou 72/47 après expansion des paires). Ils sont importés via **Importer Packball**. Le dossier GPT utilise désormais **Importer l’analyste**, schéma `stratedge.context.v4`.
+L'import avant-match reconnaît actuellement les anciens groupes A/B (49/39 colonnes compactes ou 72/47 après expansion des paires). Les nouveaux groupes avant-match de 31 et 37 choix doivent encore être vérifiés sur leurs deux CSV avant adaptation de l'import. Le dossier GPT utilise **Importer l’analyste**, schéma `stratedge.context.v4`.
 
 Pour le tableau **Statistiques en direct**, les cases ci-dessous suffisent largement à rester sous 40 filtres. Ce sont des colonnes à afficher, pas des conditions éliminatoires sur les matchs. Conserve tous les matchs souhaités et vérifie la couverture du collecteur.
 
@@ -35,8 +35,40 @@ Les fautes sur 10 minutes sont calculées depuis les compteurs cumulés quand Pa
 
 ## Redémarrer le collecteur
 
-Dans Tampermonkey, mettre à jour **le script existant** avec `live90-packball.user.js` version 4.0.0 ; conserver le nom/namespace et le stockage du token. Éviter de créer deux collecteurs actifs en parallèle.
+Dans Tampermonkey, mettre à jour **le script existant** avec `live90-packball.user.js` version 4.0.1 ; conserver le nom/namespace et le stockage du token. Éviter de créer deux collecteurs actifs en parallèle.
 
 Le script couvre désormais toutes les routes de packball.com pour survivre à la navigation interne ; il n’envoie des données que depuis les pages de matchs. Le badge est réattaché si la page le retire. La collecte passe toutes les 30 secondes. Si Chrome bloque l’exécution des scripts utilisateur, la page ne peut pas activer cette permission à sa place.
 
 Le collecteur lit les lignes réellement chargées dans le DOM, même hors écran ; il ne peut pas lire des rencontres non chargées ou virtualisées. Le compteur reçu permet de contrôler ce point. PC éteint, navigateur fermé, veille ou restriction des onglets : plus de données fiables, donc plus de déclenchement. Le serveur continue de conserver l’historique et d’indiquer la coupure.
+
+## Correspondance de la capture du 27/09 à 22:57
+
+Ordre des 14 colonnes choisies, après les colonnes fixes d'identité et de cotes 1x2 :
+
+| Position visible | Colonne | Destination | Exemple Fortaleza / Athletic Club |
+|---|---|---|---|
+| 1 | Plus buts équipe domicile (+1) | `quotes`: team_goals, FT, h, over | ligne 2,5 ; cote 1,90 |
+| 2 | Plus buts équipe visiteuse (+2) | `quotes`: team_goals, FT, a, over | ligne 2,5 ; cote 3,75 |
+| 3 | Buts | `stats.goals`, contrôle du score principal | 2–2 |
+| 4 | Total des tirs | `stats.shots` | 7–5 |
+| 5 | Tirs cadrés | `stats.sot` | 4–3 |
+| 6 | Possession | `stats.possession` | 66–34 |
+| 7 | Cartons jaunes | `stats.yellow_cards` | 0–0 |
+| 8 | Cartons rouges | `stats.red_cards` | 0–0 |
+| 9 | Cartons jaunes-rouges | `stats.second_yellow` | inconnu, pas zéro |
+| 10 | Fautes | `stats.fouls` | 8–9 |
+| 11 | Total des tirs 10 dernières minutes | `ind10.shots10` | 2–1 |
+| 12 | Tirs cadrés 10 dernières minutes | `ind10.sot10` | 2–1 |
+| 13 | Total des tirs 5 dernières minutes | `ind5.shots5` | 0–1 |
+| 14 | Tirs cadrés 5 dernières minutes | `ind5.sot5` | 0–1 |
+
+La première valeur de chaque paire appartient à l'équipe à domicile. Les positions
+ci-dessus décrivent la capture ; elles ne sont pas codées en dur. Le collecteur lit
+les libellés d'en-tête (y compris les infobulles imbriquées) et distingue les fenêtres
+5/10 minutes. Les cotes sont associées à leur libellé via la classe de colonne Packball.
+Un nombre différent de cellules et d'en-têtes, un libellé absent, un doublon de champ
+ou une contradiction entre le score principal et la colonne Buts interdit le signal
+sur le relevé concerné. Le JSON exporté inclut `column_map` et la destination `target`
+de chaque cellule pour vérifier la correspondance réelle.
+
+Les valeurs de cette capture servent de test de lecture, pas de sélection de pari.
