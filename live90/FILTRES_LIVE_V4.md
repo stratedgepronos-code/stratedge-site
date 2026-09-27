@@ -11,7 +11,7 @@ Pour le tableau **Statistiques en direct**, les cases ci-dessous suffisent large
 | Statistiques Temps plein | Tirs cadrés | Production offensive réelle |
 | Statistiques Temps plein | Possession | Soutien de la lecture de pression |
 | Statistiques Temps plein | Fautes | Cumul et variations sur 10 minutes |
-| Statistiques Temps plein | Cartons jaunes | Ne pas signaler +0,5 si déjà atteint |
+| Statistiques Temps plein | Cartons jaunes | Calculer la ligne suivante : total actuel +0,5 |
 | Statistiques Temps plein | Cartons rouges | Toutes expulsions (y compris deuxième jaune selon ta confirmation) |
 | Statistiques Temps plein | Cartons jaunes-rouges | Facultatif, information complémentaire |
 | Statistiques 10 dernières minutes | Total des tirs | Activité récente de chaque équipe |
@@ -21,7 +21,7 @@ Pour le tableau **Statistiques en direct**, les cases ci-dessous suffisent large
 | Cotes en direct (bet365) | Buts marqués par l’équipe à domicile → Ligne suivante Plus | But domicile avant la fin du match |
 | Cotes en direct (bet365) | Buts marqués par les visiteurs → Ligne suivante Plus | But extérieur avant la fin du match |
 
-Ces 14 cases sont identifiées dans ta liste. Les cotes **par équipe en première mi-temps** et **cartons par équipe +0,5** ne sont PAS présentes dans la liste de menus que tu as fournie. Il faut vérifier leur disponibilité réelle sur Packball. Si disponibles, afficher les colonnes dont le libellé explicite précise équipe, période et type de marché.
+Ces 14 cases sont identifiées dans ta liste. Les cotes **par équipe en première mi-temps** et **cartons par équipe à la ligne suivante** ne sont PAS présentes dans la liste de menus que tu as fournie. Il faut vérifier leur disponibilité réelle sur Packball. Si disponibles, afficher les colonnes dont le libellé explicite précise équipe, période et type de marché.
 
 Le collecteur V4 sait reconnaître les libellés français explicites des buts par équipe HT/FT et des cartons par équipe FT. Il ne transforme pas :
 - « Total de buts 1ère mi-temps » en buts d’une équipe ;

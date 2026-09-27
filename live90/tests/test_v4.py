@@ -69,7 +69,40 @@ class LiveV4Tests(unittest.TestCase):
   self.r['quotes']=[{'market':'team_cards','unit':'cards','team':'h','period':'FT','side':'over','line':.5,'odds':1.8,'bookmaker':'bet365','verified':True,'observed_at':V.iso(self.now)}]
   self.assertEqual(self.evaluate('card_ft')['status'],'candidate')
   self.r['quotes'][0]['unit']='booking_points';self.assertEqual(self.evaluate('card_ft')['status'],'price')
- def test_existing_yellow_prevents_first_card_signal(self):self.r['stats']['yellow_cards']['h']=1;self.assertEqual(self.evaluate('card_ft')['status'],'covered')
+ def test_existing_yellows_continue_at_next_line(self):
+  for count in (0,1,2,4):
+   self.r['stats']['yellow_cards']['h']=count
+   self.r['quotes']=[{'market':'team_cards','unit':'cards','team':'h','period':'FT','side':'over','line':count+.5,'odds':1.8,'bookmaker':'bet365','verified':True,'observed_at':V.iso(self.now)}]
+   d=self.evaluate('card_ft');self.assertEqual(d['status'],'candidate');self.assertEqual(d['line'],count+.5);self.assertIn(str(count+.5).replace('.',','),V.label(self.r,d))
+  self.r['quotes'][0]['line']=.5;self.assertEqual(self.evaluate('card_ft')['status'],'price')
+ def test_card_change_rebuilds_recent_foul_window(self):
+  old=copy.deepcopy(self.r);self.add(old,self.now-dt.timedelta(minutes=3));self.r['stats']['yellow_cards']['h']=1
+  hist=self.c.execute('SELECT * FROM samples').fetchall();d=self.evaluate('card_ft',hist=hist)
+  self.assertEqual(d['status'],'watch');self.assertEqual(d['line'],1.5)
+ def test_card_new_line_needs_two_new_samples_and_deduplicates(self):
+  self.r['quotes']=[{'market':'team_cards','unit':'cards','team':'h','period':'FT','side':'over','line':.5,'odds':1.8,'bookmaker':'bet365','verified':True,'observed_at':V.iso(self.now)}]
+  self.prepared();V.run(self.db,False,self.now)
+  self.assertEqual(self.c.execute("SELECT COUNT(*) FROM v4_signals WHERE market='card_ft'").fetchone()[0],1)
+  later=self.now+dt.timedelta(minutes=12);self.r['minute']=42;self.r['stats']['yellow_cards']['h']=1;self.r['quotes'][0]['line']=1.5
+  self.add(self.r,later);V.run(self.db,False,later)
+  self.assertEqual(self.c.execute("SELECT COUNT(*) FROM v4_signals WHERE market='card_ft'").fetchone()[0],1)
+  self.add(self.r,later+dt.timedelta(seconds=30));V.run(self.db,False,later+dt.timedelta(seconds=30));V.run(self.db,False,later+dt.timedelta(seconds=30))
+  self.assertEqual([r[0] for r in self.c.execute("SELECT line FROM v4_signals WHERE market='card_ft' ORDER BY line")],[.5,1.5])
+ def referee_context(self):
+  self.ctx['sources']=[{'id':'ref','url':'https://example.com/referee','title':'Source de test','checked_at':V.iso(self.before)}]
+  self.ctx['referee']={'name':'Arbitre Test','appointment':'confirmed','appointment_source_ids':['ref'],'note':'Données fictives de test','stats':{'sample_label':'Compétition test, saison test','matches':25,'yellow_per_match':4.2,'red_per_match':.1,'fouls_per_match':None,'source_ids':['ref']}}
+ def test_referee_context_roundtrip_and_card_notes(self):
+  self.referee_context();V.import_bundle(self.c,'analyst',self.bundle('analyst'),self.before);f=V.bind(self.c,self.r);_,context=V.inputs(self.c,f,self.now)
+  self.assertEqual(context['referee']['stats']['matches'],25);self.ctx=context
+  d=self.evaluate('card_ft');self.assertEqual(d['metrics']['referee_yellow_per_match'],4.2);self.assertIn('Arbitre Test',d['context_notes'][0]);self.assertIsNone(d['metrics']['referee_fouls_per_match'])
+ def test_referee_sources_and_numeric_values_validated(self):
+  self.referee_context()
+  for field,value in [('matches',-1),('yellow_per_match','4.2'),('source_ids',['inconnue'])]:
+   bad=copy.deepcopy(self.ctx);bad['referee']['stats'][field]=value
+   with self.assertRaises(ValueError):V.validate_context(bad,self.before)
+  self.ctx['referee']['appointment_source_ids']=[]
+  with self.assertRaises(ValueError):V.validate_context(self.ctx,self.before)
+
  def test_possession_alone_never_triggers_cards(self):self.r['stats']['fouls']['h']=2;self.r['ind10']['fouls10']['h']=1;self.assertEqual(self.evaluate('card_ft')['status'],'watch')
  def test_recent_fouls_derived_from_history(self):
   self.r['ind10'].pop('fouls10');old=copy.deepcopy(self.r);old['minute']=20;old['stats']['fouls']['h']=5;self.add(old,self.now-dt.timedelta(minutes=10));hist=self.c.execute('SELECT * FROM samples').fetchall();self.assertEqual(self.evaluate('card_ft',hist=hist)['metrics']['fouls10'],4)

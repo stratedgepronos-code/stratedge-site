@@ -4,7 +4,7 @@ import urllib.error, urllib.request
 UTC = dt.timezone.utc
 VERSION = 'live4.0'
 MARKETS = ('goal_ht', 'goal_ft', 'card_ft')
-LABELS = {'goal_ht': 'But avant la mi-temps', 'goal_ft': 'But avant la fin du match', 'card_ft': 'Équipe +0,5 carton · match'}
+LABELS = {'goal_ht': 'But avant la mi-temps', 'goal_ft': 'But avant la fin du match', 'card_ft': 'Un carton supplémentaire · équipe'}
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS v4_imports(id INTEGER PRIMARY KEY,kind TEXT,digest TEXT UNIQUE,created_at TEXT,data TEXT);
 CREATE TABLE IF NOT EXISTS v4_fixtures(fixture TEXT PRIMARY KEY,home TEXT,away TEXT,kickoff TEXT,league TEXT,match_id TEXT);
@@ -63,6 +63,21 @@ def validate_context(m, generated):
         if not isinstance(s,dict) or not text_ok(s.get('id'),40) or s['id'] in ids or not text_ok(s.get('title'),250) or not re.match(r'^https://[^\s/]+(?:/[^\s]*)?$',s.get('url','')) or len(s['url'])>1200 or not date(s.get('checked_at')) or date(s['checked_at'])>generated: raise ValueError('Source invalide ou date de consultation future')
         ids.add(s['id'])
     if not isinstance(m.get('unknowns'),list) or len(m['unknowns'])>30 or not all(text_ok(v,500) for v in m['unknowns']): raise ValueError('Liste des inconnues invalide')
+    referee=m.get('referee')
+    if referee is not None:
+        if not isinstance(referee,dict) or not text_ok(referee.get('name'),160) or referee.get('appointment') not in ('confirmed','reported','unknown') or not text_ok(referee.get('note'),1000): raise ValueError('Arbitre invalide')
+        refs=referee.get('appointment_source_ids')
+        if not isinstance(refs,list) or any(v not in ids for v in refs) or (referee['appointment']!='unknown' and not refs): raise ValueError('Source de désignation de l’arbitre requise')
+        stats=referee.get('stats')
+        if stats is not None:
+            if not isinstance(stats,dict) or not text_ok(stats.get('sample_label'),300): raise ValueError('Échantillon arbitre requis')
+            n=stats.get('matches')
+            if n is not None and (type(n) is not int or not 1<=n<=10000): raise ValueError('Nombre de matchs arbitre invalide')
+            for field in ('yellow_per_match','red_per_match','fouls_per_match'):
+                v=stats.get(field)
+                if v is not None and (not num(v) or not 0<=v<=100): raise ValueError('Statistique arbitre invalide : '+field)
+            refs=stats.get('source_ids')
+            if not isinstance(refs,list) or not refs or any(v not in ids for v in refs): raise ValueError('Sources statistiques arbitre requises')
     teams=m.get('teams')
     if not isinstance(teams,dict) or set(teams)!={'h','a'}: raise ValueError('Contexte h/a requis')
     for t in teams.values():
@@ -186,12 +201,27 @@ def evaluate(r,profile,context,market,team,now,hist,settings):
         d['threshold']+=min(penalty,12)
     else: d['context_notes']=['Contexte GPT absent, tardif ou trop ancien : lecture neutre']
     if market=='card_ft':
-        d['line']=.5
         yc=stat(r,'yellow_cards',team); fouls=stat(r,'fouls',team); poss=stat(r,'possession',team)
         f10=recent(r,hist,'fouls',team,10); oppshots=recent(r,hist,'shots',other,10)
         d['metrics']={'yellow_cards':yc,'fouls':fouls,'fouls10':f10,'possession':poss,'opponent_shots10':oppshots}
-        if yc is None: return finish('missing','Cartons jaunes de l’équipe absents')
-        if yc>0: return finish('covered','Équipe déjà avertie : +0,5 carton déjà atteint')
+        if yc is None or int(yc)!=yc: return finish('missing','Compteur entier des cartons jaunes de l’équipe requis')
+        d['line']=yc+.5
+        # Refresh discipline evidence after a booking; old sanctioned fouls
+        # cannot trigger a second bet on a higher line immediately.
+        for h in hist:
+            old=dec(h['data'],{}); old_at=date(old.get('collected_at') or h['received_at'])
+            if old_at and at-dt.timedelta(minutes=10)<=old_at<=at and stat(old,'yellow_cards',team) is not None and stat(old,'yellow_cards',team)!=yc:
+                return finish('watch','Carton ou correction récente : reconstruire la fenêtre de fautes sur 10 minutes pour le carton suivant')
+        referee=context.get('referee') if context and context.get('usable') else None
+        if isinstance(referee,dict):
+            rs=referee.get('stats') or {}
+            note='Arbitre : '+referee['name']+' · désignation '+referee['appointment']
+            if referee['appointment']=='confirmed' and rs:
+                note+=' · '+str(rs.get('yellow_per_match','?'))+' jaunes/match · '+str(rs.get('matches','?'))+' matchs · '+rs['sample_label']
+                d['metrics'].update(referee_yellow_per_match=rs.get('yellow_per_match'),referee_fouls_per_match=rs.get('fouls_per_match'),referee_sample=rs.get('matches'))
+            else: note+=' · statistiques à confirmer'
+            d['context_notes'].insert(0,note)
+        else: d['context_notes'].insert(0,'Arbitre non documenté : aucune statistique supposée')
         if not 15<=minute<=78: return finish('waiting','Fenêtre cartons : 15e à 78e minute')
         if fouls is None or f10 is None or poss is None or not 0<=poss<=100: return finish('missing','Fautes, fenêtre de 10 minutes ou possession manquantes')
         d['intensity']=min(100,round(min(f10/4,1)*40+min(fouls/9,1)*20+(15 if poss<=45 else 5 if poss<=52 else 0)+(15 if (oppshots or 0)>=3 else 0)+(10 if score[team]<=score[other] else 0)))
@@ -230,7 +260,7 @@ def safe_evaluate(*args):
 
 def label(r,d):
     name=r['home'] if d['team']=='h' else r['away']
-    if d['market']=='card_ft': return name+' · +0,5 carton dans le match'
+    if d['market']=='card_ft': return name+' · plus de '+str(d['line']).replace('.',',')+' cartons dans le match (un carton supplémentaire)'
     return name+' · plus de '+str(d['line']).replace('.',',')+' but(s) '+('en première mi-temps' if d['market']=='goal_ht' else 'dans le match')
 
 def latest(c):

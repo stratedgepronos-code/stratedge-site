@@ -15,7 +15,7 @@ Analyse TOUS les matchs fournis. Aucun ne doit disparaître du fichier, même s�
 Tu ne produis ni liste restrictive de picks, ni whitelist, ni règles éliminatoires, ni seuils de déclenchement. Tu qualifies les faits qui aideront le moteur et l’utilisateur à interpréter le direct. Les absences offensives, la fatigue ou une rotation annoncée peuvent rendre le moteur plus exigeant ; une forte dynamique live peut toujours être prise en compte. Le calendrier seul ne prouve ni démotivation ni rotation.
 
 Les trois marchés surveillés, séparément pour domicile et extérieur :
-1. Équipe +0,5 carton sur le match : l’équipe n’a encore aucun carton au moment du signal. Ce n’est pas « un carton supplémentaire » si elle en a déjà un.
+1. L’équipe reçoit un carton supplémentaire avant la fin du match : total actuel +0,5. Avec 0 carton, surveiller +0,5 ; avec 1, +1,5 ; avec 2, +2,5, etc. Un jaune déjà reçu ne met jamais fin à l’analyse. Chaque nouvelle ligne exige sa propre cote et une activité récente, sans réutiliser les fautes ayant déjà conduit au carton précédent. Une expulsion reste un cas distinct, suspendu par le moteur actuel.
 2. L’équipe marque un premier but ou un but supplémentaire avant la fin de la première mi-temps : son total de buts en première période +0,5.
 3. L’équipe marque un premier but ou un but supplémentaire avant la fin du match : son total de buts sur le match +0,5.
 
@@ -150,6 +150,18 @@ Priorité aux clubs, compétitions/fédérations, communiqués médicaux officie
 
 Confronte ces éléments aux moyennes Packball : production de tirs/cadrés, production offensive et buts concédés, taille d’échantillon. Écris une synthèse courte, factuelle et conditionnelle. N’annonce ni rentabilité, ni edge, ni probabilité, ni « pari sûr ». Le moteur n’est pas un modèle de probabilités calibré.
 
+## Arbitre : recherche StatsHub et collecte avant-match
+
+Pour CHAQUE rencontre, cherche d’abord la désignation de l’arbitre central sur la compétition, la fédération ou une source de match fiable. Distingue l’arbitre central du quatrième officiel et du VAR. Ne rattache pas une fiche à un match par simple ressemblance de nom. Si la désignation n’est pas connue, conserve le match et renseigne cette limite.
+
+Consulte ensuite la fiche correspondante sur **https://www.statshub.com/referees** ou une page **https://www.statshub.com/referee/...** trouvée par recherche web. Lis réellement la fiche accessible ; un extrait de moteur de recherche ne suffit pas à confirmer un tableau actuel. Collecte, lorsque disponibles : nombre de matchs, jaunes par match, rouges par match, fautes par match, saison/compétition/période de l’échantillon. Les fautes ne sont pas systématiquement publiées : laisse `null` si elles sont absentes.
+
+Ne mélange pas les moyennes « carrière », « saison » et « compétition ». Si le nombre de matchs du bandeau diffère des tableaux de compétition, garde un seul périmètre cohérent et signale la différence. N’additionne pas les rouges directs, deuxièmes jaunes et jaunes pour fabriquer un total de cartons. Ne copie aucune étiquette « strict » ou « permissif » comme une probabilité. Sans moyenne comparable de la même compétition et période, n’invente pas une comparaison à la ligue.
+
+Si StatsHub refuse l’accès ou ne présente pas la fiche, signale-le et recherche une autre source accessible, en la nommant. Aucun contournement d’accès ni statistique inventée. La page peut avoir changé depuis son indexation : note la date de consultation et toute ancienneté connue. Le site StratEdge ne scrappe pas automatiquement StatsHub pendant le live : cette collecte est faite ici, puis importée dans le JSON.
+
+La fiche arbitre sert de contexte documenté, affiché et conservé avec les alertes. Le moteur n’attribue pas encore de poids prédictif validé à ces moyennes. Les fautes récentes, la pression subie et la cote exacte restent nécessaires. Un arbitre à cinq jaunes par match ne « doit » pas atteindre cinq jaunes et un jaune déjà sorti ne prouve ni apaisement ni aggravation.
+
 ## Fichier de sortie : contrat exact
 
 Nom : **`StratEdge_analyste_AAAA-MM-JJ.json`** (date du programme à Paris).
@@ -172,6 +184,29 @@ Chaque match :
 - `unknowns`: liste de points précis non vérifiés (maximum 30 textes de 500 caractères).
 - `sources`: liste des sources réellement consultées, éventuellement vide. Chaque source : `id` unique dans le match, `url` HTTPS, `title`, `checked_at` ISO avec fuseau, pas postérieur à `generated_at`.
 
+### Champ `referee` de chaque match
+
+Ajoute `referee: null` si l’identité de l’arbitre est inconnue. Sinon, utilise cet objet (les champs numériques absents restent `null`) :
+
+```json
+{
+  "name": "Nom exact de l’arbitre",
+  "appointment": "confirmed",
+  "appointment_source_ids": ["designation"],
+  "note": "Périmètre, limites et éventuelles incohérences de la source.",
+  "stats": {
+    "sample_label": "Compétition, saison ou période réellement observée",
+    "matches": null,
+    "yellow_per_match": null,
+    "red_per_match": null,
+    "fouls_per_match": null,
+    "source_ids": ["statshub_arbitre"]
+  }
+}
+```
+
+Cet exemple décrit la structure, pas des faits. `appointment` vaut `confirmed`, `reported` ou `unknown`. `appointment_source_ids` référence les sources de désignation présentes dans `sources` et ne peut être vide pour `confirmed`/`reported`. Une fiche statistique de l’arbitre ne prouve pas sa désignation pour le match. `stats` vaut `null` si aucune statistique n’a été obtenue ; sinon `source_ids` doit référencer au moins une source effectivement consultée. Le nombre de matchs est un entier positif ou `null`. `name` est limité à 160 caractères, `note` à 1000 et `sample_label` à 300. Les anciens dossiers sans champ `referee` restent compatibles.
+
 Un `flag` contient :
 - `kind`: une valeur parmi `attack_absences`, `defence_absences`, `fatigue`, `rotation`, `schedule`, `discipline`, `weather`, `other`.
 - `severity`: `low`, `medium` ou `high`. Mesure l’importance contextuelle, pas la probabilité d’un pari.
@@ -181,7 +216,7 @@ Un `flag` contient :
 
 Maximum 12 flags par équipe et 30 sources par match. Une même information ne doit pas être dupliquée sous plusieurs flags pour en amplifier artificiellement l’importance. Ne crée pas de flag de fatigue forte uniquement parce qu’un match se joue trois jours après le précédent : précise l’élément documenté et l’incertitude.
 
-Aucun champ `scenarios`, `probability`, `ev`, `pick`, `exclude` ou seuil numérique de pari n’est demandé. Les statistiques numériques du moteur proviennent directement des CSV importés sur le site ; ne les recopies pas dans ce JSON de contexte.
+Aucun champ `scenarios`, `probability`, `ev`, `pick`, `exclude` ou seuil numérique de pari n’est demandé. Les statistiques Packball du moteur proviennent directement des CSV importés sur le site ; ne les recopie pas dans ce JSON de contexte. Les statistiques arbitre, absentes des CSV, se placent uniquement dans le champ `referee.stats` prévu ci-dessus.
 
 ### Exemple fictif de structure (à remplacer intégralement)
 

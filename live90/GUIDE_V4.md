@@ -4,7 +4,7 @@
 
 Nouveau module remplaçant la page et le moteur de production, même URL `/panel-x9k3m/slate/live90/`. Deux imports indépendants : JSON analyste V4 et deux CSV Packball A/B. Chaque rencontre reste visible. Les IDs sont associés automatiquement par noms normalisés et coup d’envoi ±60 s, sans appariement approximatif ambigu. Un nom différent doit être corrigé dans la source, jamais deviné.
 
-Trois marchés, chacun h/a : but supplémentaire avant HT, but supplémentaire avant FT, premier carton de l’équipe (+0,5 FT). Pas de total match, prochain but, combiné ni pari placé automatiquement. Une cote bet365 observée via Packball n’est pas une cote Stake.
+Trois marchés, chacun h/a : but supplémentaire avant HT, but supplémentaire avant FT, carton supplémentaire de l’équipe (total actuel +0,5 FT). Pas de total match, prochain but, combiné ni pari placé automatiquement. Une cote bet365 observée via Packball n’est pas une cote Stake.
 
 ## Méthode initiale, à mesurer
 
@@ -43,3 +43,9 @@ La collecte dépend toujours d’un navigateur Packball authentifié et actif ; 
 Les CSS/JS sont intégrés côté PHP dans le HTML (restriction nginx du panel conservée). Authentification super-admin et CSRF maintenues. Les deux arborescences public_html et live90/public sont synchronisées.
 
 Le script ops/deploy-live90-v4.sh sauvegarde le code et la base par l’API de sauvegarde SQLite, teste puis remplace uniquement les fichiers serveur du module et redémarre seuil90-live. L’ancien moteur reste présent pour l’audit, mais le point d’entrée engine.py exécute live_v4.run. Les clés et autres services ne sont pas modifiés. En cas d’échec de redémarrage, le point d’entrée précédent est restauré ; la migration est additive et compatible avec l’ancien schéma.
+
+## Cartons successifs et arbitre
+
+Un jaune ne termine plus la surveillance : le moteur cherche la ligne suivante (0,5 puis 1,5 puis 2,5…), avec une cote exacte par équipe. Après un changement de compteur observé dans les dix dernières minutes, les fautes antérieures ne déclenchent pas immédiatement un nouveau signal. Chaque ligne reste dédupliquée dans l’historique. Les expulsions restent suspendues car le modèle est à onze contre onze.
+
+Le prompt collecte avant-match les statistiques arbitre disponibles sur StatsHub et la source de sa désignation. Le JSON peut contenir `referee` ; les anciens fichiers restent compatibles. Ces statistiques sont affichées dans le dossier et jointes au contexte des signaux cartons si la désignation est confirmée. Elles ne modifient pas arbitrairement le score d’intensité : aucun poids prédictif n’a été validé. Il n’y a pas de scraping serveur périodique ni d’appel IA live.
