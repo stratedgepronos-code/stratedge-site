@@ -27,6 +27,16 @@ class LiveV4Tests(unittest.TestCase):
   for kind,rows in [('analyst',[self.ctx]),('packball',[self.m,m2])]:self.assertEqual(V.import_bundle(self.c,kind,self.bundle(kind,rows),self.before)['imported'],len(rows))
   self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v4_fixtures').fetchone()[0],2)
   V.bind(self.c,self.r);self.assertEqual(self.c.execute('SELECT match_id FROM v4_fixtures WHERE home=?',(self.m['home'],)).fetchone()[0],'123')
+ def test_research_preserves_normalized_packball_and_import_timing(self):
+  self.m.update(state='NS',issues=['Cadrés HT non attribuables'],packball={'layout':'packball.prematch31_37.v1','teams':{'h':{'sot_for_ht':None,'goal_intervals':{'0-15':{'scored':.2,'conceded':.4}}}},'global':{'sot_ht_unallocated':4.3},'odds':[{'market':'total_goals','period':'2H','team':None,'side':'over','line':.5,'odds':1.8}]})
+  V.import_bundle(self.c,'packball',self.bundle('packball'),self.before)
+  exported=V.export_analysis(self.c,self.now)['matches'][0]
+  self.assertEqual(exported['packball'],self.m['packball']);self.assertEqual(exported['data_issues'],self.m['issues'])
+  self.assertEqual(exported['state'],'NS');self.assertTrue(exported['prematch_usable']);self.assertEqual(exported['prematch_imported_at'],V.iso(self.before))
+ def test_research_reports_late_import(self):
+  V.import_bundle(self.c,'packball',self.bundle('packball'),self.now)
+  exported=V.export_analysis(self.c,self.now)['matches'][0]
+  self.assertFalse(exported['prematch_usable']);self.assertEqual(exported['prematch_imported_at'],V.iso(self.now))
  def test_false_watch_rejected(self):
   self.ctx['watch']=False
   with self.assertRaises(ValueError):V.import_bundle(self.c,'analyst',self.bundle('analyst'),self.before)

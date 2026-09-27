@@ -1,6 +1,6 @@
 # StratEdge Live V4 — colonnes du tableau Packball
 
-L'import avant-match reconnaît actuellement les anciens groupes A/B (49/39 colonnes compactes ou 72/47 après expansion des paires). Les nouveaux groupes avant-match de 31 et 37 choix doivent encore être vérifiés sur leurs deux CSV avant adaptation de l'import. Le dossier GPT utilise **Importer l’analyste**, schéma `stratedge.context.v4`.
+L'import avant-match reconnaît les nouveaux groupes GPT / GPT - 2 de 31 et 37 choix (40 et 46 colonnes CSV), vérifiés sur les exports du 28/09/2026, ainsi que les anciens groupes A/B (49/39 colonnes compactes ou 72/47 après expansion). Le dictionnaire exact figure dans `PROMPT_ANALYSTE_V4.md`. La colonne 32 du groupe GPT peut être corrigée en paire Domicile-Extérieur ; si elle reste Global, elle est conservée sans attribution aux équipes et cette limite est signalée. Le dossier GPT utilise **Importer l’analyste**, schéma `stratedge.context.v4`.
 
 Pour le tableau **Statistiques en direct**, les cases ci-dessous suffisent largement à rester sous 40 filtres. Ce sont des colonnes à afficher, pas des conditions éliminatoires sur les matchs. Conserve tous les matchs souhaités et vérifie la couverture du collecteur.
 

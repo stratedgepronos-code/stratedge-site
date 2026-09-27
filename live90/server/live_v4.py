@@ -367,7 +367,10 @@ def export_analysis(c,now):
         if not now-dt.timedelta(hours=12)<=date(f['kickoff'])<=now+dt.timedelta(days=2):continue
         p,_=inputs(c,f,now)
         m={k:f[k] for k in ('fixture','match_id','home','away','kickoff','league')}
-        m.update(prematch=p.get('prematch',{}) if p else {},packball=p.get('packball') if p else None);matches.append(m)
+        m.update(prematch=p.get('prematch',{}) if p else {},packball=p.get('packball') if p else None,
+                 state=p.get('state') if p else None,data_issues=p.get('issues',[]) if p else [],
+                 prematch_imported_at=p.get('imported_at') if p else None,prematch_usable=p.get('usable',False) if p else False)
+        matches.append(m)
     return {'schema':'stratedge.research.v4','exported_at':iso(now),'timezone':'Europe/Paris','matches':matches,'instructions':'Tous les matchs doivent figurer dans le résultat stratedge.context.v4 avec watch:true. Aucun scénario éliminatoire. Utiliser PROMPT_ANALYSTE_V4.md.'}
 
 def dispatch(c,x,now):

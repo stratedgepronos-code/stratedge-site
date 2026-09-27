@@ -23,3 +23,34 @@ assert.throws(()=>pbJoin(A,secondA,'2099-09-25','Europe/Paris'),/même groupe.*d
 const secondB=[B[0],[...b]];secondB[1][11]='2.20';
 assert.throws(()=>pbJoin(B,secondB,'2099-09-25','Europe/Paris'),/même groupe.*premier/);
 console.log('3 contrôles : doublon exact et groupe complémentaire manquant.');
+
+// Groupes 31/37 : positions validées, fichiers et lignes dans un ordre différent.
+const {pbOrderTables,pbNewGroup}=require('../../public_html/admin/slate/live90/assets/packball.js');
+const base=['Country','Short','League','Hour','Status','Home Team','Result Home','Result Visitor','Visitor Team'];
+const ha=[...base,...Array(31).fill('Domicile | Extérieur')];ha[31]=ha[35]='Global';
+const hb=[...base,...Array(25).fill('Odds'),...Array(12).fill('Domicile | Extérieur')];
+const ra=[...['France','FRA','Test','28-09-2099 01:00','NS','Alpha','','','Beta'],...Array(31).fill('1 | 2')];
+ra[10]='10 | 8';ra[25]='12 | 14';ra[27]='4 | 5';ra[31]='4.3';ra[35]='';
+const rb=[...ra.slice(0,9),...Array.from({length:25},(_,i)=>(1.1+i/10).toFixed(2)),...Array.from({length:12},(_,i)=>`${i/10} | ${(i+1)/10}`)];
+rb[4]='INPLAY_1ST_HALF';rb[12]='';
+const ra2=[...ra],rb2=[...rb];ra2[5]=rb2[5]='Gamma';ra2[4]=rb2[4]='CANCELLED';
+const na=[ha,ra,ra2],nb=[hb,rb2,rb];const ordered=pbOrderTables([nb,na]);
+assert.equal(pbNewGroup(ordered[0]),'A');assert.equal(pbNewGroup(ordered[1]),'B');
+const joined=pbJoin(...ordered,'2099-09-28','Europe/Paris');assert.equal(joined.length,2);
+const j=joined[0];assert.equal(j.home,'Alpha');assert.equal(j.kickoff,'2099-09-27T23:00:00.000Z');
+assert.equal(j.prematch.n_a,8);assert.equal(j.prematch.shots_a,14);assert.equal(j.prematch.sot_h,4);
+assert.equal(j.packball.global.sot_ht_unallocated,4.3);assert.equal(j.packball.teams.h.sot_for_ht,null);assert.equal(j.packball.league.cards_avg,null);
+assert.deepEqual(j.packball.teams.h.goal_intervals['0-15'],{scored:0,conceded:1.1});
+assert.deepEqual(j.packball.teams.a.goal_intervals['76-90'],{scored:.6,conceded:.7});
+const q=c=>j.packball.odds.find(x=>x.column===c);
+assert.equal(q(13).odds,null);assert.equal(q(19).team,'a');assert.equal(q(19).side,'under');assert.equal(q(32).team,'h');assert.equal(q(32).side,'under');
+assert.equal(q(24).period,'HT');assert.equal(q(26).period,'2H');assert.equal(q(22).period,'FT');assert.equal(q(24).team,null);
+assert.equal(j.state,'INPLAY_1ST_HALF');assert.equal(joined[1].state,'CANCELLED');assert(j.issues.length>=3);
+const fixed=JSON.parse(JSON.stringify(na));fixed[0][31]='Domicile | Extérieur';fixed[1][31]=fixed[2][31]='1.2 | 2.3';
+assert.equal(pbJoin(fixed,nb,'2099-09-28','Europe/Paris')[0].packball.teams.a.sot_for_ht,2.3);
+fixed[1][10]='';assert.equal(pbJoin(fixed,nb,'2099-09-28','Europe/Paris')[0].prematch.n_h,null);
+assert.throws(()=>pbJoin(na,[hb,rb],'2099-09-28','Europe/Paris'),/mêmes matchs/);
+assert.throws(()=>pbJoin([ha,ra,ra],nb,'2099-09-28','Europe/Paris'),/dupliqué/);
+const wrong=[...hb];wrong[9]='Global';assert.equal(pbNewGroup([wrong,rb]),null);
+assert.throws(()=>pbJoin(na,[wrong,rb2,rb],'2099-09-28','Europe/Paris'),/groupes attendus/);
+console.log('Groupes 31/37 : équipes, périodes, tranches inversées, Global, inconnues et statuts validés.');
