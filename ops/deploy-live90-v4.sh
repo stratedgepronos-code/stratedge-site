@@ -57,5 +57,4 @@ fi
 trap - ERR
 cmp "$repo_root/live90/server/live_v4.py" "$target_dir/live_v4.py"
 echo "LIVE90_V4_OK: moteur installé ; service auparavant actif=$was_active ; sauvegarde=$backup_dir"
-# Le diagnostic ne lit ni n’affiche les clés ; aucune alerte de test envoyée.
-sudo -u www-data /usr/bin/python3 "$target_dir/live_v4.py" "$db_path" --diagnostic
+# Le contrôle du cycle et de la configuration est exécuté ensuite par check-live90-v4.php.

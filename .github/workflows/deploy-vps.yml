@@ -114,6 +114,7 @@ jobs:
           python3 -m unittest discover -s "$REPO_ROOT/live90/tests" -p 'test_*.py'
           for page in "$REPO_ROOT/public_html/admin/slate/live90/"*.php "$REPO_ROOT/public_html/api/live90/"*.php; do php -l "$page"; done
           sudo -n bash "$REPO_ROOT/ops/deploy-live90-v4.sh" "$REPO_ROOT"
+          sudo -n -u www-data php "$REPO_ROOT/ops/check-live90-v4.php" "$REPO_ROOT"
           REMOTE
 
       - name: Vérification code_version en prod
