@@ -300,15 +300,15 @@ def deliver(c, now):
             state,error,mid=notify('\n'.join(lines))
         c.execute('UPDATE v4_signals SET delivery=?,delivery_error=?,telegram_id=? WHERE id=?',(state,error,mid,s['id']));c.commit()
 
-def result_message(s, previous, outcome, source):
+def result_message(s, previous, outcome, source, automatic=False):
     z=dec(s['data'],{});names={'won':'✅ GAGNANT','lost':'❌ PERDANT','void':'⚪ ANNULÉ / REMBOURSÉ','pending':'⏳ À VÉRIFIER — validation retirée'}
     correction=previous!='pending'
-    title='STRATEDGE · '+('CORRECTION DU RÉSULTAT' if correction else 'RÉSULTAT CONFIRMÉ')+' · LIVE #'+str(s['id'])
+    title='STRATEDGE · '+('CORRECTION DU RÉSULTAT' if correction else 'RÉSULTAT PACKBALL' if automatic else 'RÉSULTAT CONFIRMÉ')+' · LIVE #'+str(s['id'])
     lines=[title,names[outcome],z.get('home','?')+' — '+z.get('away','?'),z.get('label',LABELS.get(s['market'],s['market'])),'Cote du signal : '+str(s['odds'])]
     if correction: lines.append('Ancien résultat : '+names[previous])
     profit=s['odds']-1 if outcome=='won' else -1 if outcome=='lost' else 0 if outcome=='void' else None
     if profit is not None: lines.append('Bilan simulé pour 1 unité : '+format(profit,'+.2f')+' u')
-    lines.extend(['Confirmation dans l’historique StratEdge.','Source : '+source,'Aucune mise automatique ; vérifier le règlement du bookmaker.'])
+    lines.extend(['Résultat automatique d’après Packball ; corrigé si le flux change.' if automatic else 'Confirmation dans l’historique StratEdge.','Source : '+source,'Aucune mise automatique ; règlement du bookmaker distinct.'])
     return '\n'.join(lines)
 
 def deliver_results(c,now,enabled=True):
@@ -325,22 +325,55 @@ def deliver_results(c,now,enabled=True):
         state,error,mid=notify(event['message'])
         c.execute('UPDATE v4_result_notifications SET delivery=?,delivery_error=?,telegram_id=? WHERE result_id=?',(state,error,mid,event['result_id']));c.commit()
 
+def packball_verdict(c,s,r):
+    """A feed verdict, not a bookmaker settlement. Never infer FT from minute 90."""
+    market=s['market'];team=s['team'];state=r.get('state');value=None;ended=False
+    if state not in ('LIVE','HT','FT'):
+        return 'pending','Statut Packball non conclusif : interruption ou état à vérifier'
+    if market=='card_ft':
+        reds=[stat(r,k,t) for k in ('red_cards','second_yellow') for t in ('h','a')]
+        if any(stat(r,'red_cards',t) is None for t in ('h','a')) or any(v is not None and v>0 for v in reds):
+            return 'pending','Cartons : expulsion ou compteur incomplet, règlement à vérifier'
+        value=stat(r,'yellow_cards',team);ended=state=='FT'
+        detail='cartons jaunes équipe '+team
+    elif market=='goal_ft':
+        value=r.get('score',{}).get(team) if isinstance(r.get('score'),dict) else None;ended=state=='FT';detail='score équipe '+team+' · match'
+    elif market=='goal_ht':
+        if state=='HT' or state=='LIVE' and num(r.get('minute')) and r['minute']<=45:
+            value=r.get('score',{}).get(team) if isinstance(r.get('score'),dict) else None;ended=state=='HT'
+        else:
+            # Use the latest actual halftime observation, never a second-half score.
+            rows=c.execute('SELECT * FROM samples WHERE match_id=? AND id>? AND id<=? ORDER BY id DESC LIMIT 1500',(s['match_id'],s['sample_id'],r['sample_id'])).fetchall()
+            for row in rows:
+                hr=dec(row['data'],{})
+                if hr.get('state')=='HT' and isinstance(hr.get('score'),dict):value=hr['score'].get(team);ended=True;break
+            if value is None:return 'pending','Score de première mi-temps non collecté : aucun score FT substitué'
+        detail='score équipe '+team+' · première mi-temps'
+    else:return None
+    if not num(value) or int(value)!=value or not 0<=value<=100:return 'pending','Compteur Packball absent ou incohérent'
+    verdict='won' if value>s['line'] else 'lost' if ended else 'pending'
+    return verdict,detail+' = '+str(value)+' · ligne '+str(s['line'])+(' · période terminée' if ended else ' · relevé en cours, correction possible')
+
 def auto_results(c,now):
-    # Suggested verdict only: official period score and bookmaker settlement
-    # still require confirmation (VAR, abandonment and card rules differ).
-    for s in c.execute("SELECT * FROM v4_signals WHERE outcome='pending'").fetchall():
+    for s in c.execute('SELECT * FROM v4_signals WHERE created_at>=?',(iso(now-dt.timedelta(days=3)),)).fetchall():
+        saved=dec(s['data'],{})
+        if saved.get('resolution',{}).get('mode')=='manual':continue
+        previous=c.execute('SELECT data FROM v4_results WHERE signal_id=? ORDER BY id DESC LIMIT 1',(s['id'],)).fetchone()
+        if previous and not dec(previous['data'],{}).get('automatic'):continue
         row=c.execute('SELECT * FROM samples WHERE match_id=? ORDER BY id DESC LIMIT 1',(s['match_id'],)).fetchone()
-        if not row: continue
-        r=sample_data(row); value=None
-        if s['market']=='goal_ht':
-            ht=c.execute('SELECT * FROM samples WHERE match_id=? ORDER BY id DESC LIMIT 600',(s['match_id'],)).fetchall()
-            for h in ht:
-                hr=dec(h['data'],{})
-                if hr.get('state')=='HT' and isinstance(hr.get('score'),dict): value=hr['score'].get(s['team']);break
-        elif r.get('state')=='FT': value=r.get('score',{}).get(s['team']) if s['market']=='goal_ft' else stat(r,'yellow_cards',s['team'])
-        if num(value) and s['market']!='card_ft':
-            data=dec(s['data'],{});data['suggested_outcome']='won' if value>s['line'] else 'lost';data['suggested_source']='Packball · score '+('HT' if s['market']=='goal_ht' else 'FT')
-            c.execute('UPDATE v4_signals SET data=? WHERE id=?',(enc(data),s['id']))
+        if not row or row['id']<=s['sample_id']:continue
+        r=sample_data(row);at=date(r.get('collected_at'));received=date(r.get('received_at'))
+        if not at or not received or not 0<=(now-at).total_seconds()<=100 or not 0<=(now-received).total_seconds()<=100 or at<date(s['created_at']):continue
+        if r.get('quality_errors'):continue
+        ko=date(r.get('kickoff_ts'));original=date(saved.get('kickoff'))
+        if not ko or not original or abs((ko-original).total_seconds())>60:continue
+        if norm(r.get('home'))!=norm(saved.get('home')) or norm(r.get('away'))!=norm(saved.get('away')):continue
+        verdict=packball_verdict(c,s,r)
+        if verdict is None:continue
+        outcome,detail=verdict
+        if outcome==s['outcome']:continue
+        source='Packball automatique · '+iso(at)+' · '+detail
+        settle(c,{'id':s['id'],'outcome':outcome,'source':source},now,automatic=True,evidence={'sample_id':row['id'],'observed_at':iso(at),'detail':detail})
 
 def run(path,send=True,now=None):
     now=now or now_utc(); c=connect(path);settings=options(c)
@@ -375,7 +408,7 @@ def run(path,send=True,now=None):
     deliver_results(c,now,send and settings['telegram_enabled'])
     c.close()
 
-def settle(c,x,now):
+def settle(c,x,now,automatic=False,evidence=None):
     sid=x.get('id'); outcome=x.get('outcome');source=x.get('source')
     if type(sid) is not int or outcome not in ('won','lost','void','pending') or not text_ok(source,600): raise ValueError('Résultat et source de vérification requis')
     # Serialize concurrent confirmation clicks before reading the old verdict.
@@ -383,13 +416,21 @@ def settle(c,x,now):
         if not c.in_transaction:c.execute('BEGIN IMMEDIATE')
         s=c.execute('SELECT * FROM v4_signals WHERE id=?',(sid,)).fetchone()
         if not s: raise ValueError('Signal introuvable')
+        data=dec(s['data'],{})
+        if automatic:
+            # Manual override takes precedence even if it raced the feed worker.
+            last=c.execute('SELECT data FROM v4_results WHERE signal_id=? ORDER BY id DESC LIMIT 1',(sid,)).fetchone()
+            if data.get('resolution',{}).get('mode')=='manual' or last and not dec(last['data'],{}).get('automatic'):return {'ok':True,'manual_override':True}
+        data.pop('suggested_outcome',None);data.pop('suggested_source',None)
+        data['resolution']={'mode':'automatic' if automatic else 'manual','at':iso(now),'source':source,**(evidence or {})}
+        c.execute('UPDATE v4_signals SET data=? WHERE id=?',(enc(data),sid))
         if s['outcome']==outcome:return {'ok':True,'unchanged':True}
-        event=c.execute('INSERT INTO v4_results(signal_id,created_at,previous,outcome,source,data) VALUES(?,?,?,?,?,?)',(sid,iso(now),s['outcome'],outcome,source,enc({'market':s['market'],'team':s['team'],'line':s['line']})))
+        event=c.execute('INSERT INTO v4_results(signal_id,created_at,previous,outcome,source,data) VALUES(?,?,?,?,?,?)',(sid,iso(now),s['outcome'],outcome,source,enc({'market':s['market'],'team':s['team'],'line':s['line'],'automatic':automatic,'evidence':evidence})))
         c.execute('UPDATE v4_signals SET outcome=?,settled_at=? WHERE id=?',(outcome,iso(now) if outcome!='pending' else None,sid))
         # A correction before delivery supersedes only unsent queued events.
         c.execute("UPDATE v4_result_notifications SET delivery='superseded',delivery_error='Résultat corrigé avant envoi' WHERE signal_id=? AND delivery='queued'",(sid,))
         state='queued' if options(c)['telegram_enabled'] else 'disabled'
-        c.execute('INSERT INTO v4_result_notifications(result_id,signal_id,created_at,message,delivery) VALUES(?,?,?,?,?)',(event.lastrowid,sid,iso(now),result_message(s,s['outcome'],outcome,source),state))
+        c.execute('INSERT INTO v4_result_notifications(result_id,signal_id,created_at,message,delivery) VALUES(?,?,?,?,?)',(event.lastrowid,sid,iso(now),result_message(s,s['outcome'],outcome,source,automatic),state))
     return {'ok':True,'result_delivery':state}
 
 def history(c,limit=100,offset=0):

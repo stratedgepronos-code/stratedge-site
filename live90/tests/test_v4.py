@@ -174,6 +174,43 @@ class LiveV4Tests(unittest.TestCase):
   self.c.execute("UPDATE v4_result_notifications SET delivery='sending',attempted_at=?",(V.iso(self.now-dt.timedelta(minutes=4)),));self.c.commit()
   with patch.object(V,'notify',side_effect=AssertionError('No ambiguous retry')):V.deliver_results(self.c,self.now)
   self.assertEqual(V.history(self.c)[0]['result_notification']['delivery'],'uncertain')
+ def auto_signal(self,market='goal_ht',line=.5):
+  q=self.r['quotes'][0];q.update(market='team_cards' if market=='card_ft' else 'team_goals',period='HT' if market=='goal_ht' else 'FT',line=line)
+  if market=='card_ft':q['unit']='cards';self.r['stats']['yellow_cards']['h']=int(line)
+  self.prepared();V.run(self.db,False,self.now)
+  return self.c.execute('SELECT id FROM v4_signals WHERE market=?',(market,)).fetchone()[0]
+ def outcome(self,sid):return self.c.execute('SELECT outcome FROM v4_signals WHERE id=?',(sid,)).fetchone()[0]
+ def test_auto_goal_win_immediately_and_telegram_once(self):
+  sid=self.auto_signal();later=self.now+dt.timedelta(seconds=30);self.r['score']['h']=1;self.r['minute']=31;self.add(self.r,later)
+  with patch.object(V,'notify',return_value=('sent',None,88)) as send:
+   V.run(self.db,True,later);V.run(self.db,True,later);self.assertEqual(send.call_count,1);self.assertIn('RÉSULTAT PACKBALL',send.call_args.args[0]);self.assertIn('GAGNANT',send.call_args.args[0])
+  self.assertEqual(self.outcome(sid),'won');self.assertEqual(V.history(self.c)[0]['data']['resolution']['mode'],'automatic')
+ def test_auto_var_correction_reopens_and_later_ht_loss(self):
+  sid=self.auto_signal();later=self.now+dt.timedelta(seconds=30);self.r['score']['h']=1;self.add(self.r,later);V.auto_results(self.c,later);self.assertEqual(self.outcome(sid),'won')
+  self.r['score']['h']=0;later+=dt.timedelta(seconds=30);self.add(self.r,later);V.auto_results(self.c,later);self.assertEqual(self.outcome(sid),'pending')
+  self.r.update(state='HT',minute=45);later+=dt.timedelta(minutes=15);self.add(self.r,later);V.auto_results(self.c,later);self.assertEqual(self.outcome(sid),'lost')
+  self.r.update(state='LIVE',minute=65);self.r['score']['h']=2;later+=dt.timedelta(minutes=20);self.add(self.r,later);V.auto_results(self.c,later);self.assertEqual(self.outcome(sid),'lost')
+ def test_auto_ft_loss_requires_end_not_minute_90(self):
+  sid=self.auto_signal('goal_ft');later=self.now+dt.timedelta(minutes=60);self.r.update(minute=90,minute_extra=3);self.add(self.r,later);V.auto_results(self.c,later);self.assertEqual(self.outcome(sid),'pending')
+  self.r.update(state='FT',minute=None);later+=dt.timedelta(seconds=30);self.add(self.r,later);V.auto_results(self.c,later);self.assertEqual(self.outcome(sid),'lost')
+ def test_auto_ht_no_second_half_score_substitution(self):
+  sid=self.auto_signal();later=self.now+dt.timedelta(minutes=35);self.r.update(minute=65);self.r['score']['h']=2;self.add(self.r,later);V.auto_results(self.c,later);self.assertEqual(self.outcome(sid),'pending')
+ def test_auto_cards_second_yellow_total_target_and_correction(self):
+  sid=self.auto_signal('card_ft',1.5);later=self.now+dt.timedelta(seconds=30);self.r['stats']['yellow_cards']['h']=2;self.add(self.r,later);V.auto_results(self.c,later);self.assertEqual(self.outcome(sid),'won')
+  self.r['stats']['yellow_cards']['h']=1;later+=dt.timedelta(seconds=30);self.add(self.r,later);V.auto_results(self.c,later);self.assertEqual(self.outcome(sid),'pending')
+  self.r.update(state='FT',minute=None);later+=dt.timedelta(minutes=60);self.add(self.r,later);V.auto_results(self.c,later);self.assertEqual(self.outcome(sid),'lost')
+ def test_auto_cards_red_ambiguous_not_bookmaker_void(self):
+  sid=self.auto_signal('card_ft');later=self.now+dt.timedelta(seconds=30);self.r['stats']['yellow_cards']['h']=1;self.r['stats']['red_cards']['a']=1;self.r.update(state='FT',minute=None);self.add(self.r,later);V.auto_results(self.c,later);self.assertEqual(self.outcome(sid),'pending')
+ def test_auto_missing_stale_or_wrong_fixture_never_settles(self):
+  sid=self.auto_signal();later=self.now+dt.timedelta(seconds=30);self.r['score']=None;self.r.update(state='HT',minute=45);self.add(self.r,later);V.auto_results(self.c,later);self.assertEqual(self.outcome(sid),'pending')
+  self.r['score']={'h':1,'a':0};self.add(self.r,later);V.auto_results(self.c,later+dt.timedelta(minutes=3));self.assertEqual(self.outcome(sid),'pending')
+  self.r['home']='Mauvaise équipe';self.add(self.r,later+dt.timedelta(minutes=3));V.auto_results(self.c,later+dt.timedelta(minutes=3));self.assertEqual(self.outcome(sid),'pending')
+ def test_auto_manual_override_and_same_verdict_manual_lock(self):
+  sid=self.auto_signal();later=self.now+dt.timedelta(seconds=30);self.r['score']['h']=1;self.add(self.r,later);V.auto_results(self.c,later);self.assertEqual(self.outcome(sid),'won')
+  V.settle(self.c,{'id':sid,'outcome':'won','source':'Validation bookmaker'},later)
+  self.r['score']['h']=0;later+=dt.timedelta(seconds=30);self.add(self.r,later);V.auto_results(self.c,later);self.assertEqual(self.outcome(sid),'won')
+ def test_auto_interruption_does_not_assume_refund(self):
+  sid=self.auto_signal('goal_ft');later=self.now+dt.timedelta(seconds=30);self.r.update(state='OTHER',minute=None);self.add(self.r,later);V.auto_results(self.c,later);self.assertEqual(self.outcome(sid),'pending')
  def test_history_keeps_legacy_and_all_new_rows(self):
   self.c.execute('INSERT INTO signals VALUES(1,?,?)',(V.enc({'home':'Ancien'}),V.iso(self.before)));self.c.commit();b=V.board(self.c,self.now);self.assertEqual(b['legacy'][0]['context']['home'],'Ancien')
  def test_clock_or_missing_profile_never_invents(self):
