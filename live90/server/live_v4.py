@@ -424,10 +424,16 @@ def audit_matches(c,now):
             for market in MARKETS:
                 for team in ('h','a'):
                     d=safe_evaluate(r,p,context,market,team,at+dt.timedelta(seconds=1),hist,settings)
-                    group=markets.setdefault(market+':'+team,{'states':{},'reasons':{},'candidate_samples':0,'max_intensity':0,'best':None})
+                    group=markets.setdefault(market+':'+team,{'states':{},'reasons':{},'candidate_samples':0,'confirmed_pairs':0,'candidate_examples':[],'max_intensity':0,'best':None})
                     group['states'][d['status']]=group['states'].get(d['status'],0)+1
                     group['reasons'][d['reason']]=group['reasons'].get(d['reason'],0)+1
                     group['candidate_samples']+=int(d['status']=='candidate')
+                    if d['status']=='candidate':
+                        if len(group['candidate_examples'])<10:group['candidate_examples'].append({'at':r['received_at'],'minute':r.get('minute'),'score':r.get('score'),'decision':d})
+                        if len(hist)>1:
+                            old=sample_data(hist[1]);gap=(at-date(old['received_at'])).total_seconds()
+                            pd=safe_evaluate(old,p,context,market,team,at+dt.timedelta(seconds=1),hist[1:],settings)
+                            if 20<=gap<=100 and pd['status']=='candidate' and old.get('score')==r.get('score') and 0<=r['minute']-old.get('minute',999)<=2 and pd['line']==d['line']:group['confirmed_pairs']+=1
                     if d['intensity']>group['max_intensity'] or group['best'] is None:
                         group['max_intensity']=d['intensity'];group['best']={'at':r['received_at'],'minute':r.get('minute'),'score':r.get('score'),'decision':d,'quotes':r.get('quotes',[])}
         out.append({'match_id':f['match_id'],'home':f['home'],'away':f['away'],'kickoff':f['kickoff'],'samples':len(rows),'live_samples':live,'empty_live_samples':empty,'states':states,'first_received_at':rows[0]['received_at'],'last_received_at':rows[-1]['received_at'],'profile_usable':bool(profile and profile.get('usable')),'profile_imported_at':profile.get('imported_at') if profile else None,'context_usable':bool(ctx and ctx.get('usable')),'markets':markets,'changes':changes[-120:],'limits':'Relecture avec le code et les paramètres actuels, une seconde après l’heure de réception de chaque relevé (anciens horodatages serveur tronqués à la seconde) ; pas une preuve des décisions effectivement exécutées. 24 h, 2000 relevés/match et 120 changements maximum. Les trous ne sont pas reconstruits ; aucune alerte rétroactive.'})

@@ -236,6 +236,7 @@ class LiveV4Tests(unittest.TestCase):
    audit=V.audit_matches(self.c,self.now+dt.timedelta(seconds=30))[0]
   self.assertEqual(audit['live_samples'],3);self.assertEqual(audit['empty_live_samples'],1)
   self.assertEqual(audit['markets']['goal_ht:h']['candidate_samples'],2)
+  self.assertEqual(audit['markets']['goal_ht:h']['confirmed_pairs'],1)
   self.assertEqual(audit['markets']['goal_ht:h']['states']['missing'],1)
   self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v4_signals').fetchone()[0],0)
  def test_replay_accounts_for_server_seconds_and_browser_milliseconds(self):
