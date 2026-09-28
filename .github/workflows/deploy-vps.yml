@@ -16,11 +16,12 @@ on:
 
 concurrency:
   group: deploy-vps
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   validate-live90:
     name: Recette Live90 V4
+    timeout-minutes: 5
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
