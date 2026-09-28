@@ -423,14 +423,14 @@ def audit_matches(c,now):
             context=ctx if ctx and cr and date(cr['imported_at'])<=at else None
             for market in MARKETS:
                 for team in ('h','a'):
-                    d=safe_evaluate(r,p,context,market,team,at,hist,settings)
+                    d=safe_evaluate(r,p,context,market,team,at+dt.timedelta(seconds=1),hist,settings)
                     group=markets.setdefault(market+':'+team,{'states':{},'reasons':{},'candidate_samples':0,'max_intensity':0,'best':None})
                     group['states'][d['status']]=group['states'].get(d['status'],0)+1
                     group['reasons'][d['reason']]=group['reasons'].get(d['reason'],0)+1
                     group['candidate_samples']+=int(d['status']=='candidate')
                     if d['intensity']>group['max_intensity'] or group['best'] is None:
                         group['max_intensity']=d['intensity'];group['best']={'at':r['received_at'],'minute':r.get('minute'),'score':r.get('score'),'decision':d,'quotes':r.get('quotes',[])}
-        out.append({'match_id':f['match_id'],'home':f['home'],'away':f['away'],'kickoff':f['kickoff'],'samples':len(rows),'live_samples':live,'empty_live_samples':empty,'states':states,'first_received_at':rows[0]['received_at'],'last_received_at':rows[-1]['received_at'],'profile_usable':bool(profile and profile.get('usable')),'profile_imported_at':profile.get('imported_at') if profile else None,'context_usable':bool(ctx and ctx.get('usable')),'markets':markets,'changes':changes[-120:],'limits':'Relecture avec le code et les paramètres actuels, à l’heure de réception de chaque relevé ; pas une preuve des décisions effectivement exécutées. 24 h, 2000 relevés/match et 120 changements maximum. Les trous ne sont pas reconstruits ; aucune alerte rétroactive.'})
+        out.append({'match_id':f['match_id'],'home':f['home'],'away':f['away'],'kickoff':f['kickoff'],'samples':len(rows),'live_samples':live,'empty_live_samples':empty,'states':states,'first_received_at':rows[0]['received_at'],'last_received_at':rows[-1]['received_at'],'profile_usable':bool(profile and profile.get('usable')),'profile_imported_at':profile.get('imported_at') if profile else None,'context_usable':bool(ctx and ctx.get('usable')),'markets':markets,'changes':changes[-120:],'limits':'Relecture avec le code et les paramètres actuels, une seconde après l’heure de réception de chaque relevé (anciens horodatages serveur tronqués à la seconde) ; pas une preuve des décisions effectivement exécutées. 24 h, 2000 relevés/match et 120 changements maximum. Les trous ne sont pas reconstruits ; aucune alerte rétroactive.'})
     return out
 
 def record_health(c,report,now):

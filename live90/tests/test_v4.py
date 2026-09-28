@@ -238,6 +238,13 @@ class LiveV4Tests(unittest.TestCase):
   self.assertEqual(audit['markets']['goal_ht:h']['candidate_samples'],2)
   self.assertEqual(audit['markets']['goal_ht:h']['states']['missing'],1)
   self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v4_signals').fetchone()[0],0)
+ def test_replay_accounts_for_server_seconds_and_browser_milliseconds(self):
+  self.prepared();V.bind(self.c,self.r)
+  row=self.c.execute('SELECT * FROM samples ORDER BY id DESC LIMIT 1').fetchone();r=V.dec(row['data'],{})
+  r['collected_at']=V.iso(self.now+dt.timedelta(milliseconds=550));r['quotes'][0]['observed_at']=r['collected_at']
+  self.c.execute('UPDATE samples SET data=? WHERE id=?',(V.enc(r),row['id']));self.c.commit()
+  audit=V.audit_matches(self.c,self.now+dt.timedelta(seconds=30))[0]
+  self.assertEqual(audit['markets']['goal_ht:h']['candidate_samples'],2)
  def test_replay_does_not_use_profile_before_import(self):
   self.prepared();V.bind(self.c,self.r);self.c.execute('UPDATE v4_profiles SET imported_at=?',(V.iso(self.now+dt.timedelta(seconds=5)),));self.c.commit()
   audit=V.audit_matches(self.c,self.now+dt.timedelta(seconds=30))[0]
