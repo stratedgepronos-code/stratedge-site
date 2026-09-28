@@ -235,6 +235,13 @@ class LiveV4Tests(unittest.TestCase):
   self.c.execute('INSERT INTO cycles VALUES(?,?,?,?)',('test',V.iso(self.now),V.iso(self.now),V.enc({'rows':[self.r],'stat_headers':[]})));self.c.commit()
   report=V.feed_health(self.c,self.now);codes={x['code'] for x in report['issues']}
   self.assertTrue({'stats','score','layout'}.issubset(codes));self.assertNotIn('quotes',codes)
+ def test_health_accepts_empty_maps_reencoded_as_arrays_by_php(self):
+  self.prepared();self.r.update(stats=[],ind5=[],ind10=[],quotes=[]);self.add(self.r,self.now)
+  report=V.feed_health(self.c,self.now)
+  self.assertTrue({'stats','quotes'}.issubset({x['code'] for x in report['issues']}))
+  self.assertIsNone(V.stat(self.r,'red_cards','h'))
+  self.c.commit();V.run(self.db,False,self.now)
+  self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v4_signals').fetchone()[0],0)
  def test_health_zero_is_data_and_bad_score_does_not_crash(self):
   self.prepared()
   for pair in self.r['stats'].values():pair.update(h=0,a=0)

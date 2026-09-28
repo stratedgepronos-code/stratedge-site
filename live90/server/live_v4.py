@@ -167,7 +167,7 @@ def inputs(c,f,now):
     return profile,context
 
 def stat(r,k,t,group='stats'):
-    p=r.get(group,{}).get(k)
+    values=r.get(group);p=values.get(k) if isinstance(values,dict) else None
     v=p.get(t) if isinstance(p,dict) else None
     return v if num(v) and v>=0 else None
 
