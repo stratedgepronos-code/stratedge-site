@@ -67,3 +67,11 @@ Le bouton manuel reste disponible pour corriger le règlement ; cette correction
 Le dernier import des deux CSV Packball définit exactement les matchs actifs, y compris ceux dont les statistiques sont incomplètes. Un import analyste ne rajoute pas de matchs à cette liste. Réimporter un dossier déjà connu le réactive sans écraser ses profils figés. Le tableau, l’export GPT et les nouveaux signaux utilisent cette liste ; les résultats des anciens paris continuent d’être suivis et leur historique est conservé. Avant tout import CSV, seuls les matchs du dernier cycle de collecte sont affichés.
 
 Le compteur « Le direct » inclut les matchs en cours et à la mi-temps lorsque les relevés sont frais ; le nombre à la pause est indiqué séparément. Le moteur ne déclenche pas de pari pendant la pause.
+
+## Contrôle automatique et bilan des paris
+
+Sans API IA, le moteur contrôle la fraîcheur des relevés, le score, les compteurs de tirs/cartons/fautes/possession, la lecture des colonnes, les cotes exactes et les matchs sans association après leur horaire prévu. Une donnée manquante ne signifie pas nécessairement une panne ; les marchés peuvent être suspendus, notamment à la pause. Les incidents sont ouverts une fois, mis à jour et clôturés quand le problème disparaît. Le tableau affiche ces contrôles ; ils sont enregistrés aussi quand la page StratEdge est fermée, tant que le moteur serveur tourne.
+
+À chaque résultat, un bilan déterministe conserve les repères du signal, les limites du contexte, les relevés ultérieurs, les variations de tirs/cadrés/fautes/cartons et les trous de collecte. Gagnants et perdants sont traités, pour éviter de ne rechercher des explications qu’après les pertes. Un court extrait du bilan accompagne le message Telegram d’un pari perdu. Le bilan ne prouve pas une cause, ne calcule pas une probabilité calibrée et ne modifie aucun seuil.
+
+Le bouton « Exporter le bilan pour GPT » fournit les 100 derniers signaux, les 200 derniers incidents, les comptes de résultats sur tout l’historique et les consignes d’audit. Les résumés sont datés au moment de leur génération ; une analyse au moment d’un gain live ne connaît pas la suite du match. Une analyse qualitative libre et entièrement automatique demanderait un modèle IA local ou une API ; ce module n’en utilise aucun.

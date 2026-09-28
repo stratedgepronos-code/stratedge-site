@@ -230,6 +230,43 @@ class LiveV4Tests(unittest.TestCase):
   other=copy.deepcopy(self.r);other['packball_id']='456';other['home']='Autre';self.c.execute('INSERT INTO samples(cycle_id,match_id,received_at,data) VALUES(?,?,?,?)',('new','456',V.iso(self.now),V.enc(other)))
   self.c.execute('INSERT INTO cycles VALUES(?,?,?,?)',('new',V.iso(self.now),V.iso(self.now),V.enc({'rows':[other],'page_rows':1})));self.c.commit()
   self.assertEqual([r['packball_id'] for r in V.board(self.c,self.now)['matches']],['456'])
+ def test_health_missing_fields_even_during_halftime_and_no_columns(self):
+  self.prepared();self.r.update(state='HT',minute=45,stats={},score=None);self.add(self.r,self.now)
+  self.c.execute('INSERT INTO cycles VALUES(?,?,?,?)',('test',V.iso(self.now),V.iso(self.now),V.enc({'rows':[self.r],'stat_headers':[]})));self.c.commit()
+  report=V.feed_health(self.c,self.now);codes={x['code'] for x in report['issues']}
+  self.assertTrue({'stats','score','layout'}.issubset(codes));self.assertNotIn('quotes',codes)
+ def test_health_zero_is_data_and_bad_score_does_not_crash(self):
+  self.prepared()
+  for pair in self.r['stats'].values():pair.update(h=0,a=0)
+  self.r['score']='unreadable';self.add(self.r,self.now)
+  codes={x['code'] for x in V.feed_health(self.c,self.now)['issues']}
+  self.assertNotIn('stats',codes);self.assertIn('score',codes);self.assertIn('quotes',codes)
+  self.assertIn('stale',{x['code'] for x in V.feed_health(self.c,self.now+dt.timedelta(minutes=3))['issues']})
+ def test_health_incidents_deduplicate_resolve_and_reopen(self):
+  report={'issues':[{'key':'stats:123','code':'stats','detail':'Fautes manquantes'}]}
+  for _ in range(3):V.record_health(self.c,report,self.now)
+  self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v4_health_events').fetchone()[0],1)
+  V.record_health(self.c,{'issues':[]},self.now+dt.timedelta(seconds=30))
+  self.assertIsNotNone(self.c.execute('SELECT resolved_at FROM v4_health_events').fetchone()[0])
+  V.record_health(self.c,report,self.now+dt.timedelta(seconds=60))
+  self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v4_health_events WHERE resolved_at IS NULL').fetchone()[0],1)
+  self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v4_health_events').fetchone()[0],2)
+ def test_lost_review_preserves_facts_gaps_and_correction_versions(self):
+  sid=self.auto_signal();later=self.now+dt.timedelta(minutes=15);self.r.update(state='HT',minute=45);self.r['stats']['shots']['h']=14;self.add(self.r,later);V.auto_results(self.c,later)
+  signal=V.history(self.c)[0];review=signal['data']['review'];self.assertEqual(review['outcome'],'lost')
+  self.assertTrue(any('10 → 14' in x for x in review['facts']));self.assertTrue(any('Trou de collecte' in x for x in review['limits']))
+  self.assertIn('ne prouvent pas la cause',review['conclusion']);self.assertIn('Bilan automatique',self.c.execute('SELECT message FROM v4_result_notifications ORDER BY result_id DESC').fetchone()[0])
+  self.r['score']['h']=1;later+=dt.timedelta(seconds=30);self.add(self.r,later);V.auto_results(self.c,later)
+  self.assertEqual(V.history(self.c)[0]['data']['review']['outcome'],'won')
+  events=[V.dec(x[0],{}) for x in self.c.execute('SELECT data FROM v4_results ORDER BY id')]
+  self.assertEqual([x['review']['outcome'] for x in events],['lost','won'])
+ def test_review_export_pending_retains_signal_context_without_network(self):
+  self.result_signal()
+  with patch('urllib.request.urlopen',side_effect=AssertionError('No API')):result=V.dispatch(self.c,{'action':'export_review'},self.now)
+  self.assertEqual(result['schema'],'stratedge.audit.v4');self.assertEqual(result['coverage']['total_signals'],1)
+  review=result['signals'][0]['data']['review'];self.assertEqual(review['signal_metrics']['shots10'],6)
+  self.assertNotIn('Profil avant-match absent ou non exploitable au déclenchement.',review['limits'])
+  self.assertEqual(result['all_history_counts'][0]['outcome'],'pending')
  def test_history_keeps_legacy_and_all_new_rows(self):
   self.c.execute('INSERT INTO signals VALUES(1,?,?)',(V.enc({'home':'Ancien'}),V.iso(self.before)));self.c.commit();b=V.board(self.c,self.now);self.assertEqual(b['legacy'][0]['context']['home'],'Ancien')
  def test_clock_or_missing_profile_never_invents(self):

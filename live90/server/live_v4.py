@@ -14,6 +14,8 @@ CREATE TABLE IF NOT EXISTS v4_decisions(match_id TEXT,market TEXT,team TEXT,samp
 CREATE TABLE IF NOT EXISTS v4_signals(id INTEGER PRIMARY KEY,signal_key TEXT UNIQUE,match_id TEXT,fixture TEXT,market TEXT,team TEXT,line REAL,odds REAL,created_at TEXT,sample_id INTEGER,data TEXT,delivery TEXT,delivery_error TEXT,telegram_id INTEGER,outcome TEXT DEFAULT 'pending',settled_at TEXT);
 CREATE TABLE IF NOT EXISTS v4_results(id INTEGER PRIMARY KEY,signal_id INTEGER,created_at TEXT,previous TEXT,outcome TEXT,source TEXT,data TEXT);
 CREATE TABLE IF NOT EXISTS v4_result_notifications(result_id INTEGER PRIMARY KEY,signal_id INTEGER,created_at TEXT,message TEXT,delivery TEXT,delivery_error TEXT,telegram_id INTEGER,attempted_at TEXT);
+CREATE TABLE IF NOT EXISTS v4_health_events(id INTEGER PRIMARY KEY,issue_key TEXT,opened_at TEXT,last_seen TEXT,resolved_at TEXT,data TEXT);
+CREATE UNIQUE INDEX IF NOT EXISTS v4_health_open ON v4_health_events(issue_key) WHERE resolved_at IS NULL;
 CREATE TABLE IF NOT EXISTS v4_settings(key TEXT PRIMARY KEY,value TEXT);
 CREATE TABLE IF NOT EXISTS v4_runtime(key TEXT PRIMARY KEY,value TEXT);
 CREATE INDEX IF NOT EXISTS v4_signal_created ON v4_signals(created_at);
@@ -316,6 +318,89 @@ def deliver(c, now):
             state,error,mid=notify('\n'.join(lines))
         c.execute('UPDATE v4_signals SET delivery=?,delivery_error=?,telegram_id=? WHERE id=?',(state,error,mid,s['id']));c.commit()
 
+def signal_review(c,s,outcome,now):
+    saved=s['data'] if isinstance(s['data'],dict) else dec(s['data'],{});decision=saved.get('decision',{});facts=[];limits=[]
+    ctx=saved.get('context') or {};profile=saved.get('profile') or {}
+    if not ctx.get('usable'):limits.append('Contexte analyste absent ou non exploitable au déclenchement.')
+    if not profile.get('usable'):limits.append('Profil avant-match absent ou non exploitable au déclenchement.')
+    if s['market']=='card_ft' and not (ctx.get('referee') or {}).get('stats'):limits.append('Statistiques arbitre non documentées au déclenchement.')
+    limits.extend(str(x) for x in ctx.get('unknowns',[])[:8])
+    rows=c.execute('SELECT * FROM samples WHERE match_id=? AND id>=? ORDER BY id LIMIT 600',(s['match_id'],s['sample_id'])).fetchall()
+    observations=[]
+    for row in rows:
+        r=sample_data(row);at=date(r.get('collected_at'));received=date(r.get('received_at'))
+        if not at or not received or at>now or received>now:continue
+        if s['market']=='goal_ht' and not (r.get('state')=='HT' or r.get('state')=='LIVE' and num(r.get('minute')) and r['minute']<=45):continue
+        observations.append({'sample_id':row['id'],'at':iso(at),'received_at':iso(received),'state':r.get('state'),'minute':r.get('minute'),'score':r.get('score'),'shots':stat(r,'shots',s['team']),'sot':stat(r,'sot',s['team']),'fouls':stat(r,'fouls',s['team']),'yellow_cards':stat(r,'yellow_cards',s['team']),'red_h':stat(r,'red_cards','h'),'red_a':stat(r,'red_cards','a'),'quality_errors':r.get('quality_errors',[])})
+    if observations:
+        first,last=observations[0],observations[-1]
+        gaps=[(date(b['received_at'])-date(a['received_at'])).total_seconds() for a,b in zip(observations,observations[1:])]
+        max_gap=max(gaps,default=0)
+        if max_gap>100:limits.append('Trou de collecte observé après le signal : '+str(round(max_gap))+' secondes entre deux relevés.')
+        if any(x['quality_errors'] for x in observations):limits.append('Au moins un relevé présente des colonnes ambiguës après le signal.')
+        if any((x['red_h'] or 0)>0 or (x['red_a'] or 0)>0 for x in observations):facts.append('Une expulsion apparaît dans les relevés suivant le signal.')
+        for field,title in [('shots','Tirs'),('sot','Cadrés'),('fouls','Fautes'),('yellow_cards','Jaunes')]:
+            a,b=first[field],last[field]
+            if num(a) and num(b) and b>=a:facts.append(title+' équipe ciblée : '+str(a)+' → '+str(b)+' sur la portion de match collectée.')
+            elif num(a) and num(b):limits.append(title+' : compteur corrigé à la baisse, variation non interprétée.')
+        if len(observations)<2:limits.append('Un seul relevé exploitable : évolution du match non mesurable.')
+        if len(rows)==600:limits.append('Relecture limitée aux 600 premiers relevés après le signal.')
+    else:limits.append('Aucun relevé exploitable conservé pour reconstituer la suite du signal.')
+    required=('fouls10','fouls','possession') if s['market']=='card_ft' else ('shots10','sot10','activity_ratio')
+    for field in required:
+        if decision.get('metrics',{}).get(field) is None:limits.append('Repère absent dans le signal : '+field+'.')
+    if outcome=='lost':facts.insert(0,'Le résultat enregistré est perdant : la condition du pari n’a pas été atteinte selon sa source de règlement.')
+    elif outcome=='won':facts.insert(0,'Le résultat enregistré est gagnant ; conserver ce cas pour comparaison avec les pertes.')
+    else:facts.insert(0,'Résultat '+outcome+' : ne pas le traiter comme une perte.')
+    return {'schema':'stratedge.review.v1','generated_at':iso(now),'outcome':outcome,'signal_metrics':decision.get('metrics',{}),'facts':facts,'limits':list(dict.fromkeys(limits)),'observations':observations,'conclusion':'Ces constats ne prouvent pas la cause du résultat. Sans modèle de probabilités calibré, on ne peut pas conclure que la cote était avantageuse.','next_steps':['Comparer aux paris gagnants du même marché et aux mêmes plages de minute/cote.','Vérifier les inconnues datées disponibles avant le signal, sans utiliser le résultat comme justification rétrospective.','Tester toute modification sur une période ultérieure séparée ; aucun seuil n’est modifié automatiquement.']}
+
+def feed_health(c,now):
+    active=active_fixtures(c);cycle_ids=current_cycle_ids(c);issues=[];rows=[];seen=set()
+    def issue(code,detail,mid=None):issues.append({'key':code+':'+str(mid or 'global'),'code':code,'match_id':mid,'detail':detail})
+    for sample in latest(c):
+        r=sample_data(sample);f=bind(c,r)
+        if active is not None and (not f or f['fixture'] not in active):continue
+        if active is None and cycle_ids is not None and str(r.get('packball_id')) not in cycle_ids:continue
+        if f:seen.add(f['fixture'])
+        rows.append(r);mid=r.get('packball_id');label=r.get('home','?')+' — '+r.get('away','?')
+        if r.get('state') not in ('LIVE','HT'):continue
+        at=date(r.get('received_at'));collected=date(r.get('collected_at'))
+        if not at or not collected or not 0<=(now-at).total_seconds()<=100 or not 0<=(now-collected).total_seconds()<=100:issue('stale',label+' : relevé absent, trop ancien ou horloge incohérente.',mid);continue
+        if r.get('quality_errors'):issue('columns',label+' : '+str(r['quality_errors'])[:400],mid)
+        if not isinstance(r.get('score'),dict) or any(not num(r['score'].get(t)) for t in ('h','a')):issue('score',label+' : score non lisible.',mid)
+        if not num(r.get('minute')):issue('clock',label+' : minute non lisible.',mid)
+        missing=[k+' '+t for k in ('shots','sot','fouls','possession','yellow_cards','red_cards') for t in ('h','a') if stat(r,k,t) is None]
+        if missing:issue('stats',label+' : données absentes du relevé : '+', '.join(missing),mid)
+        if r.get('state')=='HT':continue
+        missing_quotes=[]
+        for team in ('h','a'):
+            for market,period in [('team_goals','FT'),('team_goals','HT'),('team_cards','FT')]:
+                if period=='HT' and num(r.get('minute')) and r['minute']>45:continue
+                count=stat(r,'yellow_cards',team) if market=='team_cards' else (r['score'].get(team) if isinstance(r.get('score'),dict) else None)
+                valid=[q for q in (r.get('quotes') or []) if isinstance(q,dict) and q.get('verified') is True and q.get('market')==market and q.get('period')==period and q.get('team')==team and q.get('side')=='over' and num(count) and q.get('line')==count+.5 and num(q.get('odds')) and q['odds']>1 and date(q.get('observed_at')) and 0<=(now-date(q['observed_at'])).total_seconds()<=90 and (market!='team_cards' or q.get('unit')=='cards')]
+                if not valid:missing_quotes.append(market+' '+period+' '+team)
+        if missing_quotes:issue('quotes',label+' : cotes exactes absentes : '+', '.join(missing_quotes),mid)
+    # A schedule is not proof that a match is live. Report the verification gap.
+    if active:
+        for f in c.execute('SELECT * FROM v4_fixtures'):
+            if f['fixture'] in active and f['fixture'] not in seen and now-dt.timedelta(hours=3)<=date(f['kickoff'])<=now-dt.timedelta(minutes=10):issue('unmatched',f['home']+' — '+f['away']+' : horaire dépassé, aucun relevé live associé ; statut à vérifier.',f['match_id'] or f['fixture'])
+    cycle=c.execute('SELECT payload FROM cycles ORDER BY rowid DESC LIMIT 1').fetchone()
+    payload=dec(cycle['payload'],{}) if cycle else {}
+    if cycle and any(r.get('state') in ('LIVE','HT') for r in rows) and not payload.get('stat_headers'):
+        issue('layout','Aucune colonne statistique live reçue : vérifier l’onglet Statistiques en direct et le groupe de colonnes affiché dans Packball.')
+    heartbeat=dec((c.execute("SELECT value FROM v4_runtime WHERE key='engine'").fetchone() or [None])[0],{})
+    if any(r.get('state') in ('LIVE','HT') for r in rows) and (not date(heartbeat.get('at')) or (now-date(heartbeat['at'])).total_seconds()>65):issue('engine','Aucun cycle moteur récent.')
+    return {'checked_at':iso(now),'status':'issues' if issues else 'ok','active_matches':len(rows),'issues':issues,'note':'Une cote absente est une limite de couverture, pas nécessairement une panne. Une statistique constante ne prouve pas que le flux est bloqué.'}
+
+def record_health(c,report,now):
+    current={x['key'] for x in report['issues']}
+    for row in c.execute('SELECT id,issue_key FROM v4_health_events WHERE resolved_at IS NULL').fetchall():
+        if row['issue_key'] not in current:c.execute('UPDATE v4_health_events SET resolved_at=? WHERE id=?',(iso(now),row['id']))
+    for issue in report['issues']:
+        row=c.execute('SELECT id FROM v4_health_events WHERE issue_key=? AND resolved_at IS NULL',(issue['key'],)).fetchone()
+        if row:c.execute('UPDATE v4_health_events SET last_seen=?,data=? WHERE id=?',(iso(now),enc(issue),row['id']))
+        else:c.execute('INSERT INTO v4_health_events(issue_key,opened_at,last_seen,data) VALUES(?,?,?,?)',(issue['key'],iso(now),iso(now),enc(issue)))
+
 def result_message(s, previous, outcome, source, automatic=False):
     z=dec(s['data'],{});names={'won':'✅ GAGNANT','lost':'❌ PERDANT','void':'⚪ ANNULÉ / REMBOURSÉ','pending':'⏳ À VÉRIFIER — validation retirée'}
     correction=previous!='pending'
@@ -324,6 +409,8 @@ def result_message(s, previous, outcome, source, automatic=False):
     if correction: lines.append('Ancien résultat : '+names[previous])
     profit=s['odds']-1 if outcome=='won' else -1 if outcome=='lost' else 0 if outcome=='void' else None
     if profit is not None: lines.append('Bilan simulé pour 1 unité : '+format(profit,'+.2f')+' u')
+    review=z.get('review') or {}
+    if outcome=='lost':lines.extend(['Bilan automatique :']+(review.get('facts',[])[1:3])+review.get('limits',[])[:2]+['Cause non démontrée ; bilan complet dans l’historique.'])
     lines.extend(['Résultat automatique d’après Packball ; corrigé si le flux change.' if automatic else 'Confirmation dans l’historique StratEdge.','Source : '+source,'Aucune mise automatique ; règlement du bookmaker distinct.'])
     return '\n'.join(lines)
 
@@ -425,6 +512,7 @@ def run(path,send=True,now=None):
     else:
         c.execute("UPDATE v4_signals SET delivery='disabled',delivery_error='Envoi désactivé' WHERE delivery='queued'");c.commit()
     deliver_results(c,now,send and settings['telegram_enabled'])
+    record_health(c,feed_health(c,now),now);c.commit()
     c.close()
 
 def settle(c,x,now,automatic=False,evidence=None):
@@ -440,16 +528,17 @@ def settle(c,x,now,automatic=False,evidence=None):
             # Manual override takes precedence even if it raced the feed worker.
             last=c.execute('SELECT data FROM v4_results WHERE signal_id=? ORDER BY id DESC LIMIT 1',(sid,)).fetchone()
             if data.get('resolution',{}).get('mode')=='manual' or last and not dec(last['data'],{}).get('automatic'):return {'ok':True,'manual_override':True}
+        if s['outcome']!=outcome:data['review']=signal_review(c,s,outcome,now)
         data.pop('suggested_outcome',None);data.pop('suggested_source',None)
         data['resolution']={'mode':'automatic' if automatic else 'manual','at':iso(now),'source':source,**(evidence or {})}
         c.execute('UPDATE v4_signals SET data=? WHERE id=?',(enc(data),sid))
         if s['outcome']==outcome:return {'ok':True,'unchanged':True}
-        event=c.execute('INSERT INTO v4_results(signal_id,created_at,previous,outcome,source,data) VALUES(?,?,?,?,?,?)',(sid,iso(now),s['outcome'],outcome,source,enc({'market':s['market'],'team':s['team'],'line':s['line'],'automatic':automatic,'evidence':evidence})))
+        event=c.execute('INSERT INTO v4_results(signal_id,created_at,previous,outcome,source,data) VALUES(?,?,?,?,?,?)',(sid,iso(now),s['outcome'],outcome,source,enc({'market':s['market'],'team':s['team'],'line':s['line'],'automatic':automatic,'evidence':evidence,'review':data.get('review')})))
         c.execute('UPDATE v4_signals SET outcome=?,settled_at=? WHERE id=?',(outcome,iso(now) if outcome!='pending' else None,sid))
         # A correction before delivery supersedes only unsent queued events.
         c.execute("UPDATE v4_result_notifications SET delivery='superseded',delivery_error='Résultat corrigé avant envoi' WHERE signal_id=? AND delivery='queued'",(sid,))
         state='queued' if options(c)['telegram_enabled'] else 'disabled'
-        c.execute('INSERT INTO v4_result_notifications(result_id,signal_id,created_at,message,delivery) VALUES(?,?,?,?,?)',(event.lastrowid,sid,iso(now),result_message(s,s['outcome'],outcome,source,automatic),state))
+        c.execute('INSERT INTO v4_result_notifications(result_id,signal_id,created_at,message,delivery) VALUES(?,?,?,?,?)',(event.lastrowid,sid,iso(now),result_message(dict(s,data=enc(data)),s['outcome'],outcome,source,automatic),state))
     return {'ok':True,'result_delivery':state}
 
 def history(c,limit=100,offset=0):
@@ -486,7 +575,7 @@ def board(c,now):
             z=dict(s);z['context']=dec(z['context'],{});legacy.append(z)
     except sqlite3.OperationalError:pass
     c.commit()
-    return {'ok':True,'version':VERSION,'server_time':iso(now),'matches':records,'signals':history(c),'history_total':totals['total'],'totals':totals,'legacy':legacy,'feed':{'received_at':cycle['received_at'] if cycle else None,'rows':feed.get('page_rows'), 'collector_version':feed.get('collector_version'),'headers':feed.get('stat_headers',[]),'odds_meta':feed.get('odds_meta',{})},'engine':dec((c.execute("SELECT value FROM v4_runtime WHERE key='engine'").fetchone() or [None])[0]),'settings':options(c),'telegram':{'configured':bool(os.environ.get('TELEGRAM_BOT_TOKEN') and os.environ.get('TELEGRAM_CHAT_ID'))}}
+    return {'ok':True,'version':VERSION,'server_time':iso(now),'health':feed_health(c,now),'matches':records,'signals':history(c),'history_total':totals['total'],'totals':totals,'legacy':legacy,'feed':{'received_at':cycle['received_at'] if cycle else None,'rows':feed.get('page_rows'), 'collector_version':feed.get('collector_version'),'headers':feed.get('stat_headers',[]),'odds_meta':feed.get('odds_meta',{})},'engine':dec((c.execute("SELECT value FROM v4_runtime WHERE key='engine'").fetchone() or [None])[0]),'settings':options(c),'telegram':{'configured':bool(os.environ.get('TELEGRAM_BOT_TOKEN') and os.environ.get('TELEGRAM_CHAT_ID'))}}
 
 def export_analysis(c,now):
     matches=[];active=active_fixtures(c)
@@ -510,6 +599,13 @@ def dispatch(c,x,now):
         if type(offset) is not int or not 0<=offset<=1000000:raise ValueError('Pagination invalide')
         return {'ok':True,'signals':history(c,100,offset)}
     if action=='export_history': return {'schema':'stratedge.history.v4','exported_at':iso(now),'signals':history(c,100000)}
+    if action=='export_review':
+        signals=history(c,100);all_count=c.execute('SELECT COUNT(*) FROM v4_signals').fetchone()[0]
+        incidents=[dict(row,data=dec(row['data'],{})) for row in c.execute('SELECT * FROM v4_health_events ORDER BY id DESC LIMIT 200')]
+        for signal in signals:
+            if not signal['data'].get('review'):signal['data']['review']=signal_review(c,signal,signal['outcome'],now)
+        groups=[dict(row) for row in c.execute("SELECT market,outcome,COUNT(*) n FROM v4_signals GROUP BY market,outcome")]
+        return {'schema':'stratedge.audit.v4','exported_at':iso(now),'timezone':'Europe/Paris','coverage':{'exported_signals':len(signals),'total_signals':all_count,'scope':'100 derniers signaux ; 200 derniers incidents'},'health':feed_health(c,now),'incidents':incidents,'all_history_counts':groups,'signals':signals,'instructions':'Analyser les faits, les problèmes de collecte, les limites du modèle et les hypothèses séparément. Comparer gagnants et perdants, pas seulement les pertes. Respecter les informations disponibles au moment du signal ; les relevés ultérieurs décrivent le déroulement, pas une information prédictive connue. Un résultat perdu ne prouve ni erreur ni cause précise. Ne pas inventer xG, arbitre ou absence. Les signaux sont corrélés par match et les cotes observées ne prouvent aucun avantage. Proposer des tests hors échantillon avant toute modification des seuils. Aucun changement automatique du moteur.'}
     if action=='settle': return settle(c,x,now)
     if action=='settings':
         s=x.get('settings',{})
@@ -531,7 +627,7 @@ if __name__=='__main__':
         c=connect(args.db)
         if args.init: result={'ok':True,'version':VERSION}
         elif args.diagnostic:
-            b=board(c,now_utc());result={k:b[k] for k in ('version','feed','engine','telegram','totals')};result['feed'].pop('headers',None);result['feed'].pop('odds_meta',None);result['list']={'matches':len(b['matches']),'live':sum(r.get('state')=='LIVE' for r in b['matches']),'halftime':sum(r.get('state')=='HT' for r in b['matches'])};result['recent_rows']=[{k:r.get(k) for k in ('packball_id','home','away','state','status_raw','minute','received_at')} for r in [sample_data(x) for x in latest(c)][:30]]
+            b=board(c,now_utc());result={k:b[k] for k in ('version','feed','engine','telegram','totals')};result['feed']=dict(result['feed']);result['feed'].pop('headers',None);result['feed'].pop('odds_meta',None);result['list']={'matches':len(b['matches']),'live':sum(r.get('state')=='LIVE' for r in b['matches']),'halftime':sum(r.get('state')=='HT' for r in b['matches'])};result['collection_columns']=b['feed'].get('headers',[]);result['collection_odds']=b['feed'].get('odds_meta',{});result['health']=b['health'];result['recent_rows']=[{k:r.get(k) for k in ('packball_id','home','away','state','status_raw','minute','received_at','stats','ind5','ind10','quotes','quality_errors')} for r in [sample_data(x) for x in latest(c)] if r.get('state') in ('LIVE','HT')][:6]
         else: result=dispatch(c,json.load(sys.stdin),now_utc())
         print(enc(result));c.close()
     except (ValueError,TypeError,KeyError) as e: print(enc({'error':str(e)}));sys.exit(2)
