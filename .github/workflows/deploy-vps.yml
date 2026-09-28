@@ -16,7 +16,7 @@ on:
 
 concurrency:
   group: deploy-vps
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   validate-live90:
