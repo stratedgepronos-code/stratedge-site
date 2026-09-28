@@ -35,7 +35,7 @@ Les fautes sur 10 minutes sont calculées depuis les compteurs cumulés quand Pa
 
 ## Redémarrer le collecteur
 
-Dans Tampermonkey, mettre à jour **le script existant** avec `live90-packball.user.js` version 4.0.1 ; conserver le nom/namespace et le stockage du token. Éviter de créer deux collecteurs actifs en parallèle.
+Dans Tampermonkey, mettre à jour **le script existant** avec `live90-packball.user.js` version 4.0.2 ; conserver le nom/namespace et le stockage du token. Éviter de créer deux collecteurs actifs en parallèle.
 
 Le script couvre désormais toutes les routes de packball.com pour survivre à la navigation interne ; il n’envoie des données que depuis les pages de matchs. Le badge est réattaché si la page le retire. La collecte passe toutes les 30 secondes. Si Chrome bloque l’exécution des scripts utilisateur, la page ne peut pas activer cette permission à sa place.
 
@@ -72,3 +72,5 @@ sur le relevé concerné. Le JSON exporté inclut `column_map` et la destination
 de chaque cellule pour vérifier la correspondance réelle.
 
 Les valeurs de cette capture servent de test de lecture, pas de sélection de pari.
+
+La version 4.0.2 refuse les tableaux sans colonnes live, avec un message explicite. Le serveur refuse également ces envois des anciens scripts : ils ne remplacent plus un relevé live complet. Les anciennes données gardent leur date et deviennent périmées après 100 secondes ; elles ne sont jamais présentées comme fraîches. Fermer les autres onglets Packball et désactiver les anciens collecteurs évite des envois concurrents.

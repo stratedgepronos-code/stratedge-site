@@ -36,13 +36,15 @@ async function browserTest(browser){
  const stats=texts.map(t=>`<div class="col live"><div><span>${t}</span></div></div>`).join('');
  const quotes=`<div class="inplay inp-41"><span class="label">2.5</span><span class="odds-inplay">1.9</span></div><div class="inplay inp-42"><span class="label">2.5</span><span class="odds-inplay">3.75</span></div>`;
  await page.setContent(`<section class="fixtures"><div class="header"><div class="col inp-41" title="${homeTitle}"></div><div class="col inp-42"><span title="${awayTitle}"></span></div>${header}</div><div class="row fix-999001"><div class="col time"><time datetime="1790544600"></time></div><div class="col blin">61</div><span class="team-home">Fortaleza</span><span class="team-away">Athletic Club</span><span class="title-league" title="Serie B"></span><span class="result-f">2-2</span>${quotes}${stats}</div></section>`);
- await page.addScriptTag({content:helpers});
+ await page.addScriptTag({content:'const CLIENT_ID="synthetic-client";'+helpers});
  const read=()=>page.evaluate(()=>collect());
- let x=await read(),r=x.rows[0];assert.equal(x.collector_version,'4.0.1');assert.deepEqual(r.stats,expectedStats);assert.deepEqual(r.ind5,expected5);assert.deepEqual(r.ind10,expected10);assert.deepEqual(r.quality_errors,[]);assert.equal(r.minute,61);
+ let x=await read(),r=x.rows[0];assert.equal(x.collector_version,'4.0.2');assert.deepEqual(r.stats,expectedStats);assert.deepEqual(r.ind5,expected5);assert.deepEqual(r.ind10,expected10);assert.deepEqual(r.quality_errors,[]);assert.equal(r.minute,61);
  assert.deepEqual(r.quotes.map(q=>[q.team,q.market,q.period,q.line,q.odds]),[['h','team_goals','FT',2.5,1.9],['a','team_goals','FT',2.5,3.75]]);
  assert.equal(x.column_map.stats[8].key,'shots10');assert.equal(x.column_map.odds[1].team,'a');
  await page.locator('.row .col.live').nth(1).evaluate(el=>el.remove());
  r=(await read()).rows[0];assert.deepEqual(r.stats,{});assert.match(r.quality_errors[0],/désalignées/);
+ await page.locator('.header .col.live').evaluateAll(els=>els.forEach(el=>el.remove()));
+ await assert.rejects(read(),/Aucune colonne live/);
  await page.close();console.log('Collecteur navigateur : tableau synthétique de la capture, deux cotes et douze statistiques correctement associés.');
 }
 if(require.main===module)unit();

@@ -10,7 +10,16 @@ $ts=is_string($x['collected_at']??null)?strtotime($x['collected_at']):false;
 if ($ts===false || abs(time()-$ts)>180) reply90(['error'=>'Horloge décalée ou relevé périmé'],422);
 $now=gmdate('Y-m-d\TH:i:s\Z');
 try {
- $db=db90(); $db->beginTransaction();
+ $db=db90();
+ // A prematch tab must never replace a live sample with empty statistics.
+ if(empty($x['stat_headers']) || !is_array($x['stat_headers'])) {
+   $db->exec('CREATE TABLE IF NOT EXISTS collection_rejections(id INTEGER PRIMARY KEY,received_at TEXT,reason TEXT,client_id TEXT)');
+   $s=$db->prepare('INSERT INTO collection_rejections(received_at,reason,client_id) VALUES(?,?,?)');
+   $client=is_string($x['client_id']??null)?substr($x['client_id'],0,100):'legacy';
+   $s->execute([$now,'no_live_columns',$client]);
+   reply90(['error'=>'Aucune colonne live : ouvre Statistiques en direct avec ton groupe live','code'=>'NO_LIVE_COLUMNS','inserted'=>0],422);
+ }
+ $db->beginTransaction();
  $s=$db->prepare('INSERT OR IGNORE INTO cycles VALUES(?,?,?,?)'); $s->execute([$x['cycle_id'],$x['collected_at'],$now,json_encode($x)]);
  if (!$s->rowCount()) {$db->commit(); reply90(['ok'=>true,'duplicate'=>true,'inserted'=>0]);}
  $s=$db->prepare('INSERT OR IGNORE INTO samples(cycle_id,match_id,received_at,data) VALUES(?,?,?,?)'); $n=0;

@@ -231,7 +231,7 @@ class LiveV4Tests(unittest.TestCase):
   self.c.execute('INSERT INTO cycles VALUES(?,?,?,?)',('new',V.iso(self.now),V.iso(self.now),V.enc({'rows':[other],'page_rows':1})));self.c.commit()
   self.assertEqual([r['packball_id'] for r in V.board(self.c,self.now)['matches']],['456'])
  def test_replay_audits_matches_without_signals_and_does_not_send(self):
-  self.prepared();r=copy.deepcopy(self.r);r['stats']=[];r['quotes']=[];self.add(r,self.now+dt.timedelta(seconds=30))
+  self.prepared();V.bind(self.c,self.r);self.c.commit();r=copy.deepcopy(self.r);r['stats']=[];r['quotes']=[];self.add(r,self.now+dt.timedelta(seconds=30))
   with patch.object(V,'notify',side_effect=AssertionError('Replay must never send')):
    audit=V.audit_matches(self.c,self.now+dt.timedelta(seconds=30))[0]
   self.assertEqual(audit['live_samples'],3);self.assertEqual(audit['empty_live_samples'],1)
@@ -239,7 +239,7 @@ class LiveV4Tests(unittest.TestCase):
   self.assertEqual(audit['markets']['goal_ht:h']['states']['missing'],1)
   self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v4_signals').fetchone()[0],0)
  def test_replay_does_not_use_profile_before_import(self):
-  self.prepared();self.c.execute('UPDATE v4_profiles SET imported_at=?',(V.iso(self.now+dt.timedelta(seconds=5)),));self.c.commit()
+  self.prepared();V.bind(self.c,self.r);self.c.execute('UPDATE v4_profiles SET imported_at=?',(V.iso(self.now+dt.timedelta(seconds=5)),));self.c.commit()
   audit=V.audit_matches(self.c,self.now+dt.timedelta(seconds=30))[0]
   self.assertEqual(audit['markets']['goal_ht:h']['candidate_samples'],0)
   self.assertIn('Profil Packball avant-match nécessaire pour comparer le rythme de tirs',audit['markets']['goal_ht:h']['reasons'])

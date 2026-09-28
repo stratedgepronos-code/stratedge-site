@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SEUIL90 · Packball Live Console
 // @namespace    https://stratedgepronos.fr/live90
-// @version      4.0.1
+// @version      4.0.2
 // @description  Collecte horodatée, fenêtres séparées, aucun pari automatique
 // @match        https://packball.com/*
 // @match        https://www.packball.com/*
@@ -18,6 +18,7 @@
 (()=>{'use strict';
 const ENDPOINT='https://stratedgepronos.fr/api/live90/ingest.php';
 let busy=false,last=null;
+const CLIENT_ID=crypto.randomUUID();
 const number=t=>{const s=String(t??'').replace(/%/g,'').replace(',','.').trim();return /^-?\d+(?:\.\d+)?$/.test(s)?Number(s):null};
 const norm=t=>String(t??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 function pair(el){
@@ -95,6 +96,7 @@ function quoteMeta(title,cls){
 function collect(){
  const header=document.querySelector('section.fixtures .header, .fixtures .header');if(!header)throw Error('Tableau Packball introuvable');
  const heads=[...header.querySelectorAll('.col.live')].map(columnTitle);
+ if(!heads.some(title=>field(title)))throw Error('Aucune colonne live : ouvre Statistiques en direct et ton groupe live');
  const meta={};header.querySelectorAll('[class*="inp-"]').forEach(el=>{const k=[...el.classList].find(c=>/^inp-\d+$/.test(c));if(k)meta[k]=columnTitle(el)});
  const rows=[];
  document.querySelectorAll('section.fixtures .row, .fixtures [class*="row fix-"]').forEach(row=>{
@@ -110,14 +112,14 @@ function collect(){
  });rows.push(r);
  });
  const column_map={stats:heads.map((title,i)=>({column:i+1,title,...field(title)})),odds:Object.entries(meta).map(([column,title])=>({column,title,...quoteMeta(title,column)}))};
- return {schema:2,collector_version:'4.0.1',cycle_id:crypto.randomUUID(),collected_at:new Date().toISOString(),source:'packball',page_rows:rows.length,odds_meta:meta,stat_headers:heads,column_map,rows};
+ return {schema:2,collector_version:'4.0.2',cycle_id:crypto.randomUUID(),collected_at:new Date().toISOString(),source:'packball',client_id:CLIENT_ID,page_visibility:document.visibilityState,page_rows:rows.length,odds_meta:meta,stat_headers:heads,column_map,rows};
 }
 const badge=document.createElement('div');Object.assign(badge.style,{position:'fixed',bottom:'14px',right:'14px',zIndex:'2147483647',background:'#0b1221',color:'#8eeadd',border:'1px solid #327d78',padding:'10px 16px',borderRadius:'12px',font:'12px system-ui',boxShadow:'0 6px 30px #0005'});badge.textContent='S90 · Initialisation';function mountBadge(){if(document.body&&!badge.isConnected)document.body.append(badge)}mountBadge();
 const watcher=new MutationObserver(mountBadge);watcher.observe(document.documentElement,{childList:true,subtree:true});
 function cycle(){mountBadge();if(busy)return;if(!/\/matches(?:\/|$|\?)/.test(location.pathname)){badge.textContent='S90 · Ouvre le tableau des matchs Packball';return}try{
  last=collect();const token=GM_getValue('SE90_TOKEN','');if(!token){badge.textContent='S90 · Configurer le token dans Tampermonkey';return;}
  busy=true;badge.textContent='S90 · Envoi de '+last.rows.length+' matchs';
- GM_xmlhttpRequest({method:'POST',url:ENDPOINT,headers:{'Content-Type':'application/json','X-SE-Token':token},data:JSON.stringify(last),timeout:15000,onload:res=>{busy=false;let x;try{x=JSON.parse(res.responseText)}catch{}badge.textContent=res.status===200&&x?.ok?'S90 · '+x.inserted+' relevés reçus · '+new Date().toLocaleTimeString():'S90 · Erreur '+res.status;},onerror:()=>{busy=false;badge.textContent='S90 · Connexion interrompue'},ontimeout:()=>{busy=false;badge.textContent='S90 · Délai dépassé'}});
+ GM_xmlhttpRequest({method:'POST',url:ENDPOINT,headers:{'Content-Type':'application/json','X-SE-Token':token},data:JSON.stringify(last),timeout:15000,onload:res=>{busy=false;let x;try{x=JSON.parse(res.responseText)}catch{}badge.textContent=res.status===200&&x?.ok?'S90 · '+x.inserted+' relevés reçus · '+new Date().toLocaleTimeString():'S90 · '+(x?.error||('Erreur '+res.status));},onerror:()=>{busy=false;badge.textContent='S90 · Connexion interrompue'},ontimeout:()=>{busy=false;badge.textContent='S90 · Délai dépassé'}});
  }catch(e){busy=false;badge.textContent='S90 · '+e.message}}
 GM_registerMenuCommand('S90 · Définir le token',()=>{const t=prompt('Token de collecte (reste dans Tampermonkey)');if(t!==null){GM_setValue('SE90_TOKEN',t.trim());cycle()}});
 GM_registerMenuCommand('S90 · Exporter le dernier relevé',()=>{if(!last)return;const url=URL.createObjectURL(new Blob([JSON.stringify(last,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='S90-releve.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)});

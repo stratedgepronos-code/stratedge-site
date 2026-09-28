@@ -390,7 +390,13 @@ def feed_health(c,now):
         issue('layout','Aucune colonne statistique live reçue : vérifier l’onglet Statistiques en direct et le groupe de colonnes affiché dans Packball.')
     heartbeat=dec((c.execute("SELECT value FROM v4_runtime WHERE key='engine'").fetchone() or [None])[0],{})
     if any(r.get('state') in ('LIVE','HT') for r in rows) and (not date(heartbeat.get('at')) or (now-date(heartbeat['at'])).total_seconds()>65):issue('engine','Aucun cycle moteur récent.')
-    return {'checked_at':iso(now),'status':'issues' if issues else 'ok','active_matches':len(rows),'issues':issues,'note':'Une cote absente est une limite de couverture, pas nécessairement une panne. Une statistique constante ne prouve pas que le flux est bloqué.'}
+    try:
+        rejected=c.execute('SELECT received_at FROM collection_rejections ORDER BY id DESC LIMIT 1').fetchone()
+        if rejected and date(rejected['received_at']) and 0<=(now-date(rejected['received_at'])).total_seconds()<=100:
+            issue('rejected','Un collecteur envoie un tableau sans colonnes live. Envoi refusé : vérifier les onglets Packball et les scripts actifs. Les anciens relevés ne sont pas rafraîchis artificiellement.')
+    except sqlite3.OperationalError:pass
+    history_count=c.execute('SELECT COUNT(*) FROM v4_health_events WHERE last_seen>=?',(iso(now-dt.timedelta(hours=24)),)).fetchone()[0]
+    return {'checked_at':iso(now),'status':'issues' if issues else 'ok','active_matches':len(rows),'issues':issues,'incidents_24h':history_count,'note':'État actuel uniquement : consulter les incidents et la relecture des matchs pour la nuit. Une cote absente est une limite de couverture, pas nécessairement une panne. Une statistique constante ne prouve pas que le flux est bloqué.'}
 
 def audit_matches(c,now):
     """Read-only replay, including fixtures with no signals; never backfill alerts."""
