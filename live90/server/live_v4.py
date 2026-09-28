@@ -260,6 +260,9 @@ def evaluate(r,profile,context,market,team,now,hist,settings):
         d['intensity']=min(100,round(min(sh10/6,1)*25+min(so10/3,1)*30+min(ratio/1.8,1)*25+(10 if (so5 or 0)>=1 else 0)+(10 if score[team]<=score[other] else 0)))
         if sh10<4 or so10<2 or ratio<1.15: return finish('watch','Attendre tirs cadrés répétés et rythme supérieur à l’avant-match')
     if d['intensity']<d['threshold']: return finish('watch','Intensité encore insuffisante compte tenu du contexte')
+    if market=='card_ft':
+        d['mode']='statistical_no_odds'
+        return finish('candidate','Dynamique disciplinaire concordante · alerte statistique sans cote')
     qs=[]
     for q in r.get('quotes',[]):
         qt=date(q.get('observed_at'))
@@ -279,7 +282,7 @@ def safe_evaluate(*args):
 
 def label(r,d):
     name=r['home'] if d['team']=='h' else r['away']
-    if d['market']=='card_ft': return name+' · plus de '+str(d['line']).replace('.',',')+' cartons dans le match (un carton supplémentaire)'
+    if d['market']=='card_ft': return name+' · plus de '+str(d['line']).replace('.',',')+' jaunes dans le match (un carton supplémentaire · suivi Packball)'
     return name+' · plus de '+str(d['line']).replace('.',',')+' but(s) '+('en première mi-temps' if d['market']=='goal_ht' else 'dans le match')
 
 def latest(c):
@@ -308,10 +311,10 @@ def deliver(c, now):
         valid=bool(row and 0<=(now-date(s['created_at'])).total_seconds()<=90)
         if valid:
             r=sample_data(row); f=bind(c,r);p,ctx=inputs(c,f,now);hist=c.execute('SELECT * FROM samples WHERE match_id=? AND id<=? ORDER BY id DESC LIMIT 80',(s['match_id'],row['id'])).fetchall()
-            d=safe_evaluate(r,p,ctx,s['market'],s['team'],now,hist,options(c));valid=d['status']=='candidate' and r.get('score')==saved.get('score') and d['line']==s['line'] and d['quote']['odds']==s['odds']
+            d=safe_evaluate(r,p,ctx,s['market'],s['team'],now,hist,options(c));valid=d['status']=='candidate' and r.get('score')==saved.get('score') and d['line']==s['line'] and (d.get('quote') or {}).get('odds')==s['odds']
         if not valid: state,error,mid='expired','Conditions ou cote modifiées avant envoi',None
         else:
-            lines=['STRATEDGE · LIVE #'+str(s['id']),saved['home']+' — '+saved['away'],str(saved['minute'])+'′ · '+str(saved['score']['h'])+'–'+str(saved['score']['a']),saved['label'],'Cote observée '+str(s['odds'])+' · bet365 via Packball','Intensité '+str(saved['decision']['intensity'])+'/100 (pas une probabilité)']
+            lines=['STRATEDGE · LIVE #'+str(s['id']),saved['home']+' — '+saved['away'],str(saved['minute'])+'′ · '+str(saved['score']['h'])+'–'+str(saved['score']['a']),saved['label'],('ALERTE STATISTIQUE SANS COTE · aucun avantage de prix évalué' if s['odds'] is None else 'Cote observée '+str(s['odds'])+' · bet365 via Packball'),'Intensité '+str(saved['decision']['intensity'])+'/100 (pas une probabilité)']
             lines += [k+' : '+str(v) for k,v in saved['decision']['metrics'].items() if v is not None]
             lines += saved['decision']['context_notes'][:2]
             lines += ['Vérifier la cote et le règlement chez ton bookmaker.','Signal en observation · aucune mise automatique.']
@@ -324,6 +327,7 @@ def signal_review(c,s,outcome,now):
     if not ctx.get('usable'):limits.append('Contexte analyste absent ou non exploitable au déclenchement.')
     if not profile.get('usable'):limits.append('Profil avant-match absent ou non exploitable au déclenchement.')
     if s['market']=='card_ft' and not (ctx.get('referee') or {}).get('stats'):limits.append('Statistiques arbitre non documentées au déclenchement.')
+    if s['odds'] is None:limits.append('Alerte statistique sans cote : aucun gain, rendement ou avantage de prix calculable.')
     limits.extend(str(x) for x in ctx.get('unknowns',[])[:8])
     rows=c.execute('SELECT * FROM samples WHERE match_id=? AND id>=? ORDER BY id LIMIT 600',(s['match_id'],s['sample_id'])).fetchall()
     observations=[]
@@ -349,8 +353,8 @@ def signal_review(c,s,outcome,now):
     required=('fouls10','fouls','possession') if s['market']=='card_ft' else ('shots10','sot10','activity_ratio')
     for field in required:
         if decision.get('metrics',{}).get(field) is None:limits.append('Repère absent dans le signal : '+field+'.')
-    if outcome=='lost':facts.insert(0,'Le résultat enregistré est perdant : la condition du pari n’a pas été atteinte selon sa source de règlement.')
-    elif outcome=='won':facts.insert(0,'Le résultat enregistré est gagnant ; conserver ce cas pour comparaison avec les pertes.')
+    if outcome=='lost':facts.insert(0,'Événement non observé avant la fin du match, selon Packball.' if s['odds'] is None else 'Le résultat enregistré est perdant : la condition du pari n’a pas été atteinte selon sa source de règlement.')
+    elif outcome=='won':facts.insert(0,'Événement observé dans Packball ; ce constat ne représente pas un gain financier.' if s['odds'] is None else 'Le résultat enregistré est gagnant ; conserver ce cas pour comparaison avec les pertes.')
     else:facts.insert(0,'Résultat '+outcome+' : ne pas le traiter comme une perte.')
     return {'schema':'stratedge.review.v1','generated_at':iso(now),'outcome':outcome,'signal_metrics':decision.get('metrics',{}),'facts':facts,'limits':list(dict.fromkeys(limits)),'observations':observations,'conclusion':'Ces constats ne prouvent pas la cause du résultat. Sans modèle de probabilités calibré, on ne peut pas conclure que la cote était avantageuse.','next_steps':['Comparer aux paris gagnants du même marché et aux mêmes plages de minute/cote.','Vérifier les inconnues datées disponibles avant le signal, sans utiliser le résultat comme justification rétrospective.','Tester toute modification sur une période ultérieure séparée ; aucun seuil n’est modifié automatiquement.']}
 
@@ -374,7 +378,7 @@ def feed_health(c,now):
         if r.get('state')=='HT':continue
         missing_quotes=[]
         for team in ('h','a'):
-            for market,period in [('team_goals','FT'),('team_goals','HT'),('team_cards','FT')]:
+            for market,period in [('team_goals','FT'),('team_goals','HT')]:
                 if period=='HT' and num(r.get('minute')) and r['minute']>45:continue
                 count=stat(r,'yellow_cards',team) if market=='team_cards' else (r['score'].get(team) if isinstance(r.get('score'),dict) else None)
                 valid=[q for q in (r.get('quotes') or []) if isinstance(q,dict) and q.get('verified') is True and q.get('market')==market and q.get('period')==period and q.get('team')==team and q.get('side')=='over' and num(count) and q.get('line')==count+.5 and num(q.get('odds')) and q['odds']>1 and date(q.get('observed_at')) and 0<=(now-date(q['observed_at'])).total_seconds()<=90 and (market!='team_cards' or q.get('unit')=='cards')]
@@ -450,11 +454,12 @@ def record_health(c,report,now):
 
 def result_message(s, previous, outcome, source, automatic=False):
     z=dec(s['data'],{});names={'won':'✅ GAGNANT','lost':'❌ PERDANT','void':'⚪ ANNULÉ / REMBOURSÉ','pending':'⏳ À VÉRIFIER — validation retirée'}
+    if s['odds'] is None:names={'won':'✅ ÉVÉNEMENT OBSERVÉ','lost':'❌ NON OBSERVÉ AVANT LA FIN','void':'⚪ OBSERVATION ANNULÉE','pending':'⏳ À VÉRIFIER — validation retirée'}
     correction=previous!='pending'
     title='STRATEDGE · '+('CORRECTION DU RÉSULTAT' if correction else 'RÉSULTAT PACKBALL' if automatic else 'RÉSULTAT CONFIRMÉ')+' · LIVE #'+str(s['id'])
-    lines=[title,names[outcome],z.get('home','?')+' — '+z.get('away','?'),z.get('label',LABELS.get(s['market'],s['market'])),'Cote du signal : '+str(s['odds'])]
+    lines=[title,names[outcome],z.get('home','?')+' — '+z.get('away','?'),z.get('label',LABELS.get(s['market'],s['market'])),('Alerte statistique sans cote · aucun bilan financier' if s['odds'] is None else 'Cote du signal : '+str(s['odds']))]
     if correction: lines.append('Ancien résultat : '+names[previous])
-    profit=s['odds']-1 if outcome=='won' else -1 if outcome=='lost' else 0 if outcome=='void' else None
+    profit=profit_units(s['odds'],outcome)
     if profit is not None: lines.append('Bilan simulé pour 1 unité : '+format(profit,'+.2f')+' u')
     review=z.get('review') or {}
     if outcome=='lost':lines.extend(['Bilan automatique :']+(review.get('facts',[])[1:3])+review.get('limits',[])[:2]+['Cause non démontrée ; bilan complet dans l’historique.'])
@@ -550,8 +555,8 @@ def run(path,send=True,now=None):
                         # One team/market/line signal per fixture; FT/HT overlap remains
                         # visible as correlated exposure, never a multiplied stake.
                         sk=enc([str(r['packball_id']),market,team,d['line']])
-                        data={'home':r['home'],'away':r['away'],'kickoff':r.get('kickoff_ts'),'minute':r['minute'],'score':r['score'],'label':label(r,d),'decision':d.copy(),'profile':p,'context':ctx,'version':VERSION,'mode':'observation'}
-                        c.execute('INSERT OR IGNORE INTO v4_signals(signal_key,match_id,fixture,market,team,line,odds,created_at,sample_id,data,delivery) VALUES(?,?,?,?,?,?,?,?,?,?,?)',(sk,r['packball_id'],f['fixture'] if f else None,market,team,d['line'],d['quote']['odds'],iso(now),sample['id'],enc(data),'queued' if send and settings['telegram_enabled'] else 'disabled'))
+                        data={'home':r['home'],'away':r['away'],'kickoff':r.get('kickoff_ts'),'minute':r['minute'],'score':r['score'],'label':label(r,d),'decision':d.copy(),'profile':p,'context':ctx,'version':VERSION,'mode':'statistical_no_odds' if market=='card_ft' else 'observation'}
+                        c.execute('INSERT OR IGNORE INTO v4_signals(signal_key,match_id,fixture,market,team,line,odds,created_at,sample_id,data,delivery) VALUES(?,?,?,?,?,?,?,?,?,?,?)',(sk,r['packball_id'],f['fixture'] if f else None,market,team,d['line'],(d.get('quote') or {}).get('odds'),iso(now),sample['id'],enc(data),'queued' if send and settings['telegram_enabled'] else 'disabled'))
                         d.update(status='signal',reason='Signal conservé dans l’historique')
                 c.execute('INSERT OR REPLACE INTO v4_decisions VALUES(?,?,?,?,?,?,?)',(r['packball_id'],market,team,sample['id'],iso(now),d['status'],enc(d)))
     auto_results(c,now);runtime(c,'engine',{'at':iso(now),'version':VERSION,'telegram_active':bool(send and settings['telegram_enabled'])});c.commit()
@@ -588,10 +593,14 @@ def settle(c,x,now,automatic=False,evidence=None):
         c.execute('INSERT INTO v4_result_notifications(result_id,signal_id,created_at,message,delivery) VALUES(?,?,?,?,?)',(event.lastrowid,sid,iso(now),result_message(dict(s,data=enc(data)),s['outcome'],outcome,source,automatic),state))
     return {'ok':True,'result_delivery':state}
 
+def profit_units(odds,outcome):
+    if not num(odds) or odds<=1:return None
+    return odds-1 if outcome=='won' else -1 if outcome=='lost' else 0 if outcome=='void' else None
+
 def history(c,limit=100,offset=0):
     out=[]
     for s in c.execute('SELECT * FROM v4_signals ORDER BY id DESC LIMIT ? OFFSET ?',(limit,offset)):
-        row=dict(s);row['data']=dec(s['data'],{});row['profit_units']=s['odds']-1 if s['outcome']=='won' else -1 if s['outcome']=='lost' else 0 if s['outcome']=='void' else None;event=c.execute('SELECT delivery,delivery_error,telegram_id,created_at FROM v4_result_notifications WHERE signal_id=? ORDER BY result_id DESC LIMIT 1',(s['id'],)).fetchone();row['result_notification']=dict(event) if event else None;out.append(row)
+        row=dict(s);row['data']=dec(s['data'],{});row['profit_units']=profit_units(s['odds'],s['outcome']);event=c.execute('SELECT delivery,delivery_error,telegram_id,created_at FROM v4_result_notifications WHERE signal_id=? ORDER BY result_id DESC LIMIT 1',(s['id'],)).fetchone();row['result_notification']=dict(event) if event else None;out.append(row)
     return out
 
 def board(c,now):
@@ -615,7 +624,8 @@ def board(c,now):
         p,ctx=inputs(c,f,now);records.append({'fixture':f['fixture'],'packball_id':f['match_id'],'home':f['home'],'away':f['away'],'league':f['league'],'kickoff_ts':f['kickoff'],'state':'NS','profile':p,'analyst':ctx,'decisions':[]})
     cycle=c.execute('SELECT received_at,payload FROM cycles ORDER BY rowid DESC LIMIT 1').fetchone()
     feed=dec(cycle['payload'],{}) if cycle else {}
-    totals=dict(c.execute("SELECT COUNT(*) total, SUM(outcome='won') won, SUM(outcome='lost') lost, SUM(outcome='void') void, SUM(outcome='pending') pending, COALESCE(SUM(CASE outcome WHEN 'won' THEN odds-1 WHEN 'lost' THEN -1 ELSE 0 END),0) units FROM v4_signals").fetchone())
+    totals=dict(c.execute("SELECT COUNT(*) total, SUM(outcome='won') won, SUM(outcome='lost') lost, SUM(outcome='void') void, SUM(outcome='pending') pending, COALESCE(SUM(CASE WHEN odds>1 THEN CASE outcome WHEN 'won' THEN odds-1 WHEN 'lost' THEN -1 ELSE 0 END ELSE 0 END),0) units, SUM(odds>1) priced_total, SUM(odds>1 AND outcome='won') priced_won, SUM(odds>1 AND outcome='lost') priced_lost, SUM(odds IS NULL) statistical_total, SUM(odds IS NULL AND outcome='won') statistical_won, SUM(odds IS NULL AND outcome='lost') statistical_lost FROM v4_signals").fetchone())
+    totals={k:(0 if v is None else v) for k,v in totals.items()}
     legacy=[]
     try:
         for s in c.execute('SELECT * FROM signals ORDER BY id DESC LIMIT 200'):

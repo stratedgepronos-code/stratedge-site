@@ -29,7 +29,9 @@ Le collecteur V4 sait reconnaître les libellés français explicites des buts p
 - « Total de cartons » en cartons d’une équipe ;
 - des points de sanctions ou cartons jaunes uniquement en total de cartons.
 
-Sans cote exacte, la dynamique est affichée **Cote à vérifier**, sans faux pari Telegram. On ne peut pas garantir les trois marchés automatiques avec les seules colonnes de ta liste actuelle. Il faut un relevé contenant les libellés et cotes manquants, ou une autre source autorisée pour ces marchés.
+Les **cartons** déclenchent désormais une **alerte statistique sans cote** sur Telegram, après confirmation de la dynamique sur deux relevés. Le compteur de jaunes Packball suit ensuite l’événement ; aucun rendement financier n’est calculé. Aucune cote de cartons par équipe n’est requise.
+
+Pour les **buts**, la cote exacte de l’équipe, de la période et de la ligne reste obligatoire. Sans elle, une dynamique suffisante est affichée **Cote à vérifier**. Les cotes de buts par équipe en première période restent à vérifier dans Packball.
 
 Les fautes sur 10 minutes sont calculées depuis les compteurs cumulés quand Packball ne propose pas cette fenêtre. Il faut alors environ 10 minutes de collecte continue pour obtenir le premier repère. Aucune valeur absente n’est transformée en zéro. Les ExG Packball « pour les prochaines minutes » ne sont pas utilisés comme xG de tirs observés.
 

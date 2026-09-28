@@ -15,7 +15,7 @@ Analyse TOUS les matchs fournis. Aucun ne doit disparaître du fichier, même s�
 Tu ne produis ni liste restrictive de picks, ni whitelist, ni règles éliminatoires, ni seuils de déclenchement. Tu qualifies les faits qui aideront le moteur et l’utilisateur à interpréter le direct. Les absences offensives, la fatigue ou une rotation annoncée peuvent rendre le moteur plus exigeant ; une forte dynamique live peut toujours être prise en compte. Le calendrier seul ne prouve ni démotivation ni rotation.
 
 Les trois marchés surveillés, séparément pour domicile et extérieur :
-1. L’équipe reçoit un carton supplémentaire avant la fin du match : total actuel +0,5. Avec 0 carton, surveiller +0,5 ; avec 1, +1,5 ; avec 2, +2,5, etc. Un jaune déjà reçu ne met jamais fin à l’analyse. Chaque nouvelle ligne exige sa propre cote et une activité récente, sans réutiliser les fautes ayant déjà conduit au carton précédent. Une expulsion reste un cas distinct, suspendu par le moteur actuel.
+1. L’équipe reçoit un carton supplémentaire avant la fin du match : total actuel +0,5. Avec 0 carton, surveiller +0,5 ; avec 1, +1,5 ; avec 2, +2,5, etc. Un jaune déjà reçu ne met jamais fin à l’analyse. Ce marché déclenche une alerte statistique sans cote, avec suivi du compteur de jaunes Packball ; aucun rendement ni avantage de prix ne peut en être déduit. Chaque nouvelle ligne exige une activité récente, sans réutiliser les fautes ayant déjà conduit au carton précédent. Une expulsion reste un cas distinct, suspendu par le moteur actuel.
 2. L’équipe marque un premier but ou un but supplémentaire avant la fin de la première mi-temps : son total de buts en première période +0,5.
 3. L’équipe marque un premier but ou un but supplémentaire avant la fin du match : son total de buts sur le match +0,5.
 
@@ -160,7 +160,7 @@ Ne mélange pas les moyennes « carrière », « saison » et « compétition »
 
 Si StatsHub refuse l’accès ou ne présente pas la fiche, signale-le et recherche une autre source accessible, en la nommant. Aucun contournement d’accès ni statistique inventée. La page peut avoir changé depuis son indexation : note la date de consultation et toute ancienneté connue. Le site StratEdge ne scrappe pas automatiquement StatsHub pendant le live : cette collecte est faite ici, puis importée dans le JSON.
 
-La fiche arbitre sert de contexte documenté, affiché et conservé avec les alertes. Le moteur n’attribue pas encore de poids prédictif validé à ces moyennes. Les fautes récentes, la pression subie et la cote exacte restent nécessaires. Un arbitre à cinq jaunes par match ne « doit » pas atteindre cinq jaunes et un jaune déjà sorti ne prouve ni apaisement ni aggravation.
+La fiche arbitre sert de contexte documenté, affiché et conservé avec les alertes. Le moteur n’attribue pas encore de poids prédictif validé à ces moyennes. Les fautes récentes et la pression subie restent nécessaires ; les alertes cartons fonctionnent sans cote, contrairement aux alertes de buts. Un arbitre à cinq jaunes par match ne « doit » pas atteindre cinq jaunes et un jaune déjà sorti ne prouve ni apaisement ni aggravation.
 
 ## Fichier de sortie : contrat exact
 

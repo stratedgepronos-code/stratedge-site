@@ -18,7 +18,8 @@ class LiveV4Tests(unittest.TestCase):
   x=copy.deepcopy(r);x['collected_at']=V.iso(when);x.pop('received_at',None)
   for q in x['quotes']:q['observed_at']=V.iso(when)
   self.c.execute('INSERT INTO samples(cycle_id,match_id,received_at,data) VALUES(?,?,?,?)',('test','123',V.iso(when),V.enc(x)));self.c.commit()
- def prepared(self):
+ def prepared(self,cards=False):
+  if not cards:self.r['stats']['fouls']['h']=2;self.r['ind10']['fouls10']['h']=1
   V.import_bundle(self.c,'packball',self.bundle('packball'),self.before);V.import_bundle(self.c,'analyst',self.bundle('analyst'),self.before)
   self.add(dict(self.r,minute=29),self.now-dt.timedelta(seconds=30));self.add(self.r,self.now)
  def test_two_import_orders_and_all_matches_kept(self):
@@ -65,29 +66,74 @@ class LiveV4Tests(unittest.TestCase):
    with self.subTest(changes=changes):self.r['quotes']=[dict(original,**changes)];self.assertEqual(self.evaluate()['status'],'price')
  def test_ft_team_has_already_scored_uses_next_half_line(self):
   self.r['minute']=65;self.r['score']['h']=1;self.r['quotes'][0].update(period='FT',line=1.5);self.assertEqual(self.evaluate('goal_ft')['status'],'candidate')
- def test_card_requires_exact_team_count_market(self):
+ def test_card_ignores_quotes_in_statistical_mode(self):
   self.r['quotes']=[{'market':'team_cards','unit':'cards','team':'h','period':'FT','side':'over','line':.5,'odds':1.8,'bookmaker':'bet365','verified':True,'observed_at':V.iso(self.now)}]
   self.assertEqual(self.evaluate('card_ft')['status'],'candidate')
-  self.r['quotes'][0]['unit']='booking_points';self.assertEqual(self.evaluate('card_ft')['status'],'price')
+  self.r['quotes'][0]['unit']='booking_points';d=self.evaluate('card_ft');self.assertEqual(d['status'],'candidate');self.assertIsNone(d['quote']);self.assertEqual(d['mode'],'statistical_no_odds')
  def test_existing_yellows_continue_at_next_line(self):
   for count in (0,1,2,4):
    self.r['stats']['yellow_cards']['h']=count
    self.r['quotes']=[{'market':'team_cards','unit':'cards','team':'h','period':'FT','side':'over','line':count+.5,'odds':1.8,'bookmaker':'bet365','verified':True,'observed_at':V.iso(self.now)}]
    d=self.evaluate('card_ft');self.assertEqual(d['status'],'candidate');self.assertEqual(d['line'],count+.5);self.assertIn(str(count+.5).replace('.',','),V.label(self.r,d))
-  self.r['quotes'][0]['line']=.5;self.assertEqual(self.evaluate('card_ft')['status'],'price')
+  self.r['quotes']=[];self.assertEqual(self.evaluate('card_ft')['status'],'candidate')
  def test_card_change_rebuilds_recent_foul_window(self):
   old=copy.deepcopy(self.r);self.add(old,self.now-dt.timedelta(minutes=3));self.r['stats']['yellow_cards']['h']=1
   hist=self.c.execute('SELECT * FROM samples').fetchall();d=self.evaluate('card_ft',hist=hist)
   self.assertEqual(d['status'],'watch');self.assertEqual(d['line'],1.5)
  def test_card_new_line_needs_two_new_samples_and_deduplicates(self):
   self.r['quotes']=[{'market':'team_cards','unit':'cards','team':'h','period':'FT','side':'over','line':.5,'odds':1.8,'bookmaker':'bet365','verified':True,'observed_at':V.iso(self.now)}]
-  self.prepared();V.run(self.db,False,self.now)
+  self.prepared(cards=True);V.run(self.db,False,self.now)
   self.assertEqual(self.c.execute("SELECT COUNT(*) FROM v4_signals WHERE market='card_ft'").fetchone()[0],1)
   later=self.now+dt.timedelta(minutes=12);self.r['minute']=42;self.r['stats']['yellow_cards']['h']=1;self.r['quotes'][0]['line']=1.5
   self.add(self.r,later);V.run(self.db,False,later)
   self.assertEqual(self.c.execute("SELECT COUNT(*) FROM v4_signals WHERE market='card_ft'").fetchone()[0],1)
   self.add(self.r,later+dt.timedelta(seconds=30));V.run(self.db,False,later+dt.timedelta(seconds=30));V.run(self.db,False,later+dt.timedelta(seconds=30))
   self.assertEqual([r[0] for r in self.c.execute("SELECT line FROM v4_signals WHERE market='card_ft' ORDER BY line")],[.5,1.5])
+ def test_unpriced_cards_deliver_settle_and_correct_without_profit(self):
+  self.r['quotes']=[];self.prepared(cards=True)
+  with patch.object(V,'notify',return_value=('sent',None,91)) as send:
+   V.run(self.db,True,self.now);V.run(self.db,True,self.now)
+   self.assertEqual(send.call_count,1)
+   self.assertIn('ALERTE STATISTIQUE SANS COTE',send.call_args.args[0])
+   self.assertNotIn('Cote observée',send.call_args.args[0])
+  signal=V.history(self.c)[0];sid=signal['id']
+  self.assertEqual(signal['market'],'card_ft');self.assertIsNone(signal['odds']);self.assertIsNone(signal['profit_units'])
+  self.assertEqual(signal['data']['mode'],'statistical_no_odds')
+  later=self.now+dt.timedelta(seconds=30);self.r['stats']['yellow_cards']['h']=1;self.add(self.r,later)
+  with patch.object(V,'notify',return_value=('sent',None,92)) as send:
+   V.run(self.db,True,later);V.run(self.db,True,later)
+   self.assertEqual(send.call_count,1);self.assertIn('ÉVÉNEMENT OBSERVÉ',send.call_args.args[0]);self.assertNotIn('Bilan simulé',send.call_args.args[0])
+  self.assertEqual(self.outcome(sid),'won');self.assertIsNone(V.history(self.c)[0]['profit_units'])
+  totals=V.board(self.c,later)['totals'];self.assertEqual(totals['units'],0);self.assertEqual(totals['statistical_won'],1);self.assertEqual(totals['priced_won'],0)
+  later+=dt.timedelta(seconds=30);self.r['stats']['yellow_cards']['h']=0;self.r.update(state='FT',minute=None);self.add(self.r,later)
+  with patch.object(V,'notify',return_value=('sent',None,93)) as send:
+   V.run(self.db,True,later)
+   self.assertEqual(send.call_count,1);self.assertIn('NON OBSERVÉ AVANT LA FIN',send.call_args.args[0]);self.assertNotIn('Bilan simulé',send.call_args.args[0])
+  self.assertEqual(self.outcome(sid),'lost');self.assertIsNone(V.history(self.c)[0]['profit_units'])
+  totals=V.board(self.c,later)['totals'];self.assertEqual(totals['units'],0);self.assertEqual(totals['statistical_lost'],1)
+  self.c.execute('UPDATE v4_signals SET odds=1.8 WHERE id=?',(sid,));self.c.commit()
+  self.assertEqual(V.history(self.c)[0]['profit_units'],-1);self.assertEqual(V.board(self.c,later)['totals']['units'],-1)
+ def test_unpriced_cards_still_require_stats_freshness_and_two_samples(self):
+  self.r['quotes']=[]
+  self.assertEqual(self.evaluate('goal_ht')['status'],'price')
+  self.assertEqual(self.evaluate('card_ft')['status'],'candidate')
+  self.r['ind10']['fouls10']['h']=None;self.assertEqual(self.evaluate('card_ft')['status'],'missing')
+  self.r['ind10']['fouls10']['h']=4;self.r['received_at']=V.iso(self.now-dt.timedelta(minutes=2));self.assertEqual(self.evaluate('card_ft')['status'],'stale')
+  self.r['received_at']=V.iso(self.now);self.r['stats']['red_cards']['h']=1;self.assertEqual(self.evaluate('card_ft')['status'],'suspended')
+  self.r['stats']['red_cards']['h']=0
+  V.import_bundle(self.c,'packball',self.bundle('packball'),self.before);self.add(self.r,self.now)
+  V.run(self.db,False,self.now);self.assertEqual(len(V.history(self.c)),0)
+ def test_unpriced_card_delivery_expires_after_counter_change(self):
+  self.r['quotes']=[];self.prepared(cards=True);V.run(self.db,False,self.now)
+  self.c.execute("UPDATE v4_signals SET delivery='queued'");self.c.commit()
+  self.r['stats']['yellow_cards']['h']=1;self.add(self.r,self.now)
+  with patch.object(V,'notify',side_effect=AssertionError('Counter changed: must not send')):V.deliver(self.c,self.now)
+  self.assertEqual(V.history(self.c)[0]['delivery'],'expired')
+ def test_health_does_not_require_card_odds(self):
+  self.r['quotes']=[];self.prepared(cards=True)
+  issues=V.feed_health(self.c,self.now)['issues']
+  self.assertTrue(any('team_goals' in x['detail'] for x in issues))
+  self.assertFalse(any('team_cards' in x['detail'] for x in issues))
  def referee_context(self):
   self.ctx['sources']=[{'id':'ref','url':'https://example.com/referee','title':'Source de test','checked_at':V.iso(self.before)}]
   self.ctx['referee']={'name':'Arbitre Test','appointment':'confirmed','appointment_source_ids':['ref'],'note':'Données fictives de test','stats':{'sample_label':'Compétition test, saison test','matches':25,'yellow_per_match':4.2,'red_per_match':.1,'fouls_per_match':None,'source_ids':['ref']}}
@@ -177,7 +223,7 @@ class LiveV4Tests(unittest.TestCase):
  def auto_signal(self,market='goal_ht',line=.5):
   q=self.r['quotes'][0];q.update(market='team_cards' if market=='card_ft' else 'team_goals',period='HT' if market=='goal_ht' else 'FT',line=line)
   if market=='card_ft':q['unit']='cards';self.r['stats']['yellow_cards']['h']=int(line)
-  self.prepared();V.run(self.db,False,self.now)
+  self.prepared(cards=market=='card_ft');V.run(self.db,False,self.now)
   return self.c.execute('SELECT id FROM v4_signals WHERE market=?',(market,)).fetchone()[0]
  def outcome(self,sid):return self.c.execute('SELECT outcome FROM v4_signals WHERE id=?',(sid,)).fetchone()[0]
  def test_auto_goal_win_immediately_and_telegram_once(self):
