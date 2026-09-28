@@ -392,6 +392,41 @@ def feed_health(c,now):
     if any(r.get('state') in ('LIVE','HT') for r in rows) and (not date(heartbeat.get('at')) or (now-date(heartbeat['at'])).total_seconds()>65):issue('engine','Aucun cycle moteur récent.')
     return {'checked_at':iso(now),'status':'issues' if issues else 'ok','active_matches':len(rows),'issues':issues,'note':'Une cote absente est une limite de couverture, pas nécessairement une panne. Une statistique constante ne prouve pas que le flux est bloqué.'}
 
+def audit_matches(c,now):
+    """Read-only replay, including fixtures with no signals; never backfill alerts."""
+    out=[];active=active_fixtures(c);settings=options(c)
+    for f in c.execute('SELECT * FROM v4_fixtures ORDER BY kickoff'):
+        if not f['match_id'] or active is not None and f['fixture'] not in active:continue
+        rows=list(reversed(c.execute('SELECT * FROM samples WHERE match_id=? AND received_at>=? AND received_at<=? ORDER BY id DESC LIMIT 2000',(f['match_id'],iso(now-dt.timedelta(hours=24)),iso(now))).fetchall()))
+        if not any(dec(x['data'],{}).get('state')=='LIVE' for x in rows):continue
+        profile,ctx=inputs(c,f,now);cr=c.execute('SELECT imported_at FROM v4_contexts WHERE fixture=?',(f['fixture'],)).fetchone();hist=[];markets={};live=empty=0;states={};changes=[];last_signature=None
+        for row in rows:
+            r=sample_data(row);at=date(r.get('received_at'))
+            hist.insert(0,row);hist=hist[:80]
+            states[r.get('state','?')]=states.get(r.get('state','?'),0)+1
+            if r.get('state')!='LIVE' or not at:continue
+            live+=1
+            blank=all(stat(r,k,t) is None for k in ('shots','sot','fouls','possession','yellow_cards','red_cards') for t in ('h','a'))
+            empty+=int(blank)
+            signature=(blank,enc(r.get('score')),enc(r.get('stats',{}).get('red_cards') if isinstance(r.get('stats'),dict) else None))
+            if signature!=last_signature:
+                changes.append({'at':r['received_at'],'minute':r.get('minute'),'score':r.get('score'),'stats_empty':blank,'red_cards':r.get('stats',{}).get('red_cards') if isinstance(r.get('stats'),dict) else None,'raw_cells_count':len(r.get('raw_cells') or [])})
+                last_signature=signature
+            # Only inputs already imported at this sample time are allowed.
+            p=profile if profile and date(profile['imported_at'])<=at else None
+            context=ctx if ctx and cr and date(cr['imported_at'])<=at else None
+            for market in MARKETS:
+                for team in ('h','a'):
+                    d=safe_evaluate(r,p,context,market,team,at,hist,settings)
+                    group=markets.setdefault(market+':'+team,{'states':{},'reasons':{},'candidate_samples':0,'max_intensity':0,'best':None})
+                    group['states'][d['status']]=group['states'].get(d['status'],0)+1
+                    group['reasons'][d['reason']]=group['reasons'].get(d['reason'],0)+1
+                    group['candidate_samples']+=int(d['status']=='candidate')
+                    if d['intensity']>group['max_intensity'] or group['best'] is None:
+                        group['max_intensity']=d['intensity'];group['best']={'at':r['received_at'],'minute':r.get('minute'),'score':r.get('score'),'decision':d,'quotes':r.get('quotes',[])}
+        out.append({'match_id':f['match_id'],'home':f['home'],'away':f['away'],'kickoff':f['kickoff'],'samples':len(rows),'live_samples':live,'empty_live_samples':empty,'states':states,'first_received_at':rows[0]['received_at'],'last_received_at':rows[-1]['received_at'],'profile_usable':bool(profile and profile.get('usable')),'profile_imported_at':profile.get('imported_at') if profile else None,'context_usable':bool(ctx and ctx.get('usable')),'markets':markets,'changes':changes[-120:],'limits':'Relecture avec le code et les paramètres actuels, à l’heure de réception de chaque relevé ; pas une preuve des décisions effectivement exécutées. 24 h, 2000 relevés/match et 120 changements maximum. Les trous ne sont pas reconstruits ; aucune alerte rétroactive.'})
+    return out
+
 def record_health(c,report,now):
     current={x['key'] for x in report['issues']}
     for row in c.execute('SELECT id,issue_key FROM v4_health_events WHERE resolved_at IS NULL').fetchall():
@@ -605,7 +640,7 @@ def dispatch(c,x,now):
         for signal in signals:
             if not signal['data'].get('review'):signal['data']['review']=signal_review(c,signal,signal['outcome'],now)
         groups=[dict(row) for row in c.execute("SELECT market,outcome,COUNT(*) n FROM v4_signals GROUP BY market,outcome")]
-        return {'schema':'stratedge.audit.v4','exported_at':iso(now),'timezone':'Europe/Paris','coverage':{'exported_signals':len(signals),'total_signals':all_count,'scope':'100 derniers signaux ; 200 derniers incidents'},'health':feed_health(c,now),'incidents':incidents,'all_history_counts':groups,'signals':signals,'instructions':'Analyser les faits, les problèmes de collecte, les limites du modèle et les hypothèses séparément. Comparer gagnants et perdants, pas seulement les pertes. Respecter les informations disponibles au moment du signal ; les relevés ultérieurs décrivent le déroulement, pas une information prédictive connue. Un résultat perdu ne prouve ni erreur ni cause précise. Ne pas inventer xG, arbitre ou absence. Les signaux sont corrélés par match et les cotes observées ne prouvent aucun avantage. Proposer des tests hors échantillon avant toute modification des seuils. Aucun changement automatique du moteur.'}
+        return {'schema':'stratedge.audit.v4','exported_at':iso(now),'timezone':'Europe/Paris','coverage':{'exported_signals':len(signals),'total_signals':all_count,'scope':'100 derniers signaux ; 200 derniers incidents'},'health':feed_health(c,now),'incidents':incidents,'all_history_counts':groups,'match_audits':audit_matches(c,now),'signals':signals,'instructions':'Analyser les faits, les problèmes de collecte, les limites du modèle et les hypothèses séparément. Comparer gagnants et perdants, pas seulement les pertes. Respecter les informations disponibles au moment du signal ; les relevés ultérieurs décrivent le déroulement, pas une information prédictive connue. Un résultat perdu ne prouve ni erreur ni cause précise. Ne pas inventer xG, arbitre ou absence. Les signaux sont corrélés par match et les cotes observées ne prouvent aucun avantage. Proposer des tests hors échantillon avant toute modification des seuils. Aucun changement automatique du moteur.'}
     if action=='settle': return settle(c,x,now)
     if action=='settings':
         s=x.get('settings',{})
@@ -628,6 +663,7 @@ if __name__=='__main__':
         if args.init: result={'ok':True,'version':VERSION}
         elif args.diagnostic:
             b=board(c,now_utc());result={k:b[k] for k in ('version','feed','engine','telegram','totals')};result['feed']=dict(result['feed']);result['feed'].pop('headers',None);result['feed'].pop('odds_meta',None);result['list']={'matches':len(b['matches']),'live':sum(r.get('state')=='LIVE' for r in b['matches']),'halftime':sum(r.get('state')=='HT' for r in b['matches'])};result['collection_columns']=b['feed'].get('headers',[]);result['collection_odds']=b['feed'].get('odds_meta',{});result['health']=b['health'];result['recent_rows']=[{k:r.get(k) for k in ('packball_id','home','away','state','status_raw','minute','received_at','stats','ind5','ind10','quotes','quality_errors')} for r in [sample_data(x) for x in latest(c)] if r.get('state') in ('LIVE','HT')][:6]
+            result['match_audits']=audit_matches(c,now_utc())
         else: result=dispatch(c,json.load(sys.stdin),now_utc())
         print(enc(result));c.close()
     except (ValueError,TypeError,KeyError) as e: print(enc({'error':str(e)}));sys.exit(2)
