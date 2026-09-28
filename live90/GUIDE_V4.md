@@ -61,3 +61,9 @@ Le résultat et le message sont enregistrés ensemble, puis envoyés sur Telegra
 Chaque changement donne un message avec le numéro du signal, les équipes, la ligne, la cote, le verdict et le bilan simulé pour 1 unité. Aucune répétition sur un résultat inchangé. Les corrections remplacent les messages encore en attente. Refus HTTP : échec certain ; interruption réseau : livraison incertaine sans renvoi automatique. Le réglage Telegram désactivé est respecté. L’historique affiche séparément l’envoi du signal et celui du résultat.
 
 Le bouton manuel reste disponible pour corriger le règlement ; cette correction prend priorité et n’est plus écrasée par le suivi automatique. Les validations manuelles des versions précédentes restent protégées.
+
+## Liste active et compteur de direct
+
+Le dernier import des deux CSV Packball définit exactement les matchs actifs, y compris ceux dont les statistiques sont incomplètes. Un import analyste ne rajoute pas de matchs à cette liste. Réimporter un dossier déjà connu le réactive sans écraser ses profils figés. Le tableau, l’export GPT et les nouveaux signaux utilisent cette liste ; les résultats des anciens paris continuent d’être suivis et leur historique est conservé. Avant tout import CSV, seuls les matchs du dernier cycle de collecte sont affichés.
+
+Le compteur « Le direct » inclut les matchs en cours et à la mi-temps lorsque les relevés sont frais ; le nombre à la pause est indiqué séparément. Le moteur ne déclenche pas de pari pendant la pause.

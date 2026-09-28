@@ -211,6 +211,25 @@ class LiveV4Tests(unittest.TestCase):
   self.r['score']['h']=0;later+=dt.timedelta(seconds=30);self.add(self.r,later);V.auto_results(self.c,later);self.assertEqual(self.outcome(sid),'won')
  def test_auto_interruption_does_not_assume_refund(self):
   sid=self.auto_signal('goal_ft');later=self.now+dt.timedelta(seconds=30);self.r.update(state='OTHER',minute=None);self.add(self.r,later);V.auto_results(self.c,later);self.assertEqual(self.outcome(sid),'pending')
+ def test_active_packball_list_replaces_board_and_export_only(self):
+  sid=self.result_signal();old=self.bundle('packball')
+  other=copy.deepcopy(self.m);other['home']='Programme suivant';other['kickoff']=V.iso(self.now+dt.timedelta(hours=4))
+  V.import_bundle(self.c,'packball',self.bundle('packball',[other]),self.now)
+  self.assertEqual([m['home'] for m in V.board(self.c,self.now)['matches']],['Programme suivant'])
+  self.assertEqual([m['home'] for m in V.export_analysis(self.c,self.now)['matches']],['Programme suivant'])
+  self.assertEqual(V.history(self.c)[0]['id'],sid)
+  V.import_bundle(self.c,'analyst',self.bundle('analyst'),self.now)
+  self.assertEqual([m['home'] for m in V.board(self.c,self.now)['matches']],['Programme suivant'])
+  self.assertTrue(V.import_bundle(self.c,'packball',old,self.now)['duplicate'])
+  self.assertEqual([m['home'] for m in V.board(self.c,self.now)['matches']],[self.m['home']])
+ def test_engine_does_not_alert_outside_active_list(self):
+  self.prepared();other=copy.deepcopy(self.m);other['home']='Autre programme';other['kickoff']=V.iso(self.now+dt.timedelta(hours=5));V.import_bundle(self.c,'packball',self.bundle('packball',[other]),self.now)
+  V.run(self.db,False,self.now);self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v4_signals').fetchone()[0],0)
+ def test_board_without_csv_uses_latest_cycle_only(self):
+  self.add(self.r,self.now)
+  other=copy.deepcopy(self.r);other['packball_id']='456';other['home']='Autre';self.c.execute('INSERT INTO samples(cycle_id,match_id,received_at,data) VALUES(?,?,?,?)',('new','456',V.iso(self.now),V.enc(other)))
+  self.c.execute('INSERT INTO cycles VALUES(?,?,?,?)',('new',V.iso(self.now),V.iso(self.now),V.enc({'rows':[other],'page_rows':1})));self.c.commit()
+  self.assertEqual([r['packball_id'] for r in V.board(self.c,self.now)['matches']],['456'])
  def test_history_keeps_legacy_and_all_new_rows(self):
   self.c.execute('INSERT INTO signals VALUES(1,?,?)',(V.enc({'home':'Ancien'}),V.iso(self.before)));self.c.commit();b=V.board(self.c,self.now);self.assertEqual(b['legacy'][0]['context']['home'],'Ancien')
  def test_clock_or_missing_profile_never_invents(self):

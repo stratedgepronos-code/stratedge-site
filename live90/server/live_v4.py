@@ -96,7 +96,10 @@ def import_bundle(c, kind, bundle, now=None):
     if not generated or generated>now+dt.timedelta(seconds=60) or generated<now-dt.timedelta(days=7): raise ValueError('Date du dossier absente, future ou vieille de plus de 7 jours')
     if not isinstance(matches,list) or not 1<=len(matches)<=1000: raise ValueError('Dossier attendu : de 1 à 1000 matchs, sans sélection préalable')
     digest=hashlib.sha256((kind+enc(bundle)).encode()).hexdigest()
-    if c.execute('SELECT 1 FROM v4_imports WHERE digest=?',(digest,)).fetchone(): return {'ok':True,'duplicate':True,'imported':0}
+    if c.execute('SELECT 1 FROM v4_imports WHERE digest=?',(digest,)).fetchone():
+        if kind=='packball':
+            with c:runtime(c,'active_packball_fixtures',[key(m) for m in matches])
+        return {'ok':True,'duplicate':True,'imported':0}
     seen=set(); prepared=[]
     for m in matches:
         fk=identity(m)
@@ -116,6 +119,7 @@ def import_bundle(c, kind, bundle, now=None):
         prepared.append((fk,m))
     kept=0
     with c:
+        if kind=='packball':runtime(c,'active_packball_fixtures',[fk for fk,_ in prepared])
         c.execute('INSERT INTO v4_imports(kind,digest,created_at,data) VALUES(?,?,?,?)',(kind,digest,iso(now),enc(bundle)))
         for fk,m in prepared:
             c.execute('INSERT OR IGNORE INTO v4_fixtures VALUES(?,?,?,?,?,?)',(fk,m['home'],m['away'],iso(date(m['kickoff'])),m.get('league',''),None))
@@ -127,6 +131,18 @@ def import_bundle(c, kind, bundle, now=None):
             if kind=='analyst': c.execute('INSERT OR REPLACE INTO v4_contexts VALUES(?,?,?,?)',(fk,iso(now),iso(generated),enc(m)))
             else: c.execute('INSERT OR REPLACE INTO v4_profiles VALUES(?,?,?)',(fk,iso(now),enc(m)))
     return {'ok':True,'imported':len(matches)-kept,'preserved':kept,'late':sum(date(m['kickoff'])<=now for _,m in prepared)}
+
+def active_fixtures(c):
+    saved=c.execute("SELECT value FROM v4_runtime WHERE key='active_packball_fixtures'").fetchone()
+    if saved:return set(dec(saved['value'],[]))
+    last=c.execute("SELECT data FROM v4_imports WHERE kind='packball' ORDER BY id DESC LIMIT 1").fetchone()
+    if last:return {key(m) for m in dec(last['data'],{}).get('matches',[])}
+    return None
+
+def current_cycle_ids(c):
+    row=c.execute('SELECT payload FROM cycles ORDER BY rowid DESC LIMIT 1').fetchone()
+    if not row:return None
+    return {str(r.get('packball_id')) for r in dec(row['payload'],{}).get('rows',[]) if isinstance(r,dict)}
 
 def bind(c,r):
     ko=date(r.get('kickoff_ts'))
@@ -376,11 +392,14 @@ def auto_results(c,now):
         settle(c,{'id':s['id'],'outcome':outcome,'source':source},now,automatic=True,evidence={'sample_id':row['id'],'observed_at':iso(at),'detail':detail})
 
 def run(path,send=True,now=None):
-    now=now or now_utc(); c=connect(path);settings=options(c)
+    now=now or now_utc(); c=connect(path);settings=options(c);active=active_fixtures(c);cycle_ids=current_cycle_ids(c)
     for sample in latest(c):
         r=sample_data(sample)
         if not isinstance(r.get('packball_id'),str): continue
-        f=bind(c,r);p,ctx=inputs(c,f,now)
+        f=bind(c,r)
+        if active is not None and (not f or f['fixture'] not in active):continue
+        if active is None and cycle_ids is not None and r['packball_id'] not in cycle_ids:continue
+        p,ctx=inputs(c,f,now)
         hist=c.execute('SELECT * FROM samples WHERE match_id=? AND id<=? ORDER BY id DESC LIMIT 80',(sample['match_id'],sample['id'])).fetchall()
         previous=hist[1] if len(hist)>1 else None
         for market in MARKETS:
@@ -440,12 +459,15 @@ def history(c,limit=100,offset=0):
     return out
 
 def board(c,now):
-    records=[];seen=set()
+    records=[];seen=set();active=active_fixtures(c);cycle_ids=current_cycle_ids(c)
     for s in latest(c):
         r=sample_data(s)
         ko=date(r.get('kickoff_ts'))
-        if ko and ko<now-dt.timedelta(days=1): continue
-        f=bind(c,r);p,ctx=inputs(c,f,now)
+        f=bind(c,r)
+        if active is not None and (not f or f['fixture'] not in active):continue
+        if active is None and cycle_ids is not None and str(r.get('packball_id')) not in cycle_ids:continue
+        if active is None and cycle_ids is None and ko and ko<now-dt.timedelta(days=1):continue
+        p,ctx=inputs(c,f,now)
         if f: seen.add(f['fixture'])
         r.update(profile=p,analyst=ctx,fixture=f['fixture'] if f else None,decisions=[])
         for d in c.execute('SELECT * FROM v4_decisions WHERE match_id=?',(s['match_id'],)):
@@ -453,7 +475,7 @@ def board(c,now):
         # Do not leak raw HTML or entire historical payloads into the UI.
         r.pop('raw_cells',None);records.append(r)
     for f in c.execute('SELECT * FROM v4_fixtures ORDER BY kickoff'):
-        if f['fixture'] in seen or date(f['kickoff'])<now-dt.timedelta(days=1):continue
+        if f['fixture'] in seen or active is None or f['fixture'] not in active:continue
         p,ctx=inputs(c,f,now);records.append({'fixture':f['fixture'],'packball_id':f['match_id'],'home':f['home'],'away':f['away'],'league':f['league'],'kickoff_ts':f['kickoff'],'state':'NS','profile':p,'analyst':ctx,'decisions':[]})
     cycle=c.execute('SELECT received_at,payload FROM cycles ORDER BY rowid DESC LIMIT 1').fetchone()
     feed=dec(cycle['payload'],{}) if cycle else {}
@@ -467,9 +489,9 @@ def board(c,now):
     return {'ok':True,'version':VERSION,'server_time':iso(now),'matches':records,'signals':history(c),'history_total':totals['total'],'totals':totals,'legacy':legacy,'feed':{'received_at':cycle['received_at'] if cycle else None,'rows':feed.get('page_rows'), 'collector_version':feed.get('collector_version'),'headers':feed.get('stat_headers',[]),'odds_meta':feed.get('odds_meta',{})},'engine':dec((c.execute("SELECT value FROM v4_runtime WHERE key='engine'").fetchone() or [None])[0]),'settings':options(c),'telegram':{'configured':bool(os.environ.get('TELEGRAM_BOT_TOKEN') and os.environ.get('TELEGRAM_CHAT_ID'))}}
 
 def export_analysis(c,now):
-    matches=[]
+    matches=[];active=active_fixtures(c)
     for f in c.execute('SELECT * FROM v4_fixtures ORDER BY kickoff'):
-        if not now-dt.timedelta(hours=12)<=date(f['kickoff'])<=now+dt.timedelta(days=2):continue
+        if active is None or f['fixture'] not in active:continue
         p,_=inputs(c,f,now)
         m={k:f[k] for k in ('fixture','match_id','home','away','kickoff','league')}
         m.update(prematch=p.get('prematch',{}) if p else {},packball=p.get('packball') if p else None,
@@ -509,7 +531,7 @@ if __name__=='__main__':
         c=connect(args.db)
         if args.init: result={'ok':True,'version':VERSION}
         elif args.diagnostic:
-            b=board(c,now_utc());result={k:b[k] for k in ('version','feed','engine','telegram','totals')};result['feed'].pop('headers',None);result['feed'].pop('odds_meta',None)
+            b=board(c,now_utc());result={k:b[k] for k in ('version','feed','engine','telegram','totals')};result['feed'].pop('headers',None);result['feed'].pop('odds_meta',None);result['list']={'matches':len(b['matches']),'live':sum(r.get('state')=='LIVE' for r in b['matches']),'halftime':sum(r.get('state')=='HT' for r in b['matches'])};result['recent_rows']=[{k:r.get(k) for k in ('packball_id','home','away','state','status_raw','minute','received_at')} for r in [sample_data(x) for x in latest(c)][:30]]
         else: result=dispatch(c,json.load(sys.stdin),now_utc())
         print(enc(result));c.close()
     except (ValueError,TypeError,KeyError) as e: print(enc({'error':str(e)}));sys.exit(2)

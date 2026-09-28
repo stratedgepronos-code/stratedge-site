@@ -29,11 +29,11 @@ function effective(r,d){
 function visibleSignals(){const map=new Map([...moreHistory,...data.signals].map(s=>[s.id,s]));return [...map.values()].sort((a,b)=>b.id-a.id)}
 function filteredDecisions(r){return (r.decisions||[]).filter(d=>market==='all'||d.market===market)}
 function render(){
- const feedAge=age(data.feed?.received_at),engineAge=age(data.engine?.at),live=data.matches.filter(r=>r.state==='LIVE'&&age(r.received_at)<=100);
+ const feedAge=age(data.feed?.received_at),engineAge=age(data.engine?.at),live=data.matches.filter(r=>['LIVE','HT'].includes(r.state)&&age(r.received_at)<=100);
  $('#feed-title').textContent=feedAge<=100?'Collecte connectée':'Collecte en attente';$('#feed-dot').classList.toggle('connected',feedAge<=100);
  $('#feed-detail').textContent=data.feed?.received_at?`${data.feed.rows??'—'} lignes reçues · ${time(data.feed.received_at)} · ${Math.round(feedAge)} s`:'Ouvre Packball avec le collecteur activé';
  $('#engine-state').textContent=engineAge<=65?'Moteur actif · lecture toutes les 20 s':'Moteur · aucun cycle récent';$('#engine-state').style.color=engineAge<=65?'var(--cyan)':'var(--gold)';
- $('#kpi-matches').textContent=data.matches.length;$('#kpi-live').textContent=live.length+' en direct avec données fraîches';
+ $('#kpi-matches').textContent=data.matches.length;$('#kpi-live').textContent=live.length+' en cours · '+live.filter(r=>r.state==='HT').length+' à la pause';
  $('#kpi-context').textContent=data.matches.filter(r=>r.analyst?.usable).length+' / '+data.matches.length;
  $('#kpi-signals').textContent=data.totals.total||0;$('#kpi-pending').textContent=(data.totals.pending||0)+' résultats à confirmer';
  $('#kpi-results').textContent=(data.totals.won||0)+' G / '+(data.totals.lost||0)+' P';$('#kpi-units').textContent=fmt(data.totals.units||0)+' u · simulation à mise fixe de 1 u';
