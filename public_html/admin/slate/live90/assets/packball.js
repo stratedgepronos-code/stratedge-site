@@ -1,6 +1,7 @@
 /* Packball preparation: no prediction, no invented fixture IDs. */
 'use strict';
 function pbNormalize(rows){
+ rows=pbCompactExpanded(rows);
  const h=rows[0]||[];
  if(![49,39].includes(h.length))return rows;
  const paired=h.map(v=>v.trim()==='Domicile | Extérieur');
@@ -19,6 +20,28 @@ function pbNormalize(rows){
  const result=rows.map((row,i)=>expand(row,i===0));
  if(result[0].length!==(h.length===49?72:47))throw Error('Disposition Packball non reconnue');
  return result;
+}
+// Packball peut exporter un même groupe en paires ou en colonnes séparées,
+// avec deux colonnes de score HT supplémentaires. Ramener les groupes connus
+// au dictionnaire 31/37 sans déduire la nature des statistiques de leur valeur.
+function pbCompactExpanded(rows){
+ const h=(rows[0]||[]).map(v=>v.trim());
+ const base=['Country','Short','League','Hour','Status','Home Team','Result Home','Result Visitor','Visitor Team','Result Home HT','Result Visitor HT'];
+ if(![60,71,72].includes(h.length)||!base.every((v,i)=>h[i]===v))return rows;
+ const header=h.slice(0,9),columns=[];
+ for(let i=11;i<h.length;i++){
+  if(h[i]==='Domicile'&&h[i+1]==='Extérieur'){
+   header.push('Domicile | Extérieur');columns.push([i,i+1]);i++;
+  }else if(['Odds','Global'].includes(h[i])){
+   header.push(h[i]);columns.push([i]);
+  }else return rows;
+ }
+ // Un ancien export peut avoir 72 colonnes aussi : vérifier toute la signature.
+ if(!pbNewGroup([header]))return rows;
+ return [header,...rows.slice(1).map(row=>{
+  if(row.length!==h.length)throw Error('Ligne CSV incomplète');
+  return [...row.slice(0,9),...columns.map(indices=>indices.map(i=>row[i]).join(' | '))];
+ })];
 }
 function pbNumber(v){if(!/^\d+(?:[.,]\d+)?$/.test(String(v).trim()))throw Error('Statistique requise absente ou invalide');return Number(String(v).replace(',','.'))}
 function pbKickoff(day,hour,zone){if(!/^\d{4}-\d{2}-\d{2}$/.test(day)||!/^\d{2}:\d{2}$/.test(hour)||!zone)throw Error('Date, heure ou fuseau manquant');const target=Date.parse(day+'T'+hour+':00Z');if(!Number.isFinite(target))throw Error('Date invalide');let t=target;const format=v=>Object.fromEntries(new Intl.DateTimeFormat('en-GB',{timeZone:zone,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(v)).map(p=>[p.type,p.value]));for(let i=0;i<3;i++){const p=format(t);t+=target-Date.parse(`${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:00Z`)}const p=format(t);if(`${p.year}-${p.month}-${p.day}`!==day||`${p.hour}:${p.minute}`!==hour)throw Error('Heure inexistante dans ce fuseau');return new Date(t).toISOString()}

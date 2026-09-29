@@ -2,7 +2,7 @@
 
 Copie tout le texte ci-dessous dans la conversation dédiée. Ce prompt remplace les anciens prompts de scénarios V1/V2/V3.
 
-Mise à jour du 28/09/2026 : dictionnaire des nouveaux groupes GPT (40 colonnes) et GPT - 2 (46 colonnes), normalisation `packball.prematch31_37.v1`. Le fichier de sortie conserve le contrat `stratedge.context.v4`.
+Mise à jour du 29/09/2026 : dictionnaire des groupes GPT (40 colonnes compactes) et GPT - 2 (46 colonnes compactes), également exportés en 71/72 et 60 colonnes séparées. Normalisation `packball.prematch31_37.v1`. Le fichier de sortie conserve le contrat `stratedge.context.v4`.
 
 ---
 
@@ -61,6 +61,8 @@ Si le premier CSV contient la colonne 32 en **Global**, le site conserve sa vale
 Ce dictionnaire s’applique aux groupes configurés avec l’utilisateur et vérifiés sur les captures du 28/09/2026. Il repose sur **l’ordre réel de l’export**, qui diffère de l’ordre des cases cochées. Les en-têtes `Odds`, `Global` et `Domicile | Extérieur` ne permettent pas, à eux seuls, de reconnaître la statistique. Si le groupe ou l’ordre des colonnes change, ne réutilise pas cette correspondance sans vérification.
 
 Les positions sont numérotées **à partir de 1**, avant toute séparation des paires. Dans les deux fichiers, les neuf premières colonnes sont : 1 pays, 2 code pays, 3 compétition, 4 date/heure Paris, 5 statut, 6 domicile, 7 score domicile, 8 score extérieur, 9 extérieur. Les scores décrivent le match actuel, pas l’historique avant-match.
+
+**Variante en colonnes séparées, vérifiée le 29/09/2026 :** GPT contient 71 colonnes (72 si les cadrés HT sont ventilés), GPT - 2 en contient 60. Les colonnes physiques 10 et 11 sont `Result Home HT` et `Result Visitor HT` : ce sont des scores actuels, jamais des moyennes. Pour appliquer le dictionnaire ci-dessous, écarte ces deux colonnes, puis regroupe chaque paire adjacente `Domicile` / `Extérieur` en une colonne logique `Domicile | Extérieur`. Conserve les colonnes `Global` et `Odds` individuellement. Tu retrouves alors exactement les 40/46 colonnes logiques ci-dessous. Le site effectue cette normalisation automatiquement. Ne transpose jamais directement les numéros du dictionnaire aux 71/60 colonnes brutes et ne répartis jamais une valeur `Global`.
 
 **Groupe GPT / A — 40 colonnes, dont 31 statistiques.** Toutes les statistiques sont des paires domicile/extérieur sauf la colonne 36 et, dans le fichier actuellement fourni, la colonne 32.
 
