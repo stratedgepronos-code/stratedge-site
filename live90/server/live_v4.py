@@ -433,6 +433,8 @@ def evaluate(r,profile,context,market,team,now,hist,settings):
             d['context_notes'].insert(0,note)
         else: d['context_notes'].insert(0,'Arbitre non documenté : aucune statistique supposée')
         if not 15<=minute<=78: return finish('waiting','Fenêtre cartons : 15e à 78e minute')
+        if 45<minute<55 and fouls is not None and poss is not None and 0<=poss<=100:
+            return finish('waiting','Relevé reçu · reprise après la pause : fenêtre de 10 minutes analysable à partir de la 55e minute')
         if fouls is None or f10 is None or poss is None or not 0<=poss<=100: return finish('missing','Fautes, fenêtre de 10 minutes ou possession manquantes')
         d['intensity']=min(100,round(min(f10/4,1)*40+min(fouls/9,1)*20+(15 if poss<=45 else 5 if poss<=52 else 0)+(15 if (oppshots or 0)>=3 else 0)+(10 if score[team]<=score[other] else 0)))
         if fouls<5 or f10<3 or not (poss<=48 or (oppshots or 0)>=3): return finish('watch','Attendre fautes répétées et pression subie confirmée')
@@ -446,8 +448,14 @@ def evaluate(r,profile,context,market,team,now,hist,settings):
         ratio=shots/(expected*minute/90) if num(shots) and num(expected) and expected>0 and num(sample) and sample>=1 else None
         d['metrics']={'shots':shots,'sot':sot,'shots10':sh10,'sot10':so10,'shots5':sh5,'sot5':so5,'activity_ratio':round(ratio,3) if ratio is not None else None,'baseline_shots':expected,'sample':sample}
         if shots is None or sot is None or sot>shots: return finish('missing','Tirs cumulés absents ou incohérents')
+        profile_reason=('Profil Packball avant-match absent ou non associé à cette rencontre' if not profile else
+            'Profil Packball importé après le coup d’envoi : comparaison avant-match indisponible' if not profile.get('usable') else
+            'Profil Packball incomplet ou inexploitable : moyenne de tirs et échantillon requis')
+        if ratio is None:d['context_notes'].append(profile_reason)
+        if 45<minute<55:
+            return finish('waiting','Relevé reçu · reprise après la pause : fenêtre de 10 minutes analysable à partir de la 55e minute')
         if sh10 is None or so10 is None or so10>sh10 or so10>sot: return finish('missing','Fenêtre tirs/cadrés de 10 minutes indisponible ou interrompue par un but')
-        if ratio is None: return finish('missing','Profil Packball avant-match nécessaire pour comparer le rythme de tirs')
+        if ratio is None: return finish('missing',profile_reason)
         d['intensity']=min(100,round(min(sh10/6,1)*25+min(so10/3,1)*30+min(ratio/1.8,1)*25+(10 if (so5 or 0)>=1 else 0)+(10 if score[team]<=score[other] else 0)))
         if sh10<4 or so10<2 or ratio<1.15: return finish('watch','Attendre tirs cadrés répétés et rythme supérieur à l’avant-match')
     if d['intensity']<d['threshold']: return finish('watch','Intensité encore insuffisante compte tenu du contexte')

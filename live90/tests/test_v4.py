@@ -183,7 +183,25 @@ class LiveV4Tests(unittest.TestCase):
  def test_goal_resets_recent_window(self):
   old=copy.deepcopy(self.r);self.add(old,self.now-dt.timedelta(minutes=4));self.r['score']['h']=1;hist=self.c.execute('SELECT * FROM samples').fetchall();self.assertEqual(self.evaluate(hist=hist)['status'],'missing')
  def test_second_half_window_and_staleness(self):
-  self.r['minute']=49;self.assertEqual(self.evaluate('goal_ft')['status'],'missing');self.r['received_at']=V.iso(self.now-dt.timedelta(minutes=3));self.assertEqual(self.evaluate()['status'],'stale')
+  self.r['minute']=49;self.assertEqual(self.evaluate('goal_ft')['status'],'waiting');self.r['received_at']=V.iso(self.now-dt.timedelta(minutes=3));self.assertEqual(self.evaluate()['status'],'stale')
+ def test_second_half_wait_is_not_a_collection_failure(self):
+  self.r['minute']=49
+  for market in ('goal_ft','card_ft'):
+   d=self.evaluate(market);self.assertEqual(d['status'],'waiting');self.assertIn('55e',d['reason'])
+  self.r['minute']=55
+  self.assertEqual(self.evaluate('goal_ft')['status'],'candidate');self.assertEqual(self.evaluate('card_ft')['status'],'candidate')
+ def test_profile_problem_remains_visible_during_restart_wait(self):
+  self.r['minute']=49
+  d=V.evaluate(self.r,None,None,'goal_ft','h',self.now,[],self.settings)
+  self.assertEqual(d['status'],'waiting');self.assertTrue(any('non associé' in n for n in d['context_notes']))
+  self.r['minute']=55
+  d=V.evaluate(self.r,None,None,'goal_ft','h',self.now,[],self.settings)
+  self.assertEqual(d['status'],'missing');self.assertIn('non associé',d['reason'])
+  d=V.evaluate(self.r,dict(self.profile,usable=False),None,'goal_ft','h',self.now,[],self.settings)
+  self.assertEqual(d['status'],'missing');self.assertIn('après le coup',d['reason'])
+ def test_restart_wait_does_not_hide_missing_cumulative_stats(self):
+  self.r['minute']=49;self.r['stats']['shots']['h']=None;self.r['stats']['fouls']['h']=None
+  self.assertEqual(self.evaluate('goal_ft')['status'],'missing');self.assertEqual(self.evaluate('card_ft')['status'],'missing')
  def test_one_sample_does_not_alert(self):
   V.import_bundle(self.c,'packball',self.bundle('packball'),self.before);self.add(self.r,self.now);V.run(self.db,False,self.now);self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v4_signals').fetchone()[0],0)
  def test_two_samples_persist_and_deduplicate_without_ai(self):
@@ -328,7 +346,7 @@ class LiveV4Tests(unittest.TestCase):
   self.prepared();V.bind(self.c,self.r);self.c.execute('UPDATE v4_profiles SET imported_at=?',(V.iso(self.now+dt.timedelta(seconds=5)),));self.c.commit()
   audit=V.audit_matches(self.c,self.now+dt.timedelta(seconds=30))[0]
   self.assertEqual(audit['markets']['goal_ht:h']['candidate_samples'],0)
-  self.assertIn('Profil Packball avant-match nécessaire pour comparer le rythme de tirs',audit['markets']['goal_ht:h']['reasons'])
+  self.assertIn('Profil Packball avant-match absent ou non associé à cette rencontre',audit['markets']['goal_ht:h']['reasons'])
  def test_health_missing_fields_even_during_halftime_and_no_columns(self):
   self.prepared();self.r.update(state='HT',minute=45,stats={},score=None);self.add(self.r,self.now)
   self.c.execute('INSERT INTO cycles VALUES(?,?,?,?)',('test',V.iso(self.now),V.iso(self.now),V.enc({'rows':[self.r],'stat_headers':[]})));self.c.commit()
