@@ -41,7 +41,7 @@ const server=http.createServer((r,res)=>{if(r.url==='/download.php?file=collecto
 
  board.signals.push({id:2,market:'card_ft',team:'h',line:1.5,odds:null,created_at:now,outcome:'won',delivery:'sent',data:{home:'Équipe C',away:'Équipe D',minute:60,score:{h:0,a:0},label:'Équipe C · un carton supplémentaire',decision:{...d,market:'card_ft'},context:analyst,mode:'statistical_no_odds'}});
  board.totals={...board.totals,total:2,priced_total:1,priced_won:1,priced_lost:0,statistical_total:1,statistical_won:1,statistical_lost:0};board.history_total=2;
- await page.evaluate(()=>refresh());assert((await page.locator('#kpi-units').textContent()).includes('Sans cote : 1 observés / 0 non observés'));
+ await page.evaluate(()=>refresh());assert((await page.locator('#kpi-units').textContent()).includes('Observations : 1 observés / 0 non observés'));
  const cardRow=page.locator('#match-rows tr').filter({hasText:'Équipe C'});assert((await cardRow.textContent()).includes('Sans cote'));assert((await cardRow.textContent()).includes('Événement observé'));assert(!(await cardRow.textContent()).includes('bet365'));
  await page.locator('#match-rows [data-signal="2"]').click();assert((await page.locator('#detail-content').textContent()).includes('aucun avantage de prix ni rendement calculé'));assert(!(await page.locator('#detail-content').textContent()).includes('bet365'));await page.screenshot({path:path.join(output,'cards-no-odds.png'),fullPage:true});await page.locator('[data-close="detail-modal"]').click();
  await page.locator('#match-rows [data-settle="2"]').click();assert((await page.locator('#settle-form select').textContent()).includes('Événement observé'));await page.locator('[data-close="settle-modal"]').click();
