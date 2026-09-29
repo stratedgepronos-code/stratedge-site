@@ -21,6 +21,8 @@ Les trois marchés surveillés, séparément pour domicile et extérieur :
 
 Un pari « prochaine équipe à marquer » n’est PAS équivalent : il peut être perdant si l’autre équipe marque avant, même lorsque l’équipe ciblée marque ensuite dans la période. Une cote de total de buts ou de cartons du match ne remplace jamais une cote par équipe. FT signifie match réglementaire, HT première mi-temps. Le règlement exact des cartons dépend du bookmaker ; ne confonds pas cartons et points de sanctions.
 
+Les trois marchés déclenchent uniquement des alertes statistiques sans cote. Le moteur compare les statistiques avant-match au direct et attend deux relevés concordants ; aucune cote minimale ou présence de cote ne conditionne le signal. L’utilisateur vérifie ensuite le marché, son règlement et le prix chez son bookmaker. Le suivi Packball conserve les événements observés ou non observés, sans rendement financier calculé pour ces alertes.
+
 ## Entrées acceptées
 
 Je fournis soit `StratEdge-a-analyser-V4.json`, soit mes deux CSV Packball et/ou une liste datée des matchs. Commence par lire réellement les fichiers.
@@ -50,7 +52,7 @@ Privilégie les champs normalisés plutôt que les tableaux bruts :
 - `packball.teams.h` et `.a` : statistiques distinctes pour chaque équipe, selon les noms du dictionnaire A ci-dessous. `ft` = match, `ht` = première mi-temps, `2h` = deuxième mi-temps. `for` = produit, `against` = concédé, `sot` = tirs cadrés, `_pct` = pourcentage historique.
 - `packball.teams.h.goal_intervals` et `.a.goal_intervals` : tranches `0-15`, `16-30`, `31-45`, `46-60`, `61-75`, `76-90`, avec `scored` et `conceded` pour chaque tranche.
 - `packball.league.cards_avg` : moyenne de cartons de la compétition, distincte des valeurs des deux équipes.
-- `packball.odds` : chaque objet précise `market`, `period`, `team`, `side`, `line`, `odds` et la colonne source. `team:null` est normal pour le total du match et le 1x2. Une cote `null` est indisponible. Ce tableau contient les cotes de l’export avant-match, PAS les cotes courantes permettant un signal live.
+- `packball.odds` : chaque objet précise `market`, `period`, `team`, `side`, `line`, `odds` et la colonne source. `team:null` est normal pour le total du match et le 1x2. Une cote `null` est indisponible. Ce tableau contient les cotes de l’export avant-match, PAS les cotes courantes. Leur absence ne bloque aucune alerte live.
 - `packball.export_states.a/b` : statuts présents dans les deux CSV ; `NS` = pas commencé selon l’export, `INPLAY_1ST_HALF` = en première période, `CANCELLED` = annulé selon Packball. Tout statut inhabituel doit être qualifié, pas deviné.
 - `data_issues`, `packball.data_issues`, `prematch_imported_at`, `prematch_usable` : limites et heure réelle de l’import. Une importation tardive n’est jamais un dossier collecté avant le coup d’envoi.
 
@@ -162,7 +164,7 @@ Ne mélange pas les moyennes « carrière », « saison » et « compétition »
 
 Si StatsHub refuse l’accès ou ne présente pas la fiche, signale-le et recherche une autre source accessible, en la nommant. Aucun contournement d’accès ni statistique inventée. La page peut avoir changé depuis son indexation : note la date de consultation et toute ancienneté connue. Le site StratEdge ne scrappe pas automatiquement StatsHub pendant le live : cette collecte est faite ici, puis importée dans le JSON.
 
-La fiche arbitre sert de contexte documenté, affiché et conservé avec les alertes. Le moteur n’attribue pas encore de poids prédictif validé à ces moyennes. Les fautes récentes et la pression subie restent nécessaires ; les alertes cartons fonctionnent sans cote, contrairement aux alertes de buts. Un arbitre à cinq jaunes par match ne « doit » pas atteindre cinq jaunes et un jaune déjà sorti ne prouve ni apaisement ni aggravation.
+La fiche arbitre sert de contexte documenté, affiché et conservé avec les alertes. Le moteur n’attribue pas encore de poids prédictif validé à ces moyennes. Les fautes récentes et la pression subie restent nécessaires ; les alertes cartons et buts fonctionnent toutes sans cote. Un arbitre à cinq jaunes par match ne « doit » pas atteindre cinq jaunes et un jaune déjà sorti ne prouve ni apaisement ni aggravation.
 
 ## Fichier de sortie : contrat exact
 

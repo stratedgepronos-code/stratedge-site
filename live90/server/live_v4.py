@@ -260,20 +260,8 @@ def evaluate(r,profile,context,market,team,now,hist,settings):
         d['intensity']=min(100,round(min(sh10/6,1)*25+min(so10/3,1)*30+min(ratio/1.8,1)*25+(10 if (so5 or 0)>=1 else 0)+(10 if score[team]<=score[other] else 0)))
         if sh10<4 or so10<2 or ratio<1.15: return finish('watch','Attendre tirs cadrés répétés et rythme supérieur à l’avant-match')
     if d['intensity']<d['threshold']: return finish('watch','Intensité encore insuffisante compte tenu du contexte')
-    if market=='card_ft':
-        d['mode']='statistical_no_odds'
-        return finish('candidate','Dynamique disciplinaire concordante · alerte statistique sans cote')
-    qs=[]
-    for q in r.get('quotes',[]):
-        qt=date(q.get('observed_at'))
-        if q.get('market')!=('team_cards' if market=='card_ft' else 'team_goals') or q.get('team')!=team or q.get('period')!=('HT' if market=='goal_ht' else 'FT') or q.get('side')!='over' or q.get('line')!=d['line'] or q.get('verified') is not True: continue
-        if market=='card_ft' and q.get('unit')!='cards': continue
-        if not qt or not 0<=(now-qt).total_seconds()<=90 or not num(q.get('odds')) or not 1<q['odds']<=100 or q.get('bookmaker')!='bet365': continue
-        qs.append(q)
-    if not qs: return finish('price','Dynamique intéressante · cote du marché exact manquante')
-    d['quote']=max(qs,key=lambda q:q['odds'])
-    if not settings['min_odds']<=d['quote']['odds']<=5: return finish('price','Cote hors plage de surveillance '+str(settings['min_odds'])+'–5,00')
-    return finish('candidate','Dynamique, comparaison et cote concordantes')
+    d['mode']='statistical_no_odds'
+    return finish('candidate','Dynamique '+('disciplinaire' if market=='card_ft' else 'offensive')+' concordante · alerte statistique sans cote')
 
 def safe_evaluate(*args):
     try: return evaluate(*args)
@@ -375,15 +363,6 @@ def feed_health(c,now):
         if not num(r.get('minute')):issue('clock',label+' : minute non lisible.',mid)
         missing=[k+' '+t for k in ('shots','sot','fouls','possession','yellow_cards','red_cards') for t in ('h','a') if stat(r,k,t) is None]
         if missing:issue('stats',label+' : données absentes du relevé : '+', '.join(missing),mid)
-        if r.get('state')=='HT':continue
-        missing_quotes=[]
-        for team in ('h','a'):
-            for market,period in [('team_goals','FT'),('team_goals','HT')]:
-                if period=='HT' and num(r.get('minute')) and r['minute']>45:continue
-                count=stat(r,'yellow_cards',team) if market=='team_cards' else (r['score'].get(team) if isinstance(r.get('score'),dict) else None)
-                valid=[q for q in (r.get('quotes') or []) if isinstance(q,dict) and q.get('verified') is True and q.get('market')==market and q.get('period')==period and q.get('team')==team and q.get('side')=='over' and num(count) and q.get('line')==count+.5 and num(q.get('odds')) and q['odds']>1 and date(q.get('observed_at')) and 0<=(now-date(q['observed_at'])).total_seconds()<=90 and (market!='team_cards' or q.get('unit')=='cards')]
-                if not valid:missing_quotes.append(market+' '+period+' '+team)
-        if missing_quotes:issue('quotes',label+' : cotes exactes absentes : '+', '.join(missing_quotes),mid)
     # A schedule is not proof that a match is live. Report the verification gap.
     if active:
         for f in c.execute('SELECT * FROM v4_fixtures'):
@@ -555,7 +534,7 @@ def run(path,send=True,now=None):
                         # One team/market/line signal per fixture; FT/HT overlap remains
                         # visible as correlated exposure, never a multiplied stake.
                         sk=enc([str(r['packball_id']),market,team,d['line']])
-                        data={'home':r['home'],'away':r['away'],'kickoff':r.get('kickoff_ts'),'minute':r['minute'],'score':r['score'],'label':label(r,d),'decision':d.copy(),'profile':p,'context':ctx,'version':VERSION,'mode':'statistical_no_odds' if market=='card_ft' else 'observation'}
+                        data={'home':r['home'],'away':r['away'],'kickoff':r.get('kickoff_ts'),'minute':r['minute'],'score':r['score'],'label':label(r,d),'decision':d.copy(),'profile':p,'context':ctx,'version':VERSION,'mode':'statistical_no_odds'}
                         c.execute('INSERT OR IGNORE INTO v4_signals(signal_key,match_id,fixture,market,team,line,odds,created_at,sample_id,data,delivery) VALUES(?,?,?,?,?,?,?,?,?,?,?)',(sk,r['packball_id'],f['fixture'] if f else None,market,team,d['line'],(d.get('quote') or {}).get('odds'),iso(now),sample['id'],enc(data),'queued' if send and settings['telegram_enabled'] else 'disabled'))
                         d.update(status='signal',reason='Signal conservé dans l’historique')
                 c.execute('INSERT OR REPLACE INTO v4_decisions VALUES(?,?,?,?,?,?,?)',(r['packball_id'],market,team,sample['id'],iso(now),d['status'],enc(d)))

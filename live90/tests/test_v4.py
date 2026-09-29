@@ -18,10 +18,13 @@ class LiveV4Tests(unittest.TestCase):
   x=copy.deepcopy(r);x['collected_at']=V.iso(when);x.pop('received_at',None)
   for q in x['quotes']:q['observed_at']=V.iso(when)
   self.c.execute('INSERT INTO samples(cycle_id,match_id,received_at,data) VALUES(?,?,?,?)',('test','123',V.iso(when),V.enc(x)));self.c.commit()
- def prepared(self,cards=False):
+ def prepared(self,cards=False,both_goals=False):
+  # Isoler HT (14e) ou cartons ; le test dédié couvre les deux buts simultanés.
+  if cards:self.r['ind10']['shots10']['h']=2;self.r['ind10']['sot10']['h']=1
+  elif not both_goals and self.r['minute']==30:self.r['minute']=14
   if not cards:self.r['stats']['fouls']['h']=2;self.r['ind10']['fouls10']['h']=1
   V.import_bundle(self.c,'packball',self.bundle('packball'),self.before);V.import_bundle(self.c,'analyst',self.bundle('analyst'),self.before)
-  self.add(dict(self.r,minute=29),self.now-dt.timedelta(seconds=30));self.add(self.r,self.now)
+  self.add(dict(self.r,minute=self.r['minute']-1),self.now-dt.timedelta(seconds=30));self.add(self.r,self.now)
  def test_two_import_orders_and_all_matches_kept(self):
   # A severe context and an incomplete profile must remain visible.
   m2=copy.deepcopy(self.m);m2['home']='Autre équipe';m2['prematch']['shots_h']=None
@@ -56,6 +59,31 @@ class LiveV4Tests(unittest.TestCase):
   with self.assertRaises(ValueError):V.import_bundle(self.c,'analyst',self.bundle('analyst'),self.before)
   self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v4_fixtures').fetchone()[0],0)
  def test_goals_and_optional_second_yellow(self):self.assertEqual(self.evaluate()['status'],'candidate')
+ def test_goals_ignore_missing_low_high_and_unusable_prices(self):
+  for market in ('goal_ht','goal_ft'):
+   for quotes in ([],[dict(self.r['quotes'][0],odds=1.01)],[dict(self.r['quotes'][0],odds=99)],[{'odds':'invalid'}]):
+    with self.subTest(market=market,quotes=quotes):
+     self.r['quotes']=quotes;d=self.evaluate(market)
+     self.assertEqual(d['status'],'candidate');self.assertIsNone(d['quote']);self.assertEqual(d['mode'],'statistical_no_odds')
+ def test_two_goal_periods_without_quotes_deliver_and_settle_separately(self):
+  self.r['quotes']=[];self.prepared(both_goals=True)
+  with patch.object(V,'notify',return_value=('sent',None,94)) as send:
+   V.run(self.db,True,self.now);V.run(self.db,True,self.now)
+   self.assertEqual(send.call_count,2)
+   self.assertTrue(all('ALERTE STATISTIQUE SANS COTE' in x.args[0] for x in send.call_args_list))
+  signals=V.history(self.c);self.assertEqual({s['market'] for s in signals},{'goal_ht','goal_ft'})
+  self.assertTrue(all(s['odds'] is None and s['profit_units'] is None for s in signals))
+  later=self.now+dt.timedelta(minutes=15);self.r.update(state='HT',minute=45);self.add(self.r,later)
+  with patch.object(V,'notify',return_value=('sent',None,95)) as send:
+   V.run(self.db,True,later);V.run(self.db,True,later)
+   self.assertEqual(send.call_count,1);self.assertIn('NON OBSERVÉ',send.call_args.args[0])
+  self.assertEqual({s['market']:s['outcome'] for s in V.history(self.c)},{'goal_ht':'lost','goal_ft':'pending'})
+  later+=dt.timedelta(minutes=20);self.r.update(state='LIVE',minute=65);self.r['score']['h']=1;self.add(self.r,later)
+  with patch.object(V,'notify',return_value=('sent',None,96)) as send:
+   V.run(self.db,True,later)
+   self.assertEqual(send.call_count,1);self.assertIn('ÉVÉNEMENT OBSERVÉ',send.call_args.args[0]);self.assertNotIn('Bilan simulé',send.call_args.args[0])
+  totals=V.board(self.c,later)['totals'];self.assertEqual(totals['priced_total'],0);self.assertEqual(totals['units'],0)
+  self.assertEqual(totals['statistical_won'],1);self.assertEqual(totals['statistical_lost'],1)
  def test_severe_context_still_allows_strong_live_signal(self):
   self.ctx['usable']=True;self.ctx['teams']['h']['flags']=[{'kind':'attack_absences','severity':'high','certainty':'confirmed','detail':'Absence importante'}];x=self.evaluate();self.assertEqual(x['status'],'candidate');self.assertEqual(x['threshold'],76)
  def test_missing_total_red_blocks_and_any_expulsion_suspends(self):
@@ -63,7 +91,7 @@ class LiveV4Tests(unittest.TestCase):
  def test_total_next_goal_wrong_period_no_substitution(self):
   original=copy.deepcopy(self.r['quotes'][0])
   for changes in ({'market':'total_goals'},{'market':'next_goal'},{'period':'FT'},{'team':'a'},{'line':1.5},{'verified':False},{'observed_at':V.iso(self.now-dt.timedelta(minutes=3))}):
-   with self.subTest(changes=changes):self.r['quotes']=[dict(original,**changes)];self.assertEqual(self.evaluate()['status'],'price')
+   with self.subTest(changes=changes):self.r['quotes']=[dict(original,**changes)];self.assertEqual(self.evaluate()['status'],'candidate');self.assertIsNone(self.evaluate()['quote'])
  def test_ft_team_has_already_scored_uses_next_half_line(self):
   self.r['minute']=65;self.r['score']['h']=1;self.r['quotes'][0].update(period='FT',line=1.5);self.assertEqual(self.evaluate('goal_ft')['status'],'candidate')
  def test_card_ignores_quotes_in_statistical_mode(self):
@@ -115,7 +143,7 @@ class LiveV4Tests(unittest.TestCase):
   self.assertEqual(V.history(self.c)[0]['profit_units'],-1);self.assertEqual(V.board(self.c,later)['totals']['units'],-1)
  def test_unpriced_cards_still_require_stats_freshness_and_two_samples(self):
   self.r['quotes']=[]
-  self.assertEqual(self.evaluate('goal_ht')['status'],'price')
+  self.assertEqual(self.evaluate('goal_ht')['status'],'candidate')
   self.assertEqual(self.evaluate('card_ft')['status'],'candidate')
   self.r['ind10']['fouls10']['h']=None;self.assertEqual(self.evaluate('card_ft')['status'],'missing')
   self.r['ind10']['fouls10']['h']=4;self.r['received_at']=V.iso(self.now-dt.timedelta(minutes=2));self.assertEqual(self.evaluate('card_ft')['status'],'stale')
@@ -132,7 +160,7 @@ class LiveV4Tests(unittest.TestCase):
  def test_health_does_not_require_card_odds(self):
   self.r['quotes']=[];self.prepared(cards=True)
   issues=V.feed_health(self.c,self.now)['issues']
-  self.assertTrue(any('team_goals' in x['detail'] for x in issues))
+  self.assertFalse(any(x['code']=='quotes' for x in issues))
   self.assertFalse(any('team_cards' in x['detail'] for x in issues))
  def referee_context(self):
   self.ctx['sources']=[{'id':'ref','url':'https://example.com/referee','title':'Source de test','checked_at':V.iso(self.before)}]
@@ -173,16 +201,19 @@ class LiveV4Tests(unittest.TestCase):
    for code in (400,401,429):
     with patch('urllib.request.urlopen',side_effect=urllib.error.HTTPError('https://api.telegram.org',code,'error',{},io.BytesIO())):self.assertEqual(V.notify('test')[0],'failed')
    with patch('urllib.request.urlopen',side_effect=TimeoutError()):self.assertEqual(V.notify('test')[0],'uncertain')
- def test_changed_price_before_delivery_expires(self):
+ def test_changed_price_before_delivery_does_not_block_statistical_signal(self):
   self.prepared();V.run(self.db,False,self.now);self.c.execute("UPDATE v4_signals SET delivery='queued'");self.c.commit();self.r['quotes'][0]['odds']=1.85;self.add(self.r,self.now)
-  with patch('urllib.request.urlopen',side_effect=AssertionError('Must not send')):V.deliver(self.c,self.now)
-  self.assertEqual(self.c.execute('SELECT delivery FROM v4_signals').fetchone()[0],'expired')
+  with patch.object(V,'notify',return_value=('sent',None,90)) as send:
+   V.deliver(self.c,self.now);self.assertEqual(send.call_count,1);self.assertIn('SANS COTE',send.call_args.args[0])
+  self.assertEqual(self.c.execute('SELECT delivery FROM v4_signals').fetchone()[0],'sent')
  def test_results_and_correction_audited(self):
   self.prepared();V.run(self.db,False,self.now);sid=self.c.execute('SELECT id FROM v4_signals').fetchone()[0]
   for out in ('won','void'):V.settle(self.c,{'id':sid,'outcome':out,'source':'Source officielle contrôlée'},self.now)
-  self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v4_results').fetchone()[0],2);self.assertEqual(V.history(self.c)[0]['profit_units'],0)
+  self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v4_results').fetchone()[0],2);self.assertIsNone(V.history(self.c)[0]['profit_units'])
  def result_signal(self):
   self.prepared();V.run(self.db,False,self.now)
+  # Ancienne alerte cotée : conserver les notifications et le bilan historiques.
+  self.c.execute('UPDATE v4_signals SET odds=1.9');self.c.commit()
   return self.c.execute('SELECT id FROM v4_signals').fetchone()[0]
  def test_result_notification_sent_once_after_confirmation(self):
   sid=self.result_signal();x={'id':sid,'outcome':'won','source':'Résultat officiel contrôlé'}
@@ -221,6 +252,7 @@ class LiveV4Tests(unittest.TestCase):
   with patch.object(V,'notify',side_effect=AssertionError('No ambiguous retry')):V.deliver_results(self.c,self.now)
   self.assertEqual(V.history(self.c)[0]['result_notification']['delivery'],'uncertain')
  def auto_signal(self,market='goal_ht',line=.5):
+  if market=='goal_ft':self.r['minute']=60
   q=self.r['quotes'][0];q.update(market='team_cards' if market=='card_ft' else 'team_goals',period='HT' if market=='goal_ht' else 'FT',line=line)
   if market=='card_ft':q['unit']='cards';self.r['stats']['yellow_cards']['h']=int(line)
   self.prepared(cards=market=='card_ft');V.run(self.db,False,self.now)
@@ -229,7 +261,7 @@ class LiveV4Tests(unittest.TestCase):
  def test_auto_goal_win_immediately_and_telegram_once(self):
   sid=self.auto_signal();later=self.now+dt.timedelta(seconds=30);self.r['score']['h']=1;self.r['minute']=31;self.add(self.r,later)
   with patch.object(V,'notify',return_value=('sent',None,88)) as send:
-   V.run(self.db,True,later);V.run(self.db,True,later);self.assertEqual(send.call_count,1);self.assertIn('RÉSULTAT PACKBALL',send.call_args.args[0]);self.assertIn('GAGNANT',send.call_args.args[0])
+   V.run(self.db,True,later);V.run(self.db,True,later);self.assertEqual(send.call_count,1);self.assertIn('RÉSULTAT PACKBALL',send.call_args.args[0]);self.assertIn('ÉVÉNEMENT OBSERVÉ',send.call_args.args[0])
   self.assertEqual(self.outcome(sid),'won');self.assertEqual(V.history(self.c)[0]['data']['resolution']['mode'],'automatic')
  def test_auto_var_correction_reopens_and_later_ht_loss(self):
   sid=self.auto_signal();later=self.now+dt.timedelta(seconds=30);self.r['score']['h']=1;self.add(self.r,later);V.auto_results(self.c,later);self.assertEqual(self.outcome(sid),'won')
@@ -305,7 +337,7 @@ class LiveV4Tests(unittest.TestCase):
  def test_health_accepts_empty_maps_reencoded_as_arrays_by_php(self):
   self.prepared();self.r.update(stats=[],ind5=[],ind10=[],quotes=[]);self.add(self.r,self.now)
   report=V.feed_health(self.c,self.now)
-  self.assertTrue({'stats','quotes'}.issubset({x['code'] for x in report['issues']}))
+  self.assertTrue({'stats'}.issubset({x['code'] for x in report['issues']}))
   self.assertIsNone(V.stat(self.r,'red_cards','h'))
   self.c.commit();V.run(self.db,False,self.now)
   self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v4_signals').fetchone()[0],0)
@@ -314,7 +346,7 @@ class LiveV4Tests(unittest.TestCase):
   for pair in self.r['stats'].values():pair.update(h=0,a=0)
   self.r['score']='unreadable';self.add(self.r,self.now)
   codes={x['code'] for x in V.feed_health(self.c,self.now)['issues']}
-  self.assertNotIn('stats',codes);self.assertIn('score',codes);self.assertIn('quotes',codes)
+  self.assertNotIn('stats',codes);self.assertIn('score',codes);self.assertNotIn('quotes',codes)
   self.assertIn('stale',{x['code'] for x in V.feed_health(self.c,self.now+dt.timedelta(minutes=3))['issues']})
  def test_health_incidents_deduplicate_resolve_and_reopen(self):
   report={'issues':[{'key':'stats:123','code':'stats','detail':'Fautes manquantes'}]}

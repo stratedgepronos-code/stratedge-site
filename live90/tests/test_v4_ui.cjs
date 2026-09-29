@@ -45,7 +45,15 @@ const server=http.createServer((r,res)=>{if(r.url==='/download.php?file=collecto
  const cardRow=page.locator('#match-rows tr').filter({hasText:'Équipe C'});assert((await cardRow.textContent()).includes('Sans cote'));assert((await cardRow.textContent()).includes('Événement observé'));assert(!(await cardRow.textContent()).includes('bet365'));
  await page.locator('#match-rows [data-signal="2"]').click();assert((await page.locator('#detail-content').textContent()).includes('aucun avantage de prix ni rendement calculé'));assert(!(await page.locator('#detail-content').textContent()).includes('bet365'));await page.screenshot({path:path.join(output,'cards-no-odds.png'),fullPage:true});await page.locator('[data-close="detail-modal"]').click();
  await page.locator('#match-rows [data-settle="2"]').click();assert((await page.locator('#settle-form select').textContent()).includes('Événement observé'));await page.locator('[data-close="settle-modal"]').click();
+ board.signals.push({id:3,market:'goal_ft',team:'h',line:.5,odds:null,created_at:now,outcome:'lost',delivery:'sent',data:{home:'Équipe E',away:'Équipe F',minute:60,score:{h:0,a:0},label:'Équipe E · un but avant la fin',decision:{...d,market:'goal_ft'},context:analyst,mode:'statistical_no_odds'}});
+ await page.evaluate(()=>refresh());
+ const goalRow=page.locator('#match-rows tr').filter({hasText:'Équipe E'});assert((await goalRow.textContent()).includes('Sans cote'));assert((await goalRow.textContent()).includes('Non observé'));assert(!(await goalRow.textContent()).includes('bet365'));
+ await page.locator('#match-rows [data-signal="3"]').click();assert((await page.locator('#detail-content').textContent()).includes('aucun avantage de prix ni rendement calculé'));await page.locator('[data-close="detail-modal"]').click();
  await page.locator('#settings-open').click();
+ assert.equal(await page.locator('#min-odds').count(),0);
+ await page.locator('#settings-form button[type="submit"]').click();await page.waitForFunction(()=>document.querySelector('#settings-result').textContent.includes('Paramètres enregistrés'));
+ assert.equal(posted.filter(x=>x.action==='settings').at(-1).settings.telegram_enabled,true);
+
  await page.waitForFunction(()=>document.querySelector('#collector-version').textContent.includes('HTTP 503'));
  collectorReply={status:200,body:'<!doctype html><h1>Connexion</h1>'};await page.locator('#collector-copy').click();await page.waitForFunction(()=>document.querySelector('#collector-result').textContent.includes('Reconnecte-toi'));assert.equal(await page.locator('#collector-code-label').isVisible(),false);
  collectorReply={status:200,body:collectorCode};await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async()=>{throw Error('Blocked for test')}}}));

@@ -31,7 +31,7 @@ Le collecteur V4 sait reconnaître les libellés français explicites des buts p
 
 Les **cartons** déclenchent désormais une **alerte statistique sans cote** sur Telegram, après confirmation de la dynamique sur deux relevés. Le compteur de jaunes Packball suit ensuite l’événement ; aucun rendement financier n’est calculé. Aucune cote de cartons par équipe n’est requise.
 
-Pour les **buts**, la cote exacte de l’équipe, de la période et de la ligne reste obligatoire. Sans elle, une dynamique suffisante est affichée **Cote à vérifier**. Les cotes de buts par équipe en première période restent à vérifier dans Packball.
+Depuis le 29/09/2026, les **buts HT et FT** déclenchent également des **alertes statistiques sans cote**. Les cotes reçues sont facultatives et affichées à titre informatif ; elles ne bloquent ni ne déclenchent une alerte. Vérifie toi-même la période, la ligne et le prix chez ton bookmaker. Aucun rendement financier n’est calculé pour ces nouvelles alertes. Conserve les colonnes actuelles pour ne pas modifier la disposition de collecte.
 
 Les fautes sur 10 minutes sont calculées depuis les compteurs cumulés quand Packball ne propose pas cette fenêtre. Il faut alors environ 10 minutes de collecte continue pour obtenir le premier repère. Aucune valeur absente n’est transformée en zéro. Les ExG Packball « pour les prochaines minutes » ne sont pas utilisés comme xG de tirs observés.
 
