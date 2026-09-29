@@ -146,14 +146,20 @@ $('#packball-export').onclick=exportAnalysis;
 $('#export-review').onclick=async()=>{const b=$('#export-review');b.disabled=true;try{download('StratEdge-bilan-pour-GPT.json',await request({action:'export_review'}));notice('Bilan téléchargé : joins ce JSON à une conversation GPT. Les consignes d’audit sont incluses.')}catch(e){notice(e.message)}finally{b.disabled=false}};
 $('#export-history').onclick=async()=>{try{download('StratEdge-historique-V4.json',await request({action:'export_history'}))}catch(e){notice(e.message)}};
 $('#history-more').onclick=async()=>{try{const x=await request({action:'history',offset:visibleSignals().length});moreHistory=[...visibleSignals(),...x.signals];render()}catch(e){notice(e.message)}};
+function pulseReadingHTML(m){
+ const r=m.reading;if(!r)return '';
+ if(!r.recognized)return r.reason?`<p class="help">Non associé : ${esc(r.reason)}</p>`:'';
+ return `<p><strong>${r.team==='h'?'Domicile':'Extérieur'} · ${r.period==='HT'?'buts avant la pause':'buts sur le match entier'}</strong>${r.period_corrected?'<br>Période corrigée d’après le libellé « Half Time » ; le fournisseur indique FULL_TIME.':''}</p>`+
+ (r.selections||[]).map(s=>`<p>${s.compatible_line?'Ligne en demi-but':'Ligne asiatique / entière'} · +${esc(s.line)} · ${esc(s.note)}${!s.active_confirmed?' · Disponibilité non confirmée ou marché suspendu':''}</p>`).join('');
+}
 function renderPulse(){
  const p=data.pulsescore||{},r=p.last_test;
  $('#pulse-status').textContent=`${p.configured?'Clé enregistrée':'Aucune clé enregistrée'} · ${p.attempts_31d||0} / ${p.local_limit||500} tentatives locales sur 31 jours`;
  $('#pulse-test').disabled=!p.configured||p.attempts_31d>=500;
  $('#pulse-remove').disabled=!p.configured;
  $('#pulse-report').innerHTML=!r?'':!r.ok?`<p class="help">Dernier test · ${esc(time(r.at))} · ${esc(r.error)}</p>`:
- `<p class="help">Réponse reçue le ${esc(time(r.at))} · ${esc(r.returned)} matchs sur cette page · total annoncé ${esc(r.total)}.${r.has_next_page?' D’autres pages existent ; elles ne sont pas téléchargées.':''} Il s’agit d’un instantané de test, pas de cotes actualisées. Les marchés par équipe et les prix sur stake.bet restent à vérifier. Aperçu limité à 200 marchés et 6 sélections par marché.</p>`+
- (r.events||[]).map(e=>`<details><summary>${esc(e.home)} — ${esc(e.away)} · ${esc(e.market_count)} marchés</summary>${e.markets.map(m=>`<div class="pulse-market"><b>${esc(m.name)}</b> · ${esc(m.period)}${m.active===false?' · Suspendu':''}<small>${esc(m.canonical)}</small><p>${m.selections.map(o=>`${esc(o.name)}${o.line!==null?' · ligne '+esc(o.line):''} : ${fmt(o.odds)}${o.active===false?' (suspendu)':''}`).join('<br>')||'Aucune sélection interprétable'}</p></div>`).join('')}</details>`).join('')+(r.returned===0?'<p>Aucun match live renvoyé : cela ne permet pas encore de vérifier les marchés.</p>':'');
+ `<p class="help">Réponse reçue le ${esc(time(r.at))} · ${esc(r.returned)} matchs sur cette page · total annoncé ${esc(r.total)}.${r.has_next_page?' D’autres pages existent ; elles ne sont pas téléchargées.':''} Il s’agit d’un instantané de test, pas de cotes actualisées. Les marchés reconnus sont annotés ci-dessous. Les prix sur stake.bet restent à vérifier ; aucune cote de ce test ne déclenche ni ne bloque une alerte. Aperçu limité à 200 marchés et 6 sélections par marché.</p>`+
+ (r.events||[]).map(e=>`<details><summary>${esc(e.home)} — ${esc(e.away)} · ${esc(e.market_count)} marchés</summary>${e.markets.map(m=>`<div class="pulse-market"><b>${esc(m.name)}</b> · ${esc(m.period)}${m.active===false?' · Suspendu':''}<small>${esc(m.canonical)}</small>${pulseReadingHTML(m)}<p>${m.selections.map(o=>`${esc(o.name)}${o.line!==null?' · ligne '+esc(o.line):''} : ${fmt(o.odds)}${o.active===false?' (suspendu)':''}`).join('<br>')||'Aucune sélection interprétable'}</p></div>`).join('')}</details>`).join('')+(r.returned===0?'<p>Aucun match live renvoyé : cela ne permet pas encore de vérifier les marchés.</p>':'');
 }
 $('#pulse-form').onsubmit=async e=>{
  e.preventDefault();const b=$('#pulse-save');b.disabled=true;

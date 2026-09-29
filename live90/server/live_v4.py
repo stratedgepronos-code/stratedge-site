@@ -55,9 +55,48 @@ PULSE_URL = 'https://api.pulsescore.net/api/stake/live-events?sport=soccer&page=
 class PulseNoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl): return None
 
+def pulse_market_reading(event, market):
+    """Recognize only observed, explicit team totals. Provider enums alone are unsafe.
+
+    Stake's Half Time team totals and Bands share the full-time canonical keys.
+    Keep original fields and report a separate, conservative interpretation.
+    This does not select a bet or claim that a line means one additional goal.
+    """
+    name=norm(market.get('name','')); period=market.get('period'); canonical=market.get('canonical')
+    for team,field,expected in (('h','home','HOME_OVER_UNDER'),('a','away','AWAY_OVER_UNDER')):
+        team_name=norm(event.get(field,''))
+        if not team_name or norm(event.get('home',''))==norm(event.get('away','')):continue
+        full=team_name+' total goals'
+        ht=name in ('half time '+full,'half-time '+full)
+        if not ht and name!=full:continue
+        if canonical!=expected:return {'recognized':False,'reason':'Libellé et équipe normalisée contradictoires'}
+        allowed=('FULL_TIME','FIRST_HALF') if ht else ('FULL_TIME',)
+        if period not in allowed:return {'recognized':False,'reason':'Période non reconnue ou contradictoire'}
+        mapped='HT' if ht else 'FT';selections=[]
+        for s in market.get('selections',[]):
+            line=s.get('line'); price=s.get('odds')
+            # Require the literal Over line to agree with the numeric line.
+            match=re.fullmatch(r'over\s+(\d+(?:\.\d+)?)',norm(s.get('name','')))
+            if not match or not num(line) or float(match[1])!=line or not 0<=line<=20:continue
+            half_line=abs(line%1-.5)<1e-9
+            active=market.get('active') is True and s.get('active') is True
+            selections.append({'line':line,'odds':price if num(price) and price>1 else None,
+                'kind':'half_goal' if half_line else 'asian_or_integer','active_confirmed':active,
+                'compatible_line':half_line,
+                'note':('Total de buts de cette équipe sur la période ; comparer au score à l’instant du signal' if half_line
+                        else 'Ligne asiatique ou entière : ne pas convertir en +0,5 but supplémentaire')})
+        return {'recognized':True,'team':team,'period':mapped,'market':'goal_ht' if ht else 'goal_ft',
+            'period_corrected':ht and period=='FULL_TIME','selections':selections}
+    return {'recognized':False}
+
 def pulse_status(c, now):
     used=c.execute('SELECT COUNT(*) FROM v4_pulsescore_requests WHERE attempted_at>=?',(iso(now-dt.timedelta(days=31)),)).fetchone()[0]
     last=dec((c.execute("SELECT value FROM v4_runtime WHERE key='pulsescore_test'").fetchone() or [None])[0])
+    # Reinterpret the saved test locally, including tests run before this fix.
+    # No refresh request to the bookmaker and no mutation of the raw labels.
+    if isinstance(last,dict) and last.get('ok'):
+        for event in last.get('events',[]):
+            for market in event.get('markets',[]):market['reading']=pulse_market_reading(event,market)
     return {'configured':bool(setting(c,'pulsescore_key',None)), 'attempts_31d':used, 'local_limit':500, 'last_test':last}
 
 def pulse_summary(payload, secret):

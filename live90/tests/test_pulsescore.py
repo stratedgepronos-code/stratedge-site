@@ -60,4 +60,40 @@ class PulseTests(unittest.TestCase):
   self.save()
   with patch.object(V.urllib.request,'build_opener',return_value=self.response({'total':0,'events':[]})):r=V.pulse_test(self.c,self.now)
   self.assertTrue(r['ok']);self.assertEqual(r['pulsescore']['last_test']['returned'],0)
+ def test_team_totals_from_observed_stake_labels(self):
+  event={'home':'Deportivo Pereira','away':'Santa Fe'}
+  cases=[('Deportivo Pereira Total Goals','HOME_OVER_UNDER','h','FT',.5,1.95),
+         ('Santa Fe Total Goals','AWAY_OVER_UNDER','a','FT',1.5,1.53),
+         ('Half Time Deportivo Pereira Total Goals','HOME_OVER_UNDER','h','HT',.5,5.8),
+         ('Half Time Santa Fe Total Goals','AWAY_OVER_UNDER','a','HT',1.25,2.8)]
+  for name,canonical,team,period,line,odds in cases:
+   with self.subTest(name=name):
+    m={'name':name,'canonical':canonical,'period':'FULL_TIME','active':True,'selections':[{'name':f'Over {line}','line':line,'odds':odds,'active':True}]}
+    r=V.pulse_market_reading(event,m)
+    self.assertTrue(r['recognized']);self.assertEqual((r['team'],r['period']),(team,period))
+    self.assertEqual(r['period_corrected'],period=='HT');self.assertEqual(r['selections'][0]['compatible_line'],line!=1.25)
+    self.assertEqual(m['period'],'FULL_TIME') # raw provider evidence is preserved
+ def test_other_markets_and_misleading_enums_are_not_team_goal_quotes(self):
+  event={'home':'Deportivo Pereira','away':'Santa Fe'}
+  for name in ['Deportivo Pereira Total Goals (Bands)','Half Time Total Goals','Half Time Next Team To Score','2nd Team to Score','Rest of Match Total Goals','Total Goals Over/Under After 60 Minutes','Half-time Deportivo Pereira Total Goals Odd or Even','2nd Half Deportivo Pereira Total Goals','Deportivo Pereira Total Goals After 75 Minutes']:
+   self.assertFalse(V.pulse_market_reading(event,{'name':name,'canonical':'HOME_OVER_UNDER','period':'FULL_TIME'})['recognized'])
+  for canonical,period in [('AWAY_OVER_UNDER','FULL_TIME'),('HOME_OVER_UNDER','SECOND_HALF'),('HOME_OVER_UNDER',None)]:
+   self.assertFalse(V.pulse_market_reading(event,{'name':'Half Time Deportivo Pereira Total Goals','canonical':canonical,'period':period})['recognized'])
+ def test_selection_line_agreement_asian_lines_and_unknown_active(self):
+  event={'home':'A','away':'B'}
+  market={'name':'A Total Goals','canonical':'HOME_OVER_UNDER','period':'FULL_TIME','selections':[
+   {'name':'Over 1.5','line':.5,'odds':2}, {'name':'Under 0.5','line':.5,'odds':2},
+   {'name':'Over 1','line':1,'odds':2}, {'name':'Over 1.75','line':1.75,'odds':2},
+   {'name':'Over 0.5','line':.5,'odds':2}]}
+  selections=V.pulse_market_reading(event,market)['selections']
+  self.assertEqual([s['line'] for s in selections],[1,1.75,.5]);self.assertEqual([s['compatible_line'] for s in selections],[False,False,True])
+  self.assertFalse(any(s['active_confirmed'] for s in selections))
+ def test_saved_tests_get_corrected_without_api_call_or_quota(self):
+  stored={'ok':True,'events':[{'home':'A','away':'B','markets':[{'name':'Half Time A Total Goals','period':'FULL_TIME','canonical':'HOME_OVER_UNDER','selections':[]}]}]}
+  with self.c:V.runtime(self.c,'pulsescore_test',stored)
+  with patch.object(V.urllib.request,'build_opener') as network:
+   r=V.pulse_status(self.c,self.now);network.assert_not_called()
+  self.assertEqual(r['attempts_31d'],0);self.assertTrue(r['last_test']['events'][0]['markets'][0]['reading']['period_corrected'])
+  raw=json.loads(self.c.execute("SELECT value FROM v4_runtime WHERE key='pulsescore_test'").fetchone()[0])
+  self.assertEqual(raw,stored)
 if __name__=='__main__':unittest.main()
