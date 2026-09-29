@@ -1,6 +1,7 @@
 """StratEdge Live V4 — deterministic observations, no LLM or bet placement."""
 import argparse, datetime as dt, hashlib, json, math, os, re, sqlite3, sys, unicodedata
 import urllib.error, urllib.request
+from zoneinfo import ZoneInfo
 UTC = dt.timezone.utc
 VERSION = 'live4.0'
 MARKETS = ('goal_ht', 'goal_ft', 'card_ft')
@@ -19,6 +20,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS v4_health_open ON v4_health_events(issue_key) 
 CREATE TABLE IF NOT EXISTS v4_settings(key TEXT PRIMARY KEY,value TEXT);
 CREATE TABLE IF NOT EXISTS v4_runtime(key TEXT PRIMARY KEY,value TEXT);
 CREATE TABLE IF NOT EXISTS v4_pulsescore_requests(id INTEGER PRIMARY KEY,attempted_at TEXT);
+CREATE TABLE IF NOT EXISTS v4_pulsescore_auto(id INTEGER PRIMARY KEY,attempted_at TEXT);
 CREATE INDEX IF NOT EXISTS v4_signal_created ON v4_signals(created_at);
 '''
 def now_utc(): return dt.datetime.now(UTC)
@@ -50,7 +52,7 @@ def options(c): return {'telegram_enabled': setting(c, 'telegram_enabled', True)
 def runtime(c, name, value): c.execute('INSERT OR REPLACE INTO v4_runtime VALUES(?,?)', (name, enc(value)))
 def text_ok(v, limit=300): return isinstance(v, str) and 0 < len(v.strip()) <= limit
 
-# Manual diagnostics only. Neither the board refresh nor the live loop calls the provider.
+# One request per confirmed-signal batch, never on board refresh or ordinary observation.
 PULSE_URL = 'https://api.pulsescore.net/api/stake/live-events?sport=soccer&page=1&limit=30'
 class PulseNoRedirect(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl): return None
@@ -89,6 +91,10 @@ def pulse_market_reading(event, market):
             'period_corrected':ht and period=='FULL_TIME','selections':selections}
     return {'recognized':False}
 
+def pulse_day_used(c, now):
+    start=now.astimezone(ZoneInfo('Europe/Paris')).replace(hour=0,minute=0,second=0,microsecond=0).astimezone(UTC)
+    return c.execute('SELECT COUNT(*) FROM v4_pulsescore_auto WHERE attempted_at>=?',(iso(start),)).fetchone()[0]
+
 def pulse_status(c, now):
     used=c.execute('SELECT COUNT(*) FROM v4_pulsescore_requests WHERE attempted_at>=?',(iso(now-dt.timedelta(days=31)),)).fetchone()[0]
     last=dec((c.execute("SELECT value FROM v4_runtime WHERE key='pulsescore_test'").fetchone() or [None])[0])
@@ -97,7 +103,7 @@ def pulse_status(c, now):
     if isinstance(last,dict) and last.get('ok'):
         for event in last.get('events',[]):
             for market in event.get('markets',[]):market['reading']=pulse_market_reading(event,market)
-    return {'configured':bool(setting(c,'pulsescore_key',None)), 'attempts_31d':used, 'local_limit':500, 'last_test':last}
+    return {'configured':bool(setting(c,'pulsescore_key',None)), 'attempts_31d':used, 'local_limit':500, 'last_test':last, 'auto_enabled':setting(c,'pulsescore_auto',True), 'auto_daily_limit':10, 'auto_today':pulse_day_used(c,now)}
 
 def pulse_summary(payload, secret):
     if not isinstance(payload,dict) or not isinstance(payload.get('events'),list):
@@ -121,16 +127,28 @@ def pulse_summary(payload, secret):
                 'canonical':label(market.get('canonicalMarket')), 'period':label(market.get('period')),
                 'active':market.get('isActive') if type(market.get('isActive')) is bool else None,'selections':selections})
         events.append({'home':label(event.get('home')), 'away':label(event.get('away')),
-            'market_count':len(event['markets']), 'markets':markets})
+            'event_id':label(event.get('eventId')), 'score':pulse_score(event.get('score')), 'market_count':len(event['markets']), 'markets':markets})
     total=payload.get('total')
     return {'events':events,'total':total if type(total) is int and total>=0 else None,
         'has_next_page':payload.get('hasNextPage') is True, 'returned':len(payload['events'])}
 
-def pulse_test(c, now):
+def pulse_score(value):
+    if not isinstance(value,dict):return None
+    result={}
+    for src,dst in (('home','h'),('away','a')):
+        n=value.get(src)
+        if type(n) is int and 0<=n<=99:result[dst]=n
+        elif isinstance(n,str) and re.fullmatch(r'\d{1,2}',n):result[dst]=int(n)
+        else:return None
+    return result
+
+def pulse_test(c, now, automatic=False):
     # Reserve under a write lock, then release it BEFORE the network operation.
     # Failed attempts consume the local budget too; never retry or auto-paginate.
     with c:
         c.execute('BEGIN IMMEDIATE')
+        if automatic and not setting(c,'pulsescore_auto',True):raise ValueError('Consultation automatique désactivée')
+        if automatic and pulse_day_used(c,now)>=10:raise ValueError('Budget quotidien atteint : 10 consultations automatiques, heure de Paris')
         secret=setting(c,'pulsescore_key',None)
         if not secret:raise ValueError('Enregistre ta clé PulseScore avant le test')
         prev=c.execute('SELECT attempted_at FROM v4_pulsescore_requests ORDER BY id DESC LIMIT 1').fetchone()
@@ -138,10 +156,11 @@ def pulse_test(c, now):
             raise ValueError('Attends une minute entre deux tests PulseScore')
         if pulse_status(c,now)['attempts_31d']>=500:raise ValueError('Limite locale atteinte : 500 tentatives sur 31 jours glissants')
         c.execute('INSERT INTO v4_pulsescore_requests(attempted_at) VALUES(?)',(iso(now),))
+        if automatic:c.execute('INSERT INTO v4_pulsescore_auto(attempted_at) VALUES(?)',(iso(now),))
     result={'ok':False,'at':iso(now),'error':'Connexion PulseScore indisponible ; aucun nouvel essai automatique'}
     try:
         req=urllib.request.Request(PULSE_URL,headers={'X-Secret':secret,'Accept':'application/json','Accept-Encoding':'identity'})
-        with urllib.request.build_opener(PulseNoRedirect()).open(req,timeout=8) as response:
+        with urllib.request.build_opener(PulseNoRedirect()).open(req,timeout=3 if automatic else 8) as response:
             raw=response.read(4*1024*1024+1)
             if len(raw)>4*1024*1024:raise ValueError('Réponse PulseScore trop volumineuse ; test interrompu')
         try:payload=json.loads(raw)
@@ -153,8 +172,73 @@ def pulse_test(c, now):
         e.close()
     except ValueError as e:result['error']=str(e)
     except Exception:pass  # Never expose provider bodies, headers or exception text containing credentials.
-    with c:runtime(c,'pulsescore_test',result)
-    return {'ok':result['ok'],'pulsescore':pulse_status(c,now)}
+    with c:runtime(c,'pulsescore_auto_last' if automatic else 'pulsescore_test',result)
+    return result if automatic else {'ok':result['ok'],'pulsescore':pulse_status(c,now)}
+
+def pulse_signal_quote(result, signal, saved, now):
+    stamp=date(result.get('at'))
+    if not result.get('ok') or not stamp or not 0<=(now-stamp).total_seconds()<=15:
+        return None,'Réponse absente ou trop ancienne'
+    events=[e for e in result.get('events',[]) if norm(e.get('home',''))==norm(saved.get('home','')) and norm(e.get('away',''))==norm(saved.get('away',''))]
+    if len(events)!=1:return None,'Match absent de la page reçue ou identification ambiguë'
+    event=events[0]
+    if not event.get('event_id') or event.get('score') is None or event['score']!=saved.get('score'):
+        return None,'Identifiant ou score fournisseur absent / différent de Packball'
+    if signal['market'] not in ('goal_ht','goal_ft'):return None,'Marché cartons non couvert par ce raccordement'
+    if signal['line']!=saved['score'][signal['team']]+.5:return None,'Ligne incompatible avec un but supplémentaire'
+    choices=[]
+    for m in event.get('markets',[]):
+        r=pulse_market_reading(event,m)
+        if not r.get('recognized') or r['market']!=signal['market'] or r['team']!=signal['team']:continue
+        for selection in r['selections']:
+            if selection['compatible_line'] and selection['active_confirmed'] and selection['line']==signal['line'] and num(selection['odds']) and selection['odds']>1:
+                choices.append({'odds':selection['odds'],'line':selection['line'],'period':r['period'],'team':r['team'],
+                    'market_name':m['name'],'period_corrected':r['period_corrected'],'event_id':event['event_id'],
+                    'score':event['score'],'received_at':result['at'],'source':'Stake via PulseScore',
+                    'matching':'noms exacts normalisés et score identique ; match unique dans la page live'})
+    if not choices:return None,'Marché exact absent, suspendu, asiatique ou disponibilité non confirmée'
+    if len({q['odds'] for q in choices})!=1:return None,'Plusieurs cotes contradictoires pour le même marché'
+    return choices[0],None
+
+def pulse_enrich(c, now):
+    pending=[]
+    # Claim each enrichment once. A crash leaves the signal available for statistical delivery.
+    with c:
+        c.execute('BEGIN IMMEDIATE')
+        for signal in c.execute("SELECT * FROM v4_signals WHERE delivery='queued' AND created_at>=? ORDER BY id LIMIT 10",(iso(now-dt.timedelta(seconds=90)),)).fetchall():
+            saved=dec(signal['data'],{})
+            if 'stake_lookup' in saved:continue
+            reason=None
+            if signal['market']=='card_ft':reason='Cartons : alerte statistique sans cote'
+            elif not setting(c,'pulsescore_auto',True):reason='Consultation automatique désactivée'
+            elif not setting(c,'pulsescore_key',None):reason='Clé PulseScore non configurée'
+            saved['stake_lookup']={'state':'skipped' if reason else 'checking','at':iso(now),'reason':reason}
+            c.execute('UPDATE v4_signals SET data=? WHERE id=?',(enc(saved),signal['id']))
+            if not reason:pending.append((signal,saved))
+    if not pending:return
+    cached=dec((c.execute("SELECT value FROM v4_runtime WHERE key='pulsescore_auto_last'").fetchone() or [None])[0],{})
+    at=date(cached.get('at'));result=cached if cached.get('ok') and at and 0<=(now-at).total_seconds()<=15 else None
+    reason=None
+    if result is None and at and not cached.get('ok') and 0<=(now-at).total_seconds()<900:
+        result=cached;reason='Pause API de 15 minutes après erreur : '+cached.get('error','PulseScore indisponible')
+    if result is None:
+        try:
+            result=pulse_test(c,now,automatic=True)
+            if not result.get('ok'):reason=result.get('error','PulseScore indisponible')
+        except ValueError as e:reason=str(e)
+        except Exception:reason='PulseScore indisponible ; alerte statistique conservée'
+    with c:
+        for signal,saved in pending:
+            quote,why=pulse_signal_quote(result,signal,saved,now) if result and result.get('ok') else (None,reason)
+            saved['stake_lookup']={'state':'found' if quote else 'unavailable','at':iso(now),'reason':why}
+            if quote:saved['stake_quote']=quote
+            c.execute("UPDATE v4_signals SET data=? WHERE id=? AND delivery='queued'",(enc(saved),signal['id']))
+
+def pulse_message(saved, now):
+    quote=saved.get('stake_quote');stamp=date(quote.get('received_at')) if isinstance(quote,dict) else None
+    if quote and stamp and 0<=(now-stamp).total_seconds()<=30:
+        return 'Cote indicative Stake via PulseScore : '+str(quote['odds'])+' · '+quote['market_name']+' · Over '+str(quote['line'])+' · relevée à '+stamp.astimezone(ZoneInfo('Europe/Paris')).strftime('%H:%M:%S')+' (Paris). À vérifier sur stake.bet ; fraîcheur du flux source non garantie.'
+    return 'Cote Stake non disponible : '+(saved.get('stake_lookup',{}).get('reason') or 'relevé trop ancien ou consultation inachevée')+'. Vérification manuelle.'
 
 def identity(m):
     if not isinstance(m, dict) or not all(text_ok(m.get(k), 160) for k in ('home','away')) or norm(m['home']) == norm(m['away']): raise ValueError('Noms des équipes invalides')
@@ -397,10 +481,11 @@ def notify(message):
     except urllib.error.HTTPError as e: return 'failed','Refus HTTP '+str(e.code),None
     except Exception: return 'uncertain','Connexion interrompue ; livraison inconnue, aucun renvoi automatique',None
 
-def deliver(c, now):
+def deliver(c, now, realtime=False):
     # Recover ambiguous sends after a process crash; never resend blindly.
     c.execute("UPDATE v4_signals SET delivery='uncertain',delivery_error='Processus interrompu pendant l’envoi' WHERE delivery='sending' AND created_at<?",(iso(now-dt.timedelta(minutes=3)),));c.commit()
     for s in c.execute("SELECT * FROM v4_signals WHERE delivery='queued' ORDER BY id LIMIT 10").fetchall():
+        if realtime:now=now_utc()
         if not c.execute("UPDATE v4_signals SET delivery='sending' WHERE id=? AND delivery='queued'",(s['id'],)).rowcount: continue
         c.commit(); saved=dec(s['data'],{}); row=c.execute('SELECT * FROM samples WHERE match_id=? ORDER BY id DESC LIMIT 1',(s['match_id'],)).fetchone()
         valid=bool(row and 0<=(now-date(s['created_at'])).total_seconds()<=90)
@@ -409,7 +494,8 @@ def deliver(c, now):
             d=safe_evaluate(r,p,ctx,s['market'],s['team'],now,hist,options(c));valid=d['status']=='candidate' and r.get('score')==saved.get('score') and d['line']==s['line'] and (d.get('quote') or {}).get('odds')==s['odds']
         if not valid: state,error,mid='expired','Conditions ou cote modifiées avant envoi',None
         else:
-            lines=['STRATEDGE · LIVE #'+str(s['id']),saved['home']+' — '+saved['away'],str(saved['minute'])+'′ · '+str(saved['score']['h'])+'–'+str(saved['score']['a']),saved['label'],('ALERTE STATISTIQUE SANS COTE · aucun avantage de prix évalué' if s['odds'] is None else 'Cote observée '+str(s['odds'])+' · bet365 via Packball'),'Intensité '+str(saved['decision']['intensity'])+'/100 (pas une probabilité)']
+            lines=['STRATEDGE · LIVE #'+str(s['id']),saved['home']+' — '+saved['away'],str(saved['minute'])+'′ · '+str(saved['score']['h'])+'–'+str(saved['score']['a']),saved['label'],('ALERTE STATISTIQUE'+(' · cote indicative conservée' if saved.get('stake_quote') else ' SANS COTE')+' · aucun avantage de prix évalué' if s['odds'] is None else 'Cote observée '+str(s['odds'])+' · bet365 via Packball'),'Intensité '+str(saved['decision']['intensity'])+'/100 (pas une probabilité)']
+            if s['odds'] is None:lines.append(pulse_message(saved,now))
             lines += [k+' : '+str(v) for k,v in saved['decision']['metrics'].items() if v is not None]
             lines += saved['decision']['context_notes'][:2]
             lines += ['Vérifier la cote et le règlement chez ton bookmaker.','Signal en observation · aucune mise automatique.']
@@ -617,6 +703,7 @@ def auto_results(c,now):
         settle(c,{'id':s['id'],'outcome':outcome,'source':source},now,automatic=True,evidence={'sample_id':row['id'],'observed_at':iso(at),'detail':detail})
 
 def run(path,send=True,now=None):
+    realtime=now is None
     now=now or now_utc(); c=connect(path);settings=options(c);active=active_fixtures(c);cycle_ids=current_cycle_ids(c)
     for sample in latest(c):
         r=sample_data(sample)
@@ -646,7 +733,11 @@ def run(path,send=True,now=None):
                         d.update(status='signal',reason='Signal conservé dans l’historique')
                 c.execute('INSERT OR REPLACE INTO v4_decisions VALUES(?,?,?,?,?,?,?)',(r['packball_id'],market,team,sample['id'],iso(now),d['status'],enc(d)))
     auto_results(c,now);runtime(c,'engine',{'at':iso(now),'version':VERSION,'telegram_active':bool(send and settings['telegram_enabled'])});c.commit()
-    if send and settings['telegram_enabled']: deliver(c,now)
+    if send and settings['telegram_enabled']:
+        try:pulse_enrich(c,now)
+        except Exception:
+            c.rollback() # Odds enrichment must never prevent statistical delivery.
+        deliver(c,now,realtime=realtime)
     else:
         c.execute("UPDATE v4_signals SET delivery='disabled',delivery_error='Envoi désactivé' WHERE delivery='queued'");c.commit()
     deliver_results(c,now,send and settings['telegram_enabled'])
@@ -756,17 +847,21 @@ def dispatch(c,x,now):
         with c:
             for k in ('telegram_enabled','min_odds'):c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,enc(s[k])))
         return {'ok':True}
+    if action=='pulsescore_auto':
+        if type(x.get('enabled')) is not bool:raise ValueError('Activation invalide')
+        with c:c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',('pulsescore_auto',enc(x['enabled'])))
+        return {'ok':True,'pulsescore':pulse_status(c,now)}
     if action=='pulsescore_key':
         secret=x.get('key')
         if not isinstance(secret,str) or not re.fullmatch(r'[!-~]{8,512}',secret):raise ValueError('Clé invalide : 8 à 512 caractères sans espace')
         with c:
             c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',('pulsescore_key',enc(secret)))
-            c.execute("DELETE FROM v4_runtime WHERE key='pulsescore_test'")
+            c.execute("DELETE FROM v4_runtime WHERE key IN ('pulsescore_test','pulsescore_auto_last')")
         return {'ok':True,'pulsescore':pulse_status(c,now)}
     if action=='pulsescore_remove':
         with c:
             c.execute("DELETE FROM v4_settings WHERE key='pulsescore_key'")
-            c.execute("DELETE FROM v4_runtime WHERE key='pulsescore_test'")
+            c.execute("DELETE FROM v4_runtime WHERE key IN ('pulsescore_test','pulsescore_auto_last')")
         return {'ok':True,'pulsescore':pulse_status(c,now)}
     if action=='pulsescore_test':return pulse_test(c,now)
     if action=='telegram_test':
@@ -785,6 +880,7 @@ if __name__=='__main__':
         elif args.diagnostic:
             b=board(c,now_utc());result={k:b[k] for k in ('version','feed','engine','telegram','totals')};result['feed']=dict(result['feed']);result['feed'].pop('headers',None);result['feed'].pop('odds_meta',None);result['list']={'matches':len(b['matches']),'live':sum(r.get('state')=='LIVE' for r in b['matches']),'halftime':sum(r.get('state')=='HT' for r in b['matches'])};result['collection_columns']=b['feed'].get('headers',[]);result['collection_odds']=b['feed'].get('odds_meta',{});result['health']=b['health'];result['recent_rows']=[{k:r.get(k) for k in ('packball_id','home','away','state','status_raw','minute','received_at','stats','ind5','ind10','quotes','quality_errors')} for r in [sample_data(x) for x in latest(c)] if r.get('state') in ('LIVE','HT')][:6]
             result['match_audits']=audit_matches(c,now_utc())
+            result['pulsescore']={k:b['pulsescore'][k] for k in ('configured','auto_enabled','auto_today','auto_daily_limit','attempts_31d')}
         else: result=dispatch(c,json.load(sys.stdin),now_utc())
         print(enc(result));c.close()
     except (ValueError,TypeError,KeyError) as e: print(enc({'error':str(e)}));sys.exit(2)
