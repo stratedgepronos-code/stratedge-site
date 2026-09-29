@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS v4_health_events(id INTEGER PRIMARY KEY,issue_key TEX
 CREATE UNIQUE INDEX IF NOT EXISTS v4_health_open ON v4_health_events(issue_key) WHERE resolved_at IS NULL;
 CREATE TABLE IF NOT EXISTS v4_settings(key TEXT PRIMARY KEY,value TEXT);
 CREATE TABLE IF NOT EXISTS v4_runtime(key TEXT PRIMARY KEY,value TEXT);
+CREATE TABLE IF NOT EXISTS v4_pulsescore_requests(id INTEGER PRIMARY KEY,attempted_at TEXT);
 CREATE INDEX IF NOT EXISTS v4_signal_created ON v4_signals(created_at);
 '''
 def now_utc(): return dt.datetime.now(UTC)
@@ -48,6 +49,73 @@ def setting(c, name, default):
 def options(c): return {'telegram_enabled': setting(c, 'telegram_enabled', True), 'min_odds': setting(c, 'min_odds', 1.65)}
 def runtime(c, name, value): c.execute('INSERT OR REPLACE INTO v4_runtime VALUES(?,?)', (name, enc(value)))
 def text_ok(v, limit=300): return isinstance(v, str) and 0 < len(v.strip()) <= limit
+
+# Manual diagnostics only. Neither the board refresh nor the live loop calls the provider.
+PULSE_URL = 'https://api.pulsescore.net/api/stake/live-events?sport=soccer&page=1&limit=30'
+class PulseNoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl): return None
+
+def pulse_status(c, now):
+    used=c.execute('SELECT COUNT(*) FROM v4_pulsescore_requests WHERE attempted_at>=?',(iso(now-dt.timedelta(days=31)),)).fetchone()[0]
+    last=dec((c.execute("SELECT value FROM v4_runtime WHERE key='pulsescore_test'").fetchone() or [None])[0])
+    return {'configured':bool(setting(c,'pulsescore_key',None)), 'attempts_31d':used, 'local_limit':500, 'last_test':last}
+
+def pulse_summary(payload, secret):
+    if not isinstance(payload,dict) or not isinstance(payload.get('events'),list):
+        raise ValueError('Format PulseScore non reconnu ; aucun marché interprété')
+    def label(x): return x.replace(secret,'[masqué]')[:180] if isinstance(x,str) else ''
+    events=[]
+    for event in payload['events'][:30]:
+        if not isinstance(event,dict) or not isinstance(event.get('markets'),list):
+            raise ValueError('Structure des marchés PulseScore non reconnue')
+        markets=[]
+        for market in event['markets'][:200]:
+            if not isinstance(market,dict):continue
+            selections=[]
+            for s in (market.get('selections') if isinstance(market.get('selections'),list) else [])[:6]:
+                if not isinstance(s,dict):continue
+                price=s.get('odds',s.get('decimal'));line=s.get('line')
+                selections.append({'name':label(s.get('rawName') or s.get('name') or s.get('canonicalOutcome')),
+                    'odds':price if num(price) and price>1 else None, 'line':line if num(line) else None,
+                    'active':s.get('isActive') if type(s.get('isActive')) is bool else None})
+            markets.append({'name':label(market.get('rawName') or market.get('canonicalMarket')),
+                'canonical':label(market.get('canonicalMarket')), 'period':label(market.get('period')),
+                'active':market.get('isActive') if type(market.get('isActive')) is bool else None,'selections':selections})
+        events.append({'home':label(event.get('home')), 'away':label(event.get('away')),
+            'market_count':len(event['markets']), 'markets':markets})
+    total=payload.get('total')
+    return {'events':events,'total':total if type(total) is int and total>=0 else None,
+        'has_next_page':payload.get('hasNextPage') is True, 'returned':len(payload['events'])}
+
+def pulse_test(c, now):
+    # Reserve under a write lock, then release it BEFORE the network operation.
+    # Failed attempts consume the local budget too; never retry or auto-paginate.
+    with c:
+        c.execute('BEGIN IMMEDIATE')
+        secret=setting(c,'pulsescore_key',None)
+        if not secret:raise ValueError('Enregistre ta clé PulseScore avant le test')
+        prev=c.execute('SELECT attempted_at FROM v4_pulsescore_requests ORDER BY id DESC LIMIT 1').fetchone()
+        if prev and date(prev[0]) and (now-date(prev[0])).total_seconds()<60:
+            raise ValueError('Attends une minute entre deux tests PulseScore')
+        if pulse_status(c,now)['attempts_31d']>=500:raise ValueError('Limite locale atteinte : 500 tentatives sur 31 jours glissants')
+        c.execute('INSERT INTO v4_pulsescore_requests(attempted_at) VALUES(?)',(iso(now),))
+    result={'ok':False,'at':iso(now),'error':'Connexion PulseScore indisponible ; aucun nouvel essai automatique'}
+    try:
+        req=urllib.request.Request(PULSE_URL,headers={'X-Secret':secret,'Accept':'application/json','Accept-Encoding':'identity'})
+        with urllib.request.build_opener(PulseNoRedirect()).open(req,timeout=8) as response:
+            raw=response.read(4*1024*1024+1)
+            if len(raw)>4*1024*1024:raise ValueError('Réponse PulseScore trop volumineuse ; test interrompu')
+        try:payload=json.loads(raw)
+        except (ValueError,UnicodeError):raise ValueError('Réponse PulseScore non JSON ; aucun marché interprété') from None
+        result={'ok':True,'at':iso(now),**pulse_summary(payload,secret)}
+    except urllib.error.HTTPError as e:
+        errors={401:'Clé refusée par PulseScore',403:'Accès refusé : vérifier les droits Stake du forfait',429:'Quota ou fréquence PulseScore dépassé'}
+        result['error']=errors.get(e.code,'Réponse HTTP PulseScore refusée')+' (HTTP '+str(e.code)+')'
+        e.close()
+    except ValueError as e:result['error']=str(e)
+    except Exception:pass  # Never expose provider bodies, headers or exception text containing credentials.
+    with c:runtime(c,'pulsescore_test',result)
+    return {'ok':result['ok'],'pulsescore':pulse_status(c,now)}
 
 def identity(m):
     if not isinstance(m, dict) or not all(text_ok(m.get(k), 160) for k in ('home','away')) or norm(m['home']) == norm(m['away']): raise ValueError('Noms des équipes invalides')
@@ -611,7 +679,7 @@ def board(c,now):
             z=dict(s);z['context']=dec(z['context'],{});legacy.append(z)
     except sqlite3.OperationalError:pass
     c.commit()
-    return {'ok':True,'version':VERSION,'server_time':iso(now),'health':feed_health(c,now),'matches':records,'signals':history(c),'history_total':totals['total'],'totals':totals,'legacy':legacy,'feed':{'received_at':cycle['received_at'] if cycle else None,'rows':feed.get('page_rows'), 'collector_version':feed.get('collector_version'),'headers':feed.get('stat_headers',[]),'odds_meta':feed.get('odds_meta',{})},'engine':dec((c.execute("SELECT value FROM v4_runtime WHERE key='engine'").fetchone() or [None])[0]),'settings':options(c),'telegram':{'configured':bool(os.environ.get('TELEGRAM_BOT_TOKEN') and os.environ.get('TELEGRAM_CHAT_ID'))}}
+    return {'ok':True,'version':VERSION,'server_time':iso(now),'health':feed_health(c,now),'matches':records,'signals':history(c),'history_total':totals['total'],'totals':totals,'legacy':legacy,'feed':{'received_at':cycle['received_at'] if cycle else None,'rows':feed.get('page_rows'), 'collector_version':feed.get('collector_version'),'headers':feed.get('stat_headers',[]),'odds_meta':feed.get('odds_meta',{})},'engine':dec((c.execute("SELECT value FROM v4_runtime WHERE key='engine'").fetchone() or [None])[0]),'settings':options(c),'pulsescore':pulse_status(c,now),'telegram':{'configured':bool(os.environ.get('TELEGRAM_BOT_TOKEN') and os.environ.get('TELEGRAM_CHAT_ID'))}}
 
 def export_analysis(c,now):
     matches=[];active=active_fixtures(c)
@@ -649,6 +717,19 @@ def dispatch(c,x,now):
         with c:
             for k in ('telegram_enabled','min_odds'):c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,enc(s[k])))
         return {'ok':True}
+    if action=='pulsescore_key':
+        secret=x.get('key')
+        if not isinstance(secret,str) or not re.fullmatch(r'[!-~]{8,512}',secret):raise ValueError('Clé invalide : 8 à 512 caractères sans espace')
+        with c:
+            c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',('pulsescore_key',enc(secret)))
+            c.execute("DELETE FROM v4_runtime WHERE key='pulsescore_test'")
+        return {'ok':True,'pulsescore':pulse_status(c,now)}
+    if action=='pulsescore_remove':
+        with c:
+            c.execute("DELETE FROM v4_settings WHERE key='pulsescore_key'")
+            c.execute("DELETE FROM v4_runtime WHERE key='pulsescore_test'")
+        return {'ok':True,'pulsescore':pulse_status(c,now)}
+    if action=='pulsescore_test':return pulse_test(c,now)
     if action=='telegram_test':
         prev=dec((c.execute("SELECT value FROM v4_runtime WHERE key='telegram_test'").fetchone() or [None])[0],{})
         if date(prev.get('at')) and (now-date(prev['at'])).total_seconds()<60:raise ValueError('Attendre une minute entre deux tests Telegram')
