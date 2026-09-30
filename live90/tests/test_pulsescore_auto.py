@@ -23,7 +23,7 @@ class PulseAutoTests(unittest.TestCase):
   with patch.object(V.urllib.request,'build_opener',return_value=network),patch.object(V,'notify',return_value=('sent',None,1)) as send:
    V.run(self.base.db,send=True,now=self.now)
   network.open.assert_called_once();self.assertEqual(network.open.call_args.kwargs['timeout'],3);self.assertEqual(send.call_count,2)
-  text='\n'.join(x.args[0] for x in send.call_args_list);self.assertIn('1.53',text);self.assertIn('5.8',text);self.assertIn('indicative',text)
+  text='\n'.join(x.args[0] for x in send.call_args_list);self.assertIn('1,53',text);self.assertIn('5,80',text);self.assertIn('indicative',text)
   signals=V.history(self.c);self.assertEqual(len(signals),2);self.assertTrue(all(s['odds'] is None for s in signals))
   self.assertEqual({s['data']['stake_quote']['period'] for s in signals},{'HT','FT'})
   V.settle(self.c,{'id':signals[0]['id'],'outcome':'won','source':'Test'},self.now)
@@ -33,7 +33,7 @@ class PulseAutoTests(unittest.TestCase):
   with patch.object(V.urllib.request,'build_opener',return_value=network),patch.object(V,'notify',return_value=('sent',None,1)) as send:
    V.pulse_enrich(self.c,self.now);V.pulse_enrich(self.c,self.now+dt.timedelta(seconds=70));V.deliver(self.c,self.now)
   network.open.assert_called_once();self.assertEqual(send.call_count,2)
-  self.assertTrue(all('SANS COTE' in x.args[0] for x in send.call_args_list))
+  self.assertTrue(all('Cote : à vérifier sur Stake' in x.args[0] for x in send.call_args_list))
  def test_cards_never_consume_provider_quota(self):
   self.prepare(cards=True)
   with patch.object(V.urllib.request,'build_opener') as network,patch.object(V,'notify',return_value=('sent',None,1)) as send:
@@ -50,7 +50,8 @@ class PulseAutoTests(unittest.TestCase):
   with patch.object(V.urllib.request,'build_opener') as network,patch.object(V,'notify',return_value=('sent',None,1)) as send:
    V.pulse_enrich(self.c,self.now);V.deliver(self.c,self.now)
   network.assert_not_called();self.assertEqual(send.call_count,2)
-  self.assertIn('Budget quotidien',send.call_args.args[0])
+  self.assertIn('Cote : à vérifier sur Stake',send.call_args.args[0]);self.assertNotIn('Budget quotidien',send.call_args.args[0])
+  self.assertIn('Budget quotidien',V.history(self.c)[0]['data']['stake_lookup']['reason'])
   self.assertEqual(V.pulse_day_used(self.c,self.now.replace(hour=22)),0) # midnight Paris
  def test_score_mismatch_suspension_quarter_lines_and_duplicate_events(self):
   self.prepare();s=self.c.execute('SELECT * FROM v4_signals ORDER BY id LIMIT 1').fetchone();saved=json.loads(s['data'])

@@ -1,5 +1,5 @@
 """StratEdge Live V4 — deterministic observations, no LLM or bet placement."""
-import argparse, datetime as dt, hashlib, json, math, os, re, sqlite3, sys, unicodedata
+import argparse, datetime as dt, hashlib, html, json, math, os, re, sqlite3, sys, unicodedata
 import urllib.error, urllib.request
 from zoneinfo import ZoneInfo
 UTC = dt.timezone.utc
@@ -236,9 +236,9 @@ def pulse_enrich(c, now):
 
 def pulse_message(saved, now):
     quote=saved.get('stake_quote');stamp=date(quote.get('received_at')) if isinstance(quote,dict) else None
-    if quote and stamp and 0<=(now-stamp).total_seconds()<=30:
-        return 'Cote indicative Stake via PulseScore : '+str(quote['odds'])+' · '+quote['market_name']+' · Over '+str(quote['line'])+' · relevée à '+stamp.astimezone(ZoneInfo('Europe/Paris')).strftime('%H:%M:%S')+' (Paris). À vérifier sur stake.bet ; fraîcheur du flux source non garantie.'
-    return 'Cote Stake non disponible : '+(saved.get('stake_lookup',{}).get('reason') or 'relevé trop ancien ou consultation inachevée')+'. Vérification manuelle.'
+    if quote and stamp and 0<=(now-stamp).total_seconds()<=30 and num(quote.get('odds')) and quote['odds']>1:
+        return '💰 Cote indicative : '+format(quote['odds'],'.2f').replace('.',',')+' · Stake'
+    return '💰 Cote : à vérifier sur Stake'
 
 def identity(m):
     if not isinstance(m, dict) or not all(text_ok(m.get(k), 160) for k in ('home','away')) or norm(m['home']) == norm(m['away']): raise ValueError('Noms des équipes invalides')
@@ -477,11 +477,50 @@ def latest(c):
 def sample_data(s):
     r=dec(s['data'],{}); r['received_at']=s['received_at'];r.setdefault('collected_at',s['received_at']);r['sample_id']=s['id'];return r
 
+def telegram_html(message):
+    # Keep the outbox plain text, including legacy queued results. Escape before
+    # adding our own tags; team names must never become Telegram markup.
+    plain=message.encode('utf-16-le')[:7800].decode('utf-16-le',errors='ignore')
+    lines=[]
+    for i,line in enumerate(plain.split('\n')):
+        escaped=html.escape(line,quote=False)
+        if i==0 or line.startswith(('⚽ ','🎯 ','💰 ','✅ ','❌ ','⚪ ','⏳ ')):
+            escaped='<b>'+escaped+'</b>'
+        lines.append(escaped)
+    return '\n'.join(lines)
+
+def message_target(s,saved):
+    name=saved.get('home' if s['team']=='h' else 'away','?')
+    line=format(s['line'],'g').replace('.',',')
+    unit='jaunes' if s['market']=='card_ft' else 'buts'
+    period='1re mi-temps' if s['market']=='goal_ht' else 'match entier'
+    return '🎯 '+name+' · plus de '+line+' '+unit+' · '+period
+
+def alert_message(s,saved,now):
+    score=saved['score'];m=saved.get('decision',{}).get('metrics',{})
+    name=saved['home'] if s['team']=='h' else saved['away']
+    lines=['🚨 STRATEDGE · ALERTE LIVE #'+str(s['id']),'',
+        '⚽ '+saved['home']+' — '+saved['away'],
+        '⏱ '+format(saved['minute'],'g')+'′ · Score '+str(score['h'])+'–'+str(score['a']),'',
+        message_target(s,saved),
+        pulse_message(saved,now) if s['odds'] is None else '💰 Cote observée : '+format(s['odds'],'.2f').replace('.',',')+' · bet365',
+        '', '📊 '+name]
+    if s['market']=='card_ft':
+        if num(m.get('fouls10')):lines.append('• '+format(m['fouls10'],'g')+' fautes sur les 10 dernières minutes')
+        if num(m.get('possession')):lines.append('• Possession : '+format(m['possession'],'g')+' %')
+    else:
+        if num(m.get('shots10')) and num(m.get('sot10')):
+            lines.append('• '+format(m['shots10'],'g')+' tirs dont '+format(m['sot10'],'g')+' cadrés sur 10 min')
+        if num(m.get('activity_ratio')):
+            lines.append('• Rythme de tirs : ×'+format(m['activity_ratio'],'.1f').replace('.',',')+' le repère avant-match')
+    lines.extend(['','Cote et marché à vérifier avant de miser.', 'Signal statistique · détails dans StratEdge.'])
+    return '\n'.join(lines)
+
 def notify(message):
     token=os.environ.get('TELEGRAM_BOT_TOKEN'); chat=os.environ.get('TELEGRAM_CHAT_ID')
     if not token or not chat: return 'failed','Bot ou destinataire Telegram non configuré',None
     try:
-        req=urllib.request.Request('https://api.telegram.org/bot'+token+'/sendMessage',data=enc({'chat_id':chat,'text':message[:4000]}).encode(),headers={'Content-Type':'application/json'})
+        req=urllib.request.Request('https://api.telegram.org/bot'+token+'/sendMessage',data=enc({'chat_id':chat,'text':telegram_html(message),'parse_mode':'HTML','link_preview_options':{'is_disabled':True}}).encode(),headers={'Content-Type':'application/json'})
         with urllib.request.urlopen(req,timeout=8) as response: x=json.load(response)
         if isinstance(x,dict) and x.get('ok') is True: return 'sent',None,x.get('result',{}).get('message_id')
         if isinstance(x,dict) and x.get('ok') is False: return 'failed','Refus Telegram',None
@@ -502,12 +541,7 @@ def deliver(c, now, realtime=False):
             d=safe_evaluate(r,p,ctx,s['market'],s['team'],now,hist,options(c));valid=d['status']=='candidate' and r.get('score')==saved.get('score') and d['line']==s['line'] and (d.get('quote') or {}).get('odds')==s['odds']
         if not valid: state,error,mid='expired','Conditions ou cote modifiées avant envoi',None
         else:
-            lines=['STRATEDGE · LIVE #'+str(s['id']),saved['home']+' — '+saved['away'],str(saved['minute'])+'′ · '+str(saved['score']['h'])+'–'+str(saved['score']['a']),saved['label'],('ALERTE STATISTIQUE'+(' · cote indicative conservée' if saved.get('stake_quote') else ' SANS COTE')+' · aucun avantage de prix évalué' if s['odds'] is None else 'Cote observée '+str(s['odds'])+' · bet365 via Packball'),'Intensité '+str(saved['decision']['intensity'])+'/100 (pas une probabilité)']
-            if s['odds'] is None:lines.append(pulse_message(saved,now))
-            lines += [k+' : '+str(v) for k,v in saved['decision']['metrics'].items() if v is not None]
-            lines += saved['decision']['context_notes'][:2]
-            lines += ['Vérifier la cote et le règlement chez ton bookmaker.','Signal en observation · aucune mise automatique.']
-            state,error,mid=notify('\n'.join(lines))
+            state,error,mid=notify(alert_message(s,saved,now))
         c.execute('UPDATE v4_signals SET delivery=?,delivery_error=?,telegram_id=? WHERE id=?',(state,error,mid,s['id']));c.commit()
 
 def signal_review(c,s,outcome,now):
@@ -637,13 +671,19 @@ def result_message(s, previous, outcome, source, automatic=False):
     if s['odds'] is None:names={'won':'✅ ÉVÉNEMENT OBSERVÉ','lost':'❌ NON OBSERVÉ AVANT LA FIN','void':'⚪ OBSERVATION ANNULÉE','pending':'⏳ À VÉRIFIER — validation retirée'}
     correction=previous!='pending'
     title='STRATEDGE · '+('CORRECTION DU RÉSULTAT' if correction else 'RÉSULTAT PACKBALL' if automatic else 'RÉSULTAT CONFIRMÉ')+' · LIVE #'+str(s['id'])
-    lines=[title,names[outcome],z.get('home','?')+' — '+z.get('away','?'),z.get('label',LABELS.get(s['market'],s['market'])),('Alerte statistique sans cote · aucun bilan financier' if s['odds'] is None else 'Cote du signal : '+str(s['odds']))]
+    lines=[title,'',names[outcome],'⚽ '+z.get('home','?')+' — '+z.get('away','?'),'',message_target(s,z)]
+    if s['odds'] is not None:lines.append('💰 Cote du signal : '+format(s['odds'],'.2f').replace('.',','))
+    else:
+        quote=z.get('stake_quote') or {}
+        if num(quote.get('odds')) and quote['odds']>1:
+            lines.append('💰 Cote indicative relevée au signal : '+format(quote['odds'],'.2f').replace('.',',')+' · Stake')
     if correction: lines.append('Ancien résultat : '+names[previous])
     profit=profit_units(s['odds'],outcome)
     if profit is not None: lines.append('Bilan simulé pour 1 unité : '+format(profit,'+.2f')+' u')
-    review=z.get('review') or {}
-    if outcome=='lost':lines.extend(['Bilan automatique :']+(review.get('facts',[])[1:3])+review.get('limits',[])[:2]+['Cause non démontrée ; bilan complet dans l’historique.'])
-    lines.extend(['Résultat automatique d’après Packball ; corrigé si le flux change.' if automatic else 'Confirmation dans l’historique StratEdge.','Source : '+source,'Aucune mise automatique ; règlement du bookmaker distinct.'])
+    lines.append('')
+    if outcome=='lost':lines.append('Bilan automatique disponible dans l’historique.')
+    lines.append('Suivi Packball · correction si le flux change.' if automatic else 'Résultat confirmé dans StratEdge.')
+    lines.append('Règlement final à vérifier chez le bookmaker.')
     return '\n'.join(lines)
 
 def deliver_results(c,now,enabled=True):

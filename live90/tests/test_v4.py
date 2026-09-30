@@ -70,7 +70,7 @@ class LiveV4Tests(unittest.TestCase):
   with patch.object(V,'notify',return_value=('sent',None,94)) as send:
    V.run(self.db,True,self.now);V.run(self.db,True,self.now)
    self.assertEqual(send.call_count,2)
-   self.assertTrue(all('ALERTE STATISTIQUE SANS COTE' in x.args[0] for x in send.call_args_list))
+   self.assertTrue(all('Cote : à vérifier sur Stake' in x.args[0] for x in send.call_args_list))
   signals=V.history(self.c);self.assertEqual({s['market'] for s in signals},{'goal_ht','goal_ft'})
   self.assertTrue(all(s['odds'] is None and s['profit_units'] is None for s in signals))
   later=self.now+dt.timedelta(minutes=15);self.r.update(state='HT',minute=45);self.add(self.r,later)
@@ -122,7 +122,7 @@ class LiveV4Tests(unittest.TestCase):
   with patch.object(V,'notify',return_value=('sent',None,91)) as send:
    V.run(self.db,True,self.now);V.run(self.db,True,self.now)
    self.assertEqual(send.call_count,1)
-   self.assertIn('ALERTE STATISTIQUE SANS COTE',send.call_args.args[0])
+   self.assertIn('Cote : à vérifier sur Stake',send.call_args.args[0])
    self.assertNotIn('Cote observée',send.call_args.args[0])
   signal=V.history(self.c)[0];sid=signal['id']
   self.assertEqual(signal['market'],'card_ft');self.assertIsNone(signal['odds']);self.assertIsNone(signal['profit_units'])
@@ -222,7 +222,7 @@ class LiveV4Tests(unittest.TestCase):
  def test_changed_price_before_delivery_does_not_block_statistical_signal(self):
   self.prepared();V.run(self.db,False,self.now);self.c.execute("UPDATE v4_signals SET delivery='queued'");self.c.commit();self.r['quotes'][0]['odds']=1.85;self.add(self.r,self.now)
   with patch.object(V,'notify',return_value=('sent',None,90)) as send:
-   V.deliver(self.c,self.now);self.assertEqual(send.call_count,1);self.assertIn('SANS COTE',send.call_args.args[0])
+   V.deliver(self.c,self.now);self.assertEqual(send.call_count,1);self.assertIn('Cote : à vérifier sur Stake',send.call_args.args[0])
   self.assertEqual(self.c.execute('SELECT delivery FROM v4_signals').fetchone()[0],'sent')
  def test_results_and_correction_audited(self):
   self.prepared();V.run(self.db,False,self.now);sid=self.c.execute('SELECT id FROM v4_signals').fetchone()[0]
