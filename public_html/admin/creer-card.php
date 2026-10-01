@@ -221,7 +221,7 @@ if ($seAdminFetchPrefix === '/admin' || preg_match('#/admin$#', $seAdminFetchPre
 <div class="main">
   <input type="hidden" id="csrf_token" value="<?= htmlspecialchars(csrfToken()) ?>">
   <div class="page-header">
-    <h1>🎨 Créer une Card</h1>
+    <h1>Créer une Card</h1>
     <p>Choisissez le type de bet — Claude génère la card normale + locked en JPEG.</p>
   </div>
 

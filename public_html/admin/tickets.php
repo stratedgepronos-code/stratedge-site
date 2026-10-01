@@ -314,7 +314,7 @@ $statutLabels = ['ouvert'=>'🟡 Ouvert','en_cours'=>'🔵 En cours','resolu'=>'
   <?php else: ?>
     <!-- LISTE TICKETS -->
     <div class="page-header">
-      <h1>🎫 Tickets SAV (<?= count($tickets) ?>)</h1>
+      <h1>Tickets SAV (<?= count($tickets) ?>)</h1>
       <div class="filters">
         <a href="?filtre=actif" class="filter-btn <?= $filtre==='actif'?'active':'' ?>">En attente</a>
         <a href="?filtre=tous" class="filter-btn <?= $filtre==='tous'?'active':'' ?>">Tous</a>

@@ -21,7 +21,7 @@ jobs:
           php -l public_html/admin/sidebar.php
           node --check public_html/admin/design/interactions.js
       - name: Recette des écrans et des interactions sur données fictives
-        run: ADMIN_UI_MODULES="$RUNNER_TEMP/admin-ui/node_modules" ADMIN_UI_OUTPUT="$RUNNER_TEMP/admin-captures" ADMIN_CAPTURE_LOG=1 node tests/admin-design/test_ui.cjs
+        run: ADMIN_UI_MODULES="$RUNNER_TEMP/admin-ui/node_modules" ADMIN_UI_OUTPUT="$RUNNER_TEMP/admin-captures" node tests/admin-design/test_ui.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

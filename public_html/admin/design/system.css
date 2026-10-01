@@ -72,3 +72,10 @@ body.se-admin{--bg-dark:var(--se-bg);--bg-card:var(--se-panel);--text-primary:va
 .se-admin .main :where(.help-box,.alert-info){background:#64d7ed08;border-color:#64d7ed26;color:#b3c7d3;border-radius:9px;font-size:11px;line-height:1.75}
 .se-admin .main :where(.filter-btn,.tab-btn,.type-btn,.sport-btn){font-family:var(--se-font);border-radius:8px;font-size:11px;transition:background .18s,border-color .18s}
 @media(max-width:768px){.se-admin .main :where(.chat-layout){grid-template-columns:1fr!important;height:auto!important}.se-admin .main :where(.contacts-panel){max-height:220px}.se-admin .main :where(.expire-box){flex-wrap:wrap}.se-admin .main :where(.form-section-title){margin-top:22px}}
+.se-admin .main :where(.hero-title,.topbar h1){font:500 clamp(27px,3vw,42px)/1.2 var(--se-display);letter-spacing:-1.3px;text-transform:none}
+.se-admin[data-admin-page="creer-card"] .creator-layout{grid-template-columns:minmax(360px,440px) minmax(0,1fr);gap:26px}
+.se-admin[data-admin-page="creer-card"] .form-card{position:static;padding:28px}
+.se-admin[data-admin-page="creer-card"] .type-pill{font:600 10px var(--se-font);letter-spacing:.4px;box-shadow:none}
+.se-admin[data-admin-page="creer-card"] #btn-detect{font:600 11px var(--se-font)!important;letter-spacing:0!important;border-radius:7px!important;padding:11px 14px!important}
+.se-admin .main input[type=file]::file-selector-button{font:600 10px var(--se-font);color:#d9e3ef;background:#252d3b;border:1px solid #414b5e;border-radius:5px;padding:7px 10px;margin-right:10px;cursor:pointer}
+@media(max-width:1100px){.se-admin[data-admin-page="creer-card"] .creator-layout{grid-template-columns:1fr}.se-admin[data-admin-page="creer-card"] .form-card{padding:22px}}

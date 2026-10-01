@@ -298,7 +298,7 @@ if (isset($_GET['id'])) {
   <?php else: ?>
     <!-- LISTE MEMBRES -->
     <div class="page-header">
-      <h1>👥 Membres (<?= count($membres) ?>)</h1>
+      <h1>Membres (<?= count($membres) ?>)</h1>
       <form method="GET">
         <input type="text" name="q" class="search-bar" placeholder="Rechercher par nom ou email…"
                value="<?= clean($search) ?>">

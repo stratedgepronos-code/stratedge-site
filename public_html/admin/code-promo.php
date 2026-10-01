@@ -224,7 +224,7 @@ $showMigrationBlock = ($error && strpos($error, 'Table codes_promo absente') !==
 <?php require_once __DIR__ . '/sidebar.php'; ?>
 <div class="main">
   <div class="card" style="max-width:1200px;">
-    <h1 style="margin-bottom:0.5rem;">🎟️ Codes promo</h1>
+    <h1 style="margin-bottom:0.5rem;">Codes promo</h1>
     <p style="color:var(--text-muted);font-size:0.9rem;margin-bottom:1.5rem;">Configurez les codes promo (pourcentage ou montant en €). Les membres peuvent les saisir sur les pages de paiement. L’anniversaire d’un membre lui donne automatiquement -50% sur Tennis/Daily/Weekly/Week-end et -25% sur VIP Max, une fois par an.</p>
 
     <?php if ($showMigrationBlock): ?>

@@ -29,12 +29,14 @@
     window.toggleNavGroup = btn => {
       const group = btn.closest('.nav-group');
       if (!group) return;
-      group.classList.toggle('open');
+      const opening = !group.classList.contains('open');
+      sidebar.querySelectorAll('.nav-group').forEach(other => {
+        if (other !== group) { other.classList.remove('open'); other.querySelector('button')?.setAttribute('aria-expanded','false'); }
+      });
+      group.classList.toggle('open', opening);
       btn.setAttribute('aria-expanded', String(group.classList.contains('open')));
-      try { sessionStorage.setItem('se-nav-' + group.dataset.group, String(group.classList.contains('open'))); } catch (_) {}
     };
     sidebar.querySelectorAll('.nav-group').forEach(group => {
-      try { if (!group.querySelector('a.active') && sessionStorage.getItem('se-nav-' + group.dataset.group) === 'true') group.classList.add('open'); } catch (_) {}
       const btn = group.querySelector('.nav-group-toggle'), inner = group.querySelector('.nav-group-inner');
       if (btn && inner) { inner.id = 'se-nav-' + group.dataset.group; btn.setAttribute('aria-controls', inner.id); btn.setAttribute('aria-expanded', String(group.classList.contains('open'))); }
     });

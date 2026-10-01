@@ -11,7 +11,7 @@ $seChannels = [
 ];
 ?>
 <div class="se-dashboard">
-  <header class="se-page-intro"><div><div class="se-eyebrow">Ton espace de pilotage</div><h1>Vue d’ensemble<span style="color:var(--se-pink)">.</span></h1><p>L’activité de StratEdge, les priorités et la suite.</p></div><div class="se-page-date"><?= se_admin_icon('clock',14) ?><time datetime="<?= date('c') ?>"><?= date('d.m.Y') ?></time><span>·</span>Au chargement de la page</div></header>
+  <header class="se-page-intro"><div><div class="se-eyebrow">Ton espace de pilotage</div><h1>Vue d’ensemble<span style="color:var(--se-pink)">.</span></h1><p>L’activité de StratEdge, les priorités et la suite.</p></div><div class="se-page-date"><?= se_admin_icon('clock',14) ?><time datetime="<?= date('c') ?>"><?= date('d.m.Y') ?></time><span>·</span>Actualisé à <?= date('H:i') ?></div></header>
   <section class="se-overview" aria-label="Revenus et priorités">
     <article class="se-revenue"><div class="se-panel-kicker"><span>Revenus cumulés</span><span class="se-label-pill">Depuis le début</span></div><div class="se-revenue-value"><?= $seEuro($revenuTotal) ?><small>€</small></div><p class="se-revenue-note">Packs crédits et abonnements enregistrés</p><div class="se-revenue-foot"><strong>4 offres · une vue consolidée</strong><a href="#se-revenue-breakdown">Voir la répartition <?= se_admin_icon('arrow',15) ?></a></div></article>
     <article class="se-panel se-priorities"><div class="se-panel-title"><h2>À traiter</h2><span>Support & communauté</span></div>

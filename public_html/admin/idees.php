@@ -187,7 +187,7 @@ function statutLabel($s) {
 <?php require_once __DIR__ . '/sidebar.php'; ?>
 <div class="main">
   <div class="page-header">
-    <h1>💡 Idées & Bugs</h1>
+    <h1>Idées & bugs</h1>
     <p>Soumettez une idée ou signalez un bug. Suivi de vos projets ci-dessous.</p>
   </div>
 

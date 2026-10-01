@@ -197,7 +197,7 @@ $tousMembers = $db->query("SELECT id, nom, photo_profil FROM membres WHERE email
 <body>
 <?php require_once __DIR__ . '/sidebar.php'; ?>
 <div class="main">
-  <div class="topbar"><h1>💬 Messagerie membres</h1></div>
+  <div class="topbar"><h1>Messagerie membres</h1></div>
 
   <?php if ($success): ?>
     <div class="alert alert-success">✓ <?= clean($success) ?></div>
