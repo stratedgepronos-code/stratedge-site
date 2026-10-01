@@ -3,7 +3,6 @@ require_once __DIR__ . '/../includes/auth.php';
 requireAdmin();
 $pageActive = 'ht-tracker';
 $db = getDB();
-require_once __DIR__ . '/sidebar.php';
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -26,7 +25,7 @@ require_once __DIR__ . '/sidebar.php';
     .page-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem}
     .page-head h1{font-family:'Orbitron',sans-serif;font-size:1.5rem;font-weight:700}
     .page-head h1 span{color:var(--neon-green)}
-    .page-head .sub{color:var(--text-muted);font-size:.85rem;font-family:'Space Mono',monospace;letter-spacing:1px}
+    .page-head .sub{color:var(--text-muted);font-size:0.875rem;font-family:'Space Mono',monospace;letter-spacing:1px}
 
     /* ─── KPI BAR ─── */
     .kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:.75rem;margin-bottom:1.5rem}
@@ -39,7 +38,7 @@ require_once __DIR__ . '/sidebar.php';
     .kpi:nth-child(4)::before{background:var(--neon-blue)}
     .kpi:nth-child(5)::before{background:var(--gold)}
     .kpi:nth-child(6)::before{background:var(--neon-purple)}
-    .kpi-label{font-family:'Space Mono',monospace;font-size:.58rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:.4rem}
+    .kpi-label{font-family:'Space Mono',monospace;font-size:0.8125rem;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:.4rem}
     .kpi-val{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;line-height:1}
     .kpi-val.green{color:var(--win)}.kpi-val.red{color:var(--lose)}.kpi-val.pink{color:var(--neon-green)}
     .kpi-val.cyan{color:var(--neon-blue)}.kpi-val.gold{color:var(--gold)}.kpi-val.purple{color:var(--neon-purple)}
@@ -55,7 +54,7 @@ require_once __DIR__ . '/sidebar.php';
     /* ─── ADD BET FORM ─── */
     .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:.75rem;align-items:end}
     .fg{display:flex;flex-direction:column;gap:.3rem}
-    .fg label{font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted)}
+    .fg label{font-family:'Space Mono',monospace;font-size:0.8125rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted)}
     .fg input,.fg select{background:rgba(255,255,255,.04);border:1px solid var(--border-subtle);border-radius:8px;padding:.55rem .75rem;color:var(--text-primary);font-family:'Rajdhani',sans-serif;font-size:.92rem;transition:border .2s;height:38px}
     .fg input:focus,.fg select:focus{outline:none;border-color:var(--neon-green);box-shadow:0 0 12px rgba(255,45,120,.15)}
     .fg select option{background:#0d1220;color:#f0f4f8}
@@ -66,27 +65,27 @@ require_once __DIR__ . '/sidebar.php';
     .fg .strateedge-date-wrap .cal-icon{position:absolute;right:8px;top:0;height:38px;display:flex;align-items:center;pointer-events:none;color:var(--neon-green);z-index:1}
     .fg .strateedge-date-wrap .cal-icon svg{width:16px;height:16px;flex-shrink:0}
     .fg .strateedge-date-wrap .cal-popover{top:42px;z-index:1000}
-    .btn-add{background:linear-gradient(135deg,var(--neon-green),#ff6b9d);color:#fff;border:none;border-radius:10px;padding:.65rem 1.5rem;font-family:'Orbitron',sans-serif;font-size:.75rem;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .3s;text-transform:uppercase;white-space:nowrap;height:38px}
+    .btn-add{background:linear-gradient(135deg,var(--neon-green),#ff6b9d);color:#fff;border:none;border-radius:10px;padding:.65rem 1.5rem;font-family:'Orbitron',sans-serif;font-size:0.875rem;font-weight:700;letter-spacing:1px;cursor:pointer;transition:all .3s;text-transform:uppercase;white-space:nowrap;height:38px}
     .btn-add:hover{transform:translateY(-2px);box-shadow:0 6px 25px rgba(255,45,120,.35)}
 
     /* ─── BETS TABLE ─── */
     .tbl-wrap{overflow-x:auto;margin-top:.5rem}
-    table{width:100%;border-collapse:separate;border-spacing:0;font-size:.85rem}
-    thead th{font-family:'Space Mono',monospace;font-size:.6rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);padding:.7rem .5rem;text-align:center;border-bottom:1px solid var(--border-subtle);position:sticky;top:0;background:var(--bg-card);z-index:2}
+    table{width:100%;border-collapse:separate;border-spacing:0;font-size:0.875rem}
+    thead th{font-family:'Space Mono',monospace;font-size:0.8125rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);padding:.7rem .5rem;text-align:center;border-bottom:1px solid var(--border-subtle);position:sticky;top:0;background:var(--bg-card);z-index:2}
     tbody tr{transition:background .2s;cursor:default}
     tbody tr:hover{background:rgba(255,45,120,.04)}
     tbody td{padding:.6rem .5rem;text-align:center;border-bottom:1px solid rgba(255,255,255,.03);vertical-align:middle}
     .td-match{text-align:left;font-weight:600;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .badge{display:inline-block;padding:.15rem .55rem;border-radius:6px;font-size:.72rem;font-weight:700;font-family:'Space Mono',monospace;letter-spacing:.5px}
+    .badge{display:inline-block;padding:.15rem .55rem;border-radius:6px;font-size:0.8125rem;font-weight:700;font-family:'Space Mono',monospace;letter-spacing:.5px}
     .badge-xht{background:rgba(255,45,120,.12);color:var(--neon-green);border:1px solid rgba(255,45,120,.25)}
     .badge-o15{background:rgba(0,212,255,.1);color:var(--neon-blue);border:1px solid rgba(0,212,255,.2)}
     .badge-win{background:rgba(0,255,136,.1);color:var(--win);border:1px solid rgba(0,255,136,.2)}
     .badge-lose{background:rgba(255,68,85,.1);color:var(--lose);border:1px solid rgba(255,68,85,.2)}
     .badge-pending{background:rgba(255,255,255,.05);color:var(--text-muted);border:1px solid rgba(255,255,255,.08)}
-    .stars{color:var(--gold);font-size:.8rem;letter-spacing:-1px}
+    .stars{color:var(--gold);font-size:0.875rem;letter-spacing:-1px}
     .pl-pos{color:var(--win);font-weight:700}.pl-neg{color:var(--lose);font-weight:700}
     .act-btns{display:flex;gap:.3rem;justify-content:center}
-    .act-btn{width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;font-size:.75rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
+    .act-btn{width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;font-size:0.875rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
     .act-btn:hover{transform:scale(1.15)}
     .act-win{background:rgba(0,255,136,.12);color:var(--win)}.act-win:hover{background:rgba(0,255,136,.25)}
     .act-lose{background:rgba(255,68,85,.1);color:var(--lose)}.act-lose:hover{background:rgba(255,68,85,.2)}
@@ -103,11 +102,11 @@ require_once __DIR__ . '/sidebar.php';
     /* ─── STATS CARDS ─── */
     .stats-duo{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
     .mkt-stat{text-align:center;padding:1.2rem}
-    .mkt-stat .mkt-name{font-family:'Orbitron',sans-serif;font-size:.85rem;font-weight:700;margin-bottom:.8rem}
+    .mkt-stat .mkt-name{font-family:'Orbitron',sans-serif;font-size:0.875rem;font-weight:700;margin-bottom:.8rem}
     .mkt-stat .mkt-row{display:flex;justify-content:space-around;gap:.5rem;flex-wrap:wrap}
     .mkt-mini{text-align:center}
     .mkt-mini .mv{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;line-height:1}
-    .mkt-mini .ml{font-size:.55rem;font-family:'Space Mono',monospace;letter-spacing:1px;color:var(--text-muted);text-transform:uppercase;margin-top:.15rem}
+    .mkt-mini .ml{font-size:0.8125rem;font-family:'Space Mono',monospace;letter-spacing:1px;color:var(--text-muted);text-transform:uppercase;margin-top:.15rem}
 
     /* ─── MODAL ─── */
     .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:500;align-items:center;justify-content:center}
@@ -131,6 +130,7 @@ require_once __DIR__ . '/sidebar.php';
   </style>
 </head>
 <body>
+<?php require_once __DIR__ . '/sidebar.php'; ?>
 
 <div class="main">
   <!-- HEADER -->
@@ -216,7 +216,7 @@ require_once __DIR__ . '/sidebar.php';
 
   <!-- BETS TABLE -->
   <div class="section">
-    <div class="sec-title"><span class="ico">📋</span> Historique des Bets <span style="font-family:'Space Mono';font-size:.65rem;color:var(--text-muted);margin-left:auto" id="betCount"></span></div>
+    <div class="sec-title"><span class="ico">📋</span> Historique des Bets <span style="font-family:'Space Mono';font-size:0.8125rem;color:var(--text-muted);margin-left:auto" id="betCount"></span></div>
     <div class="tbl-wrap">
       <table>
         <thead><tr>
@@ -234,7 +234,7 @@ require_once __DIR__ . '/sidebar.php';
   </div>
 
   <!-- FOOTER -->
-  <div style="text-align:center;padding:1rem;font-size:.7rem;color:var(--text-muted);font-family:'Space Mono',monospace;letter-spacing:1px">
+  <div style="text-align:center;padding:1rem;font-size:0.8125rem;color:var(--text-muted);font-family:'Space Mono',monospace;letter-spacing:1px">
     STRATEDGE PRONOS · HT Markets Tracker v1.0 · stratedgepronos.fr
   </div>
 </div>
@@ -402,18 +402,18 @@ function render() {
       if (b.status === 'win') { const v = b.odds * b.stake - b.stake; pl = `<span class="pl-pos">+${v.toFixed(2)}€</span>`; }
       else if (b.status === 'lose') { pl = `<span class="pl-neg">-${b.stake.toFixed(2)}€</span>`; }
       return `<tr>
-        <td style="color:var(--text-muted);font-size:.75rem">${num}</td>
-        <td style="font-size:.8rem">${b.date}</td>
-        <td style="font-size:.78rem;color:var(--text-secondary)">${b.league}</td>
+        <td style="color:var(--text-muted);font-size:0.875rem">${num}</td>
+        <td style="font-size:0.875rem">${b.date}</td>
+        <td style="font-size:0.875rem;color:var(--text-secondary)">${b.league}</td>
         <td class="td-match">${b.match}</td>
         <td><span class="badge ${mktClass}">${b.market}</span></td>
         <td style="font-weight:700">${b.odds.toFixed(2)}</td>
         <td><span class="stars">${stStr}</span></td>
         <td>${b.stake.toFixed(2)}€</td>
-        <td style="font-family:'Space Mono',monospace;font-size:.78rem;color:var(--neon-blue)">${b.scoreMT || '—'}</td>
+        <td style="font-family:'Space Mono',monospace;font-size:0.875rem;color:var(--neon-blue)">${b.scoreMT || '—'}</td>
         <td>${statusBadge}</td>
         <td>${pl || '—'}</td>
-        <td style="font-size:.78rem;color:var(--gold)">${b.ev ? b.ev.toFixed(1) + '%' : '—'}</td>
+        <td style="font-size:0.875rem;color:var(--gold)">${b.ev ? b.ev.toFixed(1) + '%' : '—'}</td>
         <td><div class="act-btns">
           ${b.status === 'pending' ? `<button class="act-btn act-win" onclick="markWin(${b.id})" title="Gagné">✓</button><button class="act-btn act-lose" onclick="markLose(${b.id})" title="Perdu">✗</button>` : ''}
           <button class="act-btn act-edit" onclick="openEdit(${b.id})" title="Score">⚽</button>

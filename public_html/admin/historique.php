@@ -80,13 +80,13 @@ $moisOuvert = $_GET['mois'] ?? $premierMois;
 
     /* Onglets */
     .tabs{display:flex;gap:0;margin-bottom:2rem;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:14px;overflow:hidden;}
-    .tab{flex:1;display:flex;align-items:center;justify-content:center;gap:0.7rem;padding:1rem 1.5rem;text-decoration:none;font-family:'Orbitron',sans-serif;font-size:0.78rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);transition:all 0.2s;border-bottom:3px solid transparent;}
+    .tab{flex:1;display:flex;align-items:center;justify-content:center;gap:0.7rem;padding:1rem 1.5rem;text-decoration:none;font-family:'Orbitron',sans-serif;font-size:0.875rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);transition:all 0.2s;border-bottom:3px solid transparent;}
     .tab:first-child{border-right:1px solid var(--border-subtle);}
     .tab.active-multi{color:#00d4ff;border-bottom-color:#00d4ff;background:rgba(0,212,255,0.04);}
     .tab.active-tennis{color:#00d46a;border-bottom-color:#00d46a;background:rgba(0,212,106,0.04);}
     .tab.active-hockey{color:#f59e0b;border-bottom-color:#f59e0b;background:rgba(245,158,11,0.04);}
     .tab:hover{background:rgba(255,255,255,0.03);}
-    .tab-count{font-family:'Space Mono',monospace;font-size:0.65rem;padding:0.15rem 0.5rem;border-radius:10px;}
+    .tab-count{font-family:'Space Mono',monospace;font-size:0.8125rem;padding:0.15rem 0.5rem;border-radius:10px;}
     .tab-count-multi{background:rgba(0,212,255,0.12);color:#00d4ff;}
     .tab-count-hockey{background:rgba(245,158,11,0.12);color:#f59e0b;}
     .tab-count-tennis{background:rgba(0,212,106,0.12);color:#00d46a;}
@@ -95,7 +95,7 @@ $moisOuvert = $_GET['mois'] ?? $premierMois;
     .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:2rem;}
     .sc{border-radius:12px;padding:1.2rem;text-align:center;}
     .sc-val{font-family:'Orbitron',sans-serif;font-size:1.8rem;font-weight:900;}
-    .sc-lbl{font-size:0.72rem;text-transform:uppercase;letter-spacing:1px;margin-top:0.3rem;}
+    .sc-lbl{font-size:0.8125rem;text-transform:uppercase;letter-spacing:1px;margin-top:0.3rem;}
 
     /* Dossiers */
     .dossier{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:14px;margin-bottom:1rem;overflow:hidden;}
@@ -109,18 +109,18 @@ $moisOuvert = $_GET['mois'] ?? $premierMois;
     .bet-card:hover{transform:translateY(-3px);}
 
     /* Catégorie badge dans les cards */
-    .cat-badge{display:inline-flex;align-items:center;gap:0.3rem;font-size:0.65rem;padding:0.15rem 0.5rem;border-radius:5px;font-weight:700;margin-bottom:0.4rem;}
+    .cat-badge{display:inline-flex;align-items:center;gap:0.3rem;font-size:0.8125rem;padding:0.15rem 0.5rem;border-radius:5px;font-weight:700;margin-bottom:0.4rem;}
     .cat-tennis{background:rgba(0,212,106,0.12);color:#00d46a;border:1px solid rgba(0,212,106,0.3);}
     .cat-multi{background:rgba(0,212,255,0.1);color:#00d4ff;border:1px solid rgba(0,212,255,0.25);}
 
     @media(max-width:768px){
       .stats-row{grid-template-columns:repeat(2,1fr);gap:0.6rem;}
       .tabs{flex-direction:column;border-radius:10px;}
-      .tab{padding:0.75rem 1rem;font-size:0.72rem;border-right:none !important;border-bottom:1px solid var(--border-subtle);}
+      .tab{padding:0.75rem 1rem;font-size:0.8125rem;border-right:none !important;border-bottom:1px solid var(--border-subtle);}
       .tab:last-child{border-bottom:none;}
       .sc{padding:0.9rem;border-radius:10px;}
       .sc-val{font-size:1.3rem;}
-      .sc-lbl{font-size:0.65rem;}
+      .sc-lbl{font-size:0.8125rem;}
       .dossier{border-radius:10px;margin-bottom:0.8rem;}
       .dossier-header{padding:0.9rem 1rem;gap:0.6rem;}
       .bet-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:0.6rem;padding:0.7rem;}
@@ -139,7 +139,7 @@ $moisOuvert = $_GET['mois'] ?? $premierMois;
 <div class="main">
 
   <div class="page-header" style="margin-bottom:1.5rem;">
-    <h1 style="font-family:'Orbitron',sans-serif;font-size:1.5rem;font-weight:700;">Historique des bets</h1>
+    <h1>Historique des bets</h1>
     <p style="color:var(--text-muted);margin-top:0.3rem;">Bets terminés — dissociés par catégorie</p>
   </div>
 
@@ -209,7 +209,7 @@ $accentBorder = $onglet === 'tennis' ? 'rgba(0,212,106,0.25)' : ($onglet === 'ho
         <span style="font-size:1.5rem;"><?= $isOpen ? '📂' : '📁' ?></span>
         <div style="flex:1;">
           <div style="font-family:'Orbitron',sans-serif;font-size:0.95rem;font-weight:700;"><?= $nomMois ?></div>
-          <div style="font-size:0.78rem;color:var(--text-muted);margin-top:0.2rem;">
+          <div style="font-size:0.875rem;color:var(--text-muted);margin-top:0.2rem;">
             <?= count($betsDuMois) ?> bet<?= count($betsDuMois)>1?'s':'' ?>
             <?php if($nbG): ?> · <span style="color:#00c864;">✅ <?= $nbG ?></span><?php endif; ?>
             <?php if($nbP): ?> · <span style="color:#ff4444;">❌ <?= $nbP ?></span><?php endif; ?>
@@ -237,7 +237,7 @@ $accentBorder = $onglet === 'tennis' ? 'rgba(0,212,106,0.25)' : ($onglet === 'ho
                   <?= ['gagne'=>'✅','perdu'=>'❌','annule'=>'↺'][$b['resultat']] ?>
                 </span>
               </div>
-              <div style="position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,0.7);color:white;font-size:0.65rem;padding:0.2rem 0.4rem;border-radius:4px;">🔍 Zoom</div>
+              <div style="position:absolute;bottom:5px;right:5px;background:rgba(0,0,0,0.7);color:white;font-size:0.8125rem;padding:0.2rem 0.4rem;border-radius:4px;">🔍 Zoom</div>
             </div>
           <?php else: ?>
             <div style="width:100%;height:80px;background:<?= $rc['bg'] ?>;display:flex;align-items:center;justify-content:center;font-size:2rem;">
@@ -252,21 +252,21 @@ $accentBorder = $onglet === 'tennis' ? 'rgba(0,212,106,0.25)' : ($onglet === 'ho
             <!-- Type badges -->
             <div style="display:flex;gap:0.3rem;flex-wrap:wrap;margin-bottom:0.5rem;">
               <?php foreach ($types as $t): $t=trim($t); ?>
-                <span style="font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:5px;background:rgba(255,255,255,0.05);color:var(--text-muted);">
+                <span style="font-size:0.8125rem;padding:0.15rem 0.5rem;border-radius:5px;background:rgba(255,255,255,0.05);color:var(--text-muted);">
                   <?= $typeLabels[$t] ?? $t ?>
                 </span>
               <?php endforeach; ?>
             </div>
             <?php if ($b['titre']): ?>
-              <div style="font-size:0.82rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.5rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<?= clean($b['titre']) ?>">
+              <div style="font-size:0.875rem;font-weight:600;color:var(--text-secondary);margin-bottom:0.5rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="<?= clean($b['titre']) ?>">
                 <?= clean($b['titre']) ?>
               </div>
             <?php endif; ?>
             <div style="display:flex;align-items:center;justify-content:space-between;margin-top:0.5rem;">
-              <span style="background:<?= $rc['bg'] ?>;color:<?= $rc['color'] ?>;border:1px solid <?= $rc['border'] ?>;padding:0.2rem 0.6rem;border-radius:6px;font-size:0.75rem;font-weight:700;">
+              <span style="background:<?= $rc['bg'] ?>;color:<?= $rc['color'] ?>;border:1px solid <?= $rc['border'] ?>;padding:0.2rem 0.6rem;border-radius:6px;font-size:0.875rem;font-weight:700;">
                 <?= $rc['label'] ?>
               </span>
-              <span style="font-size:0.72rem;color:var(--text-muted);"><?= $dateR ?></span>
+              <span style="font-size:0.8125rem;color:var(--text-muted);"><?= $dateR ?></span>
             </div>
           </div>
         </div>

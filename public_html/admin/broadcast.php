@@ -149,7 +149,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCsrf($_POST['csrf_token'] ?? 
     Voir sur StratEdge
   </a>
 </div>
-<p style=\"color:#ffffff;font-size:12px;text-align:center;margin-top:12px;\">
+<p style=\"color:#ffffff;font-size:14px;text-align:center;margin-top:12px;\">
   Vous recevez cet email car vous etes membre de StratEdge Pronos.<br>
   Pour vous desabonner des emails, contactez le support via le SAV.
 </p>";
@@ -200,7 +200,6 @@ $nbAbonnes = (int)$db->query("
     *{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--text-primary);min-height:100vh;display:flex;}
   </style>
-  <?php require_once __DIR__ . '/sidebar.php'; ?>
   <style>
     .page-header{margin-bottom:2rem;}
     .page-header h1{font-family:'Orbitron',sans-serif;font-size:1.4rem;font-weight:900;color:#fff;}
@@ -209,18 +208,18 @@ $nbAbonnes = (int)$db->query("
     .card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:14px;padding:1.5rem;}
     .card-title{font-family:'Orbitron',sans-serif;font-size:0.9rem;font-weight:700;color:#ff2d78;margin-bottom:1.2rem;display:flex;align-items:center;gap:0.5rem;}
     .form-group{margin-bottom:1.2rem;}
-    .form-group label{display:block;font-size:0.85rem;color:var(--text-muted);margin-bottom:0.4rem;font-weight:600;}
+    .form-group label{display:block;font-size:0.875rem;color:var(--text-muted);margin-bottom:0.4rem;font-weight:600;}
     .form-input,.form-textarea,.form-select{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);color:var(--text-primary);padding:0.75rem 0.9rem;border-radius:8px;font-family:'Rajdhani',sans-serif;font-size:0.95rem;transition:border-color .2s;}
     .form-input:focus,.form-textarea:focus,.form-select:focus{outline:none;border-color:var(--border-pink);}
     .form-textarea{resize:vertical;min-height:100px;}
-    .char-count{font-size:0.75rem;color:var(--text-muted);text-align:right;margin-top:0.2rem;}
+    .char-count{font-size:0.875rem;color:var(--text-muted);text-align:right;margin-top:0.2rem;}
     /* Cibles */
     .cibles-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;}
     .cible-check{display:none;}
     .cible-label{display:flex;align-items:center;gap:0.6rem;background:rgba(255,255,255,0.03);border:1px solid var(--border-subtle);border-radius:10px;padding:0.7rem 0.9rem;cursor:pointer;transition:all .2s;font-size:0.88rem;font-weight:600;}
     .cible-label:hover{background:rgba(255,45,120,0.06);}
     .cible-check:checked + .cible-label{background:rgba(255,45,120,0.1);border-color:rgba(255,45,120,0.4);color:#ff2d78;}
-    .cible-count{margin-left:auto;font-size:0.72rem;background:rgba(255,255,255,0.06);padding:0.1rem 0.4rem;border-radius:5px;color:var(--text-muted);}
+    .cible-count{margin-left:auto;font-size:0.8125rem;background:rgba(255,255,255,0.06);padding:0.1rem 0.4rem;border-radius:5px;color:var(--text-muted);}
     .cible-check:checked + .cible-label .cible-count{background:rgba(255,45,120,0.15);color:#ff2d78;}
     /* Canaux */
     .canaux-row{display:flex;gap:0.8rem;}
@@ -230,12 +229,12 @@ $nbAbonnes = (int)$db->query("
     .canal-check:checked + .canal-label{background:rgba(255,45,120,0.12);border-color:rgba(255,45,120,0.4);color:#ff2d78;}
     /* Preview */
     .preview-box{background:rgba(255,45,120,0.04);border:1px solid rgba(255,45,120,0.15);border-radius:12px;padding:1.2rem;margin-top:1rem;}
-    .preview-phone{background:#0d1220;border-radius:12px;padding:1rem;font-size:0.85rem;}
+    .preview-phone{background:#0d1220;border-radius:12px;padding:1rem;font-size:0.875rem;}
     .notif-preview{background:#1a1a2e;border-radius:10px;padding:0.8rem 1rem;display:flex;align-items:flex-start;gap:0.7rem;}
     .notif-icon{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#ff2d78,#d6245f);display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;}
     .notif-body{flex:1;}
-    .notif-title{font-weight:700;font-size:0.82rem;color:#f0f4f8;margin-bottom:0.2rem;}
-    .notif-msg{font-size:0.75rem;color:#8a9bb0;line-height:1.4;}
+    .notif-title{font-weight:700;font-size:0.875rem;color:#f0f4f8;margin-bottom:0.2rem;}
+    .notif-msg{font-size:0.875rem;color:#8a9bb0;line-height:1.4;}
     /* Bouton */
     .btn-send{width:100%;background:linear-gradient(135deg,#ff2d78,#d6245f);color:#fff;border:none;padding:1rem;border-radius:12px;font-family:'Orbitron',sans-serif;font-size:0.9rem;font-weight:700;cursor:pointer;transition:all .2s;margin-top:0.5rem;letter-spacing:1px;}
     .btn-send:hover{transform:translateY(-2px);box-shadow:0 8px 25px rgba(255,45,120,0.4);}
@@ -256,13 +255,14 @@ $nbAbonnes = (int)$db->query("
     .confirm-box h3{font-family:'Orbitron',sans-serif;font-size:1rem;color:#ff2d78;margin-bottom:0.8rem;}
     .confirm-box p{color:var(--text-muted);font-size:0.9rem;margin-bottom:1.5rem;line-height:1.6;}
     .confirm-actions{display:flex;gap:0.8rem;}
-    .btn-confirm{flex:1;background:linear-gradient(135deg,#ff2d78,#d6245f);color:#fff;border:none;padding:0.85rem;border-radius:10px;font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:700;cursor:pointer;}
+    .btn-confirm{flex:1;background:linear-gradient(135deg,#ff2d78,#d6245f);color:#fff;border:none;padding:0.85rem;border-radius:10px;font-family:'Orbitron',sans-serif;font-size:0.875rem;font-weight:700;cursor:pointer;}
     .btn-confirm-cancel{flex:1;background:rgba(255,255,255,0.05);border:1px solid var(--border-subtle);color:var(--text-muted);padding:0.85rem;border-radius:10px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;}
   </style>
 </head>
 <body>
+<?php require_once __DIR__ . '/sidebar.php'; ?>
 
-<div class="main" style="padding:2rem;">
+<div class="main">
 
   <div class="page-header">
     <h1>📣 Broadcast — Push & Email</h1>
@@ -303,7 +303,7 @@ $nbAbonnes = (int)$db->query("
                    <?= isset($_POST['message_html']) ? 'checked' : '' ?> onchange="toggleMsgHtmlMode()">
             <span><strong>HTML dans l’email</strong> — mise en forme, tableaux, images (<code>https://</code> uniquement). Les <strong>push</strong> restent en <strong>texte brut</strong> (aperçu ci-contre).</span>
           </label>
-          <div id="msgHtmlHelp" style="display:none;font-size:0.78rem;color:var(--text-muted);margin-top:0.55rem;line-height:1.55;padding-left:1.6rem;">
+          <div id="msgHtmlHelp" style="display:none;font-size:0.875rem;color:var(--text-muted);margin-top:0.55rem;line-height:1.55;padding-left:1.6rem;">
             Balises filtrées : titres, paragraphes, listes, liens, tableaux, <code>&lt;img src="https://…"&gt;</code>. Pas de JavaScript, pas de <code>data:</code> / <code>javascript:</code>.
           </div>
         </div>
@@ -320,7 +320,7 @@ $nbAbonnes = (int)$db->query("
           <input class="form-input" type="email" name="test_email" id="testEmailInput"
                  placeholder="test-xyz@srv1.mail-tester.com"
                  value="<?= htmlspecialchars($_POST['test_email'] ?? '') ?>">
-          <div style="font-size:0.78rem;color:#00d4ff;margin-top:0.3rem;">
+          <div style="font-size:0.875rem;color:#00d4ff;margin-top:0.3rem;">
             💡 Utilise l'adresse générée sur <a href="https://www.mail-tester.com" target="_blank" style="color:#00d4ff;">mail-tester.com</a> pour tester ta délivrabilité
           </div>
         </div>
@@ -405,7 +405,7 @@ $nbAbonnes = (int)$db->query("
       <div class="card">
         <div class="card-title">👁️ Aperçu push</div>
         <div class="preview-box">
-          <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:0.6rem;font-family:'Space Mono',monospace;letter-spacing:1px;">NOTIFICATION MOBILE</div>
+          <div style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.6rem;font-family:'Space Mono',monospace;letter-spacing:1px;">NOTIFICATION MOBILE</div>
           <div class="notif-preview">
             <div class="notif-icon">🎯</div>
             <div class="notif-body">
@@ -430,7 +430,7 @@ $nbAbonnes = (int)$db->query("
         <?php foreach (['daily'=>'⚡ Daily','weekly'=>'📅 Weekly','weekend'=>'🎉 Week-End','rasstoss'=>'👑 Rass-Toss'] as $k => $l): ?>
         <div class="stat-row">
           <span class="stat-label"><?= $l ?></span>
-          <span class="stat-val" style="font-size:0.85rem;"><?= $packStats[$k] ?></span>
+          <span class="stat-val" style="font-size:0.875rem;"><?= $packStats[$k] ?></span>
         </div>
         <?php endforeach; ?>
       </div>
@@ -438,12 +438,12 @@ $nbAbonnes = (int)$db->query("
       <!-- Anti-spam tips -->
       <div class="card" style="border-color:rgba(255,193,7,0.2);">
         <div class="card-title" style="color:#ffc107;">⚠️ Anti-spam — À faire</div>
-        <div style="font-size:0.82rem;color:var(--text-muted);line-height:1.7;">
+        <div style="font-size:0.875rem;color:var(--text-muted);line-height:1.7;">
           <p style="margin-bottom:0.5rem;"><strong style="color:#f0f4f8;">1. SPF</strong> — Ajouter dans le DNS de stratedgepronos.fr :</p>
-          <code style="background:#0a0e17;border:1px solid rgba(255,193,7,0.2);padding:0.3rem 0.5rem;border-radius:5px;display:block;font-size:0.75rem;color:#ffc107;margin-bottom:0.8rem;word-break:break-all;">v=spf1 a mx include:hostinger.com ~all</code>
+          <code style="background:#0a0e17;border:1px solid rgba(255,193,7,0.2);padding:0.3rem 0.5rem;border-radius:5px;display:block;font-size:0.875rem;color:#ffc107;margin-bottom:0.8rem;word-break:break-all;">v=spf1 a mx include:hostinger.com ~all</code>
           <p style="margin-bottom:0.5rem;"><strong style="color:#f0f4f8;">2. DKIM</strong> — Activer dans cPanel/Hostinger &gt; Email &gt; "Email Authentication"</p>
-          <p style="margin-bottom:0.5rem;"><strong style="color:#f0f4f8;">3. DMARC</strong> — Ajouter en DNS (type TXT, nom: <code style="font-size:0.75rem;">_dmarc</code>) :</p>
-          <code style="background:#0a0e17;border:1px solid rgba(255,193,7,0.2);padding:0.3rem 0.5rem;border-radius:5px;display:block;font-size:0.75rem;color:#ffc107;margin-bottom:0.8rem;word-break:break-all;">v=DMARC1; p=none; rua=mailto:stratedgepronos@gmail.com</code>
+          <p style="margin-bottom:0.5rem;"><strong style="color:#f0f4f8;">3. DMARC</strong> — Ajouter en DNS (type TXT, nom: <code style="font-size:0.875rem;">_dmarc</code>) :</p>
+          <code style="background:#0a0e17;border:1px solid rgba(255,193,7,0.2);padding:0.3rem 0.5rem;border-radius:5px;display:block;font-size:0.875rem;color:#ffc107;margin-bottom:0.8rem;word-break:break-all;">v=DMARC1; p=none; rua=mailto:stratedgepronos@gmail.com</code>
           <p><strong style="color:#f0f4f8;">4. Tester</strong> → <a href="https://www.mail-tester.com" target="_blank" style="color:#00d4ff;">mail-tester.com</a></p>
         </div>
       </div>
