@@ -106,7 +106,7 @@ $roleLabels = ['admin' => 'Admin', 'admin_tennis' => 'Admin Tennis', 'admin_fun'
 <div class="main">
 
   <div class="topbar">
-    <h1>👑 Gestion des Administrateurs</h1>
+    <h1>Gestion des administrateurs</h1>
     <p>Promouvoir ou rétrograder des membres au rang admin</p>
   </div>
 

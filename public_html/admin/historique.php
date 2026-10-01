@@ -139,7 +139,7 @@ $moisOuvert = $_GET['mois'] ?? $premierMois;
 <div class="main">
 
   <div class="page-header" style="margin-bottom:1.5rem;">
-    <h1 style="font-family:'Orbitron',sans-serif;font-size:1.5rem;font-weight:700;">📂 Historique des Bets</h1>
+    <h1 style="font-family:'Orbitron',sans-serif;font-size:1.5rem;font-weight:700;">Historique des bets</h1>
     <p style="color:var(--text-muted);margin-top:0.3rem;">Bets terminés — dissociés par catégorie</p>
   </div>
 

@@ -1,0 +1,30 @@
+name: Admin design checks
+on:
+  pull_request:
+    paths: ['public_html/admin/design/**', 'public_html/admin/index.php', 'public_html/admin/sidebar.php', 'tests/admin-design/**', '.github/workflows/admin-design-checks.yml']
+permissions:
+  contents: read
+jobs:
+  ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: PHP et navigateur de recette
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq php-cli
+          npm install --prefix "$RUNNER_TEMP/admin-ui" playwright@1.51.1 --no-audit --no-fund
+      - name: Syntaxe PHP et JavaScript
+        run: |
+          find public_html/admin/design tests/admin-design -name '*.php' -print0 | xargs -0 -n1 php -l
+          php -l public_html/admin/index.php
+          php -l public_html/admin/sidebar.php
+          node --check public_html/admin/design/interactions.js
+      - name: Recette des écrans et des interactions sur données fictives
+        run: ADMIN_UI_MODULES="$RUNNER_TEMP/admin-ui/node_modules" ADMIN_UI_OUTPUT="$RUNNER_TEMP/admin-captures" node tests/admin-design/test_ui.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: admin-design-captures
+          path: ${{ runner.temp }}/admin-captures
+          retention-days: 7

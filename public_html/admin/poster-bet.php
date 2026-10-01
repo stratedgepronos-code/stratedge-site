@@ -634,7 +634,7 @@ $resultatConfig = [
 
 <div class="main">
   <div class="page-header">
-    <h1>📸 Poster des Bets</h1>
+    <h1>Poster des bets</h1>
     <p>Sélectionnez une ou plusieurs images, configurez chaque bet puis validez en une fois</p>
   </div>
 
