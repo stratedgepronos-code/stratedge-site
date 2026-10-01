@@ -29,7 +29,7 @@ const server=http.createServer((req,res)=>{
  try{
  const page=await browser.newPage({viewport:{width:1600,height:1100}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js',route=>route.fulfill({contentType:'application/javascript',body:fs.readFileSync(path.join(process.env.ADMIN_UI_MODULES||process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES,'chart.js/dist/chart.umd.js'))}));
- await page.addInitScript(()=>localStorage.setItem('stratedge_ht_bets',JSON.stringify([{id:1,date:'2026-10-01',league:'Démonstration',match:'Équipe A — Équipe B',time:'21:00',market:'o05ht',odds:1.8,stars:4,stake:10,ev:5,notes:'Donnée fictive',scoreMT:'1-0',scoreFT:'2-1',status:'win'}])));
+ await page.addInitScript(()=>localStorage.setItem('stratedge_ht_bets',JSON.stringify([{id:1,date:'2026-10-01',league:'Démonstration',match:'Équipe A — Équipe B',time:'21:00',market:'Over 1.5 HT',odds:1.8,stars:4,stake:10,ev:5,notes:'Donnée fictive',scoreMT:'1-0',scoreFT:'2-1',status:'win'}])));
  async function checkReported(view,width){
   await page.setViewportSize({width,height:1000});
   const response=await page.goto(origin+'/'+view+'.html');assert.equal(response.status(),200,view+' PHP render');await page.evaluate(()=>document.fonts.ready);await page.waitForTimeout(500);
@@ -66,7 +66,7 @@ const server=http.createServer((req,res)=>{
  await page.setViewportSize({width:1440,height:1000});
  for(const view of ['montante-tennis','montante-foot']){
   assert.equal((await page.goto(origin+'/'+view+'.html?edit_step=1')).status(),200);assert.equal(await page.locator('form input[name=action][value=edit_step]').count(),1);
-  await page.locator('.strateedge-date-wrap').first().click();assert.equal(await page.locator('.cal-popover.is-open').count(),1);
+  await page.locator('.strateedge-date-wrap:visible').first().click();assert.equal(await page.locator('.cal-popover.is-open').count(),1);
  }
  await page.goto(origin+'/edit-bet-image.html');await page.locator('#searchInput').fill('démonstration 2');assert.equal(await page.locator('.bet-card:visible').count(),1);
  await page.locator('.bet-card:visible .btn-edit').first().click();assert.equal(await page.locator('#modalOverlay').isVisible(),true);await page.locator('#modalOverlay .btn-cancel').click();assert.equal(await page.locator('#modalOverlay').isVisible(),false);
