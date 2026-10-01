@@ -69,9 +69,10 @@ def pulse_market_reading(event, market):
         team_name=norm(event.get(field,''))
         if not team_name or norm(event.get('home',''))==norm(event.get('away','')):continue
         full=team_name+' total goals'
+        bookings=name==team_name+' total bookings'
         ht=name in ('half time '+full,'half-time '+full)
-        if not ht and name!=full:continue
-        if canonical!=expected:return {'recognized':False,'reason':'Libellé et équipe normalisée contradictoires'}
+        if not ht and name not in (full,team_name+' total') and not bookings:continue
+        if canonical!=('OTHER' if bookings else expected):return {'recognized':False,'reason':'Libellé et équipe normalisée contradictoires'}
         allowed=('FULL_TIME','FIRST_HALF') if ht else ('FULL_TIME',)
         if period not in allowed:return {'recognized':False,'reason':'Période non reconnue ou contradictoire'}
         mapped='HT' if ht else 'FT';selections=[]
@@ -83,11 +84,13 @@ def pulse_market_reading(event, market):
             half_line=abs(line%1-.5)<1e-9
             active=market.get('active') is True and s.get('active') is True
             selections.append({'line':line,'odds':price if num(price) and price>1 else None,
-                'kind':'half_goal' if half_line else 'asian_or_integer','active_confirmed':active,
+                'kind':('half_booking' if bookings else 'half_goal') if half_line else 'asian_or_integer','active_confirmed':active,
                 'compatible_line':half_line,
-                'note':('Total de buts de cette équipe sur la période ; comparer au score à l’instant du signal' if half_line
+                'note':('Total Bookings Stake : jaune = 1, rouge = 2 ; règlement distinct du suivi des jaunes Packball' if bookings else
+                        'Total de buts de cette équipe sur la période ; comparer au score à l’instant du signal' if half_line
                         else 'Ligne asiatique ou entière : ne pas convertir en +0,5 but supplémentaire')})
-        return {'recognized':True,'team':team,'period':mapped,'market':'goal_ht' if ht else 'goal_ft',
+        return {'recognized':True,'team':team,'period':mapped,'market':'card_ft' if bookings else 'goal_ht' if ht else 'goal_ft',
+            'unit':'stake_bookings' if bookings else 'goals',
             'period_corrected':ht and period=='FULL_TIME','selections':selections}
     return {'recognized':False}
 
@@ -184,8 +187,15 @@ def pulse_signal_quote(result, signal, saved, now):
     event=events[0]
     if not event.get('event_id') or event.get('score') is None or event['score']!=saved.get('score'):
         return None,'Identifiant ou score fournisseur absent / différent de Packball'
-    if signal['market'] not in ('goal_ht','goal_ft'):return None,'Marché cartons non couvert par ce raccordement'
-    if signal['line']!=saved['score'][signal['team']]+.5:return None,'Ligne incompatible avec un but supplémentaire'
+    if signal['market'] not in MARKETS:return None,'Marché non reconnu'
+    if signal['market']=='card_ft':
+        discipline=saved.get('discipline') or {}
+        if any((discipline.get('red_cards') or {}).get(t)!=0 for t in ('h','a')) or any((discipline.get('second_yellow') or {}).get(t) not in (None,0) for t in ('h','a')):
+            return None,'Compteurs disciplinaires absents ou expulsion : correspondance Bookings non établie'
+        current=saved.get('decision',{}).get('metrics',{}).get('yellow_cards')
+        if not num(current) or current<0 or int(current)!=current or signal['line']!=current+.5:
+            return None,'Ligne incompatible avec un carton supplémentaire'
+    elif signal['line']!=saved['score'][signal['team']]+.5:return None,'Ligne incompatible avec un but supplémentaire'
     choices=[]
     for m in event.get('markets',[]):
         r=pulse_market_reading(event,m)
@@ -193,9 +203,10 @@ def pulse_signal_quote(result, signal, saved, now):
         for selection in r['selections']:
             if selection['compatible_line'] and selection['active_confirmed'] and selection['line']==signal['line'] and num(selection['odds']) and selection['odds']>1:
                 choices.append({'odds':selection['odds'],'line':selection['line'],'period':r['period'],'team':r['team'],
-                    'market_name':m['name'],'period_corrected':r['period_corrected'],'event_id':event['event_id'],
+                    'market_name':m['name'],'unit':r['unit'],'period_corrected':r['period_corrected'],'event_id':event['event_id'],
                     'score':event['score'],'received_at':result['at'],'source':'Stake via PulseScore',
-                    'matching':'noms exacts normalisés et score identique ; match unique dans la page live'})
+                    'matching':'noms exacts normalisés et score identique ; match unique dans la page live',
+                    'settlement_note':('Bookings Stake : jaune = 1, rouge = 2 ; second jaune exclu du cumul, banc et encadrement exclus. Suivi des jaunes Packball distinct du règlement Stake.' if r['unit']=='stake_bookings' else None)})
     if not choices:return None,'Marché exact absent, suspendu, asiatique ou disponibilité non confirmée'
     if len({q['odds'] for q in choices})!=1:return None,'Plusieurs cotes contradictoires pour le même marché'
     return choices[0],None
@@ -209,8 +220,7 @@ def pulse_enrich(c, now):
             saved=dec(signal['data'],{})
             if 'stake_lookup' in saved:continue
             reason=None
-            if signal['market']=='card_ft':reason='Cartons : alerte statistique sans cote'
-            elif not setting(c,'pulsescore_auto',True):reason='Consultation automatique désactivée'
+            if not setting(c,'pulsescore_auto',True):reason='Consultation automatique désactivée'
             elif not setting(c,'pulsescore_key',None):reason='Clé PulseScore non configurée'
             saved['stake_lookup']={'state':'skipped' if reason else 'checking','at':iso(now),'reason':reason}
             c.execute('UPDATE v4_signals SET data=? WHERE id=?',(enc(saved),signal['id']))
@@ -237,7 +247,7 @@ def pulse_enrich(c, now):
 def pulse_message(saved, now):
     quote=saved.get('stake_quote');stamp=date(quote.get('received_at')) if isinstance(quote,dict) else None
     if quote and stamp and 0<=(now-stamp).total_seconds()<=30 and num(quote.get('odds')) and quote['odds']>1:
-        return '💰 Cote indicative : '+format(quote['odds'],'.2f').replace('.',',')+' · Stake'
+        return '💰 Cote indicative : '+format(quote['odds'],'.2f').replace('.',',')+' · Stake'+(' Bookings' if quote.get('unit')=='stake_bookings' else '')
     return '💰 Cote : à vérifier sur Stake'
 
 def identity(m):
@@ -489,10 +499,10 @@ def telegram_html(message):
         lines.append(escaped)
     return '\n'.join(lines)
 
-def message_target(s,saved):
+def message_target(s,saved,bookmaker=False):
     name=saved.get('home' if s['team']=='h' else 'away','?')
     line=format(s['line'],'g').replace('.',',')
-    unit='jaunes' if s['market']=='card_ft' else 'buts'
+    unit=('cartons (Bookings)' if bookmaker and (saved.get('stake_quote') or {}).get('unit')=='stake_bookings' else 'jaunes') if s['market']=='card_ft' else 'buts'
     period='1re mi-temps' if s['market']=='goal_ht' else 'match entier'
     return '🎯 '+name+' · plus de '+line+' '+unit+' · '+period
 
@@ -502,7 +512,7 @@ def alert_message(s,saved,now):
     lines=['🚨 STRATEDGE · ALERTE LIVE #'+str(s['id']),'',
         '⚽ '+saved['home']+' — '+saved['away'],
         '⏱ '+format(saved['minute'],'g')+'′ · Score '+str(score['h'])+'–'+str(score['a']),'',
-        message_target(s,saved),
+        message_target(s,saved,bookmaker=True),
         pulse_message(saved,now) if s['odds'] is None else '💰 Cote observée : '+format(s['odds'],'.2f').replace('.',',')+' · bet365',
         '', '📊 '+name]
     if s['market']=='card_ft':
@@ -514,6 +524,7 @@ def alert_message(s,saved,now):
         if num(m.get('activity_ratio')):
             lines.append('• Rythme de tirs : ×'+format(m['activity_ratio'],'.1f').replace('.',',')+' le repère avant-match')
     lines.extend(['','Cote et marché à vérifier avant de miser.', 'Signal statistique · détails dans StratEdge.'])
+    if (saved.get('stake_quote') or {}).get('unit')=='stake_bookings':lines.append('Résultat suivi en jaunes Packball ; règlement Stake distinct.')
     return '\n'.join(lines)
 
 def notify(message):
@@ -676,7 +687,7 @@ def result_message(s, previous, outcome, source, automatic=False):
     else:
         quote=z.get('stake_quote') or {}
         if num(quote.get('odds')) and quote['odds']>1:
-            lines.append('💰 Cote indicative relevée au signal : '+format(quote['odds'],'.2f').replace('.',',')+' · Stake')
+            lines.append('💰 Cote indicative relevée au signal : '+format(quote['odds'],'.2f').replace('.',',')+' · Stake'+(' Bookings (règlement distinct)' if quote.get('unit')=='stake_bookings' else ''))
     if correction: lines.append('Ancien résultat : '+names[previous])
     profit=profit_units(s['odds'],outcome)
     if profit is not None: lines.append('Bilan simulé pour 1 unité : '+format(profit,'+.2f')+' u')
@@ -777,6 +788,7 @@ def run(path,send=True,now=None):
                         # visible as correlated exposure, never a multiplied stake.
                         sk=enc([str(r['packball_id']),market,team,d['line']])
                         data={'home':r['home'],'away':r['away'],'kickoff':r.get('kickoff_ts'),'minute':r['minute'],'score':r['score'],'label':label(r,d),'decision':d.copy(),'profile':p,'context':ctx,'version':VERSION,'mode':'statistical_no_odds'}
+                        if market=='card_ft':data['discipline']={k:{t:stat(r,k,t) for t in ('h','a')} for k in ('red_cards','second_yellow')}
                         c.execute('INSERT OR IGNORE INTO v4_signals(signal_key,match_id,fixture,market,team,line,odds,created_at,sample_id,data,delivery) VALUES(?,?,?,?,?,?,?,?,?,?,?)',(sk,r['packball_id'],f['fixture'] if f else None,market,team,d['line'],(d.get('quote') or {}).get('odds'),iso(now),sample['id'],enc(data),'queued' if send and settings['telegram_enabled'] else 'disabled'))
                         d.update(status='signal',reason='Signal conservé dans l’historique')
                 c.execute('INSERT OR REPLACE INTO v4_decisions VALUES(?,?,?,?,?,?,?)',(r['packball_id'],market,team,sample['id'],iso(now),d['status'],enc(d)))

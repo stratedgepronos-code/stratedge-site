@@ -34,11 +34,21 @@ class PulseAutoTests(unittest.TestCase):
    V.pulse_enrich(self.c,self.now);V.pulse_enrich(self.c,self.now+dt.timedelta(seconds=70));V.deliver(self.c,self.now)
   network.open.assert_called_once();self.assertEqual(send.call_count,2)
   self.assertTrue(all('Cote : à vérifier sur Stake' in x.args[0] for x in send.call_args_list))
- def test_cards_never_consume_provider_quota(self):
+ def test_cards_fetch_bookings_price_and_still_send_without_market(self):
   self.prepare(cards=True)
-  with patch.object(V.urllib.request,'build_opener') as network,patch.object(V,'notify',return_value=('sent',None,1)) as send:
+  payload=self.payload();m=payload['events'][0]['markets'][0];m.update(rawName='Équipe A Total Bookings',canonicalMarket='OTHER')
+  network=self.opener(payload)
+  with patch.object(V.urllib.request,'build_opener',return_value=network),patch.object(V,'notify',return_value=('sent',None,1)) as send:
    V.pulse_enrich(self.c,self.now);V.deliver(self.c,self.now)
-  network.assert_not_called();self.assertEqual(send.call_count,1)
+  network.open.assert_called_once();self.assertEqual(send.call_count,1)
+  self.assertIn('1,53 · Stake Bookings',send.call_args.args[0]);self.assertIn('cartons (Bookings)',send.call_args.args[0])
+  s=V.history(self.c)[0];self.assertEqual(s['data']['stake_quote']['unit'],'stake_bookings');self.assertIsNone(s['odds'])
+  self.assertEqual(V.pulse_status(self.c,self.now)['auto_today'],1)
+ def test_cards_provider_failure_does_not_block_telegram(self):
+  self.prepare(cards=True);network=MagicMock();network.open.side_effect=TimeoutError()
+  with patch.object(V.urllib.request,'build_opener',return_value=network),patch.object(V,'notify',return_value=('sent',None,1)) as send:
+   V.pulse_enrich(self.c,self.now);V.deliver(self.c,self.now)
+  network.open.assert_called_once();self.assertEqual(send.call_count,1);self.assertIn('Cote : à vérifier',send.call_args.args[0])
  def test_unconfirmed_observation_does_not_request_quotes(self):
   self.base.prepared();self.base.r['ind10']['sot10']['h']=0;self.base.add(self.base.r,self.now)
   with patch.object(V.urllib.request,'build_opener') as network,patch.object(V,'notify'):
