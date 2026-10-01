@@ -71,6 +71,7 @@
     modal.addEventListener('close', () => { if (searchOpener?.isConnected) searchOpener.focus(); });
     modal.addEventListener('click', e => { if (e.target === modal) { const b = modal.getBoundingClientRect(); if (e.clientX < b.left || e.clientX > b.right || e.clientY < b.top || e.clientY > b.bottom) modal.close(); } });
     modal.addEventListener('keydown', e => {
+      if (e.key === 'Escape') { e.preventDefault(); modal.close(); return; }
       const links = Array.from(results.children);
       if (['ArrowDown','ArrowUp'].includes(e.key) && links.length) {
         e.preventDefault(); selected = (selected + (e.key === 'ArrowDown' ? 1 : -1) + links.length) % links.length;

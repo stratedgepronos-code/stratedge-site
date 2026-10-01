@@ -151,6 +151,10 @@ foreach ($iterator as $file) {
 }
 copy(__DIR__ . '/../../public_html/includes/auth.php', $fixture . '/public_html/includes/auth.php');
 copy(__DIR__ . '/../../public_html/admin/sidebar.php', $fixture . '/public_html/admin/sidebar.php');
+mkdir($fixture . '/public_html/admin/design');
+foreach (glob(__DIR__ . '/../../public_html/admin/design/*') as $asset) {
+    copy($asset, $fixture . '/public_html/admin/design/' . basename($asset));
+}
 file_put_contents($fixture . '/public_html/includes/db.php', '<?php define("ADMIN_EMAIL", "lab-test@example.test"); function getDB(): PDO { static $db; if (!$db) { $db = new PDO("sqlite:" . __DIR__ . "/fixture.sqlite"); $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); } return $db; }');
 $fixtureDb = new PDO('sqlite:' . $fixture . '/public_html/includes/fixture.sqlite');
 $fixtureDb->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
