@@ -174,12 +174,11 @@ $activeTab = $_GET['tab'] ?? 'compose';
     *{box-sizing:border-box;margin:0;padding:0;}
     body{font-family:'Rajdhani',sans-serif;background:var(--bg);color:var(--text-primary);min-height:100vh;display:flex;}
   </style>
-  <?php require_once __DIR__ . '/sidebar.php'; ?>
   <style>
     /* ── Layout ── */
     .page-header{margin-bottom:1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;}
     .page-header h1{font-family:'Orbitron',sans-serif;font-size:1.3rem;font-weight:900;color:#fff;display:flex;align-items:center;gap:0.6rem;}
-    .x-badge{background:linear-gradient(135deg,rgba(29,155,240,0.15),rgba(29,155,240,0.05));border:1px solid var(--border-x);border-radius:8px;padding:0.3rem 0.7rem;font-size:0.78rem;font-weight:700;color:var(--x-blue);display:flex;align-items:center;gap:0.3rem;}
+    .x-badge{background:linear-gradient(135deg,rgba(29,155,240,0.15),rgba(29,155,240,0.05));border:1px solid var(--border-x);border-radius:8px;padding:0.3rem 0.7rem;font-size:0.875rem;font-weight:700;color:var(--x-blue);display:flex;align-items:center;gap:0.3rem;}
     /* ── Tabs ── */
     .tabs{display:flex;gap:0.3rem;margin-bottom:1.5rem;background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:0.3rem;}
     .tab{flex:1;padding:0.65rem 1rem;border-radius:9px;border:none;background:transparent;color:var(--text-muted);font-family:'Rajdhani',sans-serif;font-size:0.95rem;font-weight:700;cursor:pointer;transition:all .2s;text-align:center;}
@@ -187,7 +186,7 @@ $activeTab = $_GET['tab'] ?? 'compose';
     .tab-content{display:none;} .tab-content.active{display:block;}
     /* ── Cards ── */
     .card{background:var(--bg-card);border:1px solid var(--border);border-radius:14px;padding:1.5rem;margin-bottom:1.5rem;}
-    .card-title{font-family:'Orbitron',sans-serif;font-size:0.85rem;font-weight:700;color:var(--x-blue);margin-bottom:1.2rem;display:flex;align-items:center;gap:0.5rem;}
+    .card-title{font-family:'Orbitron',sans-serif;font-size:0.875rem;font-weight:700;color:var(--x-blue);margin-bottom:1.2rem;display:flex;align-items:center;gap:0.5rem;}
     .two-cols{display:grid;grid-template-columns:1fr 360px;gap:1.5rem;align-items:start;}
     /* ── Formulaire tweet ── */
     .tweet-area{position:relative;}
@@ -196,24 +195,24 @@ $activeTab = $_GET['tab'] ?? 'compose';
     .tweet-textarea.over{border-color:#ff4444;}
     .char-ring{position:absolute;bottom:12px;right:12px;}
     .char-ring svg{transform:rotate(-90deg);}
-    .char-ring .count{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:var(--text-muted);}
+    .char-ring .count{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:0.8125rem;font-weight:700;color:var(--text-muted);}
     /* ── Image drop zone ── */
     .img-drop{border:2px dashed rgba(29,155,240,0.3);border-radius:12px;padding:1.2rem;text-align:center;cursor:pointer;transition:all .2s;background:rgba(29,155,240,0.02);position:relative;}
     .img-drop:hover,.img-drop.drag{border-color:var(--x-blue);background:rgba(29,155,240,0.07);}
     .img-drop input{display:none;}
     .img-drop .drop-icon{font-size:1.8rem;margin-bottom:0.3rem;}
     .img-drop .drop-label{font-size:0.88rem;color:var(--text-secondary);font-weight:600;}
-    .img-drop .drop-sub{font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;}
+    .img-drop .drop-sub{font-size:0.875rem;color:var(--text-muted);margin-top:0.2rem;}
     .img-preview-wrap{position:relative;display:inline-block;margin-top:0.8rem;}
     .img-preview-wrap img{max-width:100%;max-height:240px;border-radius:12px;display:block;object-fit:cover;}
-    .img-remove{position:absolute;top:-8px;right:-8px;width:24px;height:24px;background:#ff4444;border:none;border-radius:50%;color:#fff;font-size:0.8rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;}
+    .img-remove{position:absolute;top:-8px;right:-8px;width:24px;height:24px;background:#ff4444;border:none;border-radius:50%;color:#fff;font-size:0.875rem;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;}
     /* ── Templates ── */
     .templates-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:0.6rem;}
-    .tpl-btn{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:0.7rem 0.8rem;cursor:pointer;transition:all .2s;text-align:left;color:var(--text-secondary);font-family:'Rajdhani',sans-serif;font-size:0.85rem;font-weight:600;}
+    .tpl-btn{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:0.7rem 0.8rem;cursor:pointer;transition:all .2s;text-align:left;color:var(--text-secondary);font-family:'Rajdhani',sans-serif;font-size:0.875rem;font-weight:600;}
     .tpl-btn:hover{background:rgba(29,155,240,0.08);border-color:var(--border-x);color:var(--text-primary);}
     .tpl-emoji{font-size:1.2rem;display:block;margin-bottom:0.2rem;}
     /* ── Bouton envoyer ── */
-    .btn-tweet{background:var(--x-blue);color:#fff;border:none;padding:0.85rem 2rem;border-radius:50px;font-family:'Orbitron',sans-serif;font-size:0.85rem;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:0.5rem;letter-spacing:0.5px;}
+    .btn-tweet{background:var(--x-blue);color:#fff;border:none;padding:0.85rem 2rem;border-radius:50px;font-family:'Orbitron',sans-serif;font-size:0.875rem;font-weight:700;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:0.5rem;letter-spacing:0.5px;}
     .btn-tweet:hover{background:#1a8cd8;transform:translateY(-1px);box-shadow:0 6px 20px rgba(29,155,240,0.35);}
     .btn-tweet:disabled{opacity:0.4;cursor:not-allowed;transform:none;}
     .tweet-actions{display:flex;align-items:center;justify-content:space-between;margin-top:1rem;flex-wrap:wrap;gap:0.8rem;}
@@ -222,27 +221,27 @@ $activeTab = $_GET['tab'] ?? 'compose';
     .x-prev-header{display:flex;align-items:flex-start;gap:0.7rem;margin-bottom:0.7rem;}
     .x-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#ff2d78,#1d9bf0);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:900;color:#fff;font-family:'Orbitron',sans-serif;}
     .x-name{font-weight:700;font-size:0.9rem;color:#e7e9ea;}
-    .x-handle{font-size:0.8rem;color:#71767b;margin-top:0.1rem;}
+    .x-handle{font-size:0.875rem;color:#71767b;margin-top:0.1rem;}
     .x-verified{display:inline-flex;align-items:center;gap:0.2rem;}
     .x-verified svg{width:16px;height:16px;fill:var(--x-blue);}
     .x-body{font-size:0.88rem;color:#e7e9ea;line-height:1.55;white-space:pre-wrap;word-break:break-word;}
     .x-image-preview{margin-top:0.7rem;border-radius:12px;overflow:hidden;display:none;}
     .x-image-preview img{width:100%;max-height:280px;object-fit:cover;display:block;}
     .x-actions{display:flex;gap:1.5rem;margin-top:0.8rem;padding-top:0.6rem;border-top:1px solid #2f3336;}
-    .x-action{display:flex;align-items:center;gap:0.3rem;color:#71767b;font-size:0.8rem;}
+    .x-action{display:flex;align-items:center;gap:0.3rem;color:#71767b;font-size:0.875rem;}
     .x-action svg{width:16px;height:16px;fill:currentColor;}
-    .x-date{font-size:0.75rem;color:#71767b;margin-top:0.6rem;}
+    .x-date{font-size:0.875rem;color:#71767b;margin-top:0.6rem;}
     /* ── Config API ── */
     .api-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.8rem;}
-    .form-group label{display:block;font-size:0.82rem;color:var(--text-muted);margin-bottom:0.35rem;font-weight:600;}
-    .form-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text-primary);padding:0.7rem 0.9rem;border-radius:8px;font-family:'Space Mono',monospace;font-size:0.78rem;transition:border-color .2s;}
+    .form-group label{display:block;font-size:0.875rem;color:var(--text-muted);margin-bottom:0.35rem;font-weight:600;}
+    .form-input{width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--border);color:var(--text-primary);padding:0.7rem 0.9rem;border-radius:8px;font-family:'Space Mono',monospace;font-size:0.875rem;transition:border-color .2s;}
     .form-input:focus{outline:none;border-color:var(--x-blue);}
     .form-input.secret{letter-spacing:2px;}
-    .toggle-secret{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.8rem;margin-top:0.3rem;}
-    .btn-save{background:linear-gradient(135deg,var(--x-blue),#1570c4);color:#fff;border:none;padding:0.75rem 1.8rem;border-radius:10px;font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:700;cursor:pointer;transition:all .2s;margin-top:1rem;}
+    .toggle-secret{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.875rem;margin-top:0.3rem;}
+    .btn-save{background:linear-gradient(135deg,var(--x-blue),#1570c4);color:#fff;border:none;padding:0.75rem 1.8rem;border-radius:10px;font-family:'Orbitron',sans-serif;font-size:0.875rem;font-weight:700;cursor:pointer;transition:all .2s;margin-top:1rem;}
     .btn-save:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(29,155,240,0.3);}
     /* ── Status ── */
-    .api-status{display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;padding:0.5rem 0.9rem;border-radius:8px;font-weight:700;}
+    .api-status{display:flex;align-items:center;gap:0.5rem;font-size:0.875rem;padding:0.5rem 0.9rem;border-radius:8px;font-weight:700;}
     .api-status.ok{background:rgba(0,200,100,0.1);color:#00c864;border:1px solid rgba(0,200,100,0.25);}
     .api-status.ko{background:rgba(255,45,120,0.1);color:#ff6b9d;border:1px solid rgba(255,45,120,0.2);}
     /* ── Alert ── */
@@ -259,12 +258,12 @@ $activeTab = $_GET['tab'] ?? 'compose';
     .log-body{flex:1;min-width:0;}
     .log-texte{font-size:0.88rem;color:var(--text-secondary);white-space:pre-wrap;word-break:break-word;margin-bottom:0.4rem;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
     .log-meta{display:flex;gap:0.8rem;flex-wrap:wrap;align-items:center;}
-    .log-date{font-size:0.75rem;color:var(--text-muted);}
-    .log-link{font-size:0.75rem;color:var(--x-blue);text-decoration:none;display:flex;align-items:center;gap:0.2rem;}
+    .log-date{font-size:0.875rem;color:var(--text-muted);}
+    .log-link{font-size:0.875rem;color:var(--x-blue);text-decoration:none;display:flex;align-items:center;gap:0.2rem;}
     .log-link:hover{text-decoration:underline;}
-    .log-err-msg{font-size:0.75rem;color:#ff6b9d;margin-top:0.3rem;}
+    .log-err-msg{font-size:0.875rem;color:#ff6b9d;margin-top:0.3rem;}
     .log-img{width:60px;height:60px;border-radius:8px;object-fit:cover;flex-shrink:0;}
-    .btn-del{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.75rem;padding:0.2rem 0.5rem;border-radius:5px;transition:all .2s;}
+    .btn-del{background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:0.875rem;padding:0.2rem 0.5rem;border-radius:5px;transition:all .2s;}
     .btn-del:hover{background:rgba(255,45,120,0.1);color:#ff6b9d;}
     .empty-state{text-align:center;padding:3rem;color:var(--text-muted);}
     .empty-state .big{font-size:3rem;margin-bottom:0.8rem;}
@@ -273,17 +272,18 @@ $activeTab = $_GET['tab'] ?? 'compose';
     .confirm-overlay.open{display:flex;}
     .confirm-box{background:var(--bg-card);border:1px solid var(--border-x);border-radius:16px;padding:2rem;width:90%;max-width:400px;text-align:center;}
     .confirm-box h3{font-family:'Orbitron',sans-serif;font-size:1rem;color:var(--x-blue);margin-bottom:0.8rem;}
-    .confirm-preview{background:#000;border:1px solid #2f3336;border-radius:10px;padding:0.8rem;margin:1rem 0;font-size:0.82rem;color:#e7e9ea;white-space:pre-wrap;text-align:left;max-height:150px;overflow:hidden;}
+    .confirm-preview{background:#000;border:1px solid #2f3336;border-radius:10px;padding:0.8rem;margin:1rem 0;font-size:0.875rem;color:#e7e9ea;white-space:pre-wrap;text-align:left;max-height:150px;overflow:hidden;}
     .confirm-actions{display:flex;gap:0.8rem;margin-top:1.2rem;}
-    .btn-confirm{flex:1;background:var(--x-blue);color:#fff;border:none;padding:0.85rem;border-radius:10px;font-family:'Orbitron',sans-serif;font-size:0.8rem;font-weight:700;cursor:pointer;transition:all .2s;}
+    .btn-confirm{flex:1;background:var(--x-blue);color:#fff;border:none;padding:0.85rem;border-radius:10px;font-family:'Orbitron',sans-serif;font-size:0.875rem;font-weight:700;cursor:pointer;transition:all .2s;}
     .btn-confirm:hover{background:#1a8cd8;}
     .btn-confirm-cancel{flex:1;background:rgba(255,255,255,0.05);border:1px solid var(--border);color:var(--text-muted);padding:0.85rem;border-radius:10px;cursor:pointer;font-family:'Rajdhani',sans-serif;font-weight:700;}
     @media(max-width:900px){.two-cols{grid-template-columns:1fr;}.api-grid{grid-template-columns:1fr;}}
   </style>
 </head>
 <body>
+<?php require_once __DIR__ . '/sidebar.php'; ?>
 
-<div class="main" style="padding:2rem;">
+<div class="main">
 
   <!-- Header -->
   <div class="page-header">
@@ -305,7 +305,7 @@ $activeTab = $_GET['tab'] ?? 'compose';
       ✏️ Composer
     </button>
     <button class="tab <?= $activeTab==='history'?'active':'' ?>" onclick="switchTab('history')">
-      📋 Historique <?php if (count($logs) > 0): ?><span style="font-size:0.75rem;">(<?= count($logs) ?>)</span><?php endif; ?>
+      📋 Historique <?php if (count($logs) > 0): ?><span style="font-size:0.875rem;">(<?= count($logs) ?>)</span><?php endif; ?>
     </button>
     <button class="tab <?= $activeTab==='config'?'active':'' ?>" onclick="switchTab('config')">
       ⚙️ Config API
@@ -362,7 +362,7 @@ $activeTab = $_GET['tab'] ?? 'compose';
 
             <!-- Upload image -->
             <div style="margin-bottom:1.2rem;">
-              <label style="font-size:0.82rem;color:var(--text-muted);font-weight:600;display:block;margin-bottom:0.5rem;">
+              <label style="font-size:0.875rem;color:var(--text-muted);font-weight:600;display:block;margin-bottom:0.5rem;">
                 🖼️ Ajouter une image (optionnel — JPG, PNG, GIF, max 5 Mo)
               </label>
               <div class="img-drop" id="imgDrop"
@@ -401,7 +401,7 @@ $activeTab = $_GET['tab'] ?? 'compose';
                 </button>
               </div>
               <?php if (!$apiOk): ?>
-              <a href="?tab=config" style="font-size:0.82rem;color:var(--x-blue);">⚙️ Configurer l'API →</a>
+              <a href="?tab=config" style="font-size:0.875rem;color:var(--x-blue);">⚙️ Configurer l'API →</a>
               <?php endif; ?>
             </div>
 
@@ -413,7 +413,7 @@ $activeTab = $_GET['tab'] ?? 'compose';
       <div>
         <div class="card" style="position:sticky;top:80px;">
           <div class="card-title">👁️ Aperçu en temps réel</div>
-          <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:0.8rem;font-family:'Space Mono',monospace;letter-spacing:1px;">RENDU SUR X / TWITTER</div>
+          <div style="font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.8rem;font-family:'Space Mono',monospace;letter-spacing:1px;">RENDU SUR X / TWITTER</div>
           <div class="x-preview-card">
             <div class="x-prev-header">
               <div class="x-avatar">S</div>
@@ -445,15 +445,15 @@ $activeTab = $_GET['tab'] ?? 'compose';
           <div style="display:flex;gap:0.8rem;margin-top:1rem;flex-wrap:wrap;">
             <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.8rem;flex:1;text-align:center;">
               <div style="font-family:'Orbitron',sans-serif;font-size:1.2rem;color:var(--x-blue);" id="statChars">0</div>
-              <div style="font-size:0.7rem;color:var(--text-muted);">Caractères</div>
+              <div style="font-size:0.8125rem;color:var(--text-muted);">Caractères</div>
             </div>
             <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.8rem;flex:1;text-align:center;">
               <div style="font-family:'Orbitron',sans-serif;font-size:1.2rem;color:var(--x-blue);" id="statWords">0</div>
-              <div style="font-size:0.7rem;color:var(--text-muted);">Mots</div>
+              <div style="font-size:0.8125rem;color:var(--text-muted);">Mots</div>
             </div>
             <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:0.5rem 0.8rem;flex:1;text-align:center;">
               <div style="font-family:'Orbitron',sans-serif;font-size:1.2rem;color:var(--x-blue);" id="statLines">0</div>
-              <div style="font-size:0.7rem;color:var(--text-muted);">Lignes</div>
+              <div style="font-size:0.8125rem;color:var(--text-muted);">Lignes</div>
             </div>
           </div>
         </div>
@@ -524,45 +524,45 @@ $activeTab = $_GET['tab'] ?? 'compose';
         <?= $apiOk ? '✅ IFTTT connecté' : '⚠️ Webhook non configuré' ?>
       </div>
       <?php if ($apiOk): ?>
-        <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.5rem;">Webhook actif :</p>
-        <code style="background:#0a0e17;border:1px solid var(--border);padding:0.4rem 0.7rem;border-radius:6px;font-size:0.75rem;color:#00d4ff;display:block;word-break:break-all;">
+        <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:0.5rem;">Webhook actif :</p>
+        <code style="background:#0a0e17;border:1px solid var(--border);padding:0.4rem 0.7rem;border-radius:6px;font-size:0.875rem;color:#00d4ff;display:block;word-break:break-all;">
           <?= htmlspecialchars(substr($config['webhook_url'], 0, 60)) ?>...
         </code>
       <?php else: ?>
-        <p style="color:var(--text-muted);font-size:0.85rem;">Suis le guide ci-dessous pour connecter IFTTT.</p>
+        <p style="color:var(--text-muted);font-size:0.875rem;">Suis le guide ci-dessous pour connecter IFTTT.</p>
       <?php endif; ?>
     </div>
 
     <!-- Guide IFTTT -->
     <div class="card" style="max-width:700px;">
       <div class="card-title">📖 Comment configurer IFTTT</div>
-      <div style="font-size:0.85rem;color:var(--text-muted);line-height:1.9;">
+      <div style="font-size:0.875rem;color:var(--text-muted);line-height:1.9;">
         <div style="display:flex;gap:0.8rem;align-items:flex-start;margin-bottom:0.8rem;">
-          <span style="background:var(--x-blue);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;flex-shrink:0;">1</span>
+          <span style="background:var(--x-blue);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:0.8125rem;font-weight:700;flex-shrink:0;">1</span>
           <span>Va sur <a href="https://ifttt.com" target="_blank" style="color:var(--x-blue);">ifttt.com</a> → connecte-toi → <strong style="color:var(--text-primary);">Create</strong></span>
         </div>
         <div style="display:flex;gap:0.8rem;align-items:flex-start;margin-bottom:0.8rem;">
-          <span style="background:var(--x-blue);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;flex-shrink:0;">2</span>
+          <span style="background:var(--x-blue);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:0.8125rem;font-weight:700;flex-shrink:0;">2</span>
           <span><strong style="color:var(--text-primary);">If This</strong> → recherche <strong style="color:var(--text-primary);">Webhooks</strong> → <strong style="color:var(--text-primary);">Receive a web request</strong> → Event name : <code style="background:rgba(255,255,255,0.06);padding:0.1rem 0.4rem;border-radius:4px;">nouveau_tweet</code></span>
         </div>
         <div style="display:flex;gap:0.8rem;align-items:flex-start;margin-bottom:0.8rem;">
-          <span style="background:var(--x-blue);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;flex-shrink:0;">3</span>
+          <span style="background:var(--x-blue);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:0.8125rem;font-weight:700;flex-shrink:0;">3</span>
           <span>
             <strong style="color:#00c864;">Applet 1 — texte seul :</strong> Event name <code style="background:rgba(255,255,255,0.06);padding:0.1rem 0.4rem;border-radius:4px;">nouveau_tweet</code><br>
             Then That → X → <strong style="color:var(--text-primary);">Post a tweet</strong> → Tweet text : <code style="background:rgba(255,255,255,0.06);padding:0.1rem 0.4rem;border-radius:4px;">{{Value1}}</code>
           </span>
         </div>
         <div style="display:flex;gap:0.8rem;align-items:flex-start;margin-bottom:0.8rem;">
-          <span style="background:#00c864;color:#000;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;flex-shrink:0;">4</span>
+          <span style="background:#00c864;color:#000;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:0.8125rem;font-weight:700;flex-shrink:0;">4</span>
           <span>
             <strong style="color:#00c864;">Applet 2 — avec image :</strong> Crée un 2ème applet, Event name <code style="background:rgba(255,255,255,0.06);padding:0.1rem 0.4rem;border-radius:4px;">nouveau_tweet_image</code><br>
             Then That → X → <strong style="color:var(--text-primary);">Post a tweet with image</strong> → Tweet text : <code style="background:rgba(255,255,255,0.06);padding:0.1rem 0.4rem;border-radius:4px;">{{Value1}}</code> · Image URL : <code style="background:rgba(255,255,255,0.06);padding:0.1rem 0.4rem;border-radius:4px;">{{Value3}}</code>
           </span>
         </div>
         <div style="display:flex;gap:0.8rem;align-items:flex-start;margin-bottom:0.8rem;">
-          <span style="background:var(--x-blue);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;flex-shrink:0;">5</span>
+          <span style="background:var(--x-blue);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:0.8125rem;font-weight:700;flex-shrink:0;">5</span>
           <span>Va dans <a href="https://ifttt.com/maker_webhooks/settings" target="_blank" style="color:var(--x-blue);">ifttt.com/maker_webhooks/settings</a> → copie ta clé → l'URL webhook sera : <br>
-          <code style="background:rgba(255,255,255,0.04);border:1px solid var(--border);padding:0.3rem 0.6rem;border-radius:6px;font-size:0.72rem;color:#00d4ff;display:block;margin-top:0.3rem;">https://maker.ifttt.com/trigger/nouveau_tweet/with/key/TA_CLE_ICI</code></span>
+          <code style="background:rgba(255,255,255,0.04);border:1px solid var(--border);padding:0.3rem 0.6rem;border-radius:6px;font-size:0.8125rem;color:#00d4ff;display:block;margin-top:0.3rem;">https://maker.ifttt.com/trigger/nouveau_tweet/with/key/TA_CLE_ICI</code></span>
         </div>
       </div>
     </div>
@@ -576,24 +576,24 @@ $activeTab = $_GET['tab'] ?? 'compose';
 
         <div class="form-group" style="margin-bottom:1rem;">
           <label style="display:flex;align-items:center;gap:0.5rem;">
-            <span style="background:rgba(29,155,240,0.15);border:1px solid rgba(29,155,240,0.3);border-radius:6px;padding:0.15rem 0.5rem;font-size:0.75rem;color:var(--x-blue);">📝 Sans image</span>
+            <span style="background:rgba(29,155,240,0.15);border:1px solid rgba(29,155,240,0.3);border-radius:6px;padding:0.15rem 0.5rem;font-size:0.875rem;color:var(--x-blue);">📝 Sans image</span>
             URL webhook — tweets texte uniquement
           </label>
           <input type="url" class="form-input" name="webhook_url"
                  value="<?= htmlspecialchars($config['webhook_url'] ?? '') ?>"
                  placeholder="https://maker.ifttt.com/trigger/nouveau_tweet/with/key/...">
-          <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.3rem;">Applet IFTTT : "Post a tweet" avec Value1 = texte</div>
+          <div style="font-size:0.875rem;color:var(--text-muted);margin-top:0.3rem;">Applet IFTTT : "Post a tweet" avec Value1 = texte</div>
         </div>
 
         <div class="form-group" style="margin-bottom:1rem;">
           <label style="display:flex;align-items:center;gap:0.5rem;">
-            <span style="background:rgba(0,200,100,0.1);border:1px solid rgba(0,200,100,0.25);border-radius:6px;padding:0.15rem 0.5rem;font-size:0.75rem;color:#00c864;">🖼️ Avec image</span>
+            <span style="background:rgba(0,200,100,0.1);border:1px solid rgba(0,200,100,0.25);border-radius:6px;padding:0.15rem 0.5rem;font-size:0.875rem;color:#00c864;">🖼️ Avec image</span>
             URL webhook — tweets avec image
           </label>
           <input type="url" class="form-input" name="webhook_url_image"
                  value="<?= htmlspecialchars($config['webhook_url_image'] ?? '') ?>"
                  placeholder="https://maker.ifttt.com/trigger/nouveau_tweet_image/with/key/...">
-          <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.3rem;">Applet IFTTT : "Post a tweet with image" avec Value1 = texte, Value3 = URL image</div>
+          <div style="font-size:0.875rem;color:var(--text-muted);margin-top:0.3rem;">Applet IFTTT : "Post a tweet with image" avec Value1 = texte, Value3 = URL image</div>
         </div>
 
         <div style="display:flex;gap:0.8rem;align-items:center;flex-wrap:wrap;margin-top:1rem;">
@@ -622,7 +622,7 @@ $activeTab = $_GET['tab'] ?? 'compose';
       Confirmer la publication
     </h3>
     <div class="confirm-preview" id="confirmPreview"></div>
-    <p style="color:var(--text-muted);font-size:0.82rem;">Ce tweet sera publié immédiatement sur ton compte X. Irréversible.</p>
+    <p style="color:var(--text-muted);font-size:0.875rem;">Ce tweet sera publié immédiatement sur ton compte X. Irréversible.</p>
     <div class="confirm-actions">
       <button class="btn-confirm-cancel" onclick="document.getElementById('confirmOverlay').classList.remove('open')">Annuler</button>
       <button class="btn-confirm" onclick="document.getElementById('tweetForm').submit()">

@@ -305,7 +305,6 @@ $toutesMontantes = $db->query("SELECT * FROM montante_foot_config ORDER BY id DE
 <title>Montante Foot – Admin</title>
 <link rel="icon" type="image/png" href="../assets/images/mascotte.png">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<?php require_once __DIR__ . '/sidebar.php'; ?>
 <style>
 :root{--bg-dark:#050810;--bg-card:#0d1220;--bg-card2:#111827;--neon-green:#ff2d78;--neon-green-dim:#d6245f;--neon-blue:#00d4ff;--text-primary:#f0f4f8;--text-secondary:#b0bec9;--text-muted:#8a9bb0;--border-subtle:rgba(255,45,120,0.12);}
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -316,7 +315,7 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg-dark);color:var(--tex
 .card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:14px;padding:1.5rem;margin-bottom:1.5rem;}
 .card h2{font-size:1rem;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem;}
 .form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:1rem;align-items:end;}
-.form-group label{display:block;font-size:0.75rem;color:var(--text-muted);margin-bottom:0.35rem;}
+.form-group label{display:block;font-size:0.875rem;color:var(--text-muted);margin-bottom:0.35rem;}
 .form-group input,.form-group select,.form-group textarea{width:100%;padding:0.6rem;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;color:var(--text-primary);font-family:inherit;font-size:0.9rem;}
 .form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--neon-green);}
 .form-group select option{background:#0d1220;}
@@ -325,20 +324,20 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg-dark);color:var(--tex
 .btn-pink:hover{box-shadow:0 0 20px rgba(255,45,120,0.4);}
 .btn-green{background:linear-gradient(135deg,#00d46a,#00a050);color:#fff;}
 .btn-green:hover{box-shadow:0 0 20px rgba(0,212,106,0.4);}
-.btn-sm{padding:0.3rem 0.7rem;border-radius:6px;font-size:0.8rem;font-weight:700;cursor:pointer;border:none;}
+.btn-sm{padding:0.3rem 0.7rem;border-radius:6px;font-size:0.875rem;font-weight:700;cursor:pointer;border:none;}
 .table-wrap{overflow-x:auto;}
 table{width:100%;border-collapse:collapse;}
 th,td{padding:0.6rem 0.8rem;text-align:left;border-bottom:1px solid rgba(255,255,255,0.06);font-size:0.9rem;}
-th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;text-transform:uppercase;}
+th{color:var(--text-muted);font-weight:600;font-size:0.8125rem;letter-spacing:1px;text-transform:uppercase;}
 .alert-success{background:rgba(0,212,106,0.1);border:1px solid rgba(0,212,106,0.3);color:#00c864;padding:0.8rem;border-radius:8px;margin-bottom:1rem;}
 .alert-error{background:rgba(255,45,120,0.1);border:1px solid rgba(255,45,120,0.3);color:#ff6b9d;padding:0.8rem;border-radius:8px;margin-bottom:1rem;}
-.status-badge{padding:0.25rem 0.7rem;border-radius:6px;font-size:0.75rem;font-weight:700;}
+.status-badge{padding:0.25rem 0.7rem;border-radius:6px;font-size:0.875rem;font-weight:700;}
 .status-active{background:rgba(0,212,106,0.12);color:#00c864;border:1px solid rgba(0,212,106,0.3);}
 .status-pause{background:rgba(245,158,11,0.12);color:#f59e0b;border:1px solid rgba(245,158,11,0.3);}
 .status-terminee{background:rgba(255,255,255,0.06);color:var(--text-muted);border:1px solid rgba(255,255,255,0.1);}
 .profit-pos{color:#00c864;font-weight:700;}
 .profit-neg{color:#ff4444;font-weight:700;}
-.btn-delete{background:rgba(255,68,68,0.12);color:#ff4444;border:1px solid rgba(255,68,68,0.35);padding:0.35rem 0.75rem;border-radius:6px;font-size:0.8rem;font-weight:700;cursor:pointer;}
+.btn-delete{background:rgba(255,68,68,0.12);color:#ff4444;border:1px solid rgba(255,68,68,0.35);padding:0.35rem 0.75rem;border-radius:6px;font-size:0.875rem;font-weight:700;cursor:pointer;}
 .btn-delete:hover{background:rgba(255,68,68,0.25);}
 .montante-row{display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;padding:0.75rem 0;border-bottom:1px solid rgba(255,255,255,0.06);}
 .montante-row:last-child{border-bottom:none;}
@@ -356,18 +355,18 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
 .adm-step-card.is-annule{border-color:rgba(245,158,11,0.3);background:rgba(245,158,11,0.04);}
 .adm-step-card.is-en_cours{border-color:rgba(0,212,255,0.3);background:rgba(0,212,255,0.04);}
 .adm-card-header{display:flex;justify-content:space-between;align-items:flex-start;gap:0.5rem;margin-bottom:0.6rem;}
-.adm-card-num{font-family:'Orbitron',sans-serif;font-weight:900;font-size:0.85rem;letter-spacing:1px;background:rgba(255,45,120,0.15);color:#ff2d78;padding:0.25rem 0.6rem;border-radius:6px;flex-shrink:0;}
-.adm-card-result{font-size:0.7rem;font-weight:700;padding:0.25rem 0.55rem;border-radius:5px;letter-spacing:0.5px;flex-shrink:0;}
+.adm-card-num{font-family:'Orbitron',sans-serif;font-weight:900;font-size:0.875rem;letter-spacing:1px;background:rgba(255,45,120,0.15);color:#ff2d78;padding:0.25rem 0.6rem;border-radius:6px;flex-shrink:0;}
+.adm-card-result{font-size:0.8125rem;font-weight:700;padding:0.25rem 0.55rem;border-radius:5px;letter-spacing:0.5px;flex-shrink:0;}
 .adm-card-match{font-size:1rem;font-weight:700;color:var(--text-primary);line-height:1.3;margin-bottom:0.3rem;word-break:break-word;}
-.adm-card-meta{display:flex;flex-wrap:wrap;gap:0.4rem 0.9rem;font-family:'Space Mono',monospace;font-size:0.72rem;color:var(--text-muted);margin-bottom:0.7rem;}
+.adm-card-meta{display:flex;flex-wrap:wrap;gap:0.4rem 0.9rem;font-family:'Space Mono',monospace;font-size:0.8125rem;color:var(--text-muted);margin-bottom:0.7rem;}
 .adm-card-meta strong{color:var(--text-secondary);font-weight:700;}
 .adm-card-stats{display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;padding:0.6rem 0;border-top:1px solid rgba(255,255,255,0.06);border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:0.7rem;}
 .adm-card-stat-cell{display:flex;flex-direction:column;gap:0.15rem;}
-.adm-card-stat-lbl{font-family:'Space Mono',monospace;font-size:0.6rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);}
+.adm-card-stat-lbl{font-family:'Space Mono',monospace;font-size:0.8125rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-muted);}
 .adm-card-stat-val{font-size:0.95rem;font-weight:700;}
 .adm-card-actions{display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;}
 .adm-card-actions form{display:inline-flex;}
-.adm-card-actions .btn-sm{padding:0.4rem 0.7rem;font-size:0.78rem;}
+.adm-card-actions .btn-sm{padding:0.4rem 0.7rem;font-size:0.875rem;}
 
 /* Responsive admin */
 @media(max-width:768px){
@@ -386,12 +385,13 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
   .montante-row{flex-direction:column;align-items:stretch;gap:0.6rem;}
   .montante-row > *{width:100%;}
   /* Form actions full width */
-  .alert-success,.alert-error{font-size:0.85rem;padding:0.7rem;}
+  .alert-success,.alert-error{font-size:0.875rem;padding:0.7rem;}
 }
 </style>
 <link href="/assets/css/calendar-strateedge.css" rel="stylesheet">
 </head>
 <body>
+<?php require_once __DIR__ . '/sidebar.php'; ?>
 
 <div class="main">
   <div class="page-header">
@@ -409,7 +409,7 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
     <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
       <strong style="font-size:1.1rem;"><?= clean($config['nom']) ?></strong>
       <span class="status-badge status-<?= $config['statut'] ?>"><?= $config['statut'] === 'active' ? '🟢 Active' : ($config['statut'] === 'pause' ? '⏸ Pause' : '⬛ Terminée') ?></span>
-      <span style="color:var(--text-muted);font-size:0.85rem;">Objectif : <?= number_format((float)$config['bankroll_initial'], 2) ?>€ · Mise départ : <?= number_format((float)$config['mise_depart'], 2) ?>€</span>
+      <span style="color:var(--text-muted);font-size:0.875rem;">Objectif : <?= number_format((float)$config['bankroll_initial'], 2) ?>€ · Mise départ : <?= number_format((float)$config['mise_depart'], 2) ?>€</span>
     </div>
     <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
       <?php foreach (['active' => '▶ Activer', 'pause' => '⏸ Pause', 'terminee' => '⏹ Terminer'] as $st => $label): ?>
@@ -548,9 +548,9 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
               $r = $s['resultat'] ?? 'en_cours';
               $ri = $rc[$r] ?? $rc['en_cours'];
               ?>
-              <span style="background:<?= $ri[2] ?>;color:<?= $ri[1] ?>;padding:0.2rem 0.6rem;border-radius:6px;font-size:0.75rem;font-weight:700;"><?= $ri[0] ?></span>
+              <span style="background:<?= $ri[2] ?>;color:<?= $ri[1] ?>;padding:0.2rem 0.6rem;border-radius:6px;font-size:0.875rem;font-weight:700;"><?= $ri[0] ?></span>
             </td>
-            <td class="<?= ($s['gain_perte'] ?? 0) >= 0 ? 'profit-pos' : 'profit-neg' ?>" style="font-family:'Space Mono',monospace;font-size:0.82rem;">
+            <td class="<?= ($s['gain_perte'] ?? 0) >= 0 ? 'profit-pos' : 'profit-neg' ?>" style="font-family:'Space Mono',monospace;font-size:0.875rem;">
               <?= $s['gain_perte'] !== null ? (($s['gain_perte'] >= 0 ? '+' : '') . number_format((float)$s['gain_perte'], 2) . '€') : '—' ?>
             </td>
             <td style="font-weight:600;"><?= $s['bankroll_apres'] !== null ? number_format((float)$s['bankroll_apres'], 2) . '€' : '—' ?></td>
@@ -575,7 +575,7 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
                 <?php endforeach; ?>
               </div>
               <?php else: ?>
-              <span style="font-size:0.75rem;color:var(--text-muted);">Défini</span>
+              <span style="font-size:0.875rem;color:var(--text-muted);">Défini</span>
               <?php endif; ?>
             </td>
           </tr>
@@ -650,13 +650,13 @@ th{color:var(--text-muted);font-weight:600;font-size:0.7rem;letter-spacing:1px;t
   <?php if (count($toutesMontantes) > 0): ?>
   <div class="card">
     <h2>🗑️ Montantes (supprimer les tests)</h2>
-    <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem;">Tu peux supprimer une montante et toutes ses étapes. Irréversible.</p>
+    <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1rem;">Tu peux supprimer une montante et toutes ses étapes. Irréversible.</p>
     <?php foreach ($toutesMontantes as $m): ?>
     <div class="montante-row">
       <div>
         <strong><?= clean($m['nom']) ?></strong>
         <span class="status-badge status-<?= $m['statut'] ?>" style="margin-left:0.5rem;"><?= $m['statut'] === 'active' ? '🟢' : ($m['statut'] === 'pause' ? '⏸' : '⬛') ?></span>
-        <span style="color:var(--text-muted);font-size:0.82rem;margin-left:0.5rem;">ID <?= (int)$m['id'] ?> · <?= number_format((float)$m['bankroll_initial'], 0) ?>€ objectif · <?= date('d/m/Y', strtotime($m['date_debut'] ?? $m['created_at'])) ?></span>
+        <span style="color:var(--text-muted);font-size:0.875rem;margin-left:0.5rem;">ID <?= (int)$m['id'] ?> · <?= number_format((float)$m['bankroll_initial'], 0) ?>€ objectif · <?= date('d/m/Y', strtotime($m['date_debut'] ?? $m['created_at'])) ?></span>
       </div>
       <form method="post" style="display:inline;" onsubmit="return confirm('Supprimer définitivement cette montante et toutes ses étapes ?');">
         <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">

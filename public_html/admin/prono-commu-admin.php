@@ -227,7 +227,6 @@ $winners = array_filter($allMatches, function($m) { return !empty($m['is_winner'
 <title>Prono de la commu – Admin</title>
 <link rel="icon" type="image/png" href="../assets/images/mascotte.png">
 <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<?php require_once __DIR__ . '/sidebar.php'; ?>
 <style>
 :root{--bg-dark:#050810;--bg-card:#0d1220;--bg-card2:#111827;--neon-green:#ff2d78;--neon-green-dim:#d6245f;--neon-blue:#00d4ff;--text-primary:#f0f4f8;--text-secondary:#b0bec9;--text-muted:#8a9bb0;--border-subtle:rgba(255,45,120,0.12);}
 *{margin:0;padding:0;box-sizing:border-box;}
@@ -238,7 +237,7 @@ body{font-family:'Rajdhani',sans-serif;background:var(--bg-dark);color:var(--tex
 .card { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:14px; padding:1.5rem; margin-bottom:1.5rem; }
 .card h2 { font-size:1rem; margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem; }
 .form-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:1rem; align-items:end; }
-.form-group label { display:block; font-size:0.75rem; color:var(--text-muted); margin-bottom:0.35rem; }
+.form-group label { display:block; font-size:0.875rem; color:var(--text-muted); margin-bottom:0.35rem; }
 .form-group input, .form-group select, .form-group textarea { width:100%; padding:0.6rem; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:var(--text-primary); font-family:inherit; font-size:0.9rem; }
 .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline:none; border-color:var(--neon-green); }
 .form-group select option { background:#0d1220; }
@@ -253,10 +252,11 @@ th { color:var(--text-muted); font-weight:600; }
 .alert-success { background:rgba(0,212,106,0.1); border:1px solid rgba(0,212,106,0.3); color:#00c864; padding:0.8rem; border-radius:8px; margin-bottom:1rem; }
 .alert-error { background:rgba(255,45,120,0.1); border:1px solid rgba(255,45,120,0.3); color:#ff6b9d; padding:0.8rem; border-radius:8px; margin-bottom:1rem; }
 .analysis-textarea { min-height:220px; resize:vertical; font-family:inherit; }
-code { background:rgba(255,255,255,0.08); padding:0.15rem 0.4rem; border-radius:4px; font-family:'Space Mono',monospace; font-size:0.8rem; color:var(--neon-blue); }
+code { background:rgba(255,255,255,0.08); padding:0.15rem 0.4rem; border-radius:4px; font-family:'Space Mono',monospace; font-size:0.875rem; color:var(--neon-blue); }
 </style>
 </head>
 <body>
+<?php require_once __DIR__ . '/sidebar.php'; ?>
 
 <div class="main">
   <div class="page-header">
@@ -276,7 +276,7 @@ code { background:rgba(255,255,255,0.08); padding:0.15rem 0.4rem; border-radius:
         <?php if ($pauseDate): ?>
           <span style="color:var(--text-secondary);margin-left:0.5rem;">Le <?= htmlspecialchars($pauseDate) ?></span>
         <?php endif; ?>
-        <p style="color:var(--text-muted);font-size:0.85rem;margin-top:0.5rem;">
+        <p style="color:var(--text-muted);font-size:0.875rem;margin-top:0.5rem;">
           Le front affiche : « Pas de bet commu ce jour ! À demain pour le bet »
         </p>
       </div>
@@ -302,8 +302,8 @@ code { background:rgba(255,255,255,0.08); padding:0.15rem 0.4rem; border-radius:
 
   <div class="card">
     <h2>🌐 Importer les matchs du lendemain</h2>
-    <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:0.6rem;">Récupère automatiquement <strong>tous</strong> les matchs de foot prévus demain.</p>
-    <div style="font-size:0.82rem;margin-bottom:1rem;display:flex;flex-direction:column;gap:0.35rem;">
+    <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:0.6rem;">Récupère automatiquement <strong>tous</strong> les matchs de foot prévus demain.</p>
+    <div style="font-size:0.875rem;margin-bottom:1rem;display:flex;flex-direction:column;gap:0.35rem;">
       <?php if ($apiFootballRapidKey !== ''): ?>
       <div><strong style="color:var(--neon-blue);">API-Football</strong> : <span style="color:#00c864;">✅ RapidAPI</span></div>
       <?php endif; ?>
@@ -359,7 +359,7 @@ code { background:rgba(255,255,255,0.08); padding:0.15rem 0.4rem; border-radius:
 
   <div class="card">
     <h2>📊 Analyse du match gagnant</h2>
-    <p style="color:var(--text-muted);font-size:0.85rem;margin-bottom:1rem;">Quand un match est choisi à 23h59, tu reçois un mail. Tu peux poster l'analyse ici (affichée à droite sur la page Prono commu).</p>
+    <p style="color:var(--text-muted);font-size:0.875rem;margin-bottom:1rem;">Quand un match est choisi à 23h59, tu reçois un mail. Tu peux poster l'analyse ici (affichée à droite sur la page Prono commu).</p>
     <form method="post">
       <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
       <input type="hidden" name="action" value="save_analysis">
@@ -399,7 +399,7 @@ code { background:rgba(255,255,255,0.08); padding:0.15rem 0.4rem; border-radius:
             <td>
               <?php if (!empty($m['is_winner'])): ?>
                 <?php if (!empty($m['resultat'])): ?>
-                  <span style="padding:3px 8px;border-radius:6px;font-size:0.8rem;font-weight:700;
+                  <span style="padding:3px 8px;border-radius:6px;font-size:0.875rem;font-weight:700;
                     background:<?= $m['resultat']==='gagne' ? 'rgba(0,212,106,0.15)' : 'rgba(255,68,68,0.15)' ?>;
                     color:<?= $m['resultat']==='gagne' ? '#00d46a' : '#ff4444' ?>;">
                     <?= $m['resultat']==='gagne' ? '✅ Gagné' : '❌ Perdu' ?>
@@ -409,8 +409,8 @@ code { background:rgba(255,255,255,0.08); padding:0.15rem 0.4rem; border-radius:
                     <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
                     <input type="hidden" name="action" value="set_prono_result">
                     <input type="hidden" name="match_id" value="<?= (int)$m['id'] ?>">
-                    <button type="submit" name="resultat" value="gagne" class="btn-sm" style="background:rgba(0,212,106,0.12);color:#00d46a;border:1px solid rgba(0,212,106,0.3);padding:4px 8px;font-size:0.75rem;" onclick="return confirm('Marquer comme GAGNÉ ?');">✅ W</button>
-                    <button type="submit" name="resultat" value="perdu" class="btn-sm" style="background:rgba(255,68,68,0.12);color:#ff4444;border:1px solid rgba(255,68,68,0.3);padding:4px 8px;font-size:0.75rem;" onclick="return confirm('Marquer comme PERDU ?');">❌ L</button>
+                    <button type="submit" name="resultat" value="gagne" class="btn-sm" style="background:rgba(0,212,106,0.12);color:#00d46a;border:1px solid rgba(0,212,106,0.3);padding:4px 8px;font-size:0.875rem;" onclick="return confirm('Marquer comme GAGNÉ ?');">✅ W</button>
+                    <button type="submit" name="resultat" value="perdu" class="btn-sm" style="background:rgba(255,68,68,0.12);color:#ff4444;border:1px solid rgba(255,68,68,0.3);padding:4px 8px;font-size:0.875rem;" onclick="return confirm('Marquer comme PERDU ?');">❌ L</button>
                   </form>
                 <?php endif; ?>
               <?php else: ?>—<?php endif; ?>
@@ -421,13 +421,13 @@ code { background:rgba(255,255,255,0.08); padding:0.15rem 0.4rem; border-radius:
                   <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
                   <input type="hidden" name="action" value="set_winner">
                   <input type="hidden" name="match_id" value="<?= (int)$m['id'] ?>">
-                  <button type="submit" class="btn-sm" style="background:rgba(0,212,106,0.12);color:#00d46a;border:1px solid rgba(0,212,106,0.3);padding:4px 8px;font-size:0.75rem;border-radius:5px;cursor:pointer;" onclick="return confirm('Définir ce match comme gagnant pour cette session ?');">🏆 Gagnant</button>
+                  <button type="submit" class="btn-sm" style="background:rgba(0,212,106,0.12);color:#00d46a;border:1px solid rgba(0,212,106,0.3);padding:4px 8px;font-size:0.875rem;border-radius:5px;cursor:pointer;" onclick="return confirm('Définir ce match comme gagnant pour cette session ?');">🏆 Gagnant</button>
                 </form>
                 <form method="post" style="display:inline;" onsubmit="return confirm('Supprimer définitivement ce match (et tous ses votes) ?\n\n<?= htmlspecialchars(addslashes($m['team_home'] . ' – ' . $m['team_away'])) ?>');">
                   <input type="hidden" name="csrf_token" value="<?= csrfToken() ?>">
                   <input type="hidden" name="action" value="delete_match">
                   <input type="hidden" name="match_id" value="<?= (int)$m['id'] ?>">
-                  <button type="submit" class="btn-sm" style="background:rgba(255,68,68,0.12);color:#ff4444;border:1px solid rgba(255,68,68,0.3);padding:4px 8px;font-size:0.75rem;border-radius:5px;cursor:pointer;" title="Supprimer ce match">🗑️</button>
+                  <button type="submit" class="btn-sm" style="background:rgba(255,68,68,0.12);color:#ff4444;border:1px solid rgba(255,68,68,0.3);padding:4px 8px;font-size:0.875rem;border-radius:5px;cursor:pointer;" title="Supprimer ce match">🗑️</button>
                 </form>
               </div>
             </td>
