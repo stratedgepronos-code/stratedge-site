@@ -11,211 +11,25 @@ try { $nbBetsHistorique = (int)$db->query("SELECT COUNT(*) FROM bets WHERE resul
 try { $nbChatNonLus     = (int)$db->query("SELECT COUNT(*) FROM chat_messages WHERE expediteur='membre' AND lu=0")->fetchColumn(); } catch(Exception $e) {}
 try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (int)$db->query("SELECT COUNT(*) FROM admin_inbox WHERE lu=0")->fetchColumn(); } catch(Exception $e) {}
 ?>
-<!-- ════ STYLES SIDEBAR + RESPONSIVE ════ -->
-<style>
-  /* Fallback variables — définies localement pour que la sidebar fonctionne
-     même si la page hôte n'a pas le même set de variables CSS */
-  .mobile-topbar, .sidebar, .sidebar-overlay, .admin-mob-tabs {
-    --bg-card: #0d1220;
-    --border-subtle: rgba(255, 255, 255, 0.07);
-    --neon-green: #ff2d78;
-    --text-primary: #f0f4f8;
-    --text-secondary: #b0bec9;
-    --text-muted: #8a9bb0;
-  }
-
-  /* Force la font système moderne sur TOUS les éléments de la sidebar + nav mobile.
-     Indépendant de la font-family de la page hôte.
-     Applique aussi aux enfants (nav, a, button, span, div) pour garantir la
-     cohérence peu importe les styles de la page. */
-  .sidebar, .sidebar *,
-  .mobile-topbar, .mobile-topbar *,
-  .admin-mob-tabs, .admin-mob-tabs * {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-  }
-  /* Exceptions: les éléments qui doivent garder leur font cyberpunk spécifique */
-  .sidebar-logo, .mob-logo, .admin-brand-fallback {
-    /* leur font est déclarée inline ou via class spécifique */
-  }
-
-  /* TOPBAR MOBILE */
-  .mobile-topbar {
-    display:none; position:fixed; top:0; left:0; right:0; z-index:200;
-    height:58px; background:var(--bg-card); border-bottom:1px solid var(--border-subtle);
-    align-items:center; justify-content:space-between; padding:0 1.2rem;
-  }
-  .mobile-topbar .mob-logo { font-family:'Orbitron',sans-serif; font-size:1rem; color:#ff2d78; font-weight:900; }
-  .hamburger {
-    width:40px; height:40px; display:flex; flex-direction:column; align-items:center;
-    justify-content:center; gap:6px; cursor:pointer; background:rgba(255,45,120,0.08);
-    border:1px solid rgba(255,45,120,0.2); border-radius:8px; flex-shrink:0;
-  }
-  .hamburger span { width:20px; height:2px; background:var(--neon-green); border-radius:2px; transition:all 0.3s; display:block; }
-  .hamburger.open span:nth-child(1) { transform:translateY(8px) rotate(45deg); }
-  .hamburger.open span:nth-child(2) { opacity:0; }
-  .hamburger.open span:nth-child(3) { transform:translateY(-8px) rotate(-45deg); }
-
-  /* OVERLAY */
-  .sidebar-overlay {
-    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6);
-    z-index:149; backdrop-filter:blur(2px); pointer-events:none;
-  }
-  .sidebar-overlay.open { display:block; pointer-events:all; }
-
-  /* SIDEBAR */
-  .sidebar {
-    width:240px !important;
-    background: #0d1220 !important;
-    background-image: linear-gradient(180deg, #0d1220 0%, #0a0f1a 100%);
-    border-right:1px solid var(--border-subtle, rgba(255,255,255,0.07));
-    height:100vh; position:fixed; top:0; left:0; display:flex; flex-direction:column;
-    z-index:150; overflow-y:auto; transition:transform 0.3s ease;
-  }
-  .mobile-topbar {
-    background: #0d1220 !important;
-  }
-  .sidebar-logo { padding:1.2rem 1rem; border-bottom:1px solid var(--border-subtle); flex-shrink:0; text-align:center; }
-  .sidebar-logo a { display:inline-flex; align-items:center; justify-content:center; text-decoration:none; transition:.2s; }
-  .sidebar-logo a:hover { opacity:.85; }
-  .sidebar-logo img { max-height:48px; max-width:100%; width:auto; height:auto; display:block; filter:drop-shadow(0 0 10px rgba(255,45,120,0.25)); }
-  .sidebar-label {
-    font-family:'Space Mono',monospace; font-size:0.6rem; letter-spacing:3px;
-    text-transform:uppercase; color:var(--text-muted); padding:1.5rem 1.5rem 0.5rem;
-    flex-shrink:0;
-  }
-  .sidebar nav a {
-    display:flex; align-items:center; gap:0.8rem; padding:0.85rem 1.5rem;
-    color:var(--text-secondary); text-decoration:none; font-size:0.92rem; font-weight:500;
-    transition:all 0.2s; border-left:3px solid transparent;
-  }
-  .sidebar nav a:hover, .sidebar nav a.active {
-    color:var(--text-primary); background:rgba(255,45,120,0.06); border-left-color:var(--neon-green);
-  }
-  .nav-group { margin-bottom:0.25rem; }
-  .nav-group-toggle {
-    display:flex; align-items:center; gap:0.8rem; width:100%;
-    padding:0.85rem 1.5rem; border:none; background:transparent;
-    color:var(--text-secondary); font-family:inherit; font-size:0.92rem; font-weight:500;
-    text-align:left; cursor:pointer; transition:all 0.2s;
-    border-left:3px solid transparent;
-  }
-  .nav-group-toggle:hover { color:var(--text-primary); background:rgba(255,45,120,0.04); }
-  .nav-group-toggle .chevron { margin-left:auto; opacity:0.6; transition:transform 0.25s ease; }
-  .nav-group.open .nav-group-toggle .chevron { transform:rotate(90deg); }
-  .nav-group-inner { max-height:0; overflow:hidden; transition:max-height 0.3s ease; }
-  .nav-group.open .nav-group-inner { max-height:400px; }
-  .nav-group-inner a { padding-left:2.2rem; font-size:0.88rem; }
-  .badge-count {
-    background:var(--neon-green); color:white; font-size:0.62rem; font-weight:700;
-    padding:0.15rem 0.45rem; border-radius:10px; margin-left:auto;
-  }
-  .sidebar-footer {
-    margin-top:auto; padding:1.5rem; border-top:1px solid var(--border-subtle);
-    display:flex; flex-direction:column; gap:0.75rem; flex-shrink:0;
-  }
-  .btn-site {
-    display:flex; align-items:center; gap:0.6rem;
-    background:linear-gradient(135deg,rgba(0,212,255,0.12),rgba(0,180,220,0.06));
-    border:1px solid rgba(0,212,255,0.3);
-    color:#00d4ff; text-decoration:none;
-    padding:0.7rem 1rem; border-radius:10px; font-size:0.88rem; font-weight:600;
-    transition:all 0.2s;
-  }
-  .btn-site:hover { background:rgba(0,212,255,0.2); border-color:rgba(0,212,255,0.6); transform:translateY(-1px); }
-  .btn-logout {
-    display:flex; align-items:center; justify-content:center; gap:0.5rem;
-    background:rgba(255,45,120,0.08); border:1px solid rgba(255,45,120,0.25);
-    color:var(--neon-green); padding:0.65rem 1rem; border-radius:8px;
-    font-family:'Rajdhani',sans-serif; font-weight:700; font-size:0.9rem;
-    text-decoration:none; transition:all 0.2s;
-  }
-  .btn-logout:hover { background:rgba(255,45,120,0.18); color:#fff; }
-
-  /* MAIN */
-  .main { margin-left:240px; flex:1; min-height:100vh; }
-  .admin-mob-tabs { display:none; }
-
-  /* ════ RESPONSIVE MOBILE ════ */
-  @media (max-width:768px) {
-    .mobile-topbar { display:flex; }
-    .sidebar { transform:translateX(-100%); top:0; }
-    .sidebar.open { transform:translateX(0); }
-    html, body { overflow-x:hidden !important; width:100% !important; }
-    .main { margin-left:0 !important; padding-top:58px; padding-bottom:calc(74px + env(safe-area-inset-bottom, 0px)); width:100% !important; max-width:100vw !important; min-width:0 !important; overflow-x:hidden; }
-
-    /* Tables scrollables */
-    .table-scroll { overflow-x:auto; -webkit-overflow-scrolling:touch; }
-    table { min-width:400px; }
-
-    /* Grilles */
-    .two-cols, .stats-grid { grid-template-columns:1fr !important; }
-    .chat-layout { grid-template-columns:1fr !important; height:auto !important; }
-
-    /* Cards + padding */
-    .card, .section-block { padding:1rem !important; }
-    .page-header h1 { font-size:1.2rem !important; }
-    .page-header p { font-size:0.82rem; }
-
-    /* Poster bet */
-    .previews-grid { grid-template-columns:repeat(2,1fr) !important; }
-    .expire-box { flex-wrap:wrap; }
-
-    /* Contacts panel historique */
-    .contacts-panel { max-height:220px; }
-
-    /* Bottom tabs admin (mobile) */
-    .admin-mob-tabs{
-      display:flex; position:fixed; left:0; right:0; bottom:0; z-index:210;
-      height:calc(64px + env(safe-area-inset-bottom, 0px));
-      padding-bottom:env(safe-area-inset-bottom, 0px);
-      background:rgba(5,8,16,0.98);
-      backdrop-filter:blur(16px);
-      border-top:1px solid var(--border-subtle);
-      box-shadow:0 -6px 20px rgba(0,0,0,0.45);
-    }
-    .admin-mob-tabs a{
-      flex:1; min-height:50px; display:flex; flex-direction:column; align-items:center; justify-content:center;
-      color:var(--text-muted); text-decoration:none; font-size:0.62rem; font-weight:700; gap:0.15rem;
-      -webkit-tap-highlight-color:transparent;
-    }
-    .admin-mob-tabs a .ico{font-size:1.05rem;line-height:1;}
-    .admin-mob-tabs a.active{color:var(--neon-green);}
-  }
-  @media (max-width:480px) {
-    .main { padding:58px 0.75rem 1.5rem; }
-    .previews-grid { grid-template-columns:1fr !important; }
-    .stat-value { font-size:1.6rem !important; }
-  }
-</style>
+<?php require __DIR__ . '/design/shell.php'; ?>
 
 <!-- TOPBAR MOBILE -->
 <div class="mobile-topbar">
-  <a href="/bets.php" class="mob-logo" style="text-decoration:none;display:flex;align-items:center;gap:0.5rem;" title="Aller à la page Les Bets (front)">
-    <img src="/assets/images/logo_site_transparent.png" alt="StratEdge" style="height:32px;" onerror="this.src='/assets/images/logo site.png';this.onerror=function(){this.style.display='none';this.nextElementSibling.style.display='inline';}">
-    <span style="display:none;font-family:'Orbitron',sans-serif;font-size:1rem;color:#ff2d78;font-weight:900;">STRATEDGE</span>
-  </a>
-  <div class="hamburger" id="hamburger" onclick="toggleSidebar()">
-    <span></span><span></span><span></span>
-  </div>
+  <a href="/panel-x9k3m/index.php" class="mob-logo">StratEdge <small>ADMIN</small></a>
+  <div class="se-mobile-tools"><button class="se-search-trigger" type="button" data-se-search aria-label="Rechercher une page"><?= se_admin_icon('search',18) ?></button><button type="button" class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="Ouvrir le menu" aria-controls="sidebar" aria-expanded="false"><span></span><span></span><span></span></button></div>
 </div>
 
 <!-- OVERLAY -->
 <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
 
 <!-- SIDEBAR -->
-<div class="sidebar" id="sidebar">
-  <div class="sidebar-logo">
-    <a href="/bets.php" title="Voir Les Bets sur le site">
-      <img src="/assets/images/logo_site_transparent.png" alt="StratEdge"
-           onerror="this.onerror=null;this.src='/assets/images/logo site.png';">
-    </a>
-    <div style="font-family:'Space Mono',monospace;font-size:0.6rem;color:var(--text-muted);letter-spacing:2px;margin-top:0.6rem;text-transform:uppercase;">Admin Panel</div>
-  </div>
+<div class="sidebar" id="sidebar" aria-label="Menu administrateur">
+  <div class="sidebar-logo"><a class="se-brand" href="/panel-x9k3m/index.php" aria-label="StratEdge — tableau de bord"><span class="se-brand-symbol" aria-hidden="true">S</span><span class="se-brand-word">StratEdge<small>Administration</small></span></a></div>
 
-  <div class="sidebar-label">Navigation</div>
-  <nav>
+  <div class="sidebar-label">Espace de travail</div>
+  <nav aria-label="Navigation principale">
     <a href="/panel-x9k3m/index.php" <?= ($pageActive==='index') ?'class="active"':'' ?>>
-      <span>📊</span> Tableau de bord
+      <?= se_admin_icon('grid') ?> Vue d’ensemble
     </a>
 
     <?php
@@ -227,24 +41,24 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
     ?>
     <div class="nav-group <?= $bettingOpen ? 'open' : '' ?>" data-group="betting">
       <button type="button" class="nav-group-toggle" onclick="toggleNavGroup(this)">
-        <span>📌</span> Betting
+        <?= se_admin_icon('target') ?> Betting
         <span class="chevron">›</span>
       </button>
       <div class="nav-group-inner">
-        <a href="/panel-x9k3m/valider-bets.php" <?= ($pageActive==='valider-bets') ?'class="active"':'' ?>><span>✅</span> Valider les bets</a>
-        <a href="/panel-x9k3m/creer-card.php" <?= ($pageActive==='creer-card') ?'class="active"':'' ?>><span>🎨</span> Créer une Card</a>
-        <a href="/panel-x9k3m/prono-commu-admin.php" <?= ($pageActive==='prono-commu-admin') ?'class="active"':'' ?>><span>⚽</span> Prono de la commu</a>
+        <a href="/panel-x9k3m/valider-bets.php" <?= ($pageActive==='valider-bets') ?'class="active"':'' ?>><?= se_admin_icon('check') ?> Valider les bets</a>
+        <a href="/panel-x9k3m/creer-card.php" <?= ($pageActive==='creer-card') ?'class="active"':'' ?>><?= se_admin_icon('image') ?> Créer une Card</a>
+        <a href="/panel-x9k3m/prono-commu-admin.php" <?= ($pageActive==='prono-commu-admin') ?'class="active"':'' ?>><?= se_admin_icon('target') ?> Prono de la commu</a>
         <?php if (isSuperAdmin() || getAdminRole() === 'admin_tennis'): ?>
-        <a href="/panel-x9k3m/montante-tennis.php" <?= ($pageActive==='montante-tennis') ?'class="active"':'' ?>><span>🎾</span> Montante Tennis</a>
+        <a href="/panel-x9k3m/montante-tennis.php" <?= ($pageActive==='montante-tennis') ?'class="active"':'' ?>><?= se_admin_icon('target') ?> Montante Tennis</a>
         <?php endif; ?>
         <?php if (isSuperAdmin() || getAdminRole() === 'admin_foot'): ?>
-        <a href="/panel-x9k3m/montante-foot.php" <?= ($pageActive==='montante-foot') ?'class="active"':'' ?>><span>⚽</span> Montante Foot</a>
+        <a href="/panel-x9k3m/montante-foot.php" <?= ($pageActive==='montante-foot') ?'class="active"':'' ?>><?= se_admin_icon('target') ?> Montante Foot</a>
         <?php endif; ?>
-        <a href="/panel-x9k3m/edit-bet-image.php" <?= ($pageActive==='edit-bet-image') ?'class="active"':'' ?>><span>🖼️</span> Modifier image bet</a>
-        <a href="/panel-x9k3m/ht-tracker.php" <?= ($pageActive==='ht-tracker') ?'class="active"':'' ?> style="<?= ($pageActive==='ht-tracker') ? '' : 'color:rgba(0,212,255,0.85);' ?>"><span>🎯</span> Bet Mi-Temps</a>
+        <a href="/panel-x9k3m/edit-bet-image.php" <?= ($pageActive==='edit-bet-image') ?'class="active"':'' ?>><?= se_admin_icon('image') ?> Modifier image bet</a>
+        <a href="/panel-x9k3m/ht-tracker.php" <?= ($pageActive==='ht-tracker') ?'class="active"':'' ?> style="<?= ($pageActive==='ht-tracker') ? '' : 'color:rgba(0,212,255,0.85);' ?>"><?= se_admin_icon('target') ?> Bet Mi-Temps</a>
         <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
         <a href="/panel-x9k3m/historique.php" <?= ($pageActive==='historique') ?'class="active"':'' ?>>
-          <span>📂</span> Historique
+          <?= se_admin_icon('history') ?> Historique
           <?php if ($nbBetsHistorique > 0): ?><span class="badge-count"><?= $nbBetsHistorique ?></span><?php endif; ?>
         </a>
         <?php endif; ?>
@@ -254,60 +68,60 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
     <?php $usersOpen = in_array($pageActive, ['membres','admins']); ?>
     <div class="nav-group <?= $usersOpen ? 'open' : '' ?>" data-group="users">
       <button type="button" class="nav-group-toggle" onclick="toggleNavGroup(this)">
-        <span>👥</span> Gestion utilisateurs
+        <?= se_admin_icon('users') ?> Membres & équipe
         <span class="chevron">›</span>
       </button>
       <div class="nav-group-inner">
-        <a href="/panel-x9k3m/membres.php" <?= ($pageActive==='membres') ?'class="active"':'' ?>><span>👥</span> Membres</a>
-        <a href="/panel-x9k3m/gestion-admins.php" <?= ($pageActive==='admins') ?'class="active"':'' ?>><span>👑</span> Admins</a>
+        <a href="/panel-x9k3m/membres.php" <?= ($pageActive==='membres') ?'class="active"':'' ?>><?= se_admin_icon('users') ?> Membres</a>
+        <a href="/panel-x9k3m/gestion-admins.php" <?= ($pageActive==='admins') ?'class="active"':'' ?>><?= se_admin_icon('crown') ?> Admins</a>
       </div>
     </div>
 
     <a href="/panel-x9k3m/idees.php" <?= ($pageActive==='idees') ?'class="active"':'' ?>>
-      <span>💡</span> Idées & Bugs
+      <?= se_admin_icon('bulb') ?> Idées & Bugs
     </a>
 
     <a href="/panel-x9k3m/code-promo.php" <?= ($pageActive==='code-promo') ?'class="active"':'' ?>>
-      <span>🎟️</span> Code promo
+      <?= se_admin_icon('ticket') ?> Code promo
     </a>
 
     <a href="/panel-x9k3m/giveaway.php" <?= ($pageActive==='giveaway') ?'class="active"':'' ?> style="<?= ($pageActive==='giveaway') ? '' : 'color:rgba(255,45,120,0.92);' ?>">
-      <span>🎁</span> GiveAway
+      <?= se_admin_icon('gift') ?> GiveAway
     </a>
 
     <?php $msgOpen = in_array($pageActive, ['messagerie-interne','messages']); ?>
     <div class="nav-group <?= $msgOpen ? 'open' : '' ?>" data-group="messagerie">
       <button type="button" class="nav-group-toggle" onclick="toggleNavGroup(this)">
-        <span>💬</span> Messagerie
+        <?= se_admin_icon('message') ?> Messagerie
         <span class="chevron">›</span>
       </button>
       <div class="nav-group-inner">
         <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
         <a href="/panel-x9k3m/messagerie-interne.php" <?= ($pageActive==='messagerie-interne') ?'class="active"':'' ?>>
-          <span>📥</span> Messagerie interne
+          <?= se_admin_icon('message') ?> Messagerie interne
           <?php if (!empty($nbInboxNonLus)): ?><span class="badge-count"><?= $nbInboxNonLus ?></span><?php endif; ?>
         </a>
         <?php endif; ?>
         <a href="/panel-x9k3m/messages.php" <?= ($pageActive==='messages') ?'class="active"':'' ?>>
-          <span>💬</span> Messages
+          <?= se_admin_icon('message') ?> Messages
           <?php if ($nbMsgNonLus > 0): ?><span class="badge-count"><?= $nbMsgNonLus ?></span><?php endif; ?>
         </a>
       </div>
     </div>
 
     <a href="/panel-x9k3m/tickets.php" <?= ($pageActive==='tickets') ?'class="active"':'' ?>>
-      <span>🎫</span> Tickets SAV
+      <?= se_admin_icon('ticket') ?> Tickets SAV
       <?php if ($nbTicketsOpen > 0): ?><span class="badge-count"><?= $nbTicketsOpen ?></span><?php endif; ?>
     </a>
 
     <?php $pushOpen = in_array($pageActive, ['broadcast','twitter-post']); ?>
     <div class="nav-group <?= $pushOpen ? 'open' : '' ?>" data-group="push">
       <button type="button" class="nav-group-toggle" onclick="toggleNavGroup(this)">
-        <span>📣</span> Push & réseaux sociaux
+        <?= se_admin_icon('broadcast') ?> Diffusion & réseaux
         <span class="chevron">›</span>
       </button>
       <div class="nav-group-inner">
-        <a href="/panel-x9k3m/broadcast.php" <?= ($pageActive==='broadcast') ?'class="active"':'' ?>><span>📣</span> Broadcast</a>
+        <a href="/panel-x9k3m/broadcast.php" <?= ($pageActive==='broadcast') ?'class="active"':'' ?>><?= se_admin_icon('broadcast') ?> Broadcast</a>
         <a href="/panel-x9k3m/twitter-post.php" <?= ($pageActive==='twitter-post') ?'class="active"':'' ?>>
           <span style="display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;"><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.736-8.847L1.254 2.25H8.08l4.259 5.629L18.244 2.25zm-1.161 17.52h1.833L7.084 4.126H5.117L17.083 19.77z"/></svg></span> Poster sur X
         </a>
@@ -318,7 +132,7 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
     <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
     <div class="nav-group <?= strpos((string)$pageActive, 'football-lab-') === 0 ? 'open' : '' ?>" data-group="football-lab">
       <button type="button" class="nav-group-toggle" onclick="toggleNavGroup(this)" style="color:#00d4ff;">
-        <span aria-hidden="true">⚽</span> StratEdge Lab
+        <?= se_admin_icon('lab') ?> StratEdge Lab
         <span class="chevron">›</span>
       </button>
       <div class="nav-group-inner">
@@ -328,76 +142,32 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
       </div>
     </div>
     <a href="/panel-x9k3m/slate/" class="nav-item <?= ($pageActive==='slate') ?'active':'' ?>" style="color:#ff2d78;">
-      <span>🎯</span> Edge Finder
+      <?= se_admin_icon('target') ?> Edge Finder
     </a>
     <a href="/panel-x9k3m/slate/live90/" class="nav-item <?= ($pageActive==='live90') ?'active':'' ?>" style="<?= ($pageActive==='live90') ? '' : 'color:#00d4ff;' ?>">
-      <span>📡</span> Live
+      <?= se_admin_icon('live') ?> Live
     </a>
     <?php endif; ?>
   </nav>
 
   <div class="sidebar-footer">
     <a href="/" class="btn-site">
-      <span style="font-size:1rem;">🌐</span>
+      <?= se_admin_icon('globe',17) ?>
       <span>Voir le site</span>
       <span style="margin-left:auto;font-size:0.7rem;opacity:0.6;">↗</span>
     </a>
-    <a href="/logout.php" class="btn-logout">🚪 Déconnexion</a>
+    <a href="/logout.php" class="btn-logout"><?= se_admin_icon('logout',16) ?> Déconnexion</a>
   </div>
 </div>
-<nav class="admin-mob-tabs">
-  <a href="/panel-x9k3m/index.php" class="<?= ($pageActive==='index') ? 'active' : '' ?>"><span class="ico">📊</span><span>Dashboard</span></a>
-  <a href="/panel-x9k3m/valider-bets.php" class="<?= ($pageActive==='valider-bets') ? 'active' : '' ?>"><span class="ico">✅</span><span>Valider</span></a>
-  <a href="/panel-x9k3m/creer-card.php" class="<?= ($pageActive==='creer-card') ? 'active' : '' ?>"><span class="ico">🎨</span><span>Créer</span></a>
-  <a href="/panel-x9k3m/messages.php" class="<?= ($pageActive==='messages') ? 'active' : '' ?>"><span class="ico">💬</span><span>Messages</span></a>
-  <a href="/panel-x9k3m/tickets.php" class="<?= ($pageActive==='tickets') ? 'active' : '' ?>"><span class="ico">🎫</span><span>SAV</span></a>
+<nav class="admin-mob-tabs" aria-label="Navigation mobile">
+  <a href="/panel-x9k3m/index.php" class="<?= ($pageActive==='index') ? 'active' : '' ?>"><span class="ico"><?= se_admin_icon('grid') ?></span><span>Dashboard</span></a>
+  <a href="/panel-x9k3m/valider-bets.php" class="<?= ($pageActive==='valider-bets') ? 'active' : '' ?>"><span class="ico"><?= se_admin_icon('check') ?></span><span>Valider</span></a>
+  <a href="/panel-x9k3m/creer-card.php" class="<?= ($pageActive==='creer-card') ? 'active' : '' ?>"><span class="ico"><?= se_admin_icon('image') ?></span><span>Créer</span></a>
+  <a href="/panel-x9k3m/messages.php" class="<?= ($pageActive==='messages') ? 'active' : '' ?>"><span class="ico"><?= se_admin_icon('message') ?></span><span>Messages</span></a>
+  <a href="/panel-x9k3m/tickets.php" class="<?= ($pageActive==='tickets') ? 'active' : '' ?>"><span class="ico"><?= se_admin_icon('ticket') ?></span><span>SAV</span></a>
 </nav>
 
-<script>
-function toggleSidebar() {
-  const s = document.getElementById('sidebar');
-  const h = document.getElementById('hamburger');
-  const o = document.getElementById('sidebarOverlay');
-  s.classList.toggle('open');
-  h.classList.toggle('open');
-  o.classList.toggle('open');
-}
-function toggleNavGroup(btn) {
-  var g = btn.closest('.nav-group');
-  if (g) g.classList.toggle('open');
-}
-document.addEventListener('click', function(e){
-  const s = document.getElementById('sidebar');
-  const h = document.getElementById('hamburger');
-  const o = document.getElementById('sidebarOverlay');
-  if (!s || window.innerWidth > 768) return;
-  if (!s.classList.contains('open')) return;
-  if ((h && h.contains(e.target)) || s.contains(e.target)) return;
-  s.classList.remove('open');
-  if (h) h.classList.remove('open');
-  if (o) o.classList.remove('open');
-});
-document.querySelectorAll('#sidebar a').forEach(function(a){
-  a.addEventListener('click', function(){
-    if (window.innerWidth > 768) return;
-    const s = document.getElementById('sidebar');
-    const h = document.getElementById('hamburger');
-    const o = document.getElementById('sidebarOverlay');
-    if (s) s.classList.remove('open');
-    if (h) h.classList.remove('open');
-    if (o) o.classList.remove('open');
-  });
-});
-document.addEventListener('keydown', function(e){
-  if (e.key !== 'Escape') return;
-  const s = document.getElementById('sidebar');
-  const h = document.getElementById('hamburger');
-  const o = document.getElementById('sidebarOverlay');
-  if (s) s.classList.remove('open');
-  if (h) h.classList.remove('open');
-  if (o) o.classList.remove('open');
-});
-</script>
+
 
 <!-- STRATEDGE_TENNIS_UI_BOOTSTRAP_START -->
 <?php if (($pageActive ?? '') === 'edge-finder-tennis'): ?>
