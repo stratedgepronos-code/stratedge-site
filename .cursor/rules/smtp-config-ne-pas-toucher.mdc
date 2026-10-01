@@ -1,0 +1,16 @@
+---
+description: Ne jamais modifier le fichier smtp-config.php ni les clés SMTP
+alwaysApply: true
+---
+
+# Protection smtp-config.php et clés SMTP
+
+**Règle stricte :**
+
+1. **Ne jamais éditer, modifier ou réécrire** le fichier `public_html/includes/smtp-config.php`.
+2. **Ne jamais** remplacer, supprimer ou altérer les constantes `SMTP_USER`, `SMTP_PASS`, ni aucune autre valeur contenant une clé, un mot de passe ou un secret dans ce fichier.
+3. Si une évolution de la configuration SMTP est nécessaire (nouveau host, port, etc.), modifier **uniquement** `public_html/includes/smtp-config.php.example` et indiquer à l'utilisateur de mettre à jour manuellement son `smtp-config.php` s'il le souhaite.
+
+**Raison :** Le fichier `smtp-config.php` contient la clé SMTP Brevo. Une modification automatique (search_replace, write, etc.) risquerait d'écraser ou de supprimer cette clé.
+
+**En résumé :** Traiter `smtp-config.php` comme fichier interdit en écriture. Les exemples et la doc vont dans `smtp-config.php.example` uniquement.

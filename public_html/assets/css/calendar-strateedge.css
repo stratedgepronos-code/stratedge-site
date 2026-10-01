@@ -1,0 +1,204 @@
+/* StratEdge — Calendrier (servi depuis /assets/ pour éviter blocage /includes/) */
+.date-picker-wrap.startedge-cal,
+.startedge-date-wrap {
+  position: relative;
+  width: 100%;
+  min-height: 42px;
+}
+.date-picker-wrap.startedge-cal input[type="text"],
+.startedge-date-wrap .strateedge-date-display {
+  width: 100%;
+  padding: 0.6rem 2.5rem 0.6rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle, rgba(255,255,255,0.1));
+  background: var(--bg-card, #0d1220);
+  color: var(--text-primary, #f0f4f8);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+.date-picker-wrap.startedge-cal input[readonly],
+.startedge-date-wrap .strateedge-date-display[readonly] {
+  cursor: pointer;
+}
+.date-picker-wrap.startedge-cal .cal-icon,
+.startedge-date-wrap .cal-icon {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  font-size: 1.15rem;
+  opacity: 0.9;
+  color: var(--neon-green, #ff2d78);
+  line-height: 0;
+}
+.date-picker-wrap.startedge-cal .cal-icon svg,
+.startedge-date-wrap .cal-icon svg {
+  display: block;
+  width: 20px;
+  height: 20px;
+  max-width: 20px;
+  max-height: 20px;
+  flex-shrink: 0;
+  fill: currentColor;
+}
+.strateedge-date-wrap .cal-popover:not(.is-open):empty {
+  display: none;
+}
+.cal-popover {
+  position: absolute;
+  z-index: 300;
+  left: 0;
+  top: 100%;
+  margin-top: 8px;
+  width: 320px;
+  background: var(--bg-card, #0d1220);
+  border: 1px solid var(--border-subtle, rgba(255,255,255,0.1));
+  border-radius: 14px;
+  box-shadow: 0 12px 36px rgba(0,0,0,0.45);
+  overflow: hidden;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s;
+}
+.cal-popover.is-open {
+  opacity: 1;
+  visibility: visible;
+}
+.cal-popover::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--neon-green, #ff2d78), var(--neon-green-dim, #d6245f), #a855f7);
+  opacity: 0.8;
+}
+.cal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px 12px;
+  position: relative;
+}
+.cal-title {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary, #f0f4f8);
+  letter-spacing: 0.5px;
+}
+.cal-nav { display: flex; gap: 4px; }
+.cal-nav-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.06);
+  background: rgba(255,255,255,0.03);
+  color: var(--text-muted, #8a9bb0);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.cal-nav-btn:hover {
+  border-color: rgba(255,45,120,0.25);
+  background: rgba(255,45,120,0.08);
+  color: var(--neon-green, #ff2d78);
+}
+.cal-nav-btn svg { width: 14px; height: 14px; }
+.cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  padding: 0 14px;
+  margin-bottom: 4px;
+  font-family: 'Space Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-muted, #8a9bb0);
+}
+.cal-weekdays span { text-align: center; padding: 6px 0; }
+.cal-weekdays-sep {
+  margin: 0 14px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-subtle, rgba(255,255,255,0.08)), transparent);
+}
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  padding: 10px 14px 18px;
+}
+.cal-day {
+  width: 38px;
+  height: 38px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-muted, #8a9bb0);
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s;
+}
+.cal-day.other-month { color: rgba(138,155,176,0.25); pointer-events: none; }
+.cal-day:hover:not(.other-month):not(.selected) {
+  background: rgba(255,45,120,0.06);
+  border-color: rgba(255,45,120,0.15);
+  color: var(--text-primary, #f0f4f8);
+}
+.cal-day.today {
+  color: var(--neon-blue, #00d4ff);
+  font-weight: 700;
+  border-color: rgba(0,212,255,0.3);
+  background: rgba(0,212,255,0.06);
+}
+.cal-day.today::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--neon-blue, #00d4ff);
+}
+.cal-day.selected {
+  background: var(--neon-green, #ff2d78);
+  color: #fff;
+  font-weight: 700;
+  border-color: var(--neon-green, #ff2d78);
+  box-shadow: 0 0 12px rgba(255,45,120,0.3);
+}
+.cal-day.selected::after { display: none; }
+.cal-day.selected:hover {
+  background: var(--neon-green-dim, #d6245f);
+  border-color: var(--neon-green-dim, #d6245f);
+}
+.cal-footer { display: flex; justify-content: flex-end; padding: 0 14px 14px; }
+.cal-clear-btn {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted, #8a9bb0);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 10px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+.cal-clear-btn:hover {
+  color: var(--neon-green, #ff2d78);
+  background: rgba(255,45,120,0.06);
+}

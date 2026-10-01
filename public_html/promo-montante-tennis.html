@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Montante Tennis 10€ → 500€</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Bebas+Neue&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:#1a1a1a;font-family:'Rajdhani',sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+
+.card{
+  width:1080px;height:1350px;
+  background:
+    radial-gradient(ellipse 600px 400px at 80% 10%, rgba(57,255,20,0.22), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 20% 90%, rgba(0,212,255,0.15), transparent 60%),
+    radial-gradient(ellipse 500px 300px at 90% 70%, rgba(57,255,20,0.12), transparent 60%),
+    linear-gradient(180deg, #0a0e0a 0%, #0a1a0f 50%, #050810 100%);
+  position:relative;overflow:hidden;
+  border:2px solid rgba(57,255,20,0.4);
+  box-shadow:0 0 80px rgba(57,255,20,0.3);
+}
+
+/* Grid pattern subtil */
+.grid-bg{
+  position:absolute;inset:0;
+  background-image:linear-gradient(rgba(57,255,20,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(57,255,20,0.04) 1px,transparent 1px);
+  background-size:50px 50px;
+  opacity:0.6;
+}
+
+/* Scanline top */
+.scanline{
+  position:absolute;top:0;left:0;right:0;height:4px;
+  background:linear-gradient(90deg,transparent,#39ff14 20%,#00d4ff 50%,#39ff14 80%,transparent);
+  box-shadow:0 0 20px rgba(57,255,20,0.8),0 0 40px rgba(0,212,255,0.4);
+}
+
+/* Corner accents */
+.corner{
+  position:absolute;width:80px;height:80px;border:3px solid #39ff14;
+  box-shadow:0 0 20px rgba(57,255,20,0.5);
+}
+.corner-tl{top:30px;left:30px;border-right:none;border-bottom:none;}
+.corner-tr{top:30px;right:30px;border-left:none;border-bottom:none;}
+.corner-bl{bottom:30px;left:30px;border-right:none;border-top:none;}
+.corner-br{bottom:30px;right:30px;border-left:none;border-top:none;}
+
+/* Content wrapper */
+.content{
+  position:relative;z-index:2;
+  padding:80px 70px 70px;
+  height:100%;
+  display:flex;flex-direction:column;
+}
+
+/* Logo header */
+.header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:40px;
+}
+.logo{
+  font-family:'Orbitron',sans-serif;font-size:26px;font-weight:900;
+  letter-spacing:2px;color:#fff;
+}
+.logo em{color:#39ff14;font-style:normal;text-shadow:0 0 12px rgba(57,255,20,0.8);}
+.badge-live{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 16px;border-radius:30px;
+  background:rgba(255,45,120,0.12);border:1px solid rgba(255,45,120,0.4);
+  font-family:'Share Tech Mono',monospace;font-size:14px;font-weight:700;
+  color:#ff2d78;letter-spacing:2px;
+}
+.badge-live .dot{
+  width:10px;height:10px;border-radius:50%;background:#ff2d78;
+  box-shadow:0 0 12px #ff2d78;
+}
+
+/* Tennis icon badge */
+.tennis-badge{
+  display:inline-flex;align-items:center;gap:12px;
+  margin-bottom:30px;
+  padding:10px 20px;border-radius:40px;
+  background:linear-gradient(135deg,rgba(57,255,20,0.12),rgba(0,212,255,0.08));
+  border:1px solid rgba(57,255,20,0.4);
+  font-family:'Orbitron',sans-serif;font-size:18px;font-weight:900;
+  letter-spacing:3px;color:#39ff14;
+  box-shadow:0 0 20px rgba(57,255,20,0.25);
+  width:fit-content;
+}
+.tennis-badge .emoji{font-size:24px;}
+
+/* Title principal */
+.title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:140px;font-weight:400;
+  line-height:0.95;
+  color:#fff;
+  text-shadow:0 0 30px rgba(57,255,20,0.4);
+  margin-bottom:20px;
+  letter-spacing:2px;
+}
+.title .hl{
+  background:linear-gradient(135deg,#39ff14 0%,#00d46a 50%,#00d4ff 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+  filter:drop-shadow(0 0 20px rgba(57,255,20,0.6));
+}
+
+/* Défi chiffres 10€ → 500€ */
+.challenge{
+  margin:40px 0 30px;
+  background:linear-gradient(135deg,rgba(57,255,20,0.06),rgba(0,0,0,0.4));
+  border:2px solid rgba(57,255,20,0.35);
+  border-radius:24px;
+  padding:40px 50px;
+  position:relative;overflow:hidden;
+  box-shadow:0 0 30px rgba(57,255,20,0.2) inset,0 10px 40px rgba(0,0,0,0.4);
+}
+.challenge::before{
+  content:'';position:absolute;top:0;left:-50%;width:200%;height:2px;
+  background:linear-gradient(90deg,transparent,#39ff14,#00d4ff,#39ff14,transparent);
+}
+.challenge-row{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:30px;
+}
+.challenge-item{text-align:center;flex:1;}
+.challenge-lbl{
+  font-family:'Orbitron',sans-serif;font-size:14px;font-weight:700;
+  color:rgba(255,255,255,0.5);letter-spacing:3px;margin-bottom:8px;
+  text-transform:uppercase;
+}
+.challenge-val{
+  font-family:'Orbitron',sans-serif;font-size:86px;font-weight:900;
+  line-height:1;
+}
+.start{color:#fff;text-shadow:0 0 15px rgba(255,255,255,0.3);}
+.target{
+  background:linear-gradient(135deg,#39ff14,#00d46a);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 15px rgba(57,255,20,0.7));
+}
+.arrow{
+  font-family:'Orbitron',sans-serif;font-size:70px;font-weight:900;
+  color:#00d4ff;
+  text-shadow:0 0 20px rgba(0,212,255,0.7);
+  line-height:1;
+}
+.challenge-multi{
+  text-align:center;margin-top:20px;
+  font-family:'Share Tech Mono',monospace;font-size:22px;
+  color:rgba(255,255,255,0.6);letter-spacing:4px;
+}
+.challenge-multi strong{color:#39ff14;font-size:28px;font-weight:700;}
+
+/* Pitch items */
+.pitch{
+  display:grid;grid-template-columns:1fr 1fr;gap:18px;
+  margin:0 0 40px;
+}
+.pitch-item{
+  background:rgba(0,0,0,0.35);
+  border:1px solid rgba(57,255,20,0.15);
+  border-radius:16px;
+  padding:20px 24px;
+  display:flex;align-items:center;gap:15px;
+}
+.pitch-ico{
+  width:44px;height:44px;border-radius:12px;
+  background:linear-gradient(135deg,rgba(57,255,20,0.2),rgba(0,212,255,0.1));
+  border:1px solid rgba(57,255,20,0.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;flex-shrink:0;
+}
+.pitch-txt{
+  font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;
+  color:#fff;line-height:1.2;
+}
+.pitch-txt small{
+  display:block;font-size:13px;color:rgba(255,255,255,0.45);
+  font-weight:500;margin-top:2px;letter-spacing:0.5px;
+}
+
+/* Footer CTA */
+.footer-cta{
+  margin-top:auto;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:20px;
+  padding-top:30px;
+  border-top:1px solid rgba(57,255,20,0.15);
+}
+.cta-btn{
+  display:inline-flex;align-items:center;gap:12px;
+  padding:22px 40px;border-radius:16px;
+  background:linear-gradient(135deg,#39ff14,#00d46a);
+  color:#0a0e17;
+  font-family:'Orbitron',sans-serif;font-size:22px;font-weight:900;
+  letter-spacing:2px;text-transform:uppercase;
+  box-shadow:0 0 30px rgba(57,255,20,0.5),0 10px 30px rgba(0,0,0,0.4);
+  white-space:nowrap;
+}
+.cta-sub{
+  font-family:'Share Tech Mono',monospace;
+  color:rgba(255,255,255,0.55);font-size:16px;
+  text-align:right;letter-spacing:1px;line-height:1.5;
+}
+.cta-sub strong{color:#39ff14;font-size:18px;}
+
+/* Balle tennis décorative */
+.tennis-ball{
+  position:absolute;
+  width:180px;height:180px;
+  border-radius:50%;
+  background:radial-gradient(circle at 30% 30%, #e8ff4a, #c9e834 60%, #7a9608);
+  box-shadow:0 0 60px rgba(201,232,52,0.6),0 0 120px rgba(57,255,20,0.3);
+  top:-40px;right:-40px;
+  z-index:1;
+  opacity:0.9;
+}
+.tennis-ball::before{
+  content:'';position:absolute;inset:0;border-radius:50%;
+  border:3px solid rgba(255,255,255,0.15);
+  clip-path:polygon(0 30%, 100% 70%, 100% 100%, 0 100%);
+}
+.tennis-ball::after{
+  content:'';position:absolute;inset:0;border-radius:50%;
+  border:3px solid rgba(255,255,255,0.15);
+  clip-path:polygon(0 0, 100% 0, 100% 30%, 0 70%);
+}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <div class="grid-bg"></div>
+  <div class="scanline"></div>
+  <div class="corner corner-tl"></div>
+  <div class="corner corner-tr"></div>
+  <div class="corner corner-bl"></div>
+  <div class="corner corner-br"></div>
+  <div class="tennis-ball"></div>
+
+  <div class="content">
+
+    <div class="header">
+      <div class="logo"><em>STRAT</em>EDGE</div>
+      <div class="badge-live">
+        <span class="dot"></span>
+        <span>LIVE NOW</span>
+      </div>
+    </div>
+
+    <div class="tennis-badge">
+      <span class="emoji">🎾</span>
+      <span>TENNIS ACE</span>
+    </div>
+
+    <h1 class="title">
+      MONTANTE<br>
+      <span class="hl">TENNIS</span>
+    </h1>
+
+    <div class="challenge">
+      <div class="challenge-row">
+        <div class="challenge-item">
+          <div class="challenge-lbl">Start</div>
+          <div class="challenge-val start">10€</div>
+        </div>
+        <div class="arrow">→</div>
+        <div class="challenge-item">
+          <div class="challenge-lbl">Target</div>
+          <div class="challenge-val target">500€</div>
+        </div>
+      </div>
+      <div class="challenge-multi">
+        OBJECTIF <strong>×50</strong> · BASELINE SYNDICATE
+      </div>
+    </div>
+
+    <div class="pitch">
+      <div class="pitch-item">
+        <div class="pitch-ico">📊</div>
+        <div class="pitch-txt">Data ATP/WTA<small>xG, Elo, surface stats</small></div>
+      </div>
+      <div class="pitch-item">
+        <div class="pitch-ico">🎯</div>
+        <div class="pitch-txt">Value bets<small>CLV vs Pinnacle</small></div>
+      </div>
+      <div class="pitch-item">
+        <div class="pitch-ico">📲</div>
+        <div class="pitch-txt">Suivi live<small>chaque pick tracké</small></div>
+      </div>
+      <div class="pitch-item">
+        <div class="pitch-ico">🔔</div>
+        <div class="pitch-txt">Alertes push<small>jamais rater un pari</small></div>
+      </div>
+    </div>
+
+    <div class="footer-cta">
+      <div class="cta-btn">
+        🚀 SUIVRE LA MONTANTE
+      </div>
+      <div class="cta-sub">
+        📲 <strong>stratedgepronos.fr</strong><br>
+        /montante-tennis
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

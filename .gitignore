@@ -1,0 +1,64 @@
+# OS
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# IDE
+.vscode/
+.cursor/
+# Exception : versionner les règles Cursor (même config agent à la maison)
+!.cursor/rules/
+!.cursor/rules/*.mdc
+*.swp
+*.swo
+
+# Logs
+*.log
+error_log
+
+# Secrets / env
+.env
+.env.*
+*.env
+public_html/includes/smtp-config.php
+public_html/includes/football_data_config.php
+public_html/includes/claude-config.local.php
+public_html/includes/telegram-config.local.php
+public_html/plugins/football_footystats/local_config.php
+
+# Cache
+__pycache__/
+*.pyc
+
+# Dependencies
+node_modules/
+vendor/
+
+# Uploads : NE PAS versionner (images uploadées en prod, supprimées à chaque deploy sinon)
+public_html/uploads/
+
+# Slot bracket — données générées sur le serveur
+public_html/slot-history.json
+public_html/slot-state.json
+
+# Clés secrètes (hors Git)
+config-keys.php
+public_html/config-keys.php
+
+# Edge Finder dashboard — secrets et runtime
+public_html/admin/edge-finder/lib/config.php
+public_html/admin/edge-finder/data/imports/
+public_html/admin/edge-finder/data/import.log
+
+# StratEdge Lab — configuration API propre au serveur
+public_html/admin/football-lab/config.local.php
+public_html/admin/slate/data/
+public_html/private/outsider/*.csv
+public_html/private/outsider/*.txt
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.bak*
+*.orig
+*.avant-*
+_bak_*/

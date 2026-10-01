@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /panel-x9k3m/
+Disallow: /stripe-*
+Disallow: /nowpayments-*
+Disallow: /login.php
+Disallow: /register.php
+Disallow: /dashboard.php
+Disallow: /profil.php
+Disallow: /vault*
+Disallow: /logout.php
+
+Sitemap: https://stratedgepronos.fr/sitemap.xml

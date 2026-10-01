@@ -1,0 +1,173 @@
+-- ============================================================
+-- STRATEDGE PRONOS — Base de données complète
+-- À importer dans phpMyAdmin sur Hostinger
+-- ============================================================
+
+SET NAMES utf8mb4;
+SET time_zone = '+01:00';
+
+-- ── TABLE MEMBRES ──────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `membres` (
+  `id`               INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `nom`              VARCHAR(80) NOT NULL,
+  `email`            VARCHAR(150) NOT NULL UNIQUE,
+  `password`         VARCHAR(255) NOT NULL,
+  `token_session`    VARCHAR(64) DEFAULT NULL,
+  `date_inscription` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `actif`            TINYINT(1) NOT NULL DEFAULT 1,
+  `banni`            TINYINT(1) NOT NULL DEFAULT 0,
+  `role`             VARCHAR(20) DEFAULT NULL,
+  `photo_profil`     VARCHAR(255) DEFAULT NULL,
+  `accepte_emails`   TINYINT(1) NOT NULL DEFAULT 1,
+  `date_naissance`   DATE DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── TABLE ABONNEMENTS ─────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `abonnements` (
+  `id`           INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `membre_id`    INT(11) UNSIGNED NOT NULL,
+  `type`         VARCHAR(30) NOT NULL DEFAULT 'daily',
+  `date_achat`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `date_fin`     DATETIME DEFAULT NULL,   -- NULL = daily (expire au prochain bet posté)
+  `actif`        TINYINT(1) NOT NULL DEFAULT 1,
+  `montant`      DECIMAL(6,2) NOT NULL DEFAULT 0.00,
+  `ref_paiement` VARCHAR(100) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_membre` (`membre_id`),
+  FOREIGN KEY (`membre_id`) REFERENCES `membres`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── TABLE BETS ────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `bets` (
+  `id`                INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `titre`             VARCHAR(200) NOT NULL,
+  `image_path`        VARCHAR(300) NOT NULL,
+  `locked_image_path` VARCHAR(255) DEFAULT NULL,
+  `type`              SET('safe','fun','live') NOT NULL DEFAULT 'safe',
+  `categorie`         VARCHAR(30) NOT NULL DEFAULT 'multi',
+  `description`       TEXT DEFAULT NULL,
+  `actif`             TINYINT(1) NOT NULL DEFAULT 1,
+  `resultat`          ENUM('en_cours','gagne','perdu','annule') NOT NULL DEFAULT 'en_cours',
+  `date_resultat`     DATETIME DEFAULT NULL,
+  `date_post`         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── TABLE MESSAGES (messagerie membre ↔ admin) ────────────
+CREATE TABLE IF NOT EXISTS `messages` (
+  `id`           INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `membre_id`    INT(11) UNSIGNED NOT NULL,
+  `contenu`      TEXT NOT NULL,
+  `expediteur`   ENUM('membre','admin') NOT NULL,
+  `date_envoi`   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `lu`           TINYINT(1) NOT NULL DEFAULT 0,
+  PRIMARY KEY (`id`),
+  KEY `idx_membre` (`membre_id`),
+  FOREIGN KEY (`membre_id`) REFERENCES `membres`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── TABLE TICKETS SAV ─────────────────────────────────────
+CREATE TABLE IF NOT EXISTS `tickets` (
+  `id`           INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `membre_id`    INT(11) UNSIGNED NOT NULL,
+  `sujet`        VARCHAR(200) NOT NULL,
+  `statut`       ENUM('ouvert','en_cours','resolu') NOT NULL DEFAULT 'ouvert',
+  `date_creation` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_membre` (`membre_id`),
+  FOREIGN KEY (`membre_id`) REFERENCES `membres`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── TABLE MESSAGES TICKETS ────────────────────────────────
+CREATE TABLE IF NOT EXISTS `ticket_messages` (
+  `id`         INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `ticket_id`  INT(11) UNSIGNED NOT NULL,
+  `contenu`    TEXT NOT NULL,
+  `auteur`     ENUM('membre','admin') NOT NULL,
+  `date_envoi` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_ticket` (`ticket_id`),
+  FOREIGN KEY (`ticket_id`) REFERENCES `tickets`(`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── TABLE ADMIN IDÉES / BUGS (soumissions admins) ─────────────
+CREATE TABLE IF NOT EXISTS `admin_idees` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `admin_id` int(11) unsigned NOT NULL,
+  `type` enum('idee','bug') NOT NULL,
+  `titre` varchar(255) NOT NULL,
+  `description` text NOT NULL,
+  `statut` enum('en_attente','accepte','refuse','en_cours','termine') NOT NULL DEFAULT 'en_attente',
+  `progression_pct` tinyint(3) unsigned NOT NULL DEFAULT 0,
+  `notes_super` text DEFAULT NULL,
+  `date_creation` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `date_maj` datetime DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_admin` (`admin_id`),
+  KEY `idx_statut` (`statut`),
+  KEY `idx_type` (`type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── TABLE MESSAGERIE INTERNE (super admin) ──────────────────
+CREATE TABLE IF NOT EXISTS `admin_inbox` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `type` enum('idee','bug') NOT NULL,
+  `ref_id` int(11) unsigned NOT NULL,
+  `titre` varchar(255) NOT NULL,
+  `contenu` text NOT NULL,
+  `lu` tinyint(1) NOT NULL DEFAULT 0,
+  `date_creation` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_ref` (`ref_id`),
+  KEY `idx_lu` (`lu`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── CODES PROMO (admin) ───────────────────────────────────
+CREATE TABLE IF NOT EXISTS `codes_promo` (
+  `id`                INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `code`              VARCHAR(50) NOT NULL,
+  `type`              ENUM('percent','fixed') NOT NULL DEFAULT 'percent',
+  `value`             DECIMAL(10,2) NOT NULL COMMENT 'pourcent (0-100) ou montant €',
+  `offres`            VARCHAR(200) NOT NULL DEFAULT '' COMMENT 'daily,weekly,weekend,tennis,vip_max',
+  `max_utilisations`  INT(11) UNSIGNED NOT NULL DEFAULT 0 COMMENT '0=illimité',
+  `utilisations`      INT(11) UNSIGNED NOT NULL DEFAULT 0,
+  `date_expir`        DATE DEFAULT NULL,
+  `actif`             TINYINT(1) NOT NULL DEFAULT 1,
+  `date_creation`     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `code` (`code`),
+  KEY `idx_actif` (`actif`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── Utilisation des codes promo (qui a utilisé quel code) ───
+CREATE TABLE IF NOT EXISTS `code_promo_utilisations` (
+  `id`            INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `code_promo_id` INT(11) UNSIGNED NOT NULL,
+  `membre_id`     INT(11) UNSIGNED NOT NULL,
+  `offre`         VARCHAR(30) NOT NULL,
+  `montant_avant` DECIMAL(10,2) NOT NULL,
+  `montant_apres` DECIMAL(10,2) NOT NULL,
+  `date_utilisation` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_code` (`code_promo_id`),
+  KEY `idx_membre` (`membre_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── Anniversaire : 1 utilisation par membre par an ─────────
+CREATE TABLE IF NOT EXISTS `promo_anniversaire_use` (
+  `id`         INT(11) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `membre_id`  INT(11) UNSIGNED NOT NULL,
+  `annee`      SMALLINT UNSIGNED NOT NULL,
+  `offre`      VARCHAR(30) NOT NULL,
+  `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `membre_annee` (`membre_id`,`annee`),
+  KEY `idx_membre` (`membre_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ── COMPTE ADMIN PAR DÉFAUT ───────────────────────────────
+-- Mot de passe : ChangeMe2024! (à modifier dans le panel)
+INSERT INTO `membres` (`nom`, `email`, `password`, `actif`) VALUES
+('Admin', 'stratedgepronos@gmail.com', '$2y$12$LQv3c1yqBWVHxkd0LHAkCOYz6TiWQi7g.SuGeRPzqSRnGaMRrF7n2', 1);

@@ -1,0 +1,4 @@
+# Interdire l'accès HTTP au compteur de visites (données privées)
+<IfModule mod_authz_core.c>
+  Require all denied
+</IfModule>

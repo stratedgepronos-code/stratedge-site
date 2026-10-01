@@ -1,0 +1,30 @@
+name: Deploy to FTP (Hostinger)
+
+# Désactivé : déploiement via deploy-ssh.yml (SSH port 65002) à la place
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_HOST }}
+          username: ${{ secrets.FTP_USER }}
+          password: ${{ secrets.FTP_PASS }}
+          port: 21
+          local-dir: ./public_html/
+          server-dir: /public_html/
+          dangerous-clean-slate: false
+          # Ré-inclure les défauts + claude-config.local.php (hors Git) : exclu du publish/delete FTP
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/node_modules/**
+            includes/claude-config.local.php
+            config-keys.php
