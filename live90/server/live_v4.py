@@ -4,6 +4,7 @@ import urllib.error, urllib.request
 from zoneinfo import ZoneInfo
 UTC = dt.timezone.utc
 VERSION = 'live4.0'
+MIN_TELEGRAM_ODDS = 1.50
 MARKETS = ('goal_ht', 'goal_ft', 'card_ft')
 LABELS = {'goal_ht': 'But avant la mi-temps', 'goal_ft': 'But avant la fin du match', 'card_ft': 'Un carton supplémentaire · équipe'}
 SCHEMA = '''
@@ -539,6 +540,15 @@ def notify(message):
     except urllib.error.HTTPError as e: return 'failed','Refus HTTP '+str(e.code),None
     except Exception: return 'uncertain','Connexion interrompue ; livraison inconnue, aucun renvoi automatique',None
 
+def telegram_price_error(saved,now):
+    quote=saved.get('stake_quote') or {};stamp=date(quote.get('received_at'))
+    price=quote.get('odds')
+    if not num(price) or not stamp or not 0<=(now-stamp).total_seconds()<=30:
+        return 'Non envoyé : cote Stake absente ou périmée ; minimum requis 1,50'
+    if price<MIN_TELEGRAM_ODDS:
+        return 'Non envoyé : cote Stake '+format(price,'.2f').replace('.',',')+' inférieure au minimum 1,50'
+    return None
+
 def deliver(c, now, realtime=False):
     # Recover ambiguous sends after a process crash; never resend blindly.
     c.execute("UPDATE v4_signals SET delivery='uncertain',delivery_error='Processus interrompu pendant l’envoi' WHERE delivery='sending' AND created_at<?",(iso(now-dt.timedelta(minutes=3)),));c.commit()
@@ -551,6 +561,8 @@ def deliver(c, now, realtime=False):
             r=sample_data(row); f=bind(c,r);p,ctx=inputs(c,f,now);hist=c.execute('SELECT * FROM samples WHERE match_id=? AND id<=? ORDER BY id DESC LIMIT 80',(s['match_id'],row['id'])).fetchall()
             d=safe_evaluate(r,p,ctx,s['market'],s['team'],now,hist,options(c));valid=d['status']=='candidate' and r.get('score')==saved.get('score') and d['line']==s['line'] and (d.get('quote') or {}).get('odds')==s['odds']
         if not valid: state,error,mid='expired','Conditions ou cote modifiées avant envoi',None
+        elif telegram_price_error(saved,now):
+            state,error,mid='filtered',telegram_price_error(saved,now),None
         else:
             state,error,mid=notify(alert_message(s,saved,now))
         c.execute('UPDATE v4_signals SET delivery=?,delivery_error=?,telegram_id=? WHERE id=?',(state,error,mid,s['id']));c.commit()
@@ -826,7 +838,7 @@ def settle(c,x,now,automatic=False,evidence=None):
         c.execute('UPDATE v4_signals SET outcome=?,settled_at=? WHERE id=?',(outcome,iso(now) if outcome!='pending' else None,sid))
         # A correction before delivery supersedes only unsent queued events.
         c.execute("UPDATE v4_result_notifications SET delivery='superseded',delivery_error='Résultat corrigé avant envoi' WHERE signal_id=? AND delivery='queued'",(sid,))
-        state='queued' if options(c)['telegram_enabled'] else 'disabled'
+        state='queued' if options(c)['telegram_enabled'] and s['delivery']!='filtered' else 'disabled'
         c.execute('INSERT INTO v4_result_notifications(result_id,signal_id,created_at,message,delivery) VALUES(?,?,?,?,?)',(event.lastrowid,sid,iso(now),result_message(dict(s,data=enc(data)),s['outcome'],outcome,source,automatic),state))
     return {'ok':True,'result_delivery':state}
 

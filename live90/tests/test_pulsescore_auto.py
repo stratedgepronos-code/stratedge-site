@@ -32,9 +32,9 @@ class PulseAutoTests(unittest.TestCase):
   self.prepare();network=MagicMock();network.open.side_effect=TimeoutError('no secret output')
   with patch.object(V.urllib.request,'build_opener',return_value=network),patch.object(V,'notify',return_value=('sent',None,1)) as send:
    V.pulse_enrich(self.c,self.now);V.pulse_enrich(self.c,self.now+dt.timedelta(seconds=70));V.deliver(self.c,self.now)
-  network.open.assert_called_once();self.assertEqual(send.call_count,2)
-  self.assertTrue(all('Cote : à vérifier sur Stake' in x.args[0] for x in send.call_args_list))
- def test_cards_fetch_bookings_price_and_still_send_without_market(self):
+  network.open.assert_called_once();send.assert_not_called()
+  self.assertTrue(all(s["delivery"]=="filtered" for s in V.history(self.c)))
+ def test_cards_fetch_bookings_price_and_send_above_minimum(self):
   self.prepare(cards=True)
   payload=self.payload();m=payload['events'][0]['markets'][0];m.update(rawName='Équipe A Total Bookings',canonicalMarket='OTHER')
   network=self.opener(payload)
@@ -44,25 +44,26 @@ class PulseAutoTests(unittest.TestCase):
   self.assertIn('1,53 · Stake Bookings',send.call_args.args[0]);self.assertIn('cartons (Bookings)',send.call_args.args[0])
   s=V.history(self.c)[0];self.assertEqual(s['data']['stake_quote']['unit'],'stake_bookings');self.assertIsNone(s['odds'])
   self.assertEqual(V.pulse_status(self.c,self.now)['auto_today'],1)
- def test_cards_provider_failure_does_not_block_telegram(self):
+ def test_cards_provider_failure_keeps_history_without_telegram(self):
   self.prepare(cards=True);network=MagicMock();network.open.side_effect=TimeoutError()
   with patch.object(V.urllib.request,'build_opener',return_value=network),patch.object(V,'notify',return_value=('sent',None,1)) as send:
    V.pulse_enrich(self.c,self.now);V.deliver(self.c,self.now)
-  network.open.assert_called_once();self.assertEqual(send.call_count,1);self.assertIn('Cote : à vérifier',send.call_args.args[0])
+  network.open.assert_called_once();send.assert_not_called()
+  self.assertTrue(all(s["delivery"]=="filtered" for s in V.history(self.c)))
  def test_unconfirmed_observation_does_not_request_quotes(self):
   self.base.prepared();self.base.r['ind10']['sot10']['h']=0;self.base.add(self.base.r,self.now)
   with patch.object(V.urllib.request,'build_opener') as network,patch.object(V,'notify'):
    V.run(self.base.db,send=True,now=self.now)
   network.assert_not_called()
- def test_daily_budget_and_switch_keep_statistical_delivery(self):
+ def test_daily_budget_keeps_history_without_telegram(self):
   self.prepare()
   with self.c:self.c.executemany('INSERT INTO v4_pulsescore_auto(attempted_at) VALUES(?)',[(V.iso(self.now-dt.timedelta(hours=1)),)]*10)
   with patch.object(V.urllib.request,'build_opener') as network,patch.object(V,'notify',return_value=('sent',None,1)) as send:
    V.pulse_enrich(self.c,self.now);V.deliver(self.c,self.now)
-  network.assert_not_called();self.assertEqual(send.call_count,2)
-  self.assertIn('Cote : à vérifier sur Stake',send.call_args.args[0]);self.assertNotIn('Budget quotidien',send.call_args.args[0])
+  network.assert_not_called();send.assert_not_called()
   self.assertIn('Budget quotidien',V.history(self.c)[0]['data']['stake_lookup']['reason'])
   self.assertEqual(V.pulse_day_used(self.c,self.now.replace(hour=22)),0) # midnight Paris
+  self.assertTrue(all(s["delivery"]=="filtered" for s in V.history(self.c)))
  def test_score_mismatch_suspension_quarter_lines_and_duplicate_events(self):
   self.prepare();s=self.c.execute('SELECT * FROM v4_signals ORDER BY id LIMIT 1').fetchone();saved=json.loads(s['data'])
   for mutation in ('score','suspended','quarter','duplicate','missing_score'):
@@ -95,5 +96,6 @@ class PulseAutoTests(unittest.TestCase):
   self.base.prepared(both_goals=True)
   with patch.object(V,'pulse_enrich',side_effect=RuntimeError('outage')),patch.object(V,'notify',return_value=('sent',None,1)) as send:
    V.run(self.base.db,send=True,now=self.now)
-  self.assertEqual(send.call_count,2)
+  send.assert_not_called()
+  self.assertTrue(all(s["delivery"]=="filtered" for s in V.history(self.c)))
 if __name__=='__main__':unittest.main()
