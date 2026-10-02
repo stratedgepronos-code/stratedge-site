@@ -16,8 +16,8 @@ const php=process.env.PHP_BIN||'php';const prepared=cp.spawnSync(php,[path.join(
   for(const route of ['/', '/journal.php','/offres.php','/methode.php','/resultats.php','/article.php?slug=journee-sans-pari-une-decision']){
    const res=await page.goto(origin+route);assert.equal(res.status(),200,route+' render');await page.evaluate(()=>document.fonts.ready);await page.waitForTimeout(100);
    assert.equal(await page.locator('h1').count(),1,route+' heading');assert(!(await page.locator('body').innerText()).match(/Warning:|Fatal error|BROUILLON PRIVÉ|FUTUR NON PUBLIÉ/),route+' data or PHP leak');
-   const dimensions=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));assert(dimensions.scroll<=dimensions.width+1,route+' horizontal overflow '+width+' '+JSON.stringify(dimensions));
-   if(width!==320)await page.screenshot({path:path.join(output,(route==='/'?'home':route.split(/[?/.]/).filter(Boolean)[0])+'-'+width+'.png'),fullPage:true});
+   await page.screenshot({path:path.join(output,(route==='/'?'home':route.split(/[?/.]/).filter(Boolean)[0])+'-'+width+'.png'),fullPage:true});
+   const dimensions=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,overflow:[...document.querySelectorAll('main>*')].filter(e=>e.getBoundingClientRect().right>innerWidth+1).map(e=>e.className)}));assert(dimensions.scroll<=dimensions.width+1,route+' horizontal overflow '+width+' '+JSON.stringify(dimensions));
   }
  }
  await page.setViewportSize({width:390,height:844});await page.goto(origin+'/');assert.equal(await page.locator('#public-nav').evaluate(e=>e.inert),true);await page.locator('.menu-toggle').click();assert.equal(await page.locator('.menu-toggle').getAttribute('aria-expanded'),'true');assert.equal(await page.locator('#public-nav').evaluate(e=>e.inert),false);await page.keyboard.press('Escape');assert.equal(await page.locator('.menu-toggle').getAttribute('aria-expanded'),'false');

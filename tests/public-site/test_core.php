@@ -7,13 +7,13 @@ function rejects(callable $run,string $message):void{try{$run();}catch(InvalidAr
 $db=new PDO('sqlite::memory:');$db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);$j=new Journal($db);$j->install();$j->install();
 $base=['title'=>'Guide de recette <script>alert(1)</script>','slug'=>'guide-recette','summary'=>'Un résumé de recette suffisamment long.','body'=>"## Un titre\n\nUn paragraphe de test <script>alert(1)</script> conservé en texte simple, jamais exécuté.",'kind'=>'guide','sport'=>'football','decision'=>'observation','sources'=>'https://example.test/source'];
 $id=$j->save($base);ok(!$j->get($id),'A draft was exposed');ok(count($j->recent())===0,'Draft in listing');ok(count($j->revisions($id))===0,'Draft in revision trail');
-$future=gmdate('Y-m-d\TH:i:s\Z',time()+86400);$j->save($base,$id,1,'published',$future);ok(!$j->get($id),'Scheduled article exposed');
+$future=gmdate('Y-m-d\TH:i:s\Z',time()+86400);$j->save($base,$id,1,'published',$future);ok(!$j->get($id),'Scheduled article exposed');ok(count($j->revisions($id))===0,'Scheduled revision exposed');
 $j->save($base,$id,2,'published');$post=$j->get($id);ok($post!==null&&$post['version']==3,'Publishing failed');
 rejects(fn()=>$j->save($base,$id,2,'published',$post['publish_at'],'Correction concurrente'),'Stale write accepted');
 rejects(fn()=>$j->save($base,$id,3,'draft',$post['publish_at'],'Retrait de l’article'),'Public post unpublished');
 rejects(fn()=>$j->save(array_replace($base,['slug'=>'autre']),$id,3,'published',$post['publish_at'],'Modification adresse'),'Public slug changed');
 $j->save(array_replace($base,['body'=>$base['body']."\n\nCorrection visible."]),$id,3,'published',$post['publish_at'],'Précision apportée au texte');
-$revisions=$j->revisions($id);ok(count($revisions)===3&&$revisions[0]['reason']==='Précision apportée au texte','Corrections missing');ok(strpos($revisions[1]['data']['body'],'Correction visible')===false,'Old version mutated');
+$revisions=$j->revisions($id);ok(count($revisions)===2&&$revisions[0]['reason']==='Précision apportée au texte','Corrections missing');ok(strpos($revisions[1]['data']['body'],'Correction visible')===false,'Old version mutated');
 $selection=array_replace($base,['slug'=>'selection-recette','kind'=>'analyse','decision'=>'retenu','match_label'=>'Équipe fictive A — Équipe fictive B','market'=>'+2,5 buts','odds'=>'1,79','odds_at'=>(new DateTimeImmutable('now',new DateTimeZone('Europe/Paris')))->format('Y-m-d\TH:i'),'kickoff_at'=>(new DateTimeImmutable('+2 days',new DateTimeZone('Europe/Paris')))->format('Y-m-d\TH:i')]);
 $selectionId=$j->save($selection,null,0,'published');$public=$j->get($selectionId);$selection=Journal::validate($selection);
 rejects(fn()=>$j->save(array_replace($selection,['odds'=>'2.05']),$selectionId,1,'published',$public['publish_at'],'Réécriture de la cote'),'Public odds rewritten');

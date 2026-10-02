@@ -13,7 +13,7 @@ final class Journal
         $text = $sqlite ? 'TEXT' : 'LONGTEXT';
         $suffix = $sqlite ? '' : ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4';
         $this->db->exec("CREATE TABLE IF NOT EXISTS se_public_posts (id VARCHAR(32) PRIMARY KEY, slug VARCHAR(180) NOT NULL UNIQUE, status VARCHAR(20) NOT NULL, publish_at VARCHAR(32) NOT NULL, updated_at VARCHAR(32) NOT NULL, version INTEGER NOT NULL, payload $text NOT NULL)" . $suffix);
-        $this->db->exec("CREATE TABLE IF NOT EXISTS se_public_revisions (id VARCHAR(32) PRIMARY KEY, post_id VARCHAR(32) NOT NULL, version INTEGER NOT NULL, created_at VARCHAR(32) NOT NULL, reason VARCHAR(500) NOT NULL, payload $text NOT NULL, UNIQUE(post_id, version))" . $suffix);
+        $this->db->exec("CREATE TABLE IF NOT EXISTS se_public_revisions (id VARCHAR(32) PRIMARY KEY, post_id VARCHAR(32) NOT NULL, version INTEGER NOT NULL, created_at VARCHAR(32) NOT NULL, is_public INTEGER NOT NULL DEFAULT 0, reason VARCHAR(500) NOT NULL, payload $text NOT NULL, UNIQUE(post_id, version))" . $suffix);
         $this->db->exec("CREATE TABLE IF NOT EXISTS se_public_counts (day VARCHAR(10) NOT NULL, source VARCHAR(20) NOT NULL, event VARCHAR(30) NOT NULL, total INTEGER NOT NULL, PRIMARY KEY(day, source, event))" . $suffix);
     }
     public static function now(): string { return gmdate('Y-m-d\TH:i:s\Z'); }
@@ -64,7 +64,7 @@ final class Journal
     }
     public function revisions(string $id): array
     {
-        $q = $this->db->prepare('SELECT * FROM se_public_revisions WHERE post_id = ? ORDER BY version DESC');$q->execute([$id]);return array_map(fn($r)=>$this->row($r), $q->fetchAll(\PDO::FETCH_ASSOC));
+        $q = $this->db->prepare("SELECT * FROM se_public_revisions WHERE post_id = ? AND (is_public = 1 OR version = (SELECT version FROM se_public_posts WHERE id = ? AND status = 'published' AND publish_at <= ?)) ORDER BY version DESC");$q->execute([$id,$id,self::now()]);return array_map(fn($r)=>$this->row($r), $q->fetchAll(\PDO::FETCH_ASSOC));
     }
     public function save(array $input, ?string $id = null, int $expected = 0, string $status = 'draft', ?string $publish = null, string $reason = ''): string
     {
@@ -91,6 +91,7 @@ final class Journal
                 if ($kickoff->getTimestamp() <= max(time(),$d->getTimestamp())) { throw new \InvalidArgumentException('Une nouvelle sélection doit paraître avant le coup d’envoi.'); }
                 if ($data['result'] !== 'en_attente') { throw new \InvalidArgumentException('Une nouvelle sélection doit être en attente de résultat.'); }
             }
+            if ($wasPublic) { $this->db->prepare('UPDATE se_public_revisions SET is_public=1 WHERE post_id=? AND version=?')->execute([$old['id'], $old['version']]); }
             $id = $id ?: bin2hex(random_bytes(16));$version = $old ? (int)$old['version'] + 1 : 1;
             if ($old) {
                 $q=$this->db->prepare('UPDATE se_public_posts SET slug=?,status=?,publish_at=?,updated_at=?,version=?,payload=? WHERE id=? AND version=?');
@@ -101,7 +102,7 @@ final class Journal
             }
             // Only published versions enter the public audit trail; draft notes are never exposed.
             if ($status === 'published') {
-                $this->db->prepare('INSERT INTO se_public_revisions (id,post_id,version,created_at,reason,payload) VALUES (?,?,?,?,?,?)')->execute([bin2hex(random_bytes(16)),$id,$version,$now,$wasPublic ? trim($reason) : 'Publication initiale',self::encode($data)]);
+                $this->db->prepare('INSERT INTO se_public_revisions (id,post_id,version,created_at,is_public,reason,payload) VALUES (?,?,?,?,?,?,?)')->execute([bin2hex(random_bytes(16)),$id,$version,$now,$publish <= $now ? 1 : 0,$wasPublic ? trim($reason) : 'Publication initiale',self::encode($data)]);
             }
             $this->db->commit();return $id;
         } catch (\Throwable $e) { if ($this->db->inTransaction()) { $this->db->rollBack(); } throw $e; }
