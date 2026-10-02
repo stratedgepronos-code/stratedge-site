@@ -33,7 +33,7 @@ const php=process.env.PHP_BIN||'php';const prepared=cp.spawnSync(php,[path.join(
   assert((await page.locator('.lens-explanation').innerText()).includes('Tendances, contexte, prix'));
   await page.waitForTimeout(750);await page.screenshot({path:path.join(output,'lecture-'+width+'.png')});
   await page.getByRole('button',{name:'Le terrain',exact:true}).click();assert.equal(await reading.getAttribute('aria-pressed'),'false');
-  await page.locator('.ticket-tennis').scrollIntoViewIfNeeded();await page.locator('.ticket-tennis').focus();await page.keyboard.press('Enter');await page.waitForURL(/offres.php#tennis/);
+  await page.locator('.ticket-tennis').scrollIntoViewIfNeeded();await page.screenshot({path:path.join(output,'billets-'+width+'.png')});await page.locator('.ticket-tennis').focus();await page.keyboard.press('Enter');await page.waitForURL(/offres.php#tennis/);
   assert(await page.locator('#tennis').isVisible());
  }
  const noJS=await browser.newContext({javaScriptEnabled:false,viewport:{width:390,height:844}});const staticPage=await noJS.newPage();await staticPage.goto(origin+'/');
