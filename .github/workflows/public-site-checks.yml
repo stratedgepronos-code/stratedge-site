@@ -1,0 +1,31 @@
+name: Public site checks
+on:
+  pull_request:
+    paths: ['public_html/**', 'tests/public-site/**', 'ops/install-public-journal.php', '.github/workflows/public-site-checks.yml', '.github/workflows/deploy-vps.yml']
+permissions:
+  contents: read
+jobs:
+  public-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: PHP et navigateur de recette
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq php-cli php-sqlite3
+          npm install --prefix "$RUNNER_TEMP/public-ui" playwright@1.51.1 --no-audit --no-fund
+      - name: Syntaxe et règles de publication
+        run: |
+          find public_html/includes/public-site tests/public-site -name '*.php' -print0 | xargs -0 -n1 php -l
+          for page in index journal article methode resultats historique offres decouvrir journal-sitemap login register offre offre-tennis offre-fun packs-daily offres-multisports souscrire admin/journal; do php -l "public_html/$page.php"; done
+          php -l ops/install-public-journal.php
+          node --check public_html/assets/public-site/site.js
+          php tests/public-site/test_core.php
+      - name: Parcours public et administration dans une base isolée
+        run: PUBLIC_UI_MODULES="$RUNNER_TEMP/public-ui/node_modules" PUBLIC_UI_OUTPUT="$RUNNER_TEMP/public-captures" node tests/public-site/test_ui.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: public-site-captures
+          path: ${{ runner.temp }}/public-captures
+          retention-days: 7

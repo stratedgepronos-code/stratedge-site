@@ -1,5 +1,7 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/packs-config.php';
+require_once __DIR__ . '/includes/public-site/Offers.php';
 
 if (isLoggedIn()) {
     header('Location: dashboard.php');
@@ -7,7 +9,8 @@ if (isLoggedIn()) {
 }
 
 $error = '';
-$redirect = isset($_GET['redirect']) ? clean($_GET['redirect']) : 'dashboard.php';
+$offerTarget = (int)($_SESSION['public_offer_at'] ?? 0) > time() - 3600 ? \StratEdgePublic\Offers::target($_SESSION['public_offer'] ?? null) : null;
+$redirect = \StratEdgePublic\Offers::safeRedirect($_GET['redirect'] ?? $offerTarget ?? '/dashboard.php');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCsrf($_POST['csrf_token'] ?? '')) {
@@ -26,6 +29,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     header('Location: /panel-x9k3m/');
                     exit;
                 }
+                unset($_SESSION['public_offer'], $_SESSION['public_offer_at'], $_SESSION['public_source']);
                 header('Location: ' . $redirect);
                 exit;
             } else {
@@ -98,6 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="StratEdge">
   <link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/public-site/auth.css?v=20261002a">
 </head>
 <body>
   <nav>

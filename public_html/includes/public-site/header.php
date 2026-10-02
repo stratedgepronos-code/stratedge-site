@@ -1,0 +1,16 @@
+<?php
+$pageTitle=$pageTitle??'StratEdge — Lire le jeu. Avant de jouer.';
+$pageDescription=$pageDescription??'Analyses sportives, méthode et résultats. Explorez le journal StratEdge et découvrez nos offres football, tennis et multisports.';
+$pagePath=$pagePath??'/';$pageActive=$pageActive??'accueil';
+?>
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title><?= front_h($pageTitle) ?></title><meta name="description" content="<?= front_h($pageDescription) ?>">
+<?php if(!empty($frontNoIndex)): ?><meta name="robots" content="noindex,nofollow"><?php endif; ?>
+<link rel="canonical" href="https://stratedgepronos.fr<?= front_h($pagePath) ?>"><meta property="og:locale" content="fr_FR"><meta property="og:site_name" content="StratEdge Pronos"><meta property="og:type" content="<?= $pageActive==='article'?'article':'website' ?>"><meta property="og:title" content="<?= front_h($pageTitle) ?>"><meta property="og:description" content="<?= front_h($pageDescription) ?>"><meta property="og:url" content="https://stratedgepronos.fr<?= front_h($pagePath) ?>"><meta property="og:image" content="https://stratedgepronos.fr/assets/images/logo%20site.png"><meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="/assets/public-site/mark.svg" type="image/svg+xml"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/public-site/site.css?v=20261002a"><script src="/assets/public-site/site.js?v=20261002a" defer></script></head>
+<body class="front page-<?= front_h($pageActive) ?>"><a class="skip" href="#contenu">Aller au contenu</a><div class="read-progress" aria-hidden="true"></div>
+<header class="site-header"><div class="wrap header-inner"><a href="<?= front_link('/') ?>" class="brand" aria-label="StratEdge, accueil"><svg class="brand-mark" viewBox="0 0 40 40" fill="none" aria-hidden="true"><path d="M9 3h28L26 15H14l-5 6h22L16 37H2l12-13H3L9 3Z" fill="currentColor"/></svg><span>STRAT<span class="brand-edge">EDGE</span><small>L’ANALYSE FAIT LA DIFFÉRENCE</small></span></a>
+<button class="menu-toggle" aria-expanded="false" aria-controls="public-nav" type="button"><span>Menu</span><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" aria-hidden="true"><path d="M2 7h18M2 15h18"/></svg></button>
+<nav id="public-nav" class="public-nav" aria-label="Navigation principale"><?php foreach(['/journal.php'=>['journal','Le journal'],'/methode.php'=>['methode','La méthode'],'/resultats.php'=>['resultats','Les résultats'],'/offres.php'=>['offres','Les offres']] as $url=>$item): ?><a href="<?= front_link($url) ?>" <?= $pageActive===$item[0]?'aria-current="page"':'' ?>><?= $item[1] ?></a><?php endforeach; ?><a class="nav-account" href="<?= $frontMember?'/dashboard.php':front_link('/login.php') ?>"><?= $frontMember?'Mon espace':'Connexion' ?> <span aria-hidden="true">↗</span></a></nav></div></header>
+<main id="contenu">

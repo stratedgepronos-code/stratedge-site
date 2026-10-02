@@ -128,6 +128,10 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
       </div>
     </div>
 
+    <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
+    <a href="/panel-x9k3m/journal.php" <?= ($pageActive==='journal') ?'class="active"':'' ?>><?= se_admin_icon('image') ?> Journal public</a>
+    <?php endif; ?>
+
     <!-- Edge Finder (super admin uniquement) -->
     <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
     <div class="nav-group <?= strpos((string)$pageActive, 'football-lab-') === 0 ? 'open' : '' ?>" data-group="football-lab">
