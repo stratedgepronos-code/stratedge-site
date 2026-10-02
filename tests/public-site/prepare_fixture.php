@@ -2,7 +2,7 @@
 if(PHP_SAPI!=='cli')exit;
 $repo=dirname(__DIR__,2);$target=$argv[1]??'';if(!$target||is_dir($target))throw new RuntimeException('Use a new fixture directory');mkdir($target,0700,true);
 function fixture_copy(string $from,string $to):void{if(is_dir($from)){if(!is_dir($to))mkdir($to,0700,true);foreach(scandir($from) as $f)if($f!=='.'&&$f!=='..')fixture_copy($from.'/'.$f,$to.'/'.$f);}else{if(!is_dir(dirname($to)))mkdir(dirname($to),0700,true);copy($from,$to);}}
-foreach(['index.php','journal.php','article.php','methode.php','resultats.php','historique.php','offres.php','decouvrir.php','journal-sitemap.php','offre.php','offre-tennis.php','offre-fun.php','offres-multisports.php','souscrire.php','packs-daily.php','login.php','register.php','includes/packs-config.php','includes/footer-main.php','includes/footer-legal.php','includes/public-site','admin/journal.php','admin/sidebar.php','admin/design'] as $file)fixture_copy($repo.'/public_html/'.$file,$target.'/'.$file);
+foreach(['index.php','journal.php','article.php','methode.php','historique.php','offres.php','decouvrir.php','journal-sitemap.php','offre.php','offre-tennis.php','offre-fun.php','offres-multisports.php','souscrire.php','packs-daily.php','login.php','register.php','includes/packs-config.php','includes/footer-main.php','includes/footer-legal.php','includes/public-site','admin/journal.php','admin/sidebar.php','admin/design'] as $file)fixture_copy($repo.'/public_html/'.$file,$target.'/'.$file);
 symlink($repo.'/public_html/assets',$target.'/assets');symlink($target.'/admin',$target.'/panel-x9k3m');
 file_put_contents($target.'/includes/auth.php', <<<'PHP'
 <?php
