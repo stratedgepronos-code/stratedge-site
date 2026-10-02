@@ -41,5 +41,18 @@ jobs:
               require $argv[1];
             ' "$PWD/$page"
           done
-          echo 'PUBLIC_DIAG_DONE'
+          sudo -n python3 - <<'PYDIAG'
+          import glob, collections, re
+          for name in glob.glob('/var/log/nginx/*error*.log') + glob.glob('/var/log/php*-fpm.log'):
+              try:
+                  with open(name, errors='replace') as f:
+                      lines = collections.deque(f, maxlen=2000)
+                  for line in lines:
+                      if '/var/www/stratedgepronos.fr/' in line and 'Allowed memory size' in line:
+                          m = re.search(r'Allowed memory size[^"\n]{0,400}', line)
+                          if m: print('MEMORY_ERROR ' + m.group(0).split(', client:')[0])
+              except OSError:
+                  pass
+          PYDIAG
+          echo 'PUBLIC_DIAG_DONE' 
           REMOTE
