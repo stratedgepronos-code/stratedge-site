@@ -2,7 +2,7 @@
 if(PHP_SAPI!=='cli')exit;
 $repo=dirname(__DIR__,2);$target=$argv[1]??'';if(!$target||is_dir($target))throw new RuntimeException('Use a new fixture directory');mkdir($target,0700,true);
 function fixture_copy(string $from,string $to):void{if(is_dir($from)){if(!is_dir($to))mkdir($to,0700,true);foreach(scandir($from) as $f)if($f!=='.'&&$f!=='..')fixture_copy($from.'/'.$f,$to.'/'.$f);}else{if(!is_dir(dirname($to)))mkdir(dirname($to),0700,true);copy($from,$to);}}
-foreach(['index.php','journal.php','article.php','methode.php','historique.php','offres.php','decouvrir.php','journal-sitemap.php','offre.php','offre-tennis.php','offre-fun.php','offres-multisports.php','souscrire.php','packs-daily.php','login.php','register.php','includes/packs-config.php','includes/footer-main.php','includes/footer-legal.php','includes/public-site','admin/journal.php','admin/sidebar.php','admin/design'] as $file)fixture_copy($repo.'/public_html/'.$file,$target.'/'.$file);
+foreach(['index.php','journal.php','article.php','methode.php','historique.php','historique-multi.php','historique-tennis.php','historique-fun.php','_historique-tipster.php','offres.php','decouvrir.php','journal-sitemap.php','offre.php','offre-tennis.php','offre-fun.php','offres-multisports.php','souscrire.php','packs-daily.php','login.php','register.php','includes/packs-config.php','includes/stratedge-bet-categories.php','includes/sidebar.php','includes/sidebar-css.php','includes/footer-main.php','includes/footer-legal.php','includes/public-site','admin/journal.php','admin/sidebar.php','admin/design'] as $file)fixture_copy($repo.'/public_html/'.$file,$target.'/'.$file);
 symlink($repo.'/public_html/assets',$target.'/assets');symlink($target.'/admin',$target.'/panel-x9k3m');
 file_put_contents($target.'/includes/auth.php', <<<'PHP'
 <?php
@@ -13,6 +13,7 @@ function requireAdmin(){if(!isAdmin()){http_response_code(403);exit('Fixture den
 function requireLogin(){if(!isLoggedIn()){header('Location: /login.php');exit;}}function getAdminRole(){return isSuperAdmin()?'superadmin':'admin_foot';}
 function csrfToken(){return 'fixture-csrf';}function verifyCsrf($v){return $v==='fixture-csrf';}function clean($v){return htmlspecialchars((string)$v,ENT_QUOTES);}
 function registerMembre($nom,$email,$pw,$opt=0,$dob=null){getDB()->exec("INSERT INTO fixture_accounts (nom) VALUES ('created')");return ['success'=>true,'id'=>1];}
+function getMembre(){return ['id'=>1,'nom'=>'Recette','email'=>'recette@example.test'];}function getAbonnementActif($id){return null;}function betImageUrl($path){return $path;}
 function loginMembre($email,$pw){$_SESSION['membre_id']=1;return ['success'=>true];}
 PHP);
 file_put_contents($target.'/includes/mailer.php','<?php function emailBienvenue(...$args) {}');mkdir($target.'/includes/antibot');file_put_contents($target.'/includes/antibot/AntiBot.php', <<<'PHP'

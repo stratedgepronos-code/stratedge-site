@@ -41,4 +41,5 @@ for($i=2;$i<=25;$i++)$bulk->execute([$i,$privatePayload]);
 unset($privatePayload);ini_set('memory_limit','32M');$bulkRows=Results::load($db);
 ok(count($bulkRows)===25&&!array_key_exists('private_analysis',$bulkRows[0]),'Heavy private payload entered public history memory');
 $adminRows=Results::loadAdmin($db);ok(count($adminRows)===25&&array_key_exists('image_path',$adminRows[0])&&!array_key_exists('private_analysis',$adminRows[0]),'Admin reader fetched blobs or lost image references');
+$imageRows=Results::loadWithImages($db);ok(count($imageRows)===25&&array_key_exists('image_path',$imageRows[0])&&array_key_exists('sport',$imageRows[0])&&!array_key_exists('private_analysis',$imageRows[0]),'Tipster reader fetched blobs or lost filter fields');
 echo "PUBLIC_CORE_OK drafts, scheduling, revisions, immutable selections, samples, safe links, escaping, ROI, metrics, seeds\n";
