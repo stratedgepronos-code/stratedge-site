@@ -13,7 +13,7 @@ const php=process.env.PHP_BIN||'php';const prepared=cp.spawnSync(php,[path.join(
  const page=await browser.newPage({viewport:{width:1440,height:1050}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
  for(const width of [1440,390,320]){
   await page.setViewportSize({width,height:1000});
-  for(const route of ['/', '/journal.php','/offres.php','/methode.php','/resultats.php','/article.php?slug=journee-sans-pari-une-decision']){
+  for(const route of ['/', '/journal.php','/offres.php','/methode.php','/historique.php','/article.php?slug=journee-sans-pari-une-decision']){
    const res=await page.goto(origin+route);assert.equal(res.status(),200,route+' render');await page.evaluate(()=>document.fonts.ready);await page.waitForTimeout(100);
    assert.equal(await page.locator('h1').count(),1,route+' heading');assert(!(await page.locator('body').innerText()).match(/Warning:|Fatal error|BROUILLON PRIVÉ|FUTUR NON PUBLIÉ/),route+' data or PHP leak');
    await page.screenshot({path:path.join(output,(route==='/'?'home':route.split(/[?/.]/).filter(Boolean)[0])+'-'+width+'.png'),fullPage:true});
@@ -30,7 +30,7 @@ const php=process.env.PHP_BIN||'php';const prepared=cp.spawnSync(php,[path.join(
  assert.equal((await page.request.get(origin+'/article.php?slug=private-draft')).status(),404);assert.equal((await page.request.get(origin+'/article.php?slug=future-post')).status(),404);
  const xml=await (await page.request.get(origin+'/journal-sitemap.php')).text();assert(xml.includes('journee-sans-pari'));assert(!xml.includes('private-draft')&&!xml.includes('future-post'));
  for(const alias of ['offre-tennis.php','offre-fun.php','offres-multisports.php','souscrire.php','packs-daily.php','offre.php?type=vip_max']){const res=await page.goto(origin+'/'+alias);assert.equal(res.status(),200,alias+' public offers');assert.equal(await page.locator('.offer').count(),4)}
- await page.goto(origin+'/resultats.php');assert((await page.locator('.proof-note').first().innerText()).includes('cote absente'));assert.equal((await page.locator('.results-stats strong').nth(2).innerText()),'—');
+ await page.goto(origin+'/historique.php');assert((await page.locator('.proof-note').first().innerText()).includes('cote absente'));assert.equal((await page.locator('.results-stats strong').nth(2).innerText()),'—');
  await page.goto(origin+'/decouvrir.php?offre=tennis&utm_source=x');await page.getByRole('link',{name:'Créer mon compte'}).click();assert.equal(await page.locator('input[name=csrf_token]').count(),1,'Existing registration form and CSRF intact');await page.screenshot({path:path.join(output,'register-mobile.png'),fullPage:true});
  const form={csrf_token:'fixture-csrf',nom:'Recette',email:'recette@example.test',password:'fixture-password',confirm:'fixture-password',antibot:'pass'};
  const signup=await page.request.post(origin+'/register.php',{form,maxRedirects:0});assert.equal(signup.status(),302);assert.equal(signup.headers().location,'/offre-tennis.php','Chosen offer lost after signup');

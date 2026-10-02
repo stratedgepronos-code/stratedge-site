@@ -112,7 +112,7 @@ jobs:
             curl --fail --silent --show-error --max-time 20 "https://stratedgepronos.fr/assets/public-site/$asset?v=${{ github.sha }}" -o "$PUBLIC_CHECK_DIR/$asset"
             cmp "assets/public-site/$asset" "$PUBLIC_CHECK_DIR/$asset"
           done
-          for page in index.php journal.php offres.php resultats.php methode.php; do
+          for page in index.php journal.php offres.php historique.php methode.php; do
             curl --fail --silent --show-error --max-time 20 "https://stratedgepronos.fr/$page?v=${{ github.sha }}" -o "$PUBLIC_CHECK_DIR/$page"
             grep -q 'public-site/site.css' "$PUBLIC_CHECK_DIR/$page"
             if grep -qE 'Fatal error|Warning:|Parse error' "$PUBLIC_CHECK_DIR/$page"; then exit 1; fi

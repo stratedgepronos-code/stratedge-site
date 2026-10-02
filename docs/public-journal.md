@@ -2,7 +2,7 @@
 
 ## Périmètre livré
 
-Accueil éditorial avec terrain SVG, journal public, articles et dossiers de match, méthode, catalogue public, bilan des résultats, parcours de choix d’offre puis inscription. L’espace membre et les traitements de paiement existants conservent leur rôle. Les liens historiques vers les pages d’offres présentent le catalogue aux visiteurs anonymes. `historique.php` utilise le nouveau bilan ; les anciennes pages de détail et les données de bets restent conservées.
+Accueil éditorial avec terrain SVG, journal public, articles et dossiers de match, méthode, catalogue public, bilan des résultats, parcours de choix d’offre puis inscription. L’espace membre et les traitements de paiement existants conservent leur rôle. Les liens historiques vers les pages d’offres présentent le catalogue aux visiteurs anonymes. `historique.php` héberge le nouveau bilan ; les anciennes pages de détail et les données de bets restent conservées.
 
 L’identité du front associe Manrope et Barlow Condensed, fond encre, papier clair et rose. Animations CSS/SVG, réaction au pointeur, progression de lecture, navigation mobile au clavier. Le réglage système de réduction des mouvements est respecté ; un bouton permet de suspendre les animations. Aucun compteur de fréquentation, témoignage ou résultat fictif n’est ajouté à la production.
 
@@ -29,6 +29,10 @@ Compteurs journaliers UTC par événement et source grossière (X, Telegram, etc
 Ces compteurs mesurent des requêtes et des actions, pas des visiteurs uniques. Ils peuvent contenir des robots et rechargements ; ne pas en déduire un taux de conversion par personne. Une vraie création de compte est comptée après succès, jamais sur le faux succès du honeypot. Une panne du compteur ne bloque pas les pages.
 
 L’admin montre séparément les abonnements Stripe au statut `validé` et les packs inscrits dans `credits_paris`, sur les 15 derniers jours. Il ne s’agit ni d’une attribution de ventes aux UTMs, ni de recettes nettes de remboursements. Les autres modes d’abonnement ne sont pas reconstitués ni inventés. Aucun traitement financier n’est modifié.
+
+## Adresse historique conservée
+
+Le premier déploiement a détecté un `public_html/resultats.php` non suivi par Git, déjà présent sur le VPS. Ce fichier local est préservé et ne devient pas un fichier du dépôt. Le nouveau bilan, ses liens et sa canonical utilisent exclusivement `historique.php`. Aucun fichier serveur inconnu n’est déplacé ou écrasé pour contourner le conflit.
 
 ## Mise en ligne
 
