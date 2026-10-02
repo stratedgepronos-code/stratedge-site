@@ -534,6 +534,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
     .mobile-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.65); backdrop-filter:blur(6px); z-index:250; opacity:0; transition:opacity .3s ease; }
     .mobile-overlay.open { display:block; opacity:1; }
     .mobile-menu{
+      visibility:hidden;
       position:fixed;top:0;right:0;bottom:0;
       width:min(88vw,360px);
       background-color:#0a0e17;
@@ -559,7 +560,7 @@ $abonnement = $membre ? getAbonnementActif($membre['id']) : null;
       padding:0 0 calc(1rem + env(safe-area-inset-bottom,0px));
       box-shadow:-20px 0 60px rgba(0,0,0,0.7);
     }
-    .mobile-menu.open { transform:translateX(0); }
+    .mobile-menu.open { transform:translateX(0); visibility:visible; }
     .mobile-menu::after{
       content:'';position:absolute;top:-4px;left:0;right:0;height:2px;
       background:linear-gradient(90deg,transparent 0%,#ff2d78 20%,#00d4ff 50%,#a855f7 80%,transparent 100%);
