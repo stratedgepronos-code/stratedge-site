@@ -129,16 +129,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="StratEdge">
   <link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png">
-<link rel="stylesheet" href="/assets/public-site/auth.css?v=20261002creative">
+<link rel="stylesheet" href="/assets/public-site/auth.css?v=20261002restore">
 </head>
 <body>
   <nav>
     <div class="nav-inner">
-      <a href="/" class="logo" aria-label="StratEdge, accueil"><span class="auth-wordmark">STRATEDGE</span><small>LE JEU, AUTREMENT.</small></a>
+      <a href="/" class="logo"><img src="assets/images/logo site.png" alt="StratEdge Pronos"></a>
     </div>
   </nav>
   <div class="page-wrapper">
-    <aside class="auth-visual"><span>LE REGARD STRATEDGE</span><p>UN AUTRE<br><em>regard.</em></p><span>Football · Tennis · Multisports</span></aside>
+    <div class="glow-bg"></div>
     <div class="auth-card">
       <div class="auth-tag">Espace membre</div>
       <h1 class="auth-title">Inscription</h1>

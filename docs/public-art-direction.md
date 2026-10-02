@@ -1,6 +1,8 @@
-# StratEdge — Le jeu, autrement.
+# Archive — Proposition « Le jeu, autrement. »
 
-Direction artistique du 2 octobre 2026. Remplace la première version éditoriale ; aucun changement de méthode de pari, de données, de tarifs ou de paiement.
+Proposition retirée le 2 octobre 2026 à la demande de l’utilisateur. L’interface publique a été restaurée à partir de la version `4c27b804fb72200e425d40ba93c2f43359b3967b` (fond sombre, accents roses, terrain graphique). Les corrections fonctionnelles, dont les liens avec ancre et source, sont conservées. Les visuels de cette proposition restent archivés, sans être chargés par les pages restaurées.
+
+Direction artistique proposée le 2 octobre 2026. Remplace la première version éditoriale ; aucun changement de méthode de pari, de données, de tarifs ou de paiement.
 
 ## Composition
 
