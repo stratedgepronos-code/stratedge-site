@@ -108,15 +108,26 @@ jobs:
           # Additive schema and idempotent educational seeds; never overwrites an editorial post.
           sudo -n -u www-data php "$REPO_ROOT/ops/install-public-journal.php" "$REPO_ROOT"
           PUBLIC_CHECK_DIR=$(mktemp -d /tmp/public-site-check.XXXXXX)
-          for asset in site.css site.js; do
+          for asset in site.css site.js owner-theme.css; do
             curl --fail --silent --show-error --max-time 20 "https://stratedgepronos.fr/assets/public-site/$asset?v=${{ github.sha }}" -o "$PUBLIC_CHECK_DIR/$asset"
             cmp "assets/public-site/$asset" "$PUBLIC_CHECK_DIR/$asset"
           done
           for page in index.php journal.php offres.php historique.php methode.php; do
             echo "PUBLIC_ROUTE_CHECK $page"
             curl --fail --silent --show-error --max-time 20 "https://stratedgepronos.fr/$page?v=${{ github.sha }}" -o "$PUBLIC_CHECK_DIR/$page"
-            grep -q 'public-site/site.css' "$PUBLIC_CHECK_DIR/$page"
+            case "$page" in
+              index.php) grep -q 'data-design="stratedge-original"' "$PUBLIC_CHECK_DIR/$page" ;;
+              historique.php) grep -q 'data-design="stratedge-original-history"' "$PUBLIC_CHECK_DIR/$page" ;;
+              *) grep -q 'public-site/owner-theme.css' "$PUBLIC_CHECK_DIR/$page" ;;
+            esac
             if grep -qE 'Fatal error|Warning:|Parse error|Le bilan est temporairement indisponible|Le journal est momentanément indisponible' "$PUBLIC_CHECK_DIR/$page"; then exit 1; fi
+          done
+          curl --fail --silent --show-error --max-time 20 'https://stratedgepronos.fr/historique.php?vue=bilan' -o "$PUBLIC_CHECK_DIR/bilan.html"
+          grep -q 'results-stats' "$PUBLIC_CHECK_DIR/bilan.html"
+          for page in historique-multi.php historique-tennis.php historique-fun.php; do
+            curl --fail --silent --show-error --max-time 20 "https://stratedgepronos.fr/$page?v=${{ github.sha }}" -o "$PUBLIC_CHECK_DIR/$page"
+            grep -q 't-header-mascot' "$PUBLIC_CHECK_DIR/$page"
+            if grep -qE 'Fatal error|Warning:|Parse error|temporairement indisponible' "$PUBLIC_CHECK_DIR/$page"; then exit 1; fi
           done
           curl --fail --silent --show-error --max-time 20 'https://stratedgepronos.fr/article.php?slug=journee-sans-pari-une-decision' -o "$PUBLIC_CHECK_DIR/article.html"
           grep -q 'Historique de publication' "$PUBLIC_CHECK_DIR/article.html"

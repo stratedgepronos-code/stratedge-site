@@ -17,7 +17,7 @@ jobs:
       - name: Syntaxe et règles de publication
         run: |
           find public_html/includes/public-site tests/public-site -name '*.php' -print0 | xargs -0 -n1 php -l
-          for page in index journal article methode historique offres decouvrir journal-sitemap login register offre offre-tennis offre-fun packs-daily offres-multisports souscrire admin/journal; do php -l "public_html/$page.php"; done
+          for page in index journal article methode historique historique-multi historique-tennis historique-fun _historique-tipster offres decouvrir journal-sitemap login register offre offre-tennis offre-fun packs-daily offres-multisports souscrire admin/journal; do php -l "public_html/$page.php"; done
           php -l ops/install-public-journal.php
           node --check public_html/assets/public-site/site.js
           php tests/public-site/test_core.php

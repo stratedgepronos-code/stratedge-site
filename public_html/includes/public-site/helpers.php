@@ -21,7 +21,7 @@ function front_arrow(): string { return '<svg viewBox="0 0 24 24" width="24" hei
 function front_article_url(array $post): string { return '/article.php?slug='.rawurlencode($post['slug']); }
 function front_journal_tiles(array $posts): void { foreach($posts as $i=>$post): $p=$post['data']; ?>
     <a class="story" href="<?= front_link(front_article_url($post)) ?>">
-      <div class="story-art art-<?= front_h($p['kind']) ?>" aria-hidden="true"><span class="art-orbit"></span><span class="art-line"></span><span class="art-number"><?= str_pad((string)($i+1),2,'0',STR_PAD_LEFT) ?></span><span class="art-word"><?= ['guide'=>'DÉCODER','analyse'=>'DÉCIDER','debrief'=>'REVOIR','coulisses'=>'OBSERVER'][$p['kind']] ?></span></div>
+      <div class="story-art art-<?= front_h($p['kind']) ?>" aria-hidden="true"><img class="owner-story-mascot" src="/assets/images/mascotte.png" width="180" height="180" alt="" loading="lazy"><span class="art-number"><?= str_pad((string)($i+1),2,'0',STR_PAD_LEFT) ?></span><span class="art-word"><?= ['guide'=>'DÉCODER','analyse'=>'DÉCIDER','debrief'=>'REVOIR','coulisses'=>'OBSERVER'][$p['kind']] ?></span></div>
       <div class="story-meta"><span><?= front_h(front_kind($p['kind'])) ?></span><time datetime="<?= front_h($post['publish_at']) ?>"><?= front_date($post['publish_at']) ?></time></div>
       <h3><?= front_h($p['title']) ?></h3><p><?= front_h($p['summary']) ?></p><span class="story-read">Lire l’article <?= front_arrow() ?></span>
     </a>

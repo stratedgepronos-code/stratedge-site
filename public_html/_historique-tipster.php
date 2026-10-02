@@ -4,8 +4,8 @@
 // Inclut: header tipster (mascotte+stats), filtres, liste bets, charts
 // Réutilise la logique de l'ancienne historique mais filtrée
 // =============================================================
-require_once __DIR__ . '/includes/db.php';
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/public-site/Results.php';
 
 $tipsterFilter = $_GET['_tipster_filter'] ?? 'multi';
 $validTipsters = ['multi', 'tennis', 'fun'];
@@ -40,37 +40,17 @@ $tipsterConfig = [
 ];
 $tConf = $tipsterConfig[$tipsterFilter];
 
-// Charger les bets filtrés par catégorie
-$db = getDB();
-// Logique tipster basee sur posted_by_role:
-// - MULTI  = posted_by_role='superadmin' (superadmin)
-// - TENNIS = posted_by_role='admin_tennis' (Shuriik) OU categorie='tennis' fallback vieux bets
-// - FUN    = posted_by_role='admin_fun' (Morrayaffa)
-// Inclut bets en attente (resultat NULL) et bets avec resultat connu
-$resultFilter = "(resultat IS NULL OR resultat NOT IN ('en_cours','pending'))";
-$orderBy = "ORDER BY COALESCE(date_resultat, date_post) DESC";
-
-// Helper: detecte tipster avec fallback sur categorie pour les bets pre-migration
-if ($tipsterFilter === 'multi') {
-    // superadmin OU pre-migration qui n'est pas tennis
-    $bets = $db->query("SELECT * FROM bets
-        WHERE $resultFilter
-        AND (posted_by_role='superadmin'
-             OR (posted_by_role IS NULL AND categorie!='tennis')
-             OR (posted_by_role='' AND categorie!='tennis'))
-        $orderBy")->fetchAll();
-} elseif ($tipsterFilter === 'tennis') {
-    $bets = $db->query("SELECT * FROM bets
-        WHERE $resultFilter
-        AND (posted_by_role='admin_tennis' OR categorie='tennis')
-        $orderBy")->fetchAll();
-} elseif ($tipsterFilter === 'fun') {
-    $bets = $db->query("SELECT * FROM bets
-        WHERE $resultFilter
-        AND posted_by_role='admin_fun'
-        $orderBy")->fetchAll();
-} else {
-    $bets = [];
+// Read only resolved public fields; image blobs stay in the database.
+$historyUnavailable = false;
+try {
+    $bets = array_values(array_filter(\StratEdgePublic\Results::loadWithImages(getDB()), static function(array $b) use ($tipsterFilter): bool {
+        $role = $b['posted_by_role'] ?? '';
+        $owner = $role === 'admin_tennis' ? 'tennis' : ($role === 'admin_fun' ? 'fun' : ($role === 'superadmin' ? 'multi' : (($b['categorie'] ?? '') === 'tennis' ? 'tennis' : 'multi')));
+        return $owner === $tipsterFilter;
+    }));
+} catch (Throwable $e) {
+    $bets = []; $historyUnavailable = true;
+    error_log('[history] tipster history unavailable');
 }
 
 // === Filtres GET ===
@@ -100,19 +80,12 @@ function _calcStatsT(array $arr): array {
     $g = count(array_filter($arr, fn($b) => $b['resultat'] === 'gagne'));
     $p = count(array_filter($arr, fn($b) => $b['resultat'] === 'perdu'));
     $a = count(array_filter($arr, fn($b) => $b['resultat'] === 'annule'));
-    $taux = ($g + $p) > 0 ? round($g / ($g + $p) * 100) : 0;
+    $taux = ($g + $p) > 0 ? round($g / ($g + $p) * 100) : null;
     $cotes = array_filter(array_map(fn($b) => (float)str_replace(',', '.', $b['cote'] ?? 0), $arr), fn($c) => $c > 0);
     $coteMoy = count($cotes) > 0 ? round(array_sum($cotes) / count($cotes), 2) : 0;
-    $miseTotale = $g + $p;
-    $gainNet = 0;
-    foreach ($arr as $b) {
-        if ($b['resultat'] === 'gagne') {
-            $c = (float)str_replace(',', '.', $b['cote'] ?? 0);
-            if ($c > 0) $gainNet += ($c - 1);
-        } elseif ($b['resultat'] === 'perdu') $gainNet -= 1;
-    }
-    $roi = $miseTotale > 0 ? round(($gainNet / $miseTotale) * 100, 1) : 0;
-    return compact('g','p','a','taux','coteMoy','roi') + ['total' => count($arr)];
+    $validated = \StratEdgePublic\Results::calculate($arr);
+    $roi = $validated['roi'];
+    return compact('g','p','a','taux','coteMoy','roi') + ['total' => count($arr), 'missing' => $validated['missing']];
 }
 $stats = _calcStatsT($betsAvantResult);
 
@@ -132,6 +105,8 @@ foreach ($arrChrono as $b) {
     } elseif ($b['resultat'] === 'perdu') $cumul -= 1;
     $bankrollPoints[] = round($cumul, 2);
 }
+
+if ($stats['roi'] === null) $bankrollPoints = [];
 
 $currentPage = 'historique';
 $membre = isLoggedIn() ? getMembre() : null;
@@ -268,6 +243,7 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
 <div class="h-wrap">
   <a href="/historique.php" class="back-link">← Retour aux tipsters</a>
 
+  <?php if ($historyUnavailable): ?><p role="status">L’historique est temporairement indisponible.</p><?php endif; ?>
   <!-- Header tipster -->
   <div class="t-header">
     <div class="t-header-mascot">
@@ -279,9 +255,9 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
     </div>
     <div class="t-header-stats">
       <div class="t-hstat"><span class="t-hstat-val"><?= $stats['total'] ?></span><span class="t-hstat-lbl">Paris</span></div>
-      <div class="t-hstat"><span class="t-hstat-val"><?= $stats['taux'] ?>%</span><span class="t-hstat-lbl">Win rate</span></div>
+      <div class="t-hstat"><span class="t-hstat-val"><?= $stats['taux'] === null ? '—' : $stats['taux'].'%' ?></span><span class="t-hstat-lbl">Win rate</span></div>
       <div class="t-hstat"><span class="t-hstat-val"><?= $stats['coteMoy'] ?: '-' ?></span><span class="t-hstat-lbl">Cote moy</span></div>
-      <div class="t-hstat"><span class="t-hstat-val"><?= ($stats['roi'] >= 0 ? '+' : '') . $stats['roi'] ?>%</span><span class="t-hstat-lbl">ROI</span></div>
+      <div class="t-hstat"><span class="t-hstat-val"><?= $stats['roi'] === null ? '—' : ($stats['roi'] >= 0 ? '+' : '').$stats['roi'].'%' ?></span><span class="t-hstat-lbl">ROI · 1 unité</span></div>
     </div>
   </div>
 
@@ -289,12 +265,12 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
   <div class="detail-row">
     <div class="detail-card">
       <h3>Win / Loss Ratio</h3>
-      <?php $donutOff = 100 - $stats['taux']; ?>
+      <?php $donutOff = 100 - ($stats['taux'] ?? 0); ?>
       <div class="donut-display">
         <svg class="dd-svg" viewBox="0 0 36 36">
           <circle class="dd-bg" cx="18" cy="18" r="15.91" fill="transparent" stroke-width="3"/>
           <circle class="dd-fill" cx="18" cy="18" r="15.91" fill="transparent" stroke-width="3" pathLength="100" style="--off:<?= $donutOff ?>"/>
-          <text class="dd-center" x="18" y="15"><?= $stats['taux'] ?></text>
+          <text class="dd-center" x="18" y="15"><?= $stats['taux'] ?? '—' ?></text>
           <text class="dd-pct" x="18" y="24">% WIN</text>
         </svg>
         <div class="dd-info">
@@ -307,7 +283,8 @@ body{background:#05060d;color:#fff;font-family:'Rajdhani',sans-serif;margin:0;mi
     </div>
 
     <div class="detail-card">
-      <h3>Évolution Bankroll (cumul)</h3>
+      <h3>Évolution théorique · 1 unité</h3>
+      <?php if ($stats['missing'] > 0): ?><p>ROI non calculable : <?= $stats['missing'] ?> cote(s) absente(s) ou invalide(s).</p><?php endif; ?>
       <div class="bankroll-chart">
         <?php
         if (count($bankrollPoints) >= 2) {

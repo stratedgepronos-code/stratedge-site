@@ -22,11 +22,13 @@ final class Results
     }
     public static function load(\PDO $db): array { return self::read($db, false); }
     public static function loadAdmin(\PDO $db): array { return self::read($db, true); }
-    private static function read(\PDO $db, bool $admin): array
+    public static function loadWithImages(\PDO $db): array { return self::read($db, false, true); }
+    private static function read(\PDO $db, bool $admin, bool $images = false): array
     {
         // Legacy categorisation columns are optional. Discover names without loading rows:
         // bets may contain large private image payloads, which must never enter this reader.
         $allowed = array_fill_keys(['id','titre','cote','resultat','date_post','date_resultat','categorie','posted_by_role'], null);
+        if ($images) { $allowed += array_fill_keys(['image_path','type','sport'], null); }
         if ($admin) { $allowed += array_fill_keys(['image_path','type','sport'], null); }
         $sqlite = $db->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'sqlite';
         $schema = $db->query($sqlite ? 'PRAGMA table_info(bets)' : 'SHOW COLUMNS FROM bets')->fetchAll(\PDO::FETCH_ASSOC);
