@@ -33,4 +33,11 @@ foreach(require $root.'/public_html/includes/public-site/seeds.php' as $seed)$j-
 $db->exec('CREATE TABLE bets (id INTEGER,titre TEXT,cote TEXT,resultat TEXT,date_post TEXT,date_resultat TEXT,private_analysis TEXT)');
 $db->exec("INSERT INTO bets VALUES (1,'Archive de recette','2.0','gagne','2026-01-01','2026-01-02','PRIVATE-NOT-PUBLIC')");
 $legacy=Results::load($db);ok(count($legacy)===1&&Results::category($legacy[0])==='multi'&&!array_key_exists('private_analysis',$legacy[0]),'Legacy schema compatibility or private data filtering');
+// Regression: large images/private payloads must not be fetched into PHP's web memory budget.
+$bulk=$db->prepare("INSERT INTO bets VALUES (?, 'Archive volumineuse', '1.8', 'perdu', '2026-01-01', '2026-01-02', ?)");
+$privatePayload=str_repeat('x', 2*1024*1024);
+for($i=2;$i<=25;$i++)$bulk->execute([$i,$privatePayload]);
+unset($privatePayload);ini_set('memory_limit','32M');$bulkRows=Results::load($db);
+ok(count($bulkRows)===25&&!array_key_exists('private_analysis',$bulkRows[0]),'Heavy private payload entered public history memory');
+$adminRows=Results::loadAdmin($db);ok(count($adminRows)===25&&array_key_exists('image_path',$adminRows[0])&&!array_key_exists('private_analysis',$adminRows[0]),'Admin reader fetched blobs or lost image references');
 echo "PUBLIC_CORE_OK drafts, scheduling, revisions, immutable selections, samples, safe links, escaping, ROI, metrics, seeds\n";

@@ -53,3 +53,9 @@ Objectif au 17 octobre : un site lisible et actif, une première base de contenu
 - J13–J15 : bilan de la période et de la qualité des données, comparaison des sources de consultation, contrôle des achats dans leurs registres. Conserver ce qui apporte des lectures et des échanges qualifiés.
 
 Le calendrier ne force aucun pari et ne programme aucun envoi à des tiers. Les boutons de partage copient du texte ; ils n’envoient ni email, ni message Telegram, ni publication X.
+
+## Lecture de l’historique en mémoire limitée
+
+Le lecteur inspecte les noms de colonnes pour tolérer les anciens schémas, puis sélectionne explicitement les huit champs publics disponibles. Les images et payloads privés des bets ne sont jamais chargés. Une recette sous 32 Mo inclut 48 Mo de contenu privé en base pour vérifier cette séparation dès la requête SQL, et pas seulement après lecture.
+
+Les logs du VPS ont confirmé un épuisement de la limite PHP web de 256 Mo dans le lecteur public, et montraient le même problème antérieur dans l’historique administrateur. Ce dernier utilise également une projection légère : il conserve les adresses d’images et les catégories nécessaires, sans charger les colonnes binaires. Les images continuent d’être servies par leur route existante.

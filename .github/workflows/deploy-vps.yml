@@ -113,6 +113,7 @@ jobs:
             cmp "assets/public-site/$asset" "$PUBLIC_CHECK_DIR/$asset"
           done
           for page in index.php journal.php offres.php historique.php methode.php; do
+            echo "PUBLIC_ROUTE_CHECK $page"
             curl --fail --silent --show-error --max-time 20 "https://stratedgepronos.fr/$page?v=${{ github.sha }}" -o "$PUBLIC_CHECK_DIR/$page"
             grep -q 'public-site/site.css' "$PUBLIC_CHECK_DIR/$page"
             if grep -qE 'Fatal error|Warning:|Parse error|Le bilan est temporairement indisponible|Le journal est momentanément indisponible' "$PUBLIC_CHECK_DIR/$page"; then exit 1; fi

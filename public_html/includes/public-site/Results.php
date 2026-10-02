@@ -20,13 +20,23 @@ final class Results
         if ($out['complete']>0 && $out['missing']===0) { $out['roi']=round(100*$out['net']/$out['complete'],1); }
         return $out;
     }
-    public static function load(\PDO $db): array
+    public static function load(\PDO $db): array { return self::read($db, false); }
+    public static function loadAdmin(\PDO $db): array { return self::read($db, true); }
+    private static function read(\PDO $db, bool $admin): array
     {
-        // Older installations may not have the optional categorisation columns yet.
-        // Keep the existing SELECT * compatibility, then discard every non-public field.
+        // Legacy categorisation columns are optional. Discover names without loading rows:
+        // bets may contain large private image payloads, which must never enter this reader.
         $allowed = array_fill_keys(['id','titre','cote','resultat','date_post','date_resultat','categorie','posted_by_role'], null);
-        $rows = $db->query("SELECT * FROM bets WHERE resultat IN ('gagne','perdu','annule') ORDER BY COALESCE(date_resultat,date_post) DESC,id DESC")->fetchAll(\PDO::FETCH_ASSOC);
-        return array_map(static fn(array $row): array => array_replace($allowed, array_intersect_key($row, $allowed)), $rows);
+        if ($admin) { $allowed += array_fill_keys(['image_path','type','sport'], null); }
+        $sqlite = $db->getAttribute(\PDO::ATTR_DRIVER_NAME) === 'sqlite';
+        $schema = $db->query($sqlite ? 'PRAGMA table_info(bets)' : 'SHOW COLUMNS FROM bets')->fetchAll(\PDO::FETCH_ASSOC);
+        $available = array_column($schema, $sqlite ? 'name' : 'Field');
+        $columns = array_values(array_intersect(array_keys($allowed), $available));
+        if (!in_array('resultat', $columns, true)) { throw new \RuntimeException('Historique indisponible.'); }
+        $select = implode(',', array_map(static fn(string $name): string => '`' . $name . '`', $columns));
+        $where = $admin ? "resultat != 'en_cours'" : "resultat IN ('gagne','perdu','annule')";
+        $rows = $db->query("SELECT $select FROM bets WHERE $where ORDER BY COALESCE(date_resultat,date_post) DESC,id DESC")->fetchAll(\PDO::FETCH_ASSOC);
+        return array_map(static fn(array $row): array => array_replace($allowed, $row), $rows);
     }
     public static function category(array $bet): string
     {
