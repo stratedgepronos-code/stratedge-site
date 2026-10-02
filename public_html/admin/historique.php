@@ -4,12 +4,9 @@ requireSuperAdmin();
 $db = getDB();
 $pageActive = 'historique';
 
-// Bets avec résultat
-$bets = $db->query("
-    SELECT * FROM bets
-    WHERE resultat != 'en_cours'
-    ORDER BY COALESCE(date_resultat, date_post) DESC
-")->fetchAll();
+// Les images binaires restent en base ; cette page n’a besoin que de leur adresse.
+require_once __DIR__ . '/../includes/public-site/Results.php';
+$bets = \StratEdgePublic\Results::loadAdmin($db);
 
 // Séparer tennis / multi / hockey
 $betsTennis = array_filter($bets, fn($b) => ($b['categorie'] ?? 'multi') === 'tennis');
