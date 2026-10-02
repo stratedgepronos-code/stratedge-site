@@ -1,0 +1,45 @@
+name: Diagnose public PHP routes
+on:
+  push:
+    branches: [codex/public-diagnose]
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: SSH client
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq sshpass
+      - name: Read-only public route diagnosis
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          if [ -n "$VPS_SSH_KEY" ]; then
+            mkdir -p ~/.ssh
+            printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+            chmod 600 ~/.ssh/deploy_key
+            SSH_CMD="ssh -i $HOME/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o IdentitiesOnly=yes"
+          else
+            SSH_CMD="sshpass -e ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o PreferredAuthentications=password -o PubkeyAuthentication=no"
+            export SSHPASS="$VPS_PASSWORD"
+          fi
+          $SSH_CMD alex@31.97.196.145 bash -s << 'REMOTE'
+          set -u
+          cd /var/www/stratedgepronos.fr/public_html
+          for page in index.php journal.php offres.php historique.php methode.php; do
+            printf '%s ' "$page"
+            curl --silent --show-error --max-time 20 --output /dev/null --write-out 'HTTP %{http_code}\n' "https://stratedgepronos.fr/$page?diag=public"
+          done
+          for page in index.php journal.php offres.php historique.php methode.php; do
+            echo "PHP_ROUTE $page"
+            sudo -n -u www-data php -d display_errors=0 -d log_errors=0 -r '
+              $_SERVER["REQUEST_METHOD"]="GET"; $_SERVER["HTTP_HOST"]="stratedgepronos.fr";
+              ob_start();
+              register_shutdown_function(function(){ $e=error_get_last(); while(ob_get_level())ob_end_clean(); if($e&&in_array($e["type"],[E_ERROR,E_PARSE,E_CORE_ERROR,E_COMPILE_ERROR])){echo "PHP_FAILURE ".basename($e["file"]).":".$e["line"]." ".substr(explode("Stack trace:",$e["message"])[0],0,500)."\n";}else{echo "PHP_RENDER_OK\n";} });
+              require $argv[1];
+            ' "$PWD/$page"
+          done
+          echo 'PUBLIC_DIAG_DONE'
+          REMOTE
