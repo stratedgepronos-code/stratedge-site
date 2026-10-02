@@ -20,6 +20,9 @@ const php=process.env.PHP_BIN||'php';const prepared=cp.spawnSync(php,[path.join(
    const dimensions=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,overflow:[...document.querySelectorAll('main>*')].filter(e=>e.getBoundingClientRect().right>innerWidth+1).map(e=>e.className)}));assert(dimensions.scroll<=dimensions.width+1,route+' horizontal overflow '+width+' '+JSON.stringify(dimensions));
   }
  }
+ await page.setViewportSize({width:1200,height:630});await page.goto(origin+'/');await page.evaluate(()=>document.fonts.ready);
+ await page.addStyleTag({content:'.site-header .public-nav,.menu-toggle,.hero .actions,.hero-rail,.hero-meta>span:last-child{display:none!important}.header-inner{min-height:78px}.header-inner:after{content:"stratedgepronos.fr";font:600 14px Manrope;letter-spacing:1px;color:#aeb6aa}.hero{padding-top:25px}.hero-grid{min-height:475px}.hero-copy{padding:28px 0}.hero h1{font-size:109px}.hero-intro{font-size:15px;margin-top:28px}.pitch-stage{height:435px}.pitch-route{animation:none;stroke-dashoffset:0}.hero-stamp{top:15px}.pitch-caption{display:none}'});
+ await page.screenshot({path:path.join(output,'social-cover.png')});
  await page.setViewportSize({width:390,height:844});await page.goto(origin+'/');assert.equal(await page.locator('#public-nav').evaluate(e=>e.inert),true);await page.locator('.menu-toggle').click();assert.equal(await page.locator('.menu-toggle').getAttribute('aria-expanded'),'true');assert.equal(await page.locator('#public-nav').evaluate(e=>e.inert),false);await page.keyboard.press('Escape');assert.equal(await page.locator('.menu-toggle').getAttribute('aria-expanded'),'false');
  await page.locator('.motion-toggle').click();assert.equal(await page.locator('body').evaluate(e=>e.classList.contains('motion-paused')),true);assert.equal(await page.locator('.pitch-sweep').evaluate(e=>getComputedStyle(e).animationPlayState),'paused');
  await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.locator('.pitch-sweep').evaluate(e=>getComputedStyle(e).animationName),'none');await page.emulateMedia({reducedMotion:'no-preference'});
@@ -45,7 +48,7 @@ const php=process.env.PHP_BIN||'php';const prepared=cp.spawnSync(php,[path.join(
  const login=await anonymous.request.post(origin+'/login.php?redirect=https://evil.test',{form:{csrf_token:'fixture-csrf',email:'recette@example.test',password:'fixture-password'},maxRedirects:0});assert.equal(login.headers().location,'/dashboard.php','External redirect');
  const silent=await browser.newContext();await silent.request.post(origin+'/register.php',{form:{...form,antibot:'fail'},maxRedirects:0});
  const counts=cp.spawnSync(php,['-r',`$db=new PDO('sqlite:${fixture}/fixture.sqlite');echo $db->query("SELECT COUNT(*) FROM fixture_accounts")->fetchColumn().':'.$db->query("SELECT SUM(total) FROM se_public_counts WHERE event='inscription'")->fetchColumn();`],{encoding:'utf8'});assert.equal(counts.stdout,'1:1','Honeypot must not create account or count signup');
- assert.deepEqual(errors,[]);assert(!/Fatal error|PHP Warning|PHP Deprecated/.test(logs),logs.slice(-5000));
+ assert.deepEqual(errors,[]);assert(!/Fatal error|PHP Warning|PHP Deprecated/.test(logs),logs.split('\n').filter(line=>/Fatal error|PHP Warning|PHP Deprecated/.test(line)).join('\n'));
  console.log('PUBLIC_UI_OK real PHP routes, responsive 1440/390/320, private drafts/future posts, public offers, registration continuity, CSRF, admin roles, publishing/corrections, filters, reduced motion and no external messages');
  }finally{await browser.close();server.kill();fs.rmSync(temp,{recursive:true,force:true})}
 })().catch(e=>{console.error(e);process.exit(1)});
