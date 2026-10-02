@@ -12,3 +12,5 @@ Disallow: /vault*
 Disallow: /logout.php
 
 Sitemap: https://stratedgepronos.fr/sitemap.xml
+
+Sitemap: https://stratedgepronos.fr/journal-sitemap.php

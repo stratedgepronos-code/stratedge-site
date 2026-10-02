@@ -1,5 +1,6 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
+if (!isLoggedIn()) { require __DIR__ . '/offres.php'; exit; }
 require_once __DIR__ . '/includes/packs-config.php';
 require_once __DIR__ . '/includes/credits-manager.php';
 requireLogin();

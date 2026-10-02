@@ -105,6 +105,23 @@ jobs:
           echo "LAB_ASSETS_OK"
           REPO_ROOT=$(git rev-parse --show-toplevel)
           php "$REPO_ROOT/ops/check-lab-footystats.php" "$REPO_ROOT"
+          # Additive schema and idempotent educational seeds; never overwrites an editorial post.
+          sudo -n -u www-data php "$REPO_ROOT/ops/install-public-journal.php" "$REPO_ROOT"
+          PUBLIC_CHECK_DIR=$(mktemp -d /tmp/public-site-check.XXXXXX)
+          for asset in site.css site.js; do
+            curl --fail --silent --show-error --max-time 20 "https://stratedgepronos.fr/assets/public-site/$asset?v=${{ github.sha }}" -o "$PUBLIC_CHECK_DIR/$asset"
+            cmp "assets/public-site/$asset" "$PUBLIC_CHECK_DIR/$asset"
+          done
+          for page in index.php journal.php offres.php resultats.php methode.php; do
+            curl --fail --silent --show-error --max-time 20 "https://stratedgepronos.fr/$page?v=${{ github.sha }}" -o "$PUBLIC_CHECK_DIR/$page"
+            grep -q 'public-site/site.css' "$PUBLIC_CHECK_DIR/$page"
+            if grep -qE 'Fatal error|Warning:|Parse error' "$PUBLIC_CHECK_DIR/$page"; then exit 1; fi
+          done
+          curl --fail --silent --show-error --max-time 20 'https://stratedgepronos.fr/article.php?slug=journee-sans-pari-une-decision' -o "$PUBLIC_CHECK_DIR/article.html"
+          grep -q 'Historique de publication' "$PUBLIC_CHECK_DIR/article.html"
+          rm -rf "$PUBLIC_CHECK_DIR"
+          echo "PUBLIC_SITE_HEALTH_OK"
+
           # Remove only the discontinued GPT API job; preserve every other cron entry.
           GPT_CRON=$(mktemp /tmp/lab-gpt-cron.XXXXXX)
           (crontab -l 2>/dev/null || true) | sed '/# stratedge-lab-auto-context$/d' > "$GPT_CRON"

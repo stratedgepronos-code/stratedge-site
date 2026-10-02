@@ -4,6 +4,7 @@
 // 5 offres : Daily · Week-End · Weekly · VIP MAX · Tennis
 // ============================================================
 require_once __DIR__ . '/includes/auth.php';
+if (!isLoggedIn()) { require __DIR__ . '/offres.php'; exit; }
 requireLogin();
 $membre = getMembre();
 $currentPage = 'souscrire';

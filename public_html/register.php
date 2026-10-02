@@ -1,7 +1,10 @@
 <?php
 error_reporting(E_ALL);
-ini_set("display_errors", 1);
+ini_set("display_errors", 0);
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/packs-config.php';
+require_once __DIR__ . '/includes/public-site/Offers.php';
+require_once __DIR__ . '/includes/public-site/Metrics.php';
 require_once __DIR__ . '/includes/mailer.php';
 $ck = __DIR__ . '/config-keys.php';
 if (is_file($ck)) require_once $ck; // clés Turnstile / ANTIBOT_HMAC_KEY (hors Git)
@@ -56,7 +59,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 loginMembre($email, $password);
                 // Envoi email de bienvenue avec identifiants
                 emailBienvenue($email, $nom, $password);
-                header('Location: dashboard.php?welcome=1');
+                $choiceFresh = (int)($_SESSION['public_offer_at'] ?? 0) > time() - 3600;
+                $source = $choiceFresh ? ($_SESSION['public_source'] ?? 'direct') : \StratEdgePublic\Metrics::source($_GET, $_SERVER['HTTP_REFERER'] ?? '');
+                \StratEdgePublic\Metrics::count(getDB(), 'inscription', $source);
+                $offerTarget = $choiceFresh ? \StratEdgePublic\Offers::target($_SESSION['public_offer'] ?? null) : null;
+                unset($_SESSION['public_offer'], $_SESSION['public_offer_at'], $_SESSION['public_source']);
+                header('Location: ' . ($offerTarget ?? '/dashboard.php?welcome=1'));
                 exit;
             } else {
                 $error = $result['error'];
@@ -121,6 +129,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="StratEdge">
   <link rel="apple-touch-icon" href="/assets/images/apple-touch-icon.png">
+<link rel="stylesheet" href="/assets/public-site/auth.css?v=20261002a">
 </head>
 <body>
   <nav>
