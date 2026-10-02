@@ -6,7 +6,7 @@ const php=process.env.PHP_BIN||'php';const prepared=cp.spawnSync(php,[path.join(
 (async()=>{
  const port=await new Promise(resolve=>{const s=net.createServer().listen(0,'127.0.0.1',()=>{const p=s.address().port;s.close(()=>resolve(p))})});
  const server=cp.spawn(php,['-S','127.0.0.1:'+port,'-t',fixture],{stdio:['ignore','pipe','pipe']});let logs='';server.stderr.on('data',s=>logs+=s);const origin='http://127.0.0.1:'+port;
- for(let i=0;i<40;i++){try{await fetch(origin+'/');break}catch(e){await new Promise(r=>setTimeout(r,100))}}
+ for(let i=0;i<40;i++){try{const ready=await fetch(origin+'/');await ready.arrayBuffer();break}catch(e){await new Promise(r=>setTimeout(r,100))}}
  const executable=['/usr/bin/google-chrome','/usr/bin/chromium','/usr/bin/chromium-browser'].find(p=>fs.existsSync(p));
  const browser=await chromium.launch({headless:true,...(executable?{executablePath:executable}:{}),args:['--no-sandbox']});
  try{
