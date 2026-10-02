@@ -22,7 +22,11 @@ final class Results
     }
     public static function load(\PDO $db): array
     {
-        return $db->query("SELECT id,titre,cote,resultat,date_post,date_resultat,categorie,posted_by_role FROM bets WHERE resultat IN ('gagne','perdu','annule') ORDER BY COALESCE(date_resultat,date_post) DESC,id DESC")->fetchAll(\PDO::FETCH_ASSOC);
+        // Older installations may not have the optional categorisation columns yet.
+        // Keep the existing SELECT * compatibility, then discard every non-public field.
+        $allowed = array_fill_keys(['id','titre','cote','resultat','date_post','date_resultat','categorie','posted_by_role'], null);
+        $rows = $db->query("SELECT * FROM bets WHERE resultat IN ('gagne','perdu','annule') ORDER BY COALESCE(date_resultat,date_post) DESC,id DESC")->fetchAll(\PDO::FETCH_ASSOC);
+        return array_map(static fn(array $row): array => array_replace($allowed, array_intersect_key($row, $allowed)), $rows);
     }
     public static function category(array $bet): string
     {

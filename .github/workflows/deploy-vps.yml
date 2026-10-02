@@ -115,7 +115,7 @@ jobs:
           for page in index.php journal.php offres.php historique.php methode.php; do
             curl --fail --silent --show-error --max-time 20 "https://stratedgepronos.fr/$page?v=${{ github.sha }}" -o "$PUBLIC_CHECK_DIR/$page"
             grep -q 'public-site/site.css' "$PUBLIC_CHECK_DIR/$page"
-            if grep -qE 'Fatal error|Warning:|Parse error' "$PUBLIC_CHECK_DIR/$page"; then exit 1; fi
+            if grep -qE 'Fatal error|Warning:|Parse error|Le bilan est temporairement indisponible|Le journal est momentanément indisponible' "$PUBLIC_CHECK_DIR/$page"; then exit 1; fi
           done
           curl --fail --silent --show-error --max-time 20 'https://stratedgepronos.fr/article.php?slug=journee-sans-pari-une-decision' -o "$PUBLIC_CHECK_DIR/article.html"
           grep -q 'Historique de publication' "$PUBLIC_CHECK_DIR/article.html"
