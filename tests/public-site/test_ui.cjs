@@ -21,11 +21,24 @@ const php=process.env.PHP_BIN||'php';const prepared=cp.spawnSync(php,[path.join(
   }
  }
  await page.setViewportSize({width:1200,height:630});await page.goto(origin+'/');await page.evaluate(()=>document.fonts.ready);
- await page.addStyleTag({content:'.site-header .public-nav,.menu-toggle,.hero .actions,.hero-rail,.hero-meta>span:last-child{display:none!important}.header-inner{min-height:78px}.header-inner:after{content:"stratedgepronos.fr";font:600 14px Manrope;letter-spacing:1px;color:#aeb6aa}.hero{padding-top:25px}.hero-grid{min-height:475px}.hero-copy{padding:28px 0}.hero h1{font-size:109px}.hero-intro{font-size:15px;margin-top:28px}.pitch-stage{height:435px}.pitch-route{animation:none;stroke-dashoffset:0}.hero-stamp{top:15px}.pitch-caption{display:none}'});
+ await page.addStyleTag({content:'.site-header .public-nav,.menu-toggle,.hero-copy,.lens-console,.hero-meta>span:last-child,.scene-caption{display:none!important}.header-inner{min-height:75px}.header-inner:after{content:"stratedgepronos.fr";font:500 14px "DM Sans",sans-serif}.hero-shell{min-height:555px;padding-top:28px}.hero h1{font-size:130px;margin-top:60px}.hero h1 em{padding-left:120px}.hero-bottom{display:none}.hero-shade{background:linear-gradient(90deg,#10151099,transparent)}'});
  await page.screenshot({path:path.join(output,'social-cover.png')});
  await page.setViewportSize({width:390,height:844});await page.goto(origin+'/');assert.equal(await page.locator('#public-nav').evaluate(e=>e.inert),true);await page.locator('.menu-toggle').click();assert.equal(await page.locator('.menu-toggle').getAttribute('aria-expanded'),'true');assert.equal(await page.locator('#public-nav').evaluate(e=>e.inert),false);await page.keyboard.press('Escape');assert.equal(await page.locator('.menu-toggle').getAttribute('aria-expanded'),'false');
- await page.locator('.motion-toggle').click();assert.equal(await page.locator('body').evaluate(e=>e.classList.contains('motion-paused')),true);assert.equal(await page.locator('.pitch-sweep').evaluate(e=>getComputedStyle(e).animationPlayState),'paused');
- await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.locator('.pitch-sweep').evaluate(e=>getComputedStyle(e).animationName),'none');await page.emulateMedia({reducedMotion:'no-preference'});
+ await page.locator('.motion-toggle').click();assert.equal(await page.locator('body').evaluate(e=>e.classList.contains('motion-paused')),true);assert.equal(await page.locator('.tactic-pulse').evaluate(e=>getComputedStyle(e).animationPlayState),'paused');
+ await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.locator('.tactic-pulse').evaluate(e=>getComputedStyle(e).animationName),'none');await page.emulateMedia({reducedMotion:'no-preference'});
+ for(const width of [1440,390,320]){
+  await page.setViewportSize({width,height:950});await page.goto(origin+'/');
+  const reading=page.getByRole('button',{name:'La lecture'});await reading.focus();await page.keyboard.press('Enter');
+  assert.equal(await reading.getAttribute('aria-pressed'),'true');assert.equal(await page.locator('.hero').getAttribute('data-lens'),'lecture');
+  assert((await page.locator('.lens-explanation').innerText()).includes('Tendances, contexte, prix'));
+  await page.waitForTimeout(750);await page.screenshot({path:path.join(output,'lecture-'+width+'.png')});
+  await page.getByRole('button',{name:'Le terrain',exact:true}).click();assert.equal(await reading.getAttribute('aria-pressed'),'false');
+  await page.locator('.ticket-tennis').scrollIntoViewIfNeeded();await page.mouse.move(0,0);await page.waitForTimeout(550);await page.screenshot({path:path.join(output,'billets-'+width+'.png')});await page.locator('.ticket-tennis').focus();await page.keyboard.press('Enter');await page.waitForURL(/offres.php#tennis/);
+  assert(await page.locator('#tennis').isVisible());
+ }
+ const noJS=await browser.newContext({javaScriptEnabled:false,viewport:{width:390,height:844}});const staticPage=await noJS.newPage();await staticPage.goto(origin+'/');
+ assert(await staticPage.getByRole('link',{name:'Explorer le journal'}).isVisible());assert.equal(await staticPage.locator('.lens-console').isVisible(),false);await noJS.close();
+ await page.setViewportSize({width:390,height:844});
  await page.goto(origin+'/journal.php?type=analyse');assert.equal(await page.locator('.story').count(),0);await page.getByRole('link',{name:'Tout le journal',exact:true}).click();assert.equal(await page.locator('.story').count(),3);
  assert.equal((await page.request.get(origin+'/article.php?slug=private-draft')).status(),404);assert.equal((await page.request.get(origin+'/article.php?slug=future-post')).status(),404);
  const xml=await (await page.request.get(origin+'/journal-sitemap.php')).text();assert(xml.includes('journee-sans-pari'));assert(!xml.includes('private-draft')&&!xml.includes('future-post'));

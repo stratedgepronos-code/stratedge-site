@@ -4,6 +4,7 @@ $root=dirname(__DIR__,2);foreach(['Journal','Metrics','Results','Offers','LabDra
 use StratEdgePublic\Journal;use StratEdgePublic\Results;use StratEdgePublic\Metrics;use StratEdgePublic\Offers;
 function ok(bool $condition,string $message):void{if(!$condition)throw new RuntimeException($message);}
 function rejects(callable $run,string $message):void{try{$run();}catch(InvalidArgumentException|RuntimeException $e){return;}throw new Exception($message);}
+$GLOBALS['frontSource']='x';ok(front_link('/offres.php#tennis')==='/offres.php?utm_source=x#tennis','Source placed after offer fragment');ok(front_link('/offres.php?format=all#multi')==='/offres.php?format=all&amp;utm_source=x#multi','Existing query or fragment lost');$GLOBALS['frontSource']='direct';
 $db=new PDO('sqlite::memory:');$db->setAttribute(PDO::ATTR_ERRMODE,PDO::ERRMODE_EXCEPTION);$j=new Journal($db);$j->install();$j->install();
 $base=['title'=>'Guide de recette <script>alert(1)</script>','slug'=>'guide-recette','summary'=>'Un résumé de recette suffisamment long.','body'=>"## Un titre\n\nUn paragraphe de test <script>alert(1)</script> conservé en texte simple, jamais exécuté.",'kind'=>'guide','sport'=>'football','decision'=>'observation','sources'=>'https://example.test/source'];
 $id=$j->save($base);ok(!$j->get($id),'A draft was exposed');ok(count($j->recent())===0,'Draft in listing');ok(count($j->revisions($id))===0,'Draft in revision trail');
