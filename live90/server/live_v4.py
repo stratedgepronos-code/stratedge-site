@@ -249,7 +249,7 @@ def pulse_message(saved, now):
     quote=saved.get('stake_quote');stamp=date(quote.get('received_at')) if isinstance(quote,dict) else None
     if quote and stamp and 0<=(now-stamp).total_seconds()<=30 and num(quote.get('odds')) and quote['odds']>1:
         return '💰 Cote indicative : '+format(quote['odds'],'.2f').replace('.',',')+' · Stake'+(' Bookings' if quote.get('unit')=='stake_bookings' else '')
-    return '💰 Cote : à vérifier sur Stake'
+    return '🔎 Cote à vérifier — miser uniquement à partir de 1,50'
 
 def identity(m):
     if not isinstance(m, dict) or not all(text_ok(m.get(k), 160) for k in ('home','away')) or norm(m['home']) == norm(m['away']): raise ValueError('Noms des équipes invalides')
@@ -543,8 +543,8 @@ def notify(message):
 def telegram_price_error(saved,now):
     quote=saved.get('stake_quote') or {};stamp=date(quote.get('received_at'))
     price=quote.get('odds')
-    if not num(price) or not stamp or not 0<=(now-stamp).total_seconds()<=30:
-        return 'Non envoyé : cote Stake absente ou périmée ; minimum requis 1,50'
+    if not num(price) or price<=1 or not stamp or not 0<=(now-stamp).total_seconds()<=30:
+        return None
     if price<MIN_TELEGRAM_ODDS:
         return 'Non envoyé : cote Stake '+format(price,'.2f').replace('.',',')+' inférieure au minimum 1,50'
     return None

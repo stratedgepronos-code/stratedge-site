@@ -65,22 +65,22 @@ class LiveV4Tests(unittest.TestCase):
     with self.subTest(market=market,quotes=quotes):
      self.r['quotes']=quotes;d=self.evaluate(market)
      self.assertEqual(d['status'],'candidate');self.assertIsNone(d['quote']);self.assertEqual(d['mode'],'statistical_no_odds')
- def test_two_goal_periods_without_quotes_stay_on_site_and_settle_separately(self):
+ def test_two_goal_periods_without_quotes_send_with_warning_and_settle_separately(self):
   self.r['quotes']=[];self.prepared(both_goals=True)
   with patch.object(V,'notify',return_value=('sent',None,94)) as send:
    V.run(self.db,True,self.now);V.run(self.db,True,self.now)
-   send.assert_not_called()
+   self.assertEqual(send.call_count,2)
   signals=V.history(self.c);self.assertEqual({s['market'] for s in signals},{'goal_ht','goal_ft'})
   self.assertTrue(all(s['odds'] is None and s['profit_units'] is None for s in signals))
   later=self.now+dt.timedelta(minutes=15);self.r.update(state='HT',minute=45);self.add(self.r,later)
   with patch.object(V,'notify',return_value=('sent',None,95)) as send:
    V.run(self.db,True,later);V.run(self.db,True,later)
-   send.assert_not_called()
+   self.assertEqual(send.call_count,1)
   self.assertEqual({s['market']:s['outcome'] for s in V.history(self.c)},{'goal_ht':'lost','goal_ft':'pending'})
   later+=dt.timedelta(minutes=20);self.r.update(state='LIVE',minute=65);self.r['score']['h']=1;self.add(self.r,later)
   with patch.object(V,'notify',return_value=('sent',None,96)) as send:
    V.run(self.db,True,later)
-   send.assert_not_called()
+   self.assertEqual(send.call_count,1)
   totals=V.board(self.c,later)['totals'];self.assertEqual(totals['priced_total'],0);self.assertEqual(totals['units'],0)
   self.assertEqual(totals['statistical_won'],1);self.assertEqual(totals['statistical_lost'],1)
  def test_severe_context_still_allows_strong_live_signal(self):
@@ -116,24 +116,24 @@ class LiveV4Tests(unittest.TestCase):
   self.assertEqual(self.c.execute("SELECT COUNT(*) FROM v4_signals WHERE market='card_ft'").fetchone()[0],1)
   self.add(self.r,later+dt.timedelta(seconds=30));V.run(self.db,False,later+dt.timedelta(seconds=30));V.run(self.db,False,later+dt.timedelta(seconds=30))
   self.assertEqual([r[0] for r in self.c.execute("SELECT line FROM v4_signals WHERE market='card_ft' ORDER BY line")],[.5,1.5])
- def test_unpriced_cards_stay_on_site_settle_and_correct_without_profit(self):
+ def test_unpriced_cards_send_with_warning_settle_and_correct_without_profit(self):
   self.r['quotes']=[];self.prepared(cards=True)
   with patch.object(V,'notify',return_value=('sent',None,91)) as send:
    V.run(self.db,True,self.now);V.run(self.db,True,self.now)
-   send.assert_not_called()
+   self.assertEqual(send.call_count,1)
   signal=V.history(self.c)[0];sid=signal['id']
   self.assertEqual(signal['market'],'card_ft');self.assertIsNone(signal['odds']);self.assertIsNone(signal['profit_units'])
   self.assertEqual(signal['data']['mode'],'statistical_no_odds')
   later=self.now+dt.timedelta(seconds=30);self.r['stats']['yellow_cards']['h']=1;self.add(self.r,later)
   with patch.object(V,'notify',return_value=('sent',None,92)) as send:
    V.run(self.db,True,later);V.run(self.db,True,later)
-   send.assert_not_called()
+   self.assertEqual(send.call_count,1)
   self.assertEqual(self.outcome(sid),'won');self.assertIsNone(V.history(self.c)[0]['profit_units'])
   totals=V.board(self.c,later)['totals'];self.assertEqual(totals['units'],0);self.assertEqual(totals['statistical_won'],1);self.assertEqual(totals['priced_won'],0)
   later+=dt.timedelta(seconds=30);self.r['stats']['yellow_cards']['h']=0;self.r.update(state='FT',minute=None);self.add(self.r,later)
   with patch.object(V,'notify',return_value=('sent',None,93)) as send:
    V.run(self.db,True,later)
-   send.assert_not_called()
+   self.assertEqual(send.call_count,1)
   self.assertEqual(self.outcome(sid),'lost');self.assertIsNone(V.history(self.c)[0]['profit_units'])
   totals=V.board(self.c,later)['totals'];self.assertEqual(totals['units'],0);self.assertEqual(totals['statistical_lost'],1)
   self.c.execute('UPDATE v4_signals SET odds=1.8 WHERE id=?',(sid,));self.c.commit()
@@ -222,8 +222,10 @@ class LiveV4Tests(unittest.TestCase):
  def test_packball_price_cannot_replace_missing_stake_price(self):
   self.prepared();V.run(self.db,False,self.now);self.c.execute("UPDATE v4_signals SET delivery='queued'");self.c.commit();self.r['quotes'][0]['odds']=1.85;self.add(self.r,self.now)
   with patch.object(V,'notify',return_value=('sent',None,90)) as send:
-   V.deliver(self.c,self.now);send.assert_not_called()
-  self.assertEqual(self.c.execute('SELECT delivery FROM v4_signals').fetchone()[0],'filtered')
+   V.deliver(self.c,self.now);send.assert_called_once()
+   self.assertIn('🔎 Cote à vérifier — miser uniquement à partir de 1,50',send.call_args.args[0])
+   self.assertNotIn('1,85',send.call_args.args[0])
+  self.assertEqual(self.c.execute('SELECT delivery FROM v4_signals').fetchone()[0],'sent')
  def test_results_and_correction_audited(self):
   self.prepared();V.run(self.db,False,self.now);sid=self.c.execute('SELECT id FROM v4_signals').fetchone()[0]
   for out in ('won','void'):V.settle(self.c,{'id':sid,'outcome':out,'source':'Source officielle contrôlée'},self.now)

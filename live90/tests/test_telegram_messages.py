@@ -23,7 +23,7 @@ class TelegramMessages(unittest.TestCase):
         self.assertIn('63′ · Score 1–1',text)
         self.assertIn('6 tirs dont 3 cadrés sur 10 min',text)
         self.assertIn('×1,5 le repère avant-match',text)
-        self.assertIn('Cote : à vérifier sur Stake',text)
+        self.assertIn('🔎 Cote à vérifier — miser uniquement à partir de 1,50',text)
         for private in ('activity_ratio','Budget quotidien','Long internal','Intensité'):
             self.assertNotIn(private,text)
         self.assertLess(len(text),700)
@@ -44,7 +44,7 @@ class TelegramMessages(unittest.TestCase):
         self.assertIn('Cote indicative : 1,88 · Stake',V.alert_message(self.signal,self.saved,self.now))
         for seconds in (-1,31):
             text=V.alert_message(self.signal,self.saved,self.now+dt.timedelta(seconds=seconds))
-            self.assertIn('Cote : à vérifier sur Stake',text)
+            self.assertIn('🔎 Cote à vérifier — miser uniquement à partir de 1,50',text)
             self.assertNotIn('1,88',text)
         self.saved['stake_quote']['odds']=float('nan')
         self.assertNotIn('nan',V.alert_message(self.signal,self.saved,self.now))

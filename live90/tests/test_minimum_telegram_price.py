@@ -7,7 +7,7 @@ import live_v4 as V
 class MinimumTelegramPrice(unittest.TestCase):
  def test_threshold_freshness_and_result_notifications(self):
   for market in ('goal_ht','goal_ft','card_ft'):
-   for price,age,expected in [(1.12,0,False),(1.49,0,False),(1.4999,0,False),(1.50,0,True),(2.1,0,True),(None,0,False),(1.8,31,False),(1.8,-1,False)]:
+   for price,age,expected in [(1.12,0,False),(1.49,0,False),(1.4999,0,False),(1.50,0,True),(2.1,0,True),(None,0,True),(1.8,31,True),(1.8,-1,True),(1.12,31,True),(1.0,0,True)]:
     with self.subTest(market=market,price=price,age=age):
      base=test_v4.LiveV4Tests();base.setUp()
      try:
@@ -21,6 +21,9 @@ class MinimumTelegramPrice(unittest.TestCase):
       with patch.object(V,'notify',return_value=('sent',None,9)) as send:
        V.deliver(base.c,base.now);V.deliver(base.c,base.now)
        self.assertEqual(send.call_count,int(expected))
+       if expected and (price is None or price<=1 or age<0 or age>30):
+        self.assertIn('🔎 Cote à vérifier — miser uniquement à partir de 1,50',send.call_args.args[0])
+        self.assertNotIn('Cote indicative',send.call_args.args[0])
       signal=V.history(base.c)[0];self.assertEqual(signal['delivery'],'sent' if expected else 'filtered')
       if not expected:self.assertIn('1,50',signal['delivery_error'])
       with patch.object(V,'notify',return_value=('sent',None,10)) as send:
