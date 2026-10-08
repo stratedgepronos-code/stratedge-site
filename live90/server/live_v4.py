@@ -285,8 +285,14 @@ def validate_context(m, generated):
             if not isinstance(refs,list) or not refs or any(v not in ids for v in refs): raise ValueError('Sources statistiques arbitre requises')
     teams=m.get('teams')
     if not isinstance(teams,dict) or set(teams)!={'h','a'}: raise ValueError('Contexte h/a requis')
-    for t in teams.values():
-        if not isinstance(t,dict) or not text_ok(t.get('note'),1800) or not isinstance(t.get('flags'),list) or len(t['flags'])>12: raise ValueError('Note et facteurs par équipe requis')
+    for side,t in teams.items():
+        label=str(m.get('home','?'))+' — '+str(m.get('away','?'))+' · '+('domicile' if side=='h' else 'extérieur')
+        if not isinstance(t,dict): raise ValueError(label+' : contexte équipe invalide')
+        note=t.get('note')
+        if not text_ok(note,5000):
+            if isinstance(note,str) and len(note)>5000: raise ValueError(label+' : note trop longue ('+str(len(note))+' caractères ; maximum 5000)')
+            raise ValueError(label+' : note requise, texte non vide de 5000 caractères maximum')
+        if not isinstance(t.get('flags'),list) or len(t['flags'])>12: raise ValueError(label+' : flags attendus sous forme de liste, maximum 12')
         for f in t['flags']:
             if not isinstance(f,dict) or f.get('kind') not in ('attack_absences','defence_absences','fatigue','rotation','schedule','discipline','weather','other') or f.get('severity') not in ('low','medium','high') or f.get('certainty') not in ('confirmed','reported','unknown') or not text_ok(f.get('detail'),1000) or not isinstance(f.get('source_ids'),list) or any(v not in ids for v in f['source_ids']): raise ValueError('Facteur contextuel invalide')
             if f['certainty']!='unknown' and not f['source_ids']: raise ValueError('Un fait confirmé/rapporté exige une source')
