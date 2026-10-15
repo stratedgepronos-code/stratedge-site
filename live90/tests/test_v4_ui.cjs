@@ -14,6 +14,10 @@ const board={version:'live4.0',server_time:now,feed:{received_at:now,rows:43,col
 board.matches[3].state='HT';
 board.matches.forEach((r,i)=>{r.advice=['h','a'].flatMap(team=>['goals','corners','cards'].map(market=>({team,market,status:i===0&&team==='h'?'active':i===1?'missing':'neutral',title:i===0&&team==='h'?'À regarder':i===1?'À compléter':'Observer',observed:0,baseline:market==='corners'?null:1.8,sample:10,reason:market==='goals'?'4 tirs dont 2 cadrés en 10 min · 2 tirs en 5 min.':market==='cards'?'3 fautes en 10 min dont 1 en 5 min.':'4 tirs et 0 corner en 10 min.',facts:['Exemple de recette'],limits:['Données synthétiques, pas une recommandation'],criteria:'Seuil descriptif'})));});
 board.matches.forEach(r=>r.advice.forEach(d=>{d.sample_id=r.sample_id;d.metrics=d.market==='cards'?{fouls:9,fouls10:3,fouls5:1}:d.market==='goals'?{sot:8,sot10:2,sot_per_goal:6}:{shots10:5,corners10:0,blocked_shots10:2};if(d.team==='a')d.metrics={};}));
+board.matches[0].stake_cuts={state:'received',at:now,reason:'Instantané de recette',quotes:[
+ {team:'h',kind:'cards',period:'FT',line:2.5,odds:1.8,unit:'stake_bookings',half_line:true,needed:3,current:0,indicative_counter:true,score:{h:0,a:0},received_at:now,note:'Bookings distincts des jaunes'},
+ {team:'h',kind:'corners',period:'FT',line:5.5,odds:1.9,unit:'corners',half_line:true,needed:3,current:3,indicative_counter:false,score:{h:0,a:0},received_at:now,note:'Écart au cut uniquement'},
+ {team:'h',kind:'goals',period:'FT',line:.5,odds:1.6,unit:'goals',half_line:true,needed:1,current:0,indicative_counter:false,score:{h:0,a:0},received_at:now,note:'Écart au cut uniquement'}]};
 board.observations=[{id:1,team:'h',market:'goals',created_at:now,data:{home:'Équipe A',away:'Équipe B',minute:32,reading:board.matches[0].advice[0]}}];
 
 board.health={status:'issues',issues:[{code:'stats',detail:'Fautes manquantes sur équipe A'}]};
@@ -27,6 +31,16 @@ const server=http.createServer((r,res)=>{if(r.url==='/download.php?file=collecto
  await page.locator('[data-market="cards"]').click();assert.equal(await page.locator('#match-rows tr').count(),8);await page.locator('[data-market="all"]').click();
  await page.screenshot({path:path.join(output,'desktop.png'),fullPage:true});
  assert((await page.locator('#match-rows tr').filter({hasText:'Équipe G'}).first().textContent()).includes('Mi-temps'));
+ // Market cuts: several events required must never read as one additional event.
+ assert((await page.locator('#attention-cards .cards').first().textContent()).includes('Cut +2,5 · cote 1,8'));
+ assert((await page.locator('#attention-cards .cards').first().textContent()).includes('3 de plus nécessaires si même décompte'));
+ assert((await page.locator('#attention-cards .corners').first().textContent()).includes('Cut +5,5 · cote 1,9'));
+ assert((await page.locator('#attention-cards .corners').first().textContent()).includes('Un seul événement ne suffit pas.'));
+ assert.equal(posted.filter(x=>x.action==='pulsescore_test').length,0);
+ const quoteTime=board.matches[0].stake_cuts.at;board.matches[0].stake_cuts.at=new Date(Date.now()-61000).toISOString();await page.evaluate(()=>refresh());
+ assert(!(await page.locator('#attention-cards').textContent()).includes('cote 1,8'));
+ assert((await page.locator('#attention-cards').textContent()).includes('Cuts à actualiser'));
+ board.matches[0].stake_cuts.at=quoteTime;await page.evaluate(()=>refresh());
  // Radar: factual cards, deduplication, filters, halftime, corrected counters and freshness.
  assert.equal(await page.locator('#attention-cards .attention-card').count(),6);
  assert((await page.locator('#attention-cards').textContent()).includes('9 fautes, aucun jaune'));
@@ -81,8 +95,8 @@ const server=http.createServer((r,res)=>{if(r.url==='/download.php?file=collecto
  assert.equal(await page.locator('#telegram-enabled').isDisabled(),true);assert.equal(await page.locator('#pulse-auto').isDisabled(),true);assert.equal(posted.filter(x=>x.action==='pulsescore_test').length,0);
  await page.locator('#pulse-key').fill('test-only-private-key');await page.locator('#pulse-save').click();await page.waitForFunction(()=>document.querySelector('#pulse-message').textContent.includes('Clé enregistrée'));
  assert.equal(await page.locator('#pulse-key').inputValue(),'');assert.equal(posted.filter(x=>x.action==='pulsescore_test').length,0);
- await page.locator('#pulse-test').click();await page.waitForFunction(()=>document.querySelector('#pulse-message').textContent.includes('Connexion réussie'));
- assert.equal(posted.filter(x=>x.action==='pulsescore_test').length,1);assert((await page.locator('#pulse-report').textContent()).includes('Équipe <A>'));assert((await page.locator('#pulse-status').textContent()).includes('1 / 500'));
+ await page.locator('[data-close="settings-modal"]').click();await page.locator('[data-view="live"]').click();await page.locator('#cuts-refresh').click();await page.waitForFunction(()=>document.querySelector('#pulse-message').textContent.includes('Connexion réussie'));
+ await page.locator('#settings-open').click();assert.equal(posted.filter(x=>x.action==='pulsescore_test').length,1);assert((await page.locator('#pulse-report').textContent()).includes('Équipe <A>'));assert((await page.locator('#pulse-status').textContent()).includes('1 / 500'));
  await page.locator('#pulse-report summary').click();assert((await page.locator('#pulse-report').textContent()).includes('Période corrigée'));assert((await page.locator('#pulse-report').textContent()).includes('buts avant la pause'));await page.screenshot({path:path.join(output,'pulsescore.png'),fullPage:true});
  await page.evaluate(()=>refresh());assert.equal(posted.filter(x=>x.action==='pulsescore_test').length,1);
  await page.locator('#pulse-remove').click();await page.waitForFunction(()=>document.querySelector('#pulse-message').textContent.includes('Clé retirée'));assert.equal(await page.locator('#pulse-test').isDisabled(),true);

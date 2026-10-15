@@ -13,3 +13,14 @@
 - CSS/JS restent intégrés au HTML par PHP. Aucune ressource nécessaire chargée depuis le chemin nginx `assets/` du panel.
 
 Déploiement : sauvegarde SQLite et ancien moteur par `ops/deploy-live90-v4.sh`, installation des deux fichiers Python, redémarrage du même service. Le contrôle serveur exige désormais un cycle `decision5.0` et `telegram_active:false`. Installer ensuite le collecteur 5.0.0 dans le script Tampermonkey existant pour recevoir les nouveaux champs.
+
+
+## Cuts et cotes Stake dans le radar
+
+Le bouton « Cuts Stake · 1 requête » consulte la page live du fournisseur à la demande, avec la clé existante. Aucun appel automatique. Une minute minimum entre deux appels ; compteur local plafonné à 500 sur 31 jours. La réponse est limitée aux 30 matchs de la page reçue : un match non associé n’est pas déclaré indisponible chez Stake.
+
+Les marchés reconnus sont les totaux par équipe de buts, corners et Bookings. La carte utilise la plus petite ligne FT en demi-unité reçue qui n’est pas déjà dépassée ; la fiche affiche aussi les autres lignes et les buts de première mi-temps lorsqu’ils sont disponibles. Les totaux du match, prochaines équipes à marquer, corners suivants et tranches de minutes ne les remplacent jamais. Les prix contradictoires ou non confirmés actifs sont écartés.
+
+Exemple corners : 3 corners observés et over 5,5 → 3 corners supplémentaires nécessaires. Exemple buts : 1 but et over 1,5 → 1 but supplémentaire nécessaire. L’écart n’est pas une prédiction, et un signal pour un événement n’établit pas l’intérêt d’un cut qui en demande plusieurs.
+
+Pour les Bookings, les jaunes Packball sont un compteur différent : l’écart reste conditionnel à un même décompte, jamais une équivalence certifiée. Aucune conversion simple après expulsion, avec compteur manquant ou pour une ligne asiatique/entière. Les cotes expirent pour l’affichage après 60 secondes depuis la réception locale ; leur horodatage d’origine n’est pas garanti. Vérifier ligne, période, unité et prix sur Stake.

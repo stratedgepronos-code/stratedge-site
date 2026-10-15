@@ -72,9 +72,10 @@ def pulse_market_reading(event, market):
         if not team_name or norm(event.get('home',''))==norm(event.get('away','')):continue
         full=team_name+' total goals'
         bookings=name==team_name+' total bookings'
+        corners=name==team_name+' total corners'
         ht=name in ('half time '+full,'half-time '+full)
-        if not ht and name not in (full,team_name+' total') and not bookings:continue
-        if canonical!=('OTHER' if bookings else expected):return {'recognized':False,'reason':'Libellé et équipe normalisée contradictoires'}
+        if not ht and name not in (full,team_name+' total') and not bookings and not corners:continue
+        if canonical!=('OTHER' if bookings else 'CORNERS_OVER_UNDER' if corners else expected):return {'recognized':False,'reason':'Libellé et équipe normalisée contradictoires'}
         allowed=('FULL_TIME','FIRST_HALF') if ht else ('FULL_TIME',)
         if period not in allowed:return {'recognized':False,'reason':'Période non reconnue ou contradictoire'}
         mapped='HT' if ht else 'FT';selections=[]
@@ -82,19 +83,70 @@ def pulse_market_reading(event, market):
             line=s.get('line'); price=s.get('odds')
             # Require the literal Over line to agree with the numeric line.
             match=re.fullmatch(r'over\s+(\d+(?:\.\d+)?)',norm(s.get('name','')))
-            if not match or not num(line) or float(match[1])!=line or not 0<=line<=20:continue
+            if not match or not num(line) or float(match[1])!=line or not 0<=line<=(50 if corners else 20):continue
             half_line=abs(line%1-.5)<1e-9
             active=market.get('active') is True and s.get('active') is True
             selections.append({'line':line,'odds':price if num(price) and price>1 else None,
-                'kind':('half_booking' if bookings else 'half_goal') if half_line else 'asian_or_integer','active_confirmed':active,
+                'kind':('half_booking' if bookings else 'half_corner' if corners else 'half_goal') if half_line else 'asian_or_integer','active_confirmed':active,
                 'compatible_line':half_line,
                 'note':('Total Bookings Stake : jaune = 1, rouge = 2 ; règlement distinct du suivi des jaunes Packball' if bookings else
-                        'Total de buts de cette équipe sur la période ; comparer au score à l’instant du signal' if half_line
+                        'Total de corners de cette équipe sur le match entier' if corners else 'Total de buts de cette équipe sur la période ; comparer au score à l’instant du signal' if half_line
                         else 'Ligne asiatique ou entière : ne pas convertir en +0,5 but supplémentaire')})
-        return {'recognized':True,'team':team,'period':mapped,'market':'card_ft' if bookings else 'goal_ht' if ht else 'goal_ft',
-            'unit':'stake_bookings' if bookings else 'goals',
+        return {'recognized':True,'team':team,'period':mapped,'market':'card_ft' if bookings else 'corner_ft' if corners else 'goal_ht' if ht else 'goal_ft',
+            'unit':'stake_bookings' if bookings else 'corners' if corners else 'goals',
             'period_corrected':ht and period=='FULL_TIME','selections':selections}
     return {'recognized':False}
+
+def desk_cuts(r, result, now):
+    """Read a manually fetched provider snapshot, never call the network.
+
+    These are offered lines, not predictions. Bookings and Packball yellows
+    remain different counters even when no dismissal has been observed.
+    """
+    out={'quotes':[], 'state':'unavailable', 'reason':'Actualiser les cuts Stake pour ce programme.', 'at':None}
+    if not isinstance(result,dict) or not result.get('ok'):
+        if isinstance(result,dict) and result.get('error'):out['reason']=result['error']
+        return out
+    stamp=date(result.get('at'));out['at']=result.get('at')
+    if not stamp or not 0<=(now-stamp).total_seconds()<=60:
+        out.update(state='stale',reason='Instantané Stake ancien : actualiser les cuts.');return out
+    received=date(r.get('received_at'))
+    if r.get('state')!='LIVE' or not received or not 0<=(now-received).total_seconds()<=100 or r.get('quality_errors'):
+        out['reason']='Attendre un relevé Packball récent et non ambigu, en jeu.';return out
+    events=[e for e in result.get('events',[]) if norm(e.get('home',''))==norm(r.get('home','')) and norm(e.get('away',''))==norm(r.get('away',''))]
+    if len(events)!=1:
+        out['reason']='Match absent de cette page Stake ou noms non associés sans ambiguïté.';return out
+    e=events[0]
+    if not e.get('event_id') or not isinstance(e.get('score'),dict) or e['score']!=r.get('score'):
+        out['reason']='Score Stake différent ou identité incomplète : cuts non associés.';return out
+    candidates={}
+    for market in e.get('markets',[]):
+        reading=pulse_market_reading(e,market)
+        if not reading.get('recognized'):continue
+        kind={'goal_ft':'goals','goal_ht':'goals','card_ft':'cards','corner_ft':'corners'}.get(reading['market'])
+        if not kind:continue
+        if reading['period']=='HT' and (not num(r.get('minute')) or r['minute']>45):continue
+        team=reading['team']
+        current=(r.get('score') or {}).get(team) if kind=='goals' else stat(r,'yellow_cards' if kind=='cards' else 'corners',team)
+        valid_counter=num(current) and current>=0 and current==int(current)
+        if kind=='cards' and (dismissal(r) or any(stat(r,'red_cards',t)!=0 for t in ('h','a'))):valid_counter=False
+        for selection in reading['selections']:
+            if not selection['active_confirmed'] or not num(selection['odds']) or selection['odds']<=1:continue
+            line=selection['line'];half=selection['compatible_line']
+            needed=max(0,math.floor(line)+1-int(current)) if valid_counter and half else None
+            # Reject contradictory duplicate quotes rather than choosing the better price.
+            key=(team,kind,reading['period'],line)
+            q={'team':team,'kind':kind,'period':reading['period'],'line':line,'odds':selection['odds'],
+               'unit':reading['unit'],'market_name':market['name'],'event_id':e['event_id'],
+               'score':e['score'],'received_at':result['at'],'current':current if valid_counter else None,
+               'needed':needed,'indicative_counter':kind=='cards','half_line':half,
+               'source':'Stake via PulseScore','note':('Bookings Stake et jaunes Packball : écart indicatif uniquement, décompte et règlement à vérifier sur Stake.' if kind=='cards' else
+                  'Ligne asiatique ou entière : remboursement ou règlement partiel possible, aucun nombre simplifié.' if not half else
+                  'Écart au cut constaté, pas une estimation du nombre à venir.')}
+            candidates.setdefault(key,[]).append(q)
+    out['quotes']=[qs[0] for qs in candidates.values() if len({q['odds'] for q in qs})==1]
+    out.update(state='received' if out['quotes'] else 'unavailable',reason='Instantané reçu ; disponibilité et prix à vérifier sur Stake.' if out['quotes'] else 'Aucun total par équipe reconnu et actif sur cette page Stake.')
+    return out
 
 def pulse_day_used(c, now):
     start=now.astimezone(ZoneInfo('Europe/Paris')).replace(hour=0,minute=0,second=0,microsecond=0).astimezone(UTC)
@@ -868,6 +920,7 @@ def history(c,limit=100,offset=0):
     return out
 
 def board(c,now):
+    pulse=pulse_status(c,now)
     records=[];seen=set();active=active_fixtures(c);cycle_ids=current_cycle_ids(c)
     for s in latest(c):
         r=sample_data(s)
@@ -883,6 +936,7 @@ def board(c,now):
             detail=dec(d['data'],{});detail['updated_at']=d['updated_at'];detail['sample_id']=d['sample_id'];r['decisions'].append(detail)
         # Do not leak raw HTML or entire historical payloads into the UI.
         r['advice']=desk_advice(c,s,p,ctx,now)
+        r['stake_cuts']=desk_cuts(r,pulse.get('last_test'),now)
         r.pop('raw_cells',None);records.append(r)
     for f in c.execute('SELECT * FROM v4_fixtures ORDER BY kickoff'):
         if f['fixture'] in seen or active is None or f['fixture'] not in active:continue
@@ -900,7 +954,7 @@ def board(c,now):
             z=dict(s);z['context']=dec(z['context'],{});legacy.append(z)
     except sqlite3.OperationalError:pass
     c.commit()
-    return {'ok':True,'version':'decision5.0','mode':'decision','observations':desk_history(c),'server_time':iso(now),'health':feed_health(c,now),'matches':records,'signals':history(c),'history_total':totals['total'],'totals':totals,'legacy':legacy,'feed':{'received_at':cycle['received_at'] if cycle else None,'rows':feed.get('page_rows'), 'collector_version':feed.get('collector_version'),'headers':feed.get('stat_headers',[]),'odds_meta':feed.get('odds_meta',{})},'engine':dec((c.execute("SELECT value FROM v4_runtime WHERE key='engine'").fetchone() or [None])[0]),'settings':options(c),'pulsescore':pulse_status(c,now),'telegram':{'configured':bool(os.environ.get('TELEGRAM_BOT_TOKEN') and os.environ.get('TELEGRAM_CHAT_ID'))}}
+    return {'ok':True,'version':'decision5.0','mode':'decision','observations':desk_history(c),'server_time':iso(now),'health':feed_health(c,now),'matches':records,'signals':history(c),'history_total':totals['total'],'totals':totals,'legacy':legacy,'feed':{'received_at':cycle['received_at'] if cycle else None,'rows':feed.get('page_rows'), 'collector_version':feed.get('collector_version'),'headers':feed.get('stat_headers',[]),'odds_meta':feed.get('odds_meta',{})},'engine':dec((c.execute("SELECT value FROM v4_runtime WHERE key='engine'").fetchone() or [None])[0]),'settings':options(c),'pulsescore':pulse,'telegram':{'configured':bool(os.environ.get('TELEGRAM_BOT_TOKEN') and os.environ.get('TELEGRAM_CHAT_ID'))}}
 
 def export_analysis(c,now):
     matches=[];active=active_fixtures(c)
