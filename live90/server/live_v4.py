@@ -10,6 +10,7 @@ LABELS = {'goal_ht': 'But avant la mi-temps', 'goal_ft': 'But avant la fin du ma
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS v4_imports(id INTEGER PRIMARY KEY,kind TEXT,digest TEXT UNIQUE,created_at TEXT,data TEXT);
 CREATE TABLE IF NOT EXISTS v4_fixtures(fixture TEXT PRIMARY KEY,home TEXT,away TEXT,kickoff TEXT,league TEXT,match_id TEXT);
+CREATE INDEX IF NOT EXISTS v4_fixture_kickoff ON v4_fixtures(kickoff);
 CREATE TABLE IF NOT EXISTS v4_profiles(fixture TEXT PRIMARY KEY,imported_at TEXT,data TEXT);
 CREATE TABLE IF NOT EXISTS v4_contexts(fixture TEXT PRIMARY KEY,imported_at TEXT,generated_at TEXT,data TEXT);
 CREATE TABLE IF NOT EXISTS v4_decisions(match_id TEXT,market TEXT,team TEXT,sample_id INTEGER,updated_at TEXT,status TEXT,data TEXT,PRIMARY KEY(match_id,market,team));
@@ -365,12 +366,12 @@ def current_cycle_ids(c):
 def bind(c,r):
     ko=date(r.get('kickoff_ts'))
     if not ko: return None
-    rows=[f for f in c.execute('SELECT * FROM v4_fixtures') if norm(f['home'])==norm(r.get('home')) and norm(f['away'])==norm(r.get('away')) and abs((date(f['kickoff'])-ko).total_seconds())<=60]
+    rows=[f for f in c.execute('SELECT * FROM v4_fixtures WHERE kickoff BETWEEN ? AND ?', (iso(ko-dt.timedelta(minutes=2)),iso(ko+dt.timedelta(minutes=2)))) if norm(f['home'])==norm(r.get('home')) and norm(f['away'])==norm(r.get('away')) and abs((date(f['kickoff'])-ko).total_seconds())<=60]
     if len(rows)!=1: return None
     f=rows[0]; mid=str(r.get('packball_id',''))
     conflict=c.execute('SELECT fixture FROM v4_fixtures WHERE match_id=? AND fixture!=?',(mid,f['fixture'])).fetchone()
     if conflict or f['match_id'] not in (None,mid): return None
-    c.execute('UPDATE v4_fixtures SET match_id=? WHERE fixture=?',(mid,f['fixture']))
+    if f['match_id']!=mid:c.execute('UPDATE v4_fixtures SET match_id=? WHERE fixture=?',(mid,f['fixture']))
     return dict(f,match_id=mid)
 
 def inputs(c,f,now):
@@ -398,7 +399,7 @@ def recent(r,hist,k,t,minutes):
     window_start=sample_time-dt.timedelta(minutes=minutes)
     usable=[]
     for h in hist:
-        old=dec(h['data'],{}); at=date(old.get('collected_at') or h['received_at'])
+        old=h['_parsed'] if isinstance(h,dict) and '_parsed' in h else dec(h['data'],{}); at=date(old.get('collected_at') or h['received_at'])
         if not at or old.get('state')!='LIVE' or not num(old.get('minute')): continue
         if (old['minute']<=45)!=(minute<=45): continue
         if window_start<=at<=sample_time and old.get('score')!=r.get('score'): return None
@@ -1065,6 +1066,7 @@ def desk_reading(r,p,ctx,team,market,now,hist):
 def desk_advice(c,s,p,ctx,now):
     r=sample_data(s)
     hist=c.execute('SELECT * FROM samples WHERE match_id=? AND id<=? ORDER BY id DESC LIMIT 100',(s['match_id'],s['id'])).fetchall()
+    hist=[dict(h,_parsed=dec(h['data'],{})) for h in hist]
     previous=next((h for h in hist if h['id']<s['id']),None)
     out=[]
     for team in ('h','a'):
@@ -1097,6 +1099,7 @@ def run_dashboard(path,now=None):
         runtime(c,'decision_mode',True)
         c.execute("UPDATE v4_signals SET delivery='disabled',delivery_error='Module décision : envois automatiques arrêtés' WHERE delivery='queued'")
         c.execute("UPDATE v4_result_notifications SET delivery='disabled',delivery_error='Module décision : envois automatiques arrêtés' WHERE delivery='queued'")
+        c.commit() # Do not lock ingestion while calculating readings.
         active=active_fixtures(c);cycle_ids=current_cycle_ids(c)
         for s in latest(c):
             r=sample_data(s);f=bind(c,r)
@@ -1105,6 +1108,7 @@ def run_dashboard(path,now=None):
             ko=date(r.get('kickoff_ts'))
             if active is None and cycle_ids is None and ko and ko<now-dt.timedelta(days=1):continue
             p,ctx=inputs(c,f,now)
+            c.commit() # Any new fixture binding is durable before the read phase.
             for d in desk_advice(c,s,p,ctx,now):
                 previous=c.execute('SELECT data FROM v5_readings WHERE match_id=? AND team=? AND market=?',(s['match_id'],d['team'],d['market'])).fetchone()
                 old=dec(previous['data'],{}) if previous else {}
@@ -1112,9 +1116,11 @@ def run_dashboard(path,now=None):
                     saved={'home':r.get('home'),'away':r.get('away'),'minute':r.get('minute'),'score':r.get('score'),'reading':d,'profile':p,'context':ctx,'version':'decision5.0','kind':'observation_not_bet'}
                     c.execute('INSERT OR IGNORE INTO v5_observations(match_id,team,market,sample_id,created_at,data) VALUES(?,?,?,?,?,?)',(s['match_id'],d['team'],d['market'],s['id'],iso(now),enc(saved)))
                 c.execute('INSERT OR REPLACE INTO v5_readings VALUES(?,?,?,?,?,?)',(s['match_id'],d['team'],d['market'],s['id'],iso(now),enc(d)))
+            c.commit()
         auto_results(c,now) # Legacy event history can still be updated, silently.
+        health=feed_health(c,now)
         runtime(c,'engine',{'at':iso(now),'version':'decision5.0','telegram_active':False,'mode':'decision','external_calls':False})
-        record_health(c,feed_health(c,now),now);c.commit()
+        record_health(c,health,now);c.commit()
     finally:c.close()
 
 

@@ -28,6 +28,15 @@ class DeskTests(unittest.TestCase):
   self.assertFalse(V.options(self.c)['telegram_enabled']);self.assertFalse(V.setting(self.c,'pulsescore_auto',True))
   self.assertEqual(events[0]['data']['kind'],'observation_not_bet');self.assertIn('profile',events[0]['data'])
   self.assertIn('run_dashboard(args.db)',(pathlib.Path(V.__file__).parent/'engine.py').read_text())
+ def test_ingestion_is_not_locked_while_readings_are_computed(self):
+  import sqlite3
+  self.prepare();original=V.desk_advice
+  def probe(*args,**kwargs):
+   with sqlite3.connect(self.db,timeout=0) as other:
+    other.execute("INSERT OR REPLACE INTO v4_settings VALUES('concurrent_ingest_probe','true')")
+   return original(*args,**kwargs)
+  with patch.object(V,'desk_advice',side_effect=probe):V.run_dashboard(self.db,self.now)
+  self.assertTrue(V.setting(self.c,'concurrent_ingest_probe',False))
  def test_spike_is_not_confirmed_and_duplicate_timestamp_is_not_a_second_reading(self):
   self.prepare();self.c.execute('DELETE FROM samples');self.c.commit()
   quiet=copy.deepcopy(self.r);quiet['ind10']['sot10']['h']=0
