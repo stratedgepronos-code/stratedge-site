@@ -37,7 +37,7 @@ const server=http.createServer((r,res)=>{if(r.url==='/download.php?file=collecto
  assert((await page.locator('#attention-cards .corners').first().textContent()).includes('Cut +5,5 · cote 1,9'));
  assert((await page.locator('#attention-cards .corners').first().textContent()).includes('Un seul événement ne suffit pas.'));
  assert.equal(posted.filter(x=>x.action==='pulsescore_test').length,0);
- const quoteTime=board.matches[0].stake_cuts.at;board.matches[0].stake_cuts.at=new Date(Date.now()-61000).toISOString();await page.evaluate(()=>refresh());
+ const quoteTime=board.matches[0].stake_cuts.at;board.matches[0].stake_cuts.at=new Date(Date.parse(board.server_time)-61000).toISOString();await page.evaluate(()=>refresh());
  assert(!(await page.locator('#attention-cards').textContent()).includes('cote 1,8'));
  assert((await page.locator('#attention-cards').textContent()).includes('Cuts à actualiser'));
  board.matches[0].stake_cuts.at=quoteTime;await page.evaluate(()=>refresh());
