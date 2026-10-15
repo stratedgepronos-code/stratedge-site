@@ -210,9 +210,10 @@ function deskEffective(r,d){
 function deskCell(r,d,kind){
  const x=deskEffective(r,d),number=d?.observed??(kind==='goals'?r.score?.[d?.team]:r.stats?.[{corners:'corners',cards:'yellow_cards'}[kind]]?.[d?.team]);
  const unit={goals:'but(s)',corners:'corner(s)',cards:'jaune(s)'}[kind];
+ const owner=d?.team==='h'?r.home:d?.team==='a'?r.away:'cette équipe';
  const key=[r.packball_id,d?.team,kind,x.status,d?.observed].join(':');
  const animate=x.status==='active'&&!seenHighlights.has(key);if(x.status==='active')seenHighlights.add(key);
- return `<div class="reading ${esc(x.status)} ${animate?'reading-new':''}"><div class="reading-top"><b>${fmt(number)} <small>${unit}</small></b><span>${esc(x.title||deskStates[x.status]||'Observer')}</span></div><p>${esc(x.reason)}</p><div class="reading-reference">${typeof x.baseline==='number'?`Habituellement <b>${fmt(x.baseline)}</b> / match · ${fmt(x.sample)} matchs · ${esc(x.baseline_origin||'Packball')}`:'Repère avant-match indisponible'}</div>${kind==='goals'&&typeof x.metrics?.sot_per_goal==='number'?`<div class="reading-reference">Repère : ${fmt(x.metrics.sot_per_goal)} cadrés / but · aucune garantie</div>`:''}${x.status==='active'?'<small class="reading-action">Regarder le match et vérifier le marché</small>':''}</div>`;
+ return `<div class="reading ${esc(x.status)} ${animate?'reading-new':''}"><div class="reading-owner">${esc(deskNames[kind])} de ${esc(owner)}</div><div class="reading-top"><b>${fmt(number)} <small>${unit}</small></b><span>${esc(x.title||deskStates[x.status]||'Observer')}</span></div><p>${esc(x.reason)}</p><div class="reading-reference">${typeof x.baseline==='number'?`Moyenne de cette équipe : <b>${fmt(x.baseline)}</b> / match · ${fmt(x.sample)} matchs · ${esc(x.baseline_origin||'Packball')}`:'Repère avant-match indisponible'}</div>${kind==='goals'&&typeof x.metrics?.sot_per_goal==='number'?`<div class="reading-reference">Repère : ${fmt(x.metrics.sot_per_goal)} cadrés / but · aucune garantie</div>`:''}${x.status==='active'?'<small class="reading-action">Regarder le match et vérifier le marché</small>':''}</div>`;
 }
 function deskDetail(r){
  return ['h','a'].map(t=>`<section class="desk-detail-team"><h3>${esc(t==='h'?r.home:r.away)}</h3><div class="desk-detail-grid">${Object.keys(deskNames).map(k=>{
@@ -297,7 +298,7 @@ function renderDesk(matches){
  const kinds=market==='all'?Object.keys(deskNames):[market];
  const priority=r=>(r.advice||[]).some(d=>kinds.includes(d.market)&&deskEffective(r,d).status==='active');
  matches.sort((a,b)=>Number(priority(b))-Number(priority(a))||Date.parse(a.kickoff_ts)-Date.parse(b.kickoff_ts));
- $('#table-head').innerHTML='<tr><th>Équipe / rencontre</th>'+kinds.map(k=>`<th>${esc(deskNames[k])}</th>`).join('')+'<th></th></tr>';
+ $('#table-head').innerHTML='<tr><th>Équipe / rencontre</th>'+kinds.map(k=>`<th>${esc(deskNames[k])} par équipe</th>`).join('')+'<th></th></tr>';
  $('#match-rows').innerHTML=matches.flatMap(r=>['h','a'].map(t=>`<tr class="desk-row ${t==='h'?'match-start':''}"><td class="desk-team"><span class="desk-match">${esc(r.state==='LIVE'?fmt(r.minute)+'′':({HT:'Pause',FT:'Terminé',NS:'À venir'}[r.state]||'En attente'))} · ${r.score?esc(r.score.h)+'–'+esc(r.score.a):'—'}</span><strong>${esc(t==='h'?r.home:r.away)}</strong><small>${t==='h'?'Domicile':'Extérieur'} · contre ${esc(t==='h'?r.away:r.home)}</small><small>${esc(r.league||'')} · ${esc(time(r.kickoff_ts))}</small><div class="desk-context">${r.profile?.usable?'Stats ✓':'Stats —'} · ${r.analyst?.usable?'Contexte ✓':'Contexte —'}</div></td>${kinds.map(k=>`<td data-label="${esc(deskNames[k])}">${deskCell(r,(r.advice||[]).find(d=>d.team===t&&d.market===k),k)}</td>`).join('')}<td><button class="row-more" data-match="${esc(r.packball_id||r.fixture)}">Comprendre ↗</button></td></tr>`)).join('');
  $('#empty').hidden=matches.length>0;$('#board-description').textContent='Une ligne par équipe · moyenne historique ≠ événement dû · clique sur Comprendre pour les réserves.';
 }
