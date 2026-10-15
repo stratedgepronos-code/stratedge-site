@@ -190,7 +190,8 @@ let boardReceivedAt=Date.now();
 const seenHighlights=new Set();
 function deskEffective(r,d){
  if(age(r.received_at)>100)return {...d,status:r.received_at?'stale':'waiting',title:r.received_at?'Données anciennes':'En attente',reason:'Aucune lecture active sans relevé récent.'};
- if(age(data.engine?.at)>65)return {...d,status:'waiting',title:'Moteur en attente',reason:'Le dernier cycle du moteur est trop ancien.'};
+ if(age(data.engine?.at)>65||data.engine?.version!=='decision5.0')return {...d,status:'waiting',title:'Moteur en attente',reason:'Le dernier cycle du moteur est trop ancien.'};
+ if(r.state!=='LIVE')return {...d,status:'waiting',title:({HT:'Mi-temps',FT:'Terminé',NS:'À venir'}[r.state]||'En attente'),reason:'Aucune lecture active hors des périodes de jeu.'};
  return d||{status:'waiting',title:'En attente',reason:'Le moteur prépare cette lecture.'};
 }
 function deskCell(r,d,kind){
@@ -211,7 +212,7 @@ function renderDesk(matches){
  const priority=r=>(r.advice||[]).some(d=>kinds.includes(d.market)&&deskEffective(r,d).status==='active');
  matches.sort((a,b)=>Number(priority(b))-Number(priority(a))||Date.parse(a.kickoff_ts)-Date.parse(b.kickoff_ts));
  $('#table-head').innerHTML='<tr><th>Équipe / rencontre</th>'+kinds.map(k=>`<th>${esc(deskNames[k])}</th>`).join('')+'<th></th></tr>';
- $('#match-rows').innerHTML=matches.flatMap(r=>['h','a'].map(t=>`<tr class="desk-row ${t==='h'?'match-start':''}"><td class="desk-team"><span class="desk-match">${esc(r.minute==null?({HT:'Pause',FT:'Terminé',NS:'À venir'}[r.state]||'À venir'):fmt(r.minute)+'′')} · ${r.score?esc(r.score.h)+'–'+esc(r.score.a):'—'}</span><strong>${esc(t==='h'?r.home:r.away)}</strong><small>${t==='h'?'Domicile':'Extérieur'} · contre ${esc(t==='h'?r.away:r.home)}</small><small>${esc(r.league||'')} · ${esc(time(r.kickoff_ts))}</small><div class="desk-context">${r.profile?.usable?'Stats ✓':'Stats —'} · ${r.analyst?.usable?'Contexte ✓':'Contexte —'}</div></td>${kinds.map(k=>`<td data-label="${esc(deskNames[k])}">${deskCell(r,(r.advice||[]).find(d=>d.team===t&&d.market===k),k)}</td>`).join('')}<td><button class="row-more" data-match="${esc(r.packball_id||r.fixture)}">Comprendre ↗</button></td></tr>`)).join('');
+ $('#match-rows').innerHTML=matches.flatMap(r=>['h','a'].map(t=>`<tr class="desk-row ${t==='h'?'match-start':''}"><td class="desk-team"><span class="desk-match">${esc(r.state==='LIVE'?fmt(r.minute)+'′':({HT:'Pause',FT:'Terminé',NS:'À venir'}[r.state]||'En attente'))} · ${r.score?esc(r.score.h)+'–'+esc(r.score.a):'—'}</span><strong>${esc(t==='h'?r.home:r.away)}</strong><small>${t==='h'?'Domicile':'Extérieur'} · contre ${esc(t==='h'?r.away:r.home)}</small><small>${esc(r.league||'')} · ${esc(time(r.kickoff_ts))}</small><div class="desk-context">${r.profile?.usable?'Stats ✓':'Stats —'} · ${r.analyst?.usable?'Contexte ✓':'Contexte —'}</div></td>${kinds.map(k=>`<td data-label="${esc(deskNames[k])}">${deskCell(r,(r.advice||[]).find(d=>d.team===t&&d.market===k),k)}</td>`).join('')}<td><button class="row-more" data-match="${esc(r.packball_id||r.fixture)}">Comprendre ↗</button></td></tr>`)).join('');
  $('#empty').hidden=matches.length>0;$('#board-description').textContent='Une ligne par équipe · moyenne historique ≠ événement dû · clique sur Comprendre pour les réserves.';
 }
 function observationHTML(o){const x=o.data||{},d=x.reading||{};return `<article class="observation"><small>${esc(time(o.created_at))} · ${esc(x.minute)}′</small><b>${esc(o.team==='h'?x.home:x.away)} · ${esc(deskNames[o.market])}</b><p>${esc(d.reason)}</p><small>Observation conservée · aucun pari envoyé</small></article>`;}
