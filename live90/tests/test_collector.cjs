@@ -25,6 +25,8 @@ function unit(){
  for(const text of ['','-','?','0-']){c.special=cell(text);assert.equal(read('pair(special)'),null);}
  c.title=homeTitle;let q=read('quoteMeta(title,"inp-41")');assert.equal(q.team,'h');assert.equal(q.market,'team_goals');assert.equal(q.period,'FT');assert.equal(q.side,'over');
  c.title=awayTitle;q=read('quoteMeta(title,"inp-42")');assert.equal(q.team,'a');assert.equal(q.period,'FT');
+ for(const [title,key] of [['Corners Temps plein','corners'],['Corners 10 dernières minutes','corners10'],['Corners 5 dernières minutes','corners5'],['Tirs bloqués Temps plein','blocked_shots'],["Photos à l’intérieur de la boîte",'shots_inside'],['Substitutions','substitutions']]){c.title=title;assert.equal(read('field(title)').key,key);}
+ for(const title of ['Corners attendus 10 dernières minutes','1 corner toutes les x minutes']){c.title=title;assert.equal(read('field(title)'),null);}
  console.log('Collecteur : correspondance des 14 colonnes, périodes, paires, valeurs absentes et colonnes désalignées OK.');
 }
 async function browserTest(browser){
@@ -38,7 +40,7 @@ async function browserTest(browser){
  await page.setContent(`<section class="fixtures"><div class="header"><div class="col inp-41" title="${homeTitle}"></div><div class="col inp-42"><span title="${awayTitle}"></span></div>${header}</div><div class="row fix-999001"><div class="col time"><time datetime="1790544600"></time></div><div class="col blin">61</div><span class="team-home">Fortaleza</span><span class="team-away">Athletic Club</span><span class="title-league" title="Serie B"></span><span class="result-f">2-2</span>${quotes}${stats}</div></section>`);
  await page.addScriptTag({content:'const CLIENT_ID="synthetic-client";'+helpers});
  const read=()=>page.evaluate(()=>collect());
- let x=await read(),r=x.rows[0];assert.equal(x.collector_version,'4.0.2');assert.deepEqual(r.stats,expectedStats);assert.deepEqual(r.ind5,expected5);assert.deepEqual(r.ind10,expected10);assert.deepEqual(r.quality_errors,[]);assert.equal(r.minute,61);
+ let x=await read(),r=x.rows[0];assert.equal(x.collector_version,'5.0.0');assert.deepEqual(r.stats,expectedStats);assert.deepEqual(r.ind5,expected5);assert.deepEqual(r.ind10,expected10);assert.deepEqual(r.quality_errors,[]);assert.equal(r.minute,61);
  assert.deepEqual(r.quotes.map(q=>[q.team,q.market,q.period,q.line,q.odds]),[['h','team_goals','FT',2.5,1.9],['a','team_goals','FT',2.5,3.75]]);
  assert.equal(x.column_map.stats[8].key,'shots10');assert.equal(x.column_map.odds[1].team,'a');
  await page.locator('.row .col.live').nth(1).evaluate(el=>el.remove());
@@ -49,3 +51,4 @@ async function browserTest(browser){
 }
 if(require.main===module)unit();
 module.exports={browserTest};
+

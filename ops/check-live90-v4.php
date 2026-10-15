@@ -23,10 +23,11 @@ for($attempt=0;$attempt<12;$attempt++){
  if(!is_resource($proc))throw new RuntimeException('Diagnostic Python indisponible');
  $text=stream_get_contents($pipes[1]);fclose($pipes[1]);$status=proc_close($proc);$d=json_decode($text,true);
  $at=is_array($d)?strtotime((string)($d['engine']['at']??'')):false;
- if($status===0&&$at!==false&&abs(time()-$at)<=65&&($d['engine']['version']??'')==='live4.0'){
+ if($status===0&&$at!==false&&abs(time()-$at)<=65&&($d['engine']['version']??'')==='decision5.0'&&($d['engine']['telegram_active']??true)===false){
   echo 'LIVE90_V4_HEALTH '.json_encode($d,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES).PHP_EOL;
   exit(0);
  }
  usleep(1000000);
 }
-fwrite(STDERR,'LIVE90_V4_HEALTH_ERROR: aucun cycle moteur V4 récent'.PHP_EOL);exit(1);
+fwrite(STDERR,'LIVE90_V4_HEALTH_ERROR: aucun cycle décision V5 récent ou Telegram encore actif'.PHP_EOL);exit(1);
+

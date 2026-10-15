@@ -42,7 +42,7 @@ def norm(x): return ' '.join(''.join(c for c in unicodedata.normalize('NFKD', st
 def key(m): return hashlib.sha256(enc([norm(m['home']), norm(m['away']), iso(date(m['kickoff']))]).encode()).hexdigest()[:32]
 def connect(path):
     c = sqlite3.connect(path, timeout=15); c.row_factory = sqlite3.Row
-    c.execute('PRAGMA busy_timeout=15000'); c.execute('PRAGMA journal_mode=WAL'); c.executescript(SCHEMA)
+    c.execute('PRAGMA busy_timeout=15000'); c.execute('PRAGMA journal_mode=WAL'); c.executescript(SCHEMA); c.executescript(DESK_SCHEMA)
     return c
 
 def setting(c, name, default):
@@ -288,6 +288,14 @@ def validate_context(m, generated):
     for side,t in teams.items():
         label=str(m.get('home','?'))+' — '+str(m.get('away','?'))+' · '+('domicile' if side=='h' else 'extérieur')
         if not isinstance(t,dict): raise ValueError(label+' : contexte équipe invalide')
+        ref=t.get('corner_reference')
+        if ref is not None:
+            if not isinstance(ref,dict) or type(ref.get('matches')) is not int or not 1<=ref['matches']<=10000 or not text_ok(ref.get('sample_label'),300): raise ValueError(label+' : échantillon corners invalide')
+            for field in ('corners_for_ft','corners_against_ft'):
+                v=ref.get(field)
+                if v is not None and (not num(v) or not 0<=v<=50): raise ValueError(label+' : moyenne corners invalide')
+            refs=ref.get('source_ids')
+            if not isinstance(refs,list) or not refs or any(v not in ids for v in refs): raise ValueError(label+' : source corners requise')
         note=t.get('note')
         if not text_ok(note,5000):
             if isinstance(note,str) and len(note)>5000: raise ValueError(label+' : note trop longue ('+str(len(note))+' caractères ; maximum 5000)')
@@ -873,10 +881,14 @@ def board(c,now):
         for d in c.execute('SELECT * FROM v4_decisions WHERE match_id=?',(s['match_id'],)):
             detail=dec(d['data'],{});detail['updated_at']=d['updated_at'];detail['sample_id']=d['sample_id'];r['decisions'].append(detail)
         # Do not leak raw HTML or entire historical payloads into the UI.
+        r['advice']=desk_advice(c,s,p,ctx,now)
         r.pop('raw_cells',None);records.append(r)
     for f in c.execute('SELECT * FROM v4_fixtures ORDER BY kickoff'):
         if f['fixture'] in seen or active is None or f['fixture'] not in active:continue
-        p,ctx=inputs(c,f,now);records.append({'fixture':f['fixture'],'packball_id':f['match_id'],'home':f['home'],'away':f['away'],'league':f['league'],'kickoff_ts':f['kickoff'],'state':'NS','profile':p,'analyst':ctx,'decisions':[]})
+        p,ctx=inputs(c,f,now)
+        r={'fixture':f['fixture'],'packball_id':f['match_id'],'home':f['home'],'away':f['away'],'league':f['league'],'kickoff_ts':f['kickoff'],'state':'NS','profile':p,'analyst':ctx,'decisions':[]}
+        r['advice']=[desk_reading(r,p,ctx,t,m,now,[]) for t in ('h','a') for m in DESK_MARKETS]
+        records.append(r)
     cycle=c.execute('SELECT received_at,payload FROM cycles ORDER BY rowid DESC LIMIT 1').fetchone()
     feed=dec(cycle['payload'],{}) if cycle else {}
     totals=dict(c.execute("SELECT COUNT(*) total, SUM(outcome='won') won, SUM(outcome='lost') lost, SUM(outcome='void') void, SUM(outcome='pending') pending, COALESCE(SUM(CASE WHEN odds>1 THEN CASE outcome WHEN 'won' THEN odds-1 WHEN 'lost' THEN -1 ELSE 0 END ELSE 0 END),0) units, SUM(odds>1) priced_total, SUM(odds>1 AND outcome='won') priced_won, SUM(odds>1 AND outcome='lost') priced_lost, SUM(odds IS NULL) statistical_total, SUM(odds IS NULL AND outcome='won') statistical_won, SUM(odds IS NULL AND outcome='lost') statistical_lost FROM v4_signals").fetchone())
@@ -887,7 +899,7 @@ def board(c,now):
             z=dict(s);z['context']=dec(z['context'],{});legacy.append(z)
     except sqlite3.OperationalError:pass
     c.commit()
-    return {'ok':True,'version':VERSION,'server_time':iso(now),'health':feed_health(c,now),'matches':records,'signals':history(c),'history_total':totals['total'],'totals':totals,'legacy':legacy,'feed':{'received_at':cycle['received_at'] if cycle else None,'rows':feed.get('page_rows'), 'collector_version':feed.get('collector_version'),'headers':feed.get('stat_headers',[]),'odds_meta':feed.get('odds_meta',{})},'engine':dec((c.execute("SELECT value FROM v4_runtime WHERE key='engine'").fetchone() or [None])[0]),'settings':options(c),'pulsescore':pulse_status(c,now),'telegram':{'configured':bool(os.environ.get('TELEGRAM_BOT_TOKEN') and os.environ.get('TELEGRAM_CHAT_ID'))}}
+    return {'ok':True,'version':'decision5.0','mode':'decision','observations':desk_history(c),'server_time':iso(now),'health':feed_health(c,now),'matches':records,'signals':history(c),'history_total':totals['total'],'totals':totals,'legacy':legacy,'feed':{'received_at':cycle['received_at'] if cycle else None,'rows':feed.get('page_rows'), 'collector_version':feed.get('collector_version'),'headers':feed.get('stat_headers',[]),'odds_meta':feed.get('odds_meta',{})},'engine':dec((c.execute("SELECT value FROM v4_runtime WHERE key='engine'").fetchone() or [None])[0]),'settings':options(c),'pulsescore':pulse_status(c,now),'telegram':{'configured':bool(os.environ.get('TELEGRAM_BOT_TOKEN') and os.environ.get('TELEGRAM_CHAT_ID'))}}
 
 def export_analysis(c,now):
     matches=[];active=active_fixtures(c)
@@ -904,6 +916,9 @@ def export_analysis(c,now):
 def dispatch(c,x,now):
     action=x.get('action','board')
     if action=='board': return board(c,now)
+    if action=='export_observations': return {'schema':'stratedge.observations.v5','exported_at':iso(now),'observations':desk_history(c,100000)}
+    if action=='telegram_test' or action=='pulsescore_auto' and x.get('enabled') is not False or action=='settings' and (x.get('settings') or {}).get('telegram_enabled') is True:
+        raise ValueError('Mode décision : envois Telegram et cotes automatiques désactivés.')
     if action in ('analyst','packball'): return import_bundle(c,action,x.get('bundle'),now)
     if action=='export_analysis': return export_analysis(c,now)
     if action=='history':
@@ -950,11 +965,166 @@ def dispatch(c,x,now):
         return {'ok':state=='sent','state':state,'error':error,'message_id':mid}
     raise ValueError('Action inconnue')
 
+# V5 is an observation desk, never an order/alert generator. Legacy run() is
+# retained only for historical replay tests; engine.py uses run_dashboard().
+DESK_MARKETS = ('goals', 'corners', 'cards')
+DESK_SCHEMA = '''
+CREATE TABLE IF NOT EXISTS v5_readings(match_id TEXT,team TEXT,market TEXT,sample_id INTEGER,updated_at TEXT,data TEXT,PRIMARY KEY(match_id,team,market));
+CREATE TABLE IF NOT EXISTS v5_observations(id INTEGER PRIMARY KEY,match_id TEXT,team TEXT,market TEXT,sample_id INTEGER,created_at TEXT,data TEXT);
+CREATE UNIQUE INDEX IF NOT EXISTS v5_observation_sample ON v5_observations(match_id,team,market,sample_id);
+'''
+def desk_number(v):
+    return format(v,'.2f').rstrip('0').rstrip('.').replace('.',',') if num(v) else '—'
+
+def desk_reading(r,p,ctx,team,market,now,hist):
+    other='a' if team=='h' else 'h'
+    prematch=(p or {}).get('prematch') or {}
+    pb=((p or {}).get('packball') or {}).get('teams') or {}
+    own=pb.get(team) or {}; opp=pb.get(other) or {}
+    usable=bool(p and p.get('usable'))
+    baseline={'goals':prematch.get('gf_'+team),'corners':own.get('corners_for_ft'),'cards':own.get('yellow_for_ft')}[market] if usable else None
+    against={'goals':prematch.get('ga_'+other),'corners':opp.get('corners_against_ft'),'cards':None}[market] if usable else None
+    n=prematch.get('n_'+team) if usable else None
+    baseline_origin='Packball'
+    valid_ctx=ctx if ctx and ctx.get('usable') else None
+    if market=='corners' and valid_ctx:
+        refs=(valid_ctx.get('teams') or {})
+        ref=(refs.get(team) or {}).get('corner_reference') or {}
+        rival=(refs.get(other) or {}).get('corner_reference') or {}
+        if baseline is None and num(ref.get('corners_for_ft')):
+            baseline=ref['corners_for_ft'];n=ref.get('matches');baseline_origin='Source analyste'
+        if against is None:against=rival.get('corners_against_ft')
+    counter_key={'goals':'goals','corners':'corners','cards':'yellow_cards'}[market]
+    observed=(r.get('score') or {}).get(team) if market=='goals' else stat(r,counter_key,team)
+    d={'team':team,'market':market,'status':'neutral','title':'Observer','reason':'Pas de dynamique récente concordante.',
+       'observed':observed,'baseline':baseline if num(baseline) and baseline>=0 else None,'opponent_baseline':against if num(against) else None,
+       'sample':n,'baseline_origin':baseline_origin,'facts':[],'limits':[],'metrics':{},'window':'10 dernières minutes','period':'HT' if num(r.get('minute')) and r['minute']<45 else 'FT'}
+    def stop(status,title,reason):
+        d.update(status=status,title=title,reason=reason);return d
+    if not usable and baseline is None:d['limits'].append('Repère avant-match absent ou importé après le coup d’envoi.')
+    elif baseline is None:d['limits'].append('Moyenne historique '+{'goals':'de buts','corners':'de corners','cards':'de jaunes'}[market]+' absente de l’export.')
+    if num(n):d['limits'].append('Échantillon : '+desk_number(n)+' matchs ; moyenne descriptive, pas une prévision.')
+    valid_ctx=ctx if ctx and ctx.get('usable') else None
+    if valid_ctx:
+        relevant={'goals':('attack_absences','defence_absences','fatigue','rotation','weather'),'corners':('attack_absences','fatigue','rotation','weather'),'cards':('discipline','fatigue')}
+        for flag in ((valid_ctx.get('teams') or {}).get(team) or {}).get('flags',[]):
+            if flag.get('kind') in relevant[market] and flag.get('severity') in ('medium','high'):
+                d['limits'].append(flag.get('detail','Contexte à vérifier'))
+    else:d['limits'].append('Contexte avant-match non disponible ; lecture des statistiques uniquement.')
+    if market=='cards':
+        ref=(valid_ctx or {}).get('referee') or {};rs=ref.get('stats') or {}
+        if num(rs.get('yellow_per_match')):
+            d['facts'].append('Arbitre '+ref.get('name','')+' : '+desk_number(rs['yellow_per_match'])+' jaunes / match ('+desk_number(rs.get('matches'))+' matchs).')
+            d['limits'].append('Moyenne de l’arbitre sur les deux équipes ; aucune échéance de carton déduite.')
+        else:d['limits'].append('Statistiques d’arbitre non documentées.')
+    at=date(r.get('collected_at'));received=date(r.get('received_at'))
+    if not received:return stop('waiting','En attente','Collecte Packball attendue.')
+    if not at or not 0<=(now-at).total_seconds()<=100 or not 0<=(now-received).total_seconds()<=100:return stop('stale','Données anciennes','Dernier relevé trop ancien : aucune lecture active.')
+    if r.get('state')!='LIVE':return stop('waiting',{'HT':'Mi-temps','FT':'Terminé'}.get(r.get('state'),'À venir'),'La lecture reprendra avec un relevé en jeu.')
+    minute=r.get('minute');score=r.get('score')
+    if not num(minute) or not 0<minute<=90 or r.get('minute_extra',0):return stop('waiting','À vérifier','Minute inconnue ou temps additionnel : pas de mise en évidence automatique.')
+    if not isinstance(score,dict) or any(type(score.get(t)) is not int or not 0<=score[t]<=30 for t in ('h','a')):return stop('missing','Score manquant','Attendre un score fiable.')
+    if r.get('quality_errors'):return stop('missing','Lecture ambiguë','Les colonnes Packball doivent être resynchronisées.')
+    if dismissal(r):return stop('caution','Expulsion','Les repères à 11 contre 11 ne sont plus comparables.')
+    if any(stat(r,'red_cards',t) is None for t in ('h','a')):return stop('missing','Expulsions inconnues','Le compteur des rouges manque.')
+    if not num(observed) or observed<0 or observed!=int(observed):return stop('missing','Compteur absent','Afficher '+{'goals':'Buts','corners':'Corners','cards':'Cartons jaunes'}[market]+' dans Packball et mettre le collecteur à jour.')
+    keys={'goals':['shots','sot'],'corners':['shots','corners','blocked_shots'],'cards':['fouls']}[market]
+    m=d['metrics']
+    for k in keys:
+        m[k]=stat(r,k,team)
+        for window in (5,10):m[k+str(window)]=recent(r,hist,k,team,window)
+    if market=='goals':
+        m['sot_per_goal']=prematch.get('sot_'+team)/baseline if usable and num(prematch.get('sot_'+team)) and num(baseline) and baseline>0 else None
+        if num(m['sot_per_goal']):d['facts'].append('Historique : '+desk_number(m['sot_per_goal'])+' cadrés par but ; aujourd’hui '+desk_number(m['sot'])+' cadrés / '+desk_number(observed)+' but(s).')
+        if m['sot'] is not None and m['shots'] is not None and m['sot']>m['shots']:return stop('missing','Tirs incohérents','Les cadrés dépassent le total des tirs.')
+        if any(m[k] is None for k in ('shots10','sot10','shots5')):return stop('missing','Fenêtre incomplète','Il manque les tirs/cadrés récents, ou un but vient de réinitialiser la comparaison.')
+        d['reason']=desk_number(m['shots10'])+' tirs dont '+desk_number(m['sot10'])+' cadrés en 10 min · '+desk_number(m['shots5'])+' tirs en 5 min.'
+        candidate=m['shots10']>=3 and m['sot10']>=1 and m['shots5']>=1
+        d['limits'].insert(0,'La qualité des occasions n’est pas mesurée par le seul nombre de cadrés.')
+        d['criteria']='Au moins 3 tirs et 1 cadré sur 10 min, avec au moins 1 tir sur 5 min. Seuils descriptifs expérimentaux.'
+    elif market=='corners':
+        if any(m[k] is None for k in ('shots10','shots5','corners10','corners5')):return stop('missing','Corners récents manquants','Attendre les fenêtres 5/10 min ; le collecteur 5.0.0 lit les corners.')
+        d['reason']=desk_number(m['shots10'])+' tirs et '+desk_number(m['corners10'])+' corners en 10 min · '+desk_number(m['shots5'])+' tirs en 5 min.'
+        blocked=m['blocked_shots10']
+        if blocked is not None:d['facts'].append(desk_number(blocked)+' tirs bloqués sur 10 min.')
+        candidate=m['shots10']>=3 and m['shots5']>=1 and (m['corners10']>=2 or blocked is not None and blocked>=2)
+        d['limits'].insert(0,'Des tirs ne créent pas une dette de corners ; sorties de balle et trajectoires restent inconnues.')
+        d['criteria']='Au moins 3 tirs sur 10 min et 1 sur 5 min, plus 2 corners ou 2 tirs bloqués sur 10 min. Aucun corner n’est dû.'
+    else:
+        m['possession']=stat(r,'possession',team);m['opponent_shots10']=recent(r,hist,'shots',other,10)
+        if any(m[k] is None for k in ('fouls10','fouls5')):return stop('missing','Fautes récentes manquantes','Garder la collecte ouverte : les fautes sur 5/10 min sont calculées à partir des relevés.')
+        d['reason']=desk_number(m['fouls10'])+' fautes en 10 min dont '+desk_number(m['fouls5'])+' en 5 min · '+desk_number(observed)+' jaune(s) déjà reçus.'
+        support=(m['possession'] is not None and m['possession']<=45) or (m['opponent_shots10'] is not None and m['opponent_shots10']>=2)
+        candidate=m['fouls10']>=3 and m['fouls5']>=1 and support
+        if m['possession'] is not None:d['facts'].append('Possession : '+desk_number(m['possession'])+' %.')
+        d['limits'].insert(0,'La gravité des fautes et les avertissements verbaux ne sont pas connus. Un jaune déjà reçu ne ferme pas l’analyse.')
+        d['criteria']='Au moins 3 fautes sur 10 min et 1 sur 5 min, avec possession ≤ 45 % ou au moins 2 tirs adverses sur 10 min. Arbitre : contexte seulement.'
+    if candidate:d.update(status='candidate',title='Dynamique à confirmer')
+    return d
+
+def desk_advice(c,s,p,ctx,now):
+    r=sample_data(s)
+    hist=c.execute('SELECT * FROM samples WHERE match_id=? AND id<=? ORDER BY id DESC LIMIT 100',(s['match_id'],s['id'])).fetchall()
+    previous=next((h for h in hist if h['id']<s['id']),None)
+    out=[]
+    for team in ('h','a'):
+        for market in DESK_MARKETS:
+            try:d=desk_reading(r,p,ctx,team,market,now,hist)
+            except (TypeError,AttributeError,KeyError,ValueError):
+                d={'team':team,'market':market,'status':'missing','title':'Données incohérentes','reason':'Relevé non interprétable ; vérifier la collecte.','facts':[],'limits':[]}
+            if d['status']=='candidate':
+                d.update(status='confirming',title='À confirmer')
+                if previous:
+                    old=sample_data(previous);at=date(r.get('collected_at'));before=date(old.get('collected_at'))
+                    try:old_d=desk_reading(old,p,ctx,team,market,now,hist[1:])
+                    except (TypeError,AttributeError,KeyError,ValueError):old_d={'status':'missing'}
+                    # Distinct observations; score/counter changes and half transitions reset confirmation.
+                    if at and before and 20<=(at-before).total_seconds()<=100 and old_d['status']=='candidate' and old_d['period']==d['period'] and old_d['observed']==d['observed'] and old.get('score')==r.get('score') and num(old.get('minute')) and 0<=r['minute']-old['minute']<=2:
+                        d.update(status='active',title='À regarder')
+            d.update(sample_id=s['id'],updated_at=iso(now))
+            out.append(d)
+    return out
+
+def desk_history(c,limit=100):
+    return [dict(row,data=dec(row['data'],{})) for row in c.execute('SELECT * FROM v5_observations ORDER BY id DESC LIMIT ?',(limit,))]
+
+def run_dashboard(path,now=None):
+    now=now or now_utc();c=connect(path)
+    try:
+        # Sticky migration: keys remain stored, but no sender or odds API is called.
+        for name in ('telegram_enabled','pulsescore_auto'):
+            c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(name,'false'))
+        runtime(c,'decision_mode',True)
+        c.execute("UPDATE v4_signals SET delivery='disabled',delivery_error='Module décision : envois automatiques arrêtés' WHERE delivery='queued'")
+        c.execute("UPDATE v4_result_notifications SET delivery='disabled',delivery_error='Module décision : envois automatiques arrêtés' WHERE delivery='queued'")
+        active=active_fixtures(c);cycle_ids=current_cycle_ids(c)
+        for s in latest(c):
+            r=sample_data(s);f=bind(c,r)
+            if active is not None and (not f or f['fixture'] not in active):continue
+            if active is None and cycle_ids is not None and s['match_id'] not in cycle_ids:continue
+            ko=date(r.get('kickoff_ts'))
+            if active is None and cycle_ids is None and ko and ko<now-dt.timedelta(days=1):continue
+            p,ctx=inputs(c,f,now)
+            for d in desk_advice(c,s,p,ctx,now):
+                previous=c.execute('SELECT data FROM v5_readings WHERE match_id=? AND team=? AND market=?',(s['match_id'],d['team'],d['market'])).fetchone()
+                old=dec(previous['data'],{}) if previous else {}
+                if d['status']=='active' and (old.get('status')!='active' or old.get('observed')!=d['observed']):
+                    saved={'home':r.get('home'),'away':r.get('away'),'minute':r.get('minute'),'score':r.get('score'),'reading':d,'profile':p,'context':ctx,'version':'decision5.0','kind':'observation_not_bet'}
+                    c.execute('INSERT OR IGNORE INTO v5_observations(match_id,team,market,sample_id,created_at,data) VALUES(?,?,?,?,?,?)',(s['match_id'],d['team'],d['market'],s['id'],iso(now),enc(saved)))
+                c.execute('INSERT OR REPLACE INTO v5_readings VALUES(?,?,?,?,?,?)',(s['match_id'],d['team'],d['market'],s['id'],iso(now),enc(d)))
+        auto_results(c,now) # Legacy event history can still be updated, silently.
+        runtime(c,'engine',{'at':iso(now),'version':'decision5.0','telegram_active':False,'mode':'decision','external_calls':False})
+        record_health(c,feed_health(c,now),now);c.commit()
+    finally:c.close()
+
+
 if __name__=='__main__':
     ap=argparse.ArgumentParser();ap.add_argument('db');ap.add_argument('--init',action='store_true');ap.add_argument('--diagnostic',action='store_true');args=ap.parse_args()
     try:
         c=connect(args.db)
-        if args.init: result={'ok':True,'version':VERSION}
+        if args.init:
+            for name in ('telegram_enabled','pulsescore_auto'):c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(name,'false'))
+            runtime(c,'decision_mode',True);c.commit();result={'ok':True,'version':'decision5.0'}
         elif args.diagnostic:
             b=board(c,now_utc());result={k:b[k] for k in ('version','feed','engine','telegram','totals')};result['feed']=dict(result['feed']);result['feed'].pop('headers',None);result['feed'].pop('odds_meta',None);result['list']={'matches':len(b['matches']),'live':sum(r.get('state')=='LIVE' for r in b['matches']),'halftime':sum(r.get('state')=='HT' for r in b['matches'])};result['collection_columns']=b['feed'].get('headers',[]);result['collection_odds']=b['feed'].get('odds_meta',{});result['health']=b['health'];result['recent_rows']=[{k:r.get(k) for k in ('packball_id','home','away','state','status_raw','minute','received_at','stats','ind5','ind10','quotes','quality_errors')} for r in [sample_data(x) for x in latest(c)] if r.get('state') in ('LIVE','HT')][:6]
             result['match_audits']=audit_matches(c,now_utc())
@@ -963,3 +1133,4 @@ if __name__=='__main__':
         print(enc(result));c.close()
     except (ValueError,TypeError,KeyError) as e: print(enc({'error':str(e)}));sys.exit(2)
     except Exception as e: print(enc({'error':'Service Live V4 indisponible','type':type(e).__name__}));sys.exit(1)
+

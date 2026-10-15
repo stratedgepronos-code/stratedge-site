@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SEUIL90 · Packball Live Console
 // @namespace    https://stratedgepronos.fr/live90
-// @version      4.0.2
+// @version      5.0.0
 // @description  Collecte horodatée, fenêtres séparées, aucun pari automatique
 // @match        https://packball.com/*
 // @match        https://www.packball.com/*
@@ -46,6 +46,10 @@ function field(title){
  else if(/jaunes.?rouges|second.*jaune/.test(t))key='second_yellow';
  else if(/cartons rouges/.test(t))key='red_cards';
  else if(/cartons jaunes/.test(t))key='yellow_cards';
+ else if(/^corners(?:\s|$)/.test(t)&&!/(attendus|minute|moyen)/.test(t.replace(/(?:10|5) dernieres minutes?/,'')))key='corners';
+ else if(/tirs bloques/.test(t))key='blocked_shots';
+ else if(/(?:tirs|photos) a l.interieur de la boite/.test(t))key='shots_inside';
+ else if(/substitutions/.test(t))key='substitutions';
  else if(/fautes/.test(t))key='fouls';
  else if(/total des tirs/.test(t))key='shots';
  else if(/tirs cadres/.test(t))key='sot';
@@ -112,7 +116,7 @@ function collect(){
  });rows.push(r);
  });
  const column_map={stats:heads.map((title,i)=>({column:i+1,title,...field(title)})),odds:Object.entries(meta).map(([column,title])=>({column,title,...quoteMeta(title,column)}))};
- return {schema:2,collector_version:'4.0.2',cycle_id:crypto.randomUUID(),collected_at:new Date().toISOString(),source:'packball',client_id:CLIENT_ID,page_visibility:document.visibilityState,page_rows:rows.length,odds_meta:meta,stat_headers:heads,column_map,rows};
+ return {schema:2,collector_version:'5.0.0',cycle_id:crypto.randomUUID(),collected_at:new Date().toISOString(),source:'packball',client_id:CLIENT_ID,page_visibility:document.visibilityState,page_rows:rows.length,odds_meta:meta,stat_headers:heads,column_map,rows};
 }
 const badge=document.createElement('div');Object.assign(badge.style,{position:'fixed',bottom:'14px',right:'14px',zIndex:'2147483647',background:'#0b1221',color:'#8eeadd',border:'1px solid #327d78',padding:'10px 16px',borderRadius:'12px',font:'12px system-ui',boxShadow:'0 6px 30px #0005'});badge.textContent='S90 · Initialisation';function mountBadge(){if(document.body&&!badge.isConnected)document.body.append(badge)}mountBadge();
 const watcher=new MutationObserver(mountBadge);watcher.observe(document.documentElement,{childList:true,subtree:true});
@@ -128,3 +132,4 @@ window.addEventListener('pageshow',()=>{mountBadge();cycle()});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)cycle()});
 cycle();setInterval(cycle,30000);
 })();
+

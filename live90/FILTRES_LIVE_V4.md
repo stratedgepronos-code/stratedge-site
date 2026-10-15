@@ -1,78 +1,33 @@
-# StratEdge Live V4 — colonnes du tableau Packball
+# StratEdge Décision V5 — les 19 cases live
 
-L'import avant-match reconnaît les nouveaux groupes GPT / GPT - 2 de 31 et 37 choix (40 et 46 colonnes CSV), vérifiés sur les exports du 28/09/2026, ainsi que les anciens groupes A/B (49/39 colonnes compactes ou 72/47 après expansion). Le dictionnaire exact figure dans `PROMPT_ANALYSTE_V4.md`. La colonne 32 du groupe GPT peut être corrigée en paire Domicile-Extérieur ; si elle reste Global, elle est conservée sans attribution aux équipes et cette limite est signalée. Le dossier GPT utilise **Importer l’analyste**, schéma `stratedge.context.v4`.
+Dans **Statistiques en direct**, créer/garder un seul groupe. Ce sont des colonnes à afficher, pas des critères pour éliminer des matchs. Maximum autorisé : 40 ; sélection proposée : **19**.
 
-Pour le tableau **Statistiques en direct**, les cases ci-dessous suffisent largement à rester sous 40 filtres. Ce sont des colonnes à afficher, pas des conditions éliminatoires sur les matchs. Conserve tous les matchs souhaités et vérifie la couverture du collecteur.
+| Menu | Cases à cocher | Nombre |
+|---|---|---:|
+| Statistiques Temps plein | Buts ; Total des tirs ; Tirs cadrés ; Possession ; Cartons jaunes ; Cartons rouges ; Cartons jaunes-rouges ; Fautes ; Corners ; Tirs bloqués ; Photos à l’intérieur de la boîte ; Substitutions | 12 |
+| Statistiques 10 dernières minutes | Total des tirs ; Tirs cadrés ; Corners ; Buts | 4 |
+| Statistiques 5 dernières minutes | Total des tirs ; Tirs cadrés ; Corners | 3 |
 
-| Menu | Sous-menu / case | Utilisation |
-|---|---|---|
-| Statistiques Temps plein | Buts | Score et ligne de buts correcte |
-| Statistiques Temps plein | Total des tirs | Rythme comparé à l’avant-match |
-| Statistiques Temps plein | Tirs cadrés | Production offensive réelle |
-| Statistiques Temps plein | Possession | Soutien de la lecture de pression |
-| Statistiques Temps plein | Fautes | Cumul et variations sur 10 minutes |
-| Statistiques Temps plein | Cartons jaunes | Calculer la ligne suivante : total actuel +0,5 |
-| Statistiques Temps plein | Cartons rouges | Toutes expulsions (y compris deuxième jaune selon ta confirmation) |
-| Statistiques Temps plein | Cartons jaunes-rouges | Facultatif, information complémentaire |
-| Statistiques 10 dernières minutes | Total des tirs | Activité récente de chaque équipe |
-| Statistiques 10 dernières minutes | Tirs cadrés | Cadrés récents de chaque équipe |
-| Statistiques 5 dernières minutes | Total des tirs | Dynamique courte |
-| Statistiques 5 dernières minutes | Tirs cadrés | Confirmation de la dynamique courte |
-| Cotes en direct (bet365) | Buts marqués par l’équipe à domicile → Ligne suivante Plus | But domicile avant la fin du match |
-| Cotes en direct (bet365) | Buts marqués par les visiteurs → Ligne suivante Plus | But extérieur avant la fin du match |
+« Photos à l’intérieur de la boîte » est le libellé traduit de tirs dans la surface. Tirs dans la surface et substitutions sont conservés pour la lecture détaillée ; ils n’ajoutent pas de poids prédictif inventé. Aucun indicateur ExG propriétaire n’est interprété comme xG de tirs observés.
 
-Ces 14 cases sont identifiées dans ta liste. Les cotes **par équipe en première mi-temps** et **cartons par équipe à la ligne suivante** ne sont PAS présentes dans la liste de menus que tu as fournie. Il faut vérifier leur disponibilité réelle sur Packball. Si disponibles, afficher les colonnes dont le libellé explicite précise équipe, période et type de marché.
+Les cotes ne sont pas nécessaires pour cette lecture. Tu peux conserver des colonnes de cotes si tu le souhaites, tant que tu restes sous 40. Aucun pari ni message Telegram automatique. Les buts, corners et jaunes déjà obtenus ne ferment pas l’observation des suivants.
 
-Le collecteur V4 sait reconnaître les libellés français explicites des buts par équipe HT/FT et des cartons par équipe FT. Il ne transforme pas :
-- « Total de buts 1ère mi-temps » en buts d’une équipe ;
-- « Qui marquera le prochain but » en but avant la pause ;
-- « Total de cartons » en cartons d’une équipe ;
-- des points de sanctions ou cartons jaunes uniquement en total de cartons.
+## Collecteur 5.0.0
 
-Les **cartons** déclenchent désormais une **alerte statistique sans cote** sur Telegram, après confirmation de la dynamique sur deux relevés. Le compteur de jaunes Packball suit ensuite l’événement ; aucun rendement financier n’est calculé. Aucune cote de cartons par équipe n’est requise.
+Sur StratEdge → Réglages → Copier le code / Télécharger le fichier. Dans Tampermonkey, **remplacer le code du script existant** `SEUIL90 · Packball Live Console`, enregistrer, recharger Packball. Garder un seul script et un seul onglet collecteur actifs. Le nom et le namespace restent identiques pour conserver le token.
 
-Depuis le 29/09/2026, les **buts HT et FT** déclenchent également des **alertes statistiques sans cote**. Les cotes reçues sont facultatives et affichées à titre informatif ; elles ne bloquent ni ne déclenchent une alerte. Vérifie toi-même la période, la ligne et le prix chez ton bookmaker. Aucun rendement financier n’est calculé pour ces nouvelles alertes. Conserve les colonnes actuelles pour ne pas modifier la disposition de collecte.
+Le collecteur lit les libellés des colonnes, pas une position fixe. La première valeur de chaque paire appartient au domicile. Il reconnaît désormais les corners cumulés et 5/10 minutes, les tirs bloqués, les tirs dans la surface et les substitutions. Les cotes et les indicateurs « corners attendus » / « un corner toutes les x minutes » ne sont pas confondus avec les corners observés.
 
-Les fautes sur 10 minutes sont calculées depuis les compteurs cumulés quand Packball ne propose pas cette fenêtre. Il faut alors environ 10 minutes de collecte continue pour obtenir le premier repère. Aucune valeur absente n’est transformée en zéro. Les ExG Packball « pour les prochaines minutes » ne sont pas utilisés comme xG de tirs observés.
+Les fautes 5/10 minutes et les tirs bloqués 10 minutes sont calculés par différence de relevés cumulés. Il faut une collecte continue et un point de départ assez ancien ; les premiers relevés affichent honnêtement « fenêtre incomplète ». Les comparaisons sont réinitialisées après changement de score et ne traversent pas la pause. Une donnée manquante ne devient jamais zéro.
 
-## Redémarrer le collecteur
+PC allumé, navigateur ouvert et Packball sur le groupe live. Les lignes hors écran sont lues si elles sont présentes dans le DOM ; un match non chargé ou virtualisé n’est pas accessible. Vérifier le nombre de lignes reçues. Après 100 secondes sans données fraîches, la mise en évidence disparaît.
 
-Dans Tampermonkey, mettre à jour **le script existant** avec `live90-packball.user.js` version 4.0.2 ; conserver le nom/namespace et le stockage du token. Éviter de créer deux collecteurs actifs en parallèle.
+## Avant-match
 
-Le script couvre désormais toutes les routes de packball.com pour survivre à la navigation interne ; il n’envoie des données que depuis les pages de matchs. Le badge est réattaché si la page le retire. La collecte passe toutes les 30 secondes. Si Chrome bloque l’exécution des scripts utilisateur, la page ne peut pas activer cette permission à sa place.
+**Ne pas modifier les deux groupes CSV GPT / GPT - 2 actuels.** Leur dictionnaire est conservé, leurs colonnes génériques imposent l’ordre déjà vérifié. L’import ne suppose pas qu’une nouvelle colonne serait un corner.
 
-Le collecteur lit les lignes réellement chargées dans le DOM, même hors écran ; il ne peut pas lire des rencontres non chargées ou virtualisées. Le compteur reçu permet de contrôler ce point. PC éteint, navigateur fermé, veille ou restriction des onglets : plus de données fiables, donc plus de déclenchement. Le serveur continue de conserver l’historique et d’indiquer la coupure.
+Les exports actuels peuvent manquer des moyennes de corners. Le nouveau prompt permet une référence externe par équipe, sourcée et avec taille d’échantillon, via `teams.h/a.corner_reference`. Sinon le tableau affiche « Repère avant-match indisponible », tout en lisant les corners live.
 
-## Correspondance de la capture du 27/09 à 22:57
+## Lecture
 
-Ordre des 14 colonnes choisies, après les colonnes fixes d'identité et de cotes 1x2 :
-
-| Position visible | Colonne | Destination | Exemple Fortaleza / Athletic Club |
-|---|---|---|---|
-| 1 | Plus buts équipe domicile (+1) | `quotes`: team_goals, FT, h, over | ligne 2,5 ; cote 1,90 |
-| 2 | Plus buts équipe visiteuse (+2) | `quotes`: team_goals, FT, a, over | ligne 2,5 ; cote 3,75 |
-| 3 | Buts | `stats.goals`, contrôle du score principal | 2–2 |
-| 4 | Total des tirs | `stats.shots` | 7–5 |
-| 5 | Tirs cadrés | `stats.sot` | 4–3 |
-| 6 | Possession | `stats.possession` | 66–34 |
-| 7 | Cartons jaunes | `stats.yellow_cards` | 0–0 |
-| 8 | Cartons rouges | `stats.red_cards` | 0–0 |
-| 9 | Cartons jaunes-rouges | `stats.second_yellow` | inconnu, pas zéro |
-| 10 | Fautes | `stats.fouls` | 8–9 |
-| 11 | Total des tirs 10 dernières minutes | `ind10.shots10` | 2–1 |
-| 12 | Tirs cadrés 10 dernières minutes | `ind10.sot10` | 2–1 |
-| 13 | Total des tirs 5 dernières minutes | `ind5.shots5` | 0–1 |
-| 14 | Tirs cadrés 5 dernières minutes | `ind5.sot5` | 0–1 |
-
-La première valeur de chaque paire appartient à l'équipe à domicile. Les positions
-ci-dessus décrivent la capture ; elles ne sont pas codées en dur. Le collecteur lit
-les libellés d'en-tête (y compris les infobulles imbriquées) et distingue les fenêtres
-5/10 minutes. Les cotes sont associées à leur libellé via la classe de colonne Packball.
-Un nombre différent de cellules et d'en-têtes, un libellé absent, un doublon de champ
-ou une contradiction entre le score principal et la colonne Buts interdit le signal
-sur le relevé concerné. Le JSON exporté inclut `column_map` et la destination `target`
-de chaque cellule pour vérifier la correspondance réelle.
-
-Les valeurs de cette capture servent de test de lecture, pas de sélection de pari.
-
-La version 4.0.2 refuse les tableaux sans colonnes live, avec un message explicite. Le serveur refuse également ces envois des anciens scripts : ils ne remplacent plus un relevé live complet. Les anciennes données gardent leur date et deviennent périmées après 100 secondes ; elles ne sont jamais présentées comme fraîches. Fermer les autres onglets Packball et désactiver les anciens collecteurs évite des envois concurrents.
+Une ligne par équipe, trois cases : buts, corners, jaunes. La moyenne FT reste une moyenne de match entier, jamais une quantité « due à cette minute ». « À regarder » demande deux relevés distincts concordants espacés de 20 à 100 secondes. C’est un critère descriptif expérimental, pas une probabilité calibrée. Le bouton Comprendre affiche les faits, réserves et critères exacts.
