@@ -47,6 +47,7 @@ function render(){
  $('#live-counter').textContent=live.length;$('#history-counter').textContent=data.totals.total||0;
  for(const k of ['all',...Object.keys(deskNames)])$('#count-'+k).textContent=data.matches.reduce((n,r)=>n+(r.advice||[]).filter(d=>(k==='all'||d.market===k)&&deskEffective(r,d).status==='active').length,0);
  const query=normSearch($('#search').value),matches=data.matches.filter(r=>normSearch(`${r.home} ${r.away} ${r.league||''}`).includes(query));
+ renderAttention(matches);
  $('#export-history').hidden=view!=='history';$('#history-more').hidden=true;$('#legacy-history').hidden=view!=='history'||!data.legacy?.length;
  if(view==='history'){
   const rows=visibleSignals().filter(s=>(market==='all'||market==='goals'&&s.market.startsWith('goal_')||market==='cards'&&s.market==='card_ft')&&normSearch(s.data.home+' '+s.data.away).includes(query));
@@ -207,6 +208,58 @@ function deskDetail(r){
  return `<article>${deskCell(r,d,k)}<h4>Ce qui aide à lire</h4><ul>${(e.facts||[]).map(v=>`<li>${esc(v)}</li>`).join('')||'<li>Pas de complément documenté.</li>'}</ul><h4>Ce qui limite la lecture</h4><ul>${(e.limits||[]).map(v=>`<li>${esc(v)}</li>`).join('')}</ul>${typeof e.opponent_baseline==='number'?`<p>Adversaire : ${fmt(e.opponent_baseline)} ${k==='goals'?'buts':'corners'} concédés / match.</p>`:''}<details><summary>Règle de mise en évidence</summary><p>${esc(e.criteria||'Attente de données exploitables.')}</p><p>Deux relevés concordants espacés de 20 à 100 s. Aucune probabilité ni pari automatique.</p></details></article>`;
  }).join('')}</div></section>`).join('');
 }
+// Attention cards describe current facts; they do not create bets or API calls.
+let attentionExpanded=false;
+const seenAttention=new Set();
+const attentionNumber=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0;
+function attentionItems(matches){
+ const items=[];
+ for(const r of matches){
+  if(r.state!=='LIVE'||!attentionNumber(r.minute)||r.minute<=0||r.minute>90||r.minute_extra||r.quality_errors?.length)continue;
+  for(const d of r.advice||[]){
+   if(market!=='all'&&market!==d.market)continue;
+   if(!['h','a'].includes(d.team)||!Object.hasOwn(deskNames,d.market)||d.sample_id!==r.sample_id)continue;
+   const x=deskEffective(r,d),m=d.metrics||{};
+   if(!['active','confirming','neutral','missing'].includes(x.status))continue;
+   const confirmed=x.status==='active',observed=d.observed;
+   let headline='',detail='',reserve='',notable=false;
+   if(d.market==='cards'&&attentionNumber(m.fouls)&&m.fouls>=8&&observed===0){
+    headline=`${fmt(m.fouls)} fautes, aucun jaune`;
+    detail=attentionNumber(m.fouls10)?`${fmt(m.fouls10)} fautes sur les 10 dernières minutes`:'Rythme des fautes sur 10 minutes encore indisponible';
+    const ref=r.analyst?.usable?r.analyst?.referee:null,rs=ref?.stats;
+    if(attentionNumber(rs?.yellow_per_match))detail+=` · ${ref.name} : ${fmt(rs.yellow_per_match)} jaunes / match, deux équipes réunies`;
+    reserve='La gravité des fautes compte ; aucun carton n’est automatique.';notable=true;
+   }else if(d.market==='goals'&&attentionNumber(m.sot)&&attentionNumber(observed)&&attentionNumber(m.sot_per_goal)&&m.sot_per_goal>0&&m.sot>=(observed+1)*m.sot_per_goal){
+    headline=`${fmt(m.sot)} cadrés, ${fmt(observed)} but${observed===1?'':'s'}`;
+    detail=`Repère historique : ${fmt(m.sot_per_goal)} cadrés / but`;
+    if(attentionNumber(m.sot10))detail+=` · ${fmt(m.sot10)} cadrés en 10 min`;
+    reserve='Conversion sous le repère historique, sans garantie de but.';notable=true;
+   }else if(d.market==='corners'&&attentionNumber(m.shots10)&&m.shots10>=4&&attentionNumber(m.corners10)&&m.corners10<=1){
+    headline=`${fmt(m.shots10)} tirs, ${fmt(m.corners10)} corner${m.corners10===1?'':'s'} en 10 min`;
+    detail=attentionNumber(m.blocked_shots10)?`${fmt(m.blocked_shots10)} tirs bloqués sur la même période`:'Tirs bloqués récents non renseignés';
+    reserve='Du volume offensif, mais les tirs ne garantissent pas des corners.';notable=true;
+   }
+   if(!notable&&!confirmed)continue;
+   if(!notable){headline={goals:'Pression offensive soutenue',corners:'Activité autour de la surface',cards:'Fautes récentes en série'}[d.market];detail=d.reason;reserve=(d.limits||[])[0]||'Situation à examiner dans le détail du match.'}
+   const id=String(r.packball_id||r.fixture),key=[id,d.team,d.market].join(':');
+   items.push({key,match:id,team:d.team==='h'?r.home:r.away,opponent:d.team==='h'?r.away:r.home,minute:r.minute,score:r.score,kind:d.market,confirmed,headline,detail,reserve,priority:confirmed?2:x.status==='confirming'?1:0});
+  }
+ }
+ return [...new Map(items.map(x=>[x.key,x])).values()].sort((a,b)=>b.priority-a.priority||b.minute-a.minute||a.key.localeCompare(b.key));
+}
+function renderAttention(matches){
+ const panel=$('#live-attention');panel.hidden=view!=='live';if(panel.hidden)return;
+ const all=attentionItems(matches),visible=attentionExpanded?all:all.slice(0,6);
+ $('#attention-count').textContent=all.length;
+ $('#attention-empty').hidden=all.length>0;
+ $('#attention-more').hidden=all.length<=6;
+ $('#attention-more').textContent=attentionExpanded?'Réduire à 6 situations':`Voir les ${all.length} situations`;
+ $('#attention-cards').innerHTML=visible.map(x=>{
+  const fresh=!seenAttention.has(x.key);seenAttention.add(x.key);
+  return `<article class="attention-card ${x.kind} ${x.confirmed?'confirmed':''} ${fresh?'attention-new':''}"><div class="attention-card-top"><span class="attention-category">${esc(deskNames[x.kind])}</span><span class="attention-state">${x.confirmed?'Dynamique confirmée':'À surveiller'}</span></div><div class="attention-team">${esc(x.team)}</div><p class="attention-match">contre ${esc(x.opponent)} <b>${fmt(x.minute)}′ · ${fmt(x.score?.h)}–${fmt(x.score?.a)}</b></p><h3>${esc(x.headline)}</h3><p class="attention-detail">${esc(x.detail)}</p><small class="attention-reserve">${esc(x.reserve)}</small><button class="attention-open" data-match="${esc(x.match)}" aria-label="Voir le match de ${esc(x.team)}">Voir le match <span aria-hidden="true">↗</span></button></article>`;
+ }).join('');
+}
+$('#attention-more').onclick=()=>{attentionExpanded=!attentionExpanded;render()};
 function renderDesk(matches){
  const kinds=market==='all'?Object.keys(deskNames):[market];
  const priority=r=>(r.advice||[]).some(d=>kinds.includes(d.market)&&deskEffective(r,d).status==='active');
