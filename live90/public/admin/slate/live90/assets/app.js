@@ -276,7 +276,7 @@ function attentionItems(matches){
    if(!notable&&!confirmed)continue;
    if(!notable){headline={goals:'Pression offensive soutenue',corners:'Activité autour de la surface',cards:'Fautes récentes en série'}[d.market];detail=d.reason;reserve=(d.limits||[])[0]||'Situation à examiner dans le détail du match.'}
    const id=String(r.packball_id||r.fixture),key=[id,d.team,d.market].join(':');
-   items.push({key,match:id,team:d.team==='h'?r.home:r.away,opponent:d.team==='h'?r.away:r.home,minute:r.minute,score:r.score,kind:d.market,cutHTML:cutCardHTML(r,d.team,d.market),confirmed,headline,detail,reserve,priority:confirmed?2:x.status==='confirming'?1:0});
+   items.push({key,match:id,team:d.team==='h'?r.home:r.away,opponent:d.team==='h'?r.away:r.home,minute:r.minute,score:r.score,kind:d.market,cutHTML:cutCardHTML(r,d.team,d.market),confirmed,notable,headline,detail,reserve,priority:confirmed?2:x.status==='confirming'?1:0});
   }
  }
  return [...new Map(items.map(x=>[x.key,x])).values()].sort((a,b)=>b.priority-a.priority||b.minute-a.minute||a.key.localeCompare(b.key));
@@ -291,7 +291,10 @@ function renderAttention(matches){
  $('#attention-cards').innerHTML=visible.map(x=>{
   const fresh=!seenAttention.has(x.key);seenAttention.add(x.key);
   const shortDetail=x.kind==='cards'?x.detail.split(' · ')[0]:x.detail;
-  return `<article class="attention-card ${x.kind} ${x.confirmed?'confirmed':''} ${fresh?'attention-new':''}"><div class="attention-card-top"><span class="attention-category">${esc(deskNames[x.kind])}</span><span class="attention-state">${x.confirmed?'Dynamique confirmée':'À surveiller'}</span></div><div class="attention-team-line"><div class="attention-team">${esc(x.team)}</div><b class="attention-minute">${fmt(x.minute)}′</b></div><p class="attention-match">contre ${esc(x.opponent)} · ${fmt(x.score?.h)}–${fmt(x.score?.a)}</p><h3>${esc(x.headline)}</h3><p class="attention-detail">${esc(shortDetail)}</p>${x.cutHTML}<button class="attention-open" data-match="${esc(x.match)}" aria-label="Voir le match de ${esc(x.team)}" title="Ouvrir le match et ses détails"><span aria-hidden="true">↗</span></button></article>`;
+  const verdict={goals:'But à surveiller',corners:'Corners à surveiller',cards:'Carton à surveiller'}[x.kind];
+  const headline=x.confirmed?verdict:x.headline;
+  const evidence=x.confirmed&&x.notable?`${x.headline} · ${shortDetail}`:shortDetail;
+  return `<article class="attention-card ${x.kind} ${x.confirmed?'confirmed':''} ${fresh?'attention-new':''}"><div class="attention-card-top"><span class="attention-category">${esc(deskNames[x.kind])}</span><span class="attention-state">${x.confirmed?'Dynamique confirmée':'À surveiller'}</span></div><div class="attention-team-line"><div class="attention-team">${esc(x.team)}</div><b class="attention-minute">${fmt(x.minute)}′</b></div><p class="attention-match">contre ${esc(x.opponent)} · ${fmt(x.score?.h)}–${fmt(x.score?.a)}</p><h3>${esc(headline)}</h3><p class="attention-detail">${esc(evidence)}</p>${x.cutHTML}<button class="attention-open" data-match="${esc(x.match)}" aria-label="Voir le match de ${esc(x.team)}" title="Ouvrir le match et ses détails"><span aria-hidden="true">↗</span></button></article>`;
  }).join('');
 }
 $('#attention-more').onclick=()=>{attentionExpanded=!attentionExpanded;render()};

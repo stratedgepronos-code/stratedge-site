@@ -44,6 +44,7 @@ const server=http.createServer((r,res)=>{if(r.url==='/download.php?file=collecto
  assert((await page.locator('#attention-cards').textContent()).includes('Cuts à actualiser'));
  board.matches[0].stake_cuts.at=quoteTime;await page.evaluate(()=>refresh());
  // Radar: factual cards, deduplication, filters, halftime, corrected counters and freshness.
+ for(const [kind,label] of Object.entries({goals:'But à surveiller',corners:'Corners à surveiller',cards:'Carton à surveiller'})){assert.equal(await page.locator('#attention-cards .confirmed.'+kind+' h3').first().textContent(),label)}
  assert.equal(await page.locator('#attention-cards .attention-card').count(),6);
  assert((await page.locator('#attention-cards').textContent()).includes('9 fautes, aucun jaune'));
  assert((await page.locator('#attention-cards').textContent()).includes('8 cadrés, 0 buts'));
