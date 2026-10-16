@@ -92,7 +92,12 @@ jobs:
           git log --oneline -3
 
           # Recover only the failed Live90 copy and compress older backups losslessly.
-          sudo -n python3 "$(git rev-parse --show-toplevel)/ops/live90-backup-space.py"
+          LIVE90_ROOT=$(git rev-parse --show-toplevel)
+          if ! cmp -s "$LIVE90_ROOT/live90/server/live_v4.py" /opt/stratedge/live90/live_v4.py || ! cmp -s "$LIVE90_ROOT/live90/server/engine.py" /opt/stratedge/live90/engine.py; then
+            sudo -n python3 "$LIVE90_ROOT/ops/live90-backup-space.py"
+          else
+            sudo -n python3 "$LIVE90_ROOT/ops/live90-backup-space.py" --reserve-only
+          fi
           echo "── Patch Tennis UI ──"
           curl -fsSL "https://raw.githubusercontent.com/stratedgepronos-code/stratedge-site/master/ops/patch-tennis-ui-vps.sh?ts=$(date +%s)" -o /tmp/patch-tennis-ui-vps.sh
           chmod +x /tmp/patch-tennis-ui-vps.sh

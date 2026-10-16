@@ -48,7 +48,7 @@ def compress_verified(source, allowance):
         stage.unlink(missing_ok=True)
         raise
 
-def main(db):
+def main(db, reserve_only=False):
     backups = [p for p in ROOT.glob('stratedge-live90-v4.*/live90.sqlite') if p.is_file() and not p.is_symlink() and not p.parent.is_symlink()]
     print('LIVE90_SPACE free_bytes='+str(shutil.disk_usage(ROOT).free), 'db_bytes='+str(db.stat().st_size), flush=True)
     # Only the failed copy created by run 38910129770, verified to lack a DB header.
@@ -61,7 +61,7 @@ def main(db):
                 size = p.stat().st_size
                 p.unlink()
                 print('LIVE90_INCOMPLETE_COPY_REMOVED bytes='+str(size), flush=True)
-    required = db.stat().st_size + 128 * 1024 * 1024
+    required = (0 if reserve_only else db.stat().st_size) + 2 * 1024 * 1024 * 1024
     for p in sorted(backups, key=lambda p: p.parent.stat().st_mtime):
         free = shutil.disk_usage(ROOT).free
         if free >= required:
@@ -79,4 +79,5 @@ def main(db):
         raise SystemExit('Espace encore insuffisant ; aucun historique actif supprimé')
 
 if __name__ == '__main__':
-    main(pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else '/var/lib/stratedge/live90.sqlite'))
+    args=[a for a in sys.argv[1:] if a != '--reserve-only']
+    main(pathlib.Path(args[0] if args else '/var/lib/stratedge/live90.sqlite'), '--reserve-only' in sys.argv)
