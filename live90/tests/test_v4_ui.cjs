@@ -58,7 +58,12 @@ const server=http.createServer((r,res)=>{if(r.url==='/download.php?file=collecto
  await page.locator('#search').fill('Équipe E');assert.equal(await page.locator('#attention-cards .attention-card').count(),1);
  await page.locator('#search').fill('');await page.locator('[data-market="all"]').click();
  const sample=board.matches[0].sample_id;board.matches[0].sample_id=2;await page.evaluate(()=>refresh());assert.equal(await page.locator('#attention-cards [data-match="101"]').count(),0);board.matches[0].sample_id=sample;
- const originalStatus=board.matches[0].state;board.matches[0].state='FT';await page.evaluate(()=>refresh());assert.equal(await page.locator('#attention-cards [data-match="101"]').count(),0);board.matches[0].state=originalStatus;await page.evaluate(()=>refresh());
+ const originalStatus=board.matches[0].state;board.matches[0].state='FT';await page.evaluate(()=>refresh());assert.equal(await page.locator('#attention-cards [data-match="101"]').count(),0);
+ assert.equal(await page.locator('#match-rows tr').count(),3);assert.equal(await page.locator('#match-rows [data-match="101"]').count(),0);assert.equal(await page.locator('#kpi-matches').textContent(),'3');assert.equal(await page.locator('#kpi-context').textContent(),'3 / 3');
+ await page.locator('[data-view="observations"]').click();assert((await page.locator('#match-rows').textContent()).includes('Équipe A'));
+ await page.locator('[data-view="history"]').click();assert.equal(await page.locator('#match-rows [data-signal="1"]').count(),1);
+ await page.locator('[data-view="live"]').click();board.matches[0].state=originalStatus;await page.evaluate(()=>refresh());assert.equal(await page.locator('#match-rows tr').count(),4);
+ const savedMinute=board.matches[0].minute;board.matches[0].minute=94;await page.evaluate(()=>refresh());assert.equal(await page.locator('#match-rows [data-match="101"]').count(),1);board.matches[0].minute=savedMinute;await page.evaluate(()=>refresh());
  await page.locator('#attention-more').click();assert.equal(await page.locator('#attention-cards .attention-card').count(),6);
  await page.locator('#attention-cards').screenshot({path:path.join(output,'attention-cards.png')});
  const savedTime=board.server_time;board.server_time=new Date(Date.now()+120000).toISOString();await page.evaluate(()=>refresh());assert.equal(await page.locator('#match-rows .reading.active').count(),0);assert.equal(await page.locator('#attention-cards .attention-card').count(),0);board.server_time=savedTime;await page.evaluate(()=>refresh());

@@ -36,17 +36,18 @@ function renderHealth(){const h=data.health;if(!h){$('#health-summary').textCont
 function reviewHTML(r){if(!r)return '<p>Bilan disponible après un résultat, ou dans l’export du bilan pour GPT.</p>';return `<div class="detail-box"><h3>Bilan automatique du signal</h3><p>${esc(time(r.generated_at))}</p><h4>Faits observés</h4><ul>${(r.facts||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul><h4>Limites des données</h4><ul>${(r.limits||[]).map(x=>`<li>${esc(x)}</li>`).join('')||'<li>Aucune limite repérée par ces contrôles ; cela ne prouve pas la qualité prédictive du signal.</li>'}</ul><p>${esc(r.conclusion)}</p><h4>À examiner</h4><ul>${(r.next_steps||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`}
 function render(){
  renderHealth();collectorVersionStatus();
- const feedAge=age(data.feed?.received_at),engineAge=age(data.engine?.at),live=data.matches.filter(r=>['LIVE','HT'].includes(r.state)&&age(r.received_at)<=100);
+ const currentMatches=data.matches.filter(r=>r.state!=='FT');
+ const feedAge=age(data.feed?.received_at),engineAge=age(data.engine?.at),live=currentMatches.filter(r=>['LIVE','HT'].includes(r.state)&&age(r.received_at)<=100);
  $('#feed-title').textContent=feedAge<=100?'Collecte connectée':'Collecte en attente';$('#feed-dot').classList.toggle('connected',feedAge<=100);
  $('#feed-detail').textContent=data.feed?.received_at?`${data.feed.rows??'—'} lignes reçues · ${time(data.feed.received_at)} · ${Math.round(feedAge)} s`:'Ouvre Packball avec le collecteur activé';
  $('#engine-state').textContent=engineAge<=65?'Moteur actif · lecture toutes les 20 s':'Moteur · aucun cycle récent';$('#engine-state').style.color=engineAge<=65?'var(--cyan)':'var(--gold)';
- $('#kpi-matches').textContent=data.matches.length;$('#kpi-live').textContent=live.length+' en cours · '+live.filter(r=>r.state==='HT').length+' à la pause';
- $('#kpi-context').textContent=data.matches.filter(r=>r.analyst?.usable).length+' / '+data.matches.length;
- $('#kpi-signals').textContent=data.matches.reduce((n,r)=>n+(r.advice||[]).filter(d=>deskEffective(r,d).status==='active').length,0);$('#kpi-pending').textContent='Dynamiques concordantes à examiner';
+ $('#kpi-matches').textContent=currentMatches.length;$('#kpi-live').textContent=live.length+' en cours · '+live.filter(r=>r.state==='HT').length+' à la pause';
+ $('#kpi-context').textContent=currentMatches.filter(r=>r.analyst?.usable).length+' / '+currentMatches.length;
+ $('#kpi-signals').textContent=currentMatches.reduce((n,r)=>n+(r.advice||[]).filter(d=>deskEffective(r,d).status==='active').length,0);$('#kpi-pending').textContent='Dynamiques concordantes à examiner';
  $('#kpi-results').textContent='Manuel';$('#kpi-units').textContent='Telegram arrêté · aucun appel IA live';
  $('#live-counter').textContent=live.length;$('#history-counter').textContent=data.totals.total||0;
- for(const k of ['all',...Object.keys(deskNames)])$('#count-'+k).textContent=data.matches.reduce((n,r)=>n+(r.advice||[]).filter(d=>(k==='all'||d.market===k)&&deskEffective(r,d).status==='active').length,0);
- const query=normSearch($('#search').value),matches=data.matches.filter(r=>normSearch(`${r.home} ${r.away} ${r.league||''}`).includes(query));
+ for(const k of ['all',...Object.keys(deskNames)])$('#count-'+k).textContent=currentMatches.reduce((n,r)=>n+(r.advice||[]).filter(d=>(k==='all'||d.market===k)&&deskEffective(r,d).status==='active').length,0);
+ const query=normSearch($('#search').value),matches=currentMatches.filter(r=>normSearch(`${r.home} ${r.away} ${r.league||''}`).includes(query));
  renderAttention(matches);renderCutsControl();
  $('#table-head').closest('table').classList.toggle('match-table',view==='live');
  $('#export-history').hidden=view!=='history';$('#history-more').hidden=true;$('#legacy-history').hidden=view!=='history'||!data.legacy?.length;
@@ -304,7 +305,7 @@ function renderDesk(matches){
  matches.sort((a,b)=>Number(priority(b))-Number(priority(a))||Date.parse(a.kickoff_ts)-Date.parse(b.kickoff_ts));
  $('#table-head').innerHTML='<tr><th>Rencontre</th>'+kinds.map(k=>`<th>${esc(deskNames[k])} par équipe</th>`).join('')+'</tr>';
  $('#match-rows').innerHTML=matches.map(r=>`<tr class="desk-row match-row match-start"><td class="desk-team"><span class="desk-match">${esc(r.state==='LIVE'?fmt(r.minute)+'′':({HT:'Pause',FT:'Terminé',NS:'À venir'}[r.state]||'En attente'))}</span><div class="match-identity"><div><span><small>Domicile</small><strong>${esc(r.home)}</strong></span><b>${fmt(r.score?.h)}</b></div><div><span><small>Extérieur</small><strong>${esc(r.away)}</strong></span><b>${fmt(r.score?.a)}</b></div></div><small>${esc(r.league||'')} · ${esc(time(r.kickoff_ts))}</small><div class="desk-context">${r.profile?.usable?'Stats ✓':'Stats —'} · ${r.analyst?.usable?'Contexte ✓':'Contexte —'}</div><button class="row-more match-open" data-match="${esc(r.packball_id||r.fixture)}">Comprendre le match ↗</button></td>${kinds.map(k=>`<td data-label="${esc(deskNames[k])} par équipe"><div class="match-market-pair">${['h','a'].map(t=>`<section class="match-side" data-side="${t}"><div class="match-side-label">${t==='h'?'Domicile':'Visiteurs'}</div>${deskCell(r,(r.advice||[]).find(d=>d.team===t&&d.market===k)||{team:t,status:'waiting',reason:'Le moteur prépare cette lecture.'},k)}</section>`).join('')}</div></td>`).join('')}</tr>`).join('');
- $('#empty').hidden=matches.length>0;$('#board-description').textContent='Une ligne par match · domicile à gauche, visiteurs à droite dans chaque carte · compteurs séparés par équipe.';
+ $('#empty').hidden=matches.length>0;$('#board-description').textContent='Une ligne par match · domicile à gauche, visiteurs à droite dans chaque carte · compteurs séparés par équipe · matchs terminés retirés automatiquement.';
 }
 function observationHTML(o){const x=o.data||{},d=x.reading||{};return `<article class="observation"><small>${esc(time(o.created_at))} · ${esc(x.minute)}′</small><b>${esc(o.team==='h'?x.home:x.away)} · ${esc(deskNames[o.market])}</b><p>${esc(d.reason)}</p><small>Observation conservée · aucun pari envoyé</small></article>`;}
 function renderObservations(query){
