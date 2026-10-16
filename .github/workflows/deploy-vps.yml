@@ -91,6 +91,8 @@ jobs:
           echo "── HEAD déployé ──"
           git log --oneline -3
 
+          # Recover only the failed Live90 copy and compress older backups losslessly.
+          sudo -n python3 "$(git rev-parse --show-toplevel)/ops/live90-backup-space.py"
           echo "── Patch Tennis UI ──"
           curl -fsSL "https://raw.githubusercontent.com/stratedgepronos-code/stratedge-site/master/ops/patch-tennis-ui-vps.sh?ts=$(date +%s)" -o /tmp/patch-tennis-ui-vps.sh
           chmod +x /tmp/patch-tennis-ui-vps.sh
