@@ -1,5 +1,5 @@
 """StratEdge Live V4 — deterministic observations, no LLM or bet placement."""
-import argparse, datetime as dt, hashlib, html, json, math, os, re, sqlite3, sys, unicodedata
+import argparse, datetime as dt, hashlib, html, json, math, os, re, sqlite3, sys, time, unicodedata
 import urllib.error, urllib.request
 from zoneinfo import ZoneInfo
 UTC = dt.timezone.utc
@@ -954,7 +954,7 @@ def board(c,now):
             z=dict(s);z['context']=dec(z['context'],{});legacy.append(z)
     except sqlite3.OperationalError:pass
     c.commit()
-    return {'ok':True,'version':'decision5.0','mode':'decision','observations':desk_history(c),'server_time':iso(now),'health':feed_health(c,now),'matches':records,'signals':history(c),'history_total':totals['total'],'totals':totals,'legacy':legacy,'feed':{'received_at':cycle['received_at'] if cycle else None,'rows':feed.get('page_rows'), 'collector_version':feed.get('collector_version'),'headers':feed.get('stat_headers',[]),'odds_meta':feed.get('odds_meta',{})},'engine':dec((c.execute("SELECT value FROM v4_runtime WHERE key='engine'").fetchone() or [None])[0]),'settings':options(c),'pulsescore':pulse,'telegram':{'configured':bool(os.environ.get('TELEGRAM_BOT_TOKEN') and os.environ.get('TELEGRAM_CHAT_ID'))}}
+    return {'ok':True,'version':'decision5.0','mode':'decision','observations':desk_history(c),'server_time':iso(now),'health':feed_health(c,now),'matches':records,'signals':history(c),'history_total':totals['total'],'totals':totals,'legacy':legacy,'feed':{'received_at':cycle['received_at'] if cycle else None,'rows':feed.get('page_rows'), 'collector_version':feed.get('collector_version'),'headers':feed.get('stat_headers',[]),'odds_meta':feed.get('odds_meta',{})},'engine':dec((c.execute("SELECT value FROM v4_runtime WHERE key='engine'").fetchone() or [None])[0]),'radar_telegram':radar_status(c),'settings':options(c),'pulsescore':pulse,'telegram':{'configured':bool(os.environ.get('TELEGRAM_BOT_TOKEN') and os.environ.get('TELEGRAM_CHAT_ID'))}}
 
 def export_analysis(c,now):
     matches=[];active=active_fixtures(c)
@@ -972,8 +972,14 @@ def dispatch(c,x,now):
     action=x.get('action','board')
     if action=='board': return board(c,now)
     if action=='export_observations': return {'schema':'stratedge.observations.v5','exported_at':iso(now),'observations':desk_history(c,100000)}
-    if action=='telegram_test' or action=='pulsescore_auto' and x.get('enabled') is not False or action=='settings' and (x.get('settings') or {}).get('telegram_enabled') is True:
-        raise ValueError('Mode décision : envois Telegram et cotes automatiques désactivés.')
+    if action=='pulsescore_auto' and x.get('enabled') is not False or action=='settings' and (x.get('settings') or {}).get('telegram_enabled') is True:
+        raise ValueError('Mode décision : anciens paris Telegram et cotes automatiques désactivés.')
+    if action=='radar_telegram':
+        if type(x.get('enabled')) is not bool:raise ValueError('Activation invalide')
+        with c:
+            c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',('radar_telegram_enabled',enc(x['enabled'])))
+            if not x['enabled']:c.execute("UPDATE v5_radar_notifications SET delivery='disabled',delivery_error='Radar Telegram désactivé' WHERE delivery='queued'")
+        return {'ok':True,'radar_telegram':radar_status(c)}
     if action in ('analyst','packball'): return import_bundle(c,action,x.get('bundle'),now)
     if action=='export_analysis': return export_analysis(c,now)
     if action=='history':
@@ -1015,18 +1021,21 @@ def dispatch(c,x,now):
     if action=='telegram_test':
         prev=dec((c.execute("SELECT value FROM v4_runtime WHERE key='telegram_test'").fetchone() or [None])[0],{})
         if date(prev.get('at')) and (now-date(prev['at'])).total_seconds()<60:raise ValueError('Attendre une minute entre deux tests Telegram')
-        state,error,mid=notify('STRATEDGE LIVE V4 · Test de connexion\nLe canal reçoit les messages. Ceci n’est pas un pari.')
+        state,error,mid=notify('STRATEDGE · RADAR LIVE · Test de connexion\nLe canal reçoit les messages. Ceci n’est pas un pari.')
         with c: runtime(c,'telegram_test',{'at':iso(now),'state':state})
         return {'ok':state=='sent','state':state,'error':error,'message_id':mid}
     raise ValueError('Action inconnue')
 
-# V5 is an observation desk, never an order/alert generator. Legacy run() is
+# V5 is an observation desk with opt-out confirmed-card notifications. Legacy run() is
 # retained only for historical replay tests; engine.py uses run_dashboard().
 DESK_MARKETS = ('goals', 'corners', 'cards')
 DESK_SCHEMA = '''
 CREATE TABLE IF NOT EXISTS v5_readings(match_id TEXT,team TEXT,market TEXT,sample_id INTEGER,updated_at TEXT,data TEXT,PRIMARY KEY(match_id,team,market));
 CREATE TABLE IF NOT EXISTS v5_observations(id INTEGER PRIMARY KEY,match_id TEXT,team TEXT,market TEXT,sample_id INTEGER,created_at TEXT,data TEXT);
 CREATE UNIQUE INDEX IF NOT EXISTS v5_observation_sample ON v5_observations(match_id,team,market,sample_id);
+CREATE TABLE IF NOT EXISTS v5_radar_notifications(id INTEGER PRIMARY KEY,event_key TEXT UNIQUE,match_id TEXT,team TEXT,market TEXT,counter REAL,created_at TEXT,sample_id INTEGER,data TEXT,delivery TEXT,delivery_error TEXT,telegram_id INTEGER,attempted_at TEXT);
+CREATE INDEX IF NOT EXISTS v5_radar_lookup ON v5_radar_notifications(match_id,team,market,id);
+CREATE INDEX IF NOT EXISTS v5_radar_delivery ON v5_radar_notifications(delivery,id);
 '''
 def desk_number(v):
     return format(v,'.2f').rstrip('0').rstrip('.').replace('.',',') if num(v) else '—'
@@ -1142,12 +1151,97 @@ def desk_advice(c,s,p,ctx,now):
     return out
 
 def desk_history(c,limit=100):
-    return [dict(row,data=dec(row['data'],{})) for row in c.execute('SELECT * FROM v5_observations ORDER BY id DESC LIMIT ?',(limit,))]
+    out=[]
+    for row in c.execute('SELECT * FROM v5_observations ORDER BY id DESC LIMIT ?',(limit,)):
+        n=c.execute('SELECT delivery,delivery_error,telegram_id FROM v5_radar_notifications WHERE match_id=? AND team=? AND market=? AND sample_id=? ORDER BY id DESC LIMIT 1',(row['match_id'],row['team'],row['market'],row['sample_id'])).fetchone()
+        out.append(dict(row,data=dec(row['data'],{}),notification=dict(n) if n else None))
+    return out
+
+def radar_configured():
+    return bool(os.environ.get('TELEGRAM_BOT_TOKEN') and os.environ.get('TELEGRAM_CHAT_ID'))
+
+def radar_enabled(c):
+    return setting(c,'radar_telegram_enabled',True) is True
+
+def radar_status(c):
+    counts={r['delivery']:r['n'] for r in c.execute('SELECT delivery,COUNT(*) n FROM v5_radar_notifications GROUP BY delivery')}
+    last=c.execute('SELECT created_at,delivery,delivery_error FROM v5_radar_notifications ORDER BY id DESC LIMIT 1').fetchone()
+    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','counts':counts,'last':dict(last) if last else None}
+
+def radar_eligible(r,d,now):
+    # Exactly the hot (confirmed) cards; factual watch-only cards are not alerts.
+    return (d.get('status')=='active' and d.get('team') in ('h','a') and d.get('market') in DESK_MARKETS
+            and r.get('state')=='LIVE' and num(r.get('minute')) and 0<r['minute']<=90
+            and not r.get('minute_extra') and not r.get('quality_errors')
+            and d.get('sample_id')==r.get('sample_id') and num(d.get('observed'))
+            and all(date(r.get(k)) and 0<=(now-date(r[k])).total_seconds()<=100 for k in ('received_at','collected_at')))
+
+def queue_radar(c,r,d,now):
+    if not radar_enabled(c) or not radar_configured() or not radar_eligible(r,d,now):return
+    mid=str(r['packball_id']);counter=d['observed']
+    # Same counter = same opportunity, even across restarts, pauses and status flicker.
+    event_key=enc([mid,d['team'],d['market'],int(counter)])
+    last=c.execute('SELECT created_at FROM v5_radar_notifications WHERE match_id=? AND team=? AND market=? ORDER BY id DESC LIMIT 1',(mid,d['team'],d['market'])).fetchone()
+    if last and date(last['created_at']) and (now-date(last['created_at'])).total_seconds()<600:return
+    saved={'home':r.get('home'),'away':r.get('away'),'score':r.get('score'),'reading':d,'minute':r.get('minute')}
+    c.execute('INSERT OR IGNORE INTO v5_radar_notifications(event_key,match_id,team,market,counter,created_at,sample_id,data,delivery) VALUES(?,?,?,?,?,?,?,?,?)',
+              (event_key,mid,d['team'],d['market'],counter,iso(now),r['sample_id'],enc(saved),'queued'))
+
+def radar_message(r,d,cuts):
+    name=r['home'] if d['team']=='h' else r['away']
+    title={'goals':'🩷 But à surveiller','corners':'🩵 Corners à surveiller','cards':'💛 Carton à surveiller'}[d['market']]
+    lines=['🔥 STRATEDGE · RADAR LIVE','', '⚽ '+r['home']+' — '+r['away'],
+           '⏱ '+desk_number(r['minute'])+'′ · '+desk_number(r['score']['h'])+'–'+desk_number(r['score']['a']),
+           '', '🎯 '+title+' · '+name,'Dynamique confirmée sur deux relevés.','📊 '+d['reason']]
+    options=[q for q in cuts.get('quotes',[]) if q['team']==d['team'] and q['kind']==d['market'] and q['period']=='FT' and q['half_line'] and q['needed']!=0]
+    if options:
+        q=min(options,key=lambda q:q['line']);unit={'goals':'buts','corners':'corners','cards':'cartons Bookings'}[d['market']]
+        lines+=['','💰 Stake · '+name+' +'+desk_number(q['line'])+' '+unit+' · match entier · cote '+desk_number(q['odds'])]
+        if q['needed'] is not None:
+            lines+=['Actuel '+desk_number(q['current'])+' · '+desk_number(q['needed'])+' de plus nécessaire(s)'+(' si même décompte' if q['indicative_counter'] else '')]
+            if q['needed']>1:lines+=['Un seul événement ne suffit pas pour ce cut.']
+        else:lines+=['Décompte à vérifier sur Stake.']
+        if q['indicative_counter']:lines+=['Bookings Stake ≠ jaunes Packball.']
+        if q['odds']<1.50:lines+=['Cote sous ton seuil de 1,50.']
+        lines+=['Instantané : vérifier le prix et le marché sur Stake.']
+    else:lines+=['','🔎 Cote et cut indisponibles · à vérifier sur Stake (seuil 1,50).']
+    lines+=['','Observation statistique, pas un pari validé.','https://stratedgepronos.fr/panel-x9k3m/slate/live90/']
+    return '\n'.join(lines)
+
+def deliver_radar(c,now,realtime=False):
+    c.execute("UPDATE v5_radar_notifications SET delivery='uncertain',delivery_error='Processus interrompu pendant l’envoi ; aucun renvoi automatique' WHERE delivery='sending' AND attempted_at<?",(iso(now-dt.timedelta(minutes=3)),))
+    if not radar_enabled(c):
+        c.execute("UPDATE v5_radar_notifications SET delivery='disabled',delivery_error='Radar Telegram désactivé' WHERE delivery='queued'");c.commit();return
+    c.commit()
+    sent_attempts=0
+    for event in c.execute("SELECT * FROM v5_radar_notifications WHERE delivery='queued' ORDER BY id LIMIT 3").fetchall():
+        if sent_attempts:time.sleep(1.1) # Avoid bursts to the same Telegram channel.
+        if realtime:now=now_utc()
+        if not c.execute("UPDATE v5_radar_notifications SET delivery='sending',attempted_at=? WHERE id=? AND delivery='queued'",(iso(now),event['id'])).rowcount:continue
+        c.commit()
+        state,error,mid='expired','Situation terminée, modifiée ou trop ancienne avant envoi',None
+        created=date(event['created_at']);saved=dec(event['data'],{})
+        row=c.execute('SELECT * FROM samples WHERE match_id=? ORDER BY id DESC LIMIT 1',(event['match_id'],)).fetchone()
+        if created and 0<=(now-created).total_seconds()<=90 and row:
+            r=sample_data(row);f=bind(c,r);active=active_fixtures(c);cycle_ids=current_cycle_ids(c)
+            in_scope=(f and f['fixture'] in active) if active is not None else (cycle_ids is None or str(r.get('packball_id')) in cycle_ids)
+            p,ctx=inputs(c,f,now)
+            d=next((d for d in desk_advice(c,row,p,ctx,now) if d['team']==event['team'] and d['market']==event['market']),{})
+            if in_scope and radar_eligible(r,d,now) and r.get('score')==saved.get('score') and d.get('observed')==event['counter']:
+                # Read existing cache only: never consume a PulseScore request here.
+                cache=c.execute("SELECT value FROM v4_runtime WHERE key='pulsescore_test'").fetchone()
+                cuts=desk_cuts(r,dec(cache['value'],{}) if cache else {},now)
+                message=radar_message(r,d,cuts)
+                c.execute('UPDATE v5_radar_notifications SET data=? WHERE id=?',(enc(dict(saved,message=message,cuts=cuts)),event['id']));c.commit()
+                if radar_enabled(c):state,error,mid=notify(message);sent_attempts+=1
+                else:state,error='disabled','Radar Telegram désactivé'
+        c.execute('UPDATE v5_radar_notifications SET delivery=?,delivery_error=?,telegram_id=? WHERE id=?',(state,error,mid,event['id']));c.commit()
+
 
 def run_dashboard(path,now=None):
-    now=now or now_utc();c=connect(path)
+    realtime=now is None;now=now or now_utc();c=connect(path)
     try:
-        # Sticky migration: keys remain stored, but no sender or odds API is called.
+        # Legacy bets and automatic odds stay disabled; radar notifications are independent.
         for name in ('telegram_enabled','pulsescore_auto'):
             c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(name,'false'))
         runtime(c,'decision_mode',True)
@@ -1169,11 +1263,14 @@ def run_dashboard(path,now=None):
                 if d['status']=='active' and (old.get('status')!='active' or old.get('observed')!=d['observed']):
                     saved={'home':r.get('home'),'away':r.get('away'),'minute':r.get('minute'),'score':r.get('score'),'reading':d,'profile':p,'context':ctx,'version':'decision5.0','kind':'observation_not_bet'}
                     c.execute('INSERT OR IGNORE INTO v5_observations(match_id,team,market,sample_id,created_at,data) VALUES(?,?,?,?,?,?)',(s['match_id'],d['team'],d['market'],s['id'],iso(now),enc(saved)))
+                queue_radar(c,r,d,now)
                 c.execute('INSERT OR REPLACE INTO v5_readings VALUES(?,?,?,?,?,?)',(s['match_id'],d['team'],d['market'],s['id'],iso(now),enc(d)))
             c.commit()
         auto_results(c,now) # Legacy event history can still be updated, silently.
         health=feed_health(c,now)
-        runtime(c,'engine',{'at':iso(now),'version':'decision5.0','telegram_active':False,'mode':'decision','external_calls':False})
+        deliver_radar(c,now,realtime=realtime)
+        if realtime:now=now_utc()
+        runtime(c,'engine',{'at':iso(now),'version':'decision5.0','telegram_active':radar_enabled(c) and radar_configured(),'legacy_telegram_active':False,'notification_mode':'confirmed_cards','mode':'decision','external_calls':radar_enabled(c) and radar_configured(),'ai_calls':False,'automatic_odds':False})
         record_health(c,health,now);c.commit()
     finally:c.close()
 
@@ -1186,7 +1283,7 @@ if __name__=='__main__':
             for name in ('telegram_enabled','pulsescore_auto'):c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(name,'false'))
             runtime(c,'decision_mode',True);c.commit();result={'ok':True,'version':'decision5.0'}
         elif args.diagnostic:
-            b=board(c,now_utc());result={k:b[k] for k in ('version','feed','engine','telegram','totals')};result['feed']=dict(result['feed']);result['feed'].pop('headers',None);result['feed'].pop('odds_meta',None);result['list']={'matches':len(b['matches']),'live':sum(r.get('state')=='LIVE' for r in b['matches']),'halftime':sum(r.get('state')=='HT' for r in b['matches'])};result['collection_columns']=b['feed'].get('headers',[]);result['collection_odds']=b['feed'].get('odds_meta',{});result['health']=b['health'];result['recent_rows']=[{k:r.get(k) for k in ('packball_id','home','away','state','status_raw','minute','received_at','stats','ind5','ind10','quotes','quality_errors')} for r in [sample_data(x) for x in latest(c)] if r.get('state') in ('LIVE','HT')][:6]
+            b=board(c,now_utc());result={k:b[k] for k in ('version','feed','engine','telegram','radar_telegram','totals')};result['feed']=dict(result['feed']);result['feed'].pop('headers',None);result['feed'].pop('odds_meta',None);result['list']={'matches':len(b['matches']),'live':sum(r.get('state')=='LIVE' for r in b['matches']),'halftime':sum(r.get('state')=='HT' for r in b['matches'])};result['collection_columns']=b['feed'].get('headers',[]);result['collection_odds']=b['feed'].get('odds_meta',{});result['health']=b['health'];result['recent_rows']=[{k:r.get(k) for k in ('packball_id','home','away','state','status_raw','minute','received_at','stats','ind5','ind10','quotes','quality_errors')} for r in [sample_data(x) for x in latest(c)] if r.get('state') in ('LIVE','HT')][:6]
             result['match_audits']=audit_matches(c,now_utc())
             result['pulsescore']={k:b['pulsescore'][k] for k in ('configured','auto_enabled','auto_today','auto_daily_limit','attempts_31d')}
         else: result=dispatch(c,json.load(sys.stdin),now_utc())

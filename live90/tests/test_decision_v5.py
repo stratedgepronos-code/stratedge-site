@@ -78,7 +78,7 @@ class DeskTests(unittest.TestCase):
   self.ctx['teams']['h']['corner_reference']['source_ids']=['missing']
   with self.assertRaisesRegex(ValueError,'source corners'):V.validate_context(self.ctx,self.before)
  def test_actions_cannot_reenable_automatic_delivery(self):
-  for payload in ({'action':'telegram_test'},{'action':'pulsescore_auto','enabled':True},{'action':'settings','settings':{'telegram_enabled':True,'min_odds':1.65}}):
+  for payload in ({'action':'pulsescore_auto','enabled':True},{'action':'settings','settings':{'telegram_enabled':True,'min_odds':1.65}}):
    with self.assertRaisesRegex(ValueError,'Mode décision'):V.dispatch(self.c,payload,self.now)
  def test_export_observation_and_archived_history_remain_separate(self):
   self.prepare();V.run_dashboard(self.db,self.now)
