@@ -20,15 +20,35 @@ if cmp -s "$repo_root/live90/server/engine.py" "$target_dir/engine.py" && cmp -s
   echo 'LIVE90_V4_OK: fichiers moteur déjà à jour'
   exit 0
 fi
+php_core="$repo_root/public_html/api/live90/core.php"
+db_path=$(php -r 'require $argv[1]; echo config90()["SE90_DB"] ?? "/var/lib/stratedge/live90.sqlite";' "$php_core")
+# Refuse a full snapshot before allocating disk space; retain existing backups.
+python3 - "$db_path" <<'PY'
+import pathlib,shutil,sys
+p=pathlib.Path(sys.argv[1]);root=pathlib.Path('/var/backups')
+free=shutil.disk_usage(root).free;required=p.stat().st_size+64*1024*1024
+print('LIVE90_BACKUP_CAPACITY db_bytes=%d free_bytes=%d required_bytes=%d'%(p.stat().st_size,free,required),flush=True)
+if free<required:
+    for d in sorted(root.glob('stratedge-live90-v4.*'),key=lambda d:d.stat().st_mtime,reverse=True)[:30]:
+        f=d/'live90.sqlite'
+        print('LIVE90_BACKUP_EXISTING',str(d),'bytes='+str(f.stat().st_size if f.exists() else 0),'modified='+str(int(d.stat().st_mtime)),flush=True)
+    raise SystemExit('LIVE90_BACKUP_SPACE: espace insuffisant pour une sauvegarde complète ; moteur existant conservé')
+PY
 backup_dir=$(mktemp -d /var/backups/stratedge-live90-v4.XXXXXX)
 cp -p "$target_dir/engine.py" "$backup_dir/engine.py"
 if [[ -f "$target_dir/live_v4.py" ]]; then cp -p "$target_dir/live_v4.py" "$backup_dir/live_v4.py"; fi
-php_core="$repo_root/public_html/api/live90/core.php"
-db_path=$(php -r 'require $argv[1]; echo config90()["SE90_DB"] ?? "/var/lib/stratedge/live90.sqlite";' "$php_core")
 python3 - "$db_path" "$backup_dir/live90.sqlite" <<'PY'
 import pathlib,sqlite3,sys
 source=sqlite3.connect(pathlib.Path(sys.argv[1]).as_uri()+'?mode=ro',uri=True,timeout=30)
-target=sqlite3.connect(sys.argv[2]);source.backup(target);target.close();source.close()
+try:
+    target=sqlite3.connect(sys.argv[2])
+    try: source.backup(target)
+    finally: target.close()
+except Exception:
+    # Only this attempt's incomplete database copy; never a previous backup.
+    pathlib.Path(sys.argv[2]).unlink(missing_ok=True)
+    raise
+finally: source.close()
 pathlib.Path(sys.argv[2]).chmod(0o600)
 PY
 was_active=0
@@ -58,3 +78,4 @@ trap - ERR
 cmp "$repo_root/live90/server/live_v4.py" "$target_dir/live_v4.py"
 echo "LIVE90_V4_OK: moteur installé ; service auparavant actif=$was_active ; sauvegarde=$backup_dir"
 # Le contrôle du cycle et de la configuration est exécuté ensuite par check-live90-v4.php.
+
