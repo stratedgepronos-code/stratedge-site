@@ -311,6 +311,35 @@ def identity(m):
     if mid is not None and (not isinstance(mid, str) or not re.fullmatch(r'\d{1,20}', mid)): raise ValueError('ID Packball invalide : conserver null s’il manque')
     return key(m)
 
+def validate_enrichment(team, ids, generated, kickoff, label):
+    """Optional, source-backed morning data. Old analyst dossiers remain valid."""
+    for field in ('card_references','goal_timing'):
+        refs=team.get(field)
+        if refs is None:continue
+        scopes=('overall','home','away','h2h') if field=='card_references' else ('overall','home','away')
+        if not isinstance(refs,dict) or any(k not in scopes for k in refs):raise ValueError(label+' : '+field+' invalide')
+        for scope,ref in refs.items():
+            if ref is None:continue
+            if not isinstance(ref,dict) or type(ref.get('matches')) is not int or not 1<=ref['matches']<=10000 or not text_ok(ref.get('sample_label'),300):raise ValueError(label+' : échantillon '+field+' invalide')
+            cutoff=date(ref.get('as_of'))
+            if not cutoff or cutoff>generated or not kickoff or cutoff>=kickoff:raise ValueError(label+' : date de référence avant-match requise')
+            sources=ref.get('source_ids')
+            if not isinstance(sources,list) or not sources or any(s not in ids for s in sources):raise ValueError(label+' : sources '+field+' requises')
+            if field=='card_references':
+                if ref.get('unit') not in ('yellow_cards','cards','booking_points'):raise ValueError(label+' : unité cartons requise')
+                value=ref.get('for_per_match')
+                if not num(value) or not 0<=value<=100:raise ValueError(label+' : moyenne cartons invalide')
+            else:
+                bins=ref.get('bins')
+                if not text_ok(ref.get('stoppage_policy'),300) or not isinstance(bins,list) or not 1<=len(bins)<=18:raise ValueError(label+' : tranches de buts invalides')
+                previous=0
+                for b in bins:
+                    if not isinstance(b,dict) or type(b.get('start')) is not int or type(b.get('end')) is not int or not 0<=b['start']<b['end']<=90 or b['start']<previous or b['end']-b['start'] not in (5,10,15):raise ValueError(label+' : bornes de buts invalides ou chevauchantes')
+                    previous=b['end']
+                    for k in ('scored','conceded'):
+                        v=b.get(k)
+                        if v is not None and (type(v) is not int or not 0<=v<=ref['matches']*30):raise ValueError(label+' : buts par tranche = comptes entiers, jamais pourcentages')
+
 def validate_context(m, generated):
     if m.get('watch') is not True: raise ValueError('Chaque match doit conserver watch:true')
     if not text_ok(m.get('summary'), 2500): raise ValueError('Résumé du contexte requis')
@@ -341,6 +370,7 @@ def validate_context(m, generated):
     for side,t in teams.items():
         label=str(m.get('home','?'))+' — '+str(m.get('away','?'))+' · '+('domicile' if side=='h' else 'extérieur')
         if not isinstance(t,dict): raise ValueError(label+' : contexte équipe invalide')
+        validate_enrichment(t, ids, generated, date(m.get('kickoff')), label)
         ref=t.get('corner_reference')
         if ref is not None:
             if not isinstance(ref,dict) or type(ref.get('matches')) is not int or not 1<=ref['matches']<=10000 or not text_ok(ref.get('sample_label'),300): raise ValueError(label+' : échantillon corners invalide')
@@ -966,7 +996,7 @@ def export_analysis(c,now):
                  state=p.get('state') if p else None,data_issues=p.get('issues',[]) if p else [],
                  prematch_imported_at=p.get('imported_at') if p else None,prematch_usable=p.get('usable',False) if p else False)
         matches.append(m)
-    return {'schema':'stratedge.research.v4','exported_at':iso(now),'timezone':'Europe/Paris','matches':matches,'instructions':'Tous les matchs doivent figurer dans le résultat stratedge.context.v4 avec watch:true. Aucun scénario éliminatoire. Utiliser PROMPT_ANALYSTE_V4.md.'}
+    return {'schema':'stratedge.research.v4','exported_at':iso(now),'timezone':'Europe/Paris','matches':matches,'instructions':'Tous les matchs doivent figurer dans le résultat stratedge.context.v4 avec watch:true. Aucun scénario éliminatoire. Utiliser PROMPT_ANALYSTE_V4.md révision 18/10/2026 : arbitre, card_references global/home/away/h2h et goal_timing par localisation. Corners retirés.'}
 
 def dispatch(c,x,now):
     action=x.get('action','board')
@@ -976,8 +1006,11 @@ def dispatch(c,x,now):
         raise ValueError('Mode décision : anciens paris Telegram et cotes automatiques désactivés.')
     if action=='radar_telegram':
         if type(x.get('enabled')) is not bool:raise ValueError('Activation invalide')
+        leagues=x.get('card_leagues',setting(c,'card_leagues',[]))
+        if not isinstance(leagues,list) or len(leagues)>150 or any(not text_ok(v,160) for v in leagues):raise ValueError('Championnat invalide : liste de 150 noms maximum')
         with c:
             c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',('radar_telegram_enabled',enc(x['enabled'])))
+            c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',('card_leagues',enc(list(dict.fromkeys(v.strip() for v in leagues)))))
             if not x['enabled']:c.execute("UPDATE v5_radar_notifications SET delivery='disabled',delivery_error='Radar Telegram désactivé' WHERE delivery='queued'")
         return {'ok':True,'radar_telegram':radar_status(c)}
     if action in ('analyst','packball'): return import_bundle(c,action,x.get('bundle'),now)
@@ -1028,7 +1061,7 @@ def dispatch(c,x,now):
 
 # V5 is an observation desk with opt-out confirmed-card notifications. Legacy run() is
 # retained only for historical replay tests; engine.py uses run_dashboard().
-DESK_MARKETS = ('goals', 'corners', 'cards')
+DESK_MARKETS = ('goals', 'cards')
 DESK_SCHEMA = '''
 CREATE TABLE IF NOT EXISTS v5_readings(match_id TEXT,team TEXT,market TEXT,sample_id INTEGER,updated_at TEXT,data TEXT,PRIMARY KEY(match_id,team,market));
 CREATE TABLE IF NOT EXISTS v5_observations(id INTEGER PRIMARY KEY,match_id TEXT,team TEXT,market TEXT,sample_id INTEGER,created_at TEXT,data TEXT);
@@ -1039,6 +1072,53 @@ CREATE INDEX IF NOT EXISTS v5_radar_delivery ON v5_radar_notifications(delivery,
 '''
 def desk_number(v):
     return format(v,'.2f').rstrip('0').rstrip('.').replace('.',',') if num(v) else '—'
+
+def context_evidence(ctx, team, market, minute):
+    """Descriptive evidence, never an invented probability or a missing-data zero."""
+    out={'lines':[],'support':'unknown'}
+    if not ctx or not ctx.get('usable'):
+        out['lines']=['Arbitre et moyennes disciplinaires avant-match : non documentés.' if market=='cards' else 'Créneau de buts avant-match : non documenté.']
+        return out
+    teams=ctx.get('teams') or {};other='a' if team=='h' else 'h'
+    if market=='cards':
+        ref=ctx.get('referee') or {};rs=ref.get('stats') or {}
+        if ref.get('name'):
+            out['lines'].append('Arbitre : '+ref['name']+' ('+{'confirmed':'confirmé','reported':'annoncé','unknown':'à confirmer'}.get(ref.get('appointment'),'à confirmer')+') · '+desk_number(rs.get('yellow_per_match'))+' jaunes / match · n='+desk_number(rs.get('matches'))+'.')
+        else:out['lines'].append('Arbitre et moyenne : non documentés.')
+        for side in (team,other):
+            name=ctx.get('home' if side=='h' else 'away') or ('Domicile' if side=='h' else 'Extérieur')
+            refs=(teams.get(side) or {}).get('card_references') or {}
+            parts=[]
+            for scope,title in (('overall','global'),('home' if side=='h' else 'away','domicile' if side=='h' else 'extérieur'),('h2h','H2H')):
+                x=refs.get(scope)
+                if x:
+                    unit={'yellow_cards':'jaunes','cards':'cartons (décompte source)','booking_points':'points de sanction'}[x['unit']]
+                    parts.append(title+' '+desk_number(x['for_per_match'])+' '+unit+'/m · n='+str(x['matches']))
+            out['lines'].append(name+' : '+(' ; '.join(parts) if parts else 'moyennes disciplinaires non documentées')+'.')
+        out['support']='documented' if any((teams.get(s) or {}).get('card_references') for s in ('h','a')) else 'unknown'
+        return out
+    if market!='goals' or not num(minute):return out
+    windows=[]
+    for side,field in ((team,'scored'),(other,'conceded')):
+        refs=(teams.get(side) or {}).get('goal_timing') or {};scope='home' if side=='h' else 'away'
+        selected=scope if refs.get(scope) else 'overall';ref=refs.get(selected)
+        if not ref:continue
+        b=next((x for x in ref['bins'] if x['start']<minute<=x['end']),None)
+        if not b or b.get(field) is None:continue
+        name=ctx.get('home' if side=='h' else 'away') or side
+        count=b[field];rate=count/ref['matches'];width=b['end']-b['start']
+        complete=sum(x['end']-x['start'] for x in ref['bins'])==90 and all(x.get(field) is not None for x in ref['bins'])
+        total=sum(x.get(field) or 0 for x in ref['bins'])
+        elevated=complete and ref['matches']>=10 and selected==scope and total>0 and count/width>total/90
+        item={'team':side,'scope':selected,'start':b['start'],'end':b['end'],'count':count,'matches':ref['matches'],'rate':rate,'above_average':elevated}
+        windows.append(item)
+        out['lines'].append(name+' · '+{'home':'à domicile','away':'à l’extérieur','overall':'toutes localisations'}[selected]+' · '+str(b['start'])+'–'+str(b['end'])+'′ : '+str(count)+' buts '+('marqués' if field=='scored' else 'encaissés')+' / '+str(ref['matches'])+' matchs ('+desk_number(rate)+'/m).')
+    out['windows']=windows
+    if len(windows)==2 and all(w['above_average'] for w in windows) and (windows[0]['start'],windows[0]['end'])==(windows[1]['start'],windows[1]['end']):
+        out['support']='concordant';out['lines'].insert(0,'Créneau historique concordant : attaque et défense adverse au-dessus de leur rythme moyen.')
+    elif windows:out['support']='documented'
+    else:out['lines'].append('Répartition des buts sur ce créneau : non documentée.')
+    return out
 
 def desk_reading(r,p,ctx,team,market,now,hist):
     other='a' if team=='h' else 'h'
@@ -1063,6 +1143,14 @@ def desk_reading(r,p,ctx,team,market,now,hist):
     d={'team':team,'market':market,'status':'neutral','title':'Observer','reason':'Pas de dynamique récente concordante.',
        'observed':observed,'baseline':baseline if num(baseline) and baseline>=0 else None,'opponent_baseline':against if num(against) else None,
        'sample':n,'baseline_origin':baseline_origin,'facts':[],'limits':[],'metrics':{},'window':'10 dernières minutes','period':'HT' if num(r.get('minute')) and r['minute']<45 else 'FT'}
+    d['context_evidence']=context_evidence(valid_ctx,team,market,r.get('minute'))
+    d['facts'].extend(d['context_evidence']['lines'])
+    if market=='goals':d['limits'].append('Le créneau décrit toute la tranche historique, pas les minutes restantes. Aucun xG de tirs fiable reçu ; ExG Packball non assimilé à un xG cumulé.')
+    if market=='cards' and valid_ctx:
+        ref=(((valid_ctx.get('teams') or {}).get(team) or {}).get('card_references') or {}).get('home' if team=='h' else 'away')
+        if ref and ref.get('unit')=='yellow_cards':
+            d.update(baseline=ref['for_per_match'],sample=ref['matches'],baseline_origin='Analyste · '+('domicile' if team=='h' else 'extérieur'))
+            baseline=ref['for_per_match'];n=ref['matches']
     def stop(status,title,reason):
         d.update(status=status,title=title,reason=reason);return d
     if not usable and baseline is None:d['limits'].append('Repère avant-match absent ou importé après le coup d’envoi.')
@@ -1075,12 +1163,7 @@ def desk_reading(r,p,ctx,team,market,now,hist):
             if flag.get('kind') in relevant[market] and flag.get('severity') in ('medium','high'):
                 d['limits'].append(flag.get('detail','Contexte à vérifier'))
     else:d['limits'].append('Contexte avant-match non disponible ; lecture des statistiques uniquement.')
-    if market=='cards':
-        ref=(valid_ctx or {}).get('referee') or {};rs=ref.get('stats') or {}
-        if num(rs.get('yellow_per_match')):
-            d['facts'].append('Arbitre '+ref.get('name','')+' : '+desk_number(rs['yellow_per_match'])+' jaunes / match ('+desk_number(rs.get('matches'))+' matchs).')
-            d['limits'].append('Moyenne de l’arbitre sur les deux équipes ; aucune échéance de carton déduite.')
-        else:d['limits'].append('Statistiques d’arbitre non documentées.')
+    if market=='cards':d['limits'].append('La moyenne de l’arbitre concerne les deux équipes. H2H descriptif, jamais une échéance de carton.')
     at=date(r.get('collected_at'));received=date(r.get('received_at'))
     if not received:return stop('waiting','En attente','Collecte Packball attendue.')
     if not at or not 0<=(now-at).total_seconds()<=100 or not 0<=(now-received).total_seconds()<=100:return stop('stale','Données anciennes','Dernier relevé trop ancien : aucune lecture active.')
@@ -1147,6 +1230,9 @@ def desk_advice(c,s,p,ctx,now):
                     if at and before and 20<=(at-before).total_seconds()<=100 and old_d['status']=='candidate' and old_d['period']==d['period'] and old_d['observed']==d['observed'] and old.get('score')==r.get('score') and num(old.get('minute')) and 0<=r['minute']-old['minute']<=2:
                         d.update(status='active',title='À regarder')
             d.update(sample_id=s['id'],updated_at=iso(now))
+            if market=='cards':
+                d['telegram_allowed']=card_market_allowed(c,r,team,now,ctx)
+                if not d['telegram_allowed']:d['limits'].insert(0,'Telegram cartons en attente : championnat non autorisé et aucun marché équipe Stake frais vérifié.')
             out.append(d)
     return out
 
@@ -1166,11 +1252,19 @@ def radar_enabled(c):
 def radar_status(c):
     counts={r['delivery']:r['n'] for r in c.execute('SELECT delivery,COUNT(*) n FROM v5_radar_notifications GROUP BY delivery')}
     last=c.execute('SELECT created_at,delivery,delivery_error FROM v5_radar_notifications ORDER BY id DESC LIMIT 1').fetchone()
-    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','counts':counts,'last':dict(last) if last else None}
+    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'card_policy':'allowlist_or_verified_team_market'}
+
+def card_market_allowed(c,r,team,now,ctx=None):
+    league=r.get('league') or (ctx or {}).get('league')
+    if league and norm(league) in {norm(v) for v in setting(c,'card_leagues',[])}:return True
+    cache=c.execute("SELECT value FROM v4_runtime WHERE key='pulsescore_test'").fetchone()
+    cuts=desk_cuts(r,dec(cache['value'],{}) if cache else {},now)
+    return any(q['team']==team and q['kind']=='cards' and q['period']=='FT' for q in cuts.get('quotes',[]))
 
 def radar_eligible(r,d,now):
     # Exactly the hot (confirmed) cards; factual watch-only cards are not alerts.
     return (d.get('status')=='active' and d.get('team') in ('h','a') and d.get('market') in DESK_MARKETS
+            and (d.get('market')!='cards' or d.get('telegram_allowed') is True)
             and r.get('state')=='LIVE' and num(r.get('minute')) and 0<r['minute']<=90
             and not r.get('minute_extra') and not r.get('quality_errors')
             and d.get('sample_id')==r.get('sample_id') and num(d.get('observed'))
@@ -1193,6 +1287,10 @@ def radar_message(r,d,cuts):
     lines=['🔥 STRATEDGE · RADAR LIVE','', '⚽ '+r['home']+' — '+r['away'],
            '⏱ '+desk_number(r['minute'])+'′ · '+desk_number(r['score']['h'])+'–'+desk_number(r['score']['a']),
            '', '🎯 '+title+' · '+name,'Dynamique confirmée sur deux relevés.','📊 '+d['reason']]
+    if d['market']=='cards':
+        lines+=['Fautes au total : '+desk_number((d.get('metrics') or {}).get('fouls'))+' · jaunes actuels : '+desk_number(d.get('observed'))+'.']
+    evidence=(d.get('context_evidence') or {}).get('lines') or []
+    if evidence:lines+=['','📚 Repères avant-match']+evidence[:4]
     options=[q for q in cuts.get('quotes',[]) if q['team']==d['team'] and q['kind']==d['market'] and q['period']=='FT' and q['half_line'] and q['needed']!=0]
     if options:
         q=min(options,key=lambda q:q['line']);unit={'goals':'buts','corners':'corners','cards':'cartons Bookings'}[d['market']]

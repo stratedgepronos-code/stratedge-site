@@ -44,8 +44,7 @@ class DeskTests(unittest.TestCase):
   self.assertEqual(self.reading()['status'],'confirming')
   self.add(self.r,self.now);self.assertEqual(self.reading()['status'],'confirming')
  def test_corner_dynamics_work_without_inventing_baseline(self):
-  self.prepare();d=self.reading('corners');self.assertEqual(d['status'],'active');self.assertIsNone(d['baseline']);self.assertEqual(d['observed'],0)
-  self.assertIn('absente',str(d['limits']))
+  self.prepare();self.assertNotIn('corners',V.DESK_MARKETS);self.assertEqual(len(V.board(self.c,self.now)['matches'][0]['advice']),4)
  def test_historical_ratio_alone_does_not_trigger(self):
   self.prepare();self.c.execute('DELETE FROM samples');self.c.commit()
   self.r['stats']['sot']['h']=8;self.r['ind10']['shots10']['h']=1;self.r['ind10']['sot10']['h']=0
@@ -74,7 +73,7 @@ class DeskTests(unittest.TestCase):
  def test_sourced_corner_reference_validated_and_used(self):
   source={'id':'c','title':'Source de test','url':'https://example.org/corners','checked_at':V.iso(self.before)}
   self.ctx['sources']=[source];self.ctx['teams']['h']['corner_reference']={'matches':20,'sample_label':'Test','corners_for_ft':5.4,'corners_against_ft':4.1,'source_ids':['c']}
-  self.prepare();d=self.reading('corners');self.assertEqual(d['baseline'],5.4);self.assertEqual(d['sample'],20);self.assertEqual(d['baseline_origin'],'Source analyste')
+  self.prepare();V.validate_context(self.ctx,self.before);self.assertNotIn('corners',{x['market'] for x in V.board(self.c,self.now)['matches'][0]['advice']})
   self.ctx['teams']['h']['corner_reference']['source_ids']=['missing']
   with self.assertRaisesRegex(ValueError,'source corners'):V.validate_context(self.ctx,self.before)
  def test_actions_cannot_reenable_automatic_delivery(self):
@@ -87,7 +86,7 @@ class DeskTests(unittest.TestCase):
   self.assertEqual(V.dispatch(self.c,{'action':'export_history'},self.now)['signals'],[])
  def test_missing_context_keeps_every_match_and_side(self):
   self.prepare();self.c.execute('DELETE FROM v4_contexts');self.c.commit()
-  b=V.board(self.c,self.now);self.assertEqual(len(b['matches']),1);self.assertEqual(len(b['matches'][0]['advice']),6)
+  b=V.board(self.c,self.now);self.assertEqual(len(b['matches']),1);self.assertEqual(len(b['matches'][0]['advice']),4)
   self.assertEqual({d['team'] for d in b['matches'][0]['advice']},{'h','a'})
  def test_malformed_sample_does_not_break_other_markets(self):
   self.prepare();self.r['score']=[];self.add(self.r,self.now)

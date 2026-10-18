@@ -1,3 +1,17 @@
+# Mise à jour du 18 octobre 2026 — buts et cartons
+
+- Corners retirés des lectures courantes, filtres et alertes Telegram. Les archives, anciens imports et décodeurs de marchés restent compatibles ; aucune suppression d’historique.
+- Le prompt téléchargeable `PROMPT_ANALYSTE_V4.md` demande la recherche web avant-match : désignation/arbitre (StatsHub ou source officielle), cartons de chaque équipe global/home/away/H2H, timing de buts marqués et concédés (FootyStats ou autre source vérifiée). Aucun nouvel abonnement ni scraping en boucle, aucun appel IA live.
+- Contrat `stratedge.context.v4` conservé. Champs facultatifs validés `teams.h/a.card_references` et `goal_timing` : source, période, nombre de matchs et date de référence avant le coup d’envoi obligatoires. Les anciens dossiers restent acceptés. Les nouvelles données exigent un nouveau JSON importé avant le match ; une ancienne analyse n’est pas enrichie automatiquement.
+- Affichage compact et message Telegram incluent l’arbitre, les moyennes des deux équipes à leur localisation du jour, le global et H2H. Les autres splits sont conservés dans le JSON. Un décompte « cards » ou « booking_points » ne remplace jamais les jaunes.
+- Buts : tranche réellement publiée de 10 minutes, ou 15 minutes si seule disponible. Le moteur choisit celle contenant la minute (start < minute <= end), affiche buts / matchs couverts et marque « concordant » seulement si attaque et défense adverse dépassent chacune leur cadence moyenne sur un historique complet de 90 minutes, au moins 10 matchs dans les localisations du jour, mêmes bornes. Ce repère trie les cartes confirmées en priorité ; les seuils d’activité live et la confirmation restent obligatoires. Il ne prédit pas les minutes restantes.
+- Aucun xG de tirs fiable actuellement collecté : pas de seuil xG inventé, pas d’assimilation ExG Packball / xG cumulé. Les tirs/cadrés récents restent la preuve live disponible.
+- Réglages → championnats cartons : liste de noms Packball exacts, un par ligne. Seules ces ligues OU un marché FT de cartons de la bonne équipe effectivement reçu, actif et frais chez Stake autorisent Telegram cartons. Liste vide initialement ; la surveillance à l’écran et les alertes buts continuent. Aucune liste de couverture Stake inventée ; une ligue autorisée ne garantit pas chaque match.
+- La présence d’un total cartons MATCH, d’un marché adverse ou d’une ancienne cote ne permet pas l’envoi pour l’équipe ciblée. Aucun appel PulseScore automatique ajouté (quota conservé).
+- Les champs manquants ne deviennent pas zéro. Ni les historiques ni une série de fautes ne créent un événement « dû ». H2H et arbitre décrivent un contexte, pas une probabilité calibrée.
+
+Les notes ci-dessous décrivent aussi des versions antérieures ; cette mise à jour prime pour les corners et les champs analyste.
+
 # StratEdge Décision V5 — remplacement du Live V4
 
 - Route inchangée : `/panel-x9k3m/slate/live90/`.

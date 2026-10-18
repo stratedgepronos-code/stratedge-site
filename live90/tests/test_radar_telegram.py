@@ -14,7 +14,7 @@ class RadarTests(unittest.TestCase):
   self.sleep=patch.object(V.time,'sleep');self.sleep.start();self.prepare()
  def tearDown(self):
   self.sleep.stop();self.sender.stop();self.env.stop();fixtures.DeskTests.tearDown(self)
- def one(self):return V.sample_data(V.latest(self.c)[0]),self.reading('corners')
+ def one(self):return V.sample_data(V.latest(self.c)[0]),self.reading('goals')
  def queue(self):
   r,d=self.one();V.queue_radar(self.c,r,d,self.now);self.c.commit();return r,d
  def rows(self):return self.c.execute('SELECT * FROM v5_radar_notifications ORDER BY id').fetchall()
@@ -42,18 +42,18 @@ class RadarTests(unittest.TestCase):
    self.c.execute('DELETE FROM v5_radar_notifications');self.c.commit();self.r=copy.deepcopy(original);self.add(self.r,self.now-dt.timedelta(seconds=30));self.add(self.r,self.now);self.queue()
    if change=='finished':self.r['state']='FT'
    elif change=='score':self.r['score']['a']=1
-   elif change=='counter':self.r['stats']['corners']['h']=1
+   elif change=='counter':self.r['score']['h']=1
    self.add(self.r,self.now+dt.timedelta(seconds=1));V.deliver_radar(self.c,self.now+dt.timedelta(seconds=101 if change=='stale' else 1))
    self.assertEqual(self.rows()[0]['delivery'],'expired',change)
   self.send.assert_not_called()
  def test_missing_quote_does_not_block(self):
   self.queue();V.deliver_radar(self.c,self.now);msg=self.send.call_args.args[0]
-  for text in ('Corners à surveiller','Équipe A','Cote et cut indisponibles','pas un pari validé'):self.assertIn(text,msg)
+  for text in ('But à surveiller','Équipe A','Cote et cut indisponibles','pas un pari validé'):self.assertIn(text,msg)
  def test_exact_team_cut_and_required_events(self):
-  self.queue();event={'event_id':'stake','home':'Équipe A','away':'Équipe B','score':{'h':0,'a':0},'markets':[{'name':'Équipe A Total Corners','canonical':'CORNERS_OVER_UNDER','period':'FULL_TIME','active':True,'selections':[{'name':'Over 2.5','line':2.5,'odds':1.9,'active':True}]}]}
+  self.queue();event={'event_id':'stake','home':'Équipe A','away':'Équipe B','score':{'h':0,'a':0},'markets':[{'name':'Équipe A Total Goals','canonical':'HOME_OVER_UNDER','period':'FULL_TIME','active':True,'selections':[{'name':'Over 2.5','line':2.5,'odds':1.9,'active':True}]}]}
   V.runtime(self.c,'pulsescore_test',{'ok':True,'at':V.iso(self.now),'events':[event]});self.c.commit()
   V.deliver_radar(self.c,self.now);msg=self.send.call_args.args[0]
-  for text in ('Équipe A +2,5 corners','3 de plus','Un seul événement ne suffit pas'):self.assertIn(text,msg)
+  for text in ('Équipe A +2,5 buts','3 de plus','Un seul événement ne suffit pas'):self.assertIn(text,msg)
  def test_stale_quote_removed(self):
   self.queue();V.runtime(self.c,'pulsescore_test',{'ok':True,'at':V.iso(self.now-dt.timedelta(minutes=3)),'events':[]});self.c.commit()
   V.deliver_radar(self.c,self.now);self.assertIn('Cote et cut indisponibles',self.send.call_args.args[0])
