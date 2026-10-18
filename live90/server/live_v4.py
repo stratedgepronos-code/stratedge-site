@@ -332,14 +332,14 @@ def validate_enrichment(team, ids, generated, kickoff, label):
                 fouls=ref.get('fouls_for_per_match')
                 if fouls is not None and (not num(fouls) or not 0<=fouls<=100):raise ValueError(label+' : moyenne fautes commises invalide')
             elif field=='goal_halves':
-                if not text_ok(ref.get('stoppage_policy'),300):raise ValueError(label+' : convention des mi-temps requise')
-                for half in ('first_half','second_half'):
+                if not text_ok(ref.get('stoppage_policy'),300):raise ValueError(label+' : convention des périodes requise')
+                for half in ('full_time','first_half','second_half'):
                     values=ref.get(half)
                     if values is None:continue
-                    if not isinstance(values,dict) or any(k not in ('scored_per_match','conceded_per_match') for k in values):raise ValueError(label+' : statistiques par mi-temps invalides')
+                    if not isinstance(values,dict) or any(k not in ('scored_per_match','conceded_per_match') for k in values):raise ValueError(label+' : statistiques par période invalides')
                     for k in ('scored_per_match','conceded_per_match'):
                         v=values.get(k)
-                        if v is not None and (not num(v) or not 0<=v<=30):raise ValueError(label+' : moyenne de buts par mi-temps invalide')
+                        if v is not None and (not num(v) or not 0<=v<=30):raise ValueError(label+' : moyenne de buts par période invalide')
             else:
                 bins=ref.get('bins')
                 if not text_ok(ref.get('stoppage_policy'),300) or not isinstance(bins,list) or not 1<=len(bins)<=18:raise ValueError(label+' : tranches de buts invalides')
@@ -1009,7 +1009,7 @@ def export_analysis(c,now):
                  state=p.get('state') if p else None,data_issues=p.get('issues',[]) if p else [],
                  prematch_imported_at=p.get('imported_at') if p else None,prematch_usable=p.get('usable',False) if p else False)
         matches.append(m)
-    return {'schema':'stratedge.research.v4','exported_at':iso(now),'timezone':'Europe/Paris','matches':matches,'instructions':'Tous les matchs doivent figurer dans le résultat stratedge.context.v4 avec watch:true. Aucun scénario éliminatoire. Utiliser PROMPT_ANALYSTE_V4.md révision 18/10/2026 : arbitre confirmé avec jaunes et fautes moyens, card_references global/home/away/h2h avec fouls_for_per_match (même échantillon), et goal_halves par localisation (home/away), moyennes marquées/encaissées en first_half/second_half. Aucun créneau historique de 10 minutes requis. Références manquantes : null, jamais inventées. Concordance avant-match/live obligatoire pour notifier. Corners retirés.'}
+    return {'schema':'stratedge.research.v4','exported_at':iso(now),'timezone':'Europe/Paris','matches':matches,'instructions':'Tous les matchs doivent figurer dans le résultat stratedge.context.v4 avec watch:true. Aucun scénario éliminatoire. Utiliser PROMPT_ANALYSTE_V4.md révision 18/10/2026 : arbitre confirmé avec jaunes et fautes moyens, card_references global/home/away/h2h avec fouls_for_per_match (même échantillon), et goal_halves par localisation (home/away), avec full_time (prioritaire pour les alertes match entier), first_half/second_half facultatifs. La période des références doit correspondre au pari ; aucune mi-temps obligatoire pour un pari FT. Aucun créneau historique de 10 minutes requis. Références manquantes : null, jamais inventées. Concordance avant-match/live obligatoire pour notifier. Corners retirés.'}
 
 def dispatch(c,x,now):
     action=x.get('action','board')
@@ -1090,11 +1090,17 @@ CREATE INDEX IF NOT EXISTS v5_radar_result_delivery ON v5_radar_result_events(de
 def desk_number(v):
     return format(v,'.2f').rstrip('0').rstrip('.').replace('.',',') if num(v) else '—'
 
-def context_evidence(ctx, team, market, minute):
+def goal_period_values(ref, period):
+    """FT is explicit or the sum of complete halves on the same declared sample."""
+    if period!='full_time' or 'full_time' in ref:return ref.get(period) or {}
+    first=ref.get('first_half') or {};second=ref.get('second_half') or {}
+    return {k:first[k]+second[k] for k in ('scored_per_match','conceded_per_match') if num(first.get(k)) and num(second.get(k))}
+
+def context_evidence(ctx, team, market, minute, period='full_time'):
     """Descriptive evidence, never an invented probability or a missing-data zero."""
     out={'lines':[],'support':'unknown'}
     if not ctx or not ctx.get('usable'):
-        out['lines']=['Arbitre et moyennes disciplinaires avant-match : non documentés.' if market=='cards' else 'Buts avant-match par mi-temps et localisation : non documentés.']
+        out['lines']=['Arbitre et moyennes disciplinaires avant-match : non documentés.' if market=='cards' else 'Buts avant-match pour la période du pari et la localisation : non documentés.']
         return out
     teams=ctx.get('teams') or {};other='a' if team=='h' else 'h'
     if market=='cards':
@@ -1115,8 +1121,9 @@ def context_evidence(ctx, team, market, minute):
         out['support']='documented' if any((teams.get(s) or {}).get('card_references') for s in ('h','a')) else 'unknown'
         return out
     if market!='goals' or not num(minute):return out
-    half='first_half' if minute<=45 else 'second_half'
-    title='1re mi-temps' if half=='first_half' else '2e mi-temps'
+    if period not in ('full_time','first_half','second_half'):return out
+    half=period
+    title={'full_time':'match entier','first_half':'1re mi-temps','second_half':'2e mi-temps'}[period]
     refs=[]
     for side,field in ((team,'scored_per_match'),(other,'conceded_per_match')):
         scopes=(teams.get(side) or {}).get('goal_halves')
@@ -1125,17 +1132,17 @@ def context_evidence(ctx, team, market, minute):
         if scopes is None:scopes=legacy_goal_halves((teams.get(side) or {}).get('goal_timing') or {})
         scope='home' if side=='h' else 'away';selected=scope if scopes.get(scope) else 'overall';ref=scopes.get(selected)
         if not ref:continue
-        value=(ref.get(half) or {}).get(field)
+        value=goal_period_values(ref,period).get(field)
         if not num(value):continue
         name=ctx.get('home' if side=='h' else 'away') or side
         ready=ref['matches']>=10 and selected==scope
         refs.append({'team':side,'scope':selected,'half':half,'field':field,'rate':value,'matches':ref['matches'],'comparison_ready':ready})
         out['lines'].append(name+' · '+{'home':'à domicile','away':'à l’extérieur','overall':'toutes localisations'}[selected]+' · '+title+' : '+desk_number(value)+' buts '+('marqués' if field=='scored_per_match' else 'encaissés')+'/m · n='+str(ref['matches'])+'.')
-    out.update(half=half,halves=refs)
-    if len(refs)==2 and all(x['comparison_ready'] and x['rate']>=0.5 for x in refs):
-        out['support']='concordant';out['lines'].insert(0,title+' : attaque et défense adverse concordantes (repère ≥ 0,5 but/m chacune).')
+    out.update(period=period,half=half,halves=refs)
+    if len(refs)==2 and all(x['comparison_ready'] and (x['rate']>0 if period=='full_time' else x['rate']>=0.5) for x in refs):
+        out['support']='concordant';out['lines'].insert(0,title+' : références attaque et défense adverse documentées dans les localisations du match.')
     elif refs:out['support']='documented'
-    else:out['lines'].append('Buts par mi-temps et localisation : non documentés.')
+    else:out['lines'].append('Buts sur '+title+' et par localisation : non documentés.')
     return out
 
 def legacy_goal_halves(scopes):
@@ -1152,7 +1159,7 @@ def legacy_goal_halves(scopes):
 
 def prematch_live_coherence(r,p,ctx,team,market,metrics,evidence):
     """Explicit experimental concordance gates, not probabilities or event debt."""
-    out={'status':'missing','lines':[],'missing':[],'conflicts':[],'policy':'prematch_live_halves_v2'}
+    out={'status':'missing','lines':[],'missing':[],'conflicts':[],'policy':'prematch_live_period_v3'}
     missing=out['missing'];conflicts=out['conflicts'];lines=out['lines']
     if not p or not p.get('usable'):missing.append('Profil Packball avant-match absent ou tardif.')
     if not ctx or not ctx.get('usable'):missing.append('Dossier analyste avant-match absent ou tardif.')
@@ -1170,9 +1177,9 @@ def prematch_live_coherence(r,p,ctx,team,market,metrics,evidence):
             elif metrics['shots10']<=shots/9 or metrics['sot10']<=sot/9:conflicts.append('Tirs ET cadrés récents doivent dépasser le rythme historique moyen ramené à 10 min.')
             else:lines.append('Live 10′ : '+desk_number(metrics['shots10'])+' tirs / '+desk_number(metrics['sot10'])+' cadrés ; repère moyen '+desk_number(shots/9)+' / '+desk_number(sot/9)+'.')
         halves=evidence.get('halves') or []
-        if len(halves)!=2 or any(not x.get('comparison_ready') for x in halves):
-            missing.append('Buts par mi-temps : moyennes domicile/extérieur, au moins 10 matchs, attaque et défense adverse requises.')
-        elif evidence.get('support')!='concordant':conflicts.append('Mi-temps actuelle : buts marqués et encaissés adverses doivent chacun atteindre le repère expérimental de 0,5 but/m.')
+        if evidence.get('period')!='full_time' or len(halves)!=2 or any(not x.get('comparison_ready') for x in halves):
+            missing.append('Buts match entier : moyennes domicile/extérieur, au moins 10 matchs, attaque et défense adverse requises.')
+        elif evidence.get('support')!='concordant':conflicts.append('Match entier : aucune production marquée ou encaissée dans une référence historique locale.')
         else:lines.extend(evidence.get('lines',[])[1:3])
     elif market=='cards':
         refs=[]
@@ -1357,7 +1364,7 @@ def radar_status(c):
     last=c.execute('SELECT created_at,delivery,delivery_error FROM v5_radar_notifications ORDER BY id DESC LIMIT 1').fetchone()
     results={r['outcome']:r['n'] for r in c.execute('SELECT outcome,COUNT(*) n FROM v5_radar_results GROUP BY outcome')}
     result_delivery={r['delivery']:r['n'] for r in c.execute('SELECT delivery,COUNT(*) n FROM v5_radar_result_events GROUP BY delivery')}
-    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market'),'coherence_policy':'prematch_live_halves_v2','result_tracking':'packball_two_samples','results':results,'result_deliveries':result_delivery}
+    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market'),'coherence_policy':'prematch_live_period_v3','result_tracking':'packball_two_samples','results':results,'result_deliveries':result_delivery}
 
 # Explicit owner selection, 18 October 2026. Country is required for common
 # labels (Premier League, Serie A, Pro League...); no substring or team-name guesses.
@@ -1403,7 +1410,7 @@ def card_market_allowed(c,r,team,now,ctx=None,p=None):
 
 def radar_eligible(r,d,now):
     # Exactly the hot (confirmed) cards; factual watch-only cards are not alerts.
-    return (d.get('status')=='active' and (d.get('coherence') or {}).get('status')=='confirmed' and (d.get('coherence') or {}).get('policy')=='prematch_live_halves_v2' and d.get('team') in ('h','a') and d.get('market') in DESK_MARKETS
+    return (d.get('status')=='active' and (d.get('coherence') or {}).get('status')=='confirmed' and (d.get('coherence') or {}).get('policy')=='prematch_live_period_v3' and d.get('team') in ('h','a') and d.get('market') in DESK_MARKETS
             and (d.get('market')!='cards' or d.get('telegram_allowed') is True)
             and r.get('state')=='LIVE' and num(r.get('minute')) and 0<r['minute']<=90
             and not r.get('minute_extra') and not r.get('quality_errors')
@@ -1645,7 +1652,7 @@ def current_diagnostic(c,now):
     readings=[d for r in matches for d in r.get('advice',[]) if d.get('market')=='cards']
     result['card_scope']={'applies_to':'board_radar_history_telegram','excluded_readings':sum(d.get('status')=='excluded' for d in readings),'unauthorized_recommendations':sum(d.get('telegram_allowed') is not True and d.get('status')!='excluded' for d in readings)}
     readings=[d for r in matches for d in r.get('advice',[]) if d.get('status')!='excluded']
-    result['coherence']={'policy':'prematch_live_halves_v2','counts':{state:sum((d.get('coherence') or {}).get('status')==state for d in readings) for state in ('confirmed','missing','conflict')},'active_without_concordance':sum(d.get('status')=='active' and (d.get('coherence') or {}).get('status')!='confirmed' for d in readings)}
+    result['coherence']={'policy':'prematch_live_period_v3','counts':{state:sum((d.get('coherence') or {}).get('status')==state for d in readings) for state in ('confirmed','missing','conflict')},'active_without_concordance':sum(d.get('status')=='active' and (d.get('coherence') or {}).get('status')!='confirmed' for d in readings)}
     result['pulsescore']={k:b['pulsescore'][k] for k in ('configured','auto_enabled','auto_today','auto_daily_limit','attempts_31d')}
     details=[];reasons={}
     for r in sorted(matches,key=lambda r:r.get('state') not in ('LIVE','HT')):

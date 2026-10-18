@@ -34,10 +34,10 @@ class EvidenceTests(unittest.TestCase):
    with self.assertRaises(ValueError):V.validate_context(self.ctx,self.before)
  def test_half_boundary_missing_small_overall_late_and_no_live_xg(self):
   self.enrich();ctx=dict(self.ctx,usable=True)
-  self.assertEqual(V.context_evidence(ctx,'h','goals',45)['half'],'first_half')
-  self.assertEqual(V.context_evidence(ctx,'h','goals',46)['half'],'second_half')
-  self.assertEqual(V.context_evidence(ctx,'h','goals',30)['halves'][0]['rate'],.8)
-  self.assertEqual(V.context_evidence(ctx,'h','goals',60)['halves'][0]['rate'],1.2)
+  self.assertEqual(V.context_evidence(ctx,'h','goals',45)['period'],'full_time')
+  self.assertEqual(V.context_evidence(ctx,'h','goals',46)['period'],'full_time')
+  self.assertEqual(V.context_evidence(ctx,'h','goals',30)['halves'][0]['rate'],2)
+  self.assertEqual(V.context_evidence(ctx,'h','goals',60)['halves'][0]['rate'],2)
   for mode in ('small','partial','overall','late'):
    x=copy.deepcopy(ctx)
    if mode=='small':x['teams']['h']['goal_halves']['home']['matches']=3
