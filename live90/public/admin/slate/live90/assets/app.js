@@ -205,7 +205,7 @@ let boardReceivedAt=Date.now();
 const seenHighlights=new Set();
 function deskEffective(r,d){
  if(d?.market==='cards'&&(d.recommendation_allowed===false||d.telegram_allowed===false||d.status==='excluded'))return {...d,status:'excluded',title:'Hors sélection cartons',reason:'Cartons désactivés pour ce championnat.'};
- if(d&&['goals','cards'].includes(d.market)&&['active','confirming'].includes(d.status)&&d.coherence?.status!=='confirmed')return {...d,status:'context_wait',title:'Avant-match incomplet',reason:'Concordance avant-match/live non confirmée.'};
+ if(d&&['goals','cards'].includes(d.market)&&['active','confirming'].includes(d.status)&&(d.coherence?.status!=='confirmed'||d.coherence?.policy!=='prematch_live_halves_v2'))return {...d,status:'context_wait',title:'Avant-match incomplet',reason:'Concordance avant-match/live non confirmée.'};
  if(age(r.received_at)>100)return {...d,status:r.received_at?'stale':'waiting',title:r.received_at?'Données anciennes':'En attente',reason:'Aucune lecture active sans relevé récent.'};
  if(age(data.engine?.at)>65||data.engine?.version!=='decision5.0')return {...d,status:'waiting',title:'Moteur en attente',reason:'Le dernier cycle du moteur est trop ancien.'};
  if(r.state!=='LIVE')return {...d,status:'waiting',title:({HT:'Mi-temps',FT:'Terminé',NS:'À venir'}[r.state]||'En attente'),reason:'Aucune lecture active hors des périodes de jeu.'};
@@ -213,7 +213,7 @@ function deskEffective(r,d){
 }
 
 function coherenceHTML(d){const c=d.coherence;if(!c)return '';const reasons=[...(c.missing||[]),...(c.conflicts||[])];return `<div class="reading-evidence"><b>${c.status==='confirmed'?'Avant-match + live concordants':c.status==='missing'?'Avant-match à compléter':'Concordance insuffisante'}</b>${(reasons.length?reasons:c.lines||[]).slice(0,3).map(x=>`<small>${esc(x)}</small>`).join('')}</div>`}
-function evidenceHTML(d){const e=d.context_evidence;if(!e)return coherenceHTML(d);return coherenceHTML(d)+`<div class="reading-evidence"><b>${e.support==='concordant'?'Créneau favorable documenté':'Repères historiques'}</b>${(e.lines||[]).slice(0,3).map(x=>`<small>${esc(x)}</small>`).join('')}${d.market==='cards'&&d.telegram_allowed===false?'<small class="help">Cartons hors sélection : aucune recommandation ni alerte</small>':''}</div>`}
+function evidenceHTML(d){const e=d.context_evidence;if(!e)return coherenceHTML(d);return coherenceHTML(d)+`<div class="reading-evidence"><b>${e.support==='concordant'?'Mi-temps favorable documentée':'Repères historiques'}</b>${(e.lines||[]).slice(0,3).map(x=>`<small>${esc(x)}</small>`).join('')}${d.market==='cards'&&d.telegram_allowed===false?'<small class="help">Cartons hors sélection : aucune recommandation ni alerte</small>':''}</div>`}
 
 function deskCell(r,d,kind){
  const x=deskEffective(r,d),number=d?.observed??(kind==='goals'?r.score?.[d?.team]:r.stats?.[{corners:'corners',cards:'yellow_cards'}[kind]]?.[d?.team]);
@@ -259,7 +259,7 @@ function attentionItems(matches){
  for(const r of matches){
   if(r.state!=='LIVE'||!attentionNumber(r.minute)||r.minute<=0||r.minute>90||r.minute_extra||r.quality_errors?.length)continue;
   for(const d of r.advice||[]){
-   if(d.coherence?.status!=='confirmed')continue;
+   if((d.coherence?.status!=='confirmed'||d.coherence?.policy!=='prematch_live_halves_v2'))continue;
    if(market!=='all'&&market!==d.market)continue;
    if(!['h','a'].includes(d.team)||!Object.hasOwn(deskNames,d.market)||d.sample_id!==r.sample_id)continue;
    const x=deskEffective(r,d),m=d.metrics||{};
@@ -282,7 +282,7 @@ function attentionItems(matches){
     detail=attentionNumber(m.blocked_shots10)?`${fmt(m.blocked_shots10)} tirs bloqués sur la même période`:'Tirs bloqués récents non renseignés';
     reserve='Du volume offensif, mais les tirs ne garantissent pas des corners.';notable=true;
    }
-   if(d.context_evidence?.support==='concordant')detail+=' · créneau historique concordant';
+   if(d.context_evidence?.support==='concordant')detail+=' · mi-temps historique concordante';
    if(!notable&&!confirmed)continue;
    if(!notable){headline={goals:'Pression offensive soutenue',corners:'Activité autour de la surface',cards:'Fautes récentes en série'}[d.market];detail=d.reason;reserve=(d.limits||[])[0]||'Situation à examiner dans le détail du match.'}
    const id=String(r.packball_id||r.fixture),key=[id,d.team,d.market].join(':');

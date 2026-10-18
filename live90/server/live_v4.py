@@ -313,7 +313,7 @@ def identity(m):
 
 def validate_enrichment(team, ids, generated, kickoff, label):
     """Optional, source-backed morning data. Old analyst dossiers remain valid."""
-    for field in ('card_references','goal_timing'):
+    for field in ('card_references','goal_timing','goal_halves'):
         refs=team.get(field)
         if refs is None:continue
         scopes=('overall','home','away','h2h') if field=='card_references' else ('overall','home','away')
@@ -331,6 +331,15 @@ def validate_enrichment(team, ids, generated, kickoff, label):
                 if not num(value) or not 0<=value<=100:raise ValueError(label+' : moyenne cartons invalide')
                 fouls=ref.get('fouls_for_per_match')
                 if fouls is not None and (not num(fouls) or not 0<=fouls<=100):raise ValueError(label+' : moyenne fautes commises invalide')
+            elif field=='goal_halves':
+                if not text_ok(ref.get('stoppage_policy'),300):raise ValueError(label+' : convention des mi-temps requise')
+                for half in ('first_half','second_half'):
+                    values=ref.get(half)
+                    if values is None:continue
+                    if not isinstance(values,dict) or any(k not in ('scored_per_match','conceded_per_match') for k in values):raise ValueError(label+' : statistiques par mi-temps invalides')
+                    for k in ('scored_per_match','conceded_per_match'):
+                        v=values.get(k)
+                        if v is not None and (not num(v) or not 0<=v<=30):raise ValueError(label+' : moyenne de buts par mi-temps invalide')
             else:
                 bins=ref.get('bins')
                 if not text_ok(ref.get('stoppage_policy'),300) or not isinstance(bins,list) or not 1<=len(bins)<=18:raise ValueError(label+' : tranches de buts invalides')
@@ -1000,7 +1009,7 @@ def export_analysis(c,now):
                  state=p.get('state') if p else None,data_issues=p.get('issues',[]) if p else [],
                  prematch_imported_at=p.get('imported_at') if p else None,prematch_usable=p.get('usable',False) if p else False)
         matches.append(m)
-    return {'schema':'stratedge.research.v4','exported_at':iso(now),'timezone':'Europe/Paris','matches':matches,'instructions':'Tous les matchs doivent figurer dans le résultat stratedge.context.v4 avec watch:true. Aucun scénario éliminatoire. Utiliser PROMPT_ANALYSTE_V4.md révision 18/10/2026 : arbitre confirmé avec jaunes et fautes moyens, card_references global/home/away/h2h avec fouls_for_per_match (même échantillon), et goal_timing complet par localisation. Références manquantes : null, jamais inventées. Concordance avant-match/live obligatoire pour notifier. Corners retirés.'}
+    return {'schema':'stratedge.research.v4','exported_at':iso(now),'timezone':'Europe/Paris','matches':matches,'instructions':'Tous les matchs doivent figurer dans le résultat stratedge.context.v4 avec watch:true. Aucun scénario éliminatoire. Utiliser PROMPT_ANALYSTE_V4.md révision 18/10/2026 : arbitre confirmé avec jaunes et fautes moyens, card_references global/home/away/h2h avec fouls_for_per_match (même échantillon), et goal_halves par localisation (home/away), moyennes marquées/encaissées en first_half/second_half. Aucun créneau historique de 10 minutes requis. Références manquantes : null, jamais inventées. Concordance avant-match/live obligatoire pour notifier. Corners retirés.'}
 
 def dispatch(c,x,now):
     action=x.get('action','board')
@@ -1085,7 +1094,7 @@ def context_evidence(ctx, team, market, minute):
     """Descriptive evidence, never an invented probability or a missing-data zero."""
     out={'lines':[],'support':'unknown'}
     if not ctx or not ctx.get('usable'):
-        out['lines']=['Arbitre et moyennes disciplinaires avant-match : non documentés.' if market=='cards' else 'Créneau de buts avant-match : non documenté.']
+        out['lines']=['Arbitre et moyennes disciplinaires avant-match : non documentés.' if market=='cards' else 'Buts avant-match par mi-temps et localisation : non documentés.']
         return out
     teams=ctx.get('teams') or {};other='a' if team=='h' else 'h'
     if market=='cards':
@@ -1106,31 +1115,44 @@ def context_evidence(ctx, team, market, minute):
         out['support']='documented' if any((teams.get(s) or {}).get('card_references') for s in ('h','a')) else 'unknown'
         return out
     if market!='goals' or not num(minute):return out
-    windows=[]
-    for side,field in ((team,'scored'),(other,'conceded')):
-        refs=(teams.get(side) or {}).get('goal_timing') or {};scope='home' if side=='h' else 'away'
-        selected=scope if refs.get(scope) else 'overall';ref=refs.get(selected)
+    half='first_half' if minute<=45 else 'second_half'
+    title='1re mi-temps' if half=='first_half' else '2e mi-temps'
+    refs=[]
+    for side,field in ((team,'scored_per_match'),(other,'conceded_per_match')):
+        scopes=(teams.get(side) or {}).get('goal_halves')
+        # Legacy bins are only aggregated when they cover a complete half with
+        # an exact 45-minute boundary. Never split a 40-50 bin proportionally.
+        if scopes is None:scopes=legacy_goal_halves((teams.get(side) or {}).get('goal_timing') or {})
+        scope='home' if side=='h' else 'away';selected=scope if scopes.get(scope) else 'overall';ref=scopes.get(selected)
         if not ref:continue
-        b=next((x for x in ref['bins'] if x['start']<minute<=x['end']),None)
-        if not b or b.get(field) is None:continue
+        value=(ref.get(half) or {}).get(field)
+        if not num(value):continue
         name=ctx.get('home' if side=='h' else 'away') or side
-        count=b[field];rate=count/ref['matches'];width=b['end']-b['start']
-        complete=sum(x['end']-x['start'] for x in ref['bins'])==90 and all(x.get(field) is not None for x in ref['bins'])
-        total=sum(x.get(field) or 0 for x in ref['bins'])
-        elevated=complete and ref['matches']>=10 and selected==scope and total>0 and count/width>total/90
-        item={'team':side,'scope':selected,'start':b['start'],'end':b['end'],'count':count,'matches':ref['matches'],'rate':rate,'above_average':elevated,'comparison_ready':complete and ref['matches']>=10 and selected==scope}
-        windows.append(item)
-        out['lines'].append(name+' · '+{'home':'à domicile','away':'à l’extérieur','overall':'toutes localisations'}[selected]+' · '+str(b['start'])+'–'+str(b['end'])+'′ : '+str(count)+' buts '+('marqués' if field=='scored' else 'encaissés')+' / '+str(ref['matches'])+' matchs ('+desk_number(rate)+'/m).')
-    out['windows']=windows
-    if len(windows)==2 and all(w['above_average'] for w in windows) and (windows[0]['start'],windows[0]['end'])==(windows[1]['start'],windows[1]['end']):
-        out['support']='concordant';out['lines'].insert(0,'Créneau historique concordant : attaque et défense adverse au-dessus de leur rythme moyen.')
-    elif windows:out['support']='documented'
-    else:out['lines'].append('Répartition des buts sur ce créneau : non documentée.')
+        ready=ref['matches']>=10 and selected==scope
+        refs.append({'team':side,'scope':selected,'half':half,'field':field,'rate':value,'matches':ref['matches'],'comparison_ready':ready})
+        out['lines'].append(name+' · '+{'home':'à domicile','away':'à l’extérieur','overall':'toutes localisations'}[selected]+' · '+title+' : '+desk_number(value)+' buts '+('marqués' if field=='scored_per_match' else 'encaissés')+'/m · n='+str(ref['matches'])+'.')
+    out.update(half=half,halves=refs)
+    if len(refs)==2 and all(x['comparison_ready'] and x['rate']>=0.5 for x in refs):
+        out['support']='concordant';out['lines'].insert(0,title+' : attaque et défense adverse concordantes (repère ≥ 0,5 but/m chacune).')
+    elif refs:out['support']='documented'
+    else:out['lines'].append('Buts par mi-temps et localisation : non documentés.')
+    return out
+
+def legacy_goal_halves(scopes):
+    out={}
+    for scope,ref in scopes.items():
+        if not ref:continue
+        converted={k:v for k,v in ref.items() if k!='bins'}
+        for half,lo,hi in (('first_half',0,45),('second_half',45,90)):
+            bins=[b for b in ref.get('bins',[]) if lo<=b['start']<b['end']<=hi]
+            if not bins or bins[0]['start']!=lo or bins[-1]['end']!=hi or any(a['end']!=b['start'] for a,b in zip(bins,bins[1:])):continue
+            converted[half]={field+'_per_match':sum(b[field] for b in bins)/ref['matches'] if all(b.get(field) is not None for b in bins) else None for field in ('scored','conceded')}
+        if 'first_half' in converted or 'second_half' in converted:out[scope]=converted
     return out
 
 def prematch_live_coherence(r,p,ctx,team,market,metrics,evidence):
     """Explicit experimental concordance gates, not probabilities or event debt."""
-    out={'status':'missing','lines':[],'missing':[],'conflicts':[],'policy':'prematch_live_v1'}
+    out={'status':'missing','lines':[],'missing':[],'conflicts':[],'policy':'prematch_live_halves_v2'}
     missing=out['missing'];conflicts=out['conflicts'];lines=out['lines']
     if not p or not p.get('usable'):missing.append('Profil Packball avant-match absent ou tardif.')
     if not ctx or not ctx.get('usable'):missing.append('Dossier analyste avant-match absent ou tardif.')
@@ -1147,13 +1169,11 @@ def prematch_live_coherence(r,p,ctx,team,market,metrics,evidence):
             if not all(num(metrics.get(k)) for k in ('shots10','sot10')):missing.append('Tirs et cadrés live sur 10 min requis.')
             elif metrics['shots10']<=shots/9 or metrics['sot10']<=sot/9:conflicts.append('Tirs ET cadrés récents doivent dépasser le rythme historique moyen ramené à 10 min.')
             else:lines.append('Live 10′ : '+desk_number(metrics['shots10'])+' tirs / '+desk_number(metrics['sot10'])+' cadrés ; repère moyen '+desk_number(shots/9)+' / '+desk_number(sot/9)+'.')
-        windows=evidence.get('windows') or []
-        if len(windows)!=2 or any(not w.get('comparison_ready') for w in windows):
-            missing.append('Créneau : historiques complets domicile/extérieur, au moins 10 matchs, attaque et défense adverse requis.')
-        elif (windows[0]['start'],windows[0]['end'])!=(windows[1]['start'],windows[1]['end']):missing.append('Créneaux attaque/défense de bornes différentes : comparaison impossible.')
-        elif evidence.get('support')!='concordant':conflicts.append('Le créneau actuel n’est pas renforcé à la fois pour l’attaque et la défense adverse.')
-        else:
-            lines.extend(evidence.get('lines',[])[1:3])
+        halves=evidence.get('halves') or []
+        if len(halves)!=2 or any(not x.get('comparison_ready') for x in halves):
+            missing.append('Buts par mi-temps : moyennes domicile/extérieur, au moins 10 matchs, attaque et défense adverse requises.')
+        elif evidence.get('support')!='concordant':conflicts.append('Mi-temps actuelle : buts marqués et encaissés adverses doivent chacun atteindre le repère expérimental de 0,5 but/m.')
+        else:lines.extend(evidence.get('lines',[])[1:3])
     elif market=='cards':
         refs=[]
         for side in (team,other):
@@ -1208,10 +1228,10 @@ def desk_reading(r,p,ctx,team,market,now,hist):
     observed=(r.get('score') or {}).get(team) if market=='goals' else stat(r,counter_key,team)
     d={'team':team,'market':market,'status':'neutral','title':'Observer','reason':'Pas de dynamique récente concordante.',
        'observed':observed,'baseline':baseline if num(baseline) and baseline>=0 else None,'opponent_baseline':against if num(against) else None,
-       'sample':n,'baseline_origin':baseline_origin,'facts':[],'limits':[],'metrics':{},'window':'10 dernières minutes','period':'HT' if num(r.get('minute')) and r['minute']<45 else 'FT'}
+       'sample':n,'baseline_origin':baseline_origin,'facts':[],'limits':[],'metrics':{},'window':'10 dernières minutes','period':'HT' if num(r.get('minute')) and r['minute']<=45 else 'FT'}
     d['context_evidence']=context_evidence(valid_ctx,team,market,r.get('minute'))
     d['facts'].extend(d['context_evidence']['lines'])
-    if market=='goals':d['limits'].append('Le créneau décrit toute la tranche historique, pas les minutes restantes. Aucun xG de tirs fiable reçu ; ExG Packball non assimilé à un xG cumulé.')
+    if market=='goals':d['limits'].append('La moyenne décrit la mi-temps entière, temps additionnel inclus selon la source, pas les minutes restantes. Aucun but n’est dû. Aucun xG de tirs fiable reçu ; ExG Packball non assimilé à un xG cumulé.')
     if market=='cards' and valid_ctx:
         ref=(((valid_ctx.get('teams') or {}).get(team) or {}).get('card_references') or {}).get('home' if team=='h' else 'away')
         if ref and ref.get('unit')=='yellow_cards':
@@ -1337,7 +1357,7 @@ def radar_status(c):
     last=c.execute('SELECT created_at,delivery,delivery_error FROM v5_radar_notifications ORDER BY id DESC LIMIT 1').fetchone()
     results={r['outcome']:r['n'] for r in c.execute('SELECT outcome,COUNT(*) n FROM v5_radar_results GROUP BY outcome')}
     result_delivery={r['delivery']:r['n'] for r in c.execute('SELECT delivery,COUNT(*) n FROM v5_radar_result_events GROUP BY delivery')}
-    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market'),'coherence_policy':'prematch_live_v1','result_tracking':'packball_two_samples','results':results,'result_deliveries':result_delivery}
+    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market'),'coherence_policy':'prematch_live_halves_v2','result_tracking':'packball_two_samples','results':results,'result_deliveries':result_delivery}
 
 # Explicit owner selection, 18 October 2026. Country is required for common
 # labels (Premier League, Serie A, Pro League...); no substring or team-name guesses.
@@ -1383,7 +1403,7 @@ def card_market_allowed(c,r,team,now,ctx=None,p=None):
 
 def radar_eligible(r,d,now):
     # Exactly the hot (confirmed) cards; factual watch-only cards are not alerts.
-    return (d.get('status')=='active' and (d.get('coherence') or {}).get('status')=='confirmed' and d.get('team') in ('h','a') and d.get('market') in DESK_MARKETS
+    return (d.get('status')=='active' and (d.get('coherence') or {}).get('status')=='confirmed' and (d.get('coherence') or {}).get('policy')=='prematch_live_halves_v2' and d.get('team') in ('h','a') and d.get('market') in DESK_MARKETS
             and (d.get('market')!='cards' or d.get('telegram_allowed') is True)
             and r.get('state')=='LIVE' and num(r.get('minute')) and 0<r['minute']<=90
             and not r.get('minute_extra') and not r.get('quality_errors')
@@ -1627,7 +1647,7 @@ if __name__=='__main__':
             readings=[d for r in b['matches'] for d in r.get('advice',[]) if d.get('market')=='cards']
             result['card_scope']={'applies_to':'board_radar_history_telegram','excluded_readings':sum(d.get('status')=='excluded' for d in readings),'unauthorized_recommendations':sum(d.get('telegram_allowed') is not True and d.get('status')!='excluded' for d in readings)}
             all_readings=[d for r in b['matches'] for d in r.get('advice',[]) if d.get('status')!='excluded']
-            result['coherence']={'policy':'prematch_live_v1','counts':{state:sum((d.get('coherence') or {}).get('status')==state for d in all_readings) for state in ('confirmed','missing','conflict')},'active_without_concordance':sum(d.get('status')=='active' and (d.get('coherence') or {}).get('status')!='confirmed' for d in all_readings)}
+            result['coherence']={'policy':'prematch_live_halves_v2','counts':{state:sum((d.get('coherence') or {}).get('status')==state for d in all_readings) for state in ('confirmed','missing','conflict')},'active_without_concordance':sum(d.get('status')=='active' and (d.get('coherence') or {}).get('status')!='confirmed' for d in all_readings)}
             result['pulsescore']={k:b['pulsescore'][k] for k in ('configured','auto_enabled','auto_today','auto_daily_limit','attempts_31d')}
         else: result=dispatch(c,json.load(sys.stdin),now_utc())
         print(enc(result));c.close()

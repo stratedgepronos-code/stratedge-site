@@ -31,12 +31,12 @@ class Coherence(unittest.TestCase):
  def test_flat_live_never_triggers_even_with_strong_prematch(self):
   self.r['ind10']['shots10']['h']=1;self.r['ind10']['sot10']['h']=0;self.prepare()
   self.assertEqual(self.reading('goals')['status'],'neutral')
- def test_goal_wrong_window_blocks(self):
+ def test_goal_weak_half_blocks(self):
   for side,scope in [('h','home'),('a','away')]:
-   for b in self.ctx['teams'][side]['goal_timing'][scope]['bins']:b.update(scored=2,conceded=2)
-  self.prepare();d=self.reading('goals');self.assertEqual(d['status'],'context_conflict');self.assertIn('créneau',d['reason'])
+   self.ctx['teams'][side]['goal_halves'][scope]['first_half'].update(scored_per_match=.2,conceded_per_match=.2)
+  self.prepare();d=self.reading('goals');self.assertEqual(d['status'],'context_conflict');self.assertIn('Mi-temps',d['reason'])
  def test_goal_overall_does_not_replace_localization(self):
-  t=self.ctx['teams']['a']['goal_timing'];t['overall']=t.pop('away');self.prepare()
+  t=self.ctx['teams']['a']['goal_halves'];t['overall']=t.pop('away');self.prepare()
   d=self.reading('goals');self.assertEqual(d['status'],'context_wait');self.assertIn('domicile/extérieur',d['reason'])
  def test_goals_high_historical_shooting_requires_matching_live_pace(self):
   self.m['prematch']['shots_h']=90;self.m['prematch']['sot_h']=36;self.prepare()

@@ -17,7 +17,7 @@ class EvidenceTests(unittest.TestCase):
   for side,scope in [('h','home'),('a','away')]:
    common={'matches':20,'sample_label':'Saison test','as_of':V.iso(self.before),'source_ids':['s']}
    self.ctx['teams'][side]['card_references']={x:dict(common,unit='yellow_cards',for_per_match=2.4 if x==scope else 1.8,fouls_for_per_match=12) for x in ('overall',scope,'h2h')}
-   self.ctx['teams'][side]['goal_timing']={scope:dict(common,stoppage_policy='Temps additionnel dans les dernières tranches des mi-temps',bins=[{'start':i,'end':i+10,'scored':8 if i==20 else 1,'conceded':6 if i==20 else 1} for i in range(0,90,10)])}
+   self.ctx['teams'][side]['goal_halves']={scope:dict(common,stoppage_policy='45+ et 90+ dans leur mi-temps',first_half={'scored_per_match':.8,'conceded_per_match':.6},second_half={'scored_per_match':1.2,'conceded_per_match':.9})}
  def test_roundtrip_context_and_message_with_both_teams_referee_h2h(self):
   self.enrich();self.prepare();d=self.reading('cards')
   self.assertEqual(d['baseline'],2.4);self.assertIn('domicile',d['baseline_origin'])
@@ -29,18 +29,20 @@ class EvidenceTests(unittest.TestCase):
   for field,value in [('source_ids',['absent']),('as_of',V.iso(self.ko)),('unit','yellow_or_red'),('matches',0)]:
    self.ctx=copy.deepcopy(original);self.ctx['teams']['h']['card_references']['home'][field]=value
    with self.assertRaises(ValueError):V.validate_context(self.ctx,self.before)
-  for change in ({'scored':.4},{'start':10},{'end':100}):
-   self.ctx=copy.deepcopy(original);self.ctx['teams']['h']['goal_timing']['home']['bins'][2].update(change)
+  for change in ({'scored_per_match':-.4},{'conceded_per_match':31},{'scored_per_match':'50%'},{'scored_per_match':True},{'scored_per_match':float('nan')}):
+   self.ctx=copy.deepcopy(original);self.ctx['teams']['h']['goal_halves']['home']['first_half'].update(change)
    with self.assertRaises(ValueError):V.validate_context(self.ctx,self.before)
- def test_timing_boundary_partial_small_overall_late_and_no_live_xg(self):
+ def test_half_boundary_missing_small_overall_late_and_no_live_xg(self):
   self.enrich();ctx=dict(self.ctx,usable=True)
-  self.assertEqual(V.context_evidence(ctx,'h','goals',30)['windows'][0]['start'],20)
-  self.assertEqual(V.context_evidence(ctx,'h','goals',31)['windows'][0]['start'],30)
+  self.assertEqual(V.context_evidence(ctx,'h','goals',45)['half'],'first_half')
+  self.assertEqual(V.context_evidence(ctx,'h','goals',46)['half'],'second_half')
+  self.assertEqual(V.context_evidence(ctx,'h','goals',30)['halves'][0]['rate'],.8)
+  self.assertEqual(V.context_evidence(ctx,'h','goals',60)['halves'][0]['rate'],1.2)
   for mode in ('small','partial','overall','late'):
    x=copy.deepcopy(ctx)
-   if mode=='small':x['teams']['h']['goal_timing']['home']['matches']=3
-   if mode=='partial':x['teams']['h']['goal_timing']['home']['bins'].pop()
-   if mode=='overall':x['teams']['h']['goal_timing']['overall']=x['teams']['h']['goal_timing'].pop('home')
+   if mode=='small':x['teams']['h']['goal_halves']['home']['matches']=3
+   if mode=='partial':x['teams']['h']['goal_halves']['home']['first_half']=None
+   if mode=='overall':x['teams']['h']['goal_halves']['overall']=x['teams']['h']['goal_halves'].pop('home')
    if mode=='late':x['usable']=False
    self.assertNotEqual(V.context_evidence(x,'h','goals',30)['support'],'concordant',mode)
   self.prepare();self.assertIn('ExG Packball',str(self.reading('goals')['limits']))
