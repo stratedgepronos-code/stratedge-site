@@ -31,6 +31,7 @@ jobs:
           php tests/slot-arena/test_state.php
           node tests/slot-arena/test_access.cjs
           node tests/slot-arena/test_sync.cjs
+          node tests/slot-arena/test_layout.cjs
       - name: Tests moteur, imports et parseurs
         run: |
           python3 -m unittest discover -s live90/tests -p 'test_*.py'

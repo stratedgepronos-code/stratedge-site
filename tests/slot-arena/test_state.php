@@ -22,3 +22,17 @@ $empty=['schema'=>'slot-arena.v1','id'=>'empty','title'=>'','players'=>['A','B']
 check(arena_champion(arena_validate($empty))===null,'No early champion');check(arena_event(null,$empty,null)===null,'No early animation');
 check(arena_score('0')===0.0 && arena_score('1,25')===1.25 && arena_score('-1')===null,'Scores');
 echo "Slot Arena: 64 formats, validation, elimination and finale gates OK\n";
+for ($n=1; $n<=64; $n++) {
+    $state=['schema'=>'slot-arena.v1','id'=>'balanced-'.$n,'title'=>'Test','players'=>['A','B'],'slots'=>[],'rounds'=>[],'order'=>'list','updatedAt'=>0,'bracket'=>'balanced.v1'];
+    for($i=0;$i<$n*2;$i++)$state['slots'][]=['id'=>'s'.$i,'name'=>'Slot '.$i,'owner'=>$i<$n?0:1];
+    foreach(arena_layout($n) as [$a,$b])$state['rounds'][]=array_fill(0,$a+$b,match_row(null,null));
+    for($i=0;$i<$n;$i++)$state['rounds'][0][$i]=match_row('s'.$i,'s'.($i+$n));
+    $games=0;
+    for($r=0;$r<count($state['rounds']);$r++)foreach($state['rounds'][$r] as $i=>&$m){
+        if($r){[$a,$b]=arena_sources($state['rounds'],$r,$i,true);$m['bye']=$b===null;$m['players']=[$state['rounds'][$r-1][$a]['winner'],$b===null?null:$state['rounds'][$r-1][$b]['winner']];}
+        if(!$m['bye']){$m['scores']=['20','10'];$games++;}$m['winner']=$m['players'][0];
+    }unset($m);
+    arena_validate($state);check($games===$n*2-1,'Balanced total games');
+}
+check(arena_layout(6)===[[3,3],[2,2],[1,1],[1,0]],'Six duels split 3+3');
+echo "Slot Arena: balanced server validation for 64 formats OK\n";
