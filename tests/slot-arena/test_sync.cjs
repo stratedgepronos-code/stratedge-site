@@ -1,0 +1,22 @@
+'use strict';
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const html=fs.readFileSync(require('node:path').join(__dirname,'../../public_html/tournoi-slots/app.php'),'utf8');
+const timers=[],nodes={};const node=id=>nodes[id]??={textContent:'',style:{},classList:{toggle(){},remove(){}},append(){},innerHTML:''};
+const ctx={console,assert,BOOT:{admin:false,csrf:'csrf'},document:{getElementById:node,body:{classList:{toggle(){},remove(){}}},querySelectorAll:()=>[],createElement:()=>({})},location:{pathname:'/tournoi-slots/'},crypto:require('node:crypto').webcrypto,window:{},setTimeout:(fn,t)=>{timers.push({fn,t});return timers.length},clearTimeout(){},AbortController,history:[],render(){},renderBoard(){},renderRoster(){},localSave(){},clone:o=>JSON.parse(JSON.stringify(o)),cinema:null,startCinema(){ctx.plays++},stopCinema(){},plays:0};
+vm.createContext(ctx);const js=html.split('<script>')[1].split('</script>')[0];
+vm.runInContext(js.slice(js.indexOf('const $='),js.indexOf("let loadWarning='';")),ctx);
+vm.runInContext("function championship(){const f=state.rounds.at(-1)?.[0];return f&&f.winner&&!f.bye?f:null}",ctx);
+vm.runInContext(js.slice(js.indexOf('let liveReady=false'),js.indexOf("$('shareLive').onclick")),ctx);
+(async()=>{await vm.runInContext(`(async()=>{
+ liveReady=true;save();assert.equal(liveDirty,false,'Spectator cannot queue edits');
+ state=fresh();state.slots=[{id:'a',name:'A',owner:0},{id:'b',name:'B',owner:1}];state.rounds=seedRounds(['a','b']);
+ acceptEvent(null,10000);assert.equal(liveEventTimer,null);
+ state.rounds[0][0].scores=['20','5'];state.rounds[0][0].winner='a';
+ acceptEvent({id:'event-1',champion:'a',tournament:state.id,at:12500},10000);assert(liveEventTimer);const once=liveEventTimer;
+ acceptEvent({id:'event-1',champion:'a',tournament:state.id,at:12500},11000);assert.equal(liveEventTimer,once,'No duplicate schedule');
+ acceptEvent({id:'old-event',champion:'a',tournament:state.id,at:100},20000,true);assert.equal(liveEvent,'old-event','Old imported ending not played');
+ BOOT.admin=true;save();assert.equal(liveDirty,true);
+ let posted;requestLive=async options=>{posted=JSON.parse(options.body);assert.equal(options.headers['X-CSRF-Token'],'csrf');return {revision:1,event:null,serverNow:10000}};
+ await flushLive();assert.equal(posted.revision,0);assert.equal(liveRevision,1);assert.equal(liveDirty,false);
+ save();requestLive=async()=>{const e=new Error('conflict');e.status=409;throw e};await flushLive();assert.equal(liveConflict,true);assert.equal(liveDirty,true,'Conflict preserves local changes');
+ })()`,ctx);console.log('Slot Arena: read-only client, server revision, CSRF header, conflict preservation and final event deduplication OK');})().catch(e=>{console.error(e);process.exitCode=1});

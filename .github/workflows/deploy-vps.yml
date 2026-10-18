@@ -25,6 +25,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Vérification du tournoi partagé et des accès
+        run: |
+          for file in public_html/tournoi-slots/*.php; do php -l "$file"; done
+          php tests/slot-arena/test_state.php
+          node tests/slot-arena/test_access.cjs
+          node tests/slot-arena/test_sync.cjs
       - name: Tests moteur, imports et parseurs
         run: |
           python3 -m unittest discover -s live90/tests -p 'test_*.py'
@@ -88,6 +94,16 @@ jobs:
             echo "DEPLOY_ERROR: sidebar contains conflict markers" >&2
             exit 1
           fi
+          # Verify the new spectator page and API without creating or changing a tournament.
+          ARENA_CHECK=$(mktemp -d /tmp/slot-arena-check.XXXXXX)
+          curl -fsS --max-time 20 https://stratedgepronos.fr/tournoi-slots/ -o "$ARENA_CHECK/page"
+          grep -q 'online-boot' "$ARENA_CHECK/page"
+          curl -fsS --max-time 20 https://stratedgepronos.fr/tournoi-slots/api.php -o "$ARENA_CHECK/state"
+          php -r '$s=json_decode(file_get_contents($argv[1]),true); if(!is_array($s)||!array_key_exists("revision",$s)){exit(1);}' "$ARENA_CHECK/state"
+          ARENA_DENIED=$(curl -sS --max-time 20 -o "$ARENA_CHECK/denied" -w '%{http_code}' -X POST -H 'Content-Type: application/json' --data '{}' https://stratedgepronos.fr/tournoi-slots/api.php)
+          test "$ARENA_DENIED" = 403
+          rm -rf "$ARENA_CHECK"
+          echo "SLOT_ARENA_READONLY_OK"
           echo "── HEAD déployé ──"
           git log --oneline -3
 
