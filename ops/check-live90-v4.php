@@ -18,8 +18,8 @@ echo 'LIVE90_COLLECTOR_AVAILABLE '.$version[1].PHP_EOL;
 $cfg=config90();$db=$cfg['SE90_DB']??'/var/lib/stratedge/live90.sqlite';
 $env=['PATH'=>'/usr/bin:/bin','LANG'=>'C.UTF-8','PYTHONIOENCODING'=>'utf-8','PYTHONDONTWRITEBYTECODE'=>'1'];
 foreach(['TELEGRAM_BOT_TOKEN','TELEGRAM_CHAT_ID'] as $k)if(isset($cfg[$k]))$env[$k]=(string)$cfg[$k];
-for($attempt=0;$attempt<12;$attempt++){
- $proc=proc_open(['/usr/bin/python3','/opt/stratedge/live90/live_v4.py',$db,'--diagnostic'],[0=>['file','/dev/null','r'],1=>['pipe','w'],2=>['file','/dev/null','a']],$pipes,null,$env);
+for($attempt=0;$attempt<4;$attempt++){
+ $proc=proc_open(['/usr/bin/timeout','--signal=TERM','--kill-after=2','25','/usr/bin/python3','/opt/stratedge/live90/live_v4.py',$db,'--diagnostic'],[0=>['file','/dev/null','r'],1=>['pipe','w'],2=>['file','/dev/null','a']],$pipes,null,$env);
  if(!is_resource($proc))throw new RuntimeException('Diagnostic Python indisponible');
  $text=stream_get_contents($pipes[1]);fclose($pipes[1]);$status=proc_close($proc);$d=json_decode($text,true);
  $at=is_array($d)?strtotime((string)($d['engine']['at']??'')):false;
@@ -29,5 +29,7 @@ for($attempt=0;$attempt<12;$attempt++){
  }
  usleep(1000000);
 }
+if(is_array($d))echo 'LIVE90_V4_DIAGNOSTIC '.json_encode($d,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES).PHP_EOL;
 fwrite(STDERR,'LIVE90_V4_HEALTH_ERROR: aucun cycle décision V5 récent ou mode radar non confirmé'.PHP_EOL);exit(1);
+
 

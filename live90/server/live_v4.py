@@ -1633,6 +1633,41 @@ def run_dashboard(path,now=None):
     finally:c.close()
 
 
+def current_diagnostic(c,now):
+    """Current health only. Historical replay belongs to export_review, never a health probe."""
+    started=time.monotonic();b=board(c,now)
+    result={k:b[k] for k in ('version','engine','telegram','radar_telegram','totals','health')}
+    result['feed']={k:b['feed'].get(k) for k in ('received_at','rows','collector_version')}
+    result['recent_imports']=[dict(x) for x in c.execute('SELECT kind,created_at FROM v4_imports ORDER BY id DESC LIMIT 6')]
+    result['recent_notifications']=[dict(x) for x in c.execute('SELECT id,match_id,team,market,created_at,delivery FROM v5_radar_notifications ORDER BY id DESC LIMIT 10')]
+    result['last_sent_at']=(c.execute("SELECT created_at FROM v5_radar_notifications WHERE delivery='sent' ORDER BY id DESC LIMIT 1").fetchone() or [None])[0]
+    matches=b['matches'];result['list']={'matches':len(matches),'live':sum(r.get('state')=='LIVE' for r in matches),'halftime':sum(r.get('state')=='HT' for r in matches)}
+    readings=[d for r in matches for d in r.get('advice',[]) if d.get('market')=='cards']
+    result['card_scope']={'applies_to':'board_radar_history_telegram','excluded_readings':sum(d.get('status')=='excluded' for d in readings),'unauthorized_recommendations':sum(d.get('telegram_allowed') is not True and d.get('status')!='excluded' for d in readings)}
+    readings=[d for r in matches for d in r.get('advice',[]) if d.get('status')!='excluded']
+    result['coherence']={'policy':'prematch_live_halves_v2','counts':{state:sum((d.get('coherence') or {}).get('status')==state for d in readings) for state in ('confirmed','missing','conflict')},'active_without_concordance':sum(d.get('status')=='active' and (d.get('coherence') or {}).get('status')!='confirmed' for d in readings)}
+    result['pulsescore']={k:b['pulsescore'][k] for k in ('configured','auto_enabled','auto_today','auto_daily_limit','attempts_31d')}
+    details=[];reasons={}
+    for r in sorted(matches,key=lambda r:r.get('state') not in ('LIVE','HT')):
+        profile=r.get('profile') or {};ctx=r.get('analyst') or {};teams=ctx.get('teams') or {}
+        item={k:r.get(k) for k in ('packball_id','home','away','league','state','minute','received_at')}
+        item['profile_usable']=profile.get('usable',False);item['context_usable']=ctx.get('usable',False)
+        item['profile_imported_at']=profile.get('imported_at');item['context_generated_at']=ctx.get('generated_at')
+        item['referee_appointment']=(ctx.get('referee') or {}).get('appointment')
+        item['references']={side:{'half_scope_present':bool((teams.get(side,{}).get('goal_halves') or {}).get(scope)), 'local_fouls_present':num((((teams.get(side) or {}).get('card_references') or {}).get(scope) or {}).get('fouls_for_per_match'))} for side,scope in (('h','home'),('a','away'))}
+        item['readings']=[]
+        for d in r.get('advice',[]):
+            co=d.get('coherence') or {}
+            item['readings'].append({k:d.get(k) for k in ('team','market','status','reason')})
+            item['readings'][-1]['missing']=co.get('missing',[]);item['readings'][-1]['conflicts']=co.get('conflicts',[])
+            if r.get('state')=='LIVE' and d.get('status')!='active':
+                reason=d.get('reason','?');reasons[reason]=reasons.get(reason,0)+1
+        details.append(item)
+    result['matches']=details[:60];result['live_block_reasons']=reasons
+    result['diagnostic']={'mode':'current_only','historical_replay':False,'matches_truncated':len(details)>60,'elapsed_seconds':round(time.monotonic()-started,3)}
+    return result
+
+
 if __name__=='__main__':
     ap=argparse.ArgumentParser();ap.add_argument('db');ap.add_argument('--init',action='store_true');ap.add_argument('--diagnostic',action='store_true');args=ap.parse_args()
     try:
@@ -1641,14 +1676,7 @@ if __name__=='__main__':
             install_card_selection(c)
             for name in ('telegram_enabled','pulsescore_auto'):c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(name,'false'))
             runtime(c,'decision_mode',True);c.commit();result={'ok':True,'version':'decision5.0'}
-        elif args.diagnostic:
-            b=board(c,now_utc());result={k:b[k] for k in ('version','feed','engine','telegram','radar_telegram','totals')};result['feed']=dict(result['feed']);result['feed'].pop('headers',None);result['feed'].pop('odds_meta',None);result['list']={'matches':len(b['matches']),'live':sum(r.get('state')=='LIVE' for r in b['matches']),'halftime':sum(r.get('state')=='HT' for r in b['matches'])};result['collection_columns']=b['feed'].get('headers',[]);result['collection_odds']=b['feed'].get('odds_meta',{});result['health']=b['health'];result['recent_rows']=[{k:r.get(k) for k in ('packball_id','home','away','state','status_raw','minute','received_at','stats','ind5','ind10','quotes','quality_errors')} for r in [sample_data(x) for x in latest(c)] if r.get('state') in ('LIVE','HT')][:6]
-            result['match_audits']=audit_matches(c,now_utc())
-            readings=[d for r in b['matches'] for d in r.get('advice',[]) if d.get('market')=='cards']
-            result['card_scope']={'applies_to':'board_radar_history_telegram','excluded_readings':sum(d.get('status')=='excluded' for d in readings),'unauthorized_recommendations':sum(d.get('telegram_allowed') is not True and d.get('status')!='excluded' for d in readings)}
-            all_readings=[d for r in b['matches'] for d in r.get('advice',[]) if d.get('status')!='excluded']
-            result['coherence']={'policy':'prematch_live_halves_v2','counts':{state:sum((d.get('coherence') or {}).get('status')==state for d in all_readings) for state in ('confirmed','missing','conflict')},'active_without_concordance':sum(d.get('status')=='active' and (d.get('coherence') or {}).get('status')!='confirmed' for d in all_readings)}
-            result['pulsescore']={k:b['pulsescore'][k] for k in ('configured','auto_enabled','auto_today','auto_daily_limit','attempts_31d')}
+        elif args.diagnostic:result=current_diagnostic(c,now_utc())
         else: result=dispatch(c,json.load(sys.stdin),now_utc())
         print(enc(result));c.close()
     except (ValueError,TypeError,KeyError) as e: print(enc({'error':str(e)}));sys.exit(2)
