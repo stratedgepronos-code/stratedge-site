@@ -625,11 +625,13 @@ def alert_message(s,saved,now):
     if (saved.get('stake_quote') or {}).get('unit')=='stake_bookings':lines.append('Résultat suivi en jaunes Packball ; règlement Stake distinct.')
     return '\n'.join(lines)
 
-def notify(message):
+def notify(message,reply_to=None):
     token=os.environ.get('TELEGRAM_BOT_TOKEN'); chat=os.environ.get('TELEGRAM_CHAT_ID')
     if not token or not chat: return 'failed','Bot ou destinataire Telegram non configuré',None
     try:
-        req=urllib.request.Request('https://api.telegram.org/bot'+token+'/sendMessage',data=enc({'chat_id':chat,'text':telegram_html(message),'parse_mode':'HTML','link_preview_options':{'is_disabled':True}}).encode(),headers={'Content-Type':'application/json'})
+        payload={'chat_id':chat,'text':telegram_html(message),'parse_mode':'HTML','link_preview_options':{'is_disabled':True}}
+        if type(reply_to) is int and reply_to>0:payload['reply_parameters']={'message_id':reply_to,'allow_sending_without_reply':True}
+        req=urllib.request.Request('https://api.telegram.org/bot'+token+'/sendMessage',data=enc(payload).encode(),headers={'Content-Type':'application/json'})
         with urllib.request.urlopen(req,timeout=8) as response: x=json.load(response)
         if isinstance(x,dict) and x.get('ok') is True: return 'sent',None,x.get('result',{}).get('message_id')
         if isinstance(x,dict) and x.get('ok') is False: return 'failed','Refus Telegram',None
@@ -1069,6 +1071,10 @@ CREATE UNIQUE INDEX IF NOT EXISTS v5_observation_sample ON v5_observations(match
 CREATE TABLE IF NOT EXISTS v5_radar_notifications(id INTEGER PRIMARY KEY,event_key TEXT UNIQUE,match_id TEXT,team TEXT,market TEXT,counter REAL,created_at TEXT,sample_id INTEGER,data TEXT,delivery TEXT,delivery_error TEXT,telegram_id INTEGER,attempted_at TEXT);
 CREATE INDEX IF NOT EXISTS v5_radar_lookup ON v5_radar_notifications(match_id,team,market,id);
 CREATE INDEX IF NOT EXISTS v5_radar_delivery ON v5_radar_notifications(delivery,id);
+CREATE TABLE IF NOT EXISTS v5_radar_results(radar_id INTEGER PRIMARY KEY,outcome TEXT NOT NULL DEFAULT 'pending',updated_at TEXT,sample_id INTEGER,data TEXT);
+CREATE TABLE IF NOT EXISTS v5_radar_result_events(id INTEGER PRIMARY KEY,radar_id INTEGER,previous TEXT,outcome TEXT,created_at TEXT,sample_id INTEGER,data TEXT,message TEXT,delivery TEXT,delivery_error TEXT,telegram_id INTEGER,attempted_at TEXT);
+CREATE INDEX IF NOT EXISTS v5_radar_result_event_lookup ON v5_radar_result_events(radar_id,id);
+CREATE INDEX IF NOT EXISTS v5_radar_result_delivery ON v5_radar_result_events(delivery,id);
 '''
 def desk_number(v):
     return format(v,'.2f').rstrip('0').rstrip('.').replace('.',',') if num(v) else '—'
@@ -1248,8 +1254,9 @@ def apply_card_scope(c,r,d,p,ctx,now):
 def desk_history(c,limit=100):
     out=[]
     for row in c.execute('SELECT * FROM v5_observations ORDER BY id DESC LIMIT ?',(limit,)):
-        n=c.execute('SELECT delivery,delivery_error,telegram_id FROM v5_radar_notifications WHERE match_id=? AND team=? AND market=? AND sample_id=? ORDER BY id DESC LIMIT 1',(row['match_id'],row['team'],row['market'],row['sample_id'])).fetchone()
-        out.append(dict(row,data=dec(row['data'],{}),notification=dict(n) if n else None))
+        n=c.execute('SELECT id,delivery,delivery_error,telegram_id FROM v5_radar_notifications WHERE match_id=? AND team=? AND market=? AND sample_id=? ORDER BY id DESC LIMIT 1',(row['match_id'],row['team'],row['market'],row['sample_id'])).fetchone()
+        result=radar_result_status(c,n['id']) if n else None
+        out.append(dict(row,data=dec(row['data'],{}),notification=dict(n) if n else None,result=result))
     return out
 
 def radar_configured():
@@ -1261,7 +1268,9 @@ def radar_enabled(c):
 def radar_status(c):
     counts={r['delivery']:r['n'] for r in c.execute('SELECT delivery,COUNT(*) n FROM v5_radar_notifications GROUP BY delivery')}
     last=c.execute('SELECT created_at,delivery,delivery_error FROM v5_radar_notifications ORDER BY id DESC LIMIT 1').fetchone()
-    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market')}
+    results={r['outcome']:r['n'] for r in c.execute('SELECT outcome,COUNT(*) n FROM v5_radar_results GROUP BY outcome')}
+    result_delivery={r['delivery']:r['n'] for r in c.execute('SELECT delivery,COUNT(*) n FROM v5_radar_result_events GROUP BY delivery')}
+    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market'),'result_tracking':'packball_two_samples','results':results,'result_deliveries':result_delivery}
 
 # Explicit owner selection, 18 October 2026. Country is required for common
 # labels (Premier League, Serie A, Pro League...); no substring or team-name guesses.
@@ -1322,22 +1331,41 @@ def queue_radar(c,r,d,now):
     last=c.execute('SELECT created_at FROM v5_radar_notifications WHERE match_id=? AND team=? AND market=? ORDER BY id DESC LIMIT 1',(mid,d['team'],d['market'])).fetchone()
     if last and date(last['created_at']) and (now-date(last['created_at'])).total_seconds()<600:return
     saved={'home':r.get('home'),'away':r.get('away'),'score':r.get('score'),'reading':d,'minute':r.get('minute')}
-    c.execute('INSERT OR IGNORE INTO v5_radar_notifications(event_key,match_id,team,market,counter,created_at,sample_id,data,delivery) VALUES(?,?,?,?,?,?,?,?,?)',
-              (event_key,mid,d['team'],d['market'],counter,iso(now),r['sample_id'],enc(saved),'queued'))
+    inserted=c.execute('INSERT OR IGNORE INTO v5_radar_notifications(event_key,match_id,team,market,counter,created_at,sample_id,data,delivery) VALUES(?,?,?,?,?,?,?,?,?)',
+              (event_key,mid,d['team'],d['market'],counter,iso(now),r['sample_id'],enc(saved),'queued')).rowcount
+    if inserted:
+        # An alert enabled mid-dynamic still needs a visible history entry.
+        c.execute('INSERT OR IGNORE INTO v5_observations(match_id,team,market,sample_id,created_at,data) VALUES(?,?,?,?,?,?)',
+                  (mid,d['team'],d['market'],r['sample_id'],iso(now),enc(dict(saved,version='decision5.0',kind='observation_not_bet'))))
 
-def radar_message(r,d,cuts):
+def radar_quote(d,cuts):
+    options=[q for q in cuts.get('quotes',[]) if q['team']==d['team'] and q['kind']==d['market'] and q['period']=='FT' and q['half_line'] and q['needed']!=0 and q['line']>d['observed']]
+    return min(options,key=lambda q:q['line']) if options else None
+
+def radar_target(r,d,cuts):
+    q=radar_quote(d,cuts)
+    return {'team':d['team'],'market':d['market'],'period':'FT','line':q['line'] if q else d['observed']+.5,
+            'unit':'yellow_cards' if d['market']=='cards' else 'goals','mode':'cut' if q else 'event',
+            'quote':q,'bookings_proxy':bool(q and d['market']=='cards'),
+            'kickoff':r.get('kickoff_ts'),'baseline_at':r.get('collected_at'),'baseline_sample_id':r.get('sample_id')}
+
+def radar_target_label(target,saved):
+    name=saved.get('home' if target['team']=='h' else 'away','?')
+    return name+' · plus de '+desk_number(target['line'])+(' jaunes' if target['market']=='cards' else ' buts')+' · match entier'
+
+def radar_message(r,d,cuts,radar_id=None):
     name=r['home'] if d['team']=='h' else r['away']
     title={'goals':'🩷 But à surveiller','corners':'🩵 Corners à surveiller','cards':'💛 Carton à surveiller'}[d['market']]
-    lines=['🔥 STRATEDGE · RADAR LIVE','', '⚽ '+r['home']+' — '+r['away'],
+    lines=['🔥 STRATEDGE · RADAR LIVE'+(' #'+str(radar_id) if radar_id is not None else ''),'', '⚽ '+r['home']+' — '+r['away'],
            '⏱ '+desk_number(r['minute'])+'′ · '+desk_number(r['score']['h'])+'–'+desk_number(r['score']['a']),
            '', '🎯 '+title+' · '+name,'Dynamique confirmée sur deux relevés.','📊 '+d['reason']]
     if d['market']=='cards':
         lines+=['Fautes au total : '+desk_number((d.get('metrics') or {}).get('fouls'))+' · jaunes actuels : '+desk_number(d.get('observed'))+'.']
     evidence=(d.get('context_evidence') or {}).get('lines') or []
     if evidence:lines+=['','📚 Repères avant-match']+evidence[:4]
-    options=[q for q in cuts.get('quotes',[]) if q['team']==d['team'] and q['kind']==d['market'] and q['period']=='FT' and q['half_line'] and q['needed']!=0]
-    if options:
-        q=min(options,key=lambda q:q['line']);unit={'goals':'buts','corners':'corners','cards':'cartons Bookings'}[d['market']]
+    q=radar_quote(d,cuts)
+    if q:
+        unit={'goals':'buts','corners':'corners','cards':'cartons Bookings'}[d['market']]
         lines+=['','💰 Stake · '+name+' +'+desk_number(q['line'])+' '+unit+' · match entier · cote '+desk_number(q['odds'])]
         if q['needed'] is not None:
             lines+=['Actuel '+desk_number(q['current'])+' · '+desk_number(q['needed'])+' de plus nécessaire(s)'+(' si même décompte' if q['indicative_counter'] else '')]
@@ -1347,6 +1375,9 @@ def radar_message(r,d,cuts):
         if q['odds']<1.50:lines+=['Cote sous ton seuil de 1,50.']
         lines+=['Instantané : vérifier le prix et le marché sur Stake.']
     else:lines+=['','🔎 Cote et cut indisponibles · à vérifier sur Stake (seuil 1,50).']
+    target=radar_target(r,d,cuts)
+    lines+=['','📌 Suivi du résultat : '+radar_target_label(target,r)]
+    if target['bookings_proxy']:lines+=['Seuil suivi en jaunes uniquement ; résultat du pari Bookings non certifié.']
     lines+=['','Observation statistique, pas un pari validé.','https://stratedgepronos.fr/panel-x9k3m/slate/live90/']
     return '\n'.join(lines)
 
@@ -1373,12 +1404,107 @@ def deliver_radar(c,now,realtime=False):
                 # Read existing cache only: never consume a PulseScore request here.
                 cache=c.execute("SELECT value FROM v4_runtime WHERE key='pulsescore_test'").fetchone()
                 cuts=desk_cuts(r,dec(cache['value'],{}) if cache else {},now)
-                message=radar_message(r,d,cuts)
-                c.execute('UPDATE v5_radar_notifications SET data=? WHERE id=?',(enc(dict(saved,message=message,cuts=cuts)),event['id']));c.commit()
+                message=radar_message(r,d,cuts,event['id'])
+                c.execute('UPDATE v5_radar_notifications SET data=? WHERE id=?',(enc(dict(saved,message=message,cuts=cuts,result_target=radar_target(r,d,cuts))),event['id']));c.commit()
                 if radar_enabled(c):state,error,mid=notify(message);sent_attempts+=1
                 else:state,error='disabled','Radar Telegram désactivé'
         c.execute('UPDATE v5_radar_notifications SET delivery=?,delivery_error=?,telegram_id=? WHERE id=?',(state,error,mid,event['id']));c.commit()
 
+
+def radar_result_status(c,radar_id):
+    row=c.execute('SELECT * FROM v5_radar_results WHERE radar_id=?',(radar_id,)).fetchone()
+    if not row:return None
+    last=c.execute('SELECT delivery,delivery_error,telegram_id FROM v5_radar_result_events WHERE radar_id=? ORDER BY id DESC LIMIT 1',(radar_id,)).fetchone()
+    return dict(row,data=dec(row['data'],{}),notification=dict(last) if last else None)
+
+def radar_result_value(r,target,saved,now):
+    # Never infer the end from the clock or disappearance from today's slate.
+    at=date(r.get('collected_at'));received=date(r.get('received_at'));start=date(target.get('baseline_at'))
+    if not at or not received or not start or not start<at<=now or received>now or r.get('quality_errors'):return None
+    if norm(r.get('home'))!=norm(saved.get('home')) or norm(r.get('away'))!=norm(saved.get('away')):return None
+    ko=date(target.get('kickoff'));current_ko=date(r.get('kickoff_ts'))
+    if ko and (not current_ko or abs((ko-current_ko).total_seconds())>60):return None
+    if r.get('state') not in ('LIVE','HT','FT'):return None
+    # Only regulation-time totals; no inference from extra-time shootout scores.
+    if num(r.get('minute')) and r['minute']>90:return None
+    v=(r.get('score') or {}).get(target['team']) if target['market']=='goals' and isinstance(r.get('score'),dict) else stat(r,'yellow_cards',target['team']) if target['market']=='cards' else None
+    if not num(v) or v!=int(v) or not 0<=v<=100:return None
+    return v
+
+def radar_result_verdict(c,event,saved,now):
+    target=saved['result_target'];start=target.get('baseline_sample_id') or event['sample_id']
+    rows=c.execute('SELECT * FROM samples WHERE match_id=? AND id>? ORDER BY id DESC LIMIT 2',(event['match_id'],start)).fetchall()
+    if len(rows)<2:return None
+    r,old=[sample_data(row) for row in rows]
+    v=radar_result_value(r,target,saved,now);pv=radar_result_value(old,target,saved,now)
+    if v is None or pv is None:return None
+    gap=(date(r['collected_at'])-date(old['collected_at'])).total_seconds()
+    if not 15<=gap<=120:return None
+    if r['state'] in ('LIVE','HT') and old['state']=='FT':return None
+    if v>target['line'] and pv>target['line']:outcome='observed'
+    elif v<=target['line'] and pv<=target['line']:
+        outcome='not_observed' if r['state']=='FT' and old['state']=='FT' else 'pending'
+    else:return None
+    return outcome,{'current':v,'state':r['state'],'minute':r.get('minute'),'observed_at':r['collected_at'],'sample_id':r['sample_id'],'confirmed_samples':[old['sample_id'],r['sample_id']]}
+
+def radar_result_message(event,saved,previous,outcome,evidence):
+    target=saved['result_target'];cut=target['mode']=='cut';proxy=target.get('bookings_proxy')
+    labels={'observed':'✅ '+('SEUIL ATTEINT' if cut else 'ÉVÉNEMENT OBSERVÉ'),
+            'not_observed':'❌ '+('SEUIL NON ATTEINT À LA FIN' if cut else 'NON OBSERVÉ AVANT LA FIN'),
+            'pending':'⏳ VALIDATION RETIRÉE · SUIVI EN COURS','unknown':'⚪ RÉSULTAT À VÉRIFIER'}
+    title='CORRECTION' if previous in ('observed','not_observed','unknown') else 'RÉSULTAT'
+    lines=['STRATEDGE · '+title+' LIVE #'+str(event['id']),'',labels[outcome]+(' EN JAUNES PACKBALL' if proxy and outcome in ('observed','not_observed') else ''),
+           '⚽ '+saved['home']+' — '+saved['away'],'','🎯 '+radar_target_label(target,saved)]
+    if num(evidence.get('current')):
+        lines+=['📊 Compteur : '+desk_number(evidence['current'])+(' jaunes' if target['market']=='cards' else ' buts')+(' · match terminé' if evidence['state']=='FT' else ' · '+desk_number(evidence.get('minute'))+'′')]
+    if outcome=='unknown':lines+=['Pas de relevé final exploitable après six heures. Aucun résultat perdu déduit de cette absence.']
+    if outcome=='pending':lines+=['Le flux a corrigé le compteur sous le seuil. La surveillance continue.']
+    q=target.get('quote') or {}
+    if num(q.get('odds')):lines+=['💰 Cote relevée à l’alerte : '+desk_number(q['odds'])]
+    if proxy:lines+=['⚠️ Le cut Stake concerne les Bookings : ce suivi en jaunes ne valide pas le règlement du pari.']
+    lines+=['','Suivi Packball · correction possible si le flux change.','Règlement du pari à vérifier chez le bookmaker.']
+    return '\n'.join(lines)
+
+def settle_radar_results(c,now):
+    # Follow delivered alerts independently of today's matches and league filters.
+    # Existing messages without an explicit frozen target are not reinterpreted.
+    events=c.execute("SELECT n.* FROM v5_radar_notifications n LEFT JOIN v5_radar_results r ON r.radar_id=n.id WHERE n.delivery='sent' AND (n.created_at>=? OR r.outcome='pending') ORDER BY n.id",(iso(now-dt.timedelta(days=3)),)).fetchall()
+    for event in events:
+        saved=dec(event['data'],{});target=saved.get('result_target')
+        if not isinstance(target,dict) or target.get('market') not in DESK_MARKETS or target.get('period')!='FT':continue
+        verdict=radar_result_verdict(c,event,saved,now)
+        with c:
+            if not c.in_transaction:c.execute('BEGIN IMMEDIATE')
+            current=c.execute('SELECT * FROM v5_radar_results WHERE radar_id=?',(event['id'],)).fetchone()
+            previous=current['outcome'] if current else 'pending'
+            if verdict:outcome,evidence=verdict
+            else:outcome,evidence=previous,dec(current['data'],{}) if current else {}
+            if current and current['sample_id'] and evidence.get('sample_id') and evidence['sample_id']<current['sample_id']:continue
+            created=date(event['created_at'])
+            if outcome=='pending' and created and now-created>dt.timedelta(hours=6):outcome='unknown'
+            # A stale correction to pending must not replace an already unknown result.
+            if previous=='unknown' and outcome=='pending':continue
+            data=dict(evidence,target=target)
+            c.execute('INSERT OR REPLACE INTO v5_radar_results VALUES(?,?,?,?,?)',(event['id'],outcome,iso(now),evidence.get('sample_id'),enc(data)))
+            if outcome==previous:continue
+            # A correction supersedes an unsent result rather than sending obsolete success.
+            c.execute("UPDATE v5_radar_result_events SET delivery='superseded',delivery_error='Résultat corrigé avant envoi' WHERE radar_id=? AND delivery='queued'",(event['id'],))
+            message=radar_result_message(event,saved,previous,outcome,evidence)
+            c.execute('INSERT INTO v5_radar_result_events(radar_id,previous,outcome,created_at,sample_id,data,message,delivery) VALUES(?,?,?,?,?,?,?,?)',
+                      (event['id'],previous,outcome,iso(now),evidence.get('sample_id'),enc(data),message,'queued' if radar_enabled(c) else 'disabled'))
+
+def deliver_radar_results(c,now,realtime=False):
+    c.execute("UPDATE v5_radar_result_events SET delivery='uncertain',delivery_error='Processus interrompu ; aucun renvoi automatique' WHERE delivery='sending' AND attempted_at<?",(iso(now-dt.timedelta(minutes=3)),));c.commit()
+    if not radar_enabled(c):
+        c.execute("UPDATE v5_radar_result_events SET delivery='disabled',delivery_error='Radar Telegram désactivé' WHERE delivery='queued'");c.commit();return
+    attempts=0
+    for event in c.execute("SELECT e.*,n.telegram_id AS original_message FROM v5_radar_result_events e JOIN v5_radar_notifications n ON n.id=e.radar_id WHERE e.delivery='queued' AND n.delivery='sent' ORDER BY e.id LIMIT 3").fetchall():
+        if attempts:time.sleep(1.1)
+        if realtime:now=now_utc()
+        if not c.execute("UPDATE v5_radar_result_events SET delivery='sending',attempted_at=? WHERE id=? AND delivery='queued'",(iso(now),event['id'])).rowcount:continue
+        c.commit()
+        state,error,mid=notify(event['message'],reply_to=event['original_message']);attempts+=1
+        c.execute('UPDATE v5_radar_result_events SET delivery=?,delivery_error=?,telegram_id=? WHERE id=?',(state,error,mid,event['id']));c.commit()
 
 def run_dashboard(path,now=None):
     realtime=now is None;now=now or now_utc();c=connect(path)
@@ -1411,6 +1537,9 @@ def run_dashboard(path,now=None):
         auto_results(c,now) # Legacy event history can still be updated, silently.
         health=feed_health(c,now)
         deliver_radar(c,now,realtime=realtime)
+        if realtime:now=now_utc()
+        settle_radar_results(c,now)
+        deliver_radar_results(c,now,realtime=realtime)
         if realtime:now=now_utc()
         runtime(c,'engine',{'at':iso(now),'version':'decision5.0','telegram_active':radar_enabled(c) and radar_configured(),'legacy_telegram_active':False,'notification_mode':'confirmed_cards','mode':'decision','external_calls':radar_enabled(c) and radar_configured(),'ai_calls':False,'automatic_odds':False})
         record_health(c,health,now);c.commit()

@@ -22,6 +22,8 @@ board.matches[0].stake_cuts={state:'received',at:now,reason:'Instantané de rece
  {team:'h',kind:'goals',period:'FT',line:.5,odds:1.6,unit:'goals',half_line:true,needed:1,current:0,indicative_counter:false,score:{h:0,a:0},received_at:now,note:'Écart au cut uniquement'}]};
 board.observations=[{id:1,team:'h',market:'goals',created_at:now,data:{home:'Équipe A',away:'Équipe B',minute:32,reading:board.matches[0].advice[0]}}];
 
+board.observations[0].result={outcome:'observed',data:{current:2,target:{team:'h',market:'goals',line:1.5,mode:'cut'}},notification:{delivery:'sent'}};
+
 board.health={status:'issues',issues:[{code:'stats',detail:'Fautes manquantes sur équipe A'}]};
 board.signals[0].data.review={generated_at:now,facts:['Tirs après le signal : 10 → 14'],limits:['Trou de collecte'],conclusion:'Cause non démontrée',next_steps:[]};
 let posted=[];let imported=[];
@@ -76,7 +78,8 @@ const server=http.createServer((r,res)=>{if(r.url==='/download.php?file=collecto
  const sample=board.matches[0].sample_id;board.matches[0].sample_id=2;await page.evaluate(()=>refresh());assert.equal(await page.locator('#attention-cards [data-match="101"]').count(),0);board.matches[0].sample_id=sample;
  const originalStatus=board.matches[0].state;board.matches[0].state='FT';await page.evaluate(()=>refresh());assert.equal(await page.locator('#attention-cards [data-match="101"]').count(),0);
  assert.equal(await page.locator('#match-rows tr').count(),3);assert.equal(await page.locator('#match-rows [data-match="101"]').count(),0);assert.equal(await page.locator('#kpi-matches').textContent(),'3');assert.equal(await page.locator('#kpi-context').textContent(),'3 / 3');
- await page.locator('[data-view="observations"]').click();assert((await page.locator('#match-rows').textContent()).includes('Équipe A'));
+ await page.locator('[data-view="observations"]').click();assert((await page.locator('#match-rows').textContent()).includes('Équipe A'));assert((await page.locator('#match-rows').textContent()).includes('Seuil atteint'));assert((await page.locator('#match-rows').textContent()).includes('+1,5 buts'));assert((await page.locator('#match-rows').textContent()).includes('Telegram résultat : Envoyé'));assert((await page.locator('#signals-list').textContent()).includes('Seuil atteint'));
+ board.observations[0].result.outcome='unknown';await page.evaluate(()=>refresh());assert((await page.locator('#match-rows').textContent()).includes('données finales manquantes'));board.observations[0].result.outcome='observed';await page.evaluate(()=>refresh());
  await page.locator('[data-view="history"]').click();assert.equal(await page.locator('#match-rows [data-signal="1"]').count(),1);
  await page.locator('[data-view="live"]').click();board.matches[0].state=originalStatus;await page.evaluate(()=>refresh());assert.equal(await page.locator('#match-rows tr').count(),4);
  const savedMinute=board.matches[0].minute;board.matches[0].minute=94;await page.evaluate(()=>refresh());assert.equal(await page.locator('#match-rows [data-match="101"]').count(),1);board.matches[0].minute=savedMinute;await page.evaluate(()=>refresh());
