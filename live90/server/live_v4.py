@@ -1238,7 +1238,7 @@ def desk_reading(r,p,ctx,team,market,now,hist):
        'sample':n,'baseline_origin':baseline_origin,'facts':[],'limits':[],'metrics':{},'window':'10 dernières minutes','period':'HT' if num(r.get('minute')) and r['minute']<=45 else 'FT'}
     d['context_evidence']=context_evidence(valid_ctx,team,market,r.get('minute'))
     d['facts'].extend(d['context_evidence']['lines'])
-    if market=='goals':d['limits'].append('La moyenne décrit la mi-temps entière, temps additionnel inclus selon la source, pas les minutes restantes. Aucun but n’est dû. Aucun xG de tirs fiable reçu ; ExG Packball non assimilé à un xG cumulé.')
+    if market=='goals':d['limits'].append('La moyenne décrit le match entier, temps additionnel inclus selon la source, pas les minutes restantes. Aucun but n’est dû. Aucun xG de tirs fiable reçu ; ExG Packball non assimilé à un xG cumulé.')
     if market=='cards' and valid_ctx:
         ref=(((valid_ctx.get('teams') or {}).get(team) or {}).get('card_references') or {}).get('home' if team=='h' else 'away')
         if ref and ref.get('unit')=='yellow_cards':
