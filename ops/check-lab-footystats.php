@@ -12,6 +12,15 @@ try {
     echo 'FOOTYSTATS_CONNECTED: ' . $result['leagues'] . " compétitions sélectionnées ; clé acceptée.\n";
 } catch (Throwable $e) {
     // No raw exception, URL, response, environment variable or key in CI logs.
-    echo "FOOTYSTATS_CHECK_FAILED: vérifier l’accès API, le quota et cURL sur le serveur.\n";
+    // Only fixed classifications from this client's own messages; no raw errors or secrets.
+    $categories = [
+        'Extension PHP cURL indisponible.' => 'PHP_CURL_MISSING',
+        'Clé FootyStats refusée ou accès à cette compétition non autorisé.' => 'ACCESS_DENIED',
+        'Quota FootyStats atteint. Réessaie après son renouvellement.' => 'QUOTA_EXCEEDED',
+        'FootyStats indisponible : connexion ou réponse HTTP invalide.' => 'NETWORK_OR_HTTP',
+        'Réponse FootyStats invalide ou accès non autorisé.' => 'INVALID_RESPONSE_OR_ACCESS',
+    ];
+    $category = $categories[$e->getMessage()] ?? 'LOCAL_OR_PROVIDER_ERROR';
+    echo "FOOTYSTATS_CHECK_FAILED: " . $category . "\n";
     exit(3);
 }
