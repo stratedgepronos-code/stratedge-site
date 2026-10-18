@@ -14,7 +14,7 @@ const board={version:'live4.0',server_time:now,feed:{received_at:now,rows:43,col
 board.radar_telegram={enabled:true,configured:true,counts:{sent:2},last:null};
 board.matches[3].state='HT';
 board.matches.forEach((r,i)=>{r.advice=['h','a'].flatMap(team=>['goals','corners','cards'].map(market=>({team,market,status:i===0&&team==='h'?'active':i===1?'missing':'neutral',title:i===0&&team==='h'?'À regarder':i===1?'À compléter':'Observer',observed:0,baseline:market==='corners'?null:1.8,sample:10,reason:market==='goals'?'4 tirs dont 2 cadrés en 10 min · 2 tirs en 5 min.':market==='cards'?'3 fautes en 10 min dont 1 en 5 min.':'4 tirs et 0 corner en 10 min.',facts:['Exemple de recette'],limits:['Données synthétiques, pas une recommandation'],criteria:'Seuil descriptif'})));});
-board.matches.forEach(r=>r.advice.forEach(d=>{d.sample_id=r.sample_id;d.metrics=d.market==='cards'?{fouls:9,fouls10:3,fouls5:1}:d.market==='goals'?{sot:8,sot10:2,sot_per_goal:6}:{shots10:5,corners10:0,blocked_shots10:2};if(d.team==='a')d.metrics={};}));
+board.matches.forEach(r=>r.advice.forEach(d=>{d.sample_id=r.sample_id;d.coherence={status:'confirmed',lines:['Pré-match et live synthétiques concordants'],missing:[],conflicts:[]};d.metrics=d.market==='cards'?{fouls:9,fouls10:3,fouls5:1}:d.market==='goals'?{sot:8,sot10:2,sot_per_goal:6}:{shots10:5,corners10:0,blocked_shots10:2};if(d.team==='a')d.metrics={};}));
 board.matches[0].advice.find(d=>d.team==='h'&&d.market==='cards').context_evidence={support:'documented',lines:['Arbitre Test : 4,7 jaunes / match · n=20','Équipe A : domicile 2,4 jaunes/m · n=20','Équipe B : extérieur 1,8 jaunes/m · n=20']};
 board.matches[0].stake_cuts={state:'received',at:now,reason:'Instantané de recette',quotes:[
  {team:'h',kind:'cards',period:'FT',line:2.5,odds:1.8,unit:'stake_bookings',half_line:true,needed:3,current:0,indicative_counter:true,score:{h:0,a:0},received_at:now,note:'Bookings distincts des jaunes'},
@@ -37,7 +37,7 @@ const server=http.createServer((r,res)=>{if(r.url==='/download.php?file=collecto
  const assertTeamHalves=async()=>{const pair=page.locator('#match-rows .match-market-pair').first();const home=pair.locator('[data-side="h"]'),away=pair.locator('[data-side="a"]');assert.equal(await pair.locator('.match-side').count(),2);assert((await home.textContent()).includes('Équipe A'));assert((await away.textContent()).includes('Équipe B'));const h=await home.boundingBox(),a=await away.boundingBox();assert(Math.abs(h.y-a.y)<1,'Les équipes doivent être côte à côte');assert(h.x+h.width<=a.x+1,'Domicile à gauche, visiteurs à droite');assert(Math.abs(h.width-a.width)<2,'Deux moitiés de même largeur');};await assertTeamHalves();
  await page.screenshot({path:path.join(output,'desktop.png'),fullPage:true});
  assert((await page.locator('#match-rows tr').filter({hasText:'Équipe G'}).first().textContent()).includes('Mi-temps'));
- assert((await page.locator('#match-rows .reading-evidence').first().textContent()).includes('Arbitre Test : 4,7'));
+ assert((await page.locator('#match-rows').textContent()).includes('Arbitre Test : 4,7'));
  // Market cuts: several events required must never read as one additional event.
  assert((await page.locator('#attention-cards .cards').first().textContent()).includes('Cut +2,5 · cote 1,8'));
  assert((await page.locator('#attention-cards .cards').first().textContent()).includes('3 de plus nécessaires si même décompte'));
@@ -52,6 +52,13 @@ const server=http.createServer((r,res)=>{if(r.url==='/download.php?file=collecto
  for(const [kind,label] of Object.entries({goals:'But à surveiller',cards:'Carton à surveiller'})){assert.equal(await page.locator('#attention-cards .confirmed.'+kind+' h3').first().textContent(),label)}
  assert.equal(await page.locator('#attention-cards .attention-card').count(),6);
  assert((await page.locator('#attention-cards').textContent()).includes('9 fautes, aucun jaune'));
+ // Missing or conflicting pre-match evidence must suppress radar even for old active data.
+ for(const r of board.matches)for(const d of r.advice){d.savedCoherence=d.coherence;d.coherence={status:'missing',missing:['Moyenne de fautes avant-match manquante.'],conflicts:[],lines:[]};}
+ await page.evaluate(()=>refresh());assert.equal(await page.locator('#attention-cards .attention-card').count(),0);assert.equal(await page.locator('#match-rows tr').count(),4);assert.equal(await page.locator('#match-rows .reading.active').count(),0);assert((await page.locator('#match-rows').textContent()).includes('Moyenne de fautes avant-match manquante.'));
+ for(const r of board.matches)for(const d of r.advice)d.coherence={status:'conflict',missing:[],conflicts:['Créneau non concordant.'],lines:[]};
+ await page.evaluate(()=>refresh());assert.equal(await page.locator('#attention-cards .attention-card').count(),0);assert((await page.locator('#match-rows').textContent()).includes('Créneau non concordant.'));
+ for(const r of board.matches)for(const d of r.advice){d.coherence=d.savedCoherence;delete d.savedCoherence;}
+ await page.evaluate(()=>refresh());assert.equal(await page.locator('#attention-cards .attention-card').count(),6);
  // Excluded leagues suppress even factual cards from old active/missing readings.
  for(const r of board.matches)for(const d of r.advice)if(d.market==='cards')d.telegram_allowed=false;
  await page.evaluate(()=>refresh());
@@ -139,4 +146,5 @@ const server=http.createServer((r,res)=>{if(r.url==='/download.php?file=collecto
  assert.equal(await page.locator('#telegram-test').isDisabled(),false);assert.equal(posted.filter(x=>x.action==='telegram_test').length,0);await page.locator('#card-leagues').fill('Compétition de démonstration');await page.locator('#telegram-enabled').uncheck();await page.locator('#settings-form button[type=submit]').click();await page.waitForFunction(()=>document.querySelector('#kpi-units').textContent.includes('Radar Telegram arrêté'));assert.equal(posted.filter(x=>x.action==='radar_telegram').length,1);await page.locator('[data-close="settings-modal"]').click();
  await page.locator('[data-view="observations"]').click();assert((await page.locator('#match-rows').textContent()).includes('4 tirs'));
  await page.locator('[data-view="live"]').click();await page.setViewportSize({width:390,height:844});await assertTeamHalves();await page.screenshot({path:path.join(output,'mobile.png'),fullPage:true});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Débordement horizontal du document');assert.deepEqual(errors,[]);assert.deepEqual(posted.find(x=>x.action==='radar_telegram').card_leagues,['Compétition de démonstration']);assert(posted.some(x=>x.action==='analyst'));assert(posted.some(x=>x.action==='settle'));console.log('V5 browser: imports, export, four readings, details, history, settlement, radar Telegram toggle, mobile and no JS errors passed.');await require('./test_collector.cjs').browserTest(browser);await browser.close();server.close();})().catch(e=>{console.error(e);server.close();process.exit(1)});
+
 

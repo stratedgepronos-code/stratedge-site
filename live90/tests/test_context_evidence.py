@@ -13,16 +13,16 @@ class EvidenceTests(unittest.TestCase):
  reading=fixtures.DeskTests.reading
  def enrich(self):
   self.ctx['sources']=[{'id':'s','title':'Source de recette','url':'https://example.org/stats','checked_at':V.iso(self.before)}]
-  self.ctx['referee']={'name':'Arbitre Test','appointment':'confirmed','appointment_source_ids':['s'],'note':'Test','stats':{'matches':20,'sample_label':'Saison test','yellow_per_match':4.7,'source_ids':['s']}}
+  self.ctx['referee']={'name':'Arbitre Test','appointment':'confirmed','appointment_source_ids':['s'],'note':'Test','stats':{'matches':20,'sample_label':'Saison test','yellow_per_match':5,'fouls_per_match':24,'source_ids':['s']}}
   for side,scope in [('h','home'),('a','away')]:
    common={'matches':20,'sample_label':'Saison test','as_of':V.iso(self.before),'source_ids':['s']}
-   self.ctx['teams'][side]['card_references']={x:dict(common,unit='yellow_cards',for_per_match=2.4 if x==scope else 1.8) for x in ('overall',scope,'h2h')}
+   self.ctx['teams'][side]['card_references']={x:dict(common,unit='yellow_cards',for_per_match=2.4 if x==scope else 1.8,fouls_for_per_match=12) for x in ('overall',scope,'h2h')}
    self.ctx['teams'][side]['goal_timing']={scope:dict(common,stoppage_policy='Temps additionnel dans les dernières tranches des mi-temps',bins=[{'start':i,'end':i+10,'scored':8 if i==20 else 1,'conceded':6 if i==20 else 1} for i in range(0,90,10)])}
  def test_roundtrip_context_and_message_with_both_teams_referee_h2h(self):
   self.enrich();self.prepare();d=self.reading('cards')
   self.assertEqual(d['baseline'],2.4);self.assertIn('domicile',d['baseline_origin'])
   r=V.sample_data(V.latest(self.c)[0]);msg=V.radar_message(r,d,{'quotes':[]})
-  for text in ('Arbitre Test','4,7 jaunes','Équipe A','Équipe B','domicile 2,4','extérieur 2,4','H2H 1,8','n=20','Fautes au total : 9'):self.assertIn(text,msg)
+  for text in ('Arbitre Test','5 jaunes','Équipe A','Équipe B','2,4 jaunes/m','n=20','Fautes au total : 9'):self.assertIn(text,msg)
   self.assertEqual(self.reading('goals')['context_evidence']['support'],'concordant')
  def test_bad_source_units_counts_cutoff_and_overlap_rejected(self):
   self.enrich();original=copy.deepcopy(self.ctx)
@@ -68,3 +68,4 @@ class EvidenceTests(unittest.TestCase):
   self.assertFalse(self.reading('cards')['telegram_allowed'])
 
 if __name__=='__main__':unittest.main()
+

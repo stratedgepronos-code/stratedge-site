@@ -200,18 +200,20 @@ $('#telegram-test').onclick=async()=>{const b=$('#telegram-test');b.disabled=tru
 $('#settle-form').onsubmit=async e=>{e.preventDefault();try{const f=e.target.elements;const x=await request({action:'settle',id:Number(f.id.value),outcome:f.outcome.value,source:f.source.value.trim()});$('#settle-modal').close();moreHistory=[];await refresh();notice(x.unchanged?'Résultat déjà enregistré : aucune nouvelle notification.':x.result_delivery==='queued'?'Résultat enregistré. Notification Telegram au prochain passage du moteur.':'Résultat enregistré. Envoi Telegram désactivé.')}catch(err){notice(err.message)}};
 setInterval(()=>{$('#clock').textContent=new Date().toLocaleTimeString('fr-FR',{timeZone:'Europe/Paris'})},1000);
 const deskNames={goals:'Buts',cards:'Cartons jaunes'};
-const deskStates={active:'À regarder',confirming:'À confirmer',neutral:'Observer',missing:'À compléter',stale:'Données anciennes',waiting:'En attente',caution:'Prudence'};
+const deskStates={context_wait:'Avant-match incomplet',context_conflict:'Concordance insuffisante',active:'À regarder',confirming:'À confirmer',neutral:'Observer',missing:'À compléter',stale:'Données anciennes',waiting:'En attente',caution:'Prudence'};
 let boardReceivedAt=Date.now();
 const seenHighlights=new Set();
 function deskEffective(r,d){
  if(d?.market==='cards'&&(d.recommendation_allowed===false||d.telegram_allowed===false||d.status==='excluded'))return {...d,status:'excluded',title:'Hors sélection cartons',reason:'Cartons désactivés pour ce championnat.'};
+ if(d&&['goals','cards'].includes(d.market)&&['active','confirming'].includes(d.status)&&d.coherence?.status!=='confirmed')return {...d,status:'context_wait',title:'Avant-match incomplet',reason:'Concordance avant-match/live non confirmée.'};
  if(age(r.received_at)>100)return {...d,status:r.received_at?'stale':'waiting',title:r.received_at?'Données anciennes':'En attente',reason:'Aucune lecture active sans relevé récent.'};
  if(age(data.engine?.at)>65||data.engine?.version!=='decision5.0')return {...d,status:'waiting',title:'Moteur en attente',reason:'Le dernier cycle du moteur est trop ancien.'};
  if(r.state!=='LIVE')return {...d,status:'waiting',title:({HT:'Mi-temps',FT:'Terminé',NS:'À venir'}[r.state]||'En attente'),reason:'Aucune lecture active hors des périodes de jeu.'};
  return d||{status:'waiting',title:'En attente',reason:'Le moteur prépare cette lecture.'};
 }
 
-function evidenceHTML(d){const e=d.context_evidence;if(!e)return '';return `<div class="reading-evidence"><b>${e.support==='concordant'?'Créneau favorable documenté':'Repères historiques'}</b>${(e.lines||[]).slice(0,3).map(x=>`<small>${esc(x)}</small>`).join('')}${d.market==='cards'&&d.telegram_allowed===false?'<small class="help">Cartons hors sélection : aucune recommandation ni alerte</small>':''}</div>`}
+function coherenceHTML(d){const c=d.coherence;if(!c)return '';const reasons=[...(c.missing||[]),...(c.conflicts||[])];return `<div class="reading-evidence"><b>${c.status==='confirmed'?'Avant-match + live concordants':c.status==='missing'?'Avant-match à compléter':'Concordance insuffisante'}</b>${(reasons.length?reasons:c.lines||[]).slice(0,3).map(x=>`<small>${esc(x)}</small>`).join('')}</div>`}
+function evidenceHTML(d){const e=d.context_evidence;if(!e)return coherenceHTML(d);return coherenceHTML(d)+`<div class="reading-evidence"><b>${e.support==='concordant'?'Créneau favorable documenté':'Repères historiques'}</b>${(e.lines||[]).slice(0,3).map(x=>`<small>${esc(x)}</small>`).join('')}${d.market==='cards'&&d.telegram_allowed===false?'<small class="help">Cartons hors sélection : aucune recommandation ni alerte</small>':''}</div>`}
 
 function deskCell(r,d,kind){
  const x=deskEffective(r,d),number=d?.observed??(kind==='goals'?r.score?.[d?.team]:r.stats?.[{corners:'corners',cards:'yellow_cards'}[kind]]?.[d?.team]);
@@ -257,6 +259,7 @@ function attentionItems(matches){
  for(const r of matches){
   if(r.state!=='LIVE'||!attentionNumber(r.minute)||r.minute<=0||r.minute>90||r.minute_extra||r.quality_errors?.length)continue;
   for(const d of r.advice||[]){
+   if(d.coherence?.status!=='confirmed')continue;
    if(market!=='all'&&market!==d.market)continue;
    if(!['h','a'].includes(d.team)||!Object.hasOwn(deskNames,d.market)||d.sample_id!==r.sample_id)continue;
    const x=deskEffective(r,d),m=d.metrics||{};
@@ -328,4 +331,5 @@ function renderObservations(query){
 }
 
 setInterval(()=>{render();},10000);setInterval(refresh,15000);refresh();
+
 

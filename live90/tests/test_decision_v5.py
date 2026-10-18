@@ -4,7 +4,14 @@ from unittest.mock import patch
 import test_v4 as legacy_fixture
 import live_v4 as V
 class DeskTests(unittest.TestCase):
- setUp=legacy_fixture.LiveV4Tests.setUp
+ def setUp(self):
+  legacy_fixture.LiveV4Tests.setUp(self)
+  self.ctx['sources']=[{'id':'s','title':'Données synthétiques de recette','url':'https://example.org/test','checked_at':V.iso(self.before)}]
+  self.ctx['referee']={'name':'Arbitre Test','appointment':'confirmed','appointment_source_ids':['s'],'note':'Recette','stats':{'matches':20,'sample_label':'Saison synthétique','yellow_per_match':4.5,'fouls_per_match':24,'source_ids':['s']}}
+  for side,scope in [('h','home'),('a','away')]:
+   common={'matches':20,'sample_label':'Recette même échantillon','as_of':V.iso(self.before),'source_ids':['s']}
+   self.ctx['teams'][side]['card_references']={scope:dict(common,unit='yellow_cards',for_per_match=1.8,fouls_for_per_match=12)}
+   self.ctx['teams'][side]['goal_timing']={scope:dict(common,stoppage_policy='45+ et 90+ rattachés à leur mi-temps',bins=[{'start':i,'end':i+10,'scored':8 if i==20 else 1,'conceded':6 if i==20 else 1} for i in range(0,90,10)])}
  tearDown=legacy_fixture.LiveV4Tests.tearDown
  bundle=legacy_fixture.LiveV4Tests.bundle
  add=legacy_fixture.LiveV4Tests.add
@@ -73,7 +80,7 @@ class DeskTests(unittest.TestCase):
   self.assertEqual(self.reading()['status'],'missing')
  def test_sourced_corner_reference_validated_and_used(self):
   source={'id':'c','title':'Source de test','url':'https://example.org/corners','checked_at':V.iso(self.before)}
-  self.ctx['sources']=[source];self.ctx['teams']['h']['corner_reference']={'matches':20,'sample_label':'Test','corners_for_ft':5.4,'corners_against_ft':4.1,'source_ids':['c']}
+  self.ctx['sources'].append(source);self.ctx['teams']['h']['corner_reference']={'matches':20,'sample_label':'Test','corners_for_ft':5.4,'corners_against_ft':4.1,'source_ids':['c']}
   self.prepare();V.validate_context(self.ctx,self.before);self.assertNotIn('corners',{x['market'] for x in V.board(self.c,self.now)['matches'][0]['advice']})
   self.ctx['teams']['h']['corner_reference']['source_ids']=['missing']
   with self.assertRaisesRegex(ValueError,'source corners'):V.validate_context(self.ctx,self.before)
@@ -94,3 +101,4 @@ class DeskTests(unittest.TestCase):
   self.prepare();self.r['score']=[];self.add(self.r,self.now)
   self.assertTrue(all(d['status']=='missing' for d in V.board(self.c,self.now)['matches'][0]['advice']))
 if __name__=='__main__':unittest.main()
+

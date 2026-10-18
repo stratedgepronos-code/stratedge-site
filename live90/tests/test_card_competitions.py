@@ -32,7 +32,7 @@ class Competitions(unittest.TestCase):
   self.prepare();V.install_card_selection(self.c)
   self.c.execute('DELETE FROM v4_contexts');self.c.commit()
   self.assertTrue(self.reading('cards')['telegram_allowed'])
-  self.assertEqual(self.reading('goals')['status'],'active')
+  self.assertEqual(self.reading('goals')['status'],'context_wait')
  def test_stake_quote_cannot_bypass_owner_leagues(self):
   self.prepare();V.install_card_selection(self.c);r=V.sample_data(V.latest(self.c)[0])
   event={'event_id':'s','home':r['home'],'away':r['away'],'score':r['score'],'markets':[{'name':r['home']+' Total Bookings','canonical':'OTHER','period':'FULL_TIME','active':True,'selections':[{'name':'Over 0.5','line':.5,'odds':1.9,'active':True}]}]}
@@ -43,7 +43,7 @@ class Competitions(unittest.TestCase):
   for country,league in [('Turkey','Super Lig'),('Netherlands','Eredivisie')]:
    p=copy.deepcopy(self.m);p.update(league=league,usable=True,packball={'export_a':[country]})
    s=V.latest(self.c)[0];r=V.sample_data(s)
-   ds=V.desk_advice(self.c,s,p,None,self.now)
+   ds=V.desk_advice(self.c,s,p,dict(self.ctx,usable=True),self.now)
    for d in ds:
     if d['market']=='cards':
      self.assertEqual(d['status'],'excluded');self.assertFalse(d['recommendation_allowed'])
@@ -67,3 +67,4 @@ class Competitions(unittest.TestCase):
   self.assertEqual(self.reading('goals')['status'],'active')
 
 if __name__=='__main__':unittest.main()
+
