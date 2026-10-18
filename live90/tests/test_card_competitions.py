@@ -37,6 +37,33 @@ class Competitions(unittest.TestCase):
   self.prepare();V.install_card_selection(self.c);r=V.sample_data(V.latest(self.c)[0])
   event={'event_id':'s','home':r['home'],'away':r['away'],'score':r['score'],'markets':[{'name':r['home']+' Total Bookings','canonical':'OTHER','period':'FULL_TIME','active':True,'selections':[{'name':'Over 0.5','line':.5,'odds':1.9,'active':True}]}]}
   V.runtime(self.c,'pulsescore_test',{'ok':True,'at':V.iso(self.now),'events':[event]});self.c.commit()
-  self.assertFalse(self.reading('cards')['telegram_allowed']);self.assertEqual(self.reading('cards')['status'],'active')
+  self.assertFalse(self.reading('cards')['telegram_allowed']);self.assertEqual(self.reading('cards')['status'],'excluded')
+ def test_turkey_netherlands_no_card_suggestions_or_new_observations(self):
+  self.prepare();V.install_card_selection(self.c)
+  for country,league in [('Turkey','Super Lig'),('Netherlands','Eredivisie')]:
+   p=copy.deepcopy(self.m);p.update(league=league,usable=True,packball={'export_a':[country]})
+   s=V.latest(self.c)[0];r=V.sample_data(s)
+   ds=V.desk_advice(self.c,s,p,None,self.now)
+   for d in ds:
+    if d['market']=='cards':
+     self.assertEqual(d['status'],'excluded');self.assertFalse(d['recommendation_allowed'])
+     self.assertFalse(V.radar_eligible(r,d,self.now));self.assertIsNotNone(d['observed'])
+   self.assertEqual(next(d for d in ds if d['market']=='goals' and d['team']=='h')['status'],'active')
+  V.run_dashboard(self.db,self.now)
+  self.assertEqual(self.c.execute("SELECT COUNT(*) FROM v5_observations WHERE market='cards'").fetchone()[0],0)
+  self.assertGreater(self.c.execute("SELECT COUNT(*) FROM v5_observations WHERE market='goals'").fetchone()[0],0)
+ def test_scheduled_match_and_live_match_share_card_scope(self):
+  self.prepare();V.install_card_selection(self.c)
+  self.c.execute('DELETE FROM samples');self.c.commit()
+  b=V.board(self.c,self.now)
+  self.assertTrue(b['matches'])
+  self.assertTrue(all(d['status']=='excluded' for d in b['matches'][0]['advice'] if d['market']=='cards'))
+ def test_removing_allowed_league_immediately_disables_cards_only(self):
+  self.m['league']='Ligue 1';self.m['packball']={'export_a':['France']}
+  self.prepare();V.install_card_selection(self.c)
+  self.assertEqual(self.reading('cards')['status'],'active')
+  V.dispatch(self.c,{'action':'radar_telegram','enabled':True,'card_leagues':[]},self.now)
+  self.assertEqual(self.reading('cards')['status'],'excluded')
+  self.assertEqual(self.reading('goals')['status'],'active')
 
 if __name__=='__main__':unittest.main()

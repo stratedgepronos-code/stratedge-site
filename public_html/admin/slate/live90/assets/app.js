@@ -204,16 +204,18 @@ const deskStates={active:'À regarder',confirming:'À confirmer',neutral:'Observ
 let boardReceivedAt=Date.now();
 const seenHighlights=new Set();
 function deskEffective(r,d){
+ if(d?.market==='cards'&&(d.recommendation_allowed===false||d.telegram_allowed===false||d.status==='excluded'))return {...d,status:'excluded',title:'Hors sélection cartons',reason:'Cartons désactivés pour ce championnat.'};
  if(age(r.received_at)>100)return {...d,status:r.received_at?'stale':'waiting',title:r.received_at?'Données anciennes':'En attente',reason:'Aucune lecture active sans relevé récent.'};
  if(age(data.engine?.at)>65||data.engine?.version!=='decision5.0')return {...d,status:'waiting',title:'Moteur en attente',reason:'Le dernier cycle du moteur est trop ancien.'};
  if(r.state!=='LIVE')return {...d,status:'waiting',title:({HT:'Mi-temps',FT:'Terminé',NS:'À venir'}[r.state]||'En attente'),reason:'Aucune lecture active hors des périodes de jeu.'};
  return d||{status:'waiting',title:'En attente',reason:'Le moteur prépare cette lecture.'};
 }
 
-function evidenceHTML(d){const e=d.context_evidence;if(!e)return '';return `<div class="reading-evidence"><b>${e.support==='concordant'?'Créneau favorable documenté':'Repères historiques'}</b>${(e.lines||[]).slice(0,3).map(x=>`<small>${esc(x)}</small>`).join('')}${d.market==='cards'&&d.telegram_allowed===false?'<small class="help">Telegram : championnat à autoriser dans Réglages</small>':''}</div>`}
+function evidenceHTML(d){const e=d.context_evidence;if(!e)return '';return `<div class="reading-evidence"><b>${e.support==='concordant'?'Créneau favorable documenté':'Repères historiques'}</b>${(e.lines||[]).slice(0,3).map(x=>`<small>${esc(x)}</small>`).join('')}${d.market==='cards'&&d.telegram_allowed===false?'<small class="help">Cartons hors sélection : aucune recommandation ni alerte</small>':''}</div>`}
 
 function deskCell(r,d,kind){
  const x=deskEffective(r,d),number=d?.observed??(kind==='goals'?r.score?.[d?.team]:r.stats?.[{corners:'corners',cards:'yellow_cards'}[kind]]?.[d?.team]);
+ if(x.status==='excluded')return `<div class="reading excluded"><div class="reading-owner">Cartons de ${esc(d?.team==='h'?r.home:r.away)}</div><div class="reading-top"><b>${fmt(number)} <small>jaune(s)</small></b><span>Hors sélection</span></div><p>Aucune recommandation cartons pour ce championnat.</p></div>`;
  const unit={goals:'but(s)',corners:'corner(s)',cards:'jaune(s)'}[kind];
  const owner=d?.team==='h'?r.home:d?.team==='a'?r.away:'cette équipe';
  const key=[r.packball_id,d?.team,kind,x.status,d?.observed].join(':');

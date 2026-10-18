@@ -50,6 +50,19 @@ const server=http.createServer((r,res)=>{if(r.url==='/download.php?file=collecto
  for(const [kind,label] of Object.entries({goals:'But à surveiller',cards:'Carton à surveiller'})){assert.equal(await page.locator('#attention-cards .confirmed.'+kind+' h3').first().textContent(),label)}
  assert.equal(await page.locator('#attention-cards .attention-card').count(),6);
  assert((await page.locator('#attention-cards').textContent()).includes('9 fautes, aucun jaune'));
+ // Excluded leagues suppress even factual cards from old active/missing readings.
+ for(const r of board.matches)for(const d of r.advice)if(d.market==='cards')d.telegram_allowed=false;
+ await page.evaluate(()=>refresh());
+ assert.equal(await page.locator('#attention-cards .cards').count(),0);
+ assert.equal(await page.locator('#count-cards').textContent(),'0');
+ assert.equal(await page.locator('#match-rows .reading.excluded').count(),8);
+ assert((await page.locator('#match-rows .reading.excluded').first().textContent()).includes('Aucune recommandation cartons'));
+ assert.equal(await page.locator('#attention-cards .goals').count(),3);
+ // New backend exclusion persists even if fresh status and quote data arrive.
+ for(const r of board.matches)for(const d of r.advice)if(d.market==='cards'){delete d.telegram_allowed;d.recommendation_allowed=false;}
+ await page.evaluate(()=>refresh());assert.equal(await page.locator('#attention-cards .cards').count(),0);
+ for(const r of board.matches)for(const d of r.advice)delete d.recommendation_allowed;
+ await page.evaluate(()=>refresh());assert.equal(await page.locator('#attention-cards .attention-card').count(),6);
  assert((await page.locator('#attention-cards').textContent()).includes('8 cadrés, 0 buts'));
  assert(!(await page.locator('#attention-cards').textContent()).includes('corners en 10 min'));
  assert(!(await page.locator('#attention-cards').textContent()).includes('Équipe G'));

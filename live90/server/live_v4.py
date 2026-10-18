@@ -972,7 +972,7 @@ def board(c,now):
         if f['fixture'] in seen or active is None or f['fixture'] not in active:continue
         p,ctx=inputs(c,f,now)
         r={'fixture':f['fixture'],'packball_id':f['match_id'],'home':f['home'],'away':f['away'],'league':f['league'],'kickoff_ts':f['kickoff'],'state':'NS','profile':p,'analyst':ctx,'decisions':[]}
-        r['advice']=[desk_reading(r,p,ctx,t,m,now,[]) for t in ('h','a') for m in DESK_MARKETS]
+        r['advice']=[apply_card_scope(c,r,desk_reading(r,p,ctx,t,m,now,[]),p,ctx,now) for t in ('h','a') for m in DESK_MARKETS]
         records.append(r)
     cycle=c.execute('SELECT received_at,payload FROM cycles ORDER BY rowid DESC LIMIT 1').fetchone()
     feed=dec(cycle['payload'],{}) if cycle else {}
@@ -1230,11 +1230,20 @@ def desk_advice(c,s,p,ctx,now):
                     if at and before and 20<=(at-before).total_seconds()<=100 and old_d['status']=='candidate' and old_d['period']==d['period'] and old_d['observed']==d['observed'] and old.get('score')==r.get('score') and num(old.get('minute')) and 0<=r['minute']-old['minute']<=2:
                         d.update(status='active',title='À regarder')
             d.update(sample_id=s['id'],updated_at=iso(now))
-            if market=='cards':
-                d['telegram_allowed']=card_market_allowed(c,r,team,now,ctx,p)
-                if not d['telegram_allowed']:d['limits'].insert(0,'Telegram cartons en attente : championnat non autorisé ou pays/compétition non identifiés avec certitude.')
-            out.append(d)
+            out.append(apply_card_scope(c,r,d,p,ctx,now))
     return out
+
+def apply_card_scope(c,r,d,p,ctx,now):
+    # One scope for the board, factual radar, saved observations and Telegram.
+    # Keep counters and source evidence, but never advertise an excluded market.
+    if d.get('market')=='cards':
+        allowed=card_market_allowed(c,r,d['team'],now,ctx,p)
+        d.update(telegram_allowed=allowed,recommendation_allowed=allowed)
+        if not allowed:
+            reason='Cartons désactivés : championnat hors sélection ou pays/compétition non identifiés.'
+            d.update(status='excluded',title='Hors sélection cartons',reason=reason,criteria='Aucune recommandation cartons pour ce championnat.')
+            d.setdefault('limits',[]).insert(0,reason)
+    return d
 
 def desk_history(c,limit=100):
     out=[]
@@ -1419,6 +1428,8 @@ if __name__=='__main__':
         elif args.diagnostic:
             b=board(c,now_utc());result={k:b[k] for k in ('version','feed','engine','telegram','radar_telegram','totals')};result['feed']=dict(result['feed']);result['feed'].pop('headers',None);result['feed'].pop('odds_meta',None);result['list']={'matches':len(b['matches']),'live':sum(r.get('state')=='LIVE' for r in b['matches']),'halftime':sum(r.get('state')=='HT' for r in b['matches'])};result['collection_columns']=b['feed'].get('headers',[]);result['collection_odds']=b['feed'].get('odds_meta',{});result['health']=b['health'];result['recent_rows']=[{k:r.get(k) for k in ('packball_id','home','away','state','status_raw','minute','received_at','stats','ind5','ind10','quotes','quality_errors')} for r in [sample_data(x) for x in latest(c)] if r.get('state') in ('LIVE','HT')][:6]
             result['match_audits']=audit_matches(c,now_utc())
+            readings=[d for r in b['matches'] for d in r.get('advice',[]) if d.get('market')=='cards']
+            result['card_scope']={'applies_to':'board_radar_history_telegram','excluded_readings':sum(d.get('status')=='excluded' for d in readings),'unauthorized_recommendations':sum(d.get('telegram_allowed') is not True and d.get('status')!='excluded' for d in readings)}
             result['pulsescore']={k:b['pulsescore'][k] for k in ('configured','auto_enabled','auto_today','auto_daily_limit','attempts_31d')}
         else: result=dispatch(c,json.load(sys.stdin),now_utc())
         print(enc(result));c.close()

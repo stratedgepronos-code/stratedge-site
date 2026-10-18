@@ -51,6 +51,7 @@ class DeskTests(unittest.TestCase):
   self.add(self.r,self.now-dt.timedelta(seconds=30));self.add(self.r,self.now)
   self.assertEqual(self.reading()['status'],'neutral');self.assertGreater(self.reading()['metrics']['sot_per_goal'],0)
  def test_cards_continue_after_existing_yellows_but_new_yellow_resets_confirmation(self):
+  V.dispatch(self.c,{'action':'radar_telegram','enabled':True,'card_leagues':['Test']},self.now)
   self.prepare();self.r['stats']['yellow_cards']['h']=3
   self.add(self.r,self.now-dt.timedelta(seconds=1));self.add(self.r,self.now+dt.timedelta(seconds=30));self.now+=dt.timedelta(seconds=30)
   self.assertEqual(self.reading('cards')['status'],'active')
@@ -89,6 +90,7 @@ class DeskTests(unittest.TestCase):
   b=V.board(self.c,self.now);self.assertEqual(len(b['matches']),1);self.assertEqual(len(b['matches'][0]['advice']),4)
   self.assertEqual({d['team'] for d in b['matches'][0]['advice']},{'h','a'})
  def test_malformed_sample_does_not_break_other_markets(self):
+  V.dispatch(self.c,{'action':'radar_telegram','enabled':True,'card_leagues':['Test']},self.now)
   self.prepare();self.r['score']=[];self.add(self.r,self.now)
   self.assertTrue(all(d['status']=='missing' for d in V.board(self.c,self.now)['matches'][0]['advice']))
 if __name__=='__main__':unittest.main()

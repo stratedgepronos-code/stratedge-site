@@ -50,8 +50,8 @@ class EvidenceTests(unittest.TestCase):
  def test_non_yellow_reference_not_used_as_yellow_baseline(self):
   self.enrich();self.ctx['teams']['h']['card_references']['home']['unit']='booking_points';self.prepare()
   self.assertIsNone(self.reading('cards')['baseline']);self.assertIn('points de sanction',str(self.reading('cards')['facts']))
- def test_cards_leagues_are_exact_and_do_not_block_reading_or_goals(self):
-  self.enrich();self.prepare();d=self.reading('cards');self.assertEqual(d['status'],'active');self.assertFalse(d['telegram_allowed'])
+ def test_cards_leagues_block_recommendations_but_keep_evidence_and_goals(self):
+  self.enrich();self.prepare();d=self.reading('cards');self.assertEqual(d['status'],'excluded');self.assertFalse(d['telegram_allowed']);self.assertTrue(d['context_evidence']['lines'])
   self.assertEqual(self.reading('goals')['status'],'active')
   V.dispatch(self.c,{'action':'radar_telegram','enabled':True,'card_leagues':['Test women']},self.now)
   self.assertFalse(self.reading('cards')['telegram_allowed'])
