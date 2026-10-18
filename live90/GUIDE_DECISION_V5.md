@@ -1,3 +1,7 @@
+## Championnats cartons choisis le 18 octobre 2026
+
+Migration unique : MLS, Angleterre/Premier League, Espagne/La Liga, Italie/Serie A, Allemagne/Bundesliga, France/Ligue 1, Arabie saoudite/Saudi Pro League. La liste est visible et modifiable dans Réglages. Pays du CSV Packball + libellé exact de championnat, avec synonymes explicites ; aucun rapprochement par sous-chaîne ni par nom d’équipe. Donnée pays absente ou championnat ambigu : lecture conservée, Telegram cartons suspendu. Les U21, féminines, réserves, coupes, deuxièmes divisions et autres pays ne sont pas assimilés aux sept championnats. Le mode strict empêche même une cote reçue de contourner cette liste. Cette sélection prime sur l’ancien repli « marché vérifié ». Les buts restent indépendants.
+
 # Mise à jour du 18 octobre 2026 — buts et cartons
 
 - Corners retirés des lectures courantes, filtres et alertes Telegram. Les archives, anciens imports et décodeurs de marchés restent compatibles ; aucune suppression d’historique.

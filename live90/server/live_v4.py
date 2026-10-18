@@ -1231,8 +1231,8 @@ def desk_advice(c,s,p,ctx,now):
                         d.update(status='active',title='À regarder')
             d.update(sample_id=s['id'],updated_at=iso(now))
             if market=='cards':
-                d['telegram_allowed']=card_market_allowed(c,r,team,now,ctx)
-                if not d['telegram_allowed']:d['limits'].insert(0,'Telegram cartons en attente : championnat non autorisé et aucun marché équipe Stake frais vérifié.')
+                d['telegram_allowed']=card_market_allowed(c,r,team,now,ctx,p)
+                if not d['telegram_allowed']:d['limits'].insert(0,'Telegram cartons en attente : championnat non autorisé ou pays/compétition non identifiés avec certitude.')
             out.append(d)
     return out
 
@@ -1252,11 +1252,46 @@ def radar_enabled(c):
 def radar_status(c):
     counts={r['delivery']:r['n'] for r in c.execute('SELECT delivery,COUNT(*) n FROM v5_radar_notifications GROUP BY delivery')}
     last=c.execute('SELECT created_at,delivery,delivery_error FROM v5_radar_notifications ORDER BY id DESC LIMIT 1').fetchone()
-    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'card_policy':'allowlist_or_verified_team_market'}
+    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market')}
 
-def card_market_allowed(c,r,team,now,ctx=None):
+# Explicit owner selection, 18 October 2026. Country is required for common
+# labels (Premier League, Serie A, Pro League...); no substring or team-name guesses.
+CARD_COMPETITIONS={
+    'USA · MLS': (('usa','us','united states','united states of america','etats unis','etats-unis','canada','can'),('mls','major league soccer')),
+    'Angleterre · Premier League': (('eng','england','angleterre'),('premier league','english premier league','epl')),
+    'Espagne · La Liga': (('esp','spain','espagne'),('la liga','laliga','primera division','laliga ea sports')),
+    'Italie · Serie A': (('ita','italy','italie'),('serie a','serie a enilive')),
+    'Allemagne · Bundesliga': (('ger','deu','germany','allemagne'),('bundesliga','1. bundesliga','1 bundesliga')),
+    'France · Ligue 1': (('fra','france'),('ligue 1','ligue 1 mcdonalds',"ligue 1 mcdonald's")),
+    'Arabie saoudite · Saudi Pro League': (('ksa','sau','saudi arabia','arabie saoudite'),('pro league','saudi pro league','professional league','saudi professional league','saudi arabia pro league','roshn saudi league')),
+}
+
+def selected_card_competition(r,p=None,ctx=None):
+    p=p or {};pb=p.get('packball') or {};raw=pb.get('export_a')
+    country=p.get('country') or r.get('country')
+    if not country and isinstance(raw,list) and raw:country=raw[0]
+    league=p.get('league') or r.get('league') or (ctx or {}).get('league')
+    if not isinstance(country,str) or not isinstance(league,str):return None
+    for title,(countries,leagues) in CARD_COMPETITIONS.items():
+        if norm(country) in {norm(v) for v in countries} and norm(league) in {norm(v) for v in leagues}:return title
+    return None
+
+def install_card_selection(c):
+    # One-time settings migration; subsequent manual settings are never reset.
+    if setting(c,'card_selection_20261018',False):return
+    with c:
+        for k,v in (('card_leagues',list(CARD_COMPETITIONS)),('card_league_policy','strict_allowlist'),('card_selection_20261018',True)):
+            c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,enc(v)))
+
+def card_market_allowed(c,r,team,now,ctx=None,p=None):
+    selected=setting(c,'card_leagues',[]);canonical=selected_card_competition(r,p,ctx)
+    if canonical and canonical in selected:return True
     league=r.get('league') or (ctx or {}).get('league')
-    if league and norm(league) in {norm(v) for v in setting(c,'card_leagues',[])}:return True
+    # Retain custom exact league names, but never treat a qualified name as a
+    # generic league alias from another country.
+    custom=[v for v in selected if v not in CARD_COMPETITIONS]
+    if league and norm(league) in {norm(v) for v in custom}:return True
+    if setting(c,'card_league_policy','')=='strict_allowlist':return False
     cache=c.execute("SELECT value FROM v4_runtime WHERE key='pulsescore_test'").fetchone()
     cuts=desk_cuts(r,dec(cache['value'],{}) if cache else {},now)
     return any(q['team']==team and q['kind']=='cards' and q['period']=='FT' for q in cuts.get('quotes',[]))
@@ -1378,6 +1413,7 @@ if __name__=='__main__':
     try:
         c=connect(args.db)
         if args.init:
+            install_card_selection(c)
             for name in ('telegram_enabled','pulsescore_auto'):c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(name,'false'))
             runtime(c,'decision_mode',True);c.commit();result={'ok':True,'version':'decision5.0'}
         elif args.diagnostic:
