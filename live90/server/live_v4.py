@@ -1010,7 +1010,7 @@ def export_analysis(c,now):
                  state=p.get('state') if p else None,data_issues=p.get('issues',[]) if p else [],
                  prematch_imported_at=p.get('imported_at') if p else None,prematch_usable=p.get('usable',False) if p else False)
         matches.append(m)
-    return {'schema':'stratedge.research.v4','exported_at':iso(now),'timezone':'Europe/Paris','matches':matches,'instructions':'Tous les matchs doivent figurer dans le résultat stratedge.context.v4 avec watch:true. Aucun scénario éliminatoire. Utiliser PROMPT_ANALYSTE_V4.md révision 21/10/2026 : arbitre confirmé avec jaunes et fautes moyens, card_references global/home/away/h2h avec fouls_for_per_match (même échantillon), et goal_halves par localisation (home/away), avec full_time (prioritaire pour les alertes match entier), first_half/second_half facultatifs. La période des références doit correspondre au pari ; aucune mi-temps obligatoire pour un pari FT. Aucun créneau historique de 10 minutes requis. Historiques : dix derniers matchs officiels par localisation, championnat et coupes inclus, saison précédente si nécessaire ; ne pas limiter une rencontre UEFA aux matchs UEFA de la saison. Une référence domestique documentée est acceptée, avec compétition, dates et limites dans sample_label/notes ; jaunes et fautes portent sur les mêmes rencontres. Vérifier séparément les effectifs Packball n_h/n_a : le JSON analyste ne complète pas un CSV de moins de dix matchs. Références manquantes : null, jamais inventées. Concordance avant-match/live obligatoire pour notifier. Corners retirés.'}
+    return {'schema':'stratedge.research.v4','exported_at':iso(now),'timezone':'Europe/Paris','matches':matches,'instructions':'Tous les matchs doivent figurer dans le résultat stratedge.context.v4 avec watch:true. Aucun scénario éliminatoire. Utiliser PROMPT_ANALYSTE_V4.md révision 21/10/2026 : arbitre confirmé avec jaunes et fautes moyens, card_references global/home/away/h2h avec fouls_for_per_match (même échantillon), et goal_halves par localisation (home/away), avec full_time (prioritaire pour les alertes match entier), first_half/second_half facultatifs. La période des références doit correspondre au pari ; aucune mi-temps obligatoire pour un pari FT. Aucun créneau historique de 10 minutes requis. Historiques : dix derniers matchs officiels par localisation, championnat et coupes inclus, saison précédente si nécessaire ; ne pas limiter une rencontre UEFA aux matchs UEFA de la saison. Une référence domestique documentée est acceptée, avec compétition, dates et limites dans sample_label/notes ; jaunes et fautes portent sur les mêmes rencontres. Dix matchs est un objectif de collecte, pas un seuil bloquant : utiliser les vrais effectifs positifs disponibles, même inférieurs à dix, avec mention échantillon limité. Vérifier séparément les effectifs Packball n_h/n_a sans les gonfler ; les données absentes restent bloquantes. Références manquantes : null, jamais inventées. Concordance avant-match/live obligatoire pour notifier. Corners retirés.'}
 
 def dispatch(c,x,now):
     action=x.get('action','board')
@@ -1148,7 +1148,7 @@ def context_evidence(ctx, team, market, minute, period='full_time'):
         value=goal_period_values(ref,period).get(field)
         if not num(value):continue
         name=ctx.get('home' if side=='h' else 'away') or side
-        ready=ref['matches']>=10 and selected==scope
+        ready=num(ref.get('matches')) and ref['matches']>=1 and selected==scope
         refs.append({'team':side,'scope':selected,'half':half,'field':field,'rate':value,'matches':ref['matches'],'comparison_ready':ready})
         out['lines'].append(name+' · '+{'home':'à domicile','away':'à l’extérieur','overall':'toutes localisations'}[selected]+' · '+title+' : '+desk_number(value)+' buts '+('marqués' if field=='scored_per_match' else 'encaissés')+'/m · n='+str(ref['matches'])+'.')
     out.update(period=period,half=half,halves=refs)
@@ -1174,6 +1174,11 @@ def prematch_live_coherence(r,p,ctx,team,market,metrics,evidence):
     """Explicit experimental concordance gates, not probabilities or event debt."""
     out={'status':'missing','lines':[],'missing':[],'conflicts':[],'cautions':[],'legacy_conflicts':[],'policy':'prematch_live_context_v4'}
     missing=out['missing'];conflicts=out['conflicts'];lines=out['lines']
+    small_samples=[]
+    def sample_ok(n,label):
+        if not num(n) or n<1:return False
+        if n<10:small_samples.append(label+' n='+desk_number(n))
+        return True
     if not p or not p.get('usable'):missing.append('Profil Packball avant-match absent ou tardif.')
     if not ctx or not ctx.get('usable'):missing.append('Dossier analyste avant-match absent ou tardif.')
     if missing:return out
@@ -1181,7 +1186,7 @@ def prematch_live_coherence(r,p,ctx,team,market,metrics,evidence):
     own_name=r.get('home' if team=='h' else 'away',team);opp_name=r.get('home' if other=='h' else 'away',other)
     if market=='goals':
         for side in (team,other):
-            if not num(pre.get('n_'+side)) or pre['n_'+side]<10:missing.append('Buts : au moins 10 matchs historiques par équipe requis.')
+            if not sample_ok(pre.get('n_'+side),'Packball '+('domicile' if side=='h' else 'extérieur')):missing.append('Buts : effectif historique Packball positif requis pour chaque équipe.')
         gf=pre.get('gf_'+team);ga=pre.get('ga_'+other);shots=pre.get('shots_'+team);sot=pre.get('sot_'+team)
         if not all(num(v) and v>0 for v in (gf,ga,shots,sot)):missing.append('Buts marqués, encaissés, tirs ou cadrés historiques incomplets.')
         else:
@@ -1190,8 +1195,9 @@ def prematch_live_coherence(r,p,ctx,team,market,metrics,evidence):
             elif metrics['shots10']<=shots/9 or metrics['sot10']<=sot/9:conflicts.append('Tirs ET cadrés récents doivent dépasser le rythme historique moyen ramené à 10 min.')
             else:lines.append('Live 10′ : '+desk_number(metrics['shots10'])+' tirs / '+desk_number(metrics['sot10'])+' cadrés ; repère moyen '+desk_number(shots/9)+' / '+desk_number(sot/9)+'.')
         halves=evidence.get('halves') or []
+        for ref in halves:sample_ok(ref.get('matches'),'Buts '+('domicile' if ref.get('team')=='h' else 'extérieur'))
         if evidence.get('period')!='full_time' or len(halves)!=2 or any(not x.get('comparison_ready') for x in halves):
-            missing.append('Buts match entier : moyennes domicile/extérieur, au moins 10 matchs, attaque et défense adverse requises.')
+            missing.append('Buts match entier : moyennes domicile/extérieur et effectifs positifs, attaque et défense adverse requis.')
         elif evidence.get('support')!='concordant':conflicts.append('Match entier : aucune production marquée ou encaissée dans une référence historique locale.')
         else:lines.extend(evidence.get('lines',[])[1:3])
     elif market=='cards':
@@ -1199,12 +1205,12 @@ def prematch_live_coherence(r,p,ctx,team,market,metrics,evidence):
         for side in (team,other):
             scope='home' if side=='h' else 'away'
             ref=((teams.get(side) or {}).get('card_references') or {}).get(scope)
-            if not ref or ref.get('unit')!='yellow_cards' or ref.get('matches',0)<10:missing.append('Jaunes : référence '+('domicile' if side=='h' else 'extérieur')+' sur au moins 10 matchs requise.')
+            if not ref or ref.get('unit')!='yellow_cards' or not sample_ok(ref.get('matches'),'Jaunes '+('domicile' if side=='h' else 'extérieur')):missing.append('Jaunes : référence '+('domicile' if side=='h' else 'extérieur')+' avec effectif positif requise.')
             else:refs.append(ref)
         referee=ctx.get('referee') or {};rs=referee.get('stats') or {}
         if referee.get('appointment')!='confirmed':missing.append('Désignation de l’arbitre non confirmée.')
-        if not num(rs.get('matches')) or rs['matches']<10 or not all(num(rs.get(k)) and rs[k]>0 for k in ('yellow_per_match','fouls_per_match')):
-            missing.append('Arbitre : jaunes ET fautes moyens sur au moins 10 matchs requis.')
+        if not sample_ok(rs.get('matches'),'Arbitre') or not all(num(rs.get(k)) and rs[k]>0 for k in ('yellow_per_match','fouls_per_match')):
+            missing.append('Arbitre : jaunes ET fautes moyens avec effectif positif requis.')
         if len(refs)==2:
             own,opp=refs
             lines.append(own_name+' : '+desk_number(own['for_per_match'])+' jaunes/m ; '+opp_name+' : '+desk_number(opp['for_per_match'])+' jaunes/m (localisations du match).')
@@ -1227,6 +1233,9 @@ def prematch_live_coherence(r,p,ctx,team,market,metrics,evidence):
                 out['legacy_conflicts'].append('match_fouls_below_referee_pace')
                 out['cautions'].append('Rythme global sous le repère arbitre ; les fautes de l’équipe ciblée restent évaluées séparément.')
             else:lines.append('Fautes du match / 10′ : '+desk_number(sum(both))+' ; repère arbitre '+desk_number(rs['fouls_per_match']/9)+'.')
+    if small_samples:
+        out['cautions'].insert(0,'Échantillon limité : '+', '.join(small_samples)+'. Signal exploratoire ; références moins stables.')
+    out['sample_policy']='available_positive_samples_v1'
     out['missing']=list(dict.fromkeys(missing))
     out['status']='missing' if missing else 'conflict' if conflicts else 'confirmed'
     return out

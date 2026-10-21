@@ -54,8 +54,8 @@ class Coherence(unittest.TestCase):
    if change=='fouls':ctx['teams']['h']['card_references']['home'].pop('fouls_for_per_match')
    if change=='appointment':ctx['referee']['appointment']='reported'
    if change=='referee_fouls':ctx['referee']['stats'].pop('fouls_per_match')
-   if change=='referee_n':ctx['referee']['stats']['matches']=9
-   if change=='team_n':ctx['teams']['h']['card_references']['home']['matches']=9
+   if change=='referee_n':ctx['referee']['stats']['matches']=0
+   if change=='team_n':ctx['teams']['h']['card_references']['home']['matches']=0
    if change=='split':ctx['teams']['h']['card_references']['h2h']=ctx['teams']['h']['card_references'].pop('home')
    d=V.desk_reading(sample,p,ctx,'h','cards',self.now,[])
    self.assertEqual(d['status'],'context_wait',change);self.assertTrue(d['coherence']['missing'])

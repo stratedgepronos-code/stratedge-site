@@ -142,8 +142,10 @@ class Competitions(unittest.TestCase):
   self.m['prematch']['n_h']=4;self.m['prematch']['n_a']=7
   self.prepare();V.install_card_selection(self.c)
   d=self.reading('goals')
-  self.assertEqual(d['status'],'context_wait')
-  self.assertTrue(any('10 matchs historiques' in reason for reason in d['coherence']['missing']))
+  self.assertEqual(d['status'],'active')
+  self.assertEqual(self.m['prematch']['n_h'],4)
+  self.assertEqual(self.m['prematch']['n_a'],7)
+  self.assertTrue(any('Packball domicile n=4' in reason and 'extérieur n=7' in reason for reason in d['coherence']['cautions']))
 
 if __name__=='__main__':unittest.main()
 

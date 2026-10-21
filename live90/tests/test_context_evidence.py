@@ -38,9 +38,9 @@ class EvidenceTests(unittest.TestCase):
   self.assertEqual(V.context_evidence(ctx,'h','goals',46)['period'],'full_time')
   self.assertEqual(V.context_evidence(ctx,'h','goals',30)['halves'][0]['rate'],2)
   self.assertEqual(V.context_evidence(ctx,'h','goals',60)['halves'][0]['rate'],2)
-  for mode in ('small','partial','overall','late'):
+  for mode in ('empty','partial','overall','late'):
    x=copy.deepcopy(ctx)
-   if mode=='small':x['teams']['h']['goal_halves']['home']['matches']=3
+   if mode=='empty':x['teams']['h']['goal_halves']['home']['matches']=0
    if mode=='partial':x['teams']['h']['goal_halves']['home']['first_half']=None
    if mode=='overall':x['teams']['h']['goal_halves']['overall']=x['teams']['h']['goal_halves'].pop('home')
    if mode=='late':x['usable']=False
