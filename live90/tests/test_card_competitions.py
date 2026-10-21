@@ -126,5 +126,24 @@ class Competitions(unittest.TestCase):
   self.assertEqual(V.radar_status(self.c)['card_leagues'],['France · Ligue 1'])
   self.assertTrue(V.radar_enabled(self.c))
 
+ def test_uefa_fixture_accepts_documented_domestic_references(self):
+  self.m['league']='Champions League';self.m['packball']={'export_a':['Europe']}
+  self.ctx['league']='Champions League'
+  for side,scope,label in [('h','home','Ligue 1, domicile, dix matchs officiels synthétiques'),('a','away','Premier League, extérieur, dix matchs officiels synthétiques')]:
+   for field in ('card_references','goal_halves'):
+    self.ctx['teams'][side][field][scope].update(matches=10,sample_label=label)
+  self.prepare();V.install_card_selection(self.c)
+  for market in ('cards','goals'):
+   d=self.reading(market)
+   self.assertEqual(d['status'],'active')
+   self.assertEqual(d['coherence']['status'],'confirmed')
+ def test_domestic_analyst_reference_does_not_inflate_packball_sample(self):
+  self.m['league']='Champions League';self.m['packball']={'export_a':['Europe']}
+  self.m['prematch']['n_h']=4;self.m['prematch']['n_a']=7
+  self.prepare();V.install_card_selection(self.c)
+  d=self.reading('goals')
+  self.assertEqual(d['status'],'context_wait')
+  self.assertTrue(any('10 matchs historiques' in reason for reason in d['coherence']['missing']))
+
 if __name__=='__main__':unittest.main()
 

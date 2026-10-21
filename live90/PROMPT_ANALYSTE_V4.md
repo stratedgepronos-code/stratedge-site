@@ -32,6 +32,24 @@ Copier exactement `match_id`, `home`, `away`, `kickoff`, `league`. `match_id` es
 
 Conserver tous les matchs distincts, sans mélange entre deux rencontres des mêmes équipes. Signaler les doublons et identités non résolues. Ne pas antidater `generated_at` ou les consultations. Identifier clairement un dossier préparé après le coup d’envoi ; il ne constitue pas un avant-match figé. Une réimportation ne peut pas contourner cette limite.
 
+## Construction des historiques — championnat et coupes européennes
+
+Le championnat de la rencontre détermine son éligibilité aux alertes cartons, PAS une restriction de toutes les références historiques à cette compétition. Un match de Champions League ou d’Europa League peut utiliser une référence de championnat correctement identifiée. Ne te limite jamais par défaut aux seuls matchs UEFA de la saison en cours.
+
+Pour chaque équipe, construire en priorité une référence sur ses 10 derniers matchs officiels terminés dans chaque localisation recherchée : domicile séparé d’extérieur. Inclure les rencontres de championnat et les coupes officielles, dont les compétitions UEFA, en remontant chronologiquement ; si nécessaire, inclure la saison précédente. Exclure les amicaux, matchs de jeunes/réserves et rencontres postérieures ou en cours au moment de la préparation. Ne pas sélectionner seulement les matchs qui renforcent une hypothèse. Signaler les changements majeurs d’effectif, d’entraîneur ou de division ; ne pas remonter indéfiniment pour atteindre dix.
+
+Si cette série toutes compétitions n’est pas documentable mais qu’une série récente de championnat par localisation l’est, utiliser cette dernière comme référence explicitement DOMESTIQUE. Les quelques matchs UEFA peuvent être décrits séparément dans les notes, sans remplacer une référence principale mieux documentée. Ne pas faire une moyenne de moyennes de compétitions : agréger des totaux sur des rencontres uniques, ou utiliser directement une moyenne publiée avec son périmètre et son effectif vérifiés. Éviter tout doublon entre séries.
+
+Dans `sample_label` (300 caractères maximum), indiquer compétitions, saison(s), dates et localisation. Les `source_ids` doivent permettre de retrouver la série ou l’agrégat et son effectif. Décrire dans les notes les différences d’opposition et de contexte : une moyenne domestique n’est pas une moyenne UEFA ni une prévision directement transposable. Garder les mêmes champs JSON `goal_halves.home/away.full_time` et `card_references.home/away` ; ne pas modifier `league`, l’identité ou l’horaire de la rencontre.
+
+Buts : marqués ET encaissés sur match entier, avec le véritable nombre de matchs par localisation. Cartons : jaunes reçus ET fautes commises sur EXACTEMENT les mêmes rencontres ; si la couverture commune est plus petite, recalculer sur cette couverture lorsqu’elle est vérifiable et déclarer le vrai nombre. Ne jamais associer dix matchs de jaunes à sept matchs de fautes sous un effectif de dix. Pour l’arbitre, une série récente de championnat et/ou de coupes est également utilisable si son périmètre est documenté ; les totaux de matchs arbitrés ne sont pas des moyennes par équipe.
+
+Contrôler séparément les deux familles de données :
+- Références recherchées par l’analyste : au moins dix matchs par localisation pour les exigences actuelles du moteur ; conserver le véritable effectif si moins de dix sont vérifiables.
+- Profil Packball importé : `prematch.n_h` et `prematch.n_a` doivent également atteindre dix pour les alertes buts, avec buts, tirs et cadrés sur le même échantillon exporté. Un JSON analyste enrichi ne remplace PAS ces valeurs. Si un effectif est inférieur, le signaler dans `unknowns` et demander un export Packball portant sur les dix derniers matchs, avec un périmètre de compétitions et de saisons assez large. Vérifier les réglages réels ; une métadonnée déclarée « dix matchs » ne prouve pas que dix matchs ont été trouvés. Ne modifier ni les comptes ni les moyennes du CSV pour atteindre le seuil.
+
+Dix matchs est le minimum actuel du logiciel, pas une garantie de fiabilité. Une donnée absente reste inconnue. Ne pas antidater la recherche : pour un match déjà commencé, le dossier préparé après le coup d’envoi ne remplace pas l’avant-match figé utilisé par le moteur.
+
 ## Lecture des données Packball
 
 `h` et `a` désignent les équipes domicile et extérieur de la rencontre, pas nécessairement un historique séparé par localisation. Respecter `packball.sample` : nombre de matchs, toutes localisations ou séparation, compétitions, saisons incluses. Ne pas supposer un historique homogène ni la force égale des adversaires.
