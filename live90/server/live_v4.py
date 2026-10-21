@@ -1026,7 +1026,13 @@ def dispatch(c,x,now):
         if type(x.get('enabled')) is not bool:raise ValueError('Activation invalide')
         leagues=x.get('card_leagues',setting(c,'card_leagues',[]))
         if not isinstance(leagues,list) or len(leagues)>150 or any(not text_ok(v,160) for v in leagues):raise ValueError('Championnat invalide : liste de 150 noms maximum')
+        leagues=list(dict.fromkeys(v.strip() for v in leagues))
+        if 'card_leagues' in x and not leagues and x.get('disable_cards') is not True:
+            raise ValueError('Liste vide : confirme explicitement la désactivation des cartons ou restaure les 9 compétitions.')
         with c:
+            if not c.in_transaction:c.execute('BEGIN IMMEDIATE')
+            if 'expected_card_leagues' in x and x['expected_card_leagues']!=setting(c,'card_leagues',[]):
+                raise ValueError('La sélection a changé depuis l’ouverture. Ferme puis rouvre les réglages avant d’enregistrer.')
             c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',('radar_telegram_enabled',enc(x['enabled'])))
             c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',('card_leagues',enc(list(dict.fromkeys(v.strip() for v in leagues)))))
             if not x['enabled']:c.execute("UPDATE v5_radar_notifications SET delivery='disabled',delivery_error='Radar Telegram désactivé' WHERE delivery='queued'")
@@ -1445,7 +1451,7 @@ def radar_status(c):
     last=c.execute('SELECT created_at,delivery,delivery_error FROM v5_radar_notifications ORDER BY id DESC LIMIT 1').fetchone()
     results={r['outcome']:r['n'] for r in c.execute('SELECT outcome,COUNT(*) n FROM v5_radar_results GROUP BY outcome')}
     result_delivery={r['delivery']:r['n'] for r in c.execute('SELECT delivery,COUNT(*) n FROM v5_radar_result_events GROUP BY delivery')}
-    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market'),'coherence_policy':'prematch_live_context_v4','result_tracking':'packball_two_samples','results':results,'result_deliveries':result_delivery}
+    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'default_card_leagues':list(CARD_COMPETITIONS),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market'),'coherence_policy':'prematch_live_context_v4','result_tracking':'packball_two_samples','results':results,'result_deliveries':result_delivery}
 
 # Explicit owner selection, extended to UEFA competitions on 21 October 2026.
 # Country/region is required for common
@@ -1484,6 +1490,15 @@ def install_card_selection(c):
             selected=list(dict.fromkeys([*selected,*UEFA_CARD_COMPETITIONS]))
             for k,v in (('card_leagues',selected),('card_selection_uefa_20261021',True)):
                 c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,enc(v)))
+
+def repair_empty_card_selection(c):
+    # Owner-authorized recovery, once only. Later intentional empty selections remain empty.
+    with c:
+        if not setting(c,'card_empty_repair_20261021',False):
+            if not setting(c,'card_leagues',[]):
+                c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',('card_leagues',enc(list(CARD_COMPETITIONS))))
+                c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',('card_league_policy',enc('strict_allowlist')))
+            c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',('card_empty_repair_20261021','true'))
 
 def card_market_allowed(c,r,team,now,ctx=None,p=None):
     selected=setting(c,'card_leagues',[]);canonical=selected_card_competition(r,p,ctx)
@@ -1780,6 +1795,7 @@ if __name__=='__main__':
         c=connect(args.db)
         if args.init:
             install_card_selection(c)
+            repair_empty_card_selection(c)
             for name in ('telegram_enabled','pulsescore_auto'):c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(name,'false'))
             runtime(c,'decision_mode',True);c.commit();result={'ok':True,'version':'decision5.0'}
         elif args.diagnostic:result=current_diagnostic(c,now_utc())

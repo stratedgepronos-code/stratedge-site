@@ -93,9 +93,38 @@ class Competitions(unittest.TestCase):
   self.m['league']='Ligue 1';self.m['packball']={'export_a':['France']}
   self.prepare();V.install_card_selection(self.c)
   self.assertEqual(self.reading('cards')['status'],'active')
-  V.dispatch(self.c,{'action':'radar_telegram','enabled':True,'card_leagues':[]},self.now)
+  V.dispatch(self.c,{'action':'radar_telegram','enabled':True,'card_leagues':[],'disable_cards':True},self.now)
   self.assertEqual(self.reading('cards')['status'],'excluded')
   self.assertEqual(self.reading('goals')['status'],'active')
+
+ def test_empty_recovery_once_preserves_later_disable(self):
+  V.install_card_selection(self.c)
+  self.c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',('card_leagues','[]'));self.c.commit()
+  V.repair_empty_card_selection(self.c)
+  self.assertEqual(V.radar_status(self.c)['card_leagues'],list(V.CARD_COMPETITIONS))
+  V.dispatch(self.c,{'action':'radar_telegram','enabled':True,'card_leagues':[],'disable_cards':True},self.now)
+  V.repair_empty_card_selection(self.c)
+  self.assertEqual(V.radar_status(self.c)['card_leagues'],[])
+ def test_empty_recovery_preserves_nonempty_selection_and_telegram(self):
+  V.install_card_selection(self.c)
+  V.dispatch(self.c,{'action':'radar_telegram','enabled':False,'card_leagues':['France · Ligue 1']},self.now)
+  V.repair_empty_card_selection(self.c)
+  self.assertEqual(V.radar_status(self.c)['card_leagues'],['France · Ligue 1'])
+  self.assertFalse(V.radar_enabled(self.c))
+ def test_empty_save_requires_explicit_disable(self):
+  V.install_card_selection(self.c)
+  with self.assertRaisesRegex(ValueError,'confirme explicitement'):
+   V.dispatch(self.c,{'action':'radar_telegram','enabled':False,'card_leagues':[]},self.now)
+  self.assertEqual(V.radar_status(self.c)['card_leagues'],list(V.CARD_COMPETITIONS))
+  self.assertTrue(V.radar_enabled(self.c))
+ def test_stale_form_cannot_erase_newer_settings(self):
+  V.install_card_selection(self.c)
+  previous=V.radar_status(self.c)['card_leagues']
+  V.dispatch(self.c,{'action':'radar_telegram','enabled':True,'card_leagues':['France · Ligue 1'],'expected_card_leagues':previous},self.now)
+  with self.assertRaisesRegex(ValueError,'sélection a changé'):
+   V.dispatch(self.c,{'action':'radar_telegram','enabled':False,'card_leagues':previous,'expected_card_leagues':previous},self.now)
+  self.assertEqual(V.radar_status(self.c)['card_leagues'],['France · Ligue 1'])
+  self.assertTrue(V.radar_enabled(self.c))
 
 if __name__=='__main__':unittest.main()
 

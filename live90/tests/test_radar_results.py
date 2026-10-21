@@ -94,7 +94,7 @@ class RadarResults(unittest.TestCase):
  def test_away_goal_does_not_validate_home(self):
   self.emit();self.r['score']['a']=2;self.twice();self.assertEqual(self.result()['outcome'],'pending');self.send.assert_not_called()
  def test_league_removed_does_not_cancel_results_of_sent_alert(self):
-  self.emit('cards');V.dispatch(self.c,{'action':'radar_telegram','enabled':True,'card_leagues':[]},self.now)
+  self.emit('cards');V.dispatch(self.c,{'action':'radar_telegram','enabled':True,'card_leagues':[],'disable_cards':True},self.now)
   self.twice(value=1,market='cards');self.assertEqual(self.result()['outcome'],'observed');self.send.assert_called_once()
  def test_disabled_telegram_keeps_result_without_sending(self):
   self.emit();V.dispatch(self.c,{'action':'radar_telegram','enabled':False},self.now)

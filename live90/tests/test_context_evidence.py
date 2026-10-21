@@ -59,7 +59,7 @@ class EvidenceTests(unittest.TestCase):
   self.assertFalse(self.reading('cards')['telegram_allowed'])
   V.dispatch(self.c,{'action':'radar_telegram','enabled':True,'card_leagues':['Test']},self.now)
   self.assertTrue(self.reading('cards')['telegram_allowed'])
-  V.dispatch(self.c,{'action':'radar_telegram','enabled':True,'card_leagues':[]},self.now)
+  V.dispatch(self.c,{'action':'radar_telegram','enabled':True,'card_leagues':[],'disable_cards':True},self.now)
   self.assertFalse(self.reading('cards')['telegram_allowed'])
  def test_verified_current_team_market_can_authorize_without_league(self):
   self.prepare();r=V.sample_data(V.latest(self.c)[0])

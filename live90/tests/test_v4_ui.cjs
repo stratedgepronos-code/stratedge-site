@@ -146,8 +146,31 @@ const server=http.createServer((r,res)=>{if(r.url==='/download.php?file=collecto
  const collectorDL=page.waitForEvent('download');await page.locator('#collector-download').click();const collectorFile=await collectorDL;assert.equal(collectorFile.suggestedFilename(),'live90-packball.user.js');assert.equal(fs.readFileSync(await collectorFile.path(),'utf8'),collectorCode);assert.equal(await page.locator('#settings-modal').evaluate(e=>e.open),true);
  await page.evaluate(()=>Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async code=>{window.copiedCollector=code}}}));await page.locator('#collector-copy').click();await page.waitForFunction(()=>document.querySelector('#collector-result').textContent.includes('copié'));assert.equal(await page.evaluate(()=>window.copiedCollector),collectorCode);
  board.feed.collector_version=collectorVersion;await page.evaluate(()=>refresh());assert((await page.locator('#collector-version').textContent()).includes('bien envoyé un relevé'));await page.screenshot({path:path.join(output,'collector-update.png'),fullPage:true});
- assert.equal(await page.locator('#telegram-test').isDisabled(),false);assert.equal(posted.filter(x=>x.action==='telegram_test').length,0);await page.locator('#card-leagues').fill('Compétition de démonstration');await page.locator('#telegram-enabled').uncheck();await page.locator('#settings-form button[type=submit]').click();await page.waitForFunction(()=>document.querySelector('#kpi-units').textContent.includes('Radar Telegram arrêté'));assert.equal(posted.filter(x=>x.action==='radar_telegram').length,1);await page.locator('[data-close="settings-modal"]').click();
+ // Missing selection must not turn into an empty save; restore and explicit disable are visible.
+ const savedRadar=structuredClone(board.radar_telegram);
+ board.radar_telegram.card_leagues=[];
+ board.radar_telegram.default_card_leagues=['USA · MLS','Angleterre · Premier League','Espagne · La Liga','Italie · Serie A','Allemagne · Bundesliga','France · Ligue 1','Arabie saoudite · Saudi Pro League','UEFA · Champions League','UEFA · Europa League'];
+ await page.locator('[data-close="settings-modal"]').click();await page.evaluate(()=>refresh());await page.locator('#settings-open').click();
+ assert((await page.locator('#card-selection-status').textContent()).includes('Aucune compétition'));
+ const beforeSettings=posted.filter(x=>x.action==='radar_telegram').length;
+ await page.locator('#settings-form button[type=submit]').click();assert.equal(posted.filter(x=>x.action==='radar_telegram').length,beforeSettings);
+ assert((await page.locator('#settings-result').textContent()).includes('Confirme'));
+ await page.locator('#card-leagues-restore').click();assert.equal((await page.locator('#card-leagues').inputValue()).split('\n').length,9);
+ assert((await page.locator('#card-leagues').inputValue()).includes('UEFA · Europa League'));
+ assert.equal(await page.locator('#disable-cards-label').isVisible(),false);
+ await page.locator('#settings-form button[type=submit]').click();await page.waitForFunction(()=>document.querySelector('#settings-result').textContent.includes('enregistrés'));
+ assert.equal(posted.filter(x=>x.action==='radar_telegram').length,beforeSettings+1);
+ assert.equal(board.radar_telegram.card_leagues.length,9);
+ await page.locator('[data-close="settings-modal"]').click();await page.evaluate(()=>refresh());await page.locator('#settings-open').click();
+ assert.equal((await page.locator('#card-leagues').inputValue()).split('\n').length,9);
+ delete board.radar_telegram.card_leagues;
+ await page.locator('[data-close="settings-modal"]').click();await page.evaluate(()=>refresh());await page.locator('#settings-open').click();
+ await page.locator('#settings-form button[type=submit]').click();assert((await page.locator('#settings-result').textContent()).includes('Sélection non reçue'));
+ assert.equal(posted.filter(x=>x.action==='radar_telegram').length,beforeSettings+1);
+ board.radar_telegram={...savedRadar,card_leagues:['Compétition de démonstration']};
+ await page.locator('[data-close="settings-modal"]').click();await page.evaluate(()=>refresh());await page.locator('#settings-open').click();
+ assert.equal(await page.locator('#telegram-test').isDisabled(),false);assert.equal(posted.filter(x=>x.action==='telegram_test').length,0);await page.locator('#card-leagues').fill('Compétition de démonstration');await page.locator('#telegram-enabled').uncheck();await page.locator('#settings-form button[type=submit]').click();await page.waitForFunction(()=>document.querySelector('#kpi-units').textContent.includes('Radar Telegram arrêté'));assert.equal(posted.filter(x=>x.action==='radar_telegram').length,2);await page.locator('[data-close="settings-modal"]').click();
  await page.locator('[data-view="observations"]').click();assert((await page.locator('#match-rows').textContent()).includes('4 tirs'));
- await page.locator('[data-view="live"]').click();await page.setViewportSize({width:390,height:844});await assertTeamHalves();await page.screenshot({path:path.join(output,'mobile.png'),fullPage:true});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Débordement horizontal du document');assert.deepEqual(errors,[]);assert.deepEqual(posted.find(x=>x.action==='radar_telegram').card_leagues,['Compétition de démonstration']);assert(posted.some(x=>x.action==='analyst'));assert(posted.some(x=>x.action==='settle'));console.log('V5 browser: imports, export, four readings, details, history, settlement, radar Telegram toggle, mobile and no JS errors passed.');await require('./test_collector.cjs').browserTest(browser);await browser.close();server.close();})().catch(e=>{console.error(e);server.close();process.exit(1)});
+ await page.locator('[data-view="live"]').click();await page.setViewportSize({width:390,height:844});await assertTeamHalves();await page.screenshot({path:path.join(output,'mobile.png'),fullPage:true});assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'Débordement horizontal du document');assert.deepEqual(errors,[]);assert.deepEqual(posted.filter(x=>x.action==='radar_telegram').at(-1).card_leagues,['Compétition de démonstration']);assert(posted.some(x=>x.action==='analyst'));assert(posted.some(x=>x.action==='settle'));console.log('V5 browser: imports, export, four readings, details, history, settlement, radar Telegram toggle, mobile and no JS errors passed.');await require('./test_collector.cjs').browserTest(browser);await browser.close();server.close();})().catch(e=>{console.error(e);server.close();process.exit(1)});
 
 
