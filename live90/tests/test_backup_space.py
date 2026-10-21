@@ -1,5 +1,6 @@
 import gzip
 import importlib.util
+import json
 import os
 from pathlib import Path
 import tempfile
@@ -34,3 +35,15 @@ class BackupSpaceTests(unittest.TestCase):
         with self.assertRaises(OSError):backup.compress_verified(self.source,1)
         self.assertEqual(self.source.read_bytes(),self.content)
         self.assertFalse(self.source.with_suffix('.sqlite.gz.partial').exists())
+
+    def test_recent_copy_needs_matching_completion_marker(self):
+        os.utime(self.source,(self.now,self.now));os.utime(self.folder,(self.now,self.now))
+        self.assertFalse(backup.eligible_backup(self.source,self.db,self.now))
+        info=self.source.stat();marker=self.folder/'snapshot-complete.json'
+        marker.write_text(json.dumps({'size':info.st_size,'mtime_ns':info.st_mtime_ns}))
+        self.assertTrue(backup.eligible_backup(self.source,self.db,self.now))
+        self.assertFalse(backup.eligible_backup(self.source,self.source,self.now))
+        journal=Path(str(self.source)+'-wal');journal.write_bytes(b'pending')
+        self.assertFalse(backup.eligible_backup(self.source,self.db,self.now));journal.unlink()
+        with self.source.open('ab') as f:f.write(b'changed')
+        self.assertFalse(backup.eligible_backup(self.source,self.db,self.now))

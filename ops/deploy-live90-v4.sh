@@ -38,7 +38,7 @@ backup_dir=$(mktemp -d /var/backups/stratedge-live90-v4.XXXXXX)
 cp -p "$target_dir/engine.py" "$backup_dir/engine.py"
 if [[ -f "$target_dir/live_v4.py" ]]; then cp -p "$target_dir/live_v4.py" "$backup_dir/live_v4.py"; fi
 python3 - "$db_path" "$backup_dir/live90.sqlite" <<'PY'
-import pathlib,sqlite3,sys
+import json,pathlib,sqlite3,sys
 source=sqlite3.connect(pathlib.Path(sys.argv[1]).as_uri()+'?mode=ro',uri=True,timeout=30)
 try:
     target=sqlite3.connect(sys.argv[2])
@@ -49,7 +49,12 @@ except Exception:
     pathlib.Path(sys.argv[2]).unlink(missing_ok=True)
     raise
 finally: source.close()
-pathlib.Path(sys.argv[2]).chmod(0o600)
+snapshot=pathlib.Path(sys.argv[2])
+snapshot.chmod(0o600)
+info=snapshot.stat()
+marker=snapshot.parent/'snapshot-complete.json'
+marker.write_text(json.dumps({'size':info.st_size,'mtime_ns':info.st_mtime_ns}))
+marker.chmod(0o600)
 PY
 was_active=0
 if systemctl is-active --quiet "$service_name"; then was_active=1; fi
@@ -78,4 +83,5 @@ trap - ERR
 cmp "$repo_root/live90/server/live_v4.py" "$target_dir/live_v4.py"
 echo "LIVE90_V4_OK: moteur installé ; service auparavant actif=$was_active ; sauvegarde=$backup_dir"
 # Le contrôle du cycle et de la configuration est exécuté ensuite par check-live90-v4.php.
+
 

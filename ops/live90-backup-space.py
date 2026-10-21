@@ -7,6 +7,7 @@ a complete gzip round-trip SHA256 verification. No retention deletion.
 import datetime as dt
 import gzip
 import hashlib
+import json
 import os
 import pathlib
 import shutil
@@ -16,13 +17,32 @@ ROOT = pathlib.Path('/var/backups')
 FAILED_START = dt.datetime(2026, 10, 16, 13, 44, 59, tzinfo=dt.timezone.utc).timestamp()
 FAILED_END = dt.datetime(2026, 10, 16, 13, 45, 25, tzinfo=dt.timezone.utc).timestamp()
 
+# Completed backups evidenced by successful Actions deployments on 2026-10-21.
+# Exact paths and byte sizes only; no generic exemption for recent copies.
+CONFIRMED_COMPLETED = {
+    'stratedge-live90-v4.qCsLw0': 6651252736,  # job 119376685653
+    'stratedge-live90-v4.2R4MQA': 6654910464,  # job 119380095054
+}
+
+def completed_backup(source):
+    info=source.stat()
+    marker=source.parent/'snapshot-complete.json'
+    if marker.is_file() and not marker.is_symlink():
+        try:
+            record=json.loads(marker.read_text())
+            if record=={'size':info.st_size,'mtime_ns':info.st_mtime_ns}:return True
+        except (ValueError,OSError):pass
+    return source.parent.parent==pathlib.Path('/var/backups') and CONFIRMED_COMPLETED.get(source.parent.name)==info.st_size
+
 def eligible_backup(source, db, now):
     # The failed-copy incident date is not a retention cutoff: completed newer
     # backups also need compression. Leave recent/in-progress copies untouched.
     if not source.is_file() or source.is_symlink() or source.parent.is_symlink():
         return False
     info = source.stat()
-    if source.samefile(db) or info.st_size < 1024 * 1024 or max(info.st_mtime, source.parent.stat().st_mtime) >= now - 3600:
+    if source.samefile(db) or info.st_size < 1024 * 1024:
+        return False
+    if max(info.st_mtime, source.parent.stat().st_mtime) >= now - 3600 and not completed_backup(source):
         return False
     if any(pathlib.Path(str(source) + suffix).exists() for suffix in ('-wal', '-shm', '-journal')):
         return False
