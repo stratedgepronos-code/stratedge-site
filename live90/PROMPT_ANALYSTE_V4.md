@@ -24,6 +24,10 @@ Les anciens fichiers restent importables ; une référence obligatoire absente s
 
 Le site affiche les moyennes et les faits récents. Il ne dispose pas d’un modèle de probabilité calibré. Ne fournis ni promesse de gain, ni prédiction certaine, ni événement « dû », ni seuil exécutable dans le texte. Une équipe avec huit cadrés alors qu’elle a historiquement six cadrés par but n’est pas obligée de marquer. Dix fautes sans jaune ne constituent pas une dette de carton.
 
+## Prix Stake et portée du signal — 21/10/2026
+
+L’analyste fournit les références avant-match ; il ne doit pas inventer une cote live ni augmenter une ligne pour obtenir une cote plus haute. Le radar peut consulter Stake via PulseScore après une dynamique confirmée, dans un budget limité. Par défaut, Telegram exige une ligne FT par équipe compatible avec UN événement supplémentaire, un marché actif et une cote reçue depuis au plus 30 secondes, au minimum 1,50. Une cote absente ou inférieure laisse la situation visible sur le site, sans recommandation Telegram. Un cut demandant deux ou trois événements n’est pas validé par une dynamique prévue pour un seul. Le seuil de prix ne prouve aucune rentabilité ; les règles Bookings Stake restent distinctes du suivi des jaunes Packball. Aucun changement du JSON analyste n’est nécessaire pour ce filtre de prix.
+
 ## Entrée et identité
 
 Utiliser en priorité le JSON téléchargé via « Exporter les matchs pour GPT », schéma `stratedge.research.v4`. Les champs normalisés `prematch` et `packball` font autorité sur les CSV bruts. Ne réattribue jamais une colonne générique d’après sa valeur ou sa position supposée. Si l’entrée est un CSV non documenté, expliquer les champs non identifiables et demander l’export du site.

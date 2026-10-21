@@ -98,7 +98,7 @@ def pulse_market_reading(event, market):
     return {'recognized':False}
 
 def desk_cuts(r, result, now):
-    """Read a manually fetched provider snapshot, never call the network.
+    """Read a provider snapshot (manual or bounded radar lookup), never call the network.
 
     These are offered lines, not predictions. Bookings and Packball yellows
     remain different counters even when no dismissal has been observed.
@@ -160,7 +160,7 @@ def pulse_status(c, now):
     if isinstance(last,dict) and last.get('ok'):
         for event in last.get('events',[]):
             for market in event.get('markets',[]):market['reading']=pulse_market_reading(event,market)
-    return {'configured':bool(setting(c,'pulsescore_key',None)), 'attempts_31d':used, 'local_limit':500, 'last_test':last, 'auto_enabled':setting(c,'pulsescore_auto',True), 'auto_daily_limit':10, 'auto_today':pulse_day_used(c,now)}
+    return {'configured':bool(setting(c,'pulsescore_key',None)), 'attempts_31d':used, 'local_limit':500, 'last_test':last, 'auto_enabled':setting(c,'radar_odds_auto',True), 'auto_daily_limit':10, 'auto_today':pulse_day_used(c,now),'last_lookup':dec((c.execute("SELECT value FROM v4_runtime WHERE key='radar_price_lookup'").fetchone() or [None])[0],{})}
 
 def pulse_summary(payload, secret):
     if not isinstance(payload,dict) or not isinstance(payload.get('events'),list):
@@ -199,12 +199,12 @@ def pulse_score(value):
         else:return None
     return result
 
-def pulse_test(c, now, automatic=False):
+def pulse_test(c, now, automatic=False, radar=False):
     # Reserve under a write lock, then release it BEFORE the network operation.
     # Failed attempts consume the local budget too; never retry or auto-paginate.
     with c:
         c.execute('BEGIN IMMEDIATE')
-        if automatic and not setting(c,'pulsescore_auto',True):raise ValueError('Consultation automatique désactivée')
+        if automatic and not setting(c,'radar_odds_auto' if radar else 'pulsescore_auto',True):raise ValueError('Consultation automatique désactivée')
         if automatic and pulse_day_used(c,now)>=10:raise ValueError('Budget quotidien atteint : 10 consultations automatiques, heure de Paris')
         secret=setting(c,'pulsescore_key',None)
         if not secret:raise ValueError('Enregistre ta clé PulseScore avant le test')
@@ -980,7 +980,9 @@ def board(c,now):
             detail=dec(d['data'],{});detail['updated_at']=d['updated_at'];detail['sample_id']=d['sample_id'];r['decisions'].append(detail)
         # Do not leak raw HTML or entire historical payloads into the UI.
         r['advice']=desk_advice(c,s,p,ctx,now)
-        r['stake_cuts']=desk_cuts(r,pulse.get('last_test'),now)
+        r['stake_cuts']=desk_cuts(r,radar_price_cache(c),now)
+        for d in r['advice']:d['stake_gate']=radar_market_gate(d,r['stake_cuts'],now)
+        r['stake_lookup']=dec((c.execute("SELECT value FROM v4_runtime WHERE key='radar_price_lookup'").fetchone() or [None])[0],{})
         r.pop('raw_cells',None);records.append(r)
     for f in c.execute('SELECT * FROM v4_fixtures ORDER BY kickoff'):
         if f['fixture'] in seen or active is None or f['fixture'] not in active:continue
@@ -1024,6 +1026,8 @@ def dispatch(c,x,now):
     if action=='pulsescore_auto' and x.get('enabled') is not False or action=='settings' and (x.get('settings') or {}).get('telegram_enabled') is True:
         raise ValueError('Mode décision : anciens paris Telegram et cotes automatiques désactivés.')
     if action=='radar_telegram':
+        for flag in ('priced_only','odds_auto'):
+            if flag in x and type(x[flag]) is not bool:raise ValueError('Option Stake invalide')
         if type(x.get('enabled')) is not bool:raise ValueError('Activation invalide')
         leagues=x.get('card_leagues',setting(c,'card_leagues',[]))
         if not isinstance(leagues,list) or len(leagues)>150 or any(not text_ok(v,160) for v in leagues):raise ValueError('Championnat invalide : liste de 150 noms maximum')
@@ -1034,6 +1038,8 @@ def dispatch(c,x,now):
             if not c.in_transaction:c.execute('BEGIN IMMEDIATE')
             if 'expected_card_leagues' in x and x['expected_card_leagues']!=setting(c,'card_leagues',[]):
                 raise ValueError('La sélection a changé depuis l’ouverture. Ferme puis rouvre les réglages avant d’enregistrer.')
+            for flag in ('priced_only','odds_auto'):
+                if flag in x:c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',('radar_'+flag,enc(x[flag])))
             c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',('radar_telegram_enabled',enc(x['enabled'])))
             c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',('card_leagues',enc(list(dict.fromkeys(v.strip() for v in leagues)))))
             if not x['enabled']:c.execute("UPDATE v5_radar_notifications SET delivery='disabled',delivery_error='Radar Telegram désactivé' WHERE delivery='queued'")
@@ -1461,7 +1467,7 @@ def radar_status(c):
     last=c.execute('SELECT created_at,delivery,delivery_error FROM v5_radar_notifications ORDER BY id DESC LIMIT 1').fetchone()
     results={r['outcome']:r['n'] for r in c.execute('SELECT outcome,COUNT(*) n FROM v5_radar_results GROUP BY outcome')}
     result_delivery={r['delivery']:r['n'] for r in c.execute('SELECT delivery,COUNT(*) n FROM v5_radar_result_events GROUP BY delivery')}
-    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'default_card_leagues':list(CARD_COMPETITIONS),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market'),'coherence_policy':'prematch_live_context_v4','result_tracking':'packball_two_samples','results':results,'result_deliveries':result_delivery}
+    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','priced_only':setting(c,'radar_priced_only',True),'odds_auto':setting(c,'radar_odds_auto',True),'min_odds':MIN_TELEGRAM_ODDS,'counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'default_card_leagues':list(CARD_COMPETITIONS),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market'),'coherence_policy':'prematch_live_context_v4','result_tracking':'packball_two_samples','results':results,'result_deliveries':result_delivery}
 
 # Explicit owner selection, extended to UEFA competitions on 21 October 2026.
 # Country/region is required for common
@@ -1532,14 +1538,62 @@ def radar_eligible(r,d,now):
             and d.get('sample_id')==r.get('sample_id') and num(d.get('observed'))
             and all(date(r.get(k)) and 0<=(now-date(r[k])).total_seconds()<=100 for k in ('received_at','collected_at')))
 
+def radar_price_cache(c):
+    rows=c.execute("SELECT value FROM v4_runtime WHERE key IN ('pulsescore_test','pulsescore_auto_last')").fetchall()
+    values=[dec(row['value'],{}) for row in rows]
+    return max(values,key=lambda v:date(v.get('at')) or dt.datetime.min.replace(tzinfo=UTC)) if values else {}
+
+def radar_market_gate(d,cuts,now):
+    """An observed price is not an estimated edge. Only ONE additional event."""
+    out={'eligible':False,'state':'unavailable','reason':cuts.get('reason','Cote Stake indisponible'),'min_odds':MIN_TELEGRAM_ODDS,'quote':None}
+    q=radar_quote(d,cuts)
+    if not q:return out
+    out['quote']=q
+    at=date(q.get('received_at'))
+    if not at or not 0<=(now-at).total_seconds()<=30:
+        out.update(state='stale',reason='Cote Stake trop ancienne pour Telegram (30 s maximum).');return out
+    if q.get('needed')!=1 or q.get('current')!=d.get('observed') or q.get('line')!=d.get('observed',-1)+.5:
+        out.update(state='unsupported',reason='Cut non soutenu : plusieurs événements nécessaires ou compteur inconnu.');return out
+    if not num(q.get('odds')) or q['odds']<MIN_TELEGRAM_ODDS:
+        out.update(state='below_minimum',reason='Cote Stake '+desk_number(q.get('odds'))+' : sous le minimum 1,50.');return out
+    out.update(eligible=True,state='priced',reason='Cut par équipe reçu à '+desk_number(q['odds'])+' ; vérifier le prix sur Stake.')
+    return out
+
+def refresh_radar_prices(c,now,candidates):
+    """One bounded batch lookup on live confirmation, never on page refresh."""
+    if not radar_enabled(c) or not radar_configured() or not setting(c,'radar_odds_auto',True):return
+    if not setting(c,'pulsescore_key',None):return
+    wanted=[]
+    for r,d in candidates:
+        if not radar_eligible(r,d,now):continue
+        key=enc([str(r['packball_id']),d['team'],d['market'],int(d['observed'])])
+        existing=c.execute('SELECT delivery FROM v5_radar_notifications WHERE event_key=?',(key,)).fetchone()
+        if existing and existing['delivery']!='price_wait':continue
+        last=c.execute("SELECT created_at FROM v5_radar_notifications WHERE match_id=? AND team=? AND market=? AND delivery IN ('sent','queued','sending') ORDER BY id DESC LIMIT 1",(str(r['packball_id']),d['team'],d['market'])).fetchone()
+        if last and date(last[0]) and (now-date(last[0])).total_seconds()<600:continue
+        wanted.append((r,d))
+    if not wanted:return
+    cached=radar_price_cache(c);at=date(cached.get('at'))
+    if at and 0<=(now-at).total_seconds()<(300 if cached.get('ok') else 900):return
+    last=dec((c.execute("SELECT value FROM v4_runtime WHERE key='radar_price_lookup'").fetchone() or [None])[0],{})
+    if date(last.get('at')) and 0<=(now-date(last['at'])).total_seconds()<300:return
+    try:
+        result=pulse_test(c,now,automatic=True,radar=True)
+        note='Instantané Stake reçu (30 matchs maximum, première page).' if result.get('ok') else result.get('error','PulseScore indisponible')
+    except ValueError as e:note=str(e)
+    except Exception:note='Consultation Stake indisponible.'
+    with c:runtime(c,'radar_price_lookup',{'at':iso(now),'reason':note,'candidate_count':len(wanted)})
+
 def queue_radar(c,r,d,now):
     if not radar_enabled(c) or not radar_configured() or not radar_eligible(r,d,now):return
+    if setting(c,'radar_priced_only',True) and not radar_market_gate(d,desk_cuts(r,radar_price_cache(c),now),now)['eligible']:return
     mid=str(r['packball_id']);counter=d['observed']
     # Same counter = same opportunity, even across restarts, pauses and status flicker.
     event_key=enc([mid,d['team'],d['market'],int(counter)])
-    last=c.execute('SELECT created_at FROM v5_radar_notifications WHERE match_id=? AND team=? AND market=? ORDER BY id DESC LIMIT 1',(mid,d['team'],d['market'])).fetchone()
+    last=c.execute("SELECT created_at FROM v5_radar_notifications WHERE match_id=? AND team=? AND market=? AND delivery!='price_wait' ORDER BY id DESC LIMIT 1",(mid,d['team'],d['market'])).fetchone()
     if last and date(last['created_at']) and (now-date(last['created_at'])).total_seconds()<600:return
     saved={'home':r.get('home'),'away':r.get('away'),'score':r.get('score'),'reading':d,'minute':r.get('minute')}
+    c.execute("UPDATE v5_radar_notifications SET created_at=?,sample_id=?,data=?,delivery='queued',delivery_error=NULL WHERE event_key=? AND delivery='price_wait'",(iso(now),r['sample_id'],enc(saved),event_key))
     inserted=c.execute('INSERT OR IGNORE INTO v5_radar_notifications(event_key,match_id,team,market,counter,created_at,sample_id,data,delivery) VALUES(?,?,?,?,?,?,?,?,?)',
               (event_key,mid,d['team'],d['market'],counter,iso(now),r['sample_id'],enc(saved),'queued')).rowcount
     if inserted:
@@ -1571,6 +1625,10 @@ def radar_message(r,d,cuts,radar_id=None):
     lines=['🔥 STRATEDGE · RADAR LIVE'+(' #'+str(radar_id) if radar_id is not None else ''),'', '⚽ '+r['home']+' — '+r['away'],
            '⏱ '+desk_number(r['minute'])+'′ · '+desk_number(r['score']['h'])+'–'+desk_number(r['score']['a']),
            '', '🎯 '+title+' · '+name,'Avant-match + live concordants sur deux relevés.','📊 '+d['reason']]
+    q=radar_quote(d,cuts)
+    if q and q.get('needed')==1 and num(q.get('odds')) and q['odds']>=MIN_TELEGRAM_ODDS:
+        unit='buts' if d['market']=='goals' else 'Bookings (cartons Stake)'
+        lines[7:7]=['💰 Stake · '+name+' +'+desk_number(q['line'])+' '+unit+' · FT · cote '+desk_number(q['odds']),'']
     if d['market']=='cards':
         lines+=['Fautes au total : '+desk_number((d.get('metrics') or {}).get('fouls'))+' · jaunes actuels : '+desk_number(d.get('observed'))+'.']
     evidence=(d.get('coherence') or {}).get('lines') or (d.get('context_evidence') or {}).get('lines') or []
@@ -1618,9 +1676,10 @@ def deliver_radar(c,now,realtime=False):
             p,ctx=inputs(c,f,now)
             d=next((d for d in desk_advice(c,row,p,ctx,now) if d['team']==event['team'] and d['market']==event['market']),{})
             if in_scope and radar_eligible(r,d,now) and r.get('score')==saved.get('score') and d.get('observed')==event['counter']:
-                # Read existing cache only: never consume a PulseScore request here.
-                cache=c.execute("SELECT value FROM v4_runtime WHERE key='pulsescore_test'").fetchone()
-                cuts=desk_cuts(r,dec(cache['value'],{}) if cache else {},now)
+                cuts=desk_cuts(r,radar_price_cache(c),now)
+                gate=radar_market_gate(d,cuts,now)
+                if setting(c,'radar_priced_only',True) and not gate['eligible']:
+                    c.execute("UPDATE v5_radar_notifications SET delivery='price_wait',delivery_error=? WHERE id=?",(gate['reason'],event['id']));c.commit();continue
                 message=radar_message(r,d,cuts,event['id'])
                 c.execute('UPDATE v5_radar_notifications SET data=? WHERE id=?',(enc(dict(saved,message=message,cuts=cuts,result_target=radar_target(r,d,cuts))),event['id']));c.commit()
                 if radar_enabled(c):state,error,mid=notify(message);sent_attempts+=1
@@ -1726,7 +1785,7 @@ def deliver_radar_results(c,now,realtime=False):
 def run_dashboard(path,now=None):
     realtime=now is None;now=now or now_utc();c=connect(path)
     try:
-        # Legacy bets and automatic odds stay disabled; radar notifications are independent.
+        # Legacy bets/odds stay disabled; bounded radar price lookups are independent.
         for name in ('telegram_enabled','pulsescore_auto'):
             c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(name,'false'))
         runtime(c,'decision_mode',True)
@@ -1734,6 +1793,7 @@ def run_dashboard(path,now=None):
         c.execute("UPDATE v4_result_notifications SET delivery='disabled',delivery_error='Module décision : envois automatiques arrêtés' WHERE delivery='queued'")
         c.commit() # Do not lock ingestion while calculating readings.
         active=active_fixtures(c);cycle_ids=current_cycle_ids(c)
+        price_candidates=[]
         for s in latest(c):
             r=sample_data(s);f=bind(c,r)
             if active is not None and (not f or f['fixture'] not in active):continue
@@ -1748,10 +1808,14 @@ def run_dashboard(path,now=None):
                 if d['status']=='active' and (old.get('status')!='active' or old.get('observed')!=d['observed']):
                     saved={'home':r.get('home'),'away':r.get('away'),'minute':r.get('minute'),'score':r.get('score'),'reading':d,'profile':p,'context':ctx,'version':'decision5.0','kind':'observation_not_bet'}
                     c.execute('INSERT OR IGNORE INTO v5_observations(match_id,team,market,sample_id,created_at,data) VALUES(?,?,?,?,?,?)',(s['match_id'],d['team'],d['market'],s['id'],iso(now),enc(saved)))
-                queue_radar(c,r,d,now)
+                if radar_eligible(r,d,now):price_candidates.append((r,d))
                 record_shadow(c,r,d,now)
                 c.execute('INSERT OR REPLACE INTO v5_readings VALUES(?,?,?,?,?,?)',(s['match_id'],d['team'],d['market'],s['id'],iso(now),enc(d)))
             c.commit()
+        refresh_radar_prices(c,now,price_candidates)
+        if realtime:now=now_utc()
+        for r,d in price_candidates:queue_radar(c,r,d,now)
+        c.commit()
         auto_results(c,now) # Legacy event history can still be updated, silently.
         health=feed_health(c,now)
         deliver_radar(c,now,realtime=realtime)
@@ -1759,7 +1823,7 @@ def run_dashboard(path,now=None):
         settle_radar_results(c,now)
         deliver_radar_results(c,now,realtime=realtime)
         if realtime:now=now_utc()
-        runtime(c,'engine',{'at':iso(now),'version':'decision5.0','telegram_active':radar_enabled(c) and radar_configured(),'legacy_telegram_active':False,'notification_mode':'confirmed_cards','mode':'decision','external_calls':radar_enabled(c) and radar_configured(),'ai_calls':False,'automatic_odds':False,'feature_policy':'context5.1','research_mode':'shadow'})
+        runtime(c,'engine',{'at':iso(now),'version':'decision5.0','telegram_active':radar_enabled(c) and radar_configured(),'legacy_telegram_active':False,'notification_mode':'confirmed_cards','mode':'decision','external_calls':radar_enabled(c) and radar_configured(),'ai_calls':False,'automatic_odds':setting(c,'radar_odds_auto',True),'priced_only':setting(c,'radar_priced_only',True),'feature_policy':'stake_price_gate5.2','research_mode':'shadow'})
         record_health(c,health,now);c.commit()
     finally:c.close()
 
@@ -1776,6 +1840,7 @@ def current_diagnostic(c,now):
     readings=[d for r in matches for d in r.get('advice',[]) if d.get('market')=='cards']
     result['card_scope']={'applies_to':'board_radar_history_telegram','excluded_readings':sum(d.get('status')=='excluded' for d in readings),'unauthorized_recommendations':sum(d.get('telegram_allowed') is not True and d.get('status')!='excluded' for d in readings)}
     readings=[d for r in matches for d in r.get('advice',[]) if d.get('status')!='excluded']
+    result['stake_price_lookup']=b.get('pulsescore',{}).get('last_lookup',{})
     result['coherence']={'policy':'prematch_live_context_v4','counts':{state:sum((d.get('coherence') or {}).get('status')==state for d in readings) for state in ('confirmed','missing','conflict')},'active_without_concordance':sum(d.get('status')=='active' and (d.get('coherence') or {}).get('status')!='confirmed' for d in readings)}
     result['pulsescore']={k:b['pulsescore'][k] for k in ('configured','auto_enabled','auto_today','auto_daily_limit','attempts_31d')}
     details=[];reasons={}
@@ -1790,6 +1855,7 @@ def current_diagnostic(c,now):
         for d in r.get('advice',[]):
             co=d.get('coherence') or {}
             item['readings'].append({k:d.get(k) for k in ('team','market','status','reason')})
+            item['readings'][-1]['stake_gate']=d.get('stake_gate')
             item['readings'][-1]['missing']=co.get('missing',[]);item['readings'][-1]['conflicts']=co.get('conflicts',[])
             if r.get('state')=='LIVE' and d.get('status')!='active':
                 reason=d.get('reason','?');reasons[reason]=reasons.get(reason,0)+1

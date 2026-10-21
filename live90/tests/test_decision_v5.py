@@ -6,6 +6,8 @@ import live_v4 as V
 class DeskTests(unittest.TestCase):
  def setUp(self):
   legacy_fixture.LiveV4Tests.setUp(self)
+  for key in ('radar_priced_only','radar_odds_auto'):self.c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(key,'false'))
+  self.c.commit()
   self.ctx['sources']=[{'id':'s','title':'Données synthétiques de recette','url':'https://example.org/test','checked_at':V.iso(self.before)}]
   self.ctx['referee']={'name':'Arbitre Test','appointment':'confirmed','appointment_source_ids':['s'],'note':'Recette','stats':{'matches':20,'sample_label':'Saison synthétique','yellow_per_match':4.5,'fouls_per_match':24,'source_ids':['s']}}
   for side,scope in [('h','home'),('a','away')]:
