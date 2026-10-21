@@ -485,8 +485,9 @@ def dismissal(r): return any((stat(r,k,t) or 0)>0 for k in ('red_cards','second_
 def recent(r,hist,k,t,minutes):
     minute=r.get('minute')
     if not num(minute) or minute<minutes or 45<minute<45+minutes: return None
-    # After a goal, require a full new window. This avoids celebrating a
-    # completed attack as evidence that the team is about to score again.
+    # Restart attacking windows after a goal to avoid treating a completed
+    # attack as evidence for another goal. Fouls are independent cumulative
+    # events: retain their measured window across score changes.
     sample_time=date(r.get('collected_at'))
     if not sample_time: return None
     window_start=sample_time-dt.timedelta(minutes=minutes)
@@ -495,7 +496,7 @@ def recent(r,hist,k,t,minutes):
         old=h['_parsed'] if isinstance(h,dict) and '_parsed' in h else dec(h['data'],{}); at=date(old.get('collected_at') or h['received_at'])
         if not at or old.get('state')!='LIVE' or not num(old.get('minute')): continue
         if (old['minute']<=45)!=(minute<=45): continue
-        if window_start<=at<=sample_time and old.get('score')!=r.get('score'): return None
+        if k!='fouls' and window_start<=at<=sample_time and old.get('score')!=r.get('score'): return None
         if at<=window_start and 0<=(window_start-at).total_seconds()<=100 and minutes-.5<=minute-old['minute']<=minutes+2: usable.append((at,old))
     supplied=stat(r,k+str(minutes),t,'ind'+str(minutes))
     total=stat(r,k,t)

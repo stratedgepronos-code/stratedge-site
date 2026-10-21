@@ -82,4 +82,29 @@ class LiveContext(unittest.TestCase):
   d['coherence']['policy']='prematch_live_context_v4';d['status']='neutral';d['research']['candidate']=True
   self.assertFalse(V.radar_eligible(r,d,self.now))
 
+ def test_foul_windows_survive_goal_without_inventing_missing_samples(self):
+  r=copy.deepcopy(self.r);r['minute']=69;r['score']={'h':2,'a':4}
+  r['ind10'].pop('fouls10',None);r['ind5'].pop('fouls5',None)
+  r['stats']['fouls']['h']=12
+  hist=[]
+  for minutes,total in [(10,8),(5,10),(2,11)]:
+   old=copy.deepcopy(r);old['minute']=69-minutes;old['collected_at']=V.iso(self.now-dt.timedelta(minutes=minutes))
+   old['score']={'h':2,'a':3};old['stats']['fouls']['h']=total
+   hist.append({'data':V.enc(old),'received_at':old['collected_at']})
+  self.assertEqual(V.recent(r,hist,'fouls','h',10),4)
+  self.assertEqual(V.recent(r,hist,'fouls','h',5),2)
+  self.assertIsNone(V.recent(r,hist,'shots','h',10))
+  self.assertIsNone(V.recent(r,[],'fouls','h',10))
+  r['stats']['fouls']['h']=7
+  self.assertIsNone(V.recent(r,hist,'fouls','h',10))
+  r['minute']=49
+  self.assertIsNone(V.recent(r,hist,'fouls','h',10))
+ def test_goal_still_requires_fresh_card_confirmation_after_score_change(self):
+  V.dispatch(self.c,{'action':'radar_telegram','enabled':True,'card_leagues':['Test']},self.now)
+  self.prepare();self.now+=dt.timedelta(seconds=30);self.r['score']['h']=1;self.add(self.r,self.now)
+  self.assertEqual(self.reading('goals')['status'],'missing')
+  self.assertEqual(self.reading('cards')['status'],'confirming')
+  self.now+=dt.timedelta(seconds=30);self.add(self.r,self.now)
+  self.assertEqual(self.reading('cards')['status'],'active')
+
 if __name__=='__main__':unittest.main()
