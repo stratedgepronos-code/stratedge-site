@@ -1366,7 +1366,8 @@ def radar_status(c):
     result_delivery={r['delivery']:r['n'] for r in c.execute('SELECT delivery,COUNT(*) n FROM v5_radar_result_events GROUP BY delivery')}
     return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market'),'coherence_policy':'prematch_live_period_v3','result_tracking':'packball_two_samples','results':results,'result_deliveries':result_delivery}
 
-# Explicit owner selection, 18 October 2026. Country is required for common
+# Explicit owner selection, extended to UEFA competitions on 21 October 2026.
+# Country/region is required for common
 # labels (Premier League, Serie A, Pro League...); no substring or team-name guesses.
 CARD_COMPETITIONS={
     'USA · MLS': (('usa','us','united states','united states of america','etats unis','etats-unis','canada','can'),('mls','major league soccer')),
@@ -1376,7 +1377,10 @@ CARD_COMPETITIONS={
     'Allemagne · Bundesliga': (('ger','deu','germany','allemagne'),('bundesliga','1. bundesliga','1 bundesliga')),
     'France · Ligue 1': (('fra','france'),('ligue 1','ligue 1 mcdonalds',"ligue 1 mcdonald's")),
     'Arabie saoudite · Saudi Pro League': (('ksa','sau','saudi arabia','arabie saoudite'),('pro league','saudi pro league','professional league','saudi professional league','saudi arabia pro league','roshn saudi league')),
+    'UEFA · Champions League': (('eur','europe','uefa'),('uefa champions league','champions league','ligue des champions','ligue des champions uefa','uefa ligue des champions')),
+    'UEFA · Europa League': (('eur','europe','uefa'),('uefa europa league','europa league','ligue europa','uefa ligue europa')),
 }
+UEFA_CARD_COMPETITIONS=('UEFA · Champions League','UEFA · Europa League')
 
 def selected_card_competition(r,p=None,ctx=None):
     p=p or {};pb=p.get('packball') or {};raw=pb.get('export_a')
@@ -1389,11 +1393,16 @@ def selected_card_competition(r,p=None,ctx=None):
     return None
 
 def install_card_selection(c):
-    # One-time settings migration; subsequent manual settings are never reset.
-    if setting(c,'card_selection_20261018',False):return
+    # Independent one-time migrations; retain existing selections/removals.
     with c:
-        for k,v in (('card_leagues',list(CARD_COMPETITIONS)),('card_league_policy','strict_allowlist'),('card_selection_20261018',True)):
-            c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,enc(v)))
+        if not setting(c,'card_selection_20261018',False):
+            for k,v in (('card_leagues',list(CARD_COMPETITIONS)),('card_league_policy','strict_allowlist'),('card_selection_20261018',True)):
+                c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,enc(v)))
+        if not setting(c,'card_selection_uefa_20261021',False):
+            selected=setting(c,'card_leagues',[])
+            selected=list(dict.fromkeys([*selected,*UEFA_CARD_COMPETITIONS]))
+            for k,v in (('card_leagues',selected),('card_selection_uefa_20261021',True)):
+                c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,enc(v)))
 
 def card_market_allowed(c,r,team,now,ctx=None,p=None):
     selected=setting(c,'card_leagues',[]);canonical=selected_card_competition(r,p,ctx)

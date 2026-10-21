@@ -8,14 +8,45 @@ class Competitions(unittest.TestCase):
  prepare=F.DeskTests.prepare
  reading=F.DeskTests.reading
  add=F.DeskTests.add
- def test_selected_seven_country_and_league(self):
+ def test_selected_nine_country_and_league(self):
   cases=[('United States','Major League Soccer','USA · MLS'),('England','Premier League','Angleterre · Premier League'),('Spain','La Liga','Espagne · La Liga'),('Italy','Serie A','Italie · Serie A'),('Germany','Bundesliga','Allemagne · Bundesliga'),('France','Ligue 1','France · Ligue 1'),('Saudi Arabia','Pro League','Arabie saoudite · Saudi Pro League')]
   V.install_card_selection(self.c)
   for country,league,wanted in cases:
    p={'league':league,'packball':{'export_a':[country]}}
    self.assertEqual(V.selected_card_competition({'league':league},p),wanted)
    self.assertTrue(V.card_market_allowed(self.c,{'league':league},'h',self.now,p=p))
-  self.assertEqual(len(V.radar_status(self.c)['card_leagues']),7)
+  self.assertEqual(len(V.radar_status(self.c)['card_leagues']),9)
+ def test_uefa_region_aliases_and_both_teams(self):
+  V.install_card_selection(self.c)
+  for country in ('EUR','Europe','UEFA'):
+   for league,wanted in [('UEFA Champions League','UEFA · Champions League'),('Champions League','UEFA · Champions League'),('Ligue des champions','UEFA · Champions League'),('UEFA Europa League','UEFA · Europa League'),('Europa League','UEFA · Europa League'),('Ligue Europa','UEFA · Europa League')]:
+    p={'league':league,'packball':{'export_a':[country]}}
+    self.assertEqual(V.selected_card_competition({},p),wanted)
+    for team in ('h','a'):
+     self.assertTrue(V.card_market_allowed(self.c,{},team,self.now,p=p),(country,league,team))
+ def test_other_continents_cups_and_ambiguous_names_remain_excluded(self):
+  V.install_card_selection(self.c)
+  for country,league in [('Africa','Champions League'),('Asia','Champions League'),('','Champions League'),('EUR','UEFA Conference League'),('EUR',"UEFA Women's Champions League"),('EUR','UEFA Youth League'),('EUR','Champions League Women'),('EUR','UEFA Nations League'),('EUR','UEFA Champions League U19')]:
+   self.assertFalse(V.card_market_allowed(self.c,{'country':country,'league':league},'h',self.now),(country,league))
+ def test_upgrade_adds_only_uefa_and_does_not_reset_owner_settings(self):
+  for k,v in [('card_selection_20261018',True),('card_leagues',['France · Ligue 1','Custom League']),('card_league_policy','strict_allowlist'),('radar_telegram_enabled',False)]:
+   self.c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,V.enc(v)))
+  self.c.commit()
+  V.install_card_selection(self.c)
+  self.assertEqual(V.setting(self.c,'card_leagues',[]),['France · Ligue 1','Custom League',*V.UEFA_CARD_COMPETITIONS])
+  self.assertFalse(V.radar_enabled(self.c))
+  V.dispatch(self.c,{'action':'radar_telegram','enabled':False,'card_leagues':['France · Ligue 1']},self.now)
+  V.install_card_selection(self.c)
+  self.assertEqual(V.setting(self.c,'card_leagues',[]),['France · Ligue 1'])
+  self.assertEqual(V.setting(self.c,'card_league_policy',''),'strict_allowlist')
+ def test_uefa_allowed_in_live_and_scheduled_board(self):
+  self.m['league']='UEFA Champions League';self.m['packball']={'export_a':['Europe']}
+  self.prepare();V.install_card_selection(self.c)
+  self.assertTrue(self.reading('cards')['telegram_allowed'])
+  self.assertNotEqual(self.reading('cards')['status'],'excluded')
+  self.c.execute('DELETE FROM samples');self.c.commit()
+  for d in V.board(self.c,self.now)['matches'][0]['advice']:
+   if d['market']=='cards':self.assertNotEqual(d['status'],'excluded')
  def test_no_other_countries_divisions_cups_youth_women_or_missing_country(self):
   V.install_card_selection(self.c)
   for country,league in [('Brazil','Serie A'),('Kenya','Premier League'),('Austria','Bundesliga'),('France','Ligue 2'),('England','Championship'),('Spain','La Liga 2'),('Saudi Arabia','Division 1'),('USA','MLS Next Pro'),('England','Premier League U21'),('France','Ligue 1 Women'),('England','FA Cup'),('','Premier League')]:

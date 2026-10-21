@@ -1,3 +1,7 @@
+## Extension cartons UEFA — 21 octobre 2026
+
+La sélection cartons inclut maintenant neuf compétitions : les sept championnats déjà choisis, plus UEFA Champions League et UEFA Europa League. Une migration unique ajoute ces deux compétitions aux réglages existants sans réactiver les autres ligues retirées ni changer l'état de Telegram. Les modifications manuelles ultérieures restent conservées. Reconnaissance exacte des libellés anglais/français avec la région Europe/EUR/UEFA ; pas d'inférence depuis le pays des clubs. Les autres coupes, la Conference League, les femmes, jeunes et Champions League d'autres continents restent exclues par défaut. L'autorisation s'applique au tableau, au radar et à Telegram ; elle ne garantit ni un marché bookmaker disponible ni une alerte sans données avant-match/live cohérentes. Le prompt téléchargeable demande aussi la recherche disciplinaire pour ces deux compétitions. Aucun changement de seuil ni de suivi des résultats.
+
 ## Période des références alignée sur le pari — 18 octobre 2026, soirée
 
 Le radar buts suit une cible FT : les références avant-match portent désormais sur MATCH ENTIER, avec les localisations domicile/extérieur du jour. La minute live ne sélectionne plus une mi-temps historique comme condition obligatoire. Aucun nouveau marché HT n’est activé. Les résultats déjà figés et les règles cartons sont inchangés.
