@@ -205,7 +205,7 @@ let boardReceivedAt=Date.now();
 const seenHighlights=new Set();
 function deskEffective(r,d){
  if(d?.market==='cards'&&(d.recommendation_allowed===false||d.telegram_allowed===false||d.status==='excluded'))return {...d,status:'excluded',title:'Hors sélection cartons',reason:'Cartons désactivés pour ce championnat.'};
- if(d&&['goals','cards'].includes(d.market)&&['active','confirming'].includes(d.status)&&(d.coherence?.status!=='confirmed'||d.coherence?.policy!=='prematch_live_period_v3'))return {...d,status:'context_wait',title:'Avant-match incomplet',reason:'Concordance avant-match/live non confirmée.'};
+ if(d&&['goals','cards'].includes(d.market)&&['active','confirming'].includes(d.status)&&(d.coherence?.status!=='confirmed'||d.coherence?.policy!=='prematch_live_context_v4'))return {...d,status:'context_wait',title:'Avant-match incomplet',reason:'Concordance avant-match/live non confirmée.'};
  if(age(r.received_at)>100)return {...d,status:r.received_at?'stale':'waiting',title:r.received_at?'Données anciennes':'En attente',reason:'Aucune lecture active sans relevé récent.'};
  if(age(data.engine?.at)>65||data.engine?.version!=='decision5.0')return {...d,status:'waiting',title:'Moteur en attente',reason:'Le dernier cycle du moteur est trop ancien.'};
  if(r.state!=='LIVE')return {...d,status:'waiting',title:({HT:'Mi-temps',FT:'Terminé',NS:'À venir'}[r.state]||'En attente'),reason:'Aucune lecture active hors des périodes de jeu.'};
@@ -213,7 +213,7 @@ function deskEffective(r,d){
 }
 
 function coherenceHTML(d){const c=d.coherence;if(!c)return '';const reasons=[...(c.missing||[]),...(c.conflicts||[])];return `<div class="reading-evidence"><b>${c.status==='confirmed'?'Avant-match + live concordants':c.status==='missing'?'Avant-match à compléter':'Concordance insuffisante'}</b>${(reasons.length?reasons:c.lines||[]).slice(0,3).map(x=>`<small>${esc(x)}</small>`).join('')}</div>`}
-function evidenceHTML(d){const e=d.context_evidence;if(!e)return coherenceHTML(d);return coherenceHTML(d)+`<div class="reading-evidence"><b>${e.support==='concordant'?'Références de la période documentées':'Repères historiques'}</b>${(e.lines||[]).slice(0,3).map(x=>`<small>${esc(x)}</small>`).join('')}${d.market==='cards'&&d.telegram_allowed===false?'<small class="help">Cartons hors sélection : aucune recommandation ni alerte</small>':''}</div>`}
+function evidenceHTML(d){const e=d.context_evidence,s=d.situation;const live=s?`<div class="reading-evidence"><b>${esc(s.clock_line)}</b><small>${esc(s.lines?.[0]||'')}</small></div>`:'';if(!e)return live+coherenceHTML(d);return live+coherenceHTML(d)+`<div class="reading-evidence"><b>${e.support==='concordant'?'Références de la période documentées':'Repères historiques'}</b>${(e.lines||[]).slice(0,3).map(x=>`<small>${esc(x)}</small>`).join('')}${d.market==='cards'&&d.telegram_allowed===false?'<small class="help">Cartons hors sélection : aucune recommandation ni alerte</small>':''}</div>`}
 
 function deskCell(r,d,kind){
  const x=deskEffective(r,d),number=d?.observed??(kind==='goals'?r.score?.[d?.team]:r.stats?.[{corners:'corners',cards:'yellow_cards'}[kind]]?.[d?.team]);
@@ -248,7 +248,7 @@ function cutCardHTML(r,team,kind){
  options.sort((a,b)=>a.line-b.line);
  const q=options[0];
  if(!q){const stale=r.stake_cuts?.state==='stale'||age(r.stake_cuts?.at)>60&&r.stake_cuts?.at;return `<div class="cut-card unavailable">${stale?'Cuts à actualiser':'Cut FT non reçu'} · observation seule</div>`}
- return `<div class="cut-card ${q.needed>1?'multiple':''}"><b>Cut +${fmt(q.line)} · cote ${fmt(q.odds)}${q.odds<1.5?' · &lt; 1,50':''}</b><span>Actuel ${fmt(q.current)} · ${esc(cutGap(q))}</span>${q.needed>1?'<small>Un seul événement ne suffit pas.</small>':''}${q.indicative_counter?'<small>* Bookings Stake ≠ jaunes Packball</small>':''}</div>`;
+ return `<div class="cut-card ${q.needed>1?'multiple':''}"><b>Cut +${fmt(q.line)} · cote ${fmt(q.odds)}${q.odds<1.5?' · &lt; 1,50':''}</b><span>Actuel ${fmt(q.current)} · ${esc(cutGap(q))}</span>${q.needed>1?'<small>Marché distinct : ce signal suit un événement supplémentaire, pas ce cut.</small>':''}${q.indicative_counter?'<small>* Bookings Stake ≠ jaunes Packball</small>':''}</div>`;
 }
 function cutDetailHTML(r){
  const all=freshCuts(r).filter(q=>Object.hasOwn(deskNames,q.kind)),c=r.stake_cuts;
@@ -259,7 +259,7 @@ function attentionItems(matches){
  for(const r of matches){
   if(r.state!=='LIVE'||!attentionNumber(r.minute)||r.minute<=0||r.minute>90||r.minute_extra||r.quality_errors?.length)continue;
   for(const d of r.advice||[]){
-   if((d.coherence?.status!=='confirmed'||d.coherence?.policy!=='prematch_live_period_v3'))continue;
+   if((d.coherence?.status!=='confirmed'||d.coherence?.policy!=='prematch_live_context_v4'))continue;
    if(market!=='all'&&market!==d.market)continue;
    if(!['h','a'].includes(d.team)||!Object.hasOwn(deskNames,d.market)||d.sample_id!==r.sample_id)continue;
    const x=deskEffective(r,d),m=d.metrics||{};
@@ -285,8 +285,9 @@ function attentionItems(matches){
    if(d.context_evidence?.support==='concordant')detail+=' · références match entier documentées';
    if(!notable&&!confirmed)continue;
    if(!notable){headline={goals:'Pression offensive soutenue',corners:'Activité autour de la surface',cards:'Fautes récentes en série'}[d.market];detail=d.reason;reserve=(d.limits||[])[0]||'Situation à examiner dans le détail du match.'}
+   if(d.situation){detail+=' · '+(d.situation.lines?.[0]||'');reserve=d.situation.clock_line+' · Un événement supplémentaire à surveiller.'}
    const id=String(r.packball_id||r.fixture),key=[id,d.team,d.market].join(':');
-   items.push({key,match:id,team:d.team==='h'?r.home:r.away,opponent:d.team==='h'?r.away:r.home,minute:r.minute,score:r.score,kind:d.market,cutHTML:cutCardHTML(r,d.team,d.market),confirmed,notable,headline,detail,reserve,priority:confirmed?(d.context_evidence?.support==='concordant'?3:2):x.status==='confirming'?1:0});
+   items.push({key,match:id,team:d.team==='h'?r.home:r.away,opponent:d.team==='h'?r.away:r.home,minute:r.minute,score:r.score,kind:d.market,cutHTML:cutCardHTML(r,d.team,d.market),confirmed,notable,headline,detail,reserve,clockLine:d.situation?.clock_line||'',priority:confirmed?(d.context_evidence?.support==='concordant'?3:2):x.status==='confirming'?1:0});
   }
  }
  return [...new Map(items.map(x=>[x.key,x])).values()].sort((a,b)=>b.priority-a.priority||b.minute-a.minute||a.key.localeCompare(b.key));
@@ -304,7 +305,7 @@ function renderAttention(matches){
   const verdict={goals:'But à surveiller',corners:'Corners à surveiller',cards:'Carton à surveiller'}[x.kind];
   const headline=x.confirmed?verdict:x.headline;
   const evidence=x.confirmed&&x.notable?`${x.headline} · ${shortDetail}`:shortDetail;
-  return `<article class="attention-card ${x.kind} ${x.confirmed?'confirmed':''} ${fresh?'attention-new':''}"><div class="attention-card-top"><span class="attention-category">${esc(deskNames[x.kind])}</span><span class="attention-state">${x.confirmed?'Dynamique confirmée':'À surveiller'}</span></div><div class="attention-team-line"><div class="attention-team">${esc(x.team)}</div><b class="attention-minute">${fmt(x.minute)}′</b></div><p class="attention-match">contre ${esc(x.opponent)} · ${fmt(x.score?.h)}–${fmt(x.score?.a)}</p><h3>${esc(headline)}</h3><p class="attention-detail">${esc(evidence)}</p>${x.cutHTML}<button class="attention-open" data-match="${esc(x.match)}" aria-label="Voir le match de ${esc(x.team)}" title="Ouvrir le match et ses détails"><span aria-hidden="true">↗</span></button></article>`;
+  return `<article class="attention-card ${x.kind} ${x.confirmed?'confirmed':''} ${fresh?'attention-new':''}"><div class="attention-card-top"><span class="attention-category">${esc(deskNames[x.kind])}</span><span class="attention-state">${x.confirmed?'Dynamique confirmée':'À surveiller'}</span></div><div class="attention-team-line"><div class="attention-team">${esc(x.team)}</div><b class="attention-minute">${fmt(x.minute)}′</b></div><p class="attention-match">contre ${esc(x.opponent)} · ${fmt(x.score?.h)}–${fmt(x.score?.a)}${x.clockLine?` · ${esc(x.clockLine)}`:''}</p><h3>${esc(headline)}</h3><p class="attention-detail">${esc(evidence)}</p>${x.cutHTML}<button class="attention-open" data-match="${esc(x.match)}" aria-label="Voir le match de ${esc(x.team)}" title="Ouvrir le match et ses détails"><span aria-hidden="true">↗</span></button></article>`;
  }).join('');
 }
 $('#attention-more').onclick=()=>{attentionExpanded=!attentionExpanded;render()};

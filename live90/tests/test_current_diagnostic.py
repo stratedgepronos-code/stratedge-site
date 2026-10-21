@@ -18,7 +18,7 @@ class DiagnosticTests(unittest.TestCase):
   self.assertTrue(result['telegram']['configured']);self.assertEqual(result['list']['matches'],1)
   text=V.enc(result);self.assertNotIn('private-bot-token',text);self.assertNotIn('private-chat',text)
   self.assertNotIn('sources',text);self.assertNotIn('summary',text)
-  self.assertEqual(result['coherence']['policy'],'prematch_live_period_v3')
+  self.assertEqual(result['coherence']['policy'],'prematch_live_context_v4')
  def test_missing_half_references_and_current_block_are_visible(self):
   for side in ('h','a'):self.ctx['teams'][side].pop('goal_halves')
   self.prepare();result=V.current_diagnostic(self.c,self.now);match=result['matches'][0]

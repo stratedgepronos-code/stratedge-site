@@ -19,7 +19,7 @@ class GoalMarketPeriod(unittest.TestCase):
  def test_ft_only_import_alert_and_telegram_without_halves(self):
   self.full_time_only();self.prepare();d=self.reading()
   self.assertEqual(d['status'],'active')
-  self.assertEqual(d['coherence']['policy'],'prematch_live_period_v3')
+  self.assertEqual(d['coherence']['policy'],'prematch_live_context_v4')
   msg=V.radar_message(V.sample_data(V.latest(self.c)[0]),d,{'quotes':[]})
   self.assertIn('1,7 buts marqués/m',msg);self.assertIn('1,3 buts encaissés/m',msg)
   self.assertIn('match entier',msg);self.assertNotIn('mi-temps',msg)

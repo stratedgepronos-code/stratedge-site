@@ -14,7 +14,8 @@ const board={version:'live4.0',server_time:now,feed:{received_at:now,rows:43,col
 board.radar_telegram={enabled:true,configured:true,counts:{sent:2},last:null};
 board.matches[3].state='HT';
 board.matches.forEach((r,i)=>{r.advice=['h','a'].flatMap(team=>['goals','corners','cards'].map(market=>({team,market,status:i===0&&team==='h'?'active':i===1?'missing':'neutral',title:i===0&&team==='h'?'À regarder':i===1?'À compléter':'Observer',observed:0,baseline:market==='corners'?null:1.8,sample:10,reason:market==='goals'?'4 tirs dont 2 cadrés en 10 min · 2 tirs en 5 min.':market==='cards'?'3 fautes en 10 min dont 1 en 5 min.':'4 tirs et 0 corner en 10 min.',facts:['Exemple de recette'],limits:['Données synthétiques, pas une recommandation'],criteria:'Seuil descriptif'})));});
-board.matches.forEach(r=>r.advice.forEach(d=>{d.sample_id=r.sample_id;d.coherence={status:'confirmed',policy:'prematch_live_period_v3',lines:['Pré-match et live synthétiques concordants'],missing:[],conflicts:[]};d.metrics=d.market==='cards'?{fouls:9,fouls10:3,fouls5:1}:d.market==='goals'?{sot:8,sot10:2,sot_per_goal:6}:{shots10:5,corners10:0,blocked_shots10:2};if(d.team==='a')d.metrics={};}));
+board.matches.forEach(r=>r.advice.forEach(d=>{d.sample_id=r.sample_id;d.coherence={status:'confirmed',policy:'prematch_live_context_v4',lines:['Pré-match et live synthétiques concordants'],missing:[],conflicts:[]};d.metrics=d.market==='cards'?{fouls:9,fouls10:3,fouls5:1}:d.market==='goals'?{sot:8,sot10:2,sot_per_goal:6}:{shots10:5,corners10:0,blocked_shots10:2};if(d.team==='a')d.metrics={};}));
+board.matches[0].advice.find(d=>d.team==='h'&&d.market==='goals').situation={clock_line:'égalité · 58 min réglementaires restantes, hors arrêts de jeu',lines:['3 tirs dans la surface sur 4 en 10 min.']};
 board.matches[0].advice.find(d=>d.team==='h'&&d.market==='cards').context_evidence={support:'documented',lines:['Arbitre Test : 4,7 jaunes / match · n=20','Équipe A : domicile 2,4 jaunes/m · n=20','Équipe B : extérieur 1,8 jaunes/m · n=20']};
 board.matches[0].stake_cuts={state:'received',at:now,reason:'Instantané de recette',quotes:[
  {team:'h',kind:'cards',period:'FT',line:2.5,odds:1.8,unit:'stake_bookings',half_line:true,needed:3,current:0,indicative_counter:true,score:{h:0,a:0},received_at:now,note:'Bookings distincts des jaunes'},
@@ -38,11 +39,13 @@ const server=http.createServer((r,res)=>{if(r.url==='/download.php?file=collecto
  await page.screenshot({path:path.join(output,'desktop.png'),fullPage:true});
  assert((await page.locator('#match-rows tr').filter({hasText:'Équipe G'}).first().textContent()).includes('Mi-temps'));
  assert((await page.locator('#match-rows').textContent()).includes('Arbitre Test : 4,7'));
+ assert((await page.locator('#match-rows').textContent()).includes('3 tirs dans la surface'));
+ assert((await page.locator('#attention-cards').textContent()).includes('58 min réglementaires'));
  // Market cuts: several events required must never read as one additional event.
  assert((await page.locator('#attention-cards .cards').first().textContent()).includes('Cut +2,5 · cote 1,8'));
  assert((await page.locator('#attention-cards .cards').first().textContent()).includes('3 de plus nécessaires si même décompte'));
  assert.equal(await page.locator('[data-market="corners"]').count(),0);assert.equal(await page.locator('#attention-cards .corners').count(),0);
- assert((await page.locator('#attention-cards .cards').first().textContent()).includes('Un seul événement ne suffit pas.'));
+ assert((await page.locator('#attention-cards .cards').first().textContent()).includes('Marché distinct'));
  assert.equal(posted.filter(x=>x.action==='pulsescore_test').length,0);
  const quoteTime=board.matches[0].stake_cuts.at;board.matches[0].stake_cuts.at=new Date(Date.parse(board.server_time)-61000).toISOString();await page.evaluate(()=>refresh());
  assert(!(await page.locator('#attention-cards').textContent()).includes('cote 1,8'));

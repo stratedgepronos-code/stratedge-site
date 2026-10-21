@@ -1009,12 +1009,17 @@ def export_analysis(c,now):
                  state=p.get('state') if p else None,data_issues=p.get('issues',[]) if p else [],
                  prematch_imported_at=p.get('imported_at') if p else None,prematch_usable=p.get('usable',False) if p else False)
         matches.append(m)
-    return {'schema':'stratedge.research.v4','exported_at':iso(now),'timezone':'Europe/Paris','matches':matches,'instructions':'Tous les matchs doivent figurer dans le résultat stratedge.context.v4 avec watch:true. Aucun scénario éliminatoire. Utiliser PROMPT_ANALYSTE_V4.md révision 18/10/2026 : arbitre confirmé avec jaunes et fautes moyens, card_references global/home/away/h2h avec fouls_for_per_match (même échantillon), et goal_halves par localisation (home/away), avec full_time (prioritaire pour les alertes match entier), first_half/second_half facultatifs. La période des références doit correspondre au pari ; aucune mi-temps obligatoire pour un pari FT. Aucun créneau historique de 10 minutes requis. Références manquantes : null, jamais inventées. Concordance avant-match/live obligatoire pour notifier. Corners retirés.'}
+    return {'schema':'stratedge.research.v4','exported_at':iso(now),'timezone':'Europe/Paris','matches':matches,'instructions':'Tous les matchs doivent figurer dans le résultat stratedge.context.v4 avec watch:true. Aucun scénario éliminatoire. Utiliser PROMPT_ANALYSTE_V4.md révision 21/10/2026 : arbitre confirmé avec jaunes et fautes moyens, card_references global/home/away/h2h avec fouls_for_per_match (même échantillon), et goal_halves par localisation (home/away), avec full_time (prioritaire pour les alertes match entier), first_half/second_half facultatifs. La période des références doit correspondre au pari ; aucune mi-temps obligatoire pour un pari FT. Aucun créneau historique de 10 minutes requis. Références manquantes : null, jamais inventées. Concordance avant-match/live obligatoire pour notifier. Corners retirés.'}
 
 def dispatch(c,x,now):
     action=x.get('action','board')
     if action=='board': return board(c,now)
-    if action=='export_observations': return {'schema':'stratedge.observations.v5','exported_at':iso(now),'observations':desk_history(c,100000)}
+    if action=='export_observations':
+        rows=c.execute('SELECT * FROM v5_shadow_readings ORDER BY created_at DESC,match_id,team,market LIMIT 10000').fetchall()
+        return {'schema':'stratedge.observations.v5','exported_at':iso(now),'observations':desk_history(c,100000),
+                'research':{'mode':'shadow','limit':10000,'returned':len(rows),'total':c.execute('SELECT COUNT(*) FROM v5_shadow_readings').fetchone()[0],
+                            'instructions':'Comparaison interne : candidats ET non-candidats, premier relevé exploitable par minute. Résultats à rapprocher des relevés ultérieurs ; aucune probabilité ni validation de seuil. Séparer les matchs et dates entre apprentissage et test.',
+                            'readings':[dict(row,data=dec(row['data'],{})) for row in rows]}}
     if action=='pulsescore_auto' and x.get('enabled') is not False or action=='settings' and (x.get('settings') or {}).get('telegram_enabled') is True:
         raise ValueError('Mode décision : anciens paris Telegram et cotes automatiques désactivés.')
     if action=='radar_telegram':
@@ -1086,6 +1091,7 @@ CREATE TABLE IF NOT EXISTS v5_radar_results(radar_id INTEGER PRIMARY KEY,outcome
 CREATE TABLE IF NOT EXISTS v5_radar_result_events(id INTEGER PRIMARY KEY,radar_id INTEGER,previous TEXT,outcome TEXT,created_at TEXT,sample_id INTEGER,data TEXT,message TEXT,delivery TEXT,delivery_error TEXT,telegram_id INTEGER,attempted_at TEXT);
 CREATE INDEX IF NOT EXISTS v5_radar_result_event_lookup ON v5_radar_result_events(radar_id,id);
 CREATE INDEX IF NOT EXISTS v5_radar_result_delivery ON v5_radar_result_events(delivery,id);
+CREATE TABLE IF NOT EXISTS v5_shadow_readings(match_id TEXT,team TEXT,market TEXT,minute INTEGER,policy TEXT,sample_id INTEGER,created_at TEXT,data TEXT,PRIMARY KEY(match_id,team,market,minute,policy));
 '''
 def desk_number(v):
     return format(v,'.2f').rstrip('0').rstrip('.').replace('.',',') if num(v) else '—'
@@ -1159,7 +1165,7 @@ def legacy_goal_halves(scopes):
 
 def prematch_live_coherence(r,p,ctx,team,market,metrics,evidence):
     """Explicit experimental concordance gates, not probabilities or event debt."""
-    out={'status':'missing','lines':[],'missing':[],'conflicts':[],'policy':'prematch_live_period_v3'}
+    out={'status':'missing','lines':[],'missing':[],'conflicts':[],'cautions':[],'legacy_conflicts':[],'policy':'prematch_live_context_v4'}
     missing=out['missing'];conflicts=out['conflicts'];lines=out['lines']
     if not p or not p.get('usable'):missing.append('Profil Packball avant-match absent ou tardif.')
     if not ctx or not ctx.get('usable'):missing.append('Dossier analyste avant-match absent ou tardif.')
@@ -1202,16 +1208,85 @@ def prematch_live_coherence(r,p,ctx,team,market,metrics,evidence):
             elif metrics['fouls10']<=fouls/9:conflicts.append('Le rythme récent des fautes ne dépasse pas le repère historique de l’équipe.')
             else:lines.append('Fautes équipe / 10′ : '+desk_number(metrics['fouls10'])+' en live ; repère moyen '+desk_number(fouls/9)+'.')
             if num(rs.get('yellow_per_match')) and rs['yellow_per_match']<own['for_per_match']+opp['for_per_match']:
-                conflicts.append('La moyenne de jaunes de l’arbitre est inférieure à la somme des références des deux équipes.')
+                out['legacy_conflicts'].append('referee_below_team_sum')
+                out['cautions'].append('Moyenne arbitre inférieure à la somme des moyennes équipes : échantillons différents, aucun veto automatique.')
         if num(rs.get('yellow_per_match')) and num(rs.get('fouls_per_match')):
             lines.insert(0,'Arbitre '+referee.get('name','?')+' : '+desk_number(rs['yellow_per_match'])+' jaunes et '+desk_number(rs['fouls_per_match'])+' fautes/m · n='+desk_number(rs.get('matches'))+' (deux équipes).')
             both=[metrics.get('fouls10'),metrics.get('opponent_fouls10')]
-            if not all(num(v) for v in both):missing.append('Fautes récentes des deux équipes requises pour comparer au profil de l’arbitre.')
-            elif sum(both)<=rs['fouls_per_match']/9:conflicts.append('Le rythme de fautes du match ne dépasse pas le repère moyen des matchs de cet arbitre.')
+            if not all(num(v) for v in both):
+                out['legacy_conflicts'].append('opponent_fouls_missing')
+                out['cautions'].append('Fautes adverses récentes inconnues ; la comparaison globale au profil arbitre reste indisponible.')
+            elif sum(both)<=rs['fouls_per_match']/9:
+                out['legacy_conflicts'].append('match_fouls_below_referee_pace')
+                out['cautions'].append('Rythme global sous le repère arbitre ; les fautes de l’équipe ciblée restent évaluées séparément.')
             else:lines.append('Fautes du match / 10′ : '+desk_number(sum(both))+' ; repère arbitre '+desk_number(rs['fouls_per_match']/9)+'.')
     out['missing']=list(dict.fromkeys(missing))
     out['status']='missing' if missing else 'conflict' if conflicts else 'confirmed'
     return out
+
+def live_situation(r,team,market,m,hist):
+    """Observed context only. Extra metrics never invent xG, players or probabilities."""
+    other='a' if team=='h' else 'h';gap=r['score'][team]-r['score'][other]
+    remaining=max(0,90-r['minute'])
+    out={'score_gap':gap,'remaining_regulation':remaining,'lines':[], 'coverage':{},'warnings':[]}
+    position='égalité' if gap==0 else ('avance de ' if gap>0 else 'retard de ')+desk_number(abs(gap))+' but(s)'
+    out['clock_line']=position+' · '+desk_number(remaining)+' min réglementaires restantes, hors arrêts de jeu'
+    extras=('shots_inside','shots_outside','shots_off_target','blocked_shots','da','substitutions') if market=='goals' else ('tackles','da','substitutions')
+    for k in extras:
+        m[k]=stat(r,k,team)
+        for w in (5,10):m[k+str(w)]=recent(r,hist,k,team,w)
+        out['coverage'][k]=m[k+'10'] is not None
+    core='shots' if market=='goals' else 'fouls'
+    last,whole=m.get(core+'5'),m.get(core+'10')
+    previous=whole-last if num(last) and num(whole) and 0<=last<=whole else None
+    m[core+'_previous5']=previous
+    out['trend']='unknown' if previous is None else 'rising' if last>previous else 'falling' if last<previous else 'stable'
+    if previous is not None:
+        label='tirs' if market=='goals' else 'fautes'
+        out['lines'].append(desk_number(last)+' '+label+' sur les 5 dernières min, contre '+desk_number(previous)+' sur les 5 précédentes.')
+    elif num(last) and num(whole):out['warnings'].append('Fenêtres 5/10 min incohérentes : tendance non calculée.')
+    if market=='goals':
+        inside=m.get('shots_inside10');total=m.get('shots10')
+        if num(inside) and num(total) and inside<=total:
+            out['quality']='inside_observed' if inside>0 else 'no_inside_shots'
+            out['lines'].insert(0,desk_number(inside)+' tir(s) dans la surface sur '+desk_number(total)+' en 10 min.')
+        else:
+            out['quality']='unknown'
+            out['lines'].insert(0,'Tirs dans la surface sur 10 min non exploitables ; qualité des occasions non mesurée.')
+            if num(inside) and num(total):out['warnings'].append('Tirs dans la surface supérieurs au total : donnée ignorée.')
+        if num(m.get('blocked_shots10')):out['lines'].append(desk_number(m['blocked_shots10'])+' tir(s) bloqué(s) sur 10 min ; peut aussi refléter un bloc défensif efficace.')
+        out['warnings'].append('Tirs dans la surface et cadrés peuvent décrire les mêmes tirs : ils ne s’additionnent pas.')
+    else:
+        if num(m.get('tackles10')):out['lines'].append(desk_number(m['tackles10'])+' tacle(s) sur 10 min ; ni fautes ni jaunes automatiques.')
+        out['warnings'].append('Possession affichée sur le match entier ; fautes individuelles et gravité inconnues.')
+    if num(m.get('substitutions10')) and m['substitutions10']>0:
+        out['lines'].append(desk_number(m['substitutions10'])+' remplacement(s) récent(s) : joueurs et effet tactique non identifiés.')
+    out['warnings'].append('Le score et le temps restant contextualisent le signal ; aucune probabilité de but/carton n’est calculée.')
+    return out
+
+def research_candidate(d,candidate):
+    """One explicit hypothesis in shadow mode. Never controls Telegram."""
+    situation=d.get('situation') or {};m=d['metrics'];co=d.get('coherence') or {}
+    eligible=co.get('status')=='confirmed'
+    result={'policy':'quality_shadow_v1','mode':'shadow','baseline_candidate':candidate and eligible,
+            'candidate':None,'notes':[],'legacy_candidate':candidate and eligible and not co.get('legacy_conflicts')}
+    if d['market']=='goals':
+        if situation.get('quality')=='unknown' or not num(m.get('sot5')) or situation.get('trend')=='unknown':
+            result['notes'].append('Qualité/tendance récente incomplète : hypothèse non évaluée.')
+        else:
+            result['candidate']=bool(candidate and eligible and m.get('shots_inside10',0)>=2 and m['sot5']>=1 and situation['trend']!='falling')
+            result['notes'].append('Hypothèse : seuils actuels + 2 tirs surface/10 min + 1 cadré/5 min + volume non décroissant. À valider hors échantillon, par minute et score.')
+    else:result['candidate']=candidate and eligible
+    return result
+
+def record_shadow(c,r,d,now):
+    if 'research' not in d or d.get('status') in ('excluded','missing','waiting','stale','caution'):return
+    # First usable observation per match-minute: both alerts and non-alerts,
+    # without overwriting earlier knowledge with a later event/result.
+    payload={k:d.get(k) for k in ('observed','status','metrics','situation','coherence','research')}
+    payload.update(score=r['score'],collected_at=r.get('collected_at'),received_at=r.get('received_at'),target_period='FT',target_line=d['observed']+.5)
+    c.execute('INSERT OR IGNORE INTO v5_shadow_readings VALUES(?,?,?,?,?,?,?,?)',
+              (str(r['packball_id']),d['team'],d['market'],int(r['minute']),d['research']['policy'],r['sample_id'],iso(now),enc(payload)))
 
 def desk_reading(r,p,ctx,team,market,now,hist):
     other='a' if team=='h' else 'h'
@@ -1300,7 +1375,13 @@ def desk_reading(r,p,ctx,team,market,now,hist):
         d['limits'].insert(0,'La gravité des fautes et les avertissements verbaux ne sont pas connus. Un jaune déjà reçu ne ferme pas l’analyse.')
         d['criteria']='Au moins 3 fautes sur 10 min et 1 sur 5 min, avec possession ≤ 45 % ou au moins 2 tirs adverses sur 10 min. Références arbitre et équipes requises pour la concordance.'
     if market in DESK_MARKETS:
+        d['situation']=live_situation(r,team,market,m,hist)
+        d['facts'].extend([d['situation']['clock_line'],*d['situation']['lines']])
+        d['limits'].extend(d['situation']['warnings'])
+    if market in DESK_MARKETS:
         d['coherence']=prematch_live_coherence(r,p,ctx,team,market,m,d['context_evidence'])
+        d['limits'].extend(d['coherence'].get('cautions',[]))
+        d['research']=research_candidate(d,candidate)
         d['criteria']+=' Avant-match/live : références complètes et concordantes obligatoires, sur les deux relevés.'
         d['limits'].append('Règles de concordance expérimentales, sans probabilité calibrée. Le rythme moyen par 10 min est un repère descriptif, pas une prévision ni une dette d’événement.')
         if candidate and d['coherence']['status']!='confirmed':
@@ -1364,7 +1445,7 @@ def radar_status(c):
     last=c.execute('SELECT created_at,delivery,delivery_error FROM v5_radar_notifications ORDER BY id DESC LIMIT 1').fetchone()
     results={r['outcome']:r['n'] for r in c.execute('SELECT outcome,COUNT(*) n FROM v5_radar_results GROUP BY outcome')}
     result_delivery={r['delivery']:r['n'] for r in c.execute('SELECT delivery,COUNT(*) n FROM v5_radar_result_events GROUP BY delivery')}
-    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market'),'coherence_policy':'prematch_live_period_v3','result_tracking':'packball_two_samples','results':results,'result_deliveries':result_delivery}
+    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market'),'coherence_policy':'prematch_live_context_v4','result_tracking':'packball_two_samples','results':results,'result_deliveries':result_delivery}
 
 # Explicit owner selection, extended to UEFA competitions on 21 October 2026.
 # Country/region is required for common
@@ -1419,7 +1500,7 @@ def card_market_allowed(c,r,team,now,ctx=None,p=None):
 
 def radar_eligible(r,d,now):
     # Exactly the hot (confirmed) cards; factual watch-only cards are not alerts.
-    return (d.get('status')=='active' and (d.get('coherence') or {}).get('status')=='confirmed' and (d.get('coherence') or {}).get('policy')=='prematch_live_period_v3' and d.get('team') in ('h','a') and d.get('market') in DESK_MARKETS
+    return (d.get('status')=='active' and (d.get('coherence') or {}).get('status')=='confirmed' and (d.get('coherence') or {}).get('policy')=='prematch_live_context_v4' and d.get('team') in ('h','a') and d.get('market') in DESK_MARKETS
             and (d.get('market')!='cards' or d.get('telegram_allowed') is True)
             and r.get('state')=='LIVE' and num(r.get('minute')) and 0<r['minute']<=90
             and not r.get('minute_extra') and not r.get('quality_errors')
@@ -1447,6 +1528,9 @@ def radar_quote(d,cuts):
 
 def radar_target(r,d,cuts):
     q=radar_quote(d,cuts)
+    # New observations concern ONE extra event. A remote cut requiring several
+    # events is informative only; frozen targets of already-sent alerts are kept.
+    if q and q.get('needed')!=1:q=None
     return {'team':d['team'],'market':d['market'],'period':'FT','line':q['line'] if q else d['observed']+.5,
             'unit':'yellow_cards' if d['market']=='cards' else 'goals','mode':'cut' if q else 'event',
             'quote':q,'bookings_proxy':bool(q and d['market']=='cards'),
@@ -1466,10 +1550,15 @@ def radar_message(r,d,cuts,radar_id=None):
         lines+=['Fautes au total : '+desk_number((d.get('metrics') or {}).get('fouls'))+' · jaunes actuels : '+desk_number(d.get('observed'))+'.']
     evidence=(d.get('coherence') or {}).get('lines') or (d.get('context_evidence') or {}).get('lines') or []
     if evidence:lines+=['','🔗 Pourquoi les données concordent']+evidence[:5]
+    situation=d.get('situation') or {}
+    if situation:
+        lines+=['','🔎 Lecture du direct',situation['clock_line']]+situation.get('lines',[])[:2]
+    cautions=(d.get('coherence') or {}).get('cautions',[])
+    if cautions:lines+=['À nuancer : '+cautions[0]]
     q=radar_quote(d,cuts)
     if q:
         unit={'goals':'buts','corners':'corners','cards':'cartons Bookings'}[d['market']]
-        lines+=['','💰 Stake · '+name+' +'+desk_number(q['line'])+' '+unit+' · match entier · cote '+desk_number(q['odds'])]
+        lines+=['',('💰 Stake · ' if q.get('needed')==1 else 'ℹ️ Marché distinct, non soutenu par ce signal · ')+name+' +'+desk_number(q['line'])+' '+unit+' · match entier · cote '+desk_number(q['odds'])]
         if q['needed'] is not None:
             lines+=['Actuel '+desk_number(q['current'])+' · '+desk_number(q['needed'])+' de plus nécessaire(s)'+(' si même décompte' if q['indicative_counter'] else '')]
             if q['needed']>1:lines+=['Un seul événement ne suffit pas pour ce cut.']
@@ -1635,6 +1724,7 @@ def run_dashboard(path,now=None):
                     saved={'home':r.get('home'),'away':r.get('away'),'minute':r.get('minute'),'score':r.get('score'),'reading':d,'profile':p,'context':ctx,'version':'decision5.0','kind':'observation_not_bet'}
                     c.execute('INSERT OR IGNORE INTO v5_observations(match_id,team,market,sample_id,created_at,data) VALUES(?,?,?,?,?,?)',(s['match_id'],d['team'],d['market'],s['id'],iso(now),enc(saved)))
                 queue_radar(c,r,d,now)
+                record_shadow(c,r,d,now)
                 c.execute('INSERT OR REPLACE INTO v5_readings VALUES(?,?,?,?,?,?)',(s['match_id'],d['team'],d['market'],s['id'],iso(now),enc(d)))
             c.commit()
         auto_results(c,now) # Legacy event history can still be updated, silently.
@@ -1644,7 +1734,7 @@ def run_dashboard(path,now=None):
         settle_radar_results(c,now)
         deliver_radar_results(c,now,realtime=realtime)
         if realtime:now=now_utc()
-        runtime(c,'engine',{'at':iso(now),'version':'decision5.0','telegram_active':radar_enabled(c) and radar_configured(),'legacy_telegram_active':False,'notification_mode':'confirmed_cards','mode':'decision','external_calls':radar_enabled(c) and radar_configured(),'ai_calls':False,'automatic_odds':False})
+        runtime(c,'engine',{'at':iso(now),'version':'decision5.0','telegram_active':radar_enabled(c) and radar_configured(),'legacy_telegram_active':False,'notification_mode':'confirmed_cards','mode':'decision','external_calls':radar_enabled(c) and radar_configured(),'ai_calls':False,'automatic_odds':False,'feature_policy':'context5.1','research_mode':'shadow'})
         record_health(c,health,now);c.commit()
     finally:c.close()
 
@@ -1661,7 +1751,7 @@ def current_diagnostic(c,now):
     readings=[d for r in matches for d in r.get('advice',[]) if d.get('market')=='cards']
     result['card_scope']={'applies_to':'board_radar_history_telegram','excluded_readings':sum(d.get('status')=='excluded' for d in readings),'unauthorized_recommendations':sum(d.get('telegram_allowed') is not True and d.get('status')!='excluded' for d in readings)}
     readings=[d for r in matches for d in r.get('advice',[]) if d.get('status')!='excluded']
-    result['coherence']={'policy':'prematch_live_period_v3','counts':{state:sum((d.get('coherence') or {}).get('status')==state for d in readings) for state in ('confirmed','missing','conflict')},'active_without_concordance':sum(d.get('status')=='active' and (d.get('coherence') or {}).get('status')!='confirmed' for d in readings)}
+    result['coherence']={'policy':'prematch_live_context_v4','counts':{state:sum((d.get('coherence') or {}).get('status')==state for d in readings) for state in ('confirmed','missing','conflict')},'active_without_concordance':sum(d.get('status')=='active' and (d.get('coherence') or {}).get('status')!='confirmed' for d in readings)}
     result['pulsescore']={k:b['pulsescore'][k] for k in ('configured','auto_enabled','auto_today','auto_daily_limit','attempts_31d')}
     details=[];reasons={}
     for r in sorted(matches,key=lambda r:r.get('state') not in ('LIVE','HT')):

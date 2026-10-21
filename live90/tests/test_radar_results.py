@@ -50,14 +50,24 @@ class RadarResults(unittest.TestCase):
   # This fixture queued directly, but a dashboard-created observation has the same sample.
   self.assertTrue(tracked);self.assertEqual(tracked[0]['result']['outcome'],'observed')
  def test_cut_requires_exact_total_and_is_never_replaced_by_new_quote(self):
-  self.emit(line=1.5);self.twice(value=1);self.assertEqual(self.result()['outcome'],'pending')
+  self.emit(line=1.5)
+  # Simulate a target frozen by the previous version: never reinterpret history.
+  self.freeze_legacy_cut(1.5)
+  self.twice(value=1);self.assertEqual(self.result()['outcome'],'pending')
   V.runtime(self.c,'pulsescore_test',{'ok':True,'at':V.iso(self.now),'events':[]});self.c.commit()
   self.twice(value=2);self.assertEqual(self.result()['outcome'],'observed')
   self.assertEqual(self.result()['data']['target']['line'],1.5)
  def test_bookings_cut_is_only_indicative_yellow_result(self):
-  self.emit('cards',2.5);self.twice(value=1,market='cards');self.assertEqual(self.result()['outcome'],'pending')
+  self.emit('cards',2.5);self.freeze_legacy_cut(2.5,True);self.twice(value=1,market='cards');self.assertEqual(self.result()['outcome'],'pending')
   self.twice(value=3,market='cards');self.assertEqual(self.result()['outcome'],'observed')
   message=self.send.call_args.args[0];self.assertIn('EN JAUNES PACKBALL',message);self.assertIn('ne valide pas',message);self.assertNotIn('GAGNANT',message)
+ def freeze_legacy_cut(self,line,bookings=False):
+  data=V.dec(self.event['data']);data['result_target'].update(line=line,mode='cut',bookings_proxy=bookings)
+  self.c.execute('UPDATE v5_radar_notifications SET data=? WHERE id=?',(V.enc(data),self.event['id']))
+  self.c.execute('DELETE FROM v5_radar_results WHERE radar_id=?',(self.event['id'],));self.c.commit()
+ def test_new_multi_event_quote_keeps_one_event_target(self):
+  target=self.emit(line=2.5);self.assertEqual(target['line'],.5);self.assertEqual(target['mode'],'event')
+  self.twice(value=1);self.assertEqual(self.result()['outcome'],'observed')
  def test_ft_required_never_halftime_clock_90_or_disappearance(self):
   self.emit();self.twice(state='HT');self.assertEqual(self.result()['outcome'],'pending')
   self.r['minute']=90;self.twice();self.assertEqual(self.result()['outcome'],'pending')
@@ -110,3 +120,4 @@ class RadarResults(unittest.TestCase):
   V.deliver_radar_results(self.c,self.now);self.send.assert_not_called();self.assertEqual(self.events()[0]['delivery'],'uncertain')
 
 if __name__=='__main__':unittest.main()
+

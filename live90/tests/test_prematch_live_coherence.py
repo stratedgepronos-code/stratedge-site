@@ -67,7 +67,10 @@ class Coherence(unittest.TestCase):
    if change=='team_fouls':ctx['teams']['h']['card_references']['home']['fouls_for_per_match']=45
    if change=='referee_fouls':ctx['referee']['stats']['fouls_per_match']=54
    d=V.desk_reading(sample,p,ctx,'h','cards',self.now,[])
-   self.assertEqual(d['status'],'context_conflict',change)
+   if change=='team_fouls':self.assertEqual(d['status'],'context_conflict',change)
+   else:
+    self.assertEqual(d['status'],'candidate',change)
+    self.assertTrue(d['coherence']['cautions']);self.assertTrue(d['coherence']['legacy_conflicts'])
  def test_existing_yellows_do_not_create_debt_or_disable_new_card(self):
   V.dispatch(self.c,{'action':'radar_telegram','enabled':True,'card_leagues':['Test']},self.now)
   self.r['stats']['yellow_cards']['h']=4;self.prepare();self.assertEqual(self.reading('cards')['status'],'active')

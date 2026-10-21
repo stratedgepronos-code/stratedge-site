@@ -27,6 +27,9 @@ function unit(){
  c.title=awayTitle;q=read('quoteMeta(title,"inp-42")');assert.equal(q.team,'a');assert.equal(q.period,'FT');
  for(const [title,key] of [['Corners Temps plein','corners'],['Corners 10 dernières minutes','corners10'],['Corners 5 dernières minutes','corners5'],['Tirs bloqués Temps plein','blocked_shots'],["Photos à l’intérieur de la boîte",'shots_inside'],['Substitutions','substitutions']]){c.title=title;assert.equal(read('field(title)').key,key);}
  for(const title of ['Corners attendus 10 dernières minutes','1 corner toutes les x minutes']){c.title=title;assert.equal(read('field(title)'),null);}
+ for(const [title,key] of [['Tirs hors boîte Temps plein','shots_outside'],['Tirs hors cible Temps plein','shots_off_target'],['Tacles Temps plein','tackles'],['Attaques dangereuses Temps plein','da'],['Attaques dangereuses 10 dernières minutes','da10'],['Attaques dangereuses 5 dernières minutes','da5'],['AVG Attaques dangereuses par minute','da_per_minute'],['Buts attendus ExG 10 dernières minutes','exg10'],['Buts attendus ExG 5 dernières minutes','exg5']]){c.title=title;assert.equal(read('field(title)').key,key,title);}
+ c.moreHeads=['Attaques dangereuses Temps plein','Attaques dangereuses par minute Temps plein','Tirs hors boîte Temps plein','Tacles Temps plein'];c.moreCells=['20-10','0.6-0.3','3-2','8-9'].map(cell);
+ r=read('readStats(moreCells,moreHeads,null)');assert.deepEqual(r.quality_errors,[]);assert.equal(r.stats.da.h,20);assert.equal(r.stats.da_per_minute.h,.6);assert.equal(r.stats.shots_outside.h,3);assert.equal(r.stats.tackles.a,9);
  console.log('Collecteur : correspondance des 14 colonnes, périodes, paires, valeurs absentes et colonnes désalignées OK.');
 }
 async function browserTest(browser){
@@ -40,7 +43,7 @@ async function browserTest(browser){
  await page.setContent(`<section class="fixtures"><div class="header"><div class="col inp-41" title="${homeTitle}"></div><div class="col inp-42"><span title="${awayTitle}"></span></div>${header}</div><div class="row fix-999001"><div class="col time"><time datetime="1790544600"></time></div><div class="col blin">61</div><span class="team-home">Fortaleza</span><span class="team-away">Athletic Club</span><span class="title-league" title="Serie B"></span><span class="result-f">2-2</span>${quotes}${stats}</div></section>`);
  await page.addScriptTag({content:'const CLIENT_ID="synthetic-client";'+helpers});
  const read=()=>page.evaluate(()=>collect());
- let x=await read(),r=x.rows[0];assert.equal(x.collector_version,'5.0.0');assert.deepEqual(r.stats,expectedStats);assert.deepEqual(r.ind5,expected5);assert.deepEqual(r.ind10,expected10);assert.deepEqual(r.quality_errors,[]);assert.equal(r.minute,61);
+ let x=await read(),r=x.rows[0];assert.equal(x.collector_version,'5.1.0');assert.deepEqual(r.stats,expectedStats);assert.deepEqual(r.ind5,expected5);assert.deepEqual(r.ind10,expected10);assert.deepEqual(r.quality_errors,[]);assert.equal(r.minute,61);
  assert.deepEqual(r.quotes.map(q=>[q.team,q.market,q.period,q.line,q.odds]),[['h','team_goals','FT',2.5,1.9],['a','team_goals','FT',2.5,3.75]]);
  assert.equal(x.column_map.stats[8].key,'shots10');assert.equal(x.column_map.odds[1].team,'a');
  await page.locator('.row .col.live').nth(1).evaluate(el=>el.remove());
@@ -51,4 +54,5 @@ async function browserTest(browser){
 }
 if(require.main===module)unit();
 module.exports={browserTest};
+
 

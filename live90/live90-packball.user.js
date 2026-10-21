@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         SEUIL90 · Packball Live Console
 // @namespace    https://stratedgepronos.fr/live90
-// @version      5.0.0
+// @version      5.1.0
 // @description  Collecte horodatée, fenêtres séparées, aucun pari automatique
 // @match        https://packball.com/*
 // @match        https://www.packball.com/*
@@ -49,6 +49,9 @@ function field(title){
  else if(/^corners(?:\s|$)/.test(t)&&!/(attendus|minute|moyen)/.test(t.replace(/(?:10|5) dernieres minutes?/,'')))key='corners';
  else if(/tirs bloques/.test(t))key='blocked_shots';
  else if(/(?:tirs|photos) a l.interieur de la boite/.test(t))key='shots_inside';
+ else if(/tirs (?:hors boite|a l.exterieur de la boite)/.test(t))key='shots_outside';
+ else if(/tirs hors cible/.test(t))key='shots_off_target';
+ else if(/^tacles(?:\s|$)/.test(t))key='tackles';
  else if(/substitutions/.test(t))key='substitutions';
  else if(/fautes/.test(t))key='fouls';
  else if(/total des tirs/.test(t))key='shots';
@@ -56,7 +59,8 @@ function field(title){
  else if(/possession/.test(t))key='possession';
  else if(/difference de pression/.test(t))key='press_diff';
  else if(/indice de pression/.test(t))key='press_idx';
- else if(/attaques dangereuses/.test(t))key='da';
+ // AVG is a rate, not the cumulative counter used for window differences.
+ else if(/attaques dangereuses/.test(t))key=/par minute|avg/.test(t)?'da_per_minute':'da';
  return key?{group,key:key+(window?window:'')}:null;
 }
 function readStats(cells,heads,score){
@@ -116,15 +120,15 @@ function collect(){
  });rows.push(r);
  });
  const column_map={stats:heads.map((title,i)=>({column:i+1,title,...field(title)})),odds:Object.entries(meta).map(([column,title])=>({column,title,...quoteMeta(title,column)}))};
- return {schema:2,collector_version:'5.0.0',cycle_id:crypto.randomUUID(),collected_at:new Date().toISOString(),source:'packball',client_id:CLIENT_ID,page_visibility:document.visibilityState,page_rows:rows.length,odds_meta:meta,stat_headers:heads,column_map,rows};
+ return {schema:2,collector_version:'5.1.0',cycle_id:crypto.randomUUID(),collected_at:new Date().toISOString(),source:'packball',client_id:CLIENT_ID,page_visibility:document.visibilityState,page_rows:rows.length,odds_meta:meta,stat_headers:heads,column_map,rows};
 }
-const badge=document.createElement('div');Object.assign(badge.style,{position:'fixed',bottom:'14px',right:'14px',zIndex:'2147483647',background:'#0b1221',color:'#8eeadd',border:'1px solid #327d78',padding:'10px 16px',borderRadius:'12px',font:'12px system-ui',boxShadow:'0 6px 30px #0005'});badge.textContent='S90 · Initialisation';function mountBadge(){if(document.body&&!badge.isConnected)document.body.append(badge)}mountBadge();
+const badge=document.createElement('div');Object.assign(badge.style,{position:'fixed',bottom:'14px',right:'14px',zIndex:'2147483647',background:'#0b1221',color:'#8eeadd',border:'1px solid #327d78',padding:'10px 16px',borderRadius:'12px',font:'12px system-ui',boxShadow:'0 6px 30px #0005'});badge.textContent='S90 v5.1.0 · Initialisation';function mountBadge(){if(document.body&&!badge.isConnected)document.body.append(badge)}mountBadge();
 const watcher=new MutationObserver(mountBadge);watcher.observe(document.documentElement,{childList:true,subtree:true});
-function cycle(){mountBadge();if(busy)return;if(!/\/matches(?:\/|$|\?)/.test(location.pathname)){badge.textContent='S90 · Ouvre le tableau des matchs Packball';return}try{
- last=collect();const token=GM_getValue('SE90_TOKEN','');if(!token){badge.textContent='S90 · Configurer le token dans Tampermonkey';return;}
- busy=true;badge.textContent='S90 · Envoi de '+last.rows.length+' matchs';
- GM_xmlhttpRequest({method:'POST',url:ENDPOINT,headers:{'Content-Type':'application/json','X-SE-Token':token},data:JSON.stringify(last),timeout:15000,onload:res=>{busy=false;let x;try{x=JSON.parse(res.responseText)}catch{}badge.textContent=res.status===200&&x?.ok?'S90 · '+x.inserted+' relevés reçus · '+new Date().toLocaleTimeString():'S90 · '+(x?.error||('Erreur '+res.status));},onerror:()=>{busy=false;badge.textContent='S90 · Connexion interrompue'},ontimeout:()=>{busy=false;badge.textContent='S90 · Délai dépassé'}});
- }catch(e){busy=false;badge.textContent='S90 · '+e.message}}
+function cycle(){mountBadge();if(busy)return;if(!/\/matches(?:\/|$|\?)/.test(location.pathname)){badge.textContent='S90 v5.1.0 · Ouvre le tableau des matchs Packball';return}try{
+ last=collect();const token=GM_getValue('SE90_TOKEN','');if(!token){badge.textContent='S90 v5.1.0 · Configurer le token dans Tampermonkey';return;}
+ busy=true;badge.textContent='S90 v5.1.0 · Envoi de '+last.rows.length+' matchs';
+ GM_xmlhttpRequest({method:'POST',url:ENDPOINT,headers:{'Content-Type':'application/json','X-SE-Token':token},data:JSON.stringify(last),timeout:15000,onload:res=>{busy=false;let x;try{x=JSON.parse(res.responseText)}catch{}badge.textContent=res.status===200&&x?.ok?'S90 v5.1.0 · '+x.inserted+' relevés reçus · '+new Date().toLocaleTimeString():'S90 v5.1.0 · '+(x?.error||('Erreur '+res.status));},onerror:()=>{busy=false;badge.textContent='S90 v5.1.0 · Connexion interrompue'},ontimeout:()=>{busy=false;badge.textContent='S90 v5.1.0 · Délai dépassé'}});
+ }catch(e){busy=false;badge.textContent='S90 v5.1.0 · '+e.message}}
 GM_registerMenuCommand('S90 · Définir le token',()=>{const t=prompt('Token de collecte (reste dans Tampermonkey)');if(t!==null){GM_setValue('SE90_TOKEN',t.trim());cycle()}});
 GM_registerMenuCommand('S90 · Exporter le dernier relevé',()=>{if(!last)return;const url=URL.createObjectURL(new Blob([JSON.stringify(last,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='S90-releve.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)});
 GM_registerMenuCommand('S90 · Relancer la collecte',cycle);
@@ -132,4 +136,5 @@ window.addEventListener('pageshow',()=>{mountBadge();cycle()});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)cycle()});
 cycle();setInterval(cycle,30000);
 })();
+
 
