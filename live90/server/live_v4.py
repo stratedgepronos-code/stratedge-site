@@ -1469,7 +1469,7 @@ def radar_status(c):
     result_delivery={r['delivery']:r['n'] for r in c.execute('SELECT delivery,COUNT(*) n FROM v5_radar_result_events GROUP BY delivery')}
     return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','priced_only':setting(c,'radar_priced_only',True),'odds_auto':setting(c,'radar_odds_auto',True),'min_odds':MIN_TELEGRAM_ODDS,'counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'default_card_leagues':list(CARD_COMPETITIONS),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market'),'coherence_policy':'prematch_live_context_v4','result_tracking':'packball_two_samples','results':results,'result_deliveries':result_delivery}
 
-# Explicit owner selection, extended to UEFA competitions on 21 October 2026.
+# Explicit owner selection, extended to UEFA Conference League on 22 October 2026.
 # Country/region is required for common
 # labels (Premier League, Serie A, Pro League...); no substring or team-name guesses.
 CARD_COMPETITIONS={
@@ -1482,6 +1482,7 @@ CARD_COMPETITIONS={
     'Arabie saoudite · Saudi Pro League': (('ksa','sau','saudi arabia','arabie saoudite'),('pro league','saudi pro league','professional league','saudi professional league','saudi arabia pro league','roshn saudi league')),
     'UEFA · Champions League': (('eur','europe','uefa'),('uefa champions league','champions league','ligue des champions','ligue des champions uefa','uefa ligue des champions')),
     'UEFA · Europa League': (('eur','europe','uefa'),('uefa europa league','europa league','ligue europa','uefa ligue europa')),
+    'UEFA · Conference League': (('eur','europe','uefa'),('uefa conference league','conference league','uefa europa conference league','europa conference league','ligue conference','ligue europa conference','uefa ligue conference')),
 }
 UEFA_CARD_COMPETITIONS=('UEFA · Champions League','UEFA · Europa League')
 
@@ -1505,6 +1506,11 @@ def install_card_selection(c):
             selected=setting(c,'card_leagues',[])
             selected=list(dict.fromkeys([*selected,*UEFA_CARD_COMPETITIONS]))
             for k,v in (('card_leagues',selected),('card_selection_uefa_20261021',True)):
+                c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,enc(v)))
+
+        if not setting(c,'card_selection_conference_20261022',False):
+            selected=list(dict.fromkeys([*setting(c,'card_leagues',[]),'UEFA · Conference League']))
+            for k,v in (('card_leagues',selected),('card_selection_conference_20261022',True)):
                 c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,enc(v)))
 
 def repair_empty_card_selection(c):

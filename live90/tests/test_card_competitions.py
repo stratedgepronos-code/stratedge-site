@@ -8,14 +8,14 @@ class Competitions(unittest.TestCase):
  prepare=F.DeskTests.prepare
  reading=F.DeskTests.reading
  add=F.DeskTests.add
- def test_selected_nine_country_and_league(self):
+ def test_selected_ten_country_and_league(self):
   cases=[('United States','Major League Soccer','USA · MLS'),('England','Premier League','Angleterre · Premier League'),('Spain','La Liga','Espagne · La Liga'),('Italy','Serie A','Italie · Serie A'),('Germany','Bundesliga','Allemagne · Bundesliga'),('France','Ligue 1','France · Ligue 1'),('Saudi Arabia','Pro League','Arabie saoudite · Saudi Pro League')]
   V.install_card_selection(self.c)
   for country,league,wanted in cases:
    p={'league':league,'packball':{'export_a':[country]}}
    self.assertEqual(V.selected_card_competition({'league':league},p),wanted)
    self.assertTrue(V.card_market_allowed(self.c,{'league':league},'h',self.now,p=p))
-  self.assertEqual(len(V.radar_status(self.c)['card_leagues']),9)
+  self.assertEqual(len(V.radar_status(self.c)['card_leagues']),10)
  def test_uefa_region_aliases_and_both_teams(self):
   V.install_card_selection(self.c)
   for country in ('EUR','Europe','UEFA'):
@@ -26,14 +26,14 @@ class Competitions(unittest.TestCase):
      self.assertTrue(V.card_market_allowed(self.c,{},team,self.now,p=p),(country,league,team))
  def test_other_continents_cups_and_ambiguous_names_remain_excluded(self):
   V.install_card_selection(self.c)
-  for country,league in [('Africa','Champions League'),('Asia','Champions League'),('','Champions League'),('EUR','UEFA Conference League'),('EUR',"UEFA Women's Champions League"),('EUR','UEFA Youth League'),('EUR','Champions League Women'),('EUR','UEFA Nations League'),('EUR','UEFA Champions League U19')]:
+  for country,league in [('Africa','Champions League'),('Asia','Champions League'),('','Champions League'),('Asia','Conference League'),('', 'Conference League'),('EUR','Conference League Women'),('EUR','UEFA Conference League U19'),('EUR',"UEFA Women's Champions League"),('EUR','UEFA Youth League'),('EUR','Champions League Women'),('EUR','UEFA Nations League'),('EUR','UEFA Champions League U19')]:
    self.assertFalse(V.card_market_allowed(self.c,{'country':country,'league':league},'h',self.now),(country,league))
  def test_upgrade_adds_only_uefa_and_does_not_reset_owner_settings(self):
   for k,v in [('card_selection_20261018',True),('card_leagues',['France · Ligue 1','Custom League']),('card_league_policy','strict_allowlist'),('radar_telegram_enabled',False)]:
    self.c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,V.enc(v)))
   self.c.commit()
   V.install_card_selection(self.c)
-  self.assertEqual(V.setting(self.c,'card_leagues',[]),['France · Ligue 1','Custom League',*V.UEFA_CARD_COMPETITIONS])
+  self.assertEqual(V.setting(self.c,'card_leagues',[]),['France · Ligue 1','Custom League',*V.UEFA_CARD_COMPETITIONS,'UEFA · Conference League'])
   self.assertFalse(V.radar_enabled(self.c))
   V.dispatch(self.c,{'action':'radar_telegram','enabled':False,'card_leagues':['France · Ligue 1']},self.now)
   V.install_card_selection(self.c)
@@ -146,6 +146,37 @@ class Competitions(unittest.TestCase):
   self.assertEqual(self.m['prematch']['n_h'],4)
   self.assertEqual(self.m['prematch']['n_a'],7)
   self.assertTrue(any('Packball domicile n=4' in reason and 'extérieur n=7' in reason for reason in d['coherence']['cautions']))
+
+
+ def test_conference_aliases_both_teams_and_live_board(self):
+  V.install_card_selection(self.c)
+  for country in ('EUR','Europe','UEFA'):
+   for league in ('Europa Conference League','UEFA Europa Conference League','UEFA Conference League','Conference League','Ligue Conférence','Ligue Europa Conference'):
+    p={'country':country,'league':league}
+    self.assertEqual(V.selected_card_competition({},p),'UEFA · Conference League')
+    for team in ('h','a'):
+     self.assertTrue(V.card_market_allowed(self.c,{},team,self.now,p=p))
+  self.m['league']=self.ctx['league']='Europa Conference League'
+  self.m['packball']={'export_a':['EUR']}
+  self.prepare()
+  d=self.reading('cards')
+  self.assertEqual(d['status'],'active')
+  self.assertTrue(d['telegram_allowed'])
+  self.assertTrue(V.radar_eligible(V.sample_data(V.latest(self.c)[0]),d,self.now))
+
+ def test_existing_install_adds_conference_once_without_resetting_selection(self):
+  V.install_card_selection(self.c)
+  self.c.execute("DELETE FROM v4_settings WHERE key='card_selection_conference_20261022'")
+  for k,v in [('card_leagues',['France · Ligue 1','Custom League']),('radar_telegram_enabled',False),('radar_priced_only',True)]:
+   self.c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,V.enc(v)))
+  self.c.commit()
+  V.install_card_selection(self.c)
+  self.assertEqual(V.setting(self.c,'card_leagues',[]),['France · Ligue 1','Custom League','UEFA · Conference League'])
+  self.assertFalse(V.radar_enabled(self.c))
+  self.assertTrue(V.setting(self.c,'radar_priced_only',False))
+  V.dispatch(self.c,{'action':'radar_telegram','enabled':False,'card_leagues':['France · Ligue 1']},self.now)
+  V.install_card_selection(self.c)
+  self.assertEqual(V.setting(self.c,'card_leagues',[]),['France · Ligue 1'])
 
 if __name__=='__main__':unittest.main()
 
