@@ -48,15 +48,17 @@ class RadarTests(unittest.TestCase):
   self.send.assert_not_called()
  def test_missing_quote_does_not_block(self):
   self.queue();V.deliver_radar(self.c,self.now);msg=self.send.call_args.args[0]
-  for text in ('But à surveiller','Équipe A','Cote et cut indisponibles','pas un pari validé'):self.assertIn(text,msg)
+  for text in ('But à surveiller','Équipe A','Cote à vérifier — miser uniquement à partir de 1,50','pas un pari validé'):self.assertIn(text,msg)
  def test_exact_team_cut_and_required_events(self):
   self.queue();event={'event_id':'stake','home':'Équipe A','away':'Équipe B','score':{'h':0,'a':0},'markets':[{'name':'Équipe A Total Goals','canonical':'HOME_OVER_UNDER','period':'FULL_TIME','active':True,'selections':[{'name':'Over 2.5','line':2.5,'odds':1.9,'active':True}]}]}
   V.runtime(self.c,'pulsescore_test',{'ok':True,'at':V.iso(self.now),'events':[event]});self.c.commit()
   V.deliver_radar(self.c,self.now);msg=self.send.call_args.args[0]
-  for text in ('Équipe A +2,5 buts','3 de plus','Un seul événement ne suffit pas'):self.assertIn(text,msg)
+  self.assertNotIn('Équipe A +2,5 buts',msg)
+  self.assertIn('objectif statistique',msg)
+  self.assertEqual(V.dec(self.rows()[0]['data'])['result_target']['line'],.5)
  def test_stale_quote_removed(self):
   self.queue();V.runtime(self.c,'pulsescore_test',{'ok':True,'at':V.iso(self.now-dt.timedelta(minutes=3)),'events':[]});self.c.commit()
-  V.deliver_radar(self.c,self.now);self.assertIn('Cote et cut indisponibles',self.send.call_args.args[0])
+  V.deliver_radar(self.c,self.now);self.assertIn('Cote à vérifier — miser uniquement à partir de 1,50',self.send.call_args.args[0])
  def test_disable_and_missing_credentials(self):
   with patch.dict(os.environ,{'TELEGRAM_BOT_TOKEN':''}):self.queue()
   self.assertEqual(len(self.rows()),0);self.queue();V.dispatch(self.c,{'action':'radar_telegram','enabled':False},self.now)
@@ -77,3 +79,4 @@ class RadarTests(unittest.TestCase):
   self.send.side_effect=send;V.deliver_radar(self.c,self.now);self.assertTrue(V.setting(self.c,'during_notify',False));self.send.reset_mock()
   b=V.board(self.c,self.now);self.send.assert_not_called();self.assertTrue(b['radar_telegram']['enabled'])
 if __name__=='__main__':unittest.main()
+

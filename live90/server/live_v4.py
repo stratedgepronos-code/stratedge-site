@@ -1513,6 +1513,14 @@ def install_card_selection(c):
             for k,v in (('card_leagues',selected),('card_selection_conference_20261022',True)):
                 c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,enc(v)))
 
+def install_radar_observation_mode(c):
+    # Owner-requested temporary mode, once only. Later UI changes remain authoritative.
+    with c:
+        if not setting(c,'radar_observation_20261022',False):
+            for k,v in (('radar_priced_only',False),('radar_odds_auto',False),('radar_observation_20261022',True)):
+                c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,enc(v)))
+
+
 def repair_empty_card_selection(c):
     # Owner-authorized recovery, once only. Later intentional empty selections remain empty.
     with c:
@@ -1592,7 +1600,8 @@ def refresh_radar_prices(c,now,candidates):
 
 def queue_radar(c,r,d,now):
     if not radar_enabled(c) or not radar_configured() or not radar_eligible(r,d,now):return
-    if setting(c,'radar_priced_only',True) and not radar_market_gate(d,desk_cuts(r,radar_price_cache(c),now),now)['eligible']:return
+    gate=radar_market_gate(d,desk_cuts(r,radar_price_cache(c),now),now)
+    if gate['state']=='below_minimum' or (setting(c,'radar_priced_only',True) and not gate['eligible']):return
     mid=str(r['packball_id']);counter=d['observed']
     # Same counter = same opportunity, even across restarts, pauses and status flicker.
     event_key=enc([mid,d['team'],d['market'],int(counter)])
@@ -1655,7 +1664,7 @@ def radar_message(r,d,cuts,radar_id=None):
         if q['indicative_counter']:lines+=['Bookings Stake ≠ jaunes Packball.']
         if q['odds']<1.50:lines+=['Cote sous ton seuil de 1,50.']
         lines+=['Instantané : vérifier le prix et le marché sur Stake.']
-    else:lines+=['','🔎 Cote et cut indisponibles · à vérifier sur Stake (seuil 1,50).']
+    else:lines+=['','🔎 Cote à vérifier — miser uniquement à partir de 1,50.\nCut à vérifier sur Stake : le seuil suivi ci-dessous est un objectif statistique.']
     target=radar_target(r,d,cuts)
     lines+=['','📌 Suivi du résultat : '+radar_target_label(target,r)]
     if target['bookings_proxy']:lines+=['Seuil suivi en jaunes uniquement ; résultat du pari Bookings non certifié.']
@@ -1684,8 +1693,10 @@ def deliver_radar(c,now,realtime=False):
             if in_scope and radar_eligible(r,d,now) and r.get('score')==saved.get('score') and d.get('observed')==event['counter']:
                 cuts=desk_cuts(r,radar_price_cache(c),now)
                 gate=radar_market_gate(d,cuts,now)
-                if setting(c,'radar_priced_only',True) and not gate['eligible']:
+                if gate['state']=='below_minimum' or (setting(c,'radar_priced_only',True) and not gate['eligible']):
                     c.execute("UPDATE v5_radar_notifications SET delivery='price_wait',delivery_error=? WHERE id=?",(gate['reason'],event['id']));c.commit();continue
+                if not gate['eligible']:
+                    cuts=dict(cuts,quotes=[],reason='Cote et cut non vérifiés pour cette observation.')
                 message=radar_message(r,d,cuts,event['id'])
                 c.execute('UPDATE v5_radar_notifications SET data=? WHERE id=?',(enc(dict(saved,message=message,cuts=cuts,result_target=radar_target(r,d,cuts))),event['id']));c.commit()
                 if radar_enabled(c):state,error,mid=notify(message);sent_attempts+=1
@@ -1878,6 +1889,7 @@ if __name__=='__main__':
         if args.init:
             install_card_selection(c)
             repair_empty_card_selection(c)
+            install_radar_observation_mode(c)
             for name in ('telegram_enabled','pulsescore_auto'):c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(name,'false'))
             runtime(c,'decision_mode',True);c.commit();result={'ok':True,'version':'decision5.0'}
         elif args.diagnostic:result=current_diagnostic(c,now_utc())

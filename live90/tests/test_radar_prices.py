@@ -103,4 +103,55 @@ class RadarPrices(unittest.TestCase):
   with patch.object(V.urllib.request,'build_opener',return_value=net):V.run_dashboard(self.db,self.now)
   self.assertTrue(V.setting(self.c,'during_price_fetch',False));self.send.assert_called_once()
 
+
+class ObservationPrices(unittest.TestCase):
+ bundle=RadarPrices.bundle
+ add=RadarPrices.add
+ prepare=RadarPrices.prepare
+ reading=RadarPrices.reading
+ one=RadarPrices.one
+ queue=RadarPrices.queue
+ rows=RadarPrices.rows
+ tearDown=RadarPrices.tearDown
+ cache=RadarPrices.cache
+ enable_auto=RadarPrices.enable_auto
+ def setUp(self):
+  RadarPrices.setUp(self)
+ def observation_mode(self):
+  V.install_radar_observation_mode(self.c)
+ def test_observation_sends_without_price_even_with_exhausted_budget(self):
+  self.enable_auto();self.observation_mode()
+  self.c.executemany('INSERT INTO v4_pulsescore_auto(attempted_at) VALUES(?)',[(V.iso(self.now),)]*10);self.c.commit()
+  with patch.object(V.urllib.request,'build_opener') as net:
+   V.run_dashboard(self.db,self.now);net.assert_not_called()
+  self.assertEqual(self.send.call_count,2)
+  self.assertIn('Cote à vérifier — miser uniquement à partir de 1,50',self.send.call_args.args[0])
+  target=V.dec(self.rows()[0]['data'])['result_target']
+  self.assertEqual(target['mode'],'event');self.assertEqual(target['line'],.5);self.assertIsNone(target['quote'])
+  self.queue();V.deliver_radar(self.c,self.now);self.assertEqual(self.send.call_count,2)
+ def test_observation_still_blocks_known_low_price_at_queue_and_delivery(self):
+  self.observation_mode();self.cache(1.12);self.queue()
+  self.assertEqual(len(self.rows()),0)
+  self.cache(1.8);self.queue();self.cache(1.12);V.deliver_radar(self.c,self.now)
+  self.send.assert_not_called();self.assertEqual(self.rows()[0]['delivery'],'price_wait')
+ def test_stale_quote_is_not_displayed_or_frozen_as_valid_price(self):
+  self.observation_mode();self.cache(1.8,age=35);self.queue();V.deliver_radar(self.c,self.now)
+  self.send.assert_called_once();self.assertNotIn('cote 1,8',self.send.call_args.args[0])
+  self.assertIsNone(V.dec(self.rows()[0]['data'])['result_target']['quote'])
+ def test_unsupported_cut_does_not_raise_statistical_target(self):
+  self.observation_mode();self.cache(2.4,line=2.5);self.queue();V.deliver_radar(self.c,self.now)
+  self.send.assert_called_once();target=V.dec(self.rows()[0]['data'])['result_target']
+  self.assertEqual(target['line'],.5);self.assertIsNone(target['quote'])
+ def test_observation_migration_preserves_manual_reenable_and_other_settings(self):
+  self.observation_mode()
+  self.assertFalse(V.setting(self.c,'radar_priced_only',True));self.assertFalse(V.setting(self.c,'radar_odds_auto',True))
+  self.enable_auto();V.install_radar_observation_mode(self.c)
+  self.assertTrue(V.setting(self.c,'radar_priced_only',False));self.assertTrue(V.setting(self.c,'radar_odds_auto',False))
+ def test_existing_price_wait_can_send_only_while_still_confirmed(self):
+  self.cache(1.8);self.queue();self.cache(1.2);V.deliver_radar(self.c,self.now)
+  self.assertEqual(self.rows()[0]['delivery'],'price_wait')
+  self.observation_mode();self.c.execute("DELETE FROM v4_runtime WHERE key='pulsescore_test'");self.c.commit()
+  self.queue();V.deliver_radar(self.c,self.now);self.send.assert_called_once()
+  self.assertEqual(self.rows()[0]['delivery'],'sent')
+
 if __name__=='__main__':unittest.main()
