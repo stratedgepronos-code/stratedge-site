@@ -48,7 +48,7 @@ function render(){
  $('#live-counter').textContent=live.length;$('#history-counter').textContent=data.totals.total||0;
  for(const k of ['all',...Object.keys(deskNames)])$('#count-'+k).textContent=currentMatches.reduce((n,r)=>n+(r.advice||[]).filter(d=>(k==='all'||d.market===k)&&deskEffective(r,d).status==='active').length,0);
  const query=normSearch($('#search').value),matches=currentMatches.filter(r=>normSearch(`${r.home} ${r.away} ${r.league||''}`).includes(query));
- renderAttention(matches);renderCutsControl();
+ renderAttention(matches);renderCutsControl();renderLearning();
  $('#table-head').closest('table').classList.toggle('match-table',view==='live');
  $('#export-history').hidden=view!=='history';$('#history-more').hidden=true;$('#legacy-history').hidden=view!=='history'||!data.legacy?.length;
  if(view==='history'){
@@ -61,6 +61,12 @@ function render(){
  }else if(view==='observations'){renderObservations(query)}else{renderDesk(matches)}
  $('#signals-list').innerHTML=(data.observations||[]).slice(0,4).map(observationHTML).join('')||'<p class="help">Les prochaines mises en évidence seront conservées ici. Les cartes confirmées peuvent être envoyées sur Telegram.</p>';
  $('#updated').textContent='Actualisé · '+time(data.server_time);
+}
+function renderLearning(){
+ const m=data.learning||{},el=$('#learning-summary');if(!el)return;
+ el.textContent=m.error?'Bilan temporairement indisponible · les alertes live continuent.':m.revision?`Mémoire v${m.revision} · ${m.review_count} alertes relues · ${m.match_count} matchs · ${m.settled_count} résultats exploitables. Dernière mise à jour : ${time(m.generated_at)}.`:'En attente de résultats à relire. Aucun appel IA et aucun seuil modifié automatiquement.';
+ $('#learning-prompt').textContent=m.prompt_addendum||'La prochaine mémoire sera intégrée automatiquement à ton export GPT.';
+ $('#learning-reviews').innerHTML=(m.recent||[]).map(r=>`<details class="detail-box"><summary>#${esc(r.radar_id)} · ${esc(r.team==='h'?r.home:r.away)} · ${esc(r.market==='cards'?'Cartons':'Buts')} · ${esc(r.label)}</summary><ul>${(r.facts||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul><b>Limites constatées</b><ul>${(r.flags||[]).map(x=>`<li>${esc(x.detail)}</li>`).join('')}</ul><b>À tester, sans cause présumée</b><p>${(r.hypotheses||[]).map(esc).join('<br>')}</p><p class="help">${esc(r.conclusion)} · Révision ${esc(r.revision)}</p></details>`).join('')||'<p class="help">Aucun résultat relu pour le moment.</p>';
 }
 function normSearch(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()}
 async function refresh(){if(busy)return;busy=true;const requestedAt=Date.now();try{data=await request();boardReceivedAt=requestedAt;render();const modal=$('#detail-modal');if(modal.open&&modal.dataset.match){const scroll=modal.scrollTop;showMatch(modal.dataset.match);modal.scrollTop=scroll}}catch(e){notice(e.message)}finally{busy=false}}
@@ -142,6 +148,7 @@ async function exportAnalysis(){
 }
 $('#export-analysis').onclick=exportAnalysis;
 $('#packball-export').onclick=exportAnalysis;
+$('#export-learning').onclick=async()=>{const b=$('#export-learning');b.disabled=true;try{download('StratEdge-memoire-pour-GPT.json',await request({action:'export_learning'}));notice('Mémoire téléchargée : bilans factuels et consignes de révision inclus.')}catch(e){notice(e.message)}finally{b.disabled=false}};
 $('#export-review').onclick=async()=>{const b=$('#export-review');b.disabled=true;try{download('StratEdge-bilan-pour-GPT.json',await request({action:'export_review'}));notice('Bilan téléchargé : joins ce JSON à une conversation GPT. Les consignes d’audit sont incluses.')}catch(e){notice(e.message)}finally{b.disabled=false}};
 $('#export-history').onclick=async()=>{try{download(view==='observations'?'StratEdge-observations-V5.json':'StratEdge-historique-V4.json',await request({action:view==='observations'?'export_observations':'export_history'}))}catch(e){notice(e.message)}};
 $('#history-more').onclick=async()=>{try{const x=await request({action:'history',offset:visibleSignals().length});moreHistory=[...visibleSignals(),...x.signals];render()}catch(e){notice(e.message)}};
