@@ -9,6 +9,7 @@ LEARNING_VERSION = 'review1.0'
 with open(__file__, 'rb') as _source:
     ENGINE_FINGERPRINT = hashlib.sha256(_source.read()).hexdigest()[:16]
 MIN_TELEGRAM_ODDS = 1.50
+ALERT_STOP_MINUTE = 80
 MARKETS = ('goal_ht', 'goal_ft', 'card_ft')
 LABELS = {'goal_ht': 'But avant la mi-temps', 'goal_ft': 'But avant la fin du match', 'card_ft': 'Un carton supplémentaire · équipe'}
 SCHEMA = '''
@@ -1417,6 +1418,7 @@ def desk_reading(r,p,ctx,team,market,now,hist):
         if candidate and d['coherence']['status']!='confirmed':
             state=d['coherence']['status'];reasons=d['coherence']['missing']+d['coherence']['conflicts']
             return stop('context_wait' if state=='missing' else 'context_conflict','Avant-match incomplet' if state=='missing' else 'Concordance insuffisante',reasons[0])
+    if num(minute) and alert_cutoff_reached(r,now):return stop('waiting','Alertes arrêtées · 80′','Aucune nouvelle alerte dès la 80e minute ; suivi des résultats maintenu.')
     if candidate:d.update(status='candidate',title='Avant-match + live à confirmer')
     return d
 
@@ -1475,7 +1477,7 @@ def radar_status(c):
     last=c.execute('SELECT created_at,delivery,delivery_error FROM v5_radar_notifications ORDER BY id DESC LIMIT 1').fetchone()
     results={r['outcome']:r['n'] for r in c.execute('SELECT outcome,COUNT(*) n FROM v5_radar_results GROUP BY outcome')}
     result_delivery={r['delivery']:r['n'] for r in c.execute('SELECT delivery,COUNT(*) n FROM v5_radar_result_events GROUP BY delivery')}
-    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','priced_only':setting(c,'radar_priced_only',True),'odds_auto':setting(c,'radar_odds_auto',True),'min_odds':MIN_TELEGRAM_ODDS,'counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'default_card_leagues':list(CARD_COMPETITIONS),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market'),'coherence_policy':'prematch_live_context_v4','result_tracking':'packball_two_samples','results':results,'result_deliveries':result_delivery}
+    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','priced_only':setting(c,'radar_priced_only',True),'odds_auto':setting(c,'radar_odds_auto',True),'min_odds':MIN_TELEGRAM_ODDS,'stop_minute':ALERT_STOP_MINUTE,'counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'default_card_leagues':list(CARD_COMPETITIONS),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market'),'coherence_policy':'prematch_live_context_v4','result_tracking':'packball_two_samples','results':results,'result_deliveries':result_delivery}
 
 # Explicit owner selection, extended to UEFA Conference League on 22 October 2026.
 # Country/region is required for common
@@ -1551,11 +1553,20 @@ def card_market_allowed(c,r,team,now,ctx=None,p=None):
     cuts=desk_cuts(r,dec(cache['value'],{}) if cache else {},now)
     return any(q['team']==team and q['kind']=='cards' and q['period']=='FT' for q in cuts.get('quotes',[]))
 
+def alert_cutoff_reached(r,now):
+    minute=r.get('minute')
+    if not num(minute):return False
+    at=date(r.get('collected_at'))
+    elapsed=max(0,(now-at).total_seconds()/60) if at and r.get('state')=='LIVE' else 0
+    # Conservatively expire a 79th-minute sample that ages past the cutoff in queue.
+    return minute+elapsed>=ALERT_STOP_MINUTE
+
+
 def radar_eligible(r,d,now):
     # Exactly the hot (confirmed) cards; factual watch-only cards are not alerts.
     return (d.get('status')=='active' and (d.get('coherence') or {}).get('status')=='confirmed' and (d.get('coherence') or {}).get('policy')=='prematch_live_context_v4' and d.get('team') in ('h','a') and d.get('market') in DESK_MARKETS
             and (d.get('market')!='cards' or d.get('telegram_allowed') is True)
-            and r.get('state')=='LIVE' and num(r.get('minute')) and 0<r['minute']<=90
+            and r.get('state')=='LIVE' and num(r.get('minute')) and 0<r['minute']<ALERT_STOP_MINUTE and not alert_cutoff_reached(r,now)
             and not r.get('minute_extra') and not r.get('quality_errors')
             and d.get('sample_id')==r.get('sample_id') and num(d.get('observed'))
             and all(date(r.get(k)) and 0<=(now-date(r[k])).total_seconds()<=100 for k in ('received_at','collected_at')))

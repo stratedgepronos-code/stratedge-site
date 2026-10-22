@@ -36,6 +36,24 @@ class RadarTests(unittest.TestCase):
   later=self.now+dt.timedelta(minutes=11);r.update(received_at=V.iso(later),collected_at=V.iso(later))
   V.queue_radar(self.c,r,d,later);self.assertEqual(len(self.rows()),1)
   V.queue_radar(self.c,r,dict(d,observed=1),later);self.assertEqual(len(self.rows()),2)
+ def test_stop_at_80_for_both_markets_including_old_active_readings(self):
+  r,d=self.one()
+  for market in ('goals','cards'):
+   reading=dict(d,market=market,telegram_allowed=True)
+   self.assertTrue(V.radar_eligible(dict(r,minute=79),reading,self.now))
+   for minute in (80,81,90,95):
+    V.queue_radar(self.c,dict(r,minute=minute),reading,self.now)
+  self.assertEqual(len(self.rows()),0)
+ def test_queued_alert_expires_at_cutoff_even_without_new_sample(self):
+  for latest_minute,delay in ((80,1),(79,60)):
+   self.c.execute('DELETE FROM v5_radar_notifications');self.c.commit()
+   self.r['minute']=79;self.add(self.r,self.now-dt.timedelta(seconds=30));self.add(self.r,self.now);r,d=self.one()
+   V.queue_radar(self.c,r,d,self.now);self.c.commit()
+   if latest_minute==80:
+    self.r['minute']=80;self.add(self.r,self.now+dt.timedelta(seconds=1))
+   V.deliver_radar(self.c,self.now+dt.timedelta(seconds=delay))
+   self.assertEqual(self.rows()[0]['delivery'],'expired')
+  self.send.assert_not_called()
  def test_expire_if_finished_score_counter_or_freshness_changes(self):
   original=copy.deepcopy(self.r)
   for change in ('finished','score','counter','stale'):

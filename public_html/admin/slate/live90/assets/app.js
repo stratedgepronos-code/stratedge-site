@@ -214,7 +214,9 @@ const deskNames={goals:'Buts',cards:'Cartons jaunes'};
 const deskStates={context_wait:'Avant-match incomplet',context_conflict:'Concordance insuffisante',active:'À regarder',confirming:'À confirmer',neutral:'Observer',missing:'À compléter',stale:'Données anciennes',waiting:'En attente',caution:'Prudence'};
 let boardReceivedAt=Date.now();
 const seenHighlights=new Set();
+function alertCutoffReached(r){return typeof r.minute==='number'&&r.minute+Math.max(0,age(r.collected_at||r.received_at))/60>=80;}
 function deskEffective(r,d){
+ if(r.state==='LIVE'&&alertCutoffReached(r))return {...d,status:'waiting',title:'Alertes arrêtées · 80′',reason:'Aucune nouvelle alerte dès la 80e minute ; suivi des résultats maintenu.'};
  if(d?.market==='cards'&&(d.recommendation_allowed===false||d.telegram_allowed===false||d.status==='excluded'))return {...d,status:'excluded',title:'Hors sélection cartons',reason:'Cartons désactivés pour ce championnat.'};
  if(d&&['goals','cards'].includes(d.market)&&['active','confirming'].includes(d.status)&&(d.coherence?.status!=='confirmed'||d.coherence?.policy!=='prematch_live_context_v4'))return {...d,status:'context_wait',title:'Avant-match incomplet',reason:'Concordance avant-match/live non confirmée.'};
  if(age(r.received_at)>100)return {...d,status:r.received_at?'stale':'waiting',title:r.received_at?'Données anciennes':'En attente',reason:'Aucune lecture active sans relevé récent.'};
@@ -269,7 +271,7 @@ function cutDetailHTML(r){
 function attentionItems(matches){
  const items=[];
  for(const r of matches){
-  if(r.state!=='LIVE'||!attentionNumber(r.minute)||r.minute<=0||r.minute>90||r.minute_extra||r.quality_errors?.length)continue;
+  if(r.state!=='LIVE'||!attentionNumber(r.minute)||r.minute<=0||alertCutoffReached(r)||r.minute_extra||r.quality_errors?.length)continue;
   for(const d of r.advice||[]){
    if((d.coherence?.status!=='confirmed'||d.coherence?.policy!=='prematch_live_context_v4'))continue;
    if(market!=='all'&&market!==d.market)continue;

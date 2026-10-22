@@ -98,6 +98,9 @@ const server=http.createServer((r,res)=>{if(r.url==='/download.php?file=collecto
  board.observations[0].result.outcome='unknown';await page.evaluate(()=>refresh());assert((await page.locator('#match-rows').textContent()).includes('données finales manquantes'));board.observations[0].result.outcome='observed';await page.evaluate(()=>refresh());
  await page.locator('[data-view="history"]').click();assert.equal(await page.locator('#match-rows [data-signal="1"]').count(),1);
  await page.locator('[data-view="live"]').click();board.matches[0].state=originalStatus;await page.evaluate(()=>refresh());assert.equal(await page.locator('#match-rows tr').count(),4);
+ const cutoffMinute=board.matches[0].minute;
+ for(const minute of [80,90,95]){board.matches[0].minute=minute;await page.evaluate(()=>refresh());assert.equal(await page.locator('#attention-cards [data-match="101"]').count(),0);assert((await page.locator('#match-rows tr').first().textContent()).includes('Alertes arrêtées'));}
+ board.matches[0].minute=cutoffMinute;await page.evaluate(()=>refresh());
  const savedMinute=board.matches[0].minute;board.matches[0].minute=94;await page.evaluate(()=>refresh());assert.equal(await page.locator('#match-rows [data-match="101"]').count(),1);board.matches[0].minute=savedMinute;await page.evaluate(()=>refresh());
  assert.equal(await page.locator('#attention-cards .attention-card').count(),6);
  await page.locator('#attention-cards').screenshot({path:path.join(output,'attention-cards.png')});
