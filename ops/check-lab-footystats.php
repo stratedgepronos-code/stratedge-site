@@ -22,5 +22,11 @@ try {
     ];
     $category = $categories[$e->getMessage()] ?? 'LOCAL_OR_PROVIDER_ERROR';
     echo "FOOTYSTATS_CHECK_FAILED: " . $category . "\n";
+    // A spent provider quota is an operational warning, not a broken release.
+    // Keep authentication, runtime and malformed-response failures blocking.
+    if ($category === 'QUOTA_EXCEEDED') {
+        echo "FOOTYSTATS_DEPLOY_WARNING: quota épuisé ; enrichissement FootyStats indisponible, déploiement des autres modules autorisé.\n";
+        exit(0);
+    }
     exit(3);
 }
