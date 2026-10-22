@@ -683,7 +683,7 @@ def deliver(c, now, realtime=False):
             state,error,mid=notify(alert_message(s,saved,now))
         c.execute('UPDATE v4_signals SET delivery=?,delivery_error=?,telegram_id=? WHERE id=?',(state,error,mid,s['id']));c.commit()
 
-def signal_review(c,s,outcome,now):
+def signal_review(c,s,outcome,now,replay=True):
     saved=s['data'] if isinstance(s['data'],dict) else dec(s['data'],{});decision=saved.get('decision',{});facts=[];limits=[]
     ctx=saved.get('context') or {};profile=saved.get('profile') or {}
     if not ctx.get('usable'):limits.append('Contexte analyste absent ou non exploitable au déclenchement.')
@@ -691,7 +691,7 @@ def signal_review(c,s,outcome,now):
     if s['market']=='card_ft' and not (ctx.get('referee') or {}).get('stats'):limits.append('Statistiques arbitre non documentées au déclenchement.')
     if s['odds'] is None:limits.append('Alerte statistique sans cote : aucun gain, rendement ou avantage de prix calculable.')
     limits.extend(str(x) for x in ctx.get('unknowns',[])[:8])
-    rows=c.execute('SELECT * FROM samples WHERE match_id=? AND id>=? ORDER BY id LIMIT 600',(s['match_id'],s['sample_id'])).fetchall()
+    rows=c.execute('SELECT * FROM samples WHERE match_id=? AND id>=? ORDER BY id LIMIT 600',(s['match_id'],s['sample_id'])).fetchall() if replay else []
     observations=[]
     for row in rows:
         r=sample_data(row);at=date(r.get('collected_at'));received=date(r.get('received_at'))
@@ -711,7 +711,7 @@ def signal_review(c,s,outcome,now):
             elif num(a) and num(b):limits.append(title+' : compteur corrigé à la baisse, variation non interprétée.')
         if len(observations)<2:limits.append('Un seul relevé exploitable : évolution du match non mesurable.')
         if len(rows)==600:limits.append('Relecture limitée aux 600 premiers relevés après le signal.')
-    else:limits.append('Aucun relevé exploitable conservé pour reconstituer la suite du signal.')
+    else:limits.append('Aucun relevé exploitable conservé pour reconstituer la suite du signal.' if replay else 'Export rapide : données figées au signal ; historique des relevés non rejoué pendant le téléchargement.')
     required=('fouls10','fouls','possession') if s['market']=='card_ft' else ('shots10','sot10','activity_ratio')
     for field in required:
         if decision.get('metrics',{}).get(field) is None:limits.append('Repère absent dans le signal : '+field+'.')
@@ -795,6 +795,25 @@ def audit_matches(c,now):
                         group['max_intensity']=d['intensity'];group['best']={'at':r['received_at'],'minute':r.get('minute'),'score':r.get('score'),'decision':d,'quotes':r.get('quotes',[])}
         out.append({'match_id':f['match_id'],'home':f['home'],'away':f['away'],'kickoff':f['kickoff'],'samples':len(rows),'live_samples':live,'empty_live_samples':empty,'states':states,'first_received_at':rows[0]['received_at'],'last_received_at':rows[-1]['received_at'],'profile_usable':bool(profile and profile.get('usable')),'profile_imported_at':profile.get('imported_at') if profile else None,'context_usable':bool(ctx and ctx.get('usable')),'markets':markets,'changes':changes[-120:],'limits':'Relecture avec le code et les paramètres actuels, une seconde après l’heure de réception de chaque relevé (anciens horodatages serveur tronqués à la seconde) ; pas une preuve des décisions effectivement exécutées. 24 h, 2000 relevés/match et 120 changements maximum. Les trous ne sont pas reconstruits ; aucune alerte rétroactive.'})
     return out
+
+def export_quality_readings(c):
+    """Export recorded V5 decisions; do not rerun thousands of historical samples."""
+    active=active_fixtures(c);cycle=current_cycle_ids(c)
+    fixtures={str(f['match_id']):dict(f) for f in c.execute('SELECT * FROM v4_fixtures') if f['match_id'] and (active is None or f['fixture'] in active)}
+    out={}
+    for row in c.execute('SELECT * FROM v5_readings ORDER BY updated_at DESC,match_id,team,market LIMIT 6000'):
+        mid=row['match_id'];f=fixtures.get(mid)
+        if active is not None and not f:continue
+        if active is None and cycle is not None and mid not in cycle:continue
+        if mid not in out:
+            sample=c.execute('SELECT * FROM samples WHERE id=?',(row['sample_id'],)).fetchone()
+            r=sample_data(sample) if sample else {}
+            out[mid]={'match_id':mid,'home':r.get('home') or (f or {}).get('home'),'away':r.get('away') or (f or {}).get('away'),
+                      'mode':'stored_readings','latest_sample':{k:r.get(k) for k in ('sample_id','collected_at','received_at','state','minute','score','quality_errors')},
+                      'readings':[],'limits':'Lectures conservées du moteur V5. Aucun recalcul rétrospectif ; un tableau vide ne prouve pas une absence de collecte.'}
+        out[mid]['readings'].append({'team':row['team'],'market':row['market'],'sample_id':row['sample_id'],'updated_at':row['updated_at'],'data':dec(row['data'],{})})
+    return list(out.values())
+
 
 def record_health(c,report,now):
     current={x['key'] for x in report['issues']}
@@ -1061,9 +1080,9 @@ def dispatch(c,x,now):
         signals=history(c,100);all_count=c.execute('SELECT COUNT(*) FROM v4_signals').fetchone()[0]
         incidents=[dict(row,data=dec(row['data'],{})) for row in c.execute('SELECT * FROM v4_health_events ORDER BY id DESC LIMIT 200')]
         for signal in signals:
-            if not signal['data'].get('review'):signal['data']['review']=signal_review(c,signal,signal['outcome'],now)
+            if not signal['data'].get('review'):signal['data']['review']=signal_review(c,signal,signal['outcome'],now,replay=False)
         groups=[dict(row) for row in c.execute("SELECT market,outcome,COUNT(*) n FROM v4_signals GROUP BY market,outcome")]
-        return {'schema':'stratedge.audit.v4','exported_at':iso(now),'timezone':'Europe/Paris','coverage':{'exported_signals':len(signals),'total_signals':all_count,'scope':'100 derniers signaux ; 200 derniers incidents'},'health':feed_health(c,now),'incidents':incidents,'all_history_counts':groups,'match_audits':audit_matches(c,now),'signals':signals,'learning':export_learning(c,now),'instructions':'Analyser les faits, les problèmes de collecte, les limites du modèle et les hypothèses séparément. Comparer gagnants et perdants, pas seulement les pertes. Respecter les informations disponibles au moment du signal ; les relevés ultérieurs décrivent le déroulement, pas une information prédictive connue. Un résultat perdu ne prouve ni erreur ni cause précise. Ne pas inventer xG, arbitre ou absence. Les signaux sont corrélés par match et les cotes observées ne prouvent aucun avantage. Proposer des tests hors échantillon avant toute modification des seuils. Aucun changement automatique du moteur.'}
+        return {'schema':'stratedge.audit.v4','exported_at':iso(now),'timezone':'Europe/Paris','coverage':{'exported_signals':len(signals),'total_signals':all_count,'scope':'100 derniers signaux ; 200 derniers incidents ; dernières lectures enregistrées, sans relecture historique' },'health':feed_health(c,now),'incidents':incidents,'all_history_counts':groups,'match_audits':export_quality_readings(c),'signals':signals,'learning':export_learning(c,now),'instructions':'Analyser les faits, les problèmes de collecte, les limites du modèle et les hypothèses séparément. Comparer gagnants et perdants, pas seulement les pertes. Respecter les informations disponibles au moment du signal ; les relevés ultérieurs décrivent le déroulement, pas une information prédictive connue. Un résultat perdu ne prouve ni erreur ni cause précise. Ne pas inventer xG, arbitre ou absence. Les signaux sont corrélés par match et les cotes observées ne prouvent aucun avantage. Proposer des tests hors échantillon avant toute modification des seuils. Aucun changement automatique du moteur.'}
     if action=='settle': return settle(c,x,now)
     if action=='settings':
         s=x.get('settings',{})

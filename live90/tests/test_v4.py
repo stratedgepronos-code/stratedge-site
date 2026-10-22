@@ -386,6 +386,17 @@ class LiveV4Tests(unittest.TestCase):
   self.assertEqual(V.history(self.c)[0]['data']['review']['outcome'],'won')
   events=[V.dec(x[0],{}) for x in self.c.execute('SELECT data FROM v4_results ORDER BY id')]
   self.assertEqual([x['review']['outcome'] for x in events],['lost','won'])
+ def test_quality_export_uses_stored_evidence_without_historical_replay(self):
+  self.result_signal()
+  original=V.signal_review
+  def review(*args,**kwargs):
+   self.assertIs(kwargs.get('replay'),False)
+   return original(*args,**kwargs)
+  with patch.object(V,'audit_matches',side_effect=AssertionError('Full replay forbidden in export')),patch.object(V,'signal_review',side_effect=review),patch.object(V,'notify',side_effect=AssertionError('No Telegram')):
+   result=V.dispatch(self.c,{'action':'export_review'},self.now)
+  self.assertEqual(result['schema'],'stratedge.audit.v4')
+  self.assertIn('sans relecture',result['coverage']['scope'])
+  self.assertEqual(result['learning']['schema'],'stratedge.learning.v1')
  def test_review_export_pending_retains_signal_context_without_network(self):
   self.result_signal()
   with patch('urllib.request.urlopen',side_effect=AssertionError('No API')):result=V.dispatch(self.c,{'action':'export_review'},self.now)
@@ -398,3 +409,4 @@ class LiveV4Tests(unittest.TestCase):
  def test_clock_or_missing_profile_never_invents(self):
   self.profile['prematch']['shots_h']=None;self.assertEqual(self.evaluate()['status'],'missing');self.r['collected_at']=V.iso(self.now+dt.timedelta(minutes=2));self.assertEqual(self.evaluate()['status'],'stale')
 if __name__=='__main__':unittest.main()
+

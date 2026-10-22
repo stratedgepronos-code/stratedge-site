@@ -14,13 +14,37 @@ const outcomes={won:'Gagnant',lost:'Perdant',void:'Annulé',pending:'À confirme
 const metricNames={referee_yellow_per_match:'Arbitre · jaunes / match',referee_fouls_per_match:'Arbitre · fautes / match',referee_sample:'Arbitre · matchs étudiés',shots:'Tirs cumulés',sot:'Cadrés cumulés',shots10:'Tirs / 10′',sot10:'Cadrés / 10′',shots5:'Tirs / 5′',sot5:'Cadrés / 5′',activity_ratio:'Rythme / avant-match',baseline_shots:'Tirs moyens / match',sample:'Échantillon',yellow_cards:'Jaunes',fouls:'Fautes cumulées',fouls10:'Fautes / 10′',possession:'Possession %',opponent_shots10:'Tirs adverses / 10′'};
 let data={matches:[],signals:[],settings:{telegram_enabled:true,min_odds:1.65},totals:{},feed:{},telegram:{}},view='live',market='all',busy=false,moreHistory=[],analystFiles=[];
 function notice(msg){$('#notice').textContent=msg;$('#notice').hidden=false}
-async function request(payload){
+async function request(payload,options={}){
  if(window.S90_DEMO){if(payload&&payload.action!=='board')throw Error('Aperçu visuel : action désactivée');return window.S90_DEMO}
- const r=await fetch('api.php',{method:payload?'POST':'GET',credentials:'same-origin',headers:payload?{'Content-Type':'application/json','X-CSRF-Token':$('meta[name=csrf-token]')?.content||''}:{},body:payload?JSON.stringify(payload):undefined});
- let x;try{x=await r.json()}catch{throw Error('Session expirée ou service indisponible. Recharge la page après connexion.')}
- if(!r.ok||x.error&&x.ok!==false)throw Error(x.error||'Réponse invalide');return x;
+ const controller=options.timeoutMs&&typeof AbortController==='function'?new AbortController():null;
+ const timer=controller?setTimeout(()=>controller.abort(),options.timeoutMs):null;
+ try{
+  const r=await fetch('api.php',{method:payload?'POST':'GET',credentials:'same-origin',headers:payload?{'Content-Type':'application/json','X-CSRF-Token':$('meta[name=csrf-token]')?.content||''}:{},body:payload?JSON.stringify(payload):undefined,...(controller?{signal:controller.signal}:{})});
+  let x;try{x=await r.json()}catch(e){if(e.name==='AbortError')throw e;throw Error(`Réponse illisible du serveur${r.status?' (HTTP '+r.status+')':''}. Recharge la page si ta session a expiré.`)}
+  if(!r.ok||x.error&&x.ok!==false)throw Error(x.error||'Réponse invalide');return x;
+ }catch(e){if(e.name==='AbortError')throw Error('L’export prend trop de temps. Réessaie ; les alertes live continuent.');throw e}
+ finally{if(timer!==null)clearTimeout(timer)}
 }
-function download(name,x){const url=URL.createObjectURL(new Blob([JSON.stringify(x,null,2)],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+function download(name,x,result=null){
+ const url=URL.createObjectURL(new Blob([JSON.stringify(x,null,2)],{type:'application/json;charset=utf-8'}));
+ const a=document.createElement('a');a.href=url;a.download=name;
+ if(result){a.textContent='Télécharger le JSON';a.className='button';result.appendChild(a)}
+ else{a.hidden=true;document.body.appendChild(a)}
+ try{a.click()}finally{if(!result)a.remove()}
+ setTimeout(()=>{URL.revokeObjectURL(url);if(result&&a.isConnected){a.removeAttribute('href');a.textContent='Lien expiré : relance l’export.'}},result?600000:60000);
+}
+async function exportReport(buttonId,resultId,action,schema,name){
+ const button=$(buttonId),result=$(resultId),label=button.textContent;
+ if(button.disabled)return;
+ button.disabled=true;button.textContent='Préparation…';result.hidden=false;result.textContent='Préparation du fichier…';
+ try{
+  const x=await request({action},{timeoutMs:45000});
+  if(x?.schema!==schema)throw Error('Le serveur n’a pas renvoyé le bon fichier. Recharge la page puis réessaie.');
+  result.textContent='Fichier prêt. Si le téléchargement ne démarre pas, clique ici : ';
+  download(name,x,result);notice('Fichier prêt : '+name+'. Le lien de téléchargement reste disponible sous le bouton.');
+ }catch(e){result.textContent=e.message;notice(e.message)}
+ finally{button.disabled=false;button.textContent=label}
+}
 function referenceNow(){return (Date.parse(data.server_time)||boardReceivedAt)+(Date.now()-boardReceivedAt)}
 function age(v){return v?Math.max(0,(referenceNow()-Date.parse(v))/1000):Infinity}
 function effective(r,d){
@@ -148,8 +172,8 @@ async function exportAnalysis(){
 }
 $('#export-analysis').onclick=exportAnalysis;
 $('#packball-export').onclick=exportAnalysis;
-$('#export-learning').onclick=async()=>{const b=$('#export-learning');b.disabled=true;try{download('StratEdge-memoire-pour-GPT.json',await request({action:'export_learning'}));notice('Mémoire téléchargée : bilans factuels et consignes de révision inclus.')}catch(e){notice(e.message)}finally{b.disabled=false}};
-$('#export-review').onclick=async()=>{const b=$('#export-review');b.disabled=true;try{download('StratEdge-bilan-pour-GPT.json',await request({action:'export_review'}));notice('Bilan téléchargé : joins ce JSON à une conversation GPT. Les consignes d’audit sont incluses.')}catch(e){notice(e.message)}finally{b.disabled=false}};
+$('#export-learning').onclick=()=>exportReport('#export-learning','#learning-export-result','export_learning','stratedge.learning.v1','StratEdge-memoire-pour-GPT.json');
+$('#export-review').onclick=()=>exportReport('#export-review','#review-export-result','export_review','stratedge.audit.v4','StratEdge-bilan-pour-GPT.json');
 $('#export-history').onclick=async()=>{try{download(view==='observations'?'StratEdge-observations-V5.json':'StratEdge-historique-V4.json',await request({action:view==='observations'?'export_observations':'export_history'}))}catch(e){notice(e.message)}};
 $('#history-more').onclick=async()=>{try{const x=await request({action:'history',offset:visibleSignals().length});moreHistory=[...visibleSignals(),...x.signals];render()}catch(e){notice(e.message)}};
 function stakeQuoteHTML(z){
