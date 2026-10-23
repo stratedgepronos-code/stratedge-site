@@ -131,6 +131,22 @@ const server=http.createServer((r,res)=>{if(r.url==='/download.php?file=collecto
  const realExport=JSON.parse(fs.readFileSync(await (await realDownload).path(),'utf8'));
  assert.equal(realExport.schema,'stratedge.research.v4');assert.equal(realExport.matches.length,16);
  assert.equal(realExport.matches.find(m=>m.home==='Deportivo Pereira').prematch.sot_a,4.5);
+ // Le format sans cotes atteint l’API puis l’export avec les mêmes identités.
+ const noOddsTable=realBundle.matches.map(m=>[...m.packball.export_b.slice(0,9),...m.packball.export_b.slice(34)]);
+ const newBHeader=[...realBundle.headers.export_b.slice(0,9),...realBundle.headers.export_b.slice(34)];
+ const quoteCSV=rows=>rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(';')).join('\n');
+ const newA=[realBundle.headers.export_a,...realBundle.matches.map(m=>m.packball.export_a)];
+ await page.locator('#packball-files').setInputFiles([{name:'GPT-2-29-09-2026.csv',mimeType:'text/csv',buffer:Buffer.from(quoteCSV([newBHeader,...noOddsTable]))},{name:'GPT-29-09-2026.csv',mimeType:'text/csv',buffer:Buffer.from(quoteCSV(newA))}]);
+ const beforeCompact=posted.filter(x=>x.action==='packball').length;
+ await page.locator('#packball-save').click();await page.waitForFunction(()=>!document.querySelector('#packball-save').disabled);
+ assert.equal(posted.filter(x=>x.action==='packball').length,beforeCompact+1);
+ const compactBundle=posted.filter(x=>x.action==='packball').at(-1).bundle;
+ assert.equal(compactBundle.headers.export_b.length,21);assert.equal(compactBundle.matches.length,16);
+ assert.deepEqual(compactBundle.matches.map(m=>m.packball.teams),realBundle.matches.map(m=>m.packball.teams));
+ assert(compactBundle.matches.every(m=>m.packball.odds.length===0));
+ const compactDownload=page.waitForEvent('download');await page.locator('#packball-export').click();
+ const compactExport=JSON.parse(fs.readFileSync(await (await compactDownload).path(),'utf8'));
+ assert.equal(compactExport.matches[0].packball.layout,'packball.prematch31_12.v1');
  await page.locator('[data-close="packball-modal"]').click();
  await page.locator('[data-view="history"]').click();assert.equal(await page.locator('#live-attention').isVisible(),false);assert.equal(await page.locator('#match-rows tr').count(),1);await page.locator('#match-rows [data-signal="1"]').click();assert((await page.locator('#detail-content').textContent()).includes('Cause non démontrée'));await page.locator('[data-close="detail-modal"]').click();await page.locator('#match-rows [data-settle="1"]').click();await page.locator('#settle-form select').selectOption('won');await page.locator('#settle-form textarea').fill('Source officielle de test');await page.locator('#settle-form button[type="submit"]').click();await page.waitForFunction(()=>document.querySelector('#match-rows').textContent.includes('Gagnant'));assert((await page.locator('#match-rows').textContent()).includes('Résultat : En attente'));
 

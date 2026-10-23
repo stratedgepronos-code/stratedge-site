@@ -98,3 +98,24 @@ const truncated=structuredClone(expandedA);truncated[1].pop();assert.throws(()=>
 const reversed=structuredClone(expandedA);[reversed[0][11],reversed[0][12]]=[reversed[0][12],reversed[0][11]];
 assert.throws(()=>pbJoin(reversed,expandedB,'2026-09-29','Europe/Paris'),/groupes attendus/);
 console.log('Exports séparés 71/60 et 72/60 : 16 matchs, valeurs, cotes, périodes, Global et champs manquants validés.');
+
+
+// GPT-2 sans cotes : mêmes tranches, ordre encaissé inversé, aucune cote inventée.
+const nb21=nb.map(row=>[...row.slice(0,9),...row.slice(34)]);
+assert.equal(pbNewGroup(nb21),'B');
+const joined21=pbJoin(...pbOrderTables([nb21,na]),'2099-09-28','Europe/Paris');
+assert.deepEqual(joined21.map(m=>m.packball.teams),joined.map(m=>m.packball.teams));
+assert.deepEqual(joined21[0].packball.odds,[]);
+assert.equal(joined21[0].packball.export_b.length,21);
+assert.equal(joined21[0].packball.layout,'packball.prematch31_12.v1');
+assert.equal(joined21[0].packball.sample.venue_scope,'unknown');
+assert.deepEqual(pbJoin(nb21,na,'2099-09-28','Europe/Paris'),joined21);
+const expanded21=[ [...base,'Result Home HT','Result Visitor HT',...Array.from({length:12},()=>['Domicile','Extérieur']).flat()], ...nb21.slice(1).map(r=>[...r.slice(0,9),'','',...r.slice(9).flatMap(v=>v.split('|').map(x=>x.trim()))]) ];
+assert.deepEqual(pbJoin(na,expanded21,'2099-09-28','Europe/Paris'),joined21);
+const blank21=structuredClone(nb21);blank21[1][9]='';
+assert.equal(pbJoin(na,blank21,'2099-09-28','Europe/Paris')[1].packball.teams.h.goal_intervals['0-15'].scored,null);
+assert.throws(()=>pbJoin(na,[nb21[0],nb21[1]],'2099-09-28','Europe/Paris'),/mêmes matchs/);
+assert.throws(()=>pbJoin(na,[nb21[0],nb21[1],nb21[1]],'2099-09-28','Europe/Paris'),/dupliqué/);
+const excessive=[nb21[0],...Array.from({length:1001},(_,i)=>{const r=[...nb21[1]];r[5]='Home '+i;return r})];
+assert.throws(()=>pbJoin(na,excessive,'2099-09-28','Europe/Paris'),/GPT 2 matchs, GPT - 2 1001/);
+console.log('GPT-2 21/35 colonnes : tranches, prix absents, périmètre inconnu, paires vides et contrôles de liste validés.');

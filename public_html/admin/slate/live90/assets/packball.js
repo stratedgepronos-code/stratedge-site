@@ -27,7 +27,7 @@ function pbNormalize(rows){
 function pbCompactExpanded(rows){
  const h=(rows[0]||[]).map(v=>v.trim());
  const base=['Country','Short','League','Hour','Status','Home Team','Result Home','Result Visitor','Visitor Team','Result Home HT','Result Visitor HT'];
- if(![60,71,72].includes(h.length)||!base.every((v,i)=>h[i]===v))return rows;
+ if(![35,60,71,72].includes(h.length)||!base.every((v,i)=>h[i]===v))return rows;
  const header=h.slice(0,9),columns=[];
  for(let i=11;i<h.length;i++){
   if(h[i]==='Domicile'&&h[i+1]==='Extérieur'){
@@ -64,22 +64,25 @@ function pbNewGroup(table){
  const h=(table[0]||[]).map(v=>v.trim()),base=['Country','Short','League','Hour','Status','Home Team','Result Home','Result Visitor','Visitor Team'];
  if(!base.every((v,i)=>h[i]===v))return null;
  if(h.length===40&&h.slice(9).every((v,i)=>i+10===36?v==='Global':i+10===32?['Global','Domicile | Extérieur'].includes(v):v==='Domicile | Extérieur'))return 'A';
+ if(h.length===21&&h.slice(9).every(v=>v==='Domicile | Extérieur'))return 'B';
  if(h.length===46&&h.slice(9,34).every(v=>v==='Odds')&&h.slice(34).every(v=>v==='Domicile | Extérieur'))return 'B';
  return null;
 }
 function pbOrderTables(tables){
  const t=tables.map(pbNormalize);
- if(t.length===2&&t.some(x=>[40,46].includes(x[0]?.length)))return t.sort((a,b)=>(pbNewGroup(a)==='A'?0:1)-(pbNewGroup(b)==='A'?0:1));
+ if(t.length===2&&t.some(x=>[21,40,46].includes(x[0]?.length)))return t.sort((a,b)=>(pbNewGroup(a)==='A'?0:1)-(pbNewGroup(b)==='A'?0:1));
  return t.sort((a,b)=>b[0].length-a[0].length);
 }
 function pbJoinNew(a,b,day,zone){
  if(JSON.stringify(a)===JSON.stringify(b))throw Error('Les deux fichiers sont identiques. Exporte un fichier GPT et un fichier GPT - 2.');
  if(pbNewGroup(a)==='B'&&pbNewGroup(b)==='A')[a,b]=[b,a];
- if(pbNewGroup(a)!=='A'||pbNewGroup(b)!=='B')throw Error('Les nouveaux groupes attendus sont GPT (40 colonnes) et GPT - 2 (46 colonnes), avec les choix convenus.');
+ if(pbNewGroup(a)!=='A'||pbNewGroup(b)!=='B')throw Error('Les nouveaux groupes attendus sont GPT (40 colonnes) et GPT - 2 (21 colonnes sans cotes ou 46 avec cotes), avec les choix convenus.');
  const key=r=>JSON.stringify([r[0],r[2],r[3],r[5],r[8]]);
  const index=(rows,width)=>{const map=new Map();for(const r of rows.slice(1)){if(r.length!==width)throw Error('Ligne CSV incomplète');const k=key(r);if(map.has(k))throw Error('Match dupliqué : '+r[5]);map.set(k,r);}return map;};
- const aa=index(a,40),bb=index(b,46);
- if(!aa.size||aa.size>1000||aa.size!==bb.size)throw Error('Les deux exports doivent contenir les mêmes matchs (1 à 1000)');
+ const compact=b[0].length===21;
+ const aa=index(a,40),bb=index(b,compact?21:46);
+ if(!aa.size||!bb.size||aa.size>1000||bb.size>1000)throw Error(`Exports trop larges ou vides : GPT ${aa.size} matchs, GPT - 2 ${bb.size}. Sélectionne la même journée et les mêmes ligues dans les deux vues (1 à 1000 matchs).`);
+ if(aa.size!==bb.size)throw Error(`Les deux exports doivent contenir les mêmes matchs : GPT ${aa.size}, GPT - 2 ${bb.size}. Exporte la même journée et les mêmes ligues.`);
  return [...aa].map(([k,r])=>{
   const s=bb.get(k);if(!s)throw Error('Match absent du deuxième export : '+r[5]);
   const issues=[],teams={h:{},a:{}},global={};
@@ -99,10 +102,11 @@ function pbJoinNew(a,b,day,zone){
    if(prematch['shots_'+side]!==null&&prematch['sot_'+side]!==null&&prematch['sot_'+side]>prematch['shots_'+side]){prematch['sot_'+side]=null;teams[side].sot_for_ft=null;issues.push('Cadrés supérieurs aux tirs pour '+side+' : cadrés laissés inconnus');}
   }
   if(Object.values(prematch).some(v=>v===null))issues.push('Profil principal incomplet ; match conservé');
+  const offset=compact?9:34;
   const intervals=['0-15','16-30','31-45','46-60','61-75','76-90'];
   for(const side of ['h','a'])teams[side].goal_intervals={};
-  intervals.forEach((interval,i)=>{const scored=pair(s[34+i],'GPT - 2 colonne '+(35+i)),conceded=pair(s[45-i],'GPT - 2 colonne '+(46-i));for(const side of ['h','a'])teams[side].goal_intervals[interval]={scored:scored[side],conceded:conceded[side]};});
-  const odds=PB37_ODDS.map(([column,market,period,team,side,line])=>{const n=scalar(s[column-1],'GPT - 2 cote colonne '+column,10000);return {column,market,period,team,side,line,odds:n!==null&&n>1?n:null};});
+  intervals.forEach((interval,i)=>{const scored=pair(s[offset+i],'GPT - 2 colonne '+(offset+1+i)),conceded=pair(s[offset+11-i],'GPT - 2 colonne '+(offset+12-i));for(const side of ['h','a'])teams[side].goal_intervals[interval]={scored:scored[side],conceded:conceded[side]};});
+  const odds=compact?[]:PB37_ODDS.map(([column,market,period,team,side,line])=>{const n=scalar(s[column-1],'GPT - 2 cote colonne '+column,10000);return {column,market,period,team,side,line,odds:n!==null&&n>1?n:null};});
   const stamp=r[3].trim().match(/^(\d{2})-(\d{2})-(\d{4}) (\d{2}:\d{2})$/);
   const kickoff=pbKickoff(stamp?`${stamp[3]}-${stamp[2]}-${stamp[1]}`:day,stamp?stamp[4]:r[3],zone);
   const cards_avg=scalar(r[35],'Cartes moyennes Ligue');
@@ -110,16 +114,18 @@ function pbJoinNew(a,b,day,zone){
   const state=s[4]||r[4];
   if([r[4],s[4]].some(v=>v&&v!=='NS'))issues.push('Au moins un export porte un statut autre que NS : vérifier le statut et ne pas présenter ses cotes comme un relevé avant coup d’envoi');
   return {match_id:null,home:r[5],away:r[8],league:r[2],state,kickoff,prematch,issues,
-   packball:{layout:'packball.prematch31_37.v1',sample:{requested_matches:10,venue_scope:'all',competitions_scope:'all',previous_seasons_included:true},teams,league:{cards_avg},global,odds,export_states:{a:r[4],b:s[4]},data_issues:issues,export_a:r,export_b:s}};
+   packball:{layout:compact?'packball.prematch31_12.v1':'packball.prematch31_37.v1',sample:compact?{requested_matches:10,venue_scope:'unknown',competitions_scope:'unknown',previous_seasons_included:null,settings_status:'not_exported'}:{requested_matches:10,venue_scope:'all',competitions_scope:'all',previous_seasons_included:true},teams,league:{cards_avg},global,odds,export_states:{a:r[4],b:s[4]},data_issues:issues,export_a:r,export_b:s}};
  });
 }
 function pbJoin(a,b,day,zone){a=pbNormalize(a);b=pbNormalize(b);
- if([a[0]?.length,b[0]?.length].some(n=>[40,46].includes(n)))return pbJoinNew(a,b,day,zone);
+ if([a[0]?.length,b[0]?.length].some(n=>[21,40,46].includes(n)))return pbJoinNew(a,b,day,zone);
  if(JSON.stringify(a)===JSON.stringify(b))throw Error('Les deux fichiers sont identiques, même si leurs noms diffèrent. Garde un exemplaire et exporte le deuxième groupe de filtres Packball, puis sélectionne les deux exports complémentaires.');
  if(a[0]?.length===b[0]?.length&&[72,47].includes(a[0]?.length))throw Error('Les deux fichiers correspondent au même groupe de filtres Packball. Il manque '+(a[0].length===72?'le deuxième':'le premier')+' groupe. Exporte-le depuis Packball pour compléter le dossier.');
- if(a[0]?.length!==72||b[0]?.length!==47)throw Error('Disposition des exports non reconnue ('+(a[0]?.length||0)+' et '+(b[0]?.length||0)+' colonnes après lecture). Sélectionne un export de chacun des deux groupes de filtres Packball.');const key=r=>JSON.stringify([r[0],r[2],r[3],r[5],r[8]]);const read=(rows,n)=>{const out=new Map();for(const r of rows.slice(1)){if(r.length!==n)throw Error('Nombre de colonnes incohérent');const k=key(r);if(out.has(k))throw Error('Match dupliqué : '+r[5]);out.set(k,r)}return out};const aa=read(a,72),bb=read(b,47);if(!aa.size||aa.size>1000||aa.size!==bb.size)throw Error('Les deux exports doivent contenir les mêmes matchs (1 à 1000)');return [...aa].map(([k,r])=>{if(!bb.has(k))throw Error('Match absent du deuxième export : '+r[5]);const fields={n_h:25,n_a:26,gf_h:53,gf_a:54,ga_h:55,ga_a:56,shots_h:27,shots_a:28,sot_h:31,sot_a:32};const prematch=Object.fromEntries(Object.entries(fields).map(([f,i])=>[f,String(r[i-1]).trim()===''?null:pbNumber(r[i-1])]));const issues=[];for(const side of ['h','a'])if(!Number.isInteger(prematch['n_'+side])||prematch['n_'+side]<1||prematch['shots_'+side]<=0||prematch['sot_'+side]>prematch['shots_'+side])issues.push('Échantillon ou tirs incomplets pour '+side);if(Object.values(prematch).some(v=>v===null||v>100))issues.push('Profil à compléter avant activation');const stamp=r[3].trim().match(/^(\d{2})-(\d{2})-(\d{4}) (\d{2}:\d{2})$/);const kickoff=pbKickoff(stamp?`${stamp[3]}-${stamp[2]}-${stamp[1]}`:day,stamp?stamp[4]:r[3],zone);return {match_id:null,home:r[5],away:r[8],league:r[2],state:r[4],kickoff,prematch,issues,packball:{export_a:r,export_b:bb.get(k)}}})}
+ if(a[0]?.length!==72||b[0]?.length!==47)throw Error('Disposition des exports non reconnue ('+(a[0]?.length||0)+' et '+(b[0]?.length||0)+' colonnes après lecture). Sélectionne un export de chacun des deux groupes de filtres Packball.');const key=r=>JSON.stringify([r[0],r[2],r[3],r[5],r[8]]);const read=(rows,n)=>{const out=new Map();for(const r of rows.slice(1)){if(r.length!==n)throw Error('Nombre de colonnes incohérent');const k=key(r);if(out.has(k))throw Error('Match dupliqué : '+r[5]);out.set(k,r)}return out};const aa=read(a,72),bb=read(b,47);if(!aa.size||!bb.size||aa.size>1000||bb.size>1000)throw Error(`Exports trop larges ou vides : GPT ${aa.size} matchs, GPT - 2 ${bb.size}. Sélectionne la même journée et les mêmes ligues dans les deux vues (1 à 1000 matchs).`);
+ if(aa.size!==bb.size)throw Error(`Les deux exports doivent contenir les mêmes matchs : GPT ${aa.size}, GPT - 2 ${bb.size}. Exporte la même journée et les mêmes ligues.`);return [...aa].map(([k,r])=>{if(!bb.has(k))throw Error('Match absent du deuxième export : '+r[5]);const fields={n_h:25,n_a:26,gf_h:53,gf_a:54,ga_h:55,ga_a:56,shots_h:27,shots_a:28,sot_h:31,sot_a:32};const prematch=Object.fromEntries(Object.entries(fields).map(([f,i])=>[f,String(r[i-1]).trim()===''?null:pbNumber(r[i-1])]));const issues=[];for(const side of ['h','a'])if(!Number.isInteger(prematch['n_'+side])||prematch['n_'+side]<1||prematch['shots_'+side]<=0||prematch['sot_'+side]>prematch['shots_'+side])issues.push('Échantillon ou tirs incomplets pour '+side);if(Object.values(prematch).some(v=>v===null||v>100))issues.push('Profil à compléter avant activation');const stamp=r[3].trim().match(/^(\d{2})-(\d{2})-(\d{4}) (\d{2}:\d{2})$/);const kickoff=pbKickoff(stamp?`${stamp[3]}-${stamp[2]}-${stamp[1]}`:day,stamp?stamp[4]:r[3],zone);return {match_id:null,home:r[5],away:r[8],league:r[2],state:r[4],kickoff,prematch,issues,packball:{export_a:r,export_b:bb.get(k)}}})}
 function pbResolve(m,known){const norm=s=>String(s).normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase();const candidates=known.filter(r=>norm(r.home)===norm(m.home)&&norm(r.away)===norm(m.away)&&(()=>{let t=r.prematch?.kickoff||r.kickoff_ts;if(typeof t==='number')t*=t<1e12?1000:1;return Number.isFinite(new Date(t).getTime())&&Math.abs(new Date(t).getTime()-Date.parse(m.kickoff))<60000})());const ids=[...new Set(candidates.map(r=>String(r.packball_id)))];return ids.length===1&&/^\d{1,20}$/.test(ids[0])?ids[0]:null}
 
 
 function parseCSV(text){text=text.replace(/^\uFEFF/,'');const line=text.split(/\r?\n/)[0];const delimiter=(line.match(/;/g)||[]).length>(line.match(/,/g)||[]).length?';':',';const rows=[];let row=[],cell='',quoted=false;for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'){if(quoted&&text[i+1]==='"'){cell+='"';i++}else quoted=!quoted}else if(c===delimiter&&!quoted){row.push(cell);cell=''}else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell);if(row.some(v=>v.trim()))rows.push(row);row=[];cell=''}else cell+=c}if(quoted)throw Error('CSV : guillemet non fermé');row.push(cell);if(row.some(v=>v.trim()))rows.push(row);return rows}
 if(typeof module!=='undefined')module.exports={pbJoin,pbKickoff,pbResolve,pbNormalize,pbOrderTables,pbNewGroup,parseCSV};
+

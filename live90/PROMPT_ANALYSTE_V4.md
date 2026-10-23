@@ -81,6 +81,8 @@ Dix matchs est un objectif de collecte, pas un minimum bloquant ni une garantie 
 
 Dans `prematch` : `n_h/n_a` échantillons, `gf_h/gf_a` buts marqués FT, `ga_h/ga_a` buts encaissés FT, `shots_h/shots_a` tirs produits FT, `sot_h/sot_a` tirs cadrés produits FT.
 
+GPT - 2 sans cotes est reconnu par `packball.layout = packball.prematch31_12.v1` : 21 colonnes CSV (9 d’identité, 6 de buts marqués de 0–15 à 76–90, puis 6 de buts encaissés dans l’ordre inverse). `packball.odds` est alors une liste vide : aucune cote manquante à rechercher pour compléter cet export. Le premier fichier GPT conserve les moyennes FT/HT/2H. Les réglages d’historique ne figurent pas dans le CSV : si `sample.settings_status = not_exported`, utiliser une capture ou une confirmation explicite datée pour établir la localisation, les compétitions et les saisons des deux groupes. Ne pas convertir unknown en all ni en home/away. Les colonnes h/a identifient les équipes ; elles ne prouvent pas les réglages. Les tranches déjà fournies restent descriptives ; ne pas sommer des moyennes arrondies pour remplacer des moyennes de mi-temps directement disponibles. Ce changement d’import n’active pas un marché avant la pause.
+
 Dans `packball.teams.h/a` :
 - `goals_for_ft/against_ft`, `goals_for_ht/against_ht`, `goals_for_2h/against_2h` : moyennes de la période indiquée.
 - `shots_for_ft/against_ft`, `sot_for_ft/against_ft`, éventuels équivalents `_ht` : ne jamais confondre tirs et cadrés, produits et concédés.
