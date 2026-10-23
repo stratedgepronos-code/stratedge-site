@@ -15,6 +15,7 @@ class RadarResults(unittest.TestCase):
   self.sender=patch.object(V,'notify',return_value=('sent',None,123));self.send=self.sender.start()
   self.sleep=patch.object(V.time,'sleep');self.sleep.start()
   V.dispatch(self.c,{'action':'radar_telegram','enabled':True,'card_leagues':['Test']},self.now)
+  self.r['minute']=65
   self.prepare()
  def tearDown(self):
   self.sleep.stop();self.sender.stop();self.env.stop();F.DeskTests.tearDown(self)

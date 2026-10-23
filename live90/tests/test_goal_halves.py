@@ -24,9 +24,9 @@ class GoalHalvesTests(unittest.TestCase):
   self.assertEqual([x['rate'] for x in V.context_evidence(ctx,'a','goals',30,period='first_half')['halves']],[.7,.6])
   self.assertEqual(V.context_evidence(ctx,'h','goals',45,period='first_half')['half'],'first_half')
   self.assertEqual([x['rate'] for x in V.context_evidence(ctx,'h','goals',46,period='second_half')['halves']],[1.2,.9])
- def test_incomplete_halves_cannot_supply_ft_reference(self):
+ def test_missing_second_half_only_blocks_second_half(self):
   self.ctx['teams']['h']['goal_halves']['home']['second_half']=None
-  self.prepare();self.assertEqual(self.reading()['status'],'context_wait')
+  self.prepare();self.assertEqual(self.reading()['status'],'active')
   self.r['minute']=60;self.now+=dt.timedelta(seconds=30);self.add(self.r,self.now)
   self.assertEqual(self.reading()['status'],'context_wait')
  def test_half_switch_restarts_confirmation(self):
@@ -38,9 +38,9 @@ class GoalHalvesTests(unittest.TestCase):
   self.assertEqual(self.reading()['status'],'confirming')
   self.now+=dt.timedelta(seconds=30);self.add(dict(self.r,minute=56),self.now)
   self.assertEqual(self.reading()['status'],'active')
- def test_message_uses_ft_while_roundtrip_keeps_optional_halves(self):
+ def test_message_uses_first_half_and_roundtrip_keeps_halves(self):
   self.prepare();d=self.reading();r=V.sample_data(V.latest(self.c)[0]);msg=V.radar_message(r,d,{'quotes':[]})
-  self.assertNotIn('1re mi-temps',msg);self.assertIn('match entier',msg);self.assertIn('2 buts marqués/m',msg);self.assertIn('1,5 buts encaissés/m',msg)
+  self.assertIn('1re mi-temps',msg);self.assertIn('première mi-temps',msg);self.assertIn('0,8 buts marqués/m',msg);self.assertIn('0,6 buts encaissés/m',msg)
   self.assertNotIn('créneau',msg);self.assertNotIn('windows',d['context_evidence'])
   p,ctx=V.inputs(self.c,V.bind(self.c,r),self.now)
   self.assertEqual(ctx['teams']['h']['goal_halves']['home']['first_half']['scored_per_match'],.8)

@@ -31,10 +31,10 @@ class Coherence(unittest.TestCase):
  def test_flat_live_never_triggers_even_with_strong_prematch(self):
   self.r['ind10']['shots10']['h']=1;self.r['ind10']['sot10']['h']=0;self.prepare()
   self.assertEqual(self.reading('goals')['status'],'neutral')
- def test_goal_weak_half_does_not_block_ft(self):
+ def test_goal_weak_half_blocks_first_half(self):
   for side,scope in [('h','home'),('a','away')]:
    self.ctx['teams'][side]['goal_halves'][scope]['first_half'].update(scored_per_match=.2,conceded_per_match=.2)
-  self.prepare();d=self.reading('goals');self.assertEqual(d['status'],'active');self.assertEqual(d['context_evidence']['period'],'full_time')
+  self.prepare();d=self.reading('goals');self.assertEqual(d['status'],'context_conflict');self.assertEqual(d['context_evidence']['period'],'first_half')
  def test_goal_overall_does_not_replace_localization(self):
   t=self.ctx['teams']['a']['goal_halves'];t['overall']=t.pop('away');self.prepare()
   d=self.reading('goals');self.assertEqual(d['status'],'context_wait');self.assertIn('domicile/extérieur',d['reason'])

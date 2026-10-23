@@ -16,13 +16,11 @@ class GoalMarketPeriod(unittest.TestCase):
    ref=self.ctx['teams'][side]['goal_halves'][scope]
    ref['full_time']={'scored_per_match':1.7,'conceded_per_match':1.3}
    ref.pop('first_half');ref.pop('second_half')
- def test_ft_only_import_alert_and_telegram_without_halves(self):
+ def test_ft_only_import_remains_valid_but_does_not_fake_half_references(self):
   self.full_time_only();self.prepare();d=self.reading()
-  self.assertEqual(d['status'],'active')
-  self.assertEqual(d['coherence']['policy'],'prematch_live_context_v4')
-  msg=V.radar_message(V.sample_data(V.latest(self.c)[0]),d,{'quotes':[]})
-  self.assertIn('1,7 buts marqués/m',msg);self.assertIn('1,3 buts encaissés/m',msg)
-  self.assertIn('match entier',msg);self.assertNotIn('mi-temps',msg)
+  self.assertEqual(d['status'],'context_wait')
+  self.assertEqual(d['context_evidence']['period'],'first_half')
+  self.assertFalse(V.radar_eligible(V.sample_data(V.latest(self.c)[0]),d,self.now))
  def test_ft_reference_does_not_change_at_halftime(self):
   self.full_time_only();ctx=dict(self.ctx,usable=True)
   self.assertEqual(V.context_evidence(ctx,'h','goals',30),V.context_evidence(ctx,'h','goals',60))
@@ -30,9 +28,9 @@ class GoalMarketPeriod(unittest.TestCase):
  def test_explicit_ft_precedes_halves_and_zero_is_not_replaced(self):
   ref=self.ctx['teams']['h']['goal_halves']['home']
   ref['full_time']={'scored_per_match':0,'conceded_per_match':1}
-  self.prepare();d=self.reading()
-  self.assertEqual(d['status'],'context_conflict')
-  self.assertEqual(d['context_evidence']['halves'][0]['rate'],0)
+  evidence=V.context_evidence(dict(self.ctx,usable=True),'h','goals',30)
+  self.assertEqual(evidence['halves'][0]['rate'],0)
+  self.assertNotEqual(evidence['support'],'concordant')
  def test_missing_ft_is_never_inferred_from_only_one_half(self):
   ref=self.ctx['teams']['h']['goal_halves']['home'];ref.pop('second_half')
   ctx=dict(self.ctx,usable=True)

@@ -39,7 +39,7 @@ class RadarTests(unittest.TestCase):
  def test_stop_at_80_for_both_markets_including_old_active_readings(self):
   r,d=self.one()
   for market in ('goals','cards'):
-   reading=dict(d,market=market,telegram_allowed=True)
+   reading=dict(d,market=market,period='FT',telegram_allowed=True)
    self.assertTrue(V.radar_eligible(dict(r,minute=79),reading,self.now))
    for minute in (80,81,90,95):
     V.queue_radar(self.c,dict(r,minute=minute),reading,self.now)

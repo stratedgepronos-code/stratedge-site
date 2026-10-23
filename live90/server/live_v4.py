@@ -338,6 +338,14 @@ def validate_enrichment(team, ids, generated, kickoff, label):
                 if fouls is not None and (not num(fouls) or not 0<=fouls<=100):raise ValueError(label+' : moyenne fautes commises invalide')
             elif field=='goal_halves':
                 if not text_ok(ref.get('stoppage_policy'),300):raise ValueError(label+' : convention des périodes requise')
+                intervals=ref.get('intervals')
+                if intervals is not None:
+                    if not isinstance(intervals,dict) or any(k not in GOAL_INTERVALS for k in intervals):raise ValueError(label+' : intervalles de buts invalides')
+                    for values in intervals.values():
+                        if values is None:continue
+                        if not isinstance(values,dict) or any(k not in ('scored_per_match','conceded_per_match') for k in values):raise ValueError(label+' : moyennes par intervalle invalides')
+                        for v in values.values():
+                            if v is not None and (not num(v) or not 0<=v<=30):raise ValueError(label+' : moyenne par intervalle invalide')
                 for half in ('full_time','first_half','second_half'):
                     values=ref.get(half)
                     if values is None:continue
@@ -1036,7 +1044,7 @@ def export_analysis(c,now):
                  state=p.get('state') if p else None,data_issues=p.get('issues',[]) if p else [],
                  prematch_imported_at=p.get('imported_at') if p else None,prematch_usable=p.get('usable',False) if p else False)
         matches.append(m)
-    return {'schema':'stratedge.research.v4','exported_at':iso(now),'timezone':'Europe/Paris','matches':matches,'learning_memory':learning_memory(c),'instructions':'Lire également learning_memory.prompt_addendum : priorités de recherche issues des alertes passées, sans modification des seuils ni du schéma. Tous les matchs doivent figurer dans le résultat stratedge.context.v4 avec watch:true. Aucun scénario éliminatoire. Utiliser PROMPT_ANALYSTE_V4.md révision 22/10/2026 : arbitre confirmé avec jaunes et fautes moyens, card_references global/home/away/h2h avec fouls_for_per_match (même échantillon), et goal_halves par localisation (home/away), avec full_time (prioritaire pour les alertes match entier), first_half/second_half facultatifs. La période des références doit correspondre au pari ; aucune mi-temps obligatoire pour un pari FT. Aucun créneau historique de 10 minutes requis. Historiques : dix derniers matchs officiels par localisation, championnat et coupes inclus, saison précédente si nécessaire ; ne pas limiter une rencontre UEFA aux matchs UEFA de la saison. Une référence domestique documentée est acceptée, avec compétition, dates et limites dans sample_label/notes ; jaunes et fautes portent sur les mêmes rencontres. Dix matchs est un objectif de collecte, pas un seuil bloquant : utiliser les vrais effectifs positifs disponibles, même inférieurs à dix, avec mention échantillon limité. Vérifier séparément les effectifs Packball n_h/n_a sans les gonfler ; les données absentes restent bloquantes. Références manquantes : null, jamais inventées. Concordance avant-match/live obligatoire pour notifier. Corners retirés.'}
+    return {'schema':'stratedge.research.v4','exported_at':iso(now),'timezone':'Europe/Paris','matches':matches,'learning_memory':learning_memory(c),'instructions':'Lire également learning_memory.prompt_addendum : priorités de recherche issues des alertes passées, sans modification des seuils ni du schéma. Tous les matchs doivent figurer dans le résultat stratedge.context.v4 avec watch:true. Aucun scénario éliminatoire. Utiliser PROMPT_ANALYSTE_V4.md révision 24/10/2026 : arbitre confirmé avec jaunes et fautes moyens, card_references global/home/away/h2h avec fouls_for_per_match (même échantillon), et goal_halves par localisation (home/away), avec full_time, first_half et second_half documentés. Les alertes buts suivent HT en première période et un but supplémentaire avant FT en deuxième période : références first_half/second_half respectivement. Ajouter goal_halves.home/away.intervals si les six tranches GPT-2 et leur localisation sont vérifiées : clés 0-15,16-30,31-45,46-60,61-75,76-90 ; chaque valeur contient scored_per_match et conceded_per_match, moyennes sur le même échantillon que les périodes. Référence manquante = null, aucune localisation déduite des seules colonnes h/a. Les notes seules ne déclenchent pas le moteur. Deux voies expérimentales : activité 10 min avec mi-temps concordante ; ou 2 cadrés/5 min dans une tranche attaque et défense adverse toutes deux supérieures à leurs moyennes des six tranches, avec mi-temps concordante et deux relevés distincts. Conserver le schéma context.v4 et tous les matchs. Aucun créneau historique de 10 minutes requis. Historiques : dix derniers matchs officiels par localisation, championnat et coupes inclus, saison précédente si nécessaire ; ne pas limiter une rencontre UEFA aux matchs UEFA de la saison. Une référence domestique documentée est acceptée, avec compétition, dates et limites dans sample_label/notes ; jaunes et fautes portent sur les mêmes rencontres. Dix matchs est un objectif de collecte, pas un seuil bloquant : utiliser les vrais effectifs positifs disponibles, même inférieurs à dix, avec mention échantillon limité. Vérifier séparément les effectifs Packball n_h/n_a sans les gonfler ; les données absentes restent bloquantes. Références manquantes : null, jamais inventées. Concordance avant-match/live obligatoire pour notifier. Corners retirés.'}
 
 def dispatch(c,x,now):
     action=x.get('action','board')
@@ -1143,6 +1151,43 @@ def goal_period_values(ref, period):
     first=ref.get('first_half') or {};second=ref.get('second_half') or {}
     return {k:first[k]+second[k] for k in ('scored_per_match','conceded_per_match') if num(first.get(k)) and num(second.get(k))}
 
+GOAL_INTERVALS=('0-15','16-30','31-45','46-60','61-75','76-90')
+GOAL_POLICY='goal_periods_intervals_v1'
+
+def goal_reference_period(r):
+    return 'first_half' if num(r.get('minute')) and r['minute']<=45 else 'second_half'
+
+def radar_period(d):
+    return 'HT' if d.get('market')=='goals' and d.get('period')=='HT' else 'FT'
+
+def goal_interval_evidence(r,p,ctx,team):
+    """Two independently documented local series. No guessing CSV sample scope."""
+    out={'status':'unknown','lines':[],'policy':GOAL_POLICY}
+    minute=r.get('minute')
+    if not num(minute) or not 0<minute<=90:return out
+    index=min(5,int((minute-1)//15));key=GOAL_INTERVALS[index]
+    out.update(interval=key,start=index*15,end=(index+1)*15)
+    other='a' if team=='h' else 'h';rates=[]
+    for side,field in ((team,'scored'),(other,'conceded')):
+        scope='home' if side=='h' else 'away'
+        ref=((((ctx or {}).get('teams') or {}).get(side) or {}).get('goal_halves') or {}).get(scope) or {}
+        intervals=ref.get('intervals');n=ref.get('matches');origin='Analyste'
+        if not intervals:
+            pb=(p or {}).get('packball') or {};sample=pb.get('sample') or {}
+            if not (p and p.get('usable') and sample.get('venue_scope') in ('home_away','home/away')):return out
+            raw=((pb.get('teams') or {}).get(side) or {}).get('goal_intervals') or {}
+            intervals={k:{'scored_per_match':v.get('scored'),'conceded_per_match':v.get('conceded')} for k,v in raw.items() if isinstance(v,dict)}
+            n=((p or {}).get('prematch') or {}).get('n_'+side);origin='Packball'
+        field=field+'_per_match'
+        values=[(intervals.get(k) or {}).get(field) for k in GOAL_INTERVALS]
+        if not num(n) or n<1 or not all(num(v) and v>=0 for v in values):return out
+        value=values[index];mean=sum(values)/6
+        rates.append(value>0 and value>mean)
+        name=r.get('home' if side=='h' else 'away',side)
+        out['lines'].append(name+' · '+key+'′ : '+desk_number(value)+' buts '+('marqués' if side==team else 'encaissés')+'/m ; moyenne des six tranches '+desk_number(mean)+' · n='+desk_number(n)+' · '+origin+'.')
+    out['status']='concordant' if all(rates) else 'not_elevated'
+    return out
+
 def context_evidence(ctx, team, market, minute, period='full_time'):
     """Descriptive evidence, never an invented probability or a missing-data zero."""
     out={'lines':[],'support':'unknown'}
@@ -1225,14 +1270,17 @@ def prematch_live_coherence(r,p,ctx,team,market,metrics,evidence):
         if not all(num(v) and v>0 for v in (gf,ga,shots,sot)):missing.append('Buts marqués, encaissés, tirs ou cadrés historiques incomplets.')
         else:
             lines.append(own_name+' : '+desk_number(gf)+' buts marqués/m ; '+opp_name+' : '+desk_number(ga)+' encaissés/m.')
-            if not all(num(metrics.get(k)) for k in ('shots10','sot10')):missing.append('Tirs et cadrés live sur 10 min requis.')
-            elif metrics['shots10']<=shots/9 or metrics['sot10']<=sot/9:conflicts.append('Tirs ET cadrés récents doivent dépasser le rythme historique moyen ramené à 10 min.')
-            else:lines.append('Live 10′ : '+desk_number(metrics['shots10'])+' tirs / '+desk_number(metrics['sot10'])+' cadrés ; repère moyen '+desk_number(shots/9)+' / '+desk_number(sot/9)+'.')
+            window=metrics.get('comparison_window',10);divisor=90/window
+            sk='shots'+str(window);tk='sot'+str(window)
+            if not all(num(metrics.get(k)) for k in (sk,tk)):missing.append('Tirs et cadrés live sur '+str(window)+' min requis.')
+            elif metrics[sk]<=shots/divisor or metrics[tk]<=sot/divisor:conflicts.append('Tirs ET cadrés récents doivent dépasser le rythme historique moyen ramené à '+str(window)+' min.')
+            else:lines.append('Live '+str(window)+'′ : '+desk_number(metrics[sk])+' tirs / '+desk_number(metrics[tk])+' cadrés ; repère FT ramené à cette durée '+desk_number(shots/divisor)+' / '+desk_number(sot/divisor)+'.')
         halves=evidence.get('halves') or []
         for ref in halves:sample_ok(ref.get('matches'),'Buts '+('domicile' if ref.get('team')=='h' else 'extérieur'))
-        if evidence.get('period')!='full_time' or len(halves)!=2 or any(not x.get('comparison_ready') for x in halves):
-            missing.append('Buts match entier : moyennes domicile/extérieur et effectifs positifs, attaque et défense adverse requis.')
-        elif evidence.get('support')!='concordant':conflicts.append('Match entier : aucune production marquée ou encaissée dans une référence historique locale.')
+        title='Première mi-temps' if goal_reference_period(r)=='first_half' else 'Deuxième mi-temps'
+        if evidence.get('period')!=goal_reference_period(r) or len(halves)!=2 or any(not x.get('comparison_ready') for x in halves):
+            missing.append(title+' : moyennes domicile/extérieur et effectifs positifs, attaque et défense adverse requis.')
+        elif evidence.get('support')!='concordant':conflicts.append(title+' : références locales sous le repère expérimental de 0,5 but marqué/encaissé par période.')
         else:lines.extend(evidence.get('lines',[])[1:3])
     elif market=='cards':
         refs=[]
@@ -1277,10 +1325,10 @@ def prematch_live_coherence(r,p,ctx,team,market,metrics,evidence):
 def live_situation(r,team,market,m,hist):
     """Observed context only. Extra metrics never invent xG, players or probabilities."""
     other='a' if team=='h' else 'h';gap=r['score'][team]-r['score'][other]
-    remaining=max(0,90-r['minute'])
+    remaining=max(0,(45 if market=='goals' and r['minute']<=45 else 90)-r['minute'])
     out={'score_gap':gap,'remaining_regulation':remaining,'lines':[], 'coverage':{},'warnings':[]}
     position='égalité' if gap==0 else ('avance de ' if gap>0 else 'retard de ')+desk_number(abs(gap))+' but(s)'
-    out['clock_line']=position+' · '+desk_number(remaining)+' min réglementaires restantes, hors arrêts de jeu'
+    out['clock_line']=position+' · '+desk_number(remaining)+' min réglementaires '+('avant la pause' if market=='goals' and r['minute']<=45 else 'avant la fin')+', hors arrêts de jeu'
     extras=('shots_inside','shots_outside','shots_off_target','blocked_shots','da','substitutions') if market=='goals' else ('tackles','da','substitutions')
     for k in extras:
         m[k]=stat(r,k,team)
@@ -1334,7 +1382,7 @@ def record_shadow(c,r,d,now):
     # First usable observation per match-minute: both alerts and non-alerts,
     # without overwriting earlier knowledge with a later event/result.
     payload={k:d.get(k) for k in ('observed','status','metrics','situation','coherence','research')}
-    payload.update(score=r['score'],collected_at=r.get('collected_at'),received_at=r.get('received_at'),target_period='FT',target_line=d['observed']+.5)
+    payload.update(score=r['score'],collected_at=r.get('collected_at'),received_at=r.get('received_at'),target_period=radar_period(d),target_line=d['observed']+.5)
     c.execute('INSERT OR IGNORE INTO v5_shadow_readings VALUES(?,?,?,?,?,?,?,?)',
               (str(r['packball_id']),d['team'],d['market'],int(r['minute']),d['research']['policy'],r['sample_id'],iso(now),enc(payload)))
 
@@ -1361,7 +1409,12 @@ def desk_reading(r,p,ctx,team,market,now,hist):
     d={'team':team,'market':market,'status':'neutral','title':'Observer','reason':'Pas de dynamique récente concordante.',
        'observed':observed,'baseline':baseline if num(baseline) and baseline>=0 else None,'opponent_baseline':against if num(against) else None,
        'sample':n,'baseline_origin':baseline_origin,'facts':[],'limits':[],'metrics':{},'window':'10 dernières minutes','period':'HT' if num(r.get('minute')) and r['minute']<=45 else 'FT'}
-    d['context_evidence']=context_evidence(valid_ctx,team,market,r.get('minute'))
+    if market=='cards':d['period']='FT'
+    if market=='goals':d['goal_policy']=GOAL_POLICY
+    d['context_evidence']=context_evidence(valid_ctx,team,market,r.get('minute'),goal_reference_period(r) if market=='goals' else 'full_time')
+    if market=='goals':
+        d['interval_evidence']=goal_interval_evidence(r,p,valid_ctx,team) if valid_ctx else {'status':'unknown','lines':[]}
+        d['facts'].extend(d['interval_evidence']['lines'])
     d['facts'].extend(d['context_evidence']['lines'])
     if market=='goals':d['limits'].append('La moyenne décrit le match entier, temps additionnel inclus selon la source, pas les minutes restantes. Aucun but n’est dû. Aucun xG de tirs fiable reçu ; ExG Packball non assimilé à un xG cumulé.')
     if market=='cards' and valid_ctx:
@@ -1402,11 +1455,17 @@ def desk_reading(r,p,ctx,team,market,now,hist):
         m['sot_per_goal']=prematch.get('sot_'+team)/baseline if usable and num(prematch.get('sot_'+team)) and num(baseline) and baseline>0 else None
         if num(m['sot_per_goal']):d['facts'].append('Historique : '+desk_number(m['sot_per_goal'])+' cadrés par but ; aujourd’hui '+desk_number(m['sot'])+' cadrés / '+desk_number(observed)+' but(s).')
         if m['sot'] is not None and m['shots'] is not None and m['sot']>m['shots']:return stop('missing','Tirs incohérents','Les cadrés dépassent le total des tirs.')
-        if any(m[k] is None for k in ('shots10','sot10','shots5')):return stop('missing','Fenêtre incomplète','Il manque les tirs/cadrés récents, ou un but vient de réinitialiser la comparaison.')
-        d['reason']=desk_number(m['shots10'])+' tirs dont '+desk_number(m['sot10'])+' cadrés en 10 min · '+desk_number(m['shots5'])+' tirs en 5 min.'
-        candidate=m['shots10']>=3 and m['sot10']>=1 and m['shots5']>=1
+        interval=d['interval_evidence']
+        short=(interval.get('status')=='concordant' and minute-5>=interval.get('start',90)
+               and all(num(m.get(k)) for k in ('shots5','sot5')) and m['shots5']>=2 and m['sot5']>=2 and m['sot5']<=m['shots5'])
+        if not short and any(m[k] is None for k in ('shots10','sot10','shots5')):return stop('missing','Fenêtre incomplète','Il manque les tirs/cadrés récents, ou un but vient de réinitialiser la comparaison.')
+        if any(num(m.get('shots'+str(w))) and num(m.get('sot'+str(w))) and m['sot'+str(w)]>m['shots'+str(w)] for w in (5,10)):return stop('missing','Tirs incohérents','Les cadrés récents dépassent les tirs de la même fenêtre.')
+        candidate=short or (m['shots10']>=3 and m['sot10']>=1 and m['shots5']>=1)
+        m['comparison_window']=5 if short else 10
+        d['trigger_path']='interval_5m' if short else 'half_10m'
+        d['reason']=(desk_number(m['shots5'])+' tirs dont '+desk_number(m['sot5'])+' cadrés sur les 5 dernières minutes · tranche '+interval['interval']+'′ concordante.' if short else desk_number(m['shots10'])+' tirs dont '+desk_number(m['sot10'])+' cadrés en 10 min · '+desk_number(m['shots5'])+' tirs en 5 min.')
         d['limits'].insert(0,'La qualité des occasions n’est pas mesurée par le seul nombre de cadrés.')
-        d['criteria']='Au moins 3 tirs et 1 cadré sur 10 min, avec au moins 1 tir sur 5 min. Seuils descriptifs expérimentaux.'
+        d['criteria']='Références de la mi-temps concordantes + 3 tirs/1 cadré sur 10 min et 1 tir sur 5 min ; ou tranche historique attaque/défense au-dessus de leurs moyennes par tranche + 2 tirs cadrés sur 5 min entièrement dans cette tranche. Deux relevés distincts. Seuils expérimentaux, non calibrés.'
     elif market=='corners':
         if any(m[k] is None for k in ('shots10','shots5','corners10','corners5')):return stop('missing','Corners récents manquants','Attendre les fenêtres 5/10 min ; le collecteur 5.0.0 lit les corners.')
         d['reason']=desk_number(m['shots10'])+' tirs et '+desk_number(m['corners10'])+' corners en 10 min · '+desk_number(m['shots5'])+' tirs en 5 min.'
@@ -1430,6 +1489,7 @@ def desk_reading(r,p,ctx,team,market,now,hist):
         d['limits'].extend(d['situation']['warnings'])
     if market in DESK_MARKETS:
         d['coherence']=prematch_live_coherence(r,p,ctx,team,market,m,d['context_evidence'])
+        if market=='goals' and d['interval_evidence'].get('status')=='concordant':d['coherence']['lines'].extend(d['interval_evidence']['lines'])
         d['limits'].extend(d['coherence'].get('cautions',[]))
         d['research']=research_candidate(d,candidate)
         d['criteria']+=' Avant-match/live : références complètes et concordantes obligatoires, sur les deux relevés.'
@@ -1437,6 +1497,7 @@ def desk_reading(r,p,ctx,team,market,now,hist):
         if candidate and d['coherence']['status']!='confirmed':
             state=d['coherence']['status'];reasons=d['coherence']['missing']+d['coherence']['conflicts']
             return stop('context_wait' if state=='missing' else 'context_conflict','Avant-match incomplet' if state=='missing' else 'Concordance insuffisante',reasons[0])
+    if market=='goals' and d['period']=='HT' and minute>=45:return stop('waiting','Pause proche','Pas de nouvelle alerte avant la pause à partir de 45:00.')
     if num(minute) and alert_cutoff_reached(r,now):return stop('waiting','Alertes arrêtées · 80′','Aucune nouvelle alerte dès la 80e minute ; suivi des résultats maintenu.')
     if candidate:d.update(status='candidate',title='Avant-match + live à confirmer')
     return d
@@ -1459,7 +1520,8 @@ def desk_advice(c,s,p,ctx,now):
                     try:old_d=desk_reading(old,p,ctx,team,market,now,hist[1:])
                     except (TypeError,AttributeError,KeyError,ValueError):old_d={'status':'missing'}
                     # Distinct observations; score/counter changes and half transitions reset confirmation.
-                    if at and before and 20<=(at-before).total_seconds()<=100 and old_d['status']=='candidate' and old_d['period']==d['period'] and old_d['observed']==d['observed'] and old.get('score')==r.get('score') and num(old.get('minute')) and 0<=r['minute']-old['minute']<=2:
+                    same_path=(market!='goals' or old_d.get('trigger_path')==d.get('trigger_path') and (d.get('trigger_path')!='interval_5m' or (old_d.get('interval_evidence') or {}).get('interval')==d['interval_evidence'].get('interval')))
+                    if same_path and at and before and 20<=(at-before).total_seconds()<=100 and old_d['status']=='candidate' and old_d['period']==d['period'] and old_d['observed']==d['observed'] and old.get('score')==r.get('score') and num(old.get('minute')) and 0<=r['minute']-old['minute']<=2:
                         d.update(status='active',title='Avant-match + live concordants')
             d.update(sample_id=s['id'],updated_at=iso(now))
             out.append(apply_card_scope(c,r,d,p,ctx,now))
@@ -1496,7 +1558,7 @@ def radar_status(c):
     last=c.execute('SELECT created_at,delivery,delivery_error FROM v5_radar_notifications ORDER BY id DESC LIMIT 1').fetchone()
     results={r['outcome']:r['n'] for r in c.execute('SELECT outcome,COUNT(*) n FROM v5_radar_results GROUP BY outcome')}
     result_delivery={r['delivery']:r['n'] for r in c.execute('SELECT delivery,COUNT(*) n FROM v5_radar_result_events GROUP BY delivery')}
-    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','priced_only':setting(c,'radar_priced_only',True),'odds_auto':setting(c,'radar_odds_auto',True),'min_odds':MIN_TELEGRAM_ODDS,'stop_minute':ALERT_STOP_MINUTE,'counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'default_card_leagues':list(CARD_COMPETITIONS),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market'),'coherence_policy':'prematch_live_context_v4','result_tracking':'packball_two_samples','results':results,'result_deliveries':result_delivery}
+    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','priced_only':setting(c,'radar_priced_only',True),'odds_auto':setting(c,'radar_odds_auto',True),'min_odds':MIN_TELEGRAM_ODDS,'stop_minute':ALERT_STOP_MINUTE,'counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'default_card_leagues':list(CARD_COMPETITIONS),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market'),'coherence_policy':'prematch_live_context_v4','result_tracking':'packball_two_samples','goal_policy':GOAL_POLICY,'goal_periods':['HT','FT'],'results':results,'result_deliveries':result_delivery}
 
 # Explicit owner selection, extended to A-League Men and 2. Bundesliga on 23 October 2026.
 # Country/region is required for common
@@ -1595,6 +1657,10 @@ def alert_cutoff_reached(r,now):
 
 def radar_eligible(r,d,now):
     # Exactly the hot (confirmed) cards; factual watch-only cards are not alerts.
+    if d.get('market')=='goals':
+        if d.get('goal_policy')!=GOAL_POLICY or radar_period(d)!=('HT' if num(r.get('minute')) and r['minute']<=45 else 'FT'):return False
+        at=date(r.get('collected_at'))
+        if radar_period(d)=='HT' and (not at or r['minute']+max(0,(now-at).total_seconds()/60)>=45):return False
     return (d.get('status')=='active' and (d.get('coherence') or {}).get('status')=='confirmed' and (d.get('coherence') or {}).get('policy')=='prematch_live_context_v4' and d.get('team') in ('h','a') and d.get('market') in DESK_MARKETS
             and (d.get('market')!='cards' or d.get('telegram_allowed') is True)
             and r.get('state')=='LIVE' and num(r.get('minute')) and 0<r['minute']<ALERT_STOP_MINUTE and not alert_cutoff_reached(r,now)
@@ -1606,6 +1672,22 @@ def radar_price_cache(c):
     rows=c.execute("SELECT value FROM v4_runtime WHERE key IN ('pulsescore_test','pulsescore_auto_last')").fetchall()
     values=[dec(row['value'],{}) for row in rows]
     return max(values,key=lambda v:date(v.get('at')) or dt.datetime.min.replace(tzinfo=UTC)) if values else {}
+
+def radar_event_key(mid,d):
+    values=[str(mid),d['team'],d['market'],int(d['observed'])]
+    # Preserve FT keys for old sent alerts; HT is a separate opportunity.
+    if radar_period(d)=='HT':values.append('HT')
+    return enc(values)
+
+def radar_recent_same_period(c,mid,d,now,deliveries=None):
+    rows=c.execute('SELECT created_at,delivery,data FROM v5_radar_notifications WHERE match_id=? AND team=? AND market=? AND created_at>? ORDER BY id DESC',
+        (str(mid),d['team'],d['market'],iso(now-dt.timedelta(minutes=10)))).fetchall()
+    for row in rows:
+        if row['delivery']=='price_wait' or deliveries and row['delivery'] not in deliveries:continue
+        saved=dec(row['data'],{});reading=saved.get('reading') or {}
+        period=(saved.get('result_target') or {}).get('period') or (radar_period(reading) if reading.get('goal_policy')==GOAL_POLICY else 'FT')
+        if period==radar_period(d):return True
+    return False
 
 def radar_market_gate(d,cuts,now):
     """An observed price is not an estimated edge. Only ONE additional event."""
@@ -1630,11 +1712,10 @@ def refresh_radar_prices(c,now,candidates):
     wanted=[]
     for r,d in candidates:
         if not radar_eligible(r,d,now):continue
-        key=enc([str(r['packball_id']),d['team'],d['market'],int(d['observed'])])
+        key=radar_event_key(r['packball_id'],d)
         existing=c.execute('SELECT delivery FROM v5_radar_notifications WHERE event_key=?',(key,)).fetchone()
         if existing and existing['delivery']!='price_wait':continue
-        last=c.execute("SELECT created_at FROM v5_radar_notifications WHERE match_id=? AND team=? AND market=? AND delivery IN ('sent','queued','sending') ORDER BY id DESC LIMIT 1",(str(r['packball_id']),d['team'],d['market'])).fetchone()
-        if last and date(last[0]) and (now-date(last[0])).total_seconds()<600:continue
+        if radar_recent_same_period(c,r['packball_id'],d,now,('sent','queued','sending')):continue
         wanted.append((r,d))
     if not wanted:return
     cached=radar_price_cache(c);at=date(cached.get('at'))
@@ -1654,9 +1735,8 @@ def queue_radar(c,r,d,now):
     if gate['state']=='below_minimum' or (setting(c,'radar_priced_only',True) and not gate['eligible']):return
     mid=str(r['packball_id']);counter=d['observed']
     # Same counter = same opportunity, even across restarts, pauses and status flicker.
-    event_key=enc([mid,d['team'],d['market'],int(counter)])
-    last=c.execute("SELECT created_at FROM v5_radar_notifications WHERE match_id=? AND team=? AND market=? AND delivery!='price_wait' ORDER BY id DESC LIMIT 1",(mid,d['team'],d['market'])).fetchone()
-    if last and date(last['created_at']) and (now-date(last['created_at'])).total_seconds()<600:return
+    event_key=radar_event_key(mid,d)
+    if radar_recent_same_period(c,mid,d,now):return
     saved={'home':r.get('home'),'away':r.get('away'),'score':r.get('score'),'reading':d,'minute':r.get('minute')}
     c.execute("UPDATE v5_radar_notifications SET created_at=?,sample_id=?,data=?,delivery='queued',delivery_error=NULL WHERE event_key=? AND delivery='price_wait'",(iso(now),r['sample_id'],enc(saved),event_key))
     inserted=c.execute('INSERT OR IGNORE INTO v5_radar_notifications(event_key,match_id,team,market,counter,created_at,sample_id,data,delivery) VALUES(?,?,?,?,?,?,?,?,?)',
@@ -1667,7 +1747,7 @@ def queue_radar(c,r,d,now):
                   (mid,d['team'],d['market'],r['sample_id'],iso(now),enc(dict(saved,version='decision5.0',kind='observation_not_bet'))))
 
 def radar_quote(d,cuts):
-    options=[q for q in cuts.get('quotes',[]) if q['team']==d['team'] and q['kind']==d['market'] and q['period']=='FT' and q['half_line'] and q['needed']!=0 and q['line']>d['observed']]
+    options=[q for q in cuts.get('quotes',[]) if q['team']==d['team'] and q['kind']==d['market'] and q['period']==radar_period(d) and q['half_line'] and q['needed']!=0 and q['line']>d['observed']]
     return min(options,key=lambda q:q['line']) if options else None
 
 def radar_target(r,d,cuts):
@@ -1675,29 +1755,30 @@ def radar_target(r,d,cuts):
     # New observations concern ONE extra event. A remote cut requiring several
     # events is informative only; frozen targets of already-sent alerts are kept.
     if q and q.get('needed')!=1:q=None
-    return {'team':d['team'],'market':d['market'],'period':'FT','line':q['line'] if q else d['observed']+.5,
+    return {'team':d['team'],'market':d['market'],'period':radar_period(d),'line':q['line'] if q else d['observed']+.5,
             'unit':'yellow_cards' if d['market']=='cards' else 'goals','mode':'cut' if q else 'event',
             'quote':q,'bookings_proxy':bool(q and d['market']=='cards'),
             'kickoff':r.get('kickoff_ts'),'baseline_at':r.get('collected_at'),'baseline_sample_id':r.get('sample_id')}
 
 def radar_target_label(target,saved):
     name=saved.get('home' if target['team']=='h' else 'away','?')
-    return name+' · plus de '+desk_number(target['line'])+(' jaunes' if target['market']=='cards' else ' buts')+' · match entier'
+    return name+' · plus de '+desk_number(target['line'])+(' jaunes' if target['market']=='cards' else ' buts')+(' · première mi-temps' if target.get('period')=='HT' else ' · match entier')
 
 def radar_message(r,d,cuts,radar_id=None):
     name=r['home'] if d['team']=='h' else r['away']
     title={'goals':'🩷 But à surveiller','corners':'🩵 Corners à surveiller','cards':'💛 Carton à surveiller'}[d['market']]
+    if d['market']=='goals':title+=' avant la pause' if radar_period(d)=='HT' else ' avant la fin'
     lines=['🔥 STRATEDGE · RADAR LIVE'+(' #'+str(radar_id) if radar_id is not None else ''),'', '⚽ '+r['home']+' — '+r['away'],
            '⏱ '+desk_number(r['minute'])+'′ · '+desk_number(r['score']['h'])+'–'+desk_number(r['score']['a']),
            '', '🎯 '+title+' · '+name,'Avant-match + live concordants sur deux relevés.','📊 '+d['reason']]
     q=radar_quote(d,cuts)
     if q and q.get('needed')==1 and num(q.get('odds')) and q['odds']>=MIN_TELEGRAM_ODDS:
         unit='buts' if d['market']=='goals' else 'Bookings (cartons Stake)'
-        lines[7:7]=['💰 Stake · '+name+' +'+desk_number(q['line'])+' '+unit+' · FT · cote '+desk_number(q['odds']),'']
+        lines[7:7]=['💰 Stake · '+name+' +'+desk_number(q['line'])+' '+unit+' · '+radar_period(d)+' · cote '+desk_number(q['odds']),'']
     if d['market']=='cards':
         lines+=['Fautes au total : '+desk_number((d.get('metrics') or {}).get('fouls'))+' · jaunes actuels : '+desk_number(d.get('observed'))+'.']
     evidence=(d.get('coherence') or {}).get('lines') or (d.get('context_evidence') or {}).get('lines') or []
-    if evidence:lines+=['','🔗 Pourquoi les données concordent']+evidence[:5]
+    if evidence:lines+=['','🔗 Pourquoi les données concordent']+evidence[:6]
     situation=d.get('situation') or {}
     if situation:
         lines+=['','🔎 Lecture du direct',situation['clock_line']]+situation.get('lines',[])[:2]
@@ -1706,7 +1787,7 @@ def radar_message(r,d,cuts,radar_id=None):
     q=radar_quote(d,cuts)
     if q:
         unit={'goals':'buts','corners':'corners','cards':'cartons Bookings'}[d['market']]
-        lines+=['',('💰 Stake · ' if q.get('needed')==1 else 'ℹ️ Marché distinct, non soutenu par ce signal · ')+name+' +'+desk_number(q['line'])+' '+unit+' · match entier · cote '+desk_number(q['odds'])]
+        lines+=['',('💰 Stake · ' if q.get('needed')==1 else 'ℹ️ Marché distinct, non soutenu par ce signal · ')+name+' +'+desk_number(q['line'])+' '+unit+(' · première mi-temps' if radar_period(d)=='HT' else ' · match entier')+' · cote '+desk_number(q['odds'])]
         if q['needed'] is not None:
             lines+=['Actuel '+desk_number(q['current'])+' · '+desk_number(q['needed'])+' de plus nécessaire(s)'+(' si même décompte' if q['indicative_counter'] else '')]
             if q['needed']>1:lines+=['Un seul événement ne suffit pas pour ce cut.']
@@ -1740,7 +1821,9 @@ def deliver_radar(c,now,realtime=False):
             in_scope=(f and f['fixture'] in active) if active is not None else (cycle_ids is None or str(r.get('packball_id')) in cycle_ids)
             p,ctx=inputs(c,f,now)
             d=next((d for d in desk_advice(c,row,p,ctx,now) if d['team']==event['team'] and d['market']==event['market']),{})
-            if in_scope and radar_eligible(r,d,now) and r.get('score')==saved.get('score') and d.get('observed')==event['counter']:
+            prior=saved.get('reading') or {}
+            same_goal_policy=event['market']!='goals' or (prior.get('goal_policy')==GOAL_POLICY and radar_period(prior)==radar_period(d))
+            if in_scope and same_goal_policy and radar_eligible(r,d,now) and r.get('score')==saved.get('score') and d.get('observed')==event['counter']:
                 cuts=desk_cuts(r,radar_price_cache(c),now)
                 gate=radar_market_gate(d,cuts,now)
                 if gate['state']=='below_minimum' or (setting(c,'radar_priced_only',True) and not gate['eligible']):
@@ -1768,6 +1851,7 @@ def radar_result_value(r,target,saved,now):
     ko=date(target.get('kickoff'));current_ko=date(r.get('kickoff_ts'))
     if ko and (not current_ko or abs((ko-current_ko).total_seconds())>60):return None
     if r.get('state') not in ('LIVE','HT','FT'):return None
+    if target.get('period')=='HT' and not (r.get('state')=='HT' or r.get('state')=='LIVE' and num(r.get('minute')) and r['minute']<=45):return None
     # Only regulation-time totals; no inference from extra-time shootout scores.
     if num(r.get('minute')) and r['minute']>90:return None
     v=(r.get('score') or {}).get(target['team']) if target['market']=='goals' and isinstance(r.get('score'),dict) else stat(r,'yellow_cards',target['team']) if target['market']=='cards' else None
@@ -1776,7 +1860,8 @@ def radar_result_value(r,target,saved,now):
 
 def radar_result_verdict(c,event,saved,now):
     target=saved['result_target'];start=target.get('baseline_sample_id') or event['sample_id']
-    rows=c.execute('SELECT * FROM samples WHERE match_id=? AND id>? ORDER BY id DESC LIMIT 2',(event['match_id'],start)).fetchall()
+    clause=" AND (json_extract(data,'$.state')='HT' OR (json_extract(data,'$.state')='LIVE' AND json_extract(data,'$.minute')<=45))" if target.get('period')=='HT' else ''
+    rows=c.execute('SELECT * FROM samples WHERE match_id=? AND id>?'+clause+' ORDER BY id DESC LIMIT 2',(event['match_id'],start)).fetchall()
     if len(rows)<2:return None
     r,old=[sample_data(row) for row in rows]
     v=radar_result_value(r,target,saved,now);pv=radar_result_value(old,target,saved,now)
@@ -1784,9 +1869,11 @@ def radar_result_verdict(c,event,saved,now):
     gap=(date(r['collected_at'])-date(old['collected_at'])).total_seconds()
     if not 15<=gap<=120:return None
     if r['state'] in ('LIVE','HT') and old['state']=='FT':return None
+    if target.get('period')=='HT' and r['state']=='LIVE' and old['state']=='HT':return None
     if v>target['line'] and pv>target['line']:outcome='observed'
     elif v<=target['line'] and pv<=target['line']:
-        outcome='not_observed' if r['state']=='FT' and old['state']=='FT' else 'pending'
+        end='HT' if target.get('period')=='HT' else 'FT'
+        outcome='not_observed' if r['state']==end and old['state']==end else 'pending'
     else:return None
     return outcome,{'current':v,'state':r['state'],'minute':r.get('minute'),'observed_at':r['collected_at'],'sample_id':r['sample_id'],'confirmed_samples':[old['sample_id'],r['sample_id']]}
 
@@ -1795,6 +1882,7 @@ def radar_result_message(event,saved,previous,outcome,evidence):
     labels={'observed':'✅ '+('SEUIL ATTEINT' if cut else 'ÉVÉNEMENT OBSERVÉ'),
             'not_observed':'❌ '+('SEUIL NON ATTEINT À LA FIN' if cut else 'NON OBSERVÉ AVANT LA FIN'),
             'pending':'⏳ VALIDATION RETIRÉE · SUIVI EN COURS','unknown':'⚪ RÉSULTAT À VÉRIFIER'}
+    if target.get('period')=='HT':labels['not_observed']='❌ NON OBSERVÉ AVANT LA PAUSE'
     title='CORRECTION' if previous in ('observed','not_observed','unknown') else 'RÉSULTAT'
     lines=['STRATEDGE · '+title+' LIVE #'+str(event['id']),'',labels[outcome]+(' EN JAUNES PACKBALL' if proxy and outcome in ('observed','not_observed') else ''),
            '⚽ '+saved['home']+' — '+saved['away'],'','🎯 '+radar_target_label(target,saved)]
@@ -1814,7 +1902,7 @@ def settle_radar_results(c,now):
     events=c.execute("SELECT n.* FROM v5_radar_notifications n LEFT JOIN v5_radar_results r ON r.radar_id=n.id WHERE n.delivery='sent' AND (n.created_at>=? OR r.outcome='pending') ORDER BY n.id",(iso(now-dt.timedelta(days=3)),)).fetchall()
     for event in events:
         saved=dec(event['data'],{});target=saved.get('result_target')
-        if not isinstance(target,dict) or target.get('market') not in DESK_MARKETS or target.get('period')!='FT':continue
+        if not isinstance(target,dict) or target.get('market') not in DESK_MARKETS or target.get('period') not in ('HT','FT') or target.get('period')=='HT' and target.get('market')!='goals':continue
         verdict=radar_result_verdict(c,event,saved,now)
         with c:
             if not c.in_transaction:c.execute('BEGIN IMMEDIATE')
@@ -1852,7 +1940,7 @@ def deliver_radar_results(c,now,realtime=False):
 def learning_snapshot(r,d,p,ctx,now):
     """Only information present before sending. Never reconstruct from today's imports."""
     return {'version':LEARNING_VERSION,'engine':ENGINE_FINGERPRINT,'captured_at':iso(now),
-            'prompt_revision':'2026-10-22-learning1','profile':p,'context':ctx,'reading':d,
+            'prompt_revision':'2026-10-24-goal-periods1','profile':p,'context':ctx,'reading':d,
             'live':{k:r.get(k) for k in ('sample_id','collected_at','received_at','packball_id','home','away',
                     'league','kickoff_ts','state','minute','score','stats','quality_errors')}}
 
@@ -1863,13 +1951,13 @@ def learning_review(event,result,now):
     target=saved.get('result_target') or {};evidence=dec(result['data'],{})
     outcome=result['outcome'];market=event['market'];flags=[];facts=[]
     def flag(code,detail):flags.append({'code':code,'detail':detail})
-    label={'observed':'Seuil atteint dans Packball','not_observed':'Seuil non atteint à la fin du match',
+    label={'observed':'Seuil atteint dans Packball','not_observed':'Seuil non atteint '+('à la pause' if target.get('period')=='HT' else 'à la fin du match'),
            'unknown':'Résultat non déterminable','pending':'Résultat remis en attente'}.get(outcome,outcome)
     facts.append(label+'.')
     if num(evidence.get('current')) and num(target.get('line')):
         facts.append('Compteur confirmé : '+desk_number(evidence['current'])+' ; seuil figé : plus de '+desk_number(target['line'])+'.')
     if d.get('reason'):facts.append('Au signal : '+d['reason'])
-    minute=(snap.get('live') or {}).get('minute',saved.get('minute'));remaining=max(0,90-minute) if num(minute) else None
+    minute=(snap.get('live') or {}).get('minute',saved.get('minute'));remaining=max(0,(45 if target.get('period')=='HT' else 90)-minute) if num(minute) else None
     if remaining is not None:facts.append('Temps réglementaire restant au signal : '+desk_number(remaining)+' min, hors temps additionnel.')
     delay=None;start=date(event.get('attempted_at') or event['created_at']);end=date(evidence.get('observed_at'))
     if start and end and end>=start and outcome=='observed':
@@ -2057,7 +2145,7 @@ def run_dashboard(path,now=None):
             c.rollback()
             with c:runtime(c,'learning_error',{'at':iso(now),'type':type(exc).__name__})
         if realtime:now=now_utc()
-        runtime(c,'engine',{'at':iso(now),'version':'decision5.0','telegram_active':radar_enabled(c) and radar_configured(),'legacy_telegram_active':False,'notification_mode':'confirmed_cards','mode':'decision','external_calls':radar_enabled(c) and radar_configured(),'ai_calls':False,'automatic_odds':setting(c,'radar_odds_auto',True),'priced_only':setting(c,'radar_priced_only',True),'feature_policy':'stake_price_gate5.2','research_mode':'shadow'})
+        runtime(c,'engine',{'at':iso(now),'version':'decision5.0','telegram_active':radar_enabled(c) and radar_configured(),'legacy_telegram_active':False,'notification_mode':'confirmed_cards','mode':'decision','external_calls':radar_enabled(c) and radar_configured(),'ai_calls':False,'automatic_odds':setting(c,'radar_odds_auto',True),'priced_only':setting(c,'radar_priced_only',True),'feature_policy':'stake_price_gate5.2','goal_policy':GOAL_POLICY,'research_mode':'shadow'})
         record_health(c,health,now);c.commit()
     finally:c.close()
 

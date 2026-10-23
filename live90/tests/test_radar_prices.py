@@ -17,7 +17,7 @@ class RadarPrices(unittest.TestCase):
   F.RadarTests.setUp(self)
   self.c.execute("INSERT OR REPLACE INTO v4_settings VALUES('radar_priced_only','true')");self.c.commit()
  def cache(self,odds=1.8,line=.5,age=0,score=None,key='pulsescore_test'):
-  event={'event_id':'stake','home':'Équipe A','away':'Équipe B','score':score or {'h':0,'a':0},'markets':[{'name':'Équipe A Total Goals','canonical':'HOME_OVER_UNDER','period':'FULL_TIME','active':True,'selections':[{'name':f'Over {line}','line':line,'odds':odds,'active':True}]}]}
+  event={'event_id':'stake','home':'Équipe A','away':'Équipe B','score':score or {'h':0,'a':0},'markets':[{'name':'Half Time Équipe A Total Goals','canonical':'HOME_OVER_UNDER','period':'FULL_TIME','active':True,'selections':[{'name':f'Over {line}','line':line,'odds':odds,'active':True}]}]}
   V.runtime(self.c,key,{'ok':True,'at':V.iso(self.now-dt.timedelta(seconds=age)),'events':[event]});self.c.commit()
  def test_no_price_stays_on_site_without_telegram(self):
   self.queue();self.assertEqual(len(self.rows()),0)
@@ -31,7 +31,7 @@ class RadarPrices(unittest.TestCase):
   self.cache(1.5);self.queue();V.deliver_radar(self.c,self.now)
   self.send.assert_called_once();saved=V.dec(self.rows()[0]['data'])
   self.assertEqual(saved['result_target']['line'],.5);self.assertEqual(saved['result_target']['quote']['odds'],1.5)
-  self.assertIn('FT · cote 1,5',self.send.call_args.args[0])
+  self.assertIn('HT · cote 1,5',self.send.call_args.args[0])
  def test_does_not_upgrade_to_two_goals_for_higher_price(self):
   self.cache(1.8,line=1.5);self.queue();self.send.assert_not_called();self.assertEqual(len(self.rows()),0)
  def test_price_rise_can_qualify_same_counter_later(self):
@@ -50,7 +50,7 @@ class RadarPrices(unittest.TestCase):
   V.dispatch(self.c,{'action':'radar_telegram','enabled':True,'priced_only':True,'odds_auto':True},self.now)
   V.dispatch(self.c,{'action':'pulsescore_key','key':'private-test-key'},self.now)
  def payload(self,odds=1.8):
-  return {'events':[{'eventId':'stake','home':'Équipe A','away':'Équipe B','score':{'home':0,'away':0},'markets':[{'rawName':'Équipe A Total Goals','canonicalMarket':'HOME_OVER_UNDER','period':'FULL_TIME','isActive':True,'selections':[{'rawName':'Over 0.5','line':.5,'odds':odds,'isActive':True}]}]}]}
+  return {'events':[{'eventId':'stake','home':'Équipe A','away':'Équipe B','score':{'home':0,'away':0},'markets':[{'rawName':'Half Time Équipe A Total Goals','canonicalMarket':'HOME_OVER_UNDER','period':'FULL_TIME','isActive':True,'selections':[{'rawName':'Over 0.5','line':.5,'odds':odds,'isActive':True}]}]}]}
  def opener(self,payload):
   net=MagicMock();net.open.return_value.__enter__.return_value.read.return_value=V.enc(payload).encode();return net
  def test_auto_fetch_once_on_confirmation_and_reuses_batch(self):

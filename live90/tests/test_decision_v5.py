@@ -23,7 +23,7 @@ class DeskTests(unittest.TestCase):
   self.r['ind5'].update(corners5={'h':0,'a':0},fouls5={'h':2,'a':0})
   V.import_bundle(self.c,'packball',self.bundle('packball'),self.before)
   V.import_bundle(self.c,'analyst',self.bundle('analyst'),self.before)
-  self.add(dict(self.r,minute=29),self.now-dt.timedelta(seconds=30));self.add(self.r,self.now)
+  self.add(dict(self.r,minute=self.r['minute']-1),self.now-dt.timedelta(seconds=30));self.add(self.r,self.now)
  def reading(self,kind='goals',team='h'):
   s=V.latest(self.c)[0];p,ctx=V.inputs(self.c,V.bind(self.c,V.sample_data(s)),self.now)
   return next(d for d in V.desk_advice(self.c,s,p,ctx,self.now) if d['market']==kind and d['team']==team)

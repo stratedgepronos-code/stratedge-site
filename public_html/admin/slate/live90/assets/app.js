@@ -240,6 +240,7 @@ let boardReceivedAt=Date.now();
 const seenHighlights=new Set();
 function alertCutoffReached(r){return typeof r.minute==='number'&&r.minute+Math.max(0,age(r.collected_at||r.received_at))/60>=80;}
 function deskEffective(r,d){
+ if(r.state==='LIVE'&&d?.market==='goals'&&d.period==='HT'&&r.minute+Math.max(0,age(r.collected_at||r.received_at))/60>=45)return {...d,status:'waiting',title:'Pause proche',reason:'Pas de nouvelle alerte avant la pause à partir de 45:00.'};
  if(r.state==='LIVE'&&alertCutoffReached(r))return {...d,status:'waiting',title:'Alertes arrêtées · 80′',reason:'Aucune nouvelle alerte dès la 80e minute ; suivi des résultats maintenu.'};
  if(d?.market==='cards'&&(d.recommendation_allowed===false||d.telegram_allowed===false||d.status==='excluded'))return {...d,status:'excluded',title:'Hors sélection cartons',reason:'Cartons désactivés pour ce championnat.'};
  if(d&&['goals','cards'].includes(d.market)&&['active','confirming'].includes(d.status)&&(d.coherence?.status!=='confirmed'||d.coherence?.policy!=='prematch_live_context_v4'))return {...d,status:'context_wait',title:'Avant-match incomplet',reason:'Concordance avant-match/live non confirmée.'};
@@ -259,7 +260,7 @@ function deskCell(r,d,kind){
  const owner=d?.team==='h'?r.home:d?.team==='a'?r.away:'cette équipe';
  const key=[r.packball_id,d?.team,kind,x.status,d?.observed].join(':');
  const animate=x.status==='active'&&!seenHighlights.has(key);if(x.status==='active')seenHighlights.add(key);
- return `<div class="reading ${esc(x.status)} ${animate?'reading-new':''}"><div class="reading-owner">${esc(deskNames[kind])} de ${esc(owner)}</div><div class="reading-top"><b>${fmt(number)} <small>${unit}</small></b><span>${esc(x.title||deskStates[x.status]||'Observer')}</span></div><p>${esc(x.reason)}</p><div class="reading-reference">${typeof x.baseline==='number'?`Moyenne de cette équipe : <b>${fmt(x.baseline)}</b> / match · ${fmt(x.sample)} matchs · ${esc(x.baseline_origin||'Packball')}`:'Repère avant-match indisponible'}</div>${kind==='goals'&&typeof x.metrics?.sot_per_goal==='number'?`<div class="reading-reference">Repère : ${fmt(x.metrics.sot_per_goal)} cadrés / but · aucune garantie</div>`:''}${evidenceHTML(x)}${x.status==='active'?'<small class="reading-action">Regarder le match et vérifier le marché</small>':''}</div>`;
+ return `<div class="reading ${esc(x.status)} ${animate?'reading-new':''}"><div class="reading-owner">${esc(deskNames[kind])} de ${esc(owner)}${kind==='goals'?(d?.period==='HT'?' · avant la pause':' · avant la fin'):''}</div><div class="reading-top"><b>${fmt(number)} <small>${unit}</small></b><span>${esc(x.title||deskStates[x.status]||'Observer')}</span></div><p>${esc(x.reason)}</p><div class="reading-reference">${typeof x.baseline==='number'?`Moyenne de cette équipe : <b>${fmt(x.baseline)}</b> / match · ${fmt(x.sample)} matchs · ${esc(x.baseline_origin||'Packball')}`:'Repère avant-match indisponible'}</div>${kind==='goals'&&typeof x.metrics?.sot_per_goal==='number'?`<div class="reading-reference">Repère : ${fmt(x.metrics.sot_per_goal)} cadrés / but · aucune garantie</div>`:''}${evidenceHTML(x)}${x.status==='active'?'<small class="reading-action">Regarder le match et vérifier le marché</small>':''}</div>`;
 }
 function deskDetail(r){
  return ['h','a'].map(t=>`<section class="desk-detail-team"><h3>${esc(t==='h'?r.home:r.away)}</h3><div class="desk-detail-grid">${Object.keys(deskNames).map(k=>{
@@ -281,16 +282,17 @@ function cutGap(q){
  return `${fmt(q.needed)} de plus nécessaire${q.needed===1?'':'s'}${q.indicative_counter?' si même décompte*':''}`;
 }
 function cutCardHTML(r,team,kind){
- const options=freshCuts(r).filter(q=>q.team===team&&q.kind===kind&&q.period==='FT'&&q.half_line&&q.needed!==0);
+ const reading=(r.advice||[]).find(x=>x.team===team&&x.market===kind),period=kind==='goals'&&reading?.period==='HT'?'HT':'FT';
+ const options=freshCuts(r).filter(q=>q.team===team&&q.kind===kind&&q.period===period&&q.half_line&&q.needed!==0);
  options.sort((a,b)=>a.line-b.line);
  const q=options[0],d=(r.advice||[]).find(x=>x.team===team&&x.market===kind),g=d?.stake_gate;
  const gateNote=g?`<small>${esc(g.reason)}</small>`:'';
- if(!q){const stale=r.stake_cuts?.state==='stale'||age(r.stake_cuts?.at)>60&&r.stake_cuts?.at;return `<div class="cut-card unavailable">${stale?'Cuts à actualiser':'Cut FT non reçu'} · observation seule${gateNote}</div>`}
+ if(!q){const stale=r.stake_cuts?.state==='stale'||age(r.stake_cuts?.at)>60&&r.stake_cuts?.at;return `<div class="cut-card unavailable">${stale?'Cuts à actualiser':'Cut '+period+' non reçu'} · observation seule${gateNote}</div>`}
  return `<div class="cut-card ${q.needed>1?'multiple':''}"><b>Cut +${fmt(q.line)} · cote ${fmt(q.odds)}${q.odds<1.5?' · &lt; 1,50':''}</b><span>Actuel ${fmt(q.current)} · ${esc(cutGap(q))}</span>${gateNote}${q.needed>1?'<small>Marché distinct : ce signal suit un événement supplémentaire, pas ce cut.</small>':''}${q.indicative_counter?'<small>* Bookings Stake ≠ jaunes Packball</small>':''}</div>`;
 }
 function cutDetailHTML(r){
  const all=freshCuts(r).filter(q=>Object.hasOwn(deskNames,q.kind)),c=r.stake_cuts;
- return `<section class="detail-box cut-detail"><h3>Les cuts réellement reçus · Stake</h3><p class="help">${esc(c?.reason||'Utilise « Cuts Stake » au-dessus des matchs pour consulter les marchés.')} Réception : ${esc(time(c?.at))}. Instantané valable 60 s pour l’affichage et 30 s maximum avant un envoi Telegram ; fraîcheur du flux source non garantie.</p>${all.length?`<div class="cut-list">${all.map(q=>`<article><b>${esc(q.team==='h'?r.home:r.away)} · ${esc(deskNames[q.kind])} · ${q.period==='HT'?'1re mi-temps':'match entier'}</b><p>Over ${fmt(q.line)} · cote ${fmt(q.odds)} · compteur Packball ${fmt(q.current)}<br><strong>${esc(cutGap(q))}</strong></p><small>${esc(q.note)}</small></article>`).join('')}</div>`:'<p>Aucun cut actuel associé sans ambiguïté. Cela ne prouve pas que le marché est absent sur Stake.</p>'}<p class="help">La carte affiche la plus petite ligne FT en demi-unité reçue, non dépassée. Un écart au cut n’est pas une prévision : une dynamique pour un événement ne valide pas un pari qui en exige plusieurs. Les jaunes Packball ne certifient pas le décompte Bookings de Stake.</p></section>`;
+ return `<section class="detail-box cut-detail"><h3>Les cuts réellement reçus · Stake</h3><p class="help">${esc(c?.reason||'Utilise « Cuts Stake » au-dessus des matchs pour consulter les marchés.')} Réception : ${esc(time(c?.at))}. Instantané valable 60 s pour l’affichage et 30 s maximum avant un envoi Telegram ; fraîcheur du flux source non garantie.</p>${all.length?`<div class="cut-list">${all.map(q=>`<article><b>${esc(q.team==='h'?r.home:r.away)} · ${esc(deskNames[q.kind])} · ${q.period==='HT'?'1re mi-temps':'match entier'}</b><p>Over ${fmt(q.line)} · cote ${fmt(q.odds)} · compteur Packball ${fmt(q.current)}<br><strong>${esc(cutGap(q))}</strong></p><small>${esc(q.note)}</small></article>`).join('')}</div>`:'<p>Aucun cut actuel associé sans ambiguïté. Cela ne prouve pas que le marché est absent sur Stake.</p>'}<p class="help">La carte affiche la plus petite ligne en demi-unité reçue pour la période suivie (HT ou FT), non dépassée. Un écart au cut n’est pas une prévision : une dynamique pour un événement ne valide pas un pari qui en exige plusieurs. Les jaunes Packball ne certifient pas le décompte Bookings de Stake.</p></section>`;
 }
 function attentionItems(matches){
  const items=[];
@@ -320,9 +322,10 @@ function attentionItems(matches){
     detail=attentionNumber(m.blocked_shots10)?`${fmt(m.blocked_shots10)} tirs bloqués sur la même période`:'Tirs bloqués récents non renseignés';
     reserve='Du volume offensif, mais les tirs ne garantissent pas des corners.';notable=true;
    }
-   if(d.context_evidence?.support==='concordant')detail+=' · références match entier documentées';
+   if(d.context_evidence?.support==='concordant')detail+=' · références '+({first_half:'1re mi-temps',second_half:'2e mi-temps',full_time:'match entier'}[d.context_evidence.period]||'de la période')+' documentées';
    if(!notable&&!confirmed)continue;
    if(!notable){headline={goals:'Pression offensive soutenue',corners:'Activité autour de la surface',cards:'Fautes récentes en série'}[d.market];detail=d.reason;reserve=(d.limits||[])[0]||'Situation à examiner dans le détail du match.'}
+   if(d.market==='goals')headline+=(d.period==='HT'?' · avant la pause':' · avant la fin');
    if(d.situation){detail+=' · '+(d.situation.lines?.[0]||'');reserve=d.situation.clock_line+' · Un événement supplémentaire à surveiller.'}
    const id=String(r.packball_id||r.fixture),key=[id,d.team,d.market].join(':');
    items.push({key,match:id,team:d.team==='h'?r.home:r.away,opponent:d.team==='h'?r.away:r.home,minute:r.minute,score:r.score,kind:d.market,cutHTML:cutCardHTML(r,d.team,d.market),confirmed,notable,headline,detail,reserve,clockLine:d.situation?.clock_line||'',priority:confirmed?(d.context_evidence?.support==='concordant'?3:2):x.status==='confirming'?1:0});
@@ -357,9 +360,9 @@ function renderDesk(matches){
 }
 function radarResultHTML(o){
  const r=o.result;if(!r)return o.notification?.delivery==='sent'?'<small>Résultat non disponible pour cette alerte.</small>':'';
- const t=r.data?.target||{},labels={pending:'⏳ En attente',observed:'✅ Seuil atteint',not_observed:'❌ Seuil non atteint à la fin',unknown:'⚪ À vérifier · données finales manquantes'};
+ const t=r.data?.target||{},labels={pending:'⏳ En attente',observed:'✅ Seuil atteint',not_observed:t.period==='HT'?'❌ Seuil non atteint à la pause':'❌ Seuil non atteint à la fin',unknown:'⚪ À vérifier · données finales manquantes'};
  const team=t.team==='h'?o.data?.home:o.data?.away;
- return `<div class="observation-result"><b>${esc(labels[r.outcome]||'À vérifier')} · Packball</b><small>${esc(team)} · +${fmt(t.line)} ${t.market==='cards'?'jaunes':'buts'} · match entier${typeof r.data?.current==='number'?' · compteur '+fmt(r.data.current):''}</small>${t.bookings_proxy?'<small>Bookings Stake : règlement du pari non certifié par les jaunes Packball.</small>':''}${r.notification?`<small>Telegram résultat : ${esc(deliveries[r.notification.delivery]||r.notification.delivery)}${r.notification.delivery_error?' · '+esc(r.notification.delivery_error):''}</small>`:''}</div>`;
+ return `<div class="observation-result"><b>${esc(labels[r.outcome]||'À vérifier')} · Packball</b><small>${esc(team)} · +${fmt(t.line)} ${t.market==='cards'?'jaunes':'buts'} · ${t.period==='HT'?'première mi-temps':'match entier'}${typeof r.data?.current==='number'?' · compteur '+fmt(r.data.current):''}</small>${t.bookings_proxy?'<small>Bookings Stake : règlement du pari non certifié par les jaunes Packball.</small>':''}${r.notification?`<small>Telegram résultat : ${esc(deliveries[r.notification.delivery]||r.notification.delivery)}${r.notification.delivery_error?' · '+esc(r.notification.delivery_error):''}</small>`:''}</div>`;
 }
 function observationHTML(o){const x=o.data||{},d=x.reading||{};return `<article class="observation"><small>${esc(time(o.created_at))} · ${esc(x.minute)}′</small><b>${esc(o.team==='h'?x.home:x.away)} · ${esc(deskNames[o.market]||'Corners · archive')}</b><p>${esc(d.reason)}</p><small>Observation conservée${o.notification?' · Telegram : '+esc(deliveries[o.notification.delivery]||o.notification.delivery):''}</small>${radarResultHTML(o)}</article>`;}
 function renderObservations(query){

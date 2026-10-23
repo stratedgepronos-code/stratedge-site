@@ -19,7 +19,7 @@ class LiveContext(unittest.TestCase):
   self.assertEqual(d['status'],'active');self.assertEqual(d['situation']['quality'],'inside_observed')
   self.assertEqual(d['metrics']['shots_previous5'],3)
   self.assertTrue(d['research']['candidate']);self.assertEqual(d['research']['mode'],'shadow')
-  self.assertEqual(d['situation']['remaining_regulation'],60)
+  self.assertEqual(d['situation']['remaining_regulation'],15)
  def test_old_collector_stays_compatible_without_inventing_quality(self):
   self.prepare();d=self.reading()
   self.assertEqual(d['status'],'active');self.assertEqual(d['situation']['quality'],'unknown')
@@ -71,7 +71,7 @@ class LiveContext(unittest.TestCase):
   self.assertEqual(row[0],first)
  def test_quote_for_multiple_events_cannot_become_result_target(self):
   self.prepare();d=self.reading();r=V.sample_data(V.latest(self.c)[0])
-  quote={'team':'h','kind':'goals','period':'FT','half_line':True,'needed':3,'line':2.5,'odds':1.9,'current':0,'indicative_counter':False}
+  quote={'team':'h','kind':'goals','period':'HT','half_line':True,'needed':3,'line':2.5,'odds':1.9,'current':0,'indicative_counter':False}
   cuts={'quotes':[quote]};t=V.radar_target(r,d,cuts)
   self.assertEqual(t['line'],.5);self.assertEqual(t['mode'],'event');self.assertIsNone(t['quote'])
   msg=V.radar_message(r,d,cuts);self.assertIn('Marché distinct, non soutenu',msg)
