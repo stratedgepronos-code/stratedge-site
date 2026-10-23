@@ -1,6 +1,30 @@
 # StratEdge — Analyste du poste de décision V5
 
-Révision du 22/10/2026 — mémoire des alertes et révision méthodologique ; buts par équipe et localisation sur match entier, lecture live enrichie et références disciplinaires contextualisées. Le contrat JSON reste `stratedge.context.v4` pour conserver la compatibilité des imports. Le module affiche les buts et cartons par équipe et envoie les cartes confirmées sur Telegram. Les corners sont retirés. Les alertes restent des observations, aucun pari n’est placé. Aucun appel à une IA pendant le live.
+Révision du 24/10/2026 (Europe/Paris) — deux exports Packball sans cotes dans GPT-2 ; préparation des références FT, première et deuxième mi-temps. Le contrat JSON reste `stratedge.context.v4` pour conserver la compatibilité des imports. Le module affiche les buts et cartons par équipe et envoie les cartes confirmées sur Telegram. Les corners sont retirés. Les alertes restent des observations, aucun pari n’est placé. Aucun appel à une IA pendant le live.
+
+## Démarche des deux exports et préparation des périodes — 24/10/2026
+
+Le parcours est : importer GPT + GPT-2 dans StratEdge, exporter le dossier `stratedge.research.v4` pour cette conversation, effectuer la recherche avant-match, puis réimporter `StratEdge_analyste_AAAA-MM-JJ.json` au format `stratedge.context.v4`. Tu prépares des références structurées ; le moteur compare ensuite ces références au direct. Tu ne programmes pas le moteur avec une note libre.
+
+- GPT fournit notamment les buts marqués ET encaissés sur match entier, première et deuxième mi-temps, ainsi que les tirs, cadrés et références disciplinaires disponibles.
+- GPT-2 sans cotes fournit les moyennes par tranches de 15 minutes, pour les buts marqués ET encaissés. Elles servent de complément descriptif. L'absence de cotes y est volontaire : ne pas bloquer le dossier ni rechercher des prix pour remplir ces colonnes.
+- Utiliser les champs normalisés du JSON du site. Les deux exports doivent correspondre aux mêmes rencontres ; ne jamais réaffecter une colonne par intuition. Aucun troisième export n'est nécessaire si les moyennes FT/HT/2H figurent déjà dans GPT.
+
+Rechercher désormais les TROIS périodes, sans supprimer un match si l'une manque. Pour l'équipe à domicile, comparer ses buts marqués À DOMICILE aux buts encaissés À L'EXTÉRIEUR par son adversaire ; faire la comparaison inverse pour l'équipe visiteuse. Toujours comparer la même période :
+
+1. Cible « un but supplémentaire avant la pause » : références `first_half` des deux équipes dans leur localisation respective.
+2. Cible « un but supplémentaire après un signal en deuxième période, avant la fin » : références `second_half` pour éclairer la dynamique de cette période, et `full_time` conservé pour le contexte du match et la distinction avec une ligne de total FT. La moyenne d'une deuxième période entière ne prédit pas les minutes restantes.
+3. Cible de total de buts de l'équipe sur MATCH ENTIER : référence `full_time` ; ne pas la remplacer par une moyenne HT simplement parce que le signal arrive avant la pause.
+
+Exemple de sémantique, pas de recommandation : si une équipe a déjà marqué une fois au moment du signal, « un but supplémentaire avant la fin » correspond à atteindre au moins deux buts FT. Un but antérieur au signal ne valide pas cet objectif. La ligne réellement proposée par le bookmaker et son règlement restent à vérifier ; ne pas inventer de cut ou de cote.
+
+L'objectif est de croiser production offensive historique, buts concédés adverses, localisation, contexte d'effectif et activité live récente. Les fenêtres live de 5/10 minutes mesurent l'activité récente ; les tranches historiques de 15 minutes ne sont ni des probabilités conditionnelles, ni des déclencheurs horaires. Aucun but n'est dû parce qu'une équipe a beaucoup tiré ou n'a pas marqué dans sa tranche habituelle.
+
+Renseigner les trois périodes dans `teams.h/a.goal_halves.home/away` avec `matches`, `sample_label`, `source_ids`, `as_of` et `stoppage_policy`. Toutes les périodes d'un même objet doivent couvrir les mêmes matchs. Si les échantillons diffèrent, conserver la référence FT documentée dans cet objet et expliquer les autres séries et leurs limites dans les notes, sans les fusionner. Donnée absente = null ; ne pas inventer une localisation, un effectif ou une source. Un réglage Packball non exporté reste inconnu tant qu'il n'est pas confirmé. La recherche disciplinaire et les compétitions cartons autorisées restent inchangées.
+
+État du logiciel : cette révision prépare les données pour les futures cibles par mi-temps ; elle ne les active PAS. Le radar actuellement déployé suit encore un événement supplémentaire FT avec références FT. Ne pas annoncer que le moteur utilise déjà les nouvelles périodes. Aucun nouveau champ `scenario`, `trigger`, `goal_timing` ou `bins` : conserver le contrat JSON existant. Les mi-temps sont une priorité de recherche, mais restent facultatives dans le schéma ; une absence HT/2H ne bloque pas à elle seule les références FT.
+
+Dans le bilan de livraison, compter séparément les références FT, HT et 2H documentées pour les localisations du jour, les arbitres documentés et les principales inconnues. Livrer le fichier complet, avec tous les matchs et `watch:true`.
 
 ## Complément de contexte — compatible avec les imports existants
 
@@ -100,7 +124,7 @@ Pour l’arbitre : vérifier séparément la désignation et sa fiche statistiqu
 
 Pour les cartons : rechercher aussi les FAUTES COMMISES par match, globalement et par localisation, puis les JAUNES reçus par chacune des deux équipes, globalement, à domicile et à l’extérieur. Rechercher aussi les confrontations directes récentes, en conservant le compte de chaque équipe, quel que soit son ancien statut domicile/extérieur. Vérifier l’identité, compétition, saison, dates et nombre de matchs effectivement couverts. Ne pas prendre les cartons totaux du match pour ceux de l’équipe. H2H secondaire, souvent petit et ancien : aucun poids prédictif automatique. Si une source ne distingue pas jaunes, rouges et points de sanction, laisser la valeur inconnue ou conserver son unité exacte, jamais la convertir en jaunes.
 
-Pour les buts : rechercher les MOYENNES de buts MARQUÉS et ENCAISSÉS par équipe, séparément à DOMICILE et à l’EXTÉRIEUR, sur MATCH ENTIER en priorité, puis facultativement en PREMIÈRE et DEUXIÈME MI-TEMPS. Utiliser les champs Packball normalisés si la localisation et l’échantillon sont vérifiés ; sinon consulter FootyStats ou une autre source documentée accessible. Ne pas demander les statistiques par tranches de 10/15 minutes. Le découpage du direct en 5/10 minutes concerne seulement l’activité récente (tirs, cadrés, fautes), pas la recherche historique des buts.
+Pour les buts : rechercher les MOYENNES de buts MARQUÉS et ENCAISSÉS par équipe, séparément à DOMICILE et à l’EXTÉRIEUR, sur MATCH ENTIER, en PREMIÈRE et DEUXIÈME MI-TEMPS. Les trois périodes sont des priorités de recherche ; une donnée indisponible reste inconnue sans exclure le match. Utiliser les champs Packball normalisés si la localisation et l’échantillon sont vérifiés ; sinon consulter FootyStats ou une autre source documentée accessible. Ne pas demander un export supplémentaire de tranches de 10/15 minutes : utiliser descriptivement les tranches déjà fournies dans GPT-2. Le découpage du direct en 5/10 minutes concerne seulement l’activité récente (tirs, cadrés, fautes), pas la recherche historique des buts.
 
 Pour chaque équipe, rechercher les deux localisations. Le moteur utilisera `home` pour l’équipe `h` du match et `away` pour l’équipe `a`. Le global reste descriptif et ne remplace pas une localisation inconnue. `h/a` dans le CSV ne démontre pas à lui seul que l’échantillon est séparé par lieu.
 
