@@ -169,20 +169,22 @@ const server=http.createServer((r,res)=>{if(r.url==='/download.php?file=collecto
  // Missing selection must not turn into an empty save; restore and explicit disable are visible.
  const savedRadar=structuredClone(board.radar_telegram);
  board.radar_telegram.card_leagues=[];
- board.radar_telegram.default_card_leagues=['USA · MLS','Angleterre · Premier League','Espagne · La Liga','Italie · Serie A','Allemagne · Bundesliga','France · Ligue 1','Arabie saoudite · Saudi Pro League','UEFA · Champions League','UEFA · Europa League','UEFA · Conference League'];
+ board.radar_telegram.default_card_leagues=['USA · MLS','Angleterre · Premier League','Espagne · La Liga','Italie · Serie A','Allemagne · Bundesliga','France · Ligue 1','Arabie saoudite · Saudi Pro League','UEFA · Champions League','UEFA · Europa League','UEFA · Conference League','Australie · A-League Men'];
  await page.locator('[data-close="settings-modal"]').click();await page.evaluate(()=>refresh());await page.locator('#settings-open').click();
  assert((await page.locator('#card-selection-status').textContent()).includes('Aucune compétition'));
  const beforeSettings=posted.filter(x=>x.action==='radar_telegram').length;
  await page.locator('#settings-form button[type=submit]').click();assert.equal(posted.filter(x=>x.action==='radar_telegram').length,beforeSettings);
  assert((await page.locator('#settings-result').textContent()).includes('Confirme'));
- await page.locator('#card-leagues-restore').click();assert.equal((await page.locator('#card-leagues').inputValue()).split('\n').length,10);
+ await page.locator('#card-leagues-restore').click();assert.equal((await page.locator('#card-leagues').inputValue()).split('\n').length,11);
  assert((await page.locator('#card-leagues').inputValue()).includes('UEFA · Conference League'));
+ assert((await page.locator('#card-leagues').inputValue()).includes('Australie · A-League Men'));
+ assert((await page.locator('#settings-result').textContent()).includes('11 compétitions'));
  assert.equal(await page.locator('#disable-cards-label').isVisible(),false);
  await page.locator('#settings-form button[type=submit]').click();await page.waitForFunction(()=>document.querySelector('#settings-result').textContent.includes('enregistrés'));
  assert.equal(posted.filter(x=>x.action==='radar_telegram').length,beforeSettings+1);
- assert.equal(board.radar_telegram.card_leagues.length,10);
+ assert.equal(board.radar_telegram.card_leagues.length,11);
  await page.locator('[data-close="settings-modal"]').click();await page.evaluate(()=>refresh());await page.locator('#settings-open').click();
- assert.equal((await page.locator('#card-leagues').inputValue()).split('\n').length,10);
+ assert.equal((await page.locator('#card-leagues').inputValue()).split('\n').length,11);
  delete board.radar_telegram.card_leagues;
  await page.locator('[data-close="settings-modal"]').click();await page.evaluate(()=>refresh());await page.locator('#settings-open').click();
  await page.locator('#settings-form button[type=submit]').click();assert((await page.locator('#settings-result').textContent()).includes('Sélection non reçue'));

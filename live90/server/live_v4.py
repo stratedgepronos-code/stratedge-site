@@ -1498,7 +1498,7 @@ def radar_status(c):
     result_delivery={r['delivery']:r['n'] for r in c.execute('SELECT delivery,COUNT(*) n FROM v5_radar_result_events GROUP BY delivery')}
     return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','priced_only':setting(c,'radar_priced_only',True),'odds_auto':setting(c,'radar_odds_auto',True),'min_odds':MIN_TELEGRAM_ODDS,'stop_minute':ALERT_STOP_MINUTE,'counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'default_card_leagues':list(CARD_COMPETITIONS),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market'),'coherence_policy':'prematch_live_context_v4','result_tracking':'packball_two_samples','results':results,'result_deliveries':result_delivery}
 
-# Explicit owner selection, extended to UEFA Conference League on 22 October 2026.
+# Explicit owner selection, extended to A-League Men on 23 October 2026.
 # Country/region is required for common
 # labels (Premier League, Serie A, Pro League...); no substring or team-name guesses.
 CARD_COMPETITIONS={
@@ -1512,6 +1512,7 @@ CARD_COMPETITIONS={
     'UEFA · Champions League': (('eur','europe','uefa'),('uefa champions league','champions league','ligue des champions','ligue des champions uefa','uefa ligue des champions')),
     'UEFA · Europa League': (('eur','europe','uefa'),('uefa europa league','europa league','ligue europa','uefa ligue europa')),
     'UEFA · Conference League': (('eur','europe','uefa'),('uefa conference league','conference league','uefa europa conference league','europa conference league','ligue conference','ligue europa conference','uefa ligue conference')),
+    'Australie · A-League Men': (('aus','au','australia','australie','nz','nzl','new zealand','nouvelle zelande'),('a-league men','a league men','a-league','a league','isuzu ute a-league','isuzu ute a-league men')),
 }
 UEFA_CARD_COMPETITIONS=('UEFA · Champions League','UEFA · Europa League')
 
@@ -1540,6 +1541,11 @@ def install_card_selection(c):
         if not setting(c,'card_selection_conference_20261022',False):
             selected=list(dict.fromkeys([*setting(c,'card_leagues',[]),'UEFA · Conference League']))
             for k,v in (('card_leagues',selected),('card_selection_conference_20261022',True)):
+                c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,enc(v)))
+
+        if not setting(c,'card_selection_australia_20261023',False):
+            selected=list(dict.fromkeys([*setting(c,'card_leagues',[]),'Australie · A-League Men']))
+            for k,v in (('card_leagues',selected),('card_selection_australia_20261023',True)):
                 c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,enc(v)))
 
 def install_radar_observation_mode(c):
