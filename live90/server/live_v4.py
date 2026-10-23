@@ -1498,7 +1498,7 @@ def radar_status(c):
     result_delivery={r['delivery']:r['n'] for r in c.execute('SELECT delivery,COUNT(*) n FROM v5_radar_result_events GROUP BY delivery')}
     return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','priced_only':setting(c,'radar_priced_only',True),'odds_auto':setting(c,'radar_odds_auto',True),'min_odds':MIN_TELEGRAM_ODDS,'stop_minute':ALERT_STOP_MINUTE,'counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'default_card_leagues':list(CARD_COMPETITIONS),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market'),'coherence_policy':'prematch_live_context_v4','result_tracking':'packball_two_samples','results':results,'result_deliveries':result_delivery}
 
-# Explicit owner selection, extended to A-League Men on 23 October 2026.
+# Explicit owner selection, extended to A-League Men and 2. Bundesliga on 23 October 2026.
 # Country/region is required for common
 # labels (Premier League, Serie A, Pro League...); no substring or team-name guesses.
 CARD_COMPETITIONS={
@@ -1507,6 +1507,7 @@ CARD_COMPETITIONS={
     'Espagne · La Liga': (('esp','spain','espagne'),('la liga','laliga','primera division','laliga ea sports')),
     'Italie · Serie A': (('ita','italy','italie'),('serie a','serie a enilive')),
     'Allemagne · Bundesliga': (('ger','deu','germany','allemagne'),('bundesliga','1. bundesliga','1 bundesliga')),
+    'Allemagne · 2. Bundesliga': (('ger','deu','de','germany','allemagne','deutschland'),('2. bundesliga','2 bundesliga','bundesliga 2','bundesliga ii','germany 2. bundesliga')),
     'France · Ligue 1': (('fra','france'),('ligue 1','ligue 1 mcdonalds',"ligue 1 mcdonald's")),
     'Arabie saoudite · Saudi Pro League': (('ksa','sau','saudi arabia','arabie saoudite'),('pro league','saudi pro league','professional league','saudi professional league','saudi arabia pro league','roshn saudi league')),
     'UEFA · Champions League': (('eur','europe','uefa'),('uefa champions league','champions league','ligue des champions','ligue des champions uefa','uefa ligue des champions')),
@@ -1546,6 +1547,11 @@ def install_card_selection(c):
         if not setting(c,'card_selection_australia_20261023',False):
             selected=list(dict.fromkeys([*setting(c,'card_leagues',[]),'Australie · A-League Men']))
             for k,v in (('card_leagues',selected),('card_selection_australia_20261023',True)):
+                c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,enc(v)))
+
+        if not setting(c,'card_selection_bundesliga2_20261023',False):
+            selected=list(dict.fromkeys([*setting(c,'card_leagues',[]),'Allemagne · 2. Bundesliga']))
+            for k,v in (('card_leagues',selected),('card_selection_bundesliga2_20261023',True)):
                 c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,enc(v)))
 
 def install_radar_observation_mode(c):

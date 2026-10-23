@@ -8,14 +8,14 @@ class Competitions(unittest.TestCase):
  prepare=F.DeskTests.prepare
  reading=F.DeskTests.reading
  add=F.DeskTests.add
- def test_selected_eleven_country_and_league(self):
+ def test_selected_twelve_country_and_league(self):
   cases=[('United States','Major League Soccer','USA · MLS'),('England','Premier League','Angleterre · Premier League'),('Spain','La Liga','Espagne · La Liga'),('Italy','Serie A','Italie · Serie A'),('Germany','Bundesliga','Allemagne · Bundesliga'),('France','Ligue 1','France · Ligue 1'),('Saudi Arabia','Pro League','Arabie saoudite · Saudi Pro League')]
   V.install_card_selection(self.c)
   for country,league,wanted in cases:
    p={'league':league,'packball':{'export_a':[country]}}
    self.assertEqual(V.selected_card_competition({'league':league},p),wanted)
    self.assertTrue(V.card_market_allowed(self.c,{'league':league},'h',self.now,p=p))
-  self.assertEqual(len(V.radar_status(self.c)['card_leagues']),11)
+  self.assertEqual(len(V.radar_status(self.c)['card_leagues']),12)
  def test_uefa_region_aliases_and_both_teams(self):
   V.install_card_selection(self.c)
   for country in ('EUR','Europe','UEFA'):
@@ -33,7 +33,7 @@ class Competitions(unittest.TestCase):
    self.c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,V.enc(v)))
   self.c.commit()
   V.install_card_selection(self.c)
-  self.assertEqual(V.setting(self.c,'card_leagues',[]),['France · Ligue 1','Custom League',*V.UEFA_CARD_COMPETITIONS,'UEFA · Conference League','Australie · A-League Men'])
+  self.assertEqual(V.setting(self.c,'card_leagues',[]),['France · Ligue 1','Custom League',*V.UEFA_CARD_COMPETITIONS,'UEFA · Conference League','Australie · A-League Men','Allemagne · 2. Bundesliga'])
   self.assertFalse(V.radar_enabled(self.c))
   V.dispatch(self.c,{'action':'radar_telegram','enabled':False,'card_leagues':['France · Ligue 1']},self.now)
   V.install_card_selection(self.c)
@@ -207,6 +207,43 @@ class Competitions(unittest.TestCase):
   self.c.commit()
   V.install_card_selection(self.c)
   self.assertEqual(V.setting(self.c,'card_leagues',[]),['France · Ligue 1','Custom League','Australie · A-League Men'])
+  self.assertTrue(V.radar_enabled(self.c))
+  self.assertFalse(V.setting(self.c,'radar_priced_only',True))
+  self.assertFalse(V.setting(self.c,'radar_odds_auto',True))
+  V.dispatch(self.c,{'action':'radar_telegram','enabled':False,'card_leagues':['France · Ligue 1']},self.now)
+  V.install_card_selection(self.c)
+  self.assertEqual(V.setting(self.c,'card_leagues',[]),['France · Ligue 1'])
+  self.assertFalse(V.radar_enabled(self.c))
+
+ def test_bundesliga2_aliases_and_both_team_cards_allowed(self):
+  V.install_card_selection(self.c)
+  for country in ('Germany','GER','DEU','Allemagne','DE','Deutschland'):
+   for league in ('2. Bundesliga','2 Bundesliga','Bundesliga 2','Bundesliga II'):
+    p={'league':league,'packball':{'export_a':[country]}}
+    self.assertEqual(V.selected_card_competition({},p),'Allemagne · 2. Bundesliga')
+    for team in ('h','a'):
+     self.assertTrue(V.card_market_allowed(self.c,{},team,self.now,p=p))
+  self.m['league']=self.ctx['league']='2. Bundesliga'
+  self.m['packball']={'export_a':['Germany','GER','2. Bundesliga']}
+  self.prepare()
+  d=self.reading('cards')
+  self.assertEqual(d['status'],'active')
+  self.assertTrue(d['telegram_allowed'])
+  self.assertTrue(V.radar_eligible(V.sample_data(V.latest(self.c)[0]),d,self.now))
+
+ def test_bundesliga2_excludes_women_youth_other_divisions_and_cups(self):
+  V.install_card_selection(self.c)
+  for country,league in [('GER','3. Liga'),('GER','2. Bundesliga Women'),('GER','2. Bundesliga U19'),('GER','DFB Pokal'),('Austria','2. Bundesliga'),('','2. Bundesliga')]:
+   self.assertFalse(V.card_market_allowed(self.c,{'country':country,'league':league},'h',self.now),(country,league))
+
+ def test_bundesliga2_upgrade_additive_once_preserves_owner_controls(self):
+  V.install_card_selection(self.c)
+  self.c.execute("DELETE FROM v4_settings WHERE key='card_selection_bundesliga2_20261023'")
+  for k,v in [('card_leagues',['France · Ligue 1','Custom League']),('radar_telegram_enabled',True),('radar_priced_only',False),('radar_odds_auto',False)]:
+   self.c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,V.enc(v)))
+  self.c.commit()
+  V.install_card_selection(self.c)
+  self.assertEqual(V.setting(self.c,'card_leagues',[]),['France · Ligue 1','Custom League','Allemagne · 2. Bundesliga'])
   self.assertTrue(V.radar_enabled(self.c))
   self.assertFalse(V.setting(self.c,'radar_priced_only',True))
   self.assertFalse(V.setting(self.c,'radar_odds_auto',True))
