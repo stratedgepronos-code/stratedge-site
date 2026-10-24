@@ -995,6 +995,24 @@ def history(c,limit=100,offset=0):
         row=dict(s);row['data']=dec(s['data'],{});row['profit_units']=profit_units(s['odds'],s['outcome']);event=c.execute('SELECT delivery,delivery_error,telegram_id,created_at FROM v4_result_notifications WHERE signal_id=? ORDER BY result_id DESC LIMIT 1',(s['id'],)).fetchone();row['result_notification']=dict(event) if event else None;out.append(row)
     return out
 
+def live_table_columns(r):
+    """Bounded display projection of the collector's labelled cells, not HTML.
+
+    The UI matches titles, never another fixture's positional column layout.
+    This is display-only: the engine continues to use validated stats.
+    """
+    cells=r.get('raw_cells')
+    if not isinstance(cells,list):return []
+    out=[]
+    for cell in cells[:40]:
+        if not isinstance(cell,dict):continue
+        title=cell.get('title')
+        if not isinstance(title,str) or not title.strip():continue
+        pair=cell.get('value')
+        value={side:pair.get(side) if num(pair.get(side)) else None for side in ('h','a')} if isinstance(pair,dict) else None
+        out.append({'title':title[:240], 'value':value})
+    return out
+
 def board(c,now):
     pulse=pulse_status(c,now)
     records=[];seen=set();active=active_fixtures(c);cycle_ids=current_cycle_ids(c)
@@ -1015,6 +1033,7 @@ def board(c,now):
         r['stake_cuts']=desk_cuts(r,radar_price_cache(c),now)
         for d in r['advice']:d['stake_gate']=radar_market_gate(d,r['stake_cuts'],now)
         r['stake_lookup']=dec((c.execute("SELECT value FROM v4_runtime WHERE key='radar_price_lookup'").fetchone() or [None])[0],{})
+        r['live_columns']=live_table_columns(r)
         r.pop('raw_cells',None);records.append(r)
     for f in c.execute('SELECT * FROM v4_fixtures ORDER BY kickoff'):
         if f['fixture'] in seen or active is None or f['fixture'] not in active:continue

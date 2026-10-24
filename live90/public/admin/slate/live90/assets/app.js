@@ -73,7 +73,9 @@ function render(){
  for(const k of ['all',...Object.keys(deskNames)])$('#count-'+k).textContent=currentMatches.reduce((n,r)=>n+(r.advice||[]).filter(d=>(k==='all'||d.market===k)&&deskEffective(r,d).status==='active').length,0);
  const query=normSearch($('#search').value),matches=currentMatches.filter(r=>normSearch(`${r.home} ${r.away} ${r.league||''}`).includes(query));
  renderAttention(matches);renderCutsControl();renderLearning();
- $('#table-head').closest('table').classList.toggle('match-table',view==='live');
+ $('#table-head').closest('table').classList.toggle('match-table',view==='live'&&deskLayout==='analysis');
+ $('#table-head').closest('table').classList.toggle('pack-table',view==='live'&&deskLayout==='table');
+ $('#table-controls').hidden=view!=='live';
  $('#export-history').hidden=view!=='history';$('#history-more').hidden=true;$('#legacy-history').hidden=view!=='history'||!data.legacy?.length;
  if(view==='history'){
   const rows=visibleSignals().filter(s=>(market==='all'||market==='goals'&&s.market.startsWith('goal_')||market==='cards'&&s.market==='card_ft')&&normSearch(s.data.home+' '+s.data.away).includes(query));
@@ -350,7 +352,89 @@ function renderAttention(matches){
  }).join('');
 }
 $('#attention-more').onclick=()=>{attentionExpanded=!attentionExpanded;render()};
+
+// Compact Packball mirror. The received column titles define the order.
+// All labels/values are escaped; missing cells are never filled from a neighbour.
+let deskLayout='table',tableScope='all';
+function readLocalSet(key){try{const a=JSON.parse(localStorage.getItem(key)||'[]');return new Set(Array.isArray(a)?a.filter(x=>typeof x==='string'):[])}catch{return new Set()}}
+const tableFavorites=readLocalSet('s90.table.favorites'),tablePins=readLocalSet('s90.table.pins'),tableValues=new Map();
+function saveLocalSet(key,set){try{localStorage.setItem(key,JSON.stringify([...set].slice(-1000)))}catch{}}
+const tableKey=r=>String(r.fixture||r.packball_id||[r.kickoff_ts,r.home,r.away].join('|'));
+const tableFallback=[['Buts','stats','goals'],['Total des tirs','stats','shots'],['Tirs cadrés','stats','sot'],['Possession','stats','possession'],['Cartons jaunes','stats','yellow_cards'],['Cartons rouges','stats','red_cards'],['Cartons jaunes-rouges','stats','second_yellow'],['Fautes','stats','fouls'],['Total des tirs 10 dernières minutes','ind10','shots10'],['Tirs cadrés 10 dernières minutes','ind10','sot10'],['Total des tirs 5 dernières minutes','ind5','shots5'],['Tirs cadrés 5 dernières minutes','ind5','sot5'],['Tirs bloqués','stats','blocked_shots'],["Photos à l’intérieur de la boîte",'stats','shots_inside'],['Substitutions','stats','substitutions'],['Buts 5 dernières minutes','ind5','goals5'],['Tirs hors cible','stats','shots_off_target'],['Tirs hors boîte','stats','shots_outside'],['Tacles','stats','tackles'],['Attaques dangereuses','stats','da'],['Attaques dangereuses 10 dernières minutes','ind10','da10'],['Attaques dangereuses 5 dernières minutes','ind5','da5']];
+function tableColumns(matches){
+ const headers=Array.isArray(data.feed?.headers)?data.feed.headers.filter(x=>typeof x==='string'&&x.trim()).slice(0,40):[];
+ if(headers.length)return headers.map(title=>({title}));
+ const recent=[...matches].sort((a,b)=>(Date.parse(b.received_at)||0)-(Date.parse(a.received_at)||0)).find(r=>r.live_columns?.length);
+ return recent?recent.live_columns.slice(0,40).map(c=>({title:c.title})):tableFallback.map(([title,group,key])=>({title,group,key}));
+}
+function tableColumnInfo(title){
+ const n=normSearch(title),window=/\b10\b/.test(n)?'10′':/\b5\b/.test(n)?'5′':'';
+ let icon='◫',label=title.replace(/(?:10|5) dernieres? minutes?/ig,'').trim(),kind='stat';
+ if(/jaunes.?rouges|second.*jaune/.test(n)){icon='▰';label='2e J.';kind='second-yellow'}
+ else if(/cartons jaunes/.test(n)){icon='▰';label='Jaunes';kind='yellow'}
+ else if(/cartons rouges/.test(n)){icon='▰';label='Rouges';kind='red'}
+ else if(/buts/.test(n)){icon='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><path d="m12 7 4.8 3.5-1.8 5.6H9l-1.8-5.6ZM12 7V3m4.8 7.5 3.7-1.3M15 16.1l2.3 3.1M9 16.1l-2.3 3.1m.5-8.7L3.5 9.2"/></svg>';label=/attendus/.test(n)?'ExG':'Buts'}
+ else if(/tirs cadres/.test(n)){icon='⊡';label='Cadrés'}
+ else if(/total des tirs/.test(n)){icon='◎';label='Tirs'}
+ else if(/hors cible/.test(n)){icon='↗';label='Non cadr.'}
+ else if(/bloques/.test(n)){icon='⊟';label='Bloqués'}
+ else if(/interieur/.test(n)){icon='⊓';label='Surface'}
+ else if(/hors boite/.test(n)){icon='⊏';label='Hors surf.'}
+ else if(/possession/.test(n)){icon='%';label='Poss.'}
+ else if(/fautes/.test(n)){icon='⚑';label='Fautes'}
+ else if(/corners/.test(n)){icon='⚐';label='Corners'}
+ else if(/substitutions/.test(n)){icon='↕';label='Chang.'}
+ else if(/tacles/.test(n)){icon='⋈';label='Tacles'}
+ else if(/attaques dangereuses/.test(n)){icon='➟';label=/par minute|avg/.test(n)?'Att.d./m':'Att. dang.'}
+ else if(/attaques/.test(n)){icon='→';label='Attaques'}
+ else if(/pression/.test(n)){icon='◴';label=/difference/.test(n)?'Δ pression':'Pression'}
+ return {icon,label,window,kind};
+}
+function tableCellValue(r,c){
+ if(Array.isArray(r.live_columns)&&r.live_columns.length){const found=r.live_columns.filter(x=>x.title===c.title);return found.length===1?found[0].value:null}
+ if(c.group)return c.key==='goals'?r.score:r[c.group]?.[c.key];
+ // Compatibility for a board without display projection; exact known labels only.
+ const f=tableFallback.find(([title])=>title===c.title);
+ return f?(f[2]==='goals'?r.score:r[f[1]]?.[f[2]]):null;
+}
+function tablePair(r,c){
+ const p=tableCellValue(r,c),h=typeof p?.h==='number'&&Number.isFinite(p.h)?p.h:null,a=typeof p?.a==='number'&&Number.isFinite(p.a)?p.a:null;
+ const key=tableKey(r)+'|'+c.title,value=JSON.stringify([h,a]),old=tableValues.get(key);
+ const changed=old&&old.value!==value,at=changed?Date.now():old?.at||0;
+ tableValues.set(key,{value,at});
+ const fresh=age(r.received_at)<=100,colour=(v,o)=>v===null?'unknown':!fresh?'old':o===null||v===o?'equal':v>o?'higher':'lower';
+ const tint=fresh&&h!==null&&a!==null&&h!==a?(h>a?'home-more':'away-more'):'';
+ return `<td class="pack-stat ${tint} ${at&&Date.now()-at<2500?'cell-updated':''}" title="${esc(c.title)} · ${esc(r.home)} : ${fmt(h)} / ${esc(r.away)} : ${fmt(a)}"><span class="${colour(h,a)}">${fmt(h)}</span><i>–</i><span class="${colour(a,h)}">${fmt(a)}</span></td>`;
+}
+const countryCodes={france:'FR',fra:'FR',england:'GB-ENG',eng:'GB-ENG',angleterre:'GB-ENG',spain:'ES',espagne:'ES',esp:'ES',italy:'IT',italie:'IT',ita:'IT',germany:'DE',allemagne:'DE',ger:'DE',deu:'DE',netherlands:'NL',ned:'NL',portugal:'PT',por:'PT',belgium:'BE',belgique:'BE',bel:'BE',turkey:'TR',turkiye:'TR',tur:'TR',sweden:'SE',swe:'SE',norway:'NO',nor:'NO',austria:'AT',aut:'AT',scotland:'GB-SCT',sco:'GB-SCT',usa:'US','united states':'US',brazil:'BR',bra:'BR',argentina:'AR',arg:'AR',colombia:'CO',col:'CO',chile:'CL',chi:'CL',ecuador:'EC',ecu:'EC','saudi arabia':'SA','arabie saoudite':'SA',ksa:'SA',sau:'SA',australia:'AU',aus:'AU',japan:'JP',jpn:'JP','south korea':'KR',kor:'KR',europe:'EU',eur:'EU',uefa:'EU'};
+function countryFlag(code){
+ const bands=(colors,vertical=false)=>colors.map((color,i)=>`<rect x="${vertical?i*30/colors.length:0}" y="${vertical?0:i*20/colors.length}" width="${vertical?30/colors.length:30}" height="${vertical?20:20/colors.length}" fill="${color}"/>`).join('');
+ const flag={FR:bands(['#244894','#fff','#ed3346'],true),IT:bands(['#008b53','#fff','#ed3346'],true),DE:bands(['#222','#d82732','#f5c53b']),ES:'<path fill="#c92636" d="M0 0h30v20H0z"/><path fill="#ffc947" d="M0 5h30v10H0z"/>',NL:bands(['#be3040','#fff','#254c99']),BE:bands(['#222','#f7ce3e','#e63b42'],true),AT:bands(['#db3040','#fff','#db3040']),AR:bands(['#85cce9','#fff','#85cce9']),CO:'<path fill="#fbd438" d="M0 0h30v20H0z"/><path fill="#224da6" d="M0 10h30v5H0z"/><path fill="#ca3142" d="M0 15h30v5H0z"/>',SE:'<path fill="#176795" d="M0 0h30v20H0z"/><path stroke="#f2ce42" stroke-width="4" d="M10 0v20M0 10h30"/>','GB-ENG':'<path fill="#fff" d="M0 0h30v20H0z"/><path stroke="#d82c42" stroke-width="4" d="M15 0v20M0 10h30"/>','GB-SCT':'<path fill="#1261a3" d="M0 0h30v20H0z"/><path stroke="#fff" stroke-width="3" d="m0 0 30 20M30 0 0 20"/>',BR:'<path fill="#27854a" d="M0 0h30v20H0z"/><path fill="#ffda3a" d="m15 2 12 8-12 8L3 10Z"/><circle fill="#294e94" cx="15" cy="10" r="5"/>',JP:'<path fill="#fff" d="M0 0h30v20H0z"/><circle fill="#d4304c" cx="15" cy="10" r="6"/>'}[code];
+ return flag?`<svg viewBox="0 0 30 20" aria-hidden="true">${flag}</svg>`:`<span class="country-code">${esc(code||'—')}</span>`;
+}
+function tableCountry(r){const country=r.profile?.packball?.country||r.profile?.packball?.export_a?.[0]||r.profile?.country||r.country||'',code=countryCodes[normSearch(country)]||(/^[A-Z]{2}$/.test(country)?country:'');return `<span class="country-flag" title="${esc(country||'Pays non transmis')}">${countryFlag(code)}</span><small>${esc(country.length<=3?country:code||'')}</small>`}
+const tablePinIcon='<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true" fill="currentColor"><path d="m13 2 5 5-2 1-3 3v3l-2 1-3-3-5 5-1-1 5-5-3-3 1-2h3l3-3Z"/></svg>';
+function tableClock(r){return r.state==='HT'?'MT':r.state==='LIVE'?fmt(r.minute)+(r.minute_extra?'+'+fmt(r.minute_extra):'')+'′':r.state==='NS'?'—':esc(r.state||'—')}
+function tableReadings(r){return ['h','a'].map(side=>{const ds=(r.advice||[]).filter(d=>d.team===side&&(market==='all'||market===d.market));const active=ds.filter(d=>deskEffective(r,d).status==='active');const confirm=ds.some(d=>deskEffective(r,d).status==='confirming');const title=ds.map(d=>`${deskNames[d.market]||d.market} : ${deskEffective(r,d).reason||d.reason||'En attente'}`).join('\n');return `<span class="pack-reading ${active.length?'active':confirm?'confirming':''}" title="${esc(title)}">${side==='h'?'D':'E'} ${active.length?active.map(d=>d.market==='goals'?'B':'J').join(' '):confirm?'◔':'·'}</span>`}).join('')}
 function renderDesk(matches){
+ const selected=matches.filter(r=>tableScope==='live'?['LIVE','HT'].includes(r.state):tableScope==='favorites'?tableFavorites.has(tableKey(r)):true);
+ $('#pack-row-count').textContent=selected.length+' matchs';
+ if(deskLayout==='analysis'){renderAnalysisDesk(selected);return}
+ const cols=tableColumns(matches),ordered=[...selected].sort((a,b)=>Number(tablePins.has(tableKey(b)))-Number(tablePins.has(tableKey(a)))||(Date.parse(a.kickoff_ts)||0)-(Date.parse(b.kickoff_ts)||0)||(a.league||'').localeCompare(b.league||'')||a.home.localeCompare(b.home));
+ $('#table-head').innerHTML='<tr><th class="pack-favorite">★</th><th class="pack-pin">'+tablePinIcon+'</th><th class="pack-country">Pays</th><th class="pack-league">Ligue</th><th class="pack-start">Heure</th><th class="pack-clock">Live</th><th class="pack-fixture">Domicile <span>Score</span> Visiteurs</th><th class="pack-ht" title="Score à la pause, uniquement si transmis par la collecte">HT</th>'+cols.map(c=>{const i=tableColumnInfo(c.title);return `<th class="pack-stat-head ${i.kind}" title="${esc(c.title)}" aria-label="${esc(c.title)}"><sup>${i.window||'&nbsp;'}</sup><b aria-hidden="true">${i.icon}</b><small>${esc(i.label)}</small></th>`}).join('')+'<th class="pack-reading-head">Radar<br><small>D / E</small></th></tr>';
+ $('#match-rows').innerHTML=ordered.map(r=>{const key=tableKey(r),stale=age(r.received_at)>100,ht=r.ht_score,score=r.score;const target=String(r.packball_id||r.fixture);return `<tr class="pack-row ${stale?'pack-stale':''}" data-fixture-key="${esc(key)}"><td class="pack-favorite"><button type="button" data-favorite="${esc(key)}" aria-pressed="${tableFavorites.has(key)}" aria-label="Favori : ${esc(r.home)} — ${esc(r.away)}">★</button></td><td class="pack-pin"><button type="button" data-pin="${esc(key)}" aria-pressed="${tablePins.has(key)}" aria-label="Épingler : ${esc(r.home)} — ${esc(r.away)}">${tablePinIcon}</button></td><td class="pack-country">${tableCountry(r)}</td><td class="pack-league" title="${esc(r.league)}">${esc(r.league||'—')}</td><td class="pack-start">${r.kickoff_ts?esc(new Date(r.kickoff_ts).toLocaleTimeString('fr-FR',{timeZone:'Europe/Paris',hour:'2-digit',minute:'2-digit'})):'—'}</td><td class="pack-clock ${r.state==='HT'?'pause':''}" title="${esc(r.received_at?'Relevé du '+time(r.received_at):'Aucun relevé')}${stale?' · données anciennes':''}">${tableClock(r)}${stale&&r.received_at?'<span class="stale-mark" title="Relevé ancien">!</span>':''}</td><td class="pack-fixture"><button type="button" class="pack-match-button" data-match="${esc(target)}" aria-label="Analyser ${esc(r.home)} — ${esc(r.away)}"><span class="pack-home" title="${esc(r.home)}">${esc(r.home)}</span><b class="pack-score">${fmt(score?.h)}–${fmt(score?.a)}</b><span class="pack-away" title="${esc(r.away)}">${esc(r.away)}</span></button></td><td class="pack-ht" title="${ht?'Score à la pause':'Score HT non transmis ; aucune valeur déduite du score actuel'}">${ht?fmt(ht.h)+'–'+fmt(ht.a):'—'}</td>${cols.map(c=>tablePair(r,c)).join('')}<td class="pack-reading-cell">${tableReadings(r)}</td></tr>`}).join('');
+ $('#empty').hidden=ordered.length>0;
+ $('#board-description').textContent='Valeurs domicile–extérieur · colonnes du filtre Packball · couleurs : comparaison des compteurs, pas une probabilité · — = non transmis · relevés ≈ 30 s, lecture serveur toutes les 15 s.';
+ // Bound memory when the slate changes. Keep change highlights only for current rows.
+ if(tableValues.size>50000){const keys=new Set(matches.map(tableKey));for(const key of tableValues.keys())if(![...keys].some(id=>key.startsWith(id+'|')))tableValues.delete(key)}
+}
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;
+ if(b.dataset.layout){deskLayout=b.dataset.layout;document.querySelectorAll('[data-layout]').forEach(x=>x.classList.toggle('selected',x===b));render()}
+ if(b.dataset.scope){tableScope=b.dataset.scope;document.querySelectorAll('[data-scope]').forEach(x=>x.classList.toggle('selected',x===b));render()}
+ for(const [attr,set,key] of [['favorite',tableFavorites,'s90.table.favorites'],['pin',tablePins,'s90.table.pins']])if(b.dataset[attr]){const id=b.dataset[attr];set.has(id)?set.delete(id):set.add(id);saveLocalSet(key,set);render()}
+});
+$('#table-focus').onclick=()=>{const on=document.body.classList.toggle('table-focus');$('#table-focus').setAttribute('aria-pressed',String(on));$('#table-focus').textContent=on?'↙ Navigation':'⛶ Pleine largeur'};
+function renderAnalysisDesk(matches){
  const kinds=market==='all'?Object.keys(deskNames):[market];
  const priority=r=>(r.advice||[]).some(d=>kinds.includes(d.market)&&deskEffective(r,d).status==='active');
  matches.sort((a,b)=>Number(priority(b))-Number(priority(a))||Date.parse(a.kickoff_ts)-Date.parse(b.kickoff_ts));
