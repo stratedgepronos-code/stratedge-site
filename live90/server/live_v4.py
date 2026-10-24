@@ -1305,6 +1305,16 @@ def prematch_live_coherence(r,p,ctx,team,market,metrics,evidence):
             missing.append(title+' : moyennes domicile/extérieur et effectifs positifs, attaque et défense adverse requis.')
         elif evidence.get('support')!='concordant':conflicts.append(title+' : références locales sous le repère expérimental de 0,5 but marqué/encaissé par période.')
         else:lines.extend(evidence.get('lines',[])[1:3])
+        # A documented weak interval must not be bypassed by the half_10m path.
+        # Unknown interval coverage is distinct from a measured unfavourable pair.
+        interval=goal_interval_evidence(r,p,ctx,team)
+        out['interval_gate']='known_interval_veto_v1'
+        out['interval_status']=interval['status']
+        if interval['status']=='not_elevated':
+            conflicts.append('Tranche '+interval['interval']+'′ : attaque et défense adverse ne sont pas toutes deux au-dessus de leurs moyennes par tranche. Temps fort live seul insuffisant pour notifier.')
+            lines.extend(interval['lines'])
+        elif interval['status']=='concordant':lines.extend(interval['lines'])
+        else:out['cautions'].append('Tranches de 15 min non documentées ou incomplètes : concordance établie sur la mi-temps seulement, pas sur le moment du but.')
     elif market=='cards':
         refs=[]
         for side in (team,other):
@@ -1488,7 +1498,7 @@ def desk_reading(r,p,ctx,team,market,now,hist):
         d['trigger_path']='interval_5m' if short else 'half_10m'
         d['reason']=(desk_number(m['shots5'])+' tirs dont '+desk_number(m['sot5'])+' cadrés sur les 5 dernières minutes · tranche '+interval['interval']+'′ concordante.' if short else desk_number(m['shots10'])+' tirs dont '+desk_number(m['sot10'])+' cadrés en 10 min · '+desk_number(m['shots5'])+' tirs en 5 min.')
         d['limits'].insert(0,'La qualité des occasions n’est pas mesurée par le seul nombre de cadrés.')
-        d['criteria']='Références de la mi-temps concordantes + 3 tirs/1 cadré sur 10 min et 1 tir sur 5 min ; ou tranche historique attaque/défense au-dessus de leurs moyennes par tranche + 2 tirs cadrés sur 5 min entièrement dans cette tranche. Deux relevés distincts. Seuils expérimentaux, non calibrés.'
+        d['criteria']='Références de la mi-temps concordantes + 3 tirs/1 cadré sur 10 min et 1 tir sur 5 min ; ou tranche historique attaque/défense au-dessus de leurs moyennes par tranche + 2 tirs cadrés sur 5 min entièrement dans cette tranche. Une tranche attaque/défense documentée non concordante bloque les deux voies. Tranche inconnue : réserve explicite. Deux relevés distincts. Seuils expérimentaux, non calibrés.'
     elif market=='corners':
         if any(m[k] is None for k in ('shots10','shots5','corners10','corners5')):return stop('missing','Corners récents manquants','Attendre les fenêtres 5/10 min ; le collecteur 5.0.0 lit les corners.')
         d['reason']=desk_number(m['shots10'])+' tirs et '+desk_number(m['corners10'])+' corners en 10 min · '+desk_number(m['shots5'])+' tirs en 5 min.'
@@ -1512,7 +1522,6 @@ def desk_reading(r,p,ctx,team,market,now,hist):
         d['limits'].extend(d['situation']['warnings'])
     if market in DESK_MARKETS:
         d['coherence']=prematch_live_coherence(r,p,ctx,team,market,m,d['context_evidence'])
-        if market=='goals' and d['interval_evidence'].get('status')=='concordant':d['coherence']['lines'].extend(d['interval_evidence']['lines'])
         d['limits'].extend(d['coherence'].get('cautions',[]))
         d['research']=research_candidate(d,candidate)
         d['criteria']+=' Avant-match/live : références complètes et concordantes obligatoires, sur les deux relevés.'
@@ -1794,6 +1803,12 @@ def radar_message(r,d,cuts,radar_id=None):
     lines=['🔥 STRATEDGE · RADAR LIVE'+(' #'+str(radar_id) if radar_id is not None else ''),'', '⚽ '+r['home']+' — '+r['away'],
            '⏱ '+desk_number(r['minute'])+'′ · '+desk_number(r['score']['h'])+'–'+desk_number(r['score']['a']),
            '', '🎯 '+title+' · '+name,'Avant-match + live concordants sur deux relevés.','📊 '+d['reason']]
+    if d['market']=='goals':
+        interval=d.get('interval_evidence') or {}
+        if interval.get('status')=='concordant':
+            lines[6]='Avant-match + live concordants : mi-temps et tranche '+interval.get('interval','?')+'′ ; deux relevés.'
+        else:
+            lines[6]='Avant-match + live concordants sur la mi-temps ; deux relevés. Tranche de 15 min non confirmée.'
     q=radar_quote(d,cuts)
     if q and q.get('needed')==1 and num(q.get('odds')) and q['odds']>=MIN_TELEGRAM_ODDS:
         unit='buts' if d['market']=='goals' else 'Bookings (cartons Stake)'

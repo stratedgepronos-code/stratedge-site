@@ -105,6 +105,32 @@ class Intervals(unittest.TestCase):
   for value in (-1,True,'0.6',float('nan'),31):
    ref['intervals']['31-45']['scored_per_match']=value
    with self.assertRaises(ValueError):V.validate_context(self.ctx,self.before)
+ def test_half_path_cannot_bypass_documented_weak_defensive_interval(self):
+  self.intervals('16-30');self.r['minute']=18
+  self.ctx['teams']['a']['goal_halves']['away']['intervals']['16-30']['conceded_per_match']=0
+  self.prepare();d=self.reading()
+  self.assertEqual(d['trigger_path'],'half_10m')
+  self.assertEqual(d['status'],'context_conflict')
+  self.assertEqual(d['coherence']['interval_status'],'not_elevated')
+  self.assertIn('16-30',d['reason'])
+  r=V.sample_data(V.latest(self.c)[0]);self.assertFalse(V.radar_eligible(r,d,self.now))
+  V.queue_radar(self.c,r,d,self.now);self.c.commit()
+  self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v5_radar_notifications').fetchone()[0],0)
+ def test_half_path_accepts_matching_interval_and_labels_missing_interval(self):
+  self.intervals('16-30');self.r['minute']=18
+  self.prepare();d=self.reading()
+  self.assertEqual(d['trigger_path'],'half_10m');self.assertEqual(d['status'],'active')
+  msg=V.radar_message(V.sample_data(V.latest(self.c)[0]),d,{'quotes':[]})
+  self.assertIn('mi-temps et tranche 16-30',msg)
+  for side,scope in [('h','home'),('a','away')]:self.ctx['teams'][side]['goal_halves'][scope].pop('intervals')
+  self.prepare();d=self.reading();self.assertEqual(d['status'],'active')
+  msg=V.radar_message(V.sample_data(V.latest(self.c)[0]),d,{'quotes':[]})
+  self.assertIn('Tranche de 15 min non confirmée',msg)
+ def test_negative_interval_blocks_both_halves_without_affecting_cards(self):
+  self.intervals('61-75');self.r['minute']=65
+  self.ctx['teams']['a']['goal_halves']['away']['intervals']['61-75']['conceded_per_match']=.01
+  self.prepare();self.assertEqual(self.reading()['status'],'context_conflict')
+  d=self.reading('cards');self.assertNotIn('interval_gate',d.get('coherence',{}))
  def test_second_half_references_and_cutoff(self):
   self.r['minute']=65;self.prepare();d=self.reading()
   self.assertEqual(d['period'],'FT');self.assertEqual(d['context_evidence']['period'],'second_half')
