@@ -1,0 +1,21 @@
+<div id="live-app" class="history-app">
+<header class="topbar"><a class="brand" href="./"><span class="brand-mark">S<span>↗</span></span><span>STRATEDGE<small>HISTORIQUE DU LIVE</small></span></a><a href="./" class="button">← Retour au direct</a></header>
+<section class="history-heading"><div><div class="eyebrow">CHAQUE ALERTE RESTE CONSERVÉE</div><h1>Le bilan de ta journée.</h1><p>Un objectif par équipe. Un résultat suivi. Toutes les corrections conservées.</p></div><button id="day-export" class="button">Exporter la journée ↗</button></section>
+<div id="history-error" class="history-error" role="alert" hidden></div>
+<section class="history-filters" aria-label="Filtres de l’historique">
+<label>Journée · heure de Paris<input type="date" id="history-day" required></label>
+<label>Jours enregistrés<select id="history-days"><option value="">Choisir une journée…</option></select></label>
+<label>Marché<select id="history-market"><option value="all">Buts et cartons</option><option value="goals">Buts par équipe</option><option value="cards">Cartons par équipe</option></select></label>
+<label>Résultat<select id="history-outcome"><option value="all">Tous les résultats</option><option value="observed">Validés</option><option value="not_observed">Non validés</option><option value="pending">En attente</option><option value="unknown">Inconnus</option><option value="cancelled">Annulés</option><option value="not_sent">Non envoyés</option></select></label>
+<label>Version<select id="history-generation"><option value="all">Toutes les versions</option><option value="radar">Radar live</option><option value="v4">Anciens paris V4</option></select></label>
+<label class="history-check"><input type="checkbox" id="history-unsent">Inclure les non-envoyés</label>
+</section>
+<section id="history-summary" class="history-summary" aria-label="Bilan de la journée"></section>
+<section class="history-ledger"><div class="history-ledger-head"><div><h2 id="history-title">Alertes de la journée</h2><p id="history-updated" role="status">Chargement de l’historique…</p></div><button id="history-refresh" class="button">↻ Actualiser</button></div>
+<div class="history-scroll"><table class="history-table"><thead><tr><th>Alerte</th><th>Match / équipe</th><th>Objectif suivi</th><th>Cote relevée</th><th>Résultat</th><th>Telegram</th><th></th></tr></thead><tbody id="history-rows"></tbody></table></div>
+<p id="history-empty" class="history-empty" hidden>Aucune alerte pour cette journée et ces filtres.</p>
+<footer class="history-pagination"><button id="history-prev" class="button" disabled>← Précédente</button><span id="history-page">—</span><button id="history-next" class="button" disabled>Suivante →</button></footer></section>
+<p class="history-note">Validé = objectif observé dans Packball. Non validé = objectif non atteint avec une fin de période confirmée. Sans preuve suffisante, le résultat reste en attente ou inconnu. Le suivi se poursuit même après le retrait du match du tableau live. Les anciens paris V4 conservent leur résultat archivé.</p>
+<p class="history-note">Les corrections remplacent le résultat de l’alerte sans créer un nouveau pari. Aucun gain ni rendement n’est calculé sans mise et règlement bookmaker vérifiés.</p>
+<dialog id="history-detail"><button id="history-close" class="close" aria-label="Fermer">×</button><div id="history-detail-content"></div></dialog>
+</div>

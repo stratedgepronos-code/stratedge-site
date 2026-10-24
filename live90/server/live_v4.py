@@ -1072,6 +1072,7 @@ def export_analysis(c,now):
 def dispatch(c,x,now):
     action=x.get('action','board')
     if action=='board': return board(c,now)
+    if action in ('daily_history','export_daily_history'):return daily_history(c,x,now,export=action=='export_daily_history')
     if action=='export_observations':
         rows=c.execute('SELECT * FROM v5_shadow_readings ORDER BY created_at DESC,match_id,team,market LIMIT 10000').fetchall()
         return {'schema':'stratedge.observations.v5','exported_at':iso(now),'observations':desk_history(c,100000),
@@ -1883,6 +1884,85 @@ def radar_result_status(c,radar_id):
     if not row:return None
     last=c.execute('SELECT delivery,delivery_error,telegram_id FROM v5_radar_result_events WHERE radar_id=? ORDER BY id DESC LIMIT 1',(radar_id,)).fetchone()
     return dict(row,data=dec(row['data'],{}),notification=dict(last) if last else None)
+
+def daily_history(c,x,now,export=False):
+    """Read-only, complete day ledger. No current-slate or last-200 restriction.
+
+    A result revision updates the original alert, never adds a second bet.
+    Dates use Paris civil time, including 23/25-hour DST days.
+    """
+    zone=ZoneInfo('Europe/Paris');today=now.astimezone(zone).date().isoformat()
+    day=x.get('day') or today
+    try:
+        if not isinstance(day,str) or dt.date.fromisoformat(day).isoformat()!=day:raise ValueError()
+    except (ValueError,TypeError):raise ValueError('Date invalide : AAAA-MM-JJ requis.')
+    market=x.get('market','all');outcome=x.get('outcome','all');generation=x.get('generation','all')
+    allowed=('observed','not_observed','pending','unknown','cancelled','not_sent')
+    if market not in ('all','goals','cards') or outcome not in ('all',*allowed) or generation not in ('all','radar','v4'):raise ValueError('Filtre historique invalide.')
+    include_unsent=x.get('include_unsent',False)
+    if type(include_unsent) is not bool:raise ValueError('Filtre envoi invalide.')
+    page=x.get('page',1);size=x.get('page_size',50)
+    if type(page) is not int or page<1 or type(size) is not int or not 1<=size<=100:raise ValueError('Pagination invalide.')
+    # Only lightweight metadata for all days; large decision/context JSON is
+    # decoded for the requested page (or explicit daily export) only.
+    meta=[];days={};invalid_dates=0
+    queries=(('radar',"SELECT n.id,n.created_at,n.market,n.delivery,r.outcome FROM v5_radar_notifications n LEFT JOIN v5_radar_results r ON r.radar_id=n.id"),
+             ('v4',"SELECT id,created_at,market,delivery,outcome FROM v4_signals"))
+    for source,sql in queries:
+        for row in c.execute(sql):
+            item=dict(row);stamp=date(item['created_at'])
+            if not stamp:invalid_dates+=1;continue
+            item.update(generation=source,key=source+':'+str(item['id']),day=stamp.astimezone(zone).date().isoformat(),stamp=stamp.timestamp())
+            item['market']='cards' if item['market'] in ('cards','card_ft') else 'goals'
+            raw=item['outcome']
+            item['outcome']=({'won':'observed','lost':'not_observed','void':'cancelled'}.get(raw,raw) if source=='v4' else raw) or 'pending'
+            if item['outcome'] not in allowed:item['outcome']='unknown'
+            if item['delivery']!='sent':item['outcome']='not_sent'
+            if not include_unsent and item['delivery']!='sent':continue
+            if generation!='all' and source!=generation:continue
+            if market!='all' and item['market']!=market:continue
+            days[item['day']]=days.get(item['day'],0)+1
+            if item['day']==day:meta.append(item)
+    summary={k:sum(m['outcome']==k for m in meta) for k in allowed}
+    summary['total']=len(meta);summary['sent']=sum(m['delivery']=='sent' for m in meta)
+    rows=[m for m in meta if outcome=='all' or m['outcome']==outcome]
+    rows.sort(key=lambda m:(m['stamp'],m['generation'],m['id']),reverse=True)
+    total=len(rows);pages=max(1,math.ceil(total/size));page=min(page,pages)
+    selected=rows if export else rows[(page-1)*size:page*size]
+    items=[]
+    for meta_row in selected:
+        source=meta_row['generation'];rid=meta_row['id'];radar=source=='radar'
+        row=c.execute('SELECT * FROM '+('v5_radar_notifications' if radar else 'v4_signals')+' WHERE id=?',(rid,)).fetchone()
+        saved=dec(row['data'],{});reading=saved.get('reading') or saved.get('decision') or {}
+        target=saved.get('result_target') if radar else {'team':row['team'],'market':meta_row['market'],'period':'HT' if row['market']=='goal_ht' else 'FT','line':row['line'],'quote':{'odds':row['odds']},'unit':'yellow_cards' if meta_row['market']=='cards' else 'goals'}
+        result=radar_result_status(c,rid) if radar else None
+        evidence=(result or {}).get('data') or {}
+        events=c.execute(('SELECT id,previous,outcome,created_at,sample_id,data,delivery FROM v5_radar_result_events WHERE radar_id=? ORDER BY id' if radar else "SELECT id,previous,outcome,created_at,data,source AS delivery FROM v4_results WHERE signal_id=? ORDER BY id"),(rid,)).fetchall()
+        revisions=[]
+        for event in events:
+            rev=dict(event);detail=dec(rev.pop('data'),{})
+            for field in ('previous','outcome'):rev[field]={'won':'observed','lost':'not_observed','void':'cancelled'}.get(rev[field],rev[field])
+            rev['counter']=detail.get('current');rev['minute']=detail.get('minute');revisions.append(rev)
+        valid_target=isinstance(target,dict) and num(target.get('line')) and target.get('team') in ('h','a') and target.get('market') in ('goals','cards')
+        label=radar_target_label(target,saved) if valid_target else saved.get('label') or 'Objectif archivé non disponible'
+        quote=(target or {}).get('quote') or {}
+        # No price or target is reconstructed from today's market.
+        items.append({k:meta_row[k] for k in ('key','id','generation','day','created_at','market','delivery','outcome')} | {
+            'home':saved.get('home'),'away':saved.get('away'),'team':row['team'],
+            'minute':saved.get('minute'),'score':saved.get('score'),'label':label,
+            'period':target.get('period') if valid_target else None,'line':target.get('line') if valid_target else None,
+            'odds':quote.get('odds') if num(quote.get('odds')) else None,
+            'bookings_proxy':bool((target or {}).get('bookings_proxy')),
+            'delivery_error':row['delivery_error'],'result_at':(result or {}).get('updated_at') if radar else row['settled_at'],
+            'counter':evidence.get('current'),'evidence_at':evidence.get('observed_at'),'evidence_state':evidence.get('state'),
+            'result_delivery':(result or {}).get('notification'),'revisions':revisions,
+            'reason':reading.get('reason'),'coherence_lines':(reading.get('coherence') or {}).get('lines',[]),
+            'message':saved.get('message'),'target_documented':valid_target})
+    return {'schema':'stratedge.daily-history.v1','generated_at':iso(now),'timezone':'Europe/Paris','day':day,
+            'summary':summary,'days':[{'day':d,'count':days[d]} for d in sorted(days,reverse=True)],
+            'items':items,'total':total,'page':page,'page_size':size,'pages':pages,'export_complete':export,
+            'invalid_date_count':invalid_dates,
+            'note':'Journée de création de l’alerte en Europe/Paris. Résultats Packball, pas un règlement bookmaker ni un bilan financier. Les anciens signaux V4 conservent leurs résultats archivés.'}
 
 def radar_result_value(r,target,saved,now):
     # Never infer the end from the clock or disappearance from today's slate.

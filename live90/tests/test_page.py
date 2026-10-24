@@ -14,7 +14,14 @@ class PageTests(unittest.TestCase):
         self.assertIsNone(re.search(r'(?:href|src)\s*=\s*["\']?assets/',self.src),'la page charge un fichier depuis assets/')
     def test_every_asset_is_inlined(self):
         for name in sorted(p.name for p in ASSETS.glob('*.css'))+sorted(p.name for p in ASSETS.glob('*.js')):
-            self.assertIn(f"'{name}'",self.src,f'{name} n’est pas intégré à la page')
+            page=(PAGE.parent/'historique.php').read_text() if name.startswith('history.') else self.src
+            self.assertIn(f"'{name}'",page,f'{name} n’est pas intégré à sa page')
+    def test_daily_history_has_auth_csrf_and_inline_assets(self):
+        src=(PAGE.parent/'historique.php').read_text()
+        for text in ('requireSuperAdmin();', 'live90_csrf', 'no-store', "'history.js'", "'history.css'", "'</style'", "'</script'"):
+            self.assertIn(text,src)
+        self.assertIsNone(re.search(r'(?:href|src)\s*=\s*["\']?assets/',src))
+        self.assertIn('historique.php',(ASSETS/'shell.html').read_text())
     def test_closing_tags_are_neutralised(self):
         self.assertIn("'</style'",self.src);self.assertIn("'</script'",self.src)
     def test_sidebar_included_with_live_key(self):
@@ -34,3 +41,4 @@ class PageTests(unittest.TestCase):
         self.assertIn('[...(e.target.files||[])]',ctx)
         self.assertNotIn("e.target.files[0]",ctx)
 if __name__=='__main__':unittest.main()
+

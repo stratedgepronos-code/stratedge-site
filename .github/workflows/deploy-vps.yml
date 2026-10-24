@@ -34,6 +34,7 @@ jobs:
           node tests/slot-arena/test_layout.cjs
       - name: Tests moteur, imports et parseurs
         run: |
+          php -l public_html/admin/slate/live90/historique.php
           python3 -m unittest discover -s live90/tests -p 'test_*.py'
           node live90/tests/test_parsers.cjs
           node live90/tests/test_collector.cjs
@@ -43,6 +44,7 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/live90-ui" playwright@1.51.1 --no-audit --no-fund
           LIVE90_UI_MODULES="$RUNNER_TEMP/live90-ui/node_modules" LIVE90_UI_OUTPUT="$RUNNER_TEMP/live90-captures" node live90/tests/test_v4_ui.cjs
+          LIVE90_UI_MODULES="$RUNNER_TEMP/live90-ui/node_modules" LIVE90_UI_OUTPUT="$RUNNER_TEMP/live90-captures" node live90/tests/test_daily_history_ui.cjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:
