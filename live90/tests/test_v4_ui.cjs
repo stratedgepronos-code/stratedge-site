@@ -49,10 +49,31 @@ const server=http.createServer((r,res)=>{if(r.url==='/download.php?file=collecto
  // Changing Packball's column order does not shift values into a different statistic.
  board.feed.headers=['Cartons jaunes','Fautes','Tirs cadrés 10 dernières minutes','Statistique absente'];await page.evaluate(()=>refresh());
  assert.equal(await statCells.nth(0).textContent(),'0–1');assert.equal(await statCells.nth(1).textContent(),'9–4');assert.equal(await statCells.nth(3).textContent(),'—–—');
- board.matches[0].live_columns.push({title:'Fautes',value:{h:99,a:99}});await page.evaluate(()=>refresh());assert.equal(await statCells.nth(1).textContent(),'—–—');board.matches[0].live_columns.pop();
+ board.matches[0].live_columns.push({title:'Fautes',value:{h:99,a:99}});await page.evaluate(()=>refresh());assert.equal(await statCells.nth(1).textContent(),'—–—');board.matches[0].live_columns.pop();await page.evaluate(()=>refresh());
  board.matches[0].live_columns[0].value.h=10;
  await page.waitForFunction(()=>[...document.querySelectorAll('#match-rows .pack-stat')].some(x=>x.textContent==='10–4'),{},{timeout:20000});
  assert.equal(await statCells.nth(1).textContent(),'10–4');
+ // One-minute emphasis is per side, persists through renders, then expires.
+ assert.equal(await statCells.nth(1).locator('.value-updated').count(),1);
+ assert.equal(await statCells.nth(1).locator('.value-updated').textContent(),'10');
+ assert.equal(await statCells.nth(1).evaluate(el=>getComputedStyle(el).fontSize),'11px');
+ assert.equal(await statCells.nth(1).locator('.value-updated').evaluate(el=>getComputedStyle(el).fontWeight),'700');
+ await page.evaluate(()=>{const original=Date.now;Date.now=()=>original()+59000;render();Date.now=original});
+ assert.equal(await statCells.nth(1).locator('.value-updated').count(),1);
+ await page.evaluate(()=>{const original=Date.now;Date.now=()=>original()+61000;expireTableEmphasis();Date.now=original});
+ assert.equal(await statCells.nth(1).locator('.value-updated').count(),0);
+ const savedHeaders=[...board.feed.headers];board.feed.headers.push('Tacles');board.matches[0].live_columns.push({title:'Tacles',value:{h:5,a:6}});await page.evaluate(()=>refresh());
+ assert.deepEqual(await page.locator('.pack-stat-head').evaluateAll(es=>es.map(e=>e.title)),['Cartons jaunes','Fautes','Tacles','Tirs cadrés 10 dernières minutes','Statistique absente']);
+ assert.equal(await statCells.nth(2).textContent(),'5–6');board.feed.headers=savedHeaders;board.matches[0].live_columns.pop();
+ const savedClock={state:board.matches[0].state,minute:board.matches[0].minute};
+ for(const raw of ["45' +3",'45 + 3′','45′＋3′']){board.matches[0].state='OTHER';board.matches[0].minute=null;board.matches[0].status_raw=raw;await page.evaluate(()=>refresh());assert.equal(await page.locator('#match-rows tr').filter({hasText:'Équipe A'}).locator('.pack-clock').textContent(),'45 + 3′');assert.equal(await page.locator('#match-rows tr').count(),4);}
+ await page.locator('[data-scope="live"]').click();assert.equal(await page.locator('#match-rows tr').count(),4);await page.locator('[data-scope="all"]').click();
+ board.matches[0].status_raw='90+6';await page.evaluate(()=>refresh());assert.equal(await page.locator('#match-rows tr').filter({hasText:'Équipe A'}).locator('.pack-clock').textContent(),'90 + 6′');
+ board.matches[0].state='FT';await page.evaluate(()=>refresh());assert.equal(await page.locator('#match-rows tr').count(),3);
+ board.matches[0].state='OTHER';board.matches[0].status_raw='Terminé';await page.evaluate(()=>refresh());assert.equal(await page.locator('#match-rows tr').count(),3);
+ board.matches[0].status_raw='AET';await page.evaluate(()=>refresh());assert.equal(await page.locator('#match-rows tr').filter({hasText:'Équipe A'}).locator('.pack-clock').textContent(),'À vérifier');
+ Object.assign(board.matches[0],savedClock);delete board.matches[0].status_raw;await page.evaluate(()=>refresh());
+
  await page.locator('#match-rows [data-favorite]').first().click();await page.locator('[data-scope="favorites"]').click();assert.equal(await page.locator('#match-rows tr').count(),1);await page.locator('[data-scope="all"]').click();
  await page.locator('[data-scope="live"]').click();assert.equal(await page.locator('#match-rows tr').count(),4);await page.locator('[data-scope="all"]').click();
  await page.locator('#match-rows [data-pin]').last().click();assert((await page.locator('#match-rows tr').first().textContent()).includes('Équipe G'));await page.locator('#match-rows [data-pin][aria-pressed="true"]').click();

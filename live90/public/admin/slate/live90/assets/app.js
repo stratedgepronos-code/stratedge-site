@@ -60,7 +60,7 @@ function renderHealth(){const h=data.health;if(!h){$('#health-summary').textCont
 function reviewHTML(r){if(!r)return '<p>Bilan disponible après un résultat, ou dans l’export du bilan pour GPT.</p>';return `<div class="detail-box"><h3>Bilan automatique du signal</h3><p>${esc(time(r.generated_at))}</p><h4>Faits observés</h4><ul>${(r.facts||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul><h4>Limites des données</h4><ul>${(r.limits||[]).map(x=>`<li>${esc(x)}</li>`).join('')||'<li>Aucune limite repérée par ces contrôles ; cela ne prouve pas la qualité prédictive du signal.</li>'}</ul><p>${esc(r.conclusion)}</p><h4>À examiner</h4><ul>${(r.next_steps||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`}
 function render(){
  renderHealth();collectorVersionStatus();
- const currentMatches=data.matches.filter(r=>r.state!=='FT'&&(view!=='live'||(deskLayout==='table'?r.on_packball_page!==false:r.in_analysis_program!==false)));
+ const currentMatches=data.matches.filter(r=>!tableFinished(r)&&(view!=='live'||(deskLayout==='table'?r.on_packball_page!==false:r.in_analysis_program!==false)));
  const feedAge=age(data.feed?.received_at),engineAge=age(data.engine?.at),live=currentMatches.filter(r=>['LIVE','HT'].includes(r.state)&&age(r.received_at)<=100);
  $('#feed-title').textContent=feedAge<=100?'Collecte connectée':'Collecte en attente';$('#feed-dot').classList.toggle('connected',feedAge<=100);
  $('#feed-detail').textContent=data.feed?.received_at?`${data.feed.rows??'—'} lignes reçues · ${time(data.feed.received_at)} · ${Math.round(feedAge)} s`:'Ouvre Packball avec le collecteur activé';
@@ -363,10 +363,25 @@ const tableKey=r=>String(r.fixture||r.packball_id||[r.kickoff_ts,r.home,r.away].
 const tableFallback=[['Buts','stats','goals'],['Total des tirs','stats','shots'],['Tirs cadrés','stats','sot'],['Possession','stats','possession'],['Cartons jaunes','stats','yellow_cards'],['Cartons rouges','stats','red_cards'],['Cartons jaunes-rouges','stats','second_yellow'],['Fautes','stats','fouls'],['Total des tirs 10 dernières minutes','ind10','shots10'],['Tirs cadrés 10 dernières minutes','ind10','sot10'],['Total des tirs 5 dernières minutes','ind5','shots5'],['Tirs cadrés 5 dernières minutes','ind5','sot5'],['Tirs bloqués','stats','blocked_shots'],["Photos à l’intérieur de la boîte",'stats','shots_inside'],['Substitutions','stats','substitutions'],['Buts 5 dernières minutes','ind5','goals5'],['Tirs hors cible','stats','shots_off_target'],['Tirs hors boîte','stats','shots_outside'],['Tacles','stats','tackles'],['Attaques dangereuses','stats','da'],['Attaques dangereuses 10 dernières minutes','ind10','da10'],['Attaques dangereuses 5 dernières minutes','ind5','da5']];
 function tableColumns(matches){
  const headers=Array.isArray(data.feed?.headers)?data.feed.headers.filter(x=>typeof x==='string'&&x.trim()).slice(0,40):[];
- if(headers.length)return headers.map(title=>({title}));
+ if(headers.length)return orderTableColumns(headers.map(title=>({title})));
  const recent=[...matches].sort((a,b)=>(Date.parse(b.received_at)||0)-(Date.parse(a.received_at)||0)).find(r=>r.live_columns?.length);
- return recent?recent.live_columns.slice(0,40).map(c=>({title:c.title})):tableFallback.map(([title,group,key])=>({title,group,key}));
+ return orderTableColumns(recent?recent.live_columns.slice(0,40).map(c=>({title:c.title})):tableFallback.map(([title,group,key])=>({title,group,key})));
 }
+function orderTableColumns(columns){
+ const out=[...columns],plain=title=>normSearch(title).replace(/temps plein/g,'').trim();
+ const tackles=out.findIndex(c=>plain(c.title)==='tacles');
+ if(tackles<0||!out.some(c=>plain(c.title)==='fautes'))return out;
+ const [column]=out.splice(tackles,1);out.splice(out.findIndex(c=>plain(c.title)==='fautes')+1,0,column);return out;
+}
+// Per-value emphasis lasts 60 seconds after an observed change, not after each render.
+function tableEmphasis(r,key,value){
+ const id=tableKey(r)+'|'+key,old=tableValues.get(id),now=Date.now();
+ const until=value===null?0:old&&old.value!==null&&old.value!==value?now+60000:old?.until||0;
+ tableValues.set(id,{value,until});
+ return until>now?` data-change-until="${until}" class="value-updated"`:'';
+}
+function expireTableEmphasis(){document.querySelectorAll('[data-change-until]').forEach(el=>{if(Number(el.dataset.changeUntil)<=Date.now()){el.classList.remove('value-updated');el.removeAttribute('data-change-until')}})}
+setInterval(expireTableEmphasis,1000);
 function tableColumnInfo(title){
  const n=normSearch(title),window=/\b10\b/.test(n)?'10′':/\b5\b/.test(n)?'5′':'';
  let icon='◫',label=title.replace(/(?:10|5) dernieres? minutes?/ig,'').trim(),kind='stat';
@@ -399,12 +414,9 @@ function tableCellValue(r,c){
 }
 function tablePair(r,c){
  const p=tableCellValue(r,c),h=typeof p?.h==='number'&&Number.isFinite(p.h)?p.h:null,a=typeof p?.a==='number'&&Number.isFinite(p.a)?p.a:null;
- const key=tableKey(r)+'|'+c.title,value=JSON.stringify([h,a]),old=tableValues.get(key);
- const changed=old&&old.value!==value,at=changed?Date.now():old?.at||0;
- tableValues.set(key,{value,at});
  const fresh=age(r.received_at)<=100,colour=(v,o)=>v===null?'unknown':!fresh?'old':o===null||v===o?'equal':v>o?'higher':'lower';
  const tint=fresh&&h!==null&&a!==null&&h!==a?(h>a?'home-more':'away-more'):'';
- return `<td class="pack-stat ${tint} ${at&&Date.now()-at<2500?'cell-updated':''}" title="${esc(c.title)} · ${esc(r.home)} : ${fmt(h)} / ${esc(r.away)} : ${fmt(a)}"><span class="${colour(h,a)}">${fmt(h)}</span><i>–</i><span class="${colour(a,h)}">${fmt(a)}</span></td>`;
+ return `<td class="pack-stat ${tint} " title="${esc(c.title)} · ${esc(r.home)} : ${fmt(h)} / ${esc(r.away)} : ${fmt(a)}"><span class="${colour(h,a)}"><span${tableEmphasis(r,c.title+':h',h)}>${fmt(h)}</span></span><i>–</i><span class="${colour(a,h)}"><span${tableEmphasis(r,c.title+':a',a)}>${fmt(a)}</span></span></td>`;
 }
 const countryCodes={france:'FR',fra:'FR',england:'GB-ENG',eng:'GB-ENG',angleterre:'GB-ENG',spain:'ES',espagne:'ES',esp:'ES',italy:'IT',italie:'IT',ita:'IT',germany:'DE',allemagne:'DE',ger:'DE',deu:'DE',netherlands:'NL',ned:'NL',portugal:'PT',por:'PT',belgium:'BE',belgique:'BE',bel:'BE',turkey:'TR',turkiye:'TR',tur:'TR',sweden:'SE',swe:'SE',norway:'NO',nor:'NO',austria:'AT',aut:'AT',scotland:'GB-SCT',sco:'GB-SCT',usa:'US','united states':'US',brazil:'BR',bra:'BR',argentina:'AR',arg:'AR',colombia:'CO',col:'CO',chile:'CL',chi:'CL',ecuador:'EC',ecu:'EC','saudi arabia':'SA','arabie saoudite':'SA',ksa:'SA',sau:'SA',australia:'AU',aus:'AU',japan:'JP',jpn:'JP','south korea':'KR',kor:'KR',europe:'EU',eur:'EU',uefa:'EU'};
 function countryFlag(code){
@@ -414,19 +426,34 @@ function countryFlag(code){
 }
 function tableCountry(r){const country=r.profile?.packball?.country||r.profile?.packball?.export_a?.[0]||r.profile?.country||r.country||'',code=countryCodes[normSearch(country)]||(/^[A-Z]{2}$/.test(country)?country:'');return `<span class="country-flag" title="${esc(country||'Pays non transmis')}">${countryFlag(code)}</span><small>${esc(country.length<=3?country:code||'')}</small>`}
 const tablePinIcon='<svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true" fill="currentColor"><path d="m13 2 5 5-2 1-3 3v3l-2 1-3-3-5 5-1-1 5-5-3-3 1-2h3l3-3Z"/></svg>';
-function tableClock(r){return r.state==='HT'?'MT':r.state==='LIVE'?fmt(r.minute)+(r.minute_extra?'+'+fmt(r.minute_extra):'')+'′':r.state==='NS'?'—':esc(r.state||'—')}
+function tableFinished(r){return r.state==='FT'||(['OTHER','NS',undefined,null].includes(r.state)&&/^(?:termin[eé]|fini|ft\b|fin\b|finished|full[ -]?time)/i.test(String(r.status_raw||'').trim()))}
+function tableAddedClock(r){
+ if(!['LIVE','OTHER','NS',undefined,null].includes(r.state))return null;
+ // Old collectors reject 45′ + 3′. Recover only an explicit added-time clock;
+ // never interpret extra-time, a score, or an announced duration as the clock.
+ const m=String(r.status_raw||'').trim().match(/^(45|90)\s*['′’]?\s*[+＋]\s*(\d{1,2})\s*['′’]?$/);
+ return m?{minute:Number(m[1]),extra:Number(m[2])}:null;
+}
+function tableClock(r){
+ if(r.state==='HT')return 'MT';
+ if(tableFinished(r))return 'Terminé';
+ const added=tableAddedClock(r);
+ if(added)return `${added.minute} + ${added.extra}′`;
+ if(r.state==='LIVE'&&typeof r.minute==='number')return fmt(r.minute)+(r.minute_extra?' + '+fmt(r.minute_extra):'')+'′';
+ return r.state==='NS'?'—':'À vérifier';
+}
 function tableReadings(r){return ['h','a'].map(side=>{const ds=(r.advice||[]).filter(d=>d.team===side&&(market==='all'||market===d.market));const active=ds.filter(d=>deskEffective(r,d).status==='active');const confirm=ds.some(d=>deskEffective(r,d).status==='confirming');const title=ds.map(d=>`${deskNames[d.market]||d.market} : ${deskEffective(r,d).reason||d.reason||'En attente'}`).join('\n');return `<span class="pack-reading ${active.length?'active':confirm?'confirming':''}" title="${esc(title)}">${side==='h'?'D':'E'} ${active.length?active.map(d=>d.market==='goals'?'B':'J').join(' '):confirm?'◔':'·'}</span>`}).join('')}
 function renderDesk(matches){
- const selected=matches.filter(r=>tableScope==='live'?['LIVE','HT'].includes(r.state):tableScope==='favorites'?tableFavorites.has(tableKey(r)):true);
+ const selected=matches.filter(r=>tableScope==='live'?(['LIVE','HT'].includes(r.state)||!!tableAddedClock(r)):tableScope==='favorites'?tableFavorites.has(tableKey(r)):true);
  $('#pack-row-count').textContent=selected.length+' matchs';
  if(deskLayout==='analysis'){renderAnalysisDesk(selected);return}
  const cols=tableColumns(matches),ordered=[...selected].sort((a,b)=>Number(tablePins.has(tableKey(b)))-Number(tablePins.has(tableKey(a)))||(Date.parse(a.kickoff_ts)||0)-(Date.parse(b.kickoff_ts)||0)||(a.league||'').localeCompare(b.league||'')||a.home.localeCompare(b.home));
  $('#table-head').innerHTML='<tr><th class="pack-favorite">★</th><th class="pack-pin">'+tablePinIcon+'</th><th class="pack-country">Pays</th><th class="pack-league">Ligue</th><th class="pack-start">Heure</th><th class="pack-clock">Live</th><th class="pack-fixture">Domicile <span>Score</span> Visiteurs</th><th class="pack-ht" title="Score à la pause, uniquement si transmis par la collecte">HT</th>'+cols.map(c=>{const i=tableColumnInfo(c.title);return `<th class="pack-stat-head ${i.kind}" title="${esc(c.title)}" aria-label="${esc(c.title)}"><sup>${i.window||'&nbsp;'}</sup><b aria-hidden="true">${i.icon}</b><small>${esc(i.label)}</small></th>`}).join('')+'<th class="pack-reading-head">Radar<br><small>D / E</small></th></tr>';
- $('#match-rows').innerHTML=ordered.map(r=>{const key=tableKey(r),stale=age(r.received_at)>100,ht=r.ht_score,score=r.score;const target=String(r.packball_id||r.fixture);return `<tr class="pack-row ${stale?'pack-stale':''}" data-fixture-key="${esc(key)}"><td class="pack-favorite"><button type="button" data-favorite="${esc(key)}" aria-pressed="${tableFavorites.has(key)}" aria-label="Favori : ${esc(r.home)} — ${esc(r.away)}">★</button></td><td class="pack-pin"><button type="button" data-pin="${esc(key)}" aria-pressed="${tablePins.has(key)}" aria-label="Épingler : ${esc(r.home)} — ${esc(r.away)}">${tablePinIcon}</button></td><td class="pack-country">${tableCountry(r)}</td><td class="pack-league" title="${esc(r.league)}">${esc(r.league||'—')}</td><td class="pack-start">${r.kickoff_ts?esc(new Date(r.kickoff_ts).toLocaleTimeString('fr-FR',{timeZone:'Europe/Paris',hour:'2-digit',minute:'2-digit'})):'—'}</td><td class="pack-clock ${r.state==='HT'?'pause':''}" title="${esc(r.received_at?'Relevé du '+time(r.received_at):'Aucun relevé')}${stale?' · données anciennes':''}">${tableClock(r)}${stale&&r.received_at?'<span class="stale-mark" title="Relevé ancien">!</span>':''}</td><td class="pack-fixture"><button type="button" class="pack-match-button" data-match="${esc(target)}" aria-label="Analyser ${esc(r.home)} — ${esc(r.away)}"><span class="pack-home" title="${esc(r.home)}">${esc(r.home)}</span><b class="pack-score">${fmt(score?.h)}–${fmt(score?.a)}</b><span class="pack-away" title="${esc(r.away)}">${esc(r.away)}</span></button></td><td class="pack-ht" title="${ht?'Score à la pause':'Score HT non transmis ; aucune valeur déduite du score actuel'}">${ht?fmt(ht.h)+'–'+fmt(ht.a):'—'}</td>${cols.map(c=>tablePair(r,c)).join('')}<td class="pack-reading-cell">${tableReadings(r)}</td></tr>`}).join('');
+ $('#match-rows').innerHTML=ordered.map(r=>{const key=tableKey(r),stale=age(r.received_at)>100,ht=r.ht_score,score=r.score;const target=String(r.packball_id||r.fixture);return `<tr class="pack-row ${stale?'pack-stale':''}" data-fixture-key="${esc(key)}"><td class="pack-favorite"><button type="button" data-favorite="${esc(key)}" aria-pressed="${tableFavorites.has(key)}" aria-label="Favori : ${esc(r.home)} — ${esc(r.away)}">★</button></td><td class="pack-pin"><button type="button" data-pin="${esc(key)}" aria-pressed="${tablePins.has(key)}" aria-label="Épingler : ${esc(r.home)} — ${esc(r.away)}">${tablePinIcon}</button></td><td class="pack-country">${tableCountry(r)}</td><td class="pack-league" title="${esc(r.league)}">${esc(r.league||'—')}</td><td class="pack-start">${r.kickoff_ts?esc(new Date(r.kickoff_ts).toLocaleTimeString('fr-FR',{timeZone:'Europe/Paris',hour:'2-digit',minute:'2-digit'})):'—'}</td><td class="pack-clock ${r.state==='HT'?'pause':''}" title="${esc(r.received_at?'Relevé du '+time(r.received_at):'Aucun relevé')}${stale?' · données anciennes':''}">${tableClock(r)}${stale&&r.received_at?'<span class="stale-mark" title="Relevé ancien">!</span>':''}</td><td class="pack-fixture"><button type="button" class="pack-match-button" data-match="${esc(target)}" aria-label="Analyser ${esc(r.home)} — ${esc(r.away)}"><span class="pack-home" title="${esc(r.home)}">${esc(r.home)}</span><span class="pack-score"><span${tableEmphasis(r,'$score:h',score?.h??null)}>${fmt(score?.h)}</span>–<span${tableEmphasis(r,'$score:a',score?.a??null)}>${fmt(score?.a)}</span></span><span class="pack-away" title="${esc(r.away)}">${esc(r.away)}</span></button></td><td class="pack-ht" title="${ht?'Score à la pause':'Score HT non transmis ; aucune valeur déduite du score actuel'}">${ht?fmt(ht.h)+'–'+fmt(ht.a):'—'}</td>${cols.map(c=>tablePair(r,c)).join('')}<td class="pack-reading-cell">${tableReadings(r)}</td></tr>`}).join('');
  $('#empty').hidden=ordered.length>0;
  if(!ordered.length){$('#empty h3').textContent=tableScope==='favorites'?'Aucun favori affiché.':$('#search').value?'Aucun match ne correspond.':'En attente du tableau Packball.';$('#empty p').textContent=tableScope==='favorites'?'Ajoute une étoile sur les rencontres à suivre.':$('#search').value?'Modifie ta recherche ou le filtre de matchs.':'Ouvre Packball avec le collecteur activé. Le programme importé reste accessible dans Lecture d’analyse.';}
 
- $('#board-description').textContent='Valeurs domicile–extérieur · colonnes du filtre Packball · couleurs : comparaison des compteurs, pas une probabilité · — = non transmis · liste du dernier relevé Packball · relevés ≈ 30 s, lecture serveur toutes les 15 s.';
+ $('#board-description').textContent='Valeurs domicile–extérieur · Tacles après Fautes · valeurs modifiées en gras pendant 1 min · couleurs : comparaison des compteurs, pas une probabilité · — = non transmis · liste du dernier relevé Packball · relevés ≈ 30 s, lecture serveur toutes les 15 s.';
  // Bound memory when the slate changes. Keep change highlights only for current rows.
  if(tableValues.size>50000){const keys=new Set(matches.map(tableKey));for(const key of tableValues.keys())if(![...keys].some(id=>key.startsWith(id+'|')))tableValues.delete(key)}
 }
