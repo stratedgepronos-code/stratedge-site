@@ -30,6 +30,8 @@ class GoalHalvesTests(unittest.TestCase):
   self.r['minute']=60;self.now+=dt.timedelta(seconds=30);self.add(self.r,self.now)
   self.assertEqual(self.reading()['status'],'context_wait')
  def test_half_switch_restarts_confirmation(self):
+  for side,scope in [('h','home'),('a','away')]:
+   self.ctx['teams'][side]['goal_halves'][scope]['intervals']['46-60']={'scored_per_match':.5,'conceded_per_match':.5}
   self.prepare();self.c.execute('DELETE FROM samples');self.c.commit()
   self.add(dict(self.r,minute=45),self.now-dt.timedelta(seconds=30))
   self.add(dict(self.r,minute=46),self.now)

@@ -14,6 +14,8 @@ class DeskTests(unittest.TestCase):
    common={'matches':20,'sample_label':'Recette même échantillon','as_of':V.iso(self.before),'source_ids':['s']}
    self.ctx['teams'][side]['card_references']={scope:dict(common,unit='yellow_cards',for_per_match=1.8,fouls_for_per_match=12)}
    self.ctx['teams'][side]['goal_halves']={scope:dict(common,stoppage_policy='45+ et 90+ rattachés à leur mi-temps',first_half={'scored_per_match':.8,'conceded_per_match':.6},second_half={'scored_per_match':1.2,'conceded_per_match':.9})}
+   # Explicit synthetic localized intervals for tests exercising active alerts.
+   self.ctx['teams'][side]['goal_halves'][scope]['intervals']={k:{'scored_per_match':.1 if k=='46-60' else .3,'conceded_per_match':.1 if k=='46-60' else .3} for k in V.GOAL_INTERVALS}
  tearDown=legacy_fixture.LiveV4Tests.tearDown
  bundle=legacy_fixture.LiveV4Tests.bundle
  add=legacy_fixture.LiveV4Tests.add
