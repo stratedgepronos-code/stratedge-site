@@ -1020,16 +1020,20 @@ def board(c,now):
         r=sample_data(s)
         ko=date(r.get('kickoff_ts'))
         f=bind(c,r)
-        if active is not None and (not f or f['fixture'] not in active):continue
+        in_program=active is None or bool(f and f['fixture'] in active)
+        on_page=cycle_ids is None or str(r.get('packball_id')) in cycle_ids
+        # The mirror also shows newly collected fixtures outside the morning slate.
+        # They remain display-only; no historical context or recommendation is reused.
+        if not in_program and (cycle_ids is None or not on_page):continue
         if active is None and cycle_ids is not None and str(r.get('packball_id')) not in cycle_ids:continue
         if active is None and cycle_ids is None and ko and ko<now-dt.timedelta(days=1):continue
-        p,ctx=inputs(c,f,now)
+        p,ctx=inputs(c,f,now) if in_program else (None,None)
         if f: seen.add(f['fixture'])
-        r.update(profile=p,analyst=ctx,fixture=f['fixture'] if f else None,decisions=[])
+        r.update(profile=p,analyst=ctx,fixture=f['fixture'] if f else None,decisions=[],on_packball_page=on_page,in_analysis_program=in_program)
         for d in c.execute('SELECT * FROM v4_decisions WHERE match_id=?',(s['match_id'],)):
             detail=dec(d['data'],{});detail['updated_at']=d['updated_at'];detail['sample_id']=d['sample_id'];r['decisions'].append(detail)
         # Do not leak raw HTML or entire historical payloads into the UI.
-        r['advice']=desk_advice(c,s,p,ctx,now)
+        r['advice']=desk_advice(c,s,p,ctx,now) if in_program else []
         r['stake_cuts']=desk_cuts(r,radar_price_cache(c),now)
         for d in r['advice']:d['stake_gate']=radar_market_gate(d,r['stake_cuts'],now)
         r['stake_lookup']=dec((c.execute("SELECT value FROM v4_runtime WHERE key='radar_price_lookup'").fetchone() or [None])[0],{})
@@ -1038,7 +1042,7 @@ def board(c,now):
     for f in c.execute('SELECT * FROM v4_fixtures ORDER BY kickoff'):
         if f['fixture'] in seen or active is None or f['fixture'] not in active:continue
         p,ctx=inputs(c,f,now)
-        r={'fixture':f['fixture'],'packball_id':f['match_id'],'home':f['home'],'away':f['away'],'league':f['league'],'kickoff_ts':f['kickoff'],'state':'NS','profile':p,'analyst':ctx,'decisions':[]}
+        r={'fixture':f['fixture'],'packball_id':f['match_id'],'home':f['home'],'away':f['away'],'league':f['league'],'kickoff_ts':f['kickoff'],'state':'NS','profile':p,'analyst':ctx,'decisions':[], 'on_packball_page':False}
         r['advice']=[apply_card_scope(c,r,desk_reading(r,p,ctx,t,m,now,[]),p,ctx,now) for t in ('h','a') for m in DESK_MARKETS]
         records.append(r)
     cycle=c.execute('SELECT received_at,payload FROM cycles ORDER BY rowid DESC LIMIT 1').fetchone()

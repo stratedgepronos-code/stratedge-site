@@ -45,6 +45,7 @@ const server=http.createServer((r,res)=>{if(r.url==='/download.php?file=collecto
  let statCells=page.locator('#match-rows tr').filter({hasText:'Équipe A'}).locator('.pack-stat');
  assert.equal(await statCells.nth(0).textContent(),'9–4');assert.equal(await statCells.nth(1).textContent(),'2–0');assert.equal(await statCells.nth(2).textContent(),'0–1');
  assert.equal(await page.locator('#table-head img').count(),0);assert.equal(await page.locator('.pack-ht').nth(1).textContent(),'—');
+ board.matches[3].on_packball_page=false;await page.evaluate(()=>refresh());assert.equal(await page.locator('#match-rows tr').count(),3);await page.locator('[data-layout="analysis"]').click();assert.equal(await page.locator('#match-rows tr').count(),4);await page.locator('[data-layout="table"]').click();delete board.matches[3].on_packball_page;await page.evaluate(()=>refresh());
  // Changing Packball's column order does not shift values into a different statistic.
  board.feed.headers=['Cartons jaunes','Fautes','Tirs cadrés 10 dernières minutes','Statistique absente'];await page.evaluate(()=>refresh());
  assert.equal(await statCells.nth(0).textContent(),'0–1');assert.equal(await statCells.nth(1).textContent(),'9–4');assert.equal(await statCells.nth(3).textContent(),'—–—');
