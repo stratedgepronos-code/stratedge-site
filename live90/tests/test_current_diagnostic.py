@@ -26,5 +26,24 @@ class DiagnosticTests(unittest.TestCase):
   reading=next(d for d in match['readings'] if d['market']=='goals' and d['team']=='h')
   self.assertEqual(reading['status'],'context_wait');self.assertTrue(reading['missing'])
   self.assertIn(reading['reason'],result['live_block_reasons'])
+ def test_duplicate_context_reports_inactive_imports_without_reactivating(self):
+  self.prepare()
+  original=[tuple(x) for x in self.c.execute('SELECT * FROM v4_contexts')]
+  V.runtime(self.c,'active_packball_fixtures',[]);self.c.commit()
+  result=V.import_bundle(self.c,'analyst',self.bundle('analyst'),self.now)
+  self.assertTrue(result['duplicate']);self.assertEqual(result['coverage']['outside_program'],1)
+  self.assertEqual(result['coverage']['missing_profile'],0);self.assertEqual(result['coverage']['ready'],0)
+  self.assertEqual(V.active_fixtures(self.c),set())
+  self.assertEqual(original,[tuple(x) for x in self.c.execute('SELECT * FROM v4_contexts')])
+ def test_diagnostic_distinguishes_hidden_from_absent_context(self):
+  self.prepare();V.runtime(self.c,'active_packball_fixtures',[]);self.c.commit()
+  # A currently displayed Packball fixture can be outside the imported slate.
+  with patch.object(V,'current_cycle_ids',return_value={str(self.r['packball_id'])}):
+   result=V.current_diagnostic(self.c,self.now)
+  match=result['matches'][0]
+  self.assertEqual(match['binding_status'],'outside_program')
+  self.assertTrue(match['profile_present']);self.assertTrue(match['context_present'])
+  self.assertTrue(match['profile_usable']);self.assertFalse(match['in_analysis_program'])
+  self.assertEqual(match['readings'],[])
 
 if __name__=='__main__':unittest.main()

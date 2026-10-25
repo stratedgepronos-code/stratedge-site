@@ -424,7 +424,7 @@ def import_bundle(c, kind, bundle, now=None):
     if c.execute('SELECT 1 FROM v4_imports WHERE digest=?',(digest,)).fetchone():
         if kind=='packball':
             with c:runtime(c,'active_packball_fixtures',[key(m) for m in matches])
-        return {'ok':True,'duplicate':True,'imported':0}
+        return {'ok':True,'duplicate':True,'imported':0,'coverage':import_coverage(c,matches,now)}
     seen=set(); prepared=[]
     for m in matches:
         fk=identity(m)
@@ -455,7 +455,22 @@ def import_bundle(c, kind, bundle, now=None):
             if old and date(m['kickoff'])<=now: kept+=1; continue
             if kind=='analyst': c.execute('INSERT OR REPLACE INTO v4_contexts VALUES(?,?,?,?)',(fk,iso(now),iso(generated),enc(m)))
             else: c.execute('INSERT OR REPLACE INTO v4_profiles VALUES(?,?,?)',(fk,iso(now),enc(m)))
-    return {'ok':True,'imported':len(matches)-kept,'preserved':kept,'late':sum(date(m['kickoff'])<=now for _,m in prepared)}
+    return {'ok':True,'imported':len(matches)-kept,'preserved':kept,'late':sum(date(m['kickoff'])<=now for _,m in prepared),'coverage':import_coverage(c,matches,now)}
+
+def import_coverage(c,matches,now):
+    """Report stored associations without activating fixtures or changing import dates."""
+    active=active_fixtures(c)
+    counts=dict(total=len(matches),active=0,outside_program=0,missing_profile=0,missing_context=0,unusable_prematch=0,ready=0)
+    for m in matches:
+        f=c.execute('SELECT * FROM v4_fixtures WHERE fixture=?',(key(m),)).fetchone()
+        p,ctx=inputs(c,f,now)
+        enabled=bool(f) and (active is None or f['fixture'] in active)
+        counts['active']+=int(enabled);counts['outside_program']+=int(not enabled)
+        counts['missing_profile']+=int(p is None);counts['missing_context']+=int(ctx is None)
+        usable=bool(p and p.get('usable') and ctx and ctx.get('usable'))
+        counts['unusable_prematch']+=int(bool(p and ctx) and not usable)
+        counts['ready']+=int(enabled and usable)
+    return counts
 
 def active_fixtures(c):
     saved=c.execute("SELECT value FROM v4_runtime WHERE key='active_packball_fixtures'").fetchone()
@@ -2332,8 +2347,13 @@ def current_diagnostic(c,now):
     result['pulsescore']={k:b['pulsescore'][k] for k in ('configured','auto_enabled','auto_today','auto_daily_limit','attempts_31d')}
     details=[];reasons={}
     for r in sorted(matches,key=lambda r:r.get('state') not in ('LIVE','HT')):
-        profile=r.get('profile') or {};ctx=r.get('analyst') or {};teams=ctx.get('teams') or {}
+        f=c.execute('SELECT * FROM v4_fixtures WHERE fixture=?',(r.get('fixture'),)).fetchone()
+        stored_profile,stored_context=inputs(c,f,now)
+        profile=stored_profile or {};ctx=stored_context or {};teams=ctx.get('teams') or {}
         item={k:r.get(k) for k in ('packball_id','home','away','league','state','minute','received_at')}
+        item['fixture']=r.get('fixture');item['in_analysis_program']=r.get('in_analysis_program',True)
+        item['binding_status']='unmatched' if not f else 'active' if item['in_analysis_program'] else 'outside_program'
+        item['profile_present']=stored_profile is not None;item['context_present']=stored_context is not None
         item['profile_usable']=profile.get('usable',False);item['context_usable']=ctx.get('usable',False)
         item['profile_imported_at']=profile.get('imported_at');item['context_generated_at']=ctx.get('generated_at')
         item['referee_appointment']=(ctx.get('referee') or {}).get('appointment')
