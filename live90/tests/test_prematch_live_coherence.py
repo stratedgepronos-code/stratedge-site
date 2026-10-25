@@ -29,7 +29,7 @@ class Coherence(unittest.TestCase):
   self.prepare();d=self.reading('goals');d.pop('coherence');r=V.sample_data(V.latest(self.c)[0])
   self.assertFalse(V.radar_eligible(r,d,self.now))
  def test_flat_live_never_triggers_even_with_strong_prematch(self):
-  self.r['ind10']['shots10']['h']=1;self.r['ind10']['sot10']['h']=0;self.prepare()
+  self.r['ind10']['shots10']['h']=1;self.r['ind10']['sot10']['h']=0;self.r['ind5']['shots5']['h']=1;self.r['ind5']['sot5']['h']=0;self.prepare()
   self.assertEqual(self.reading('goals')['status'],'neutral')
  def test_goal_weak_half_blocks_first_half(self):
   for side,scope in [('h','home'),('a','away')]:

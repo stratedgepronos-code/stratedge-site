@@ -48,7 +48,7 @@ class EvidenceTests(unittest.TestCase):
    self.assertNotEqual(V.context_evidence(x,'h','goals',30)['support'],'concordant',mode)
   self.prepare();self.assertIn('ExG Packball',str(self.reading('goals')['limits']))
  def test_history_alone_never_triggers(self):
-  self.enrich();self.r['ind10']['shots10']['h']=1;self.r['ind10']['sot10']['h']=0;self.prepare()
+  self.enrich();self.r['ind10']['shots10']['h']=1;self.r['ind10']['sot10']['h']=0;self.r['ind5']['shots5']['h']=1;self.r['ind5']['sot5']['h']=0;self.prepare()
   d=self.reading('goals');self.assertEqual(d['context_evidence']['support'],'concordant');self.assertEqual(d['status'],'neutral')
  def test_non_yellow_reference_not_used_as_yellow_baseline(self):
   self.enrich();self.ctx['teams']['h']['card_references']['home']['unit']='booking_points';self.prepare()

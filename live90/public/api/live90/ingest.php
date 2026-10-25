@@ -20,14 +20,29 @@ try {
    reply90(['error'=>'Aucune colonne live : ouvre Statistiques en direct avec ton groupe live','code'=>'NO_LIVE_COLUMNS','inserted'=>0],422);
  }
  $db->beginTransaction();
+ // A delayed POST or a second tab must not replace a newer accepted cycle.
+ // Keep the rejection trace, without touching live samples or the current slate.
+ $duplicate=$db->prepare('SELECT 1 FROM cycles WHERE id=?');$duplicate->execute([$x['cycle_id']]);
+ if($duplicate->fetchColumn()){$db->commit();reply90(['ok'=>true,'duplicate'=>true,'inserted'=>0]);}
+ $previous=$db->query('SELECT collected_at FROM cycles ORDER BY rowid DESC LIMIT 1')->fetchColumn();
+ $incomingTime=(float)(new DateTimeImmutable($x['collected_at']))->format('U.u');
+ if($previous!==false && $incomingTime<=(float)(new DateTimeImmutable($previous))->format('U.u')){
+   $db->exec('CREATE TABLE IF NOT EXISTS collection_rejections(id INTEGER PRIMARY KEY,received_at TEXT,reason TEXT,client_id TEXT)');
+   $s=$db->prepare('INSERT INTO collection_rejections(received_at,reason,client_id) VALUES(?,?,?)');
+   $s->execute([$now,'out_of_order',is_string($x['client_id']??null)?substr($x['client_id'],0,100):'legacy']);
+   $db->commit();reply90(['error'=>'Relevé plus ancien que le dernier reçu : vérifier les autres onglets et l’horloge du PC','code'=>'OUT_OF_ORDER','inserted'=>0],422);
+ }
  $s=$db->prepare('INSERT OR IGNORE INTO cycles VALUES(?,?,?,?)'); $s->execute([$x['cycle_id'],$x['collected_at'],$now,json_encode($x)]);
  if (!$s->rowCount()) {$db->commit(); reply90(['ok'=>true,'duplicate'=>true,'inserted'=>0]);}
  $s=$db->prepare('INSERT OR IGNORE INTO samples(cycle_id,match_id,received_at,data) VALUES(?,?,?,?)'); $n=0;
  foreach($x['rows'] as $r){
    if(!is_array($r) || !preg_match('/^\d{1,20}$/',(string)($r['packball_id']??''))) continue;
    $r['collected_at']=$x['collected_at'];
+   $r['collector_version']=is_string($x['collector_version']??null)?substr($x['collector_version'],0,40):null;
+   $r['client_id']=is_string($x['client_id']??null)?substr($x['client_id'],0,100):null;
    $s->execute([$x['cycle_id'],(string)$r['packball_id'],$now,json_encode($r,JSON_UNESCAPED_UNICODE)]); $n+=$s->rowCount();
  }
  $db->commit();
  reply90(['ok'=>true,'inserted'=>$n,'received_at'=>$now]);
 } catch(Throwable $e){if(isset($db)&&$db->inTransaction())$db->rollBack(); error_log('Live90 ingest: '.$e->getMessage()); reply90(['error'=>'Stockage indisponible'],500);}
+

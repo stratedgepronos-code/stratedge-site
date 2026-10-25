@@ -36,6 +36,16 @@ def audit(path):
    if fko and abs((fko-ko).total_seconds())<=172800:
     nearby.append({k:f.get(k) for k in ('fixture','kickoff','match_id','profile_at','context_at','context_generated')}|{'active':active is None or f['fixture'] in active,'offset_seconds':(fko-ko).total_seconds()})
   details.append({'match_id':row['match_id'],'home':r.get('home'),'away':r.get('away'),'kickoff_ts':r.get('kickoff_ts'),'state':r.get('state'),'received_at':row['received_at'],'candidates':nearby})
+ delivery_counts={row['delivery']:row['n'] for row in c.execute('SELECT delivery,COUNT(*) n FROM v5_radar_notifications GROUP BY delivery')}
+ result_counts={row['outcome']:row['n'] for row in c.execute('SELECT outcome,COUNT(*) n FROM v5_radar_results GROUP BY outcome')}
+ result_delivery_counts={row['delivery']:row['n'] for row in c.execute('SELECT delivery,COUNT(*) n FROM v5_radar_result_events GROUP BY delivery')}
+ chronology=[]
+ for row in c.execute("SELECT id,created_at,data FROM v5_radar_notifications WHERE delivery='sent'"):
+  saved=json.loads(row['data']);snap=saved.get('learning_snapshot') or {};live=snap.get('live') or {};captured=parse(snap.get('captured_at'))
+  received=parse(live.get('received_at'));collected=parse(live.get('collected_at'))
+  if captured and (received and received>captured or collected and collected>captured):chronology.append(row['id'])
+ obsolete=c.execute("SELECT COUNT(*) FROM v5_radar_result_events e JOIN v5_radar_results r ON r.radar_id=e.radar_id WHERE e.delivery='queued' AND e.outcome!=r.outcome").fetchone()[0]
  c.close()
- return {'at':now.isoformat(),'day':day,'active_count':None if active is None else len(active),'fixture_count':len(fixtures),'profile_count':sum(bool(f['profile_at']) for f in fixtures),'imports':imports,'recent_collectors':dict(collectors),'matches':details[:100]}
+ return {'at':now.isoformat(),'day':day,'active_count':None if active is None else len(active),'fixture_count':len(fixtures),'profile_count':sum(bool(f['profile_at']) for f in fixtures),'imports':imports,'recent_collectors':dict(collectors),'matches':details[:100],
+         'operations':{'database_bytes':pathlib.Path(path).stat().st_size,'notification_deliveries':delivery_counts,'result_outcomes':result_counts,'result_deliveries':result_delivery_counts,'samples_after_snapshot':chronology,'obsolete_queued_results':obsolete}}
 if __name__=='__main__':print(json.dumps(audit(sys.argv[1]),ensure_ascii=False,separators=(',',':')))

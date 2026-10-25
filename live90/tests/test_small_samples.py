@@ -30,7 +30,7 @@ class SmallSamples(unittest.TestCase):
    msg=V.radar_message(r,d,{'quotes':[]})
    self.assertIn('Échantillon limité',msg);self.assertIn('n=1',msg)
  def test_three_matches_do_not_override_quiet_live(self):
-  self.configure(3);self.r['ind10']['shots10']['h']=1;self.r['ind10']['sot10']['h']=0
+  self.configure(3);self.r['ind10']['shots10']['h']=1;self.r['ind10']['sot10']['h']=0;self.r['ind5']['shots5']['h']=1;self.r['ind5']['sot5']['h']=0
   self.r['ind10']['fouls10']['h']=2
   self.prepare();V.install_card_selection(self.c)
   for market in ('goals','cards'):

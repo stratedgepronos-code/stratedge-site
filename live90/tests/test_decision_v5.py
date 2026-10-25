@@ -58,7 +58,7 @@ class DeskTests(unittest.TestCase):
   self.prepare();self.assertNotIn('corners',V.DESK_MARKETS);self.assertEqual(len(V.board(self.c,self.now)['matches'][0]['advice']),4)
  def test_historical_ratio_alone_does_not_trigger(self):
   self.prepare();self.c.execute('DELETE FROM samples');self.c.commit()
-  self.r['stats']['sot']['h']=8;self.r['ind10']['shots10']['h']=1;self.r['ind10']['sot10']['h']=0
+  self.r['stats']['sot']['h']=8;self.r['ind10']['shots10']['h']=1;self.r['ind10']['sot10']['h']=0;self.r['ind5']['shots5']['h']=1;self.r['ind5']['sot5']['h']=0
   self.add(self.r,self.now-dt.timedelta(seconds=30));self.add(self.r,self.now)
   self.assertEqual(self.reading()['status'],'neutral');self.assertGreater(self.reading()['metrics']['sot_per_goal'],0)
  def test_cards_continue_after_existing_yellows_but_new_yellow_resets_confirmation(self):

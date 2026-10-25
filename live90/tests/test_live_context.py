@@ -58,7 +58,7 @@ class LiveContext(unittest.TestCase):
   r=V.sample_data(V.latest(self.c)[0]);msg=V.radar_message(r,d,{'quotes':[]})
   self.assertIn('À nuancer',msg);self.assertIn('aucun veto automatique',msg)
  def test_research_includes_non_candidates_once_without_sending(self):
-  self.r['ind10']['shots10']['h']=1;self.r['ind10']['sot10']['h']=0;self.r['ind5']['shots5']['h']=1
+  self.r['ind10']['shots10']['h']=1;self.r['ind10']['sot10']['h']=0;self.r['ind5']['shots5']['h']=1;self.r['ind5']['sot5']['h']=0;self.r['ind5']['shots5']['h']=1
   self.prepare()
   with patch.object(V,'notify') as notify:
    V.run_dashboard(self.db,self.now);V.run_dashboard(self.db,self.now)

@@ -30,4 +30,12 @@ class IngestV4Tests(unittest.TestCase):
      self.assertEqual(c.execute('SELECT COUNT(*) FROM cycles').fetchone()[0],1)
      self.assertEqual(c.execute('SELECT COUNT(*) FROM collection_rejections').fetchone()[0],1)
     self.assertTrue(post(x)[1]['duplicate'])
+    # A distinct, delayed request must not overwrite newer statistics.
+    delayed=dict(x,cycle_id='synthetic-delayed-0003',collected_at=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime(time.time()-20)))
+    status,result=post(delayed);self.assertEqual(status,422);self.assertEqual(result['code'],'OUT_OF_ORDER')
+    with sqlite3.connect(db) as c:
+     self.assertEqual(c.execute('SELECT COUNT(*) FROM cycles').fetchone()[0],1)
+     self.assertEqual(c.execute('SELECT COUNT(*) FROM samples').fetchone()[0],1)
+     self.assertEqual(c.execute("SELECT COUNT(*) FROM collection_rejections WHERE reason='out_of_order'").fetchone()[0],1)
    finally:proc.terminate();proc.wait(timeout=5)
+
