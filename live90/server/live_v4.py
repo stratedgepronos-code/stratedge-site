@@ -1067,7 +1067,7 @@ def export_analysis(c,now):
                  state=p.get('state') if p else None,data_issues=p.get('issues',[]) if p else [],
                  prematch_imported_at=p.get('imported_at') if p else None,prematch_usable=p.get('usable',False) if p else False)
         matches.append(m)
-    return {'schema':'stratedge.research.v4','exported_at':iso(now),'timezone':'Europe/Paris','matches':matches,'learning_memory':learning_memory(c),'instructions':'Lire également learning_memory.prompt_addendum : priorités de recherche issues des alertes passées, sans modification des seuils ni du schéma. Tous les matchs doivent figurer dans le résultat stratedge.context.v4 avec watch:true. Aucun scénario éliminatoire. Utiliser PROMPT_ANALYSTE_V4.md révision 24/10/2026 : arbitre confirmé avec jaunes et fautes moyens, card_references global/home/away/h2h avec fouls_for_per_match (même échantillon), et goal_halves par localisation (home/away), avec full_time, first_half et second_half documentés. Les alertes buts suivent HT en première période et un but supplémentaire avant FT en deuxième période : références first_half/second_half respectivement. Ajouter goal_halves.home/away.intervals si les six tranches GPT-2 et leur localisation sont vérifiées : clés 0-15,16-30,31-45,46-60,61-75,76-90 ; chaque valeur contient scored_per_match et conceded_per_match, moyennes sur le même échantillon que les périodes. Référence manquante = null, aucune localisation déduite des seules colonnes h/a. Les notes seules ne déclenchent pas le moteur. Pour toute nouvelle notification but, concordance documentée obligatoire de la mi-temps ET de la tranche actuelle de 15 minutes : attaque et défense adverse toutes deux supérieures à leurs moyennes des six tranches. Deux voies live expérimentales : activité sur 10 min, ou 2 cadrés/5 min entièrement dans la tranche ; deux relevés distincts restent requis. Tranches absentes, incomplètes ou non concordantes : match conservé, notification but bloquée. Ne jamais inventer ces données pour débloquer une alerte. Conserver le schéma context.v4 et tous les matchs. Aucun créneau historique de 10 minutes requis. Historiques : dix derniers matchs officiels par localisation, championnat et coupes inclus, saison précédente si nécessaire ; ne pas limiter une rencontre UEFA aux matchs UEFA de la saison. Une référence domestique documentée est acceptée, avec compétition, dates et limites dans sample_label/notes ; jaunes et fautes portent sur les mêmes rencontres. Dix matchs est un objectif de collecte, pas un seuil bloquant : utiliser les vrais effectifs positifs disponibles, même inférieurs à dix, avec mention échantillon limité. Vérifier séparément les effectifs Packball n_h/n_a sans les gonfler ; les données absentes restent bloquantes. Références manquantes : null, jamais inventées. Concordance avant-match/live obligatoire pour notifier. Corners retirés.'}
+    return {'schema':'stratedge.research.v4','exported_at':iso(now),'timezone':'Europe/Paris','matches':matches,'learning_memory':learning_memory(c),'instructions':'Lire également learning_memory.prompt_addendum : priorités de recherche issues des alertes passées, sans modification des seuils ni du schéma. Tous les matchs doivent figurer dans le résultat stratedge.context.v4 avec watch:true. Aucun scénario éliminatoire. Utiliser PROMPT_ANALYSTE_V4.md révision 25/10/2026 : arbitre confirmé avec jaunes et fautes moyens, card_references global/home/away/h2h avec fouls_for_per_match (même échantillon), et goal_halves par localisation (home/away), avec full_time, first_half et second_half documentés. Les alertes buts suivent HT en première période et un but supplémentaire avant FT en deuxième période : références first_half/second_half respectivement. La concordance de la mi-temps attaque/défense adverse et le momentum live sont requis : au moins 3 tirs et 1 cadré sur 10 min, 1 tir sur 5 min, rythme tirs/cadrés supérieur au repère historique, deux relevés distincts. Les tranches historiques de 15 minutes ne sont plus utilisées pour déclencher ni bloquer une alerte. Le champ intervals reste accepté pour compatibilité mais peut être absent/null ; ne pas rechercher ni reconstruire des tranches pour ce moteur. Référence de mi-temps manquante = null et alerte concernée bloquée, match toujours conservé. Les notes seules ne déclenchent pas le moteur. Conserver le schéma context.v4 et tous les matchs. Aucun créneau historique de 10 minutes requis. Historiques : dix derniers matchs officiels par localisation, championnat et coupes inclus, saison précédente si nécessaire ; ne pas limiter une rencontre UEFA aux matchs UEFA de la saison. Une référence domestique documentée est acceptée, avec compétition, dates et limites dans sample_label/notes ; jaunes et fautes portent sur les mêmes rencontres. Dix matchs est un objectif de collecte, pas un seuil bloquant : utiliser les vrais effectifs positifs disponibles, même inférieurs à dix, avec mention échantillon limité. Vérifier séparément les effectifs Packball n_h/n_a sans les gonfler ; les données absentes restent bloquantes. Références manquantes : null, jamais inventées. Concordance avant-match/live obligatoire pour notifier. Corners retirés.'}
 
 def dispatch(c,x,now):
     action=x.get('action','board')
@@ -1177,7 +1177,7 @@ def goal_period_values(ref, period):
 
 GOAL_INTERVALS=('0-15','16-30','31-45','46-60','61-75','76-90')
 GOAL_POLICY='goal_periods_intervals_v1'
-GOAL_INTERVAL_GATE='required_concordant_interval_v2'
+GOAL_INTERVAL_GATE='half_only_momentum_v3'
 
 def goal_reference_period(r):
     return 'first_half' if num(r.get('minute')) and r['minute']<=45 else 'second_half'
@@ -1307,16 +1307,10 @@ def prematch_live_coherence(r,p,ctx,team,market,metrics,evidence):
             missing.append(title+' : moyennes domicile/extérieur et effectifs positifs, attaque et défense adverse requis.')
         elif evidence.get('support')!='concordant':conflicts.append(title+' : références locales sous le repère expérimental de 0,5 but marqué/encaissé par période.')
         else:lines.extend(evidence.get('lines',[])[1:3])
-        # Both goal trigger paths require documented interval concordance.
-        # Missing coverage stays unknown and visible, but cannot notify.
-        interval=goal_interval_evidence(r,p,ctx,team)
+        # Historical 15-minute bins are retained for import compatibility only.
+        # Decisions use the current half's localized attack/defence references.
         out['interval_gate']=GOAL_INTERVAL_GATE
-        out['interval_status']=interval['status']
-        if interval['status']=='not_elevated':
-            conflicts.append('Tranche '+interval['interval']+'′ : attaque et défense adverse ne sont pas toutes deux au-dessus de leurs moyennes par tranche. Temps fort live seul insuffisant pour notifier.')
-            lines.extend(interval['lines'])
-        elif interval['status']=='concordant':lines.extend(interval['lines'])
-        else:missing.append('Tranches de 15 min absentes ou incomplètes : concordance attaque/défense adverse non vérifiable. Notification but bloquée ; match toujours surveillé.')
+        out['interval_status']='not_used'
     elif market=='cards':
         refs=[]
         for side in (team,other):
@@ -1448,8 +1442,7 @@ def desk_reading(r,p,ctx,team,market,now,hist):
     if market=='goals':d['goal_policy']=GOAL_POLICY
     d['context_evidence']=context_evidence(valid_ctx,team,market,r.get('minute'),goal_reference_period(r) if market=='goals' else 'full_time')
     if market=='goals':
-        d['interval_evidence']=goal_interval_evidence(r,p,valid_ctx,team) if valid_ctx else {'status':'unknown','lines':[]}
-        d['facts'].extend(d['interval_evidence']['lines'])
+        d['interval_evidence']={'status':'not_used','lines':[]}
     d['facts'].extend(d['context_evidence']['lines'])
     if market=='goals':d['limits'].append('La moyenne décrit le match entier, temps additionnel inclus selon la source, pas les minutes restantes. Aucun but n’est dû. Aucun xG de tirs fiable reçu ; ExG Packball non assimilé à un xG cumulé.')
     if market=='cards' and valid_ctx:
@@ -1490,17 +1483,14 @@ def desk_reading(r,p,ctx,team,market,now,hist):
         m['sot_per_goal']=prematch.get('sot_'+team)/baseline if usable and num(prematch.get('sot_'+team)) and num(baseline) and baseline>0 else None
         if num(m['sot_per_goal']):d['facts'].append('Historique : '+desk_number(m['sot_per_goal'])+' cadrés par but ; aujourd’hui '+desk_number(m['sot'])+' cadrés / '+desk_number(observed)+' but(s).')
         if m['sot'] is not None and m['shots'] is not None and m['sot']>m['shots']:return stop('missing','Tirs incohérents','Les cadrés dépassent le total des tirs.')
-        interval=d['interval_evidence']
-        short=(interval.get('status')=='concordant' and minute-5>=interval.get('start',90)
-               and all(num(m.get(k)) for k in ('shots5','sot5')) and m['shots5']>=2 and m['sot5']>=2 and m['sot5']<=m['shots5'])
-        if not short and any(m[k] is None for k in ('shots10','sot10','shots5')):return stop('missing','Fenêtre incomplète','Il manque les tirs/cadrés récents, ou un but vient de réinitialiser la comparaison.')
+        if any(m[k] is None for k in ('shots10','sot10','shots5')):return stop('missing','Fenêtre incomplète','Il manque les tirs/cadrés récents, ou un but vient de réinitialiser la comparaison.')
         if any(num(m.get('shots'+str(w))) and num(m.get('sot'+str(w))) and m['sot'+str(w)]>m['shots'+str(w)] for w in (5,10)):return stop('missing','Tirs incohérents','Les cadrés récents dépassent les tirs de la même fenêtre.')
-        candidate=short or (m['shots10']>=3 and m['sot10']>=1 and m['shots5']>=1)
-        m['comparison_window']=5 if short else 10
-        d['trigger_path']='interval_5m' if short else 'half_10m'
-        d['reason']=(desk_number(m['shots5'])+' tirs dont '+desk_number(m['sot5'])+' cadrés sur les 5 dernières minutes · tranche '+interval['interval']+'′ concordante.' if short else desk_number(m['shots10'])+' tirs dont '+desk_number(m['sot10'])+' cadrés en 10 min · '+desk_number(m['shots5'])+' tirs en 5 min.')
+        candidate=m['shots10']>=3 and m['sot10']>=1 and m['shots5']>=1
+        m['comparison_window']=10
+        d['trigger_path']='half_10m'
+        d['reason']=desk_number(m['shots10'])+' tirs dont '+desk_number(m['sot10'])+' cadrés en 10 min · '+desk_number(m['shots5'])+' tirs en 5 min.'
         d['limits'].insert(0,'La qualité des occasions n’est pas mesurée par le seul nombre de cadrés.')
-        d['criteria']='Références de la mi-temps concordantes + 3 tirs/1 cadré sur 10 min et 1 tir sur 5 min ; ou tranche historique attaque/défense au-dessus de leurs moyennes par tranche + 2 tirs cadrés sur 5 min entièrement dans cette tranche. Concordance documentée de la tranche attaque/défense obligatoire pour les deux voies. Tranche absente, incomplète ou non concordante : aucune notification but. Deux relevés distincts. Seuils expérimentaux, non calibrés.'
+        d['criteria']='Mi-temps en cours : attaque et défense adverse documentées dans les localisations du match, chacune ≥ 0,5 but par période. Au moins 3 tirs/1 cadré sur 10 min et 1 tir sur 5 min, avec tirs et cadrés au-dessus du rythme historique moyen. Deux relevés distincts concordants. Aucune condition de tranche de 15 min. Seuils expérimentaux, non calibrés.'
     elif market=='corners':
         if any(m[k] is None for k in ('shots10','shots5','corners10','corners5')):return stop('missing','Corners récents manquants','Attendre les fenêtres 5/10 min ; le collecteur 5.0.0 lit les corners.')
         d['reason']=desk_number(m['shots10'])+' tirs et '+desk_number(m['corners10'])+' corners en 10 min · '+desk_number(m['shots5'])+' tirs en 5 min.'
@@ -1554,7 +1544,7 @@ def desk_advice(c,s,p,ctx,now):
                     try:old_d=desk_reading(old,p,ctx,team,market,now,hist[1:])
                     except (TypeError,AttributeError,KeyError,ValueError):old_d={'status':'missing'}
                     # Distinct observations; score/counter changes and half transitions reset confirmation.
-                    same_path=(market!='goals' or old_d.get('trigger_path')==d.get('trigger_path') and (d.get('trigger_path')!='interval_5m' or (old_d.get('interval_evidence') or {}).get('interval')==d['interval_evidence'].get('interval')))
+                    same_path=(market!='goals' or old_d.get('trigger_path')==d.get('trigger_path'))
                     if same_path and at and before and 20<=(at-before).total_seconds()<=100 and old_d['status']=='candidate' and old_d['period']==d['period'] and old_d['observed']==d['observed'] and old.get('score')==r.get('score') and num(old.get('minute')) and 0<=r['minute']-old['minute']<=2:
                         d.update(status='active',title='Avant-match + live concordants')
             d.update(sample_id=s['id'],updated_at=iso(now))
@@ -1693,7 +1683,7 @@ def radar_eligible(r,d,now):
     # Exactly the hot (confirmed) cards; factual watch-only cards are not alerts.
     if d.get('market')=='goals':
         coherence=d.get('coherence') or {}
-        if coherence.get('interval_gate')!=GOAL_INTERVAL_GATE or coherence.get('interval_status')!='concordant':return False
+        if coherence.get('interval_gate')!=GOAL_INTERVAL_GATE or coherence.get('interval_status')!='not_used':return False
         if d.get('goal_policy')!=GOAL_POLICY or radar_period(d)!=('HT' if num(r.get('minute')) and r['minute']<=45 else 'FT'):return False
         at=date(r.get('collected_at'))
         if radar_period(d)=='HT' and (not at or r['minute']+max(0,(now-at).total_seconds()/60)>=45):return False
@@ -1808,11 +1798,7 @@ def radar_message(r,d,cuts,radar_id=None):
            '⏱ '+desk_number(r['minute'])+'′ · '+desk_number(r['score']['h'])+'–'+desk_number(r['score']['a']),
            '', '🎯 '+title+' · '+name,'Avant-match + live concordants sur deux relevés.','📊 '+d['reason']]
     if d['market']=='goals':
-        interval=d.get('interval_evidence') or {}
-        if interval.get('status')=='concordant':
-            lines[6]='Avant-match + live concordants : mi-temps et tranche '+interval.get('interval','?')+'′ ; deux relevés.'
-        else:
-            lines[6]='Avant-match + live concordants sur la mi-temps ; deux relevés. Tranche de 15 min non confirmée.'
+        lines[6]='Avant-match + live concordants sur la '+('1re mi-temps' if radar_period(d)=='HT' else '2e mi-temps')+' ; deux relevés.'
     q=radar_quote(d,cuts)
     if q and q.get('needed')==1 and num(q.get('odds')) and q['odds']>=MIN_TELEGRAM_ODDS:
         unit='buts' if d['market']=='goals' else 'Bookings (cartons Stake)'
@@ -1864,7 +1850,7 @@ def deliver_radar(c,now,realtime=False):
             p,ctx=inputs(c,f,now)
             d=next((d for d in desk_advice(c,row,p,ctx,now) if d['team']==event['team'] and d['market']==event['market']),{})
             prior=saved.get('reading') or {}
-            same_goal_policy=event['market']!='goals' or (prior.get('goal_policy')==GOAL_POLICY and radar_period(prior)==radar_period(d) and (prior.get('coherence') or {}).get('interval_gate')==GOAL_INTERVAL_GATE and (prior.get('coherence') or {}).get('interval_status')=='concordant')
+            same_goal_policy=event['market']!='goals' or (prior.get('goal_policy')==GOAL_POLICY and radar_period(prior)==radar_period(d) and (prior.get('coherence') or {}).get('interval_gate')==GOAL_INTERVAL_GATE and (prior.get('coherence') or {}).get('interval_status')=='not_used')
             if in_scope and same_goal_policy and radar_eligible(r,d,now) and r.get('score')==saved.get('score') and d.get('observed')==event['counter']:
                 cuts=desk_cuts(r,radar_price_cache(c),now)
                 gate=radar_market_gate(d,cuts,now)

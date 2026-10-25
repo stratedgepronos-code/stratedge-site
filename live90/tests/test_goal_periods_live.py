@@ -1,5 +1,6 @@
-"""New HT horizon, period-aware outbox and measurable interval concordance."""
+"""HT/FT settlement and localized half references with live momentum."""
 import copy, datetime as dt, unittest
+from unittest.mock import patch
 import test_decision_v5 as D
 import test_radar_results as R
 import live_v4 as V
@@ -57,7 +58,7 @@ class HalfResults(unittest.TestCase):
  def test_pre_upgrade_queued_goal_is_expired_without_sending(self):
   r=V.sample_data(V.latest(self.c)[0]);V.queue_radar(self.c,r,self.reading(),self.now)
   event=self.c.execute('SELECT * FROM v5_radar_notifications').fetchone()
-  saved=V.dec(event['data']);saved['reading']['coherence']['interval_gate']='known_interval_veto_v1'
+  saved=V.dec(event['data']);saved['reading']['coherence'].update(interval_gate='required_concordant_interval_v2',interval_status='concordant')
   self.c.execute('UPDATE v5_radar_notifications SET data=? WHERE id=?',(V.enc(saved),event['id']));self.c.commit()
   V.deliver_radar(self.c,self.now)
   self.assertEqual(self.c.execute('SELECT delivery FROM v5_radar_notifications').fetchone()[0],'expired');self.send.assert_not_called()
@@ -70,120 +71,95 @@ class HalfResults(unittest.TestCase):
   q['period']='HT';self.assertIsNotNone(V.radar_quote(d,{'quotes':[q]}))
   t=V.radar_target(r,d,{'quotes':[]});self.assertEqual((t['period'],t['line']),('HT',1.5))
 
-class Intervals(unittest.TestCase):
+class HalfMomentum(unittest.TestCase):
  def setUp(self):
   D.DeskTests.setUp(self)
   for side,scope in [('h','home'),('a','away')]:self.ctx['teams'][side]['goal_halves'][scope].pop('intervals')
  tearDown=D.DeskTests.tearDown
  bundle=D.DeskTests.bundle
  add=D.DeskTests.add
- prepare=D.DeskTests.prepare
+ def prepare(self):
+  self.c.execute('DELETE FROM v4_contexts');self.c.execute('DELETE FROM v4_imports');self.c.commit()
+  D.DeskTests.prepare(self)
  reading=D.DeskTests.reading
- def intervals(self,key='31-45'):
+ def test_user_example_confirms_and_queues_without_intervals(self):
+  self.r['minute']=25
+  self.ctx['teams']['h']['goal_halves']['home']['first_half']['scored_per_match']=1.3
+  self.ctx['teams']['a']['goal_halves']['away']['first_half']['conceded_per_match']=1.1
+  self.prepare();d=self.reading();r=V.sample_data(V.latest(self.c)[0])
+  self.assertEqual(d['status'],'active');self.assertEqual(d['period'],'HT')
+  self.assertEqual(d['coherence']['interval_status'],'not_used')
+  self.assertTrue(V.radar_eligible(r,d,self.now))
+  V.dispatch(self.c,{'action':'radar_telegram','enabled':True},self.now)
+  with patch.object(V,'radar_configured',return_value=True):V.queue_radar(self.c,r,d,self.now)
+  self.c.commit()
+  self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v5_radar_notifications').fetchone()[0],1)
+  msg=V.radar_message(r,d,{'quotes':[]})
+  self.assertIn('1re mi-temps',msg);self.assertIn('avant la pause',msg)
+  self.assertNotIn('tranche',msg.lower());self.assertNotIn('15 min',msg)
+ def test_intervals_never_change_decision_for_either_team_or_half(self):
+  original=copy.deepcopy(self.ctx)
+  for minute in (25,65):
+   for team in ('h','a'):
+    for mode in ('absent','zero','partial','flat','strong'):
+     with self.subTest(minute=minute,team=team,mode=mode):
+      self.ctx=copy.deepcopy(original);self.r['minute']=minute
+      for side,scope in [('h','home'),('a','away')]:
+       ref=self.ctx['teams'][side]['goal_halves'][scope]
+       if mode!='absent':
+        ref['intervals']={k:{'scored_per_match':0 if mode=='zero' else .2,'conceded_per_match':0 if mode=='zero' else .2} for k in V.GOAL_INTERVALS}
+        if mode=='partial':ref['intervals']['16-30']['scored_per_match']=None
+        if mode=='strong':ref['intervals']['16-30']={'scored_per_match':1,'conceded_per_match':1}
+      self.r['ind10'].update(shots10={'h':6,'a':6},sot10={'h':3,'a':3})
+      self.r['ind5'].update(shots5={'h':3,'a':3},sot5={'h':1,'a':1})
+      self.prepare();d=self.reading(team=team)
+      self.assertEqual(d['status'],'active');self.assertEqual(d['trigger_path'],'half_10m')
+      self.assertEqual(d['context_evidence']['period'],'first_half' if minute<45 else 'second_half')
+      self.assertTrue(V.radar_eligible(V.sample_data(V.latest(self.c)[0]),d,self.now))
+ def test_missing_or_weak_current_half_still_blocks(self):
+  original=copy.deepcopy(self.ctx)
+  for minute,half in ((25,'first_half'),(65,'second_half')):
+   for mode in ('missing','weak','wrong_scope'):
+    with self.subTest(minute=minute,mode=mode):
+     self.ctx=copy.deepcopy(original);self.r['minute']=minute
+     ref=self.ctx['teams']['a']['goal_halves']['away']
+     if mode=='missing':ref.pop(half)
+     elif mode=='weak':ref[half]['conceded_per_match']=.1
+     else:self.ctx['teams']['a']['goal_halves']['overall']=self.ctx['teams']['a']['goal_halves'].pop('away')
+     self.prepare();d=self.reading()
+     self.assertEqual(d['status'],'context_conflict' if mode=='weak' else 'context_wait')
+     self.assertFalse(V.radar_eligible(V.sample_data(V.latest(self.c)[0]),d,self.now))
+ def test_first_half_cannot_support_second_half_and_reverse(self):
+  for minute,bad,good in ((65,'second_half','first_half'),(25,'first_half','second_half')):
+   self.r['minute']=minute;ref=self.ctx['teams']['a']['goal_halves']['away']
+   ref[good]['conceded_per_match']=2;ref[bad]['conceded_per_match']=.1
+   self.prepare();self.assertEqual(self.reading()['status'],'context_conflict')
+ def test_two_shot_shortcut_is_retired_even_with_strong_intervals(self):
+  self.r['minute']=36;self.r['ind10'].update(shots10={'h':2,'a':1},sot10={'h':2,'a':0})
+  self.r['ind5'].update(shots5={'h':2,'a':1},sot5={'h':2,'a':0})
   for side,scope in [('h','home'),('a','away')]:
    ref=self.ctx['teams'][side]['goal_halves'][scope]
    ref['intervals']={k:{'scored_per_match':.1,'conceded_per_match':.1} for k in V.GOAL_INTERVALS}
-   ref['intervals'][key]={'scored_per_match':.6,'conceded_per_match':.6}
- def test_two_sot_in_matching_interval_can_confirm_on_two_readings(self):
-  self.intervals();self.r['minute']=36
-  self.r['ind10'].update(shots10={'h':2,'a':1},sot10={'h':2,'a':0})
-  self.r['ind5'].update(shots5={'h':2,'a':1},sot5={'h':2,'a':0})
-  self.prepare();d=self.reading()
-  self.assertEqual(d['status'],'active');self.assertEqual(d['trigger_path'],'interval_5m')
-  self.assertEqual(d['metrics']['comparison_window'],5)
-  self.assertEqual(d['interval_evidence']['interval'],'31-45')
-  message=V.radar_message(V.sample_data(V.latest(self.c)[0]),d,{'quotes':[]})
-  self.assertIn('5 dernières minutes',message);self.assertIn('31-45',message)
-  self.assertIn('avant la pause',message)
- def test_rolling_window_crossing_interval_cannot_claim_interval_confirmation(self):
-  self.intervals();self.r['minute']=34
-  self.r['ind10'].update(shots10={'h':2,'a':1},sot10={'h':2,'a':0})
-  self.r['ind5'].update(shots5={'h':2,'a':1},sot5={'h':2,'a':0})
+   ref['intervals']['31-45']={'scored_per_match':1,'conceded_per_match':1}
   self.prepare();self.assertEqual(self.reading()['status'],'neutral')
- def test_unknown_scope_cannot_be_guessed_from_pairs_or_analyst_notes(self):
-  self.m['packball']={'sample':{'venue_scope':'unknown'},'teams':{'h':{'goal_intervals':{k:{'scored':.6,'conceded':.5} for k in V.GOAL_INTERVALS}}}}
-  self.ctx['teams']['h']['note']='Tranche 31-45 favorable'
-  self.prepare();self.assertEqual(self.reading()['interval_evidence']['status'],'unknown')
- def test_matching_half_is_required_even_with_interval_and_live_spike(self):
-  self.intervals();self.ctx['teams']['h']['goal_halves']['home'].pop('first_half')
-  self.r['minute']=36;self.r['ind5']['sot5']['h']=2
-  self.prepare();self.assertEqual(self.reading()['status'],'context_wait')
- def test_missing_zero_wrong_scope_and_malformed_intervals_never_invent_evidence(self):
-  self.intervals();self.r['minute']=35
-  ref=self.ctx['teams']['h']['goal_halves']['home']
-  ref['intervals']['31-45']['scored_per_match']=0
-  e=V.goal_interval_evidence(self.r,dict(self.m,usable=True),dict(self.ctx,usable=True),'h')
-  self.assertEqual(e['status'],'not_elevated')
-  ref['intervals'].pop('0-15');self.assertEqual(V.goal_interval_evidence(self.r,self.m,self.ctx,'h')['status'],'unknown')
-  for value in (-1,True,'0.6',float('nan'),31):
-   ref['intervals']['31-45']['scored_per_match']=value
-   with self.assertRaises(ValueError):V.validate_context(self.ctx,self.before)
- def test_half_path_cannot_bypass_documented_weak_defensive_interval(self):
-  self.intervals('16-30');self.r['minute']=18
-  self.ctx['teams']['a']['goal_halves']['away']['intervals']['16-30']['conceded_per_match']=0
-  self.prepare();d=self.reading()
-  self.assertEqual(d['trigger_path'],'half_10m')
-  self.assertEqual(d['status'],'context_conflict')
-  self.assertEqual(d['coherence']['interval_status'],'not_elevated')
-  self.assertIn('16-30',d['reason'])
-  r=V.sample_data(V.latest(self.c)[0]);self.assertFalse(V.radar_eligible(r,d,self.now))
-  V.queue_radar(self.c,r,d,self.now);self.c.commit()
-  self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v5_radar_notifications').fetchone()[0],0)
- def test_half_path_accepts_matching_interval_and_blocks_missing_interval(self):
-  self.intervals('16-30');self.r['minute']=18
-  self.prepare();d=self.reading()
-  self.assertEqual(d['trigger_path'],'half_10m');self.assertEqual(d['status'],'active')
-  msg=V.radar_message(V.sample_data(V.latest(self.c)[0]),d,{'quotes':[]})
-  self.assertIn('mi-temps et tranche 16-30',msg)
-  for side,scope in [('h','home'),('a','away')]:self.ctx['teams'][side]['goal_halves'][scope].pop('intervals')
-  self.prepare();d=self.reading();self.assertEqual(d['status'],'context_wait')
-  self.assertIn('Notification but bloquée',d['reason'])
-  self.assertEqual(d['coherence']['interval_status'],'unknown')
-  r=V.sample_data(V.latest(self.c)[0]);self.assertFalse(V.radar_eligible(r,d,self.now))
-  V.queue_radar(self.c,r,d,self.now);self.c.commit()
-  self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v5_radar_notifications').fetchone()[0],0)
-  self.assertEqual(len(V.board(self.c,self.now)['matches']),1)
- def test_missing_or_partial_intervals_block_both_teams_and_halves(self):
-  original=copy.deepcopy(self.ctx)
-  for minute,key in [(18,'16-30'),(65,'61-75')]:
-   for team in ('h','a'):
-    for mode in ('absent','partial','wrong_scope'):
-     with self.subTest(minute=minute,team=team,mode=mode):
-      self.ctx=copy.deepcopy(original);self.intervals(key);self.r['minute']=minute
-      ref=self.ctx['teams']['a']['goal_halves']['away']
-      if mode=='absent':ref.pop('intervals')
-      elif mode=='partial':ref['intervals'][key]['conceded_per_match' if team=='h' else 'scored_per_match']=None
-      else:self.ctx['teams']['a']['goal_halves']['overall']=self.ctx['teams']['a']['goal_halves'].pop('away')
-      self.r['ind10'].update(shots10={'h':6,'a':6},sot10={'h':3,'a':3})
-      self.r['ind5'].update(shots5={'h':3,'a':3},sot5={'h':1,'a':1})
-      self.prepare();d=self.reading(team=team);r=V.sample_data(V.latest(self.c)[0])
-      self.assertEqual(d['status'],'context_wait');self.assertFalse(V.radar_eligible(r,d,self.now))
-      V.queue_radar(self.c,r,d,self.now);self.c.commit()
-      self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v5_radar_notifications').fetchone()[0],0)
- def test_old_active_reading_cannot_bypass_required_interval_gate(self):
-  self.intervals('16-30');self.r['minute']=18;self.prepare()
-  d=self.reading();r=V.sample_data(V.latest(self.c)[0]);self.assertTrue(V.radar_eligible(r,d,self.now))
-  for change in ({'interval_gate':'known_interval_veto_v1'},{'interval_status':'unknown'},{'interval_status':'not_elevated'}):
-   stale=copy.deepcopy(d);stale['coherence'].update(change)
-   self.assertFalse(V.radar_eligible(r,stale,self.now))
- def test_negative_interval_blocks_both_halves_without_affecting_cards(self):
-  self.intervals('61-75');self.r['minute']=65
-  self.ctx['teams']['a']['goal_halves']['away']['intervals']['61-75']['conceded_per_match']=.01
-  self.prepare();self.assertEqual(self.reading()['status'],'context_conflict')
-  d=self.reading('cards');self.assertNotIn('interval_gate',d.get('coherence',{}))
- def test_second_half_references_and_cutoff(self):
-  self.intervals('61-75')
-  for side,scope in [('h','home'),('a','away')]:self.ctx['teams'][side]['goal_halves'][scope]['intervals']['76-90']={'scored_per_match':.6,'conceded_per_match':.6}
+ def test_incomplete_cross_half_window_does_not_trigger(self):
+  self.r['minute']=51;self.r['ind5'].update(shots5={'h':2,'a':1},sot5={'h':2,'a':0})
+  self.prepare();self.assertEqual(self.reading()['status'],'missing')
+ def test_old_active_policy_cannot_notify(self):
+  self.r['minute']=25;self.prepare();d=self.reading();r=V.sample_data(V.latest(self.c)[0])
+  self.assertTrue(V.radar_eligible(r,d,self.now))
+  for policy in ('required_concordant_interval_v2','known_interval_veto_v1'):
+   old=copy.deepcopy(d);old['coherence'].update(interval_gate=policy,interval_status='concordant')
+   self.assertFalse(V.radar_eligible(r,old,self.now))
+ def test_second_half_target_and_cutoff_unchanged(self):
   self.r['minute']=65;self.prepare();d=self.reading()
   self.assertEqual(d['period'],'FT');self.assertEqual(d['context_evidence']['period'],'second_half')
-  self.assertIn('avant la fin',V.radar_message(V.sample_data(V.latest(self.c)[0]),d,{'quotes':[]}))
+  msg=V.radar_message(V.sample_data(V.latest(self.c)[0]),d,{'quotes':[]})
+  self.assertIn('2e mi-temps',msg);self.assertIn('avant la fin',msg);self.assertNotIn('tranche',msg)
   self.r['minute']=80;self.add(self.r,self.now);self.assertEqual(self.reading()['status'],'waiting')
- def test_early_second_half_short_window_does_not_require_cross_half_ten_minutes(self):
-  self.intervals('46-60');self.r['minute']=51
-  self.r['ind5'].update(shots5={'h':2,'a':1},sot5={'h':2,'a':0})
-  self.prepare();d=self.reading()
-  self.assertEqual(d['status'],'active');self.assertEqual(d['trigger_path'],'interval_5m')
-  self.assertIsNone(d['metrics']['sot10']);self.assertEqual(d['period'],'FT')
-  self.assertEqual(d['context_evidence']['period'],'second_half')
+ def test_export_tells_analyst_halves_not_intervals(self):
+  self.prepare();out=V.export_analysis(self.c,self.now)
+  self.assertIn('25/10/2026',out['instructions']);self.assertIn('ne sont plus utilisées',out['instructions'])
+  self.assertNotIn('tranche actuelle de 15 minutes',out['instructions'])
 
 if __name__=='__main__':unittest.main()
