@@ -36,6 +36,16 @@ Ces seuils sont expérimentaux, pas des probabilités calibrées. Une moyenne de
 
 Dans le bilan de livraison, compter séparément les références FT, HT et 2H documentées pour les localisations du jour, les arbitres documentés et les principales inconnues. Livrer le fichier complet, avec tous les matchs et `watch:true`.
 
+## Cartons : séquences rapides et contexte — 25/10/2026
+
+Le moteur distingue désormais une séquence rapide (au moins 3 fautes commises par une équipe sur 5 minutes) de la voie habituelle (au moins 3 sur 10 minutes, dont 1 sur 5). Les fenêtres sont mesurées ; les 5 minutes ne s’ajoutent pas aux 10. Les deux voies exigent un signe de pression subie (possession cumulée ≤ 45 % OU 2 tirs adverses sur 10 minutes), un rythme de fautes supérieur au repère historique ramené à la même durée, les références arbitre/équipes documentées et deux relevés concordants de la même voie. Une voie rapide peut être évaluée sans fenêtre de 10 minutes complète si les 5 minutes et les autres conditions sont documentées. Un carton déjà reçu n’empêche pas une nouvelle analyse ; la confirmation repart après un changement du compteur. Arrêt des nouvelles alertes à 80:00 conservé.
+
+Les seuils restent expérimentaux. L’IFAB ne fixe aucun nombre universel de fautes imposant un avertissement pour infractions persistantes (https://www.theifab.com/laws/latest/fouls-and-misconduct/). Ne jamais présenter un jaune comme dû, ni qualifier une faute de tactique ou dangereuse sans événement documenté.
+
+Documenter la météo au stade à l’heure du coup d’envoi, avec heure d’émission et échéance de la prévision dans un flag `weather` sourcé. La prévision sera affichée comme contexte avant-match, pas comme météo observée en live. Ne pas appliquer de multiplicateur pluie/vent → cartons. Possession historique : conserver le périmètre réel ; elle est comparée descriptivement à la possession cumulée du match lorsque la localisation Packball est vérifiée. Aucune estimation de possession sur 5 minutes à partir de deux pourcentages cumulés.
+
+Les compteurs live actuels ne fournissent ni identité de l’auteur ni type de faute. Le moteur ne lit pas encore de commentaires en direct. Les répétitions individuelles, fautes tactiques, contestations et avertissements verbaux restent inconnus ; ne pas inventer ces données ni modifier le schéma JSON pour simuler un flux. Les profils disciplinaires des joueurs peuvent être documentés dans les notes sourcées avant-match, sans être présentés comme des événements du match en cours.
+
 ## Complément de contexte — compatible avec les imports existants
 
 Documenter dans les notes/flags existants, avec sources et échantillons : niveau des adversaires rencontrés ; changements du onze et rôle des absents ; tirs concédés et qualité des occasions si effectivement publiés. Distinguer compétition européenne et championnat dans les historiques. Une moyenne de buts positive ne suffit pas à prouver un profil offensif favorable. Conserver les références FT domicile/extérieur structurées comme ci-dessous ; ne pas créer de nouvelle clé JSON pour ces compléments.

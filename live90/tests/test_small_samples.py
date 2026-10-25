@@ -31,7 +31,7 @@ class SmallSamples(unittest.TestCase):
    self.assertIn('Échantillon limité',msg);self.assertIn('n=1',msg)
  def test_three_matches_do_not_override_quiet_live(self):
   self.configure(3);self.r['ind10']['shots10']['h']=1;self.r['ind10']['sot10']['h']=0
-  self.r['ind10']['fouls10']['h']=1
+  self.r['ind10']['fouls10']['h']=2
   self.prepare();V.install_card_selection(self.c)
   for market in ('goals','cards'):
    d=self.reading(market);self.assertEqual(d['status'],'neutral')
