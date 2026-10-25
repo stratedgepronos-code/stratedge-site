@@ -58,7 +58,7 @@ class HalfResults(unittest.TestCase):
  def test_pre_upgrade_queued_goal_is_expired_without_sending(self):
   r=V.sample_data(V.latest(self.c)[0]);V.queue_radar(self.c,r,self.reading(),self.now)
   event=self.c.execute('SELECT * FROM v5_radar_notifications').fetchone()
-  saved=V.dec(event['data']);saved['reading']['coherence'].update(interval_gate='required_concordant_interval_v2',interval_status='concordant')
+  saved=V.dec(event['data']);saved['reading']['coherence'].update(interval_gate='half_only_momentum_v3',interval_status='not_used')
   self.c.execute('UPDATE v5_radar_notifications SET data=? WHERE id=?',(V.enc(saved),event['id']));self.c.commit()
   V.deliver_radar(self.c,self.now)
   self.assertEqual(self.c.execute('SELECT delivery FROM v5_radar_notifications').fetchone()[0],'expired');self.send.assert_not_called()
@@ -148,7 +148,7 @@ class HalfMomentum(unittest.TestCase):
  def test_old_active_policy_cannot_notify(self):
   self.r['minute']=25;self.prepare();d=self.reading();r=V.sample_data(V.latest(self.c)[0])
   self.assertTrue(V.radar_eligible(r,d,self.now))
-  for policy in ('required_concordant_interval_v2','known_interval_veto_v1'):
+  for policy in ('required_concordant_interval_v2','known_interval_veto_v1','half_only_momentum_v3'):
    old=copy.deepcopy(d);old['coherence'].update(interval_gate=policy,interval_status='concordant')
    self.assertFalse(V.radar_eligible(r,old,self.now))
  def test_second_half_target_and_cutoff_unchanged(self):
@@ -157,8 +157,28 @@ class HalfMomentum(unittest.TestCase):
   msg=V.radar_message(V.sample_data(V.latest(self.c)[0]),d,{'quotes':[]})
   self.assertIn('2e mi-temps',msg);self.assertIn('avant la fin',msg);self.assertNotIn('tranche',msg)
   self.r['minute']=80;self.add(self.r,self.now);self.assertEqual(self.reading()['status'],'waiting')
+ def test_half_minimum_applies_separately_at_exact_boundary(self):
+  original=copy.deepcopy(self.ctx)
+  for minute,half in ((25,'first_half'),(65,'second_half')):
+   for team,own,opp in (('h','home','away'),('a','away','home')):
+    for scored,conceded,expected in ((.8,.8,'active'),(.79,1.3,'context_conflict'),(1.3,.79,'context_conflict'),(.7,.9,'context_conflict'),(.9,.7,'context_conflict')):
+     with self.subTest(minute=minute,team=team,scored=scored,conceded=conceded):
+      self.ctx=copy.deepcopy(original);self.r['minute']=minute
+      other='a' if team=='h' else 'h'
+      self.ctx['teams'][team]['goal_halves'][own][half]['scored_per_match']=scored
+      self.ctx['teams'][other]['goal_halves'][opp][half]['conceded_per_match']=conceded
+      self.r['ind10'].update(shots10={'h':6,'a':6},sot10={'h':3,'a':3})
+      self.r['ind5'].update(shots5={'h':3,'a':3},sot5={'h':1,'a':1})
+      self.prepare();d=self.reading(team=team)
+      self.assertEqual(d['status'],expected);self.assertEqual(d['coherence']['half_min_rate'],.8)
+      self.assertEqual(V.radar_eligible(V.sample_data(V.latest(self.c)[0]),d,self.now),expected=='active')
+ def test_full_time_reference_is_not_a_half_threshold(self):
+  ctx=dict(self.ctx,usable=True)
+  for side,scope in [('h','home'),('a','away')]:ctx['teams'][side]['goal_halves'][scope]['full_time']={'scored_per_match':.7,'conceded_per_match':.7}
+  self.assertEqual(V.context_evidence(ctx,'h','goals',25,period='full_time')['support'],'concordant')
  def test_export_tells_analyst_halves_not_intervals(self):
   self.prepare();out=V.export_analysis(self.c,self.now)
+  self.assertIn('0,8 but marqué ET 0,8 encaissé',out['instructions'])
   self.assertIn('25/10/2026',out['instructions']);self.assertIn('ne sont plus utilisées',out['instructions'])
   self.assertNotIn('tranche actuelle de 15 minutes',out['instructions'])
 

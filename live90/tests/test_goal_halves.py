@@ -42,7 +42,7 @@ class GoalHalvesTests(unittest.TestCase):
   self.assertEqual(self.reading()['status'],'active')
  def test_message_uses_first_half_and_roundtrip_keeps_halves(self):
   self.prepare();d=self.reading();r=V.sample_data(V.latest(self.c)[0]);msg=V.radar_message(r,d,{'quotes':[]})
-  self.assertIn('1re mi-temps',msg);self.assertIn('première mi-temps',msg);self.assertIn('0,8 buts marqués/m',msg);self.assertIn('0,6 buts encaissés/m',msg)
+  self.assertIn('1re mi-temps',msg);self.assertIn('première mi-temps',msg);self.assertIn('0,8 buts marqués/m',msg);self.assertIn('0,8 buts encaissés/m',msg)
   self.assertNotIn('créneau',msg);self.assertNotIn('windows',d['context_evidence'])
   p,ctx=V.inputs(self.c,V.bind(self.c,r),self.now)
   self.assertEqual(ctx['teams']['h']['goal_halves']['home']['first_half']['scored_per_match'],.8)
@@ -54,7 +54,7 @@ class GoalHalvesTests(unittest.TestCase):
    ref['bins']=[{'start':i,'end':i+15,'scored':4,'conceded':5} for i in range(0,90,15)]
    ctx['teams'][side]['goal_timing']={scope:ref}
   e=V.context_evidence(ctx,'h','goals',30,period='first_half')
-  self.assertEqual(e['support'],'concordant');self.assertEqual([x['rate'] for x in e['halves']],[.6,.75])
+  self.assertEqual(e['support'],'documented');self.assertEqual([x['rate'] for x in e['halves']],[.6,.75])
   ctx['teams']['h']['goal_halves']={'home':None}
   self.assertNotEqual(V.context_evidence(ctx,'h','goals',30,period='first_half')['support'],'concordant')
  def test_legacy_cross_half_or_incomplete_bins_never_imputed(self):

@@ -18,7 +18,7 @@ class EvidenceTests(unittest.TestCase):
    common={'matches':20,'sample_label':'Saison test','as_of':V.iso(self.before),'source_ids':['s']}
    self.ctx['teams'][side]['card_references']={x:dict(common,unit='yellow_cards',for_per_match=2.4 if x==scope else 1.8,fouls_for_per_match=12) for x in ('overall',scope,'h2h')}
    intervals=self.ctx['teams'][side]['goal_halves'][scope]['intervals']
-   self.ctx['teams'][side]['goal_halves']={scope:dict(common,intervals=intervals,stoppage_policy='45+ et 90+ dans leur mi-temps',first_half={'scored_per_match':.8,'conceded_per_match':.6},second_half={'scored_per_match':1.2,'conceded_per_match':.9})}
+   self.ctx['teams'][side]['goal_halves']={scope:dict(common,intervals=intervals,stoppage_policy='45+ et 90+ dans leur mi-temps',first_half={'scored_per_match':.8,'conceded_per_match':.8},second_half={'scored_per_match':1.2,'conceded_per_match':.9})}
  def test_roundtrip_context_and_message_with_both_teams_referee_h2h(self):
   self.enrich();self.prepare();d=self.reading('cards')
   self.assertEqual(d['baseline'],2.4);self.assertIn('domicile',d['baseline_origin'])

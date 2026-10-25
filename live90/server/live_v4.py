@@ -1067,7 +1067,7 @@ def export_analysis(c,now):
                  state=p.get('state') if p else None,data_issues=p.get('issues',[]) if p else [],
                  prematch_imported_at=p.get('imported_at') if p else None,prematch_usable=p.get('usable',False) if p else False)
         matches.append(m)
-    return {'schema':'stratedge.research.v4','exported_at':iso(now),'timezone':'Europe/Paris','matches':matches,'learning_memory':learning_memory(c),'instructions':'Lire également learning_memory.prompt_addendum : priorités de recherche issues des alertes passées, sans modification des seuils ni du schéma. Tous les matchs doivent figurer dans le résultat stratedge.context.v4 avec watch:true. Aucun scénario éliminatoire. Utiliser PROMPT_ANALYSTE_V4.md révision 25/10/2026 : arbitre confirmé avec jaunes et fautes moyens, card_references global/home/away/h2h avec fouls_for_per_match (même échantillon), et goal_halves par localisation (home/away), avec full_time, first_half et second_half documentés. Les alertes buts suivent HT en première période et un but supplémentaire avant FT en deuxième période : références first_half/second_half respectivement. La concordance de la mi-temps attaque/défense adverse et le momentum live sont requis : au moins 3 tirs et 1 cadré sur 10 min, 1 tir sur 5 min, rythme tirs/cadrés supérieur au repère historique, deux relevés distincts. Les tranches historiques de 15 minutes ne sont plus utilisées pour déclencher ni bloquer une alerte. Le champ intervals reste accepté pour compatibilité mais peut être absent/null ; ne pas rechercher ni reconstruire des tranches pour ce moteur. Référence de mi-temps manquante = null et alerte concernée bloquée, match toujours conservé. Les notes seules ne déclenchent pas le moteur. Conserver le schéma context.v4 et tous les matchs. Aucun créneau historique de 10 minutes requis. Historiques : dix derniers matchs officiels par localisation, championnat et coupes inclus, saison précédente si nécessaire ; ne pas limiter une rencontre UEFA aux matchs UEFA de la saison. Une référence domestique documentée est acceptée, avec compétition, dates et limites dans sample_label/notes ; jaunes et fautes portent sur les mêmes rencontres. Dix matchs est un objectif de collecte, pas un seuil bloquant : utiliser les vrais effectifs positifs disponibles, même inférieurs à dix, avec mention échantillon limité. Vérifier séparément les effectifs Packball n_h/n_a sans les gonfler ; les données absentes restent bloquantes. Références manquantes : null, jamais inventées. Concordance avant-match/live obligatoire pour notifier. Corners retirés.'}
+    return {'schema':'stratedge.research.v4','exported_at':iso(now),'timezone':'Europe/Paris','matches':matches,'learning_memory':learning_memory(c),'instructions':'Lire également learning_memory.prompt_addendum : priorités de recherche issues des alertes passées, sans modification des seuils ni du schéma. Tous les matchs doivent figurer dans le résultat stratedge.context.v4 avec watch:true. Aucun scénario éliminatoire. Utiliser PROMPT_ANALYSTE_V4.md révision 25/10/2026 : arbitre confirmé avec jaunes et fautes moyens, card_references global/home/away/h2h avec fouls_for_per_match (même échantillon), et goal_halves par localisation (home/away), avec full_time, first_half et second_half documentés. Les alertes buts suivent HT en première période et un but supplémentaire avant FT en deuxième période : références first_half/second_half respectivement. La concordance de la mi-temps attaque/défense adverse exige au moins 0,8 but marqué ET 0,8 encaissé par mi-temps, dans les bonnes localisations. Ce seuil est expérimental, pas une probabilité. Conserver tous les matchs watch:true et les moyennes réelles, même sous le seuil. Le momentum live reste requis : au moins 3 tirs et 1 cadré sur 10 min, 1 tir sur 5 min, rythme tirs/cadrés supérieur au repère historique, deux relevés distincts. Les tranches historiques de 15 minutes ne sont plus utilisées pour déclencher ni bloquer une alerte. Le champ intervals reste accepté pour compatibilité mais peut être absent/null ; ne pas rechercher ni reconstruire des tranches pour ce moteur. Référence de mi-temps manquante = null et alerte concernée bloquée, match toujours conservé. Les notes seules ne déclenchent pas le moteur. Conserver le schéma context.v4 et tous les matchs. Aucun créneau historique de 10 minutes requis. Historiques : dix derniers matchs officiels par localisation, championnat et coupes inclus, saison précédente si nécessaire ; ne pas limiter une rencontre UEFA aux matchs UEFA de la saison. Une référence domestique documentée est acceptée, avec compétition, dates et limites dans sample_label/notes ; jaunes et fautes portent sur les mêmes rencontres. Dix matchs est un objectif de collecte, pas un seuil bloquant : utiliser les vrais effectifs positifs disponibles, même inférieurs à dix, avec mention échantillon limité. Vérifier séparément les effectifs Packball n_h/n_a sans les gonfler ; les données absentes restent bloquantes. Références manquantes : null, jamais inventées. Concordance avant-match/live obligatoire pour notifier. Corners retirés.'}
 
 def dispatch(c,x,now):
     action=x.get('action','board')
@@ -1177,7 +1177,8 @@ def goal_period_values(ref, period):
 
 GOAL_INTERVALS=('0-15','16-30','31-45','46-60','61-75','76-90')
 GOAL_POLICY='goal_periods_intervals_v1'
-GOAL_INTERVAL_GATE='half_only_momentum_v3'
+GOAL_INTERVAL_GATE='half_only_min08_v4'
+GOAL_HALF_MIN_RATE=0.8
 
 def goal_reference_period(r):
     return 'first_half' if num(r.get('minute')) and r['minute']<=45 else 'second_half'
@@ -1256,7 +1257,7 @@ def context_evidence(ctx, team, market, minute, period='full_time'):
         refs.append({'team':side,'scope':selected,'half':half,'field':field,'rate':value,'matches':ref['matches'],'comparison_ready':ready})
         out['lines'].append(name+' · '+{'home':'à domicile','away':'à l’extérieur','overall':'toutes localisations'}[selected]+' · '+title+' : '+desk_number(value)+' buts '+('marqués' if field=='scored_per_match' else 'encaissés')+'/m · n='+str(ref['matches'])+'.')
     out.update(period=period,half=half,halves=refs)
-    if len(refs)==2 and all(x['comparison_ready'] and (x['rate']>0 if period=='full_time' else x['rate']>=0.5) for x in refs):
+    if len(refs)==2 and all(x['comparison_ready'] and (x['rate']>0 if period=='full_time' else x['rate']>=GOAL_HALF_MIN_RATE) for x in refs):
         out['support']='concordant';out['lines'].insert(0,title+' : références attaque et défense adverse documentées dans les localisations du match.')
     elif refs:out['support']='documented'
     else:out['lines'].append('Buts sur '+title+' et par localisation : non documentés.')
@@ -1305,12 +1306,13 @@ def prematch_live_coherence(r,p,ctx,team,market,metrics,evidence):
         title='Première mi-temps' if goal_reference_period(r)=='first_half' else 'Deuxième mi-temps'
         if evidence.get('period')!=goal_reference_period(r) or len(halves)!=2 or any(not x.get('comparison_ready') for x in halves):
             missing.append(title+' : moyennes domicile/extérieur et effectifs positifs, attaque et défense adverse requis.')
-        elif evidence.get('support')!='concordant':conflicts.append(title+' : références locales sous le repère expérimental de 0,5 but marqué/encaissé par période.')
+        elif evidence.get('support')!='concordant':conflicts.append(title+' : références locales sous le repère expérimental de 0,8 but marqué/encaissé par période.')
         else:lines.extend(evidence.get('lines',[])[1:3])
         # Historical 15-minute bins are retained for import compatibility only.
         # Decisions use the current half's localized attack/defence references.
         out['interval_gate']=GOAL_INTERVAL_GATE
         out['interval_status']='not_used'
+        out['half_min_rate']=GOAL_HALF_MIN_RATE
     elif market=='cards':
         refs=[]
         for side in (team,other):
@@ -1490,7 +1492,7 @@ def desk_reading(r,p,ctx,team,market,now,hist):
         d['trigger_path']='half_10m'
         d['reason']=desk_number(m['shots10'])+' tirs dont '+desk_number(m['sot10'])+' cadrés en 10 min · '+desk_number(m['shots5'])+' tirs en 5 min.'
         d['limits'].insert(0,'La qualité des occasions n’est pas mesurée par le seul nombre de cadrés.')
-        d['criteria']='Mi-temps en cours : attaque et défense adverse documentées dans les localisations du match, chacune ≥ 0,5 but par période. Au moins 3 tirs/1 cadré sur 10 min et 1 tir sur 5 min, avec tirs et cadrés au-dessus du rythme historique moyen. Deux relevés distincts concordants. Aucune condition de tranche de 15 min. Seuils expérimentaux, non calibrés.'
+        d['criteria']='Mi-temps en cours : attaque et défense adverse documentées dans les localisations du match, chacune ≥ 0,8 but par période. Au moins 3 tirs/1 cadré sur 10 min et 1 tir sur 5 min, avec tirs et cadrés au-dessus du rythme historique moyen. Deux relevés distincts concordants. Aucune condition de tranche de 15 min. Seuils expérimentaux, non calibrés.'
     elif market=='corners':
         if any(m[k] is None for k in ('shots10','shots5','corners10','corners5')):return stop('missing','Corners récents manquants','Attendre les fenêtres 5/10 min ; le collecteur 5.0.0 lit les corners.')
         d['reason']=desk_number(m['shots10'])+' tirs et '+desk_number(m['corners10'])+' corners en 10 min · '+desk_number(m['shots5'])+' tirs en 5 min.'
@@ -1582,7 +1584,7 @@ def radar_status(c):
     last=c.execute('SELECT created_at,delivery,delivery_error FROM v5_radar_notifications ORDER BY id DESC LIMIT 1').fetchone()
     results={r['outcome']:r['n'] for r in c.execute('SELECT outcome,COUNT(*) n FROM v5_radar_results GROUP BY outcome')}
     result_delivery={r['delivery']:r['n'] for r in c.execute('SELECT delivery,COUNT(*) n FROM v5_radar_result_events GROUP BY delivery')}
-    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','priced_only':setting(c,'radar_priced_only',True),'odds_auto':setting(c,'radar_odds_auto',True),'min_odds':MIN_TELEGRAM_ODDS,'stop_minute':ALERT_STOP_MINUTE,'counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'default_card_leagues':list(CARD_COMPETITIONS),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market'),'coherence_policy':'prematch_live_context_v4','result_tracking':'packball_two_samples','goal_policy':GOAL_POLICY,'goal_interval_gate':GOAL_INTERVAL_GATE,'goal_periods':['HT','FT'],'results':results,'result_deliveries':result_delivery}
+    return {'enabled':radar_enabled(c),'configured':radar_configured(),'mode':'confirmed_cards','priced_only':setting(c,'radar_priced_only',True),'odds_auto':setting(c,'radar_odds_auto',True),'min_odds':MIN_TELEGRAM_ODDS,'stop_minute':ALERT_STOP_MINUTE,'counts':counts,'last':dict(last) if last else None,'card_leagues':setting(c,'card_leagues',[]),'default_card_leagues':list(CARD_COMPETITIONS),'card_policy':setting(c,'card_league_policy','allowlist_or_verified_team_market'),'coherence_policy':'prematch_live_context_v4','result_tracking':'packball_two_samples','goal_policy':GOAL_POLICY,'goal_interval_gate':GOAL_INTERVAL_GATE,'goal_half_min_rate':GOAL_HALF_MIN_RATE,'goal_periods':['HT','FT'],'results':results,'result_deliveries':result_delivery}
 
 # Explicit owner selection, extended to A-League Men and 2. Bundesliga on 23 October 2026.
 # Country/region is required for common
@@ -2252,7 +2254,7 @@ def run_dashboard(path,now=None):
             c.rollback()
             with c:runtime(c,'learning_error',{'at':iso(now),'type':type(exc).__name__})
         if realtime:now=now_utc()
-        runtime(c,'engine',{'at':iso(now),'version':'decision5.0','telegram_active':radar_enabled(c) and radar_configured(),'legacy_telegram_active':False,'notification_mode':'confirmed_cards','mode':'decision','external_calls':radar_enabled(c) and radar_configured(),'ai_calls':False,'automatic_odds':setting(c,'radar_odds_auto',True),'priced_only':setting(c,'radar_priced_only',True),'feature_policy':'stake_price_gate5.2','goal_policy':GOAL_POLICY,'goal_interval_gate':GOAL_INTERVAL_GATE,'research_mode':'shadow'})
+        runtime(c,'engine',{'at':iso(now),'version':'decision5.0','telegram_active':radar_enabled(c) and radar_configured(),'legacy_telegram_active':False,'notification_mode':'confirmed_cards','mode':'decision','external_calls':radar_enabled(c) and radar_configured(),'ai_calls':False,'automatic_odds':setting(c,'radar_odds_auto',True),'priced_only':setting(c,'radar_priced_only',True),'feature_policy':'stake_price_gate5.2','goal_policy':GOAL_POLICY,'goal_interval_gate':GOAL_INTERVAL_GATE,'goal_half_min_rate':GOAL_HALF_MIN_RATE,'research_mode':'shadow'})
         record_health(c,health,now);c.commit()
     finally:c.close()
 

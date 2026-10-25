@@ -31,7 +31,7 @@ do {
  if(!is_resource($proc))throw new RuntimeException('Diagnostic Python indisponible');
  $text=stream_get_contents($pipes[1]);fclose($pipes[1]);$status=proc_close($proc);$d=json_decode($text,true);
  $at=is_array($d)?strtotime((string)($d['engine']['at']??'')):false;
- if($status===0&&$at!==false&&abs(time()-$at)<=65&&($d['engine']['version']??'')==='decision5.0'&&($d['engine']['legacy_telegram_active']??true)===false&&($d['engine']['notification_mode']??'')==='confirmed_cards'&&($d['engine']['goal_policy']??'')==='goal_periods_intervals_v1'){
+ if($status===0&&$at!==false&&abs(time()-$at)<=65&&($d['engine']['version']??'')==='decision5.0'&&($d['engine']['legacy_telegram_active']??true)===false&&($d['engine']['notification_mode']??'')==='confirmed_cards'&&($d['engine']['goal_policy']??'')==='goal_periods_intervals_v1'&&($d['engine']['goal_half_min_rate']??null)===0.8){
   echo 'LIVE90_V4_HEALTH '.json_encode($d,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES).PHP_EOL;
   exit(0);
  }

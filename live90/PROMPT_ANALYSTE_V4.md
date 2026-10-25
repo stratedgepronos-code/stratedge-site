@@ -25,11 +25,12 @@ Renseigner les trois périodes dans `teams.h/a.goal_halves.home/away` avec `matc
 État du logiciel au déploiement de cette révision : les buts suivent HT en première période et FT en deuxième, les cartons restent FT. Les références de buts requises sont celles de la mi-temps en cours, dans les localisations du match. Les anciennes alertes envoyées conservent leur cible figée ; elles ne sont jamais réinterprétées. Aucun appel à une IA pendant le live.
 
 Une voie de lecture expérimentale est implémentée, avec deux relevés distincts espacés de 20 à 100 secondes, score stable, données fraîches et absence d'expulsion :
-- Références de la mi-temps en cours : buts marqués de l'équipe et encaissés adverses dans leurs localisations respectives, avec échantillons positifs documentés et au moins 0,5 but par période pour chacune.
+- Références de la mi-temps en cours : buts marqués de l'équipe et encaissés adverses dans leurs localisations respectives, avec échantillons positifs documentés et au moins 0,8 but par période pour chacune.
 - Momentum live : au moins 3 tirs et 1 cadré sur 10 minutes, au moins 1 tir sur 5 minutes ; tirs et cadrés récents dépassent aussi le rythme FT ramené à cette durée. Une fenêtre récente ne doit pas traverser la pause ni une remise à zéro après un but.
 - Exemple : A marque 1,3 but en première mi-temps à domicile ; B y encaisse 1,1 à l'extérieur. Si le momentum live et les autres contrôles concordent, la cible est « A marque un but supplémentaire avant la pause ». En deuxième période, utiliser les références second_half pour la cible avant la fin.
 - Les tranches historiques de 15 minutes ne participent plus à la décision, même lorsqu'elles sont disponibles. Leur ancienne voie de déclenchement et leur ancien veto sont retirés. Le champ facultatif intervals reste accepté pour compatibilité ; il peut être absent/null. Ne pas reconstruire de tranches pour ouvrir une alerte.
 - Nouvelle alerte HT interdite dès 45:00 ; toute nouvelle alerte interdite dès 80:00. Le suivi des alertes déjà envoyées continue.
+Le minimum de 0,8 est inclusif et exigé séparément pour les buts marqués de l’équipe et les buts encaissés adverses : ne pas les additionner ni en faire une moyenne pour franchir le seuil. Conserver tous les matchs et leurs vraies valeurs, y compris ceux sous le seuil ; seul le moteur décide de la notification. Le JSON ne change pas.
 Ces seuils sont expérimentaux, pas des probabilités calibrées. Une moyenne de mi-temps entière n'est pas la probabilité de marquer dans les minutes restantes. Ne jamais augmenter des moyennes ni combler des inconnues pour satisfaire un seuil. Une référence de mi-temps absente empêche son alerte, sans supprimer le match.
 
 
