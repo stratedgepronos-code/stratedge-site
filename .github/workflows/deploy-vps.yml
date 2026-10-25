@@ -32,6 +32,7 @@ jobs:
           node tests/slot-arena/test_access.cjs
           node tests/slot-arena/test_sync.cjs
           node tests/slot-arena/test_layout.cjs
+          node tests/slot-arena/test_cinema.cjs
       - name: Tests moteur, imports et parseurs
         run: |
           php -l public_html/admin/slate/live90/historique.php
