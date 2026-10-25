@@ -134,21 +134,63 @@ class HalfMomentum(unittest.TestCase):
    self.r['minute']=minute;ref=self.ctx['teams']['a']['goal_halves']['away']
    ref[good]['conceded_per_match']=2;ref[bad]['conceded_per_match']=.1
    self.prepare();self.assertEqual(self.reading()['status'],'context_conflict')
- def test_two_shot_shortcut_is_retired_even_with_strong_intervals(self):
-  self.r['minute']=36;self.r['ind10'].update(shots10={'h':2,'a':1},sot10={'h':2,'a':0})
-  self.r['ind5'].update(shots5={'h':2,'a':1},sot5={'h':2,'a':0})
+ def test_two_shots_with_only_one_on_target_still_do_not_trigger(self):
+  self.r['minute']=36;self.r['ind10'].update(shots10={'h':2,'a':1},sot10={'h':1,'a':0})
+  self.r['ind5'].update(shots5={'h':2,'a':1},sot5={'h':1,'a':0})
   for side,scope in [('h','home'),('a','away')]:
    ref=self.ctx['teams'][side]['goal_halves'][scope]
    ref['intervals']={k:{'scored_per_match':.1,'conceded_per_match':.1} for k in V.GOAL_INTERVALS}
    ref['intervals']['31-45']={'scored_per_match':1,'conceded_per_match':1}
   self.prepare();self.assertEqual(self.reading()['status'],'neutral')
+ def test_two_recent_on_target_shots_work_for_both_teams_and_halves(self):
+  for minute,period in ((25,'HT'),(65,'FT')):
+   for team in ('h','a'):
+    with self.subTest(minute=minute,team=team):
+     self.r['minute']=minute
+     self.r['ind10'].update(shots10={'h':2,'a':2},sot10={'h':2,'a':2})
+     self.r['ind5'].update(shots5={'h':1,'a':1},sot5={'h':1,'a':1})
+     self.prepare();d=self.reading(team=team);r=V.sample_data(V.latest(self.c)[0])
+     self.assertEqual(d['status'],'active');self.assertEqual(d['period'],period)
+     self.assertEqual(d['metrics']['momentum_basis'],'two_sot_10m')
+     self.assertTrue(V.radar_eligible(r,d,self.now))
+     self.assertIn('2 tirs dont 2 cadrés en 10 min',V.radar_message(r,d,{'quotes':[]}))
+ def test_two_on_target_requires_recent_activity_not_only_half_total(self):
+  self.r['minute']=65
+  self.r['ind10'].update(shots10={'h':2,'a':1},sot10={'h':2,'a':0})
+  self.r['ind5'].update(shots5={'h':0,'a':1},sot5={'h':0,'a':0})
+  self.prepare();self.assertEqual(self.reading()['status'],'neutral')
+  self.r['stats']['sot']['h']=8;self.r['ind10']['sot10']['h']=0
+  self.r['ind5']['shots5']['h']=1;self.prepare()
+  self.assertEqual(self.reading()['status'],'neutral')
+ def test_two_on_target_does_not_bypass_half_or_historical_pace(self):
+  self.r['minute']=65
+  self.r['ind10'].update(shots10={'h':2,'a':1},sot10={'h':2,'a':0})
+  self.r['ind5'].update(shots5={'h':1,'a':1},sot5={'h':1,'a':0})
+  self.ctx['teams']['a']['goal_halves']['away']['second_half']['conceded_per_match']=.79
+  self.prepare();self.assertEqual(self.reading()['status'],'context_conflict')
+  self.ctx['teams']['a']['goal_halves']['away']['second_half']['conceded_per_match']=1
+  self.m['prematch']['shots_h']=20;self.prepare()
+  self.assertEqual(self.reading()['status'],'context_conflict')
+ def test_two_on_target_confirmation_survives_a_third_shot(self):
+  self.r['minute']=65
+  self.r['ind10'].update(shots10={'h':2,'a':1},sot10={'h':1,'a':0})
+  self.r['ind5'].update(shots5={'h':1,'a':1},sot5={'h':1,'a':0})
+  self.prepare();self.assertEqual(self.reading()['status'],'neutral')
+  self.now+=dt.timedelta(seconds=30);self.r['ind10']['sot10']['h']=2;self.add(self.r,self.now)
+  self.assertEqual(self.reading()['status'],'confirming')
+  self.now+=dt.timedelta(seconds=30);self.r['ind10']['shots10']['h']=3;self.add(self.r,self.now)
+  self.assertEqual(self.reading()['status'],'active')
+  V.dispatch(self.c,{'action':'radar_telegram','enabled':True},self.now)
+  with patch.object(V,'radar_configured',return_value=True):
+   V.queue_radar(self.c,V.sample_data(V.latest(self.c)[0]),self.reading(),self.now)
+  self.assertEqual(self.c.execute('SELECT COUNT(*) FROM v5_radar_notifications').fetchone()[0],1)
  def test_incomplete_cross_half_window_does_not_trigger(self):
   self.r['minute']=51;self.r['ind5'].update(shots5={'h':2,'a':1},sot5={'h':2,'a':0})
   self.prepare();self.assertEqual(self.reading()['status'],'missing')
  def test_old_active_policy_cannot_notify(self):
   self.r['minute']=25;self.prepare();d=self.reading();r=V.sample_data(V.latest(self.c)[0])
   self.assertTrue(V.radar_eligible(r,d,self.now))
-  for policy in ('required_concordant_interval_v2','known_interval_veto_v1','half_only_momentum_v3'):
+  for policy in ('required_concordant_interval_v2','known_interval_veto_v1','half_only_momentum_v3','half_only_min08_v4'):
    old=copy.deepcopy(d);old['coherence'].update(interval_gate=policy,interval_status='concordant')
    self.assertFalse(V.radar_eligible(r,old,self.now))
  def test_second_half_target_and_cutoff_unchanged(self):
