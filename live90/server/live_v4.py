@@ -1476,6 +1476,36 @@ def card_context(p,ctx,team,metrics):
     out['coverage']['prematch_weather']=bool(out['weather'])
     return out
 
+def shot_conversion_context(r,p,team):
+    """FT ratios from one Packball profile, never a goal countdown or a trigger."""
+    pre=(p or {}).get('prematch') or {};sample=((p or {}).get('packball') or {}).get('sample') or {}
+    out={'policy':'shot_conversion_context_v1','usage':'context_only','period':'FT','source':'Packball',
+         'status':'missing','matches':pre.get('n_'+team),'venue_scope':sample.get('venue_scope') or 'unknown',
+         'settings_status':sample.get('settings_status') or 'unknown','shots_per_goal':None,'sot_per_goal':None,
+         'shots_mean':pre.get('shots_'+team),'sot_mean':pre.get('sot_'+team),'goals_mean':pre.get('gf_'+team),
+         'live_shots':None,'live_sot':None,'live_goals':None,'lines':[],
+         'caution':'Repère FT descriptif, pas un seuil à atteindre ni une probabilité : aucun but n’est dû.'}
+    goals,shots,sot,n=out['goals_mean'],out['shots_mean'],out['sot_mean'],out['matches']
+    if not p or not p.get('usable') or not num(n) or n<=0 or not num(goals) or goals<=0:return out
+    if num(shots) and shots>0:out['shots_per_goal']=shots/goals
+    if num(sot) and sot>0 and (not num(shots) or shots>=sot):out['sot_per_goal']=sot/goals
+    if out['shots_per_goal'] is None and out['sot_per_goal'] is None:return out
+    out['status']='available'
+    scope=out['venue_scope']
+    venue=('domicile' if team=='h' else 'extérieur') if scope in ('home_away','home/away') else 'localisation non documentée'
+    if scope=='all':venue='toutes localisations'
+    ratios=[]
+    if out['shots_per_goal'] is not None:ratios.append(desk_number(out['shots_per_goal'])+' tirs/but')
+    if out['sot_per_goal'] is not None:ratios.append(desk_number(out['sot_per_goal'])+' cadrés/but')
+    out['lines'].append('Repère FT Packball : '+' · '.join(ratios)+' · '+venue+' · n='+desk_number(n)+'.')
+    out['lines'].append('Ratios calculés sur les moyennes du même profil FT ; réglages d’échantillon '+('non documentés.' if out['settings_status'] in ('unknown','not_exported') else 'à conserver avec leur provenance.'))
+    a,b,g=stat(r,'shots',team),stat(r,'sot',team),(r.get('score') or {}).get(team)
+    if all(num(v) and v>=0 and v==int(v) for v in (a,b,g)) and b<=a:
+        out.update(live_shots=a,live_sot=b,live_goals=g)
+        out['live_line']='Match en cours (cumul FT) : '+desk_number(a)+' tirs, '+desk_number(b)+' cadrés, '+desk_number(g)+' but(s).'
+        out['lines'].insert(1,out['live_line'])
+    return out
+
 def research_candidate(d,candidate):
     """One explicit hypothesis in shadow mode. Never controls Telegram."""
     situation=d.get('situation') or {};m=d['metrics'];co=d.get('coherence') or {}
@@ -1495,7 +1525,7 @@ def record_shadow(c,r,d,now):
     if 'research' not in d or d.get('status') in ('excluded','missing','waiting','stale','caution'):return
     # First usable observation per match-minute: both alerts and non-alerts,
     # without overwriting earlier knowledge with a later event/result.
-    payload={k:d.get(k) for k in ('observed','status','metrics','situation','coherence','research')}
+    payload={k:d.get(k) for k in ('observed','status','metrics','situation','coherence','research','conversion')}
     payload.update(score=r['score'],collected_at=r.get('collected_at'),received_at=r.get('received_at'),target_period=radar_period(d),target_line=d['observed']+.5)
     c.execute('INSERT OR IGNORE INTO v5_shadow_readings VALUES(?,?,?,?,?,?,?,?)',
               (str(r['packball_id']),d['team'],d['market'],int(r['minute']),d['research']['policy'],r['sample_id'],iso(now),enc(payload)))
@@ -1567,8 +1597,10 @@ def desk_reading(r,p,ctx,team,market,now,hist):
     if market=='goals':
         if any(num(m.get(k+str(w))) and m[k+str(w)]!=int(m[k+str(w)]) for k in ('shots','sot') for w in (5,10)) or any(num(m.get(k+'5')) and num(m.get(k+'10')) and m[k+'5']>m[k+'10'] for k in ('shots','sot')):
             return stop('missing','Tirs incohérents','Les fenêtres de tirs 5/10 min doivent être des compteurs entiers cohérents : les 5 minutes sont incluses dans les 10.')
-        m['sot_per_goal']=prematch.get('sot_'+team)/baseline if usable and num(prematch.get('sot_'+team)) and num(baseline) and baseline>0 else None
-        if num(m['sot_per_goal']):d['facts'].append('Historique : '+desk_number(m['sot_per_goal'])+' cadrés par but ; aujourd’hui '+desk_number(m['sot'])+' cadrés / '+desk_number(observed)+' but(s).')
+        d['conversion']=shot_conversion_context(r,p,team)
+        for k in ('shots_per_goal','sot_per_goal'):m[k]=d['conversion'][k]
+        d['facts'].extend(d['conversion']['lines'])
+        d['limits'].append(d['conversion']['caution'])
         if m['sot'] is not None and m['shots'] is not None and m['sot']>m['shots']:return stop('missing','Tirs incohérents','Les cadrés dépassent le total des tirs.')
         if any(m[k] is None for k in ('shots10','sot10','shots5')):return stop('missing','Fenêtre incomplète','Il manque les tirs/cadrés récents, ou un but vient de réinitialiser la comparaison.')
         if any(num(m.get('shots'+str(w))) and num(m.get('sot'+str(w))) and m['sot'+str(w)]>m['shots'+str(w)] for w in (5,10)):return stop('missing','Tirs incohérents','Les cadrés récents dépassent les tirs de la même fenêtre.')
@@ -1910,6 +1942,9 @@ def radar_message(r,d,cuts,radar_id=None):
         lines+=['Fautes au total : '+desk_number((d.get('metrics') or {}).get('fouls'))+' · jaunes actuels : '+desk_number(d.get('observed'))+'.']
     evidence=(d.get('coherence') or {}).get('lines') or (d.get('context_evidence') or {}).get('lines') or []
     if evidence:lines+=['','🔗 Pourquoi les données concordent']+evidence[:6]
+    conversion=d.get('conversion') or {}
+    if d['market']=='goals' and conversion.get('status')=='available':
+        lines+=['','🎯 Efficacité historique · contexte FT']+conversion['lines'][:2]+[conversion['caution']]
     situation=d.get('situation') or {}
     if situation:
         lines+=['','🔎 Lecture du direct',situation['clock_line']]+situation.get('lines',[])[:2]
