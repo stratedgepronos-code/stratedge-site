@@ -81,6 +81,12 @@ def compress_verified(source, allowance):
         stage.unlink(missing_ok=True)
         raise
 
+def required_space(db_bytes, reserve_only=False):
+    # Streaming still writes an archive and may retain WAL pages while reading.
+    # Budget separately from the 2 GiB reserve; the runtime guard stays enabled.
+    staging = max(1024**3, db_bytes // 5) + 256 * 1024**2 if reserve_only else db_bytes
+    return staging + 2 * 1024**3
+
 def main(db, reserve_only=False):
     backups = [p for p in ROOT.glob('stratedge-live90-v4.*/live90.sqlite') if p.is_file() and not p.is_symlink() and not p.parent.is_symlink()]
     print('LIVE90_SPACE free_bytes='+str(shutil.disk_usage(ROOT).free), 'db_bytes='+str(db.stat().st_size), flush=True)
@@ -94,7 +100,7 @@ def main(db, reserve_only=False):
                 size = p.stat().st_size
                 p.unlink()
                 print('LIVE90_INCOMPLETE_COPY_REMOVED bytes='+str(size), flush=True)
-    required = (0 if reserve_only else db.stat().st_size) + 2 * 1024 * 1024 * 1024
+    required = required_space(db.stat().st_size, reserve_only)
     for p in sorted(backups, key=lambda p: p.parent.stat().st_mtime):
         free = shutil.disk_usage(ROOT).free
         if free >= required:
@@ -107,6 +113,8 @@ def main(db, reserve_only=False):
     free = shutil.disk_usage(ROOT).free
     print('LIVE90_SPACE_AFTER free_bytes='+str(free), 'required_bytes='+str(required), flush=True)
     if free < required:
+        archives=[p for p in ROOT.glob('stratedge-live90-v4.*/*') if p.name in ('live90.sql.gz','live90.sqlite.gz') and p.is_file() and not p.is_symlink()]
+        print('LIVE90_COMPRESSED_BACKUPS count='+str(len(archives)), 'bytes='+str(sum(p.stat().st_size for p in archives)), 'preserved=true', flush=True)
         for p in backups:
             if p.exists(): print('LIVE90_BACKUP_RETAINED', p, 'bytes='+str(p.stat().st_size), flush=True)
         raise SystemExit('Espace encore insuffisant ; aucun historique actif supprimé')

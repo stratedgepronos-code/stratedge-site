@@ -10,6 +10,12 @@ spec=importlib.util.spec_from_file_location('backup_space',Path(__file__).resolv
 backup=importlib.util.module_from_spec(spec);spec.loader.exec_module(backup)
 
 class BackupSpaceTests(unittest.TestCase):
+    def test_stream_preflight_budgets_archive_beyond_reserve(self):
+        size=10*1024**3
+        self.assertEqual(backup.required_space(size),size+2*1024**3)
+        self.assertGreater(backup.required_space(size,True),3*1024**3)
+        self.assertLess(backup.required_space(size,True),backup.required_space(size))
+        self.assertGreater(backup.required_space(1024,True),3*1024**3)
     def setUp(self):
         self.tmp=tempfile.TemporaryDirectory();self.addCleanup(self.tmp.cleanup)
         self.root=Path(self.tmp.name);self.folder=self.root/'snapshot';self.folder.mkdir()
