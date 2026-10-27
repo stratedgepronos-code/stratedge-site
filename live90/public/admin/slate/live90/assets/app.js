@@ -499,3 +499,27 @@ function renderObservations(query){
 setInterval(()=>{render();},10000);setInterval(refresh,15000);refresh();
 
 
+
+$('#window-audit-day').value=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Paris'}).format(new Date());
+$('#export-windows').onclick=async()=>{
+ const b=$('#export-windows'),result=$('#window-export-result'),day=$('#window-audit-day').value;
+ b.disabled=true;result.hidden=false;result.textContent='Préparation des fenêtres du '+day+'…';
+ try{
+  let cursor=0,ceiling=null,bundle=null;const ids=new Set();
+  do{
+   const page=await request({action:'export_window_audit',day,cursor,...(ceiling===null?{}:{ceiling})},{timeoutMs:45000});
+   if(page.schema!=='stratedge.windows.v1'||!Array.isArray(page.readings))throw Error('Réponse de fenêtres invalide.');
+   if(!bundle){ceiling=page.ceiling;bundle={...page,readings:[],samples:{},inputs:{}}}
+   if(page.ceiling!==ceiling||page.total!==bundle.total)throw Error('Export modifié pendant la lecture : réessaie.');
+   for(const row of page.readings){if(ids.has(row.id))throw Error('Doublon dans les fenêtres.');ids.add(row.id);bundle.readings.push(row)}
+   Object.assign(bundle.samples,page.samples);Object.assign(bundle.inputs,page.inputs);
+   result.textContent=bundle.readings.length+' / '+bundle.total+' lectures récupérées…';
+   if(page.next_cursor!==null&&(!Number.isInteger(page.next_cursor)||page.next_cursor<=cursor))throw Error('Pagination de fenêtres invalide.');
+   cursor=page.next_cursor;
+  }while(cursor!==null);
+  if(bundle.readings.length!==bundle.total)throw Error('Export incomplet : réessaie.');
+  bundle.complete=true;bundle.next_cursor=null;bundle.returned=bundle.readings.length;
+  result.textContent=bundle.returned+' lectures exportées pour le '+day+' (Europe/Paris). Archives disponibles depuis cette mise à jour uniquement. ';
+  download('StratEdge-fenetres-'+day+'.json',bundle,result);
+ }catch(e){result.textContent=e.message}finally{b.disabled=false}
+};

@@ -64,6 +64,15 @@ class RadarTests(unittest.TestCase):
    self.add(self.r,self.now+dt.timedelta(seconds=1));V.deliver_radar(self.c,self.now+dt.timedelta(seconds=101 if change=='stale' else 1))
    self.assertEqual(self.rows()[0]['delivery'],'expired',change)
   self.send.assert_not_called()
+ def test_initial_and_delivery_confirmation_pairs_are_separately_frozen(self):
+  _,first=self.queue();initial=copy.deepcopy(first['confirmation'])
+  self.now+=dt.timedelta(seconds=30);self.add(self.r,self.now)
+  V.deliver_radar(self.c,self.now)
+  self.send.assert_called_once()
+  saved=V.dec(self.rows()[0]['data']);snap=saved['learning_snapshot']
+  self.assertEqual(snap['initial_confirmation'],initial)
+  self.assertNotEqual(snap['reading']['confirmation']['samples'][-1]['sample']['sample_id'],initial['samples'][-1]['sample']['sample_id'])
+  self.assertEqual(len(snap['reading']['confirmation']['samples']),2)
  def test_missing_quote_does_not_block(self):
   self.queue();V.deliver_radar(self.c,self.now);msg=self.send.call_args.args[0]
   for text in ('But à surveiller','Équipe A','Cote à vérifier — miser uniquement à partir de 1,50','pas un pari validé'):self.assertIn(text,msg)

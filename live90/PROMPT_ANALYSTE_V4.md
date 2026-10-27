@@ -289,3 +289,16 @@ Vérifier toutes les identités, watch:true, périodes/équipes, sources et long
 
 Fournir le lien du fichier, puis un bilan bref : nombre de matchs, contextes tardifs, arbitres documentés, équipes avec références de cartons, buts FT/HT/2H et tranches structurées vérifiées, couvertures home/away, H2H vérifiés, principales données manquantes. Aucun match exclu pour absence de contexte. Le compteur « versions avant-match conservées » signifie remplacements empêchés ; ce n’est pas le nombre de dossiers nouvellement exploitables.
 
+
+
+## Complément d’audit — fenêtres acceptées et rejetées
+
+Le fichier facultatif `StratEdge-fenetres-AAAA-MM-JJ.json` (schéma `stratedge.windows.v1`) accompagne le bilan et la mémoire. Il conserve les évaluations LIVE réellement faites par le moteur, y compris les refus et les données manquantes, depuis l’activation de cette archive. Ce n’est ni tous les instants d’un match, ni les matchs hors programme, ni une reconstruction des anciennes journées.
+
+- Vérifier `complete: true`, le nombre de `readings` égal à `total`, et dédupliquer par identifiant. Relier chaque lecture à `samples` par `sample_id` et à `inputs` par `inputs_hash`. Une valeur absente demeure inconnue, jamais zéro.
+- Comparer toutes les issues et les fenêtres sans alerte, en regroupant les lectures d’un même match. Séparer versions du moteur, dates et périodes ; tester chronologiquement sur des matchs distincts. Les lectures répétées ne sont pas des observations indépendantes. Ne pas sélectionner seulement les échecs.
+- Dans les alertes, `initial_confirmation` conserve les deux relevés du déclenchement ; `reading.confirmation` conserve ceux de la dernière vérification avant envoi. Les deux paires peuvent différer. Respecter collecte, réception et décision : aucune donnée reçue après la décision ne devient une preuve connue au signal. Une archive ancienne sans ces champs ne permet pas de les inventer.
+- `shot_quality` distingue valeur brute, disponibilité, validité et utilisation. Contrôler cumul, fenêtres 5/10 min, sous-statistique inférieure ou égale au total et provenance des mesures. Une différence de cumuls doit utiliser des ancres compatibles. Une capture commune ne garantit pas la synchronisation du fournisseur : `provider_synchronization: unknown` n’est pas une preuve de synchronisation.
+- Les tirs dans/hors surface et les tirs bloqués incohérents sont neutralisés individuellement. Une incohérence de tirs/cadrés nécessaires peut bloquer la lecture buts ; ne pas l’attribuer aux cartons ni à une cause de résultat perdu sans preuve. Ne pas imposer une somme cadrés + non cadrés + bloqués sans connaître les conventions du fournisseur.
+
+Ce complément concerne l’audit et la traçabilité. Il ne change ni le schéma du JSON avant-match, ni les seuils de déclenchement. Les résultats se rapprochent du bilan séparément ; ces fichiers ne démontrent pas la rentabilité sans cotes et règlement vérifiés. Proposer une hypothèse et un protocole de test avant toute modification du prompt prédictif ou du moteur.

@@ -524,29 +524,42 @@ def stat(r,k,t,group='stats'):
 
 def dismissal(r): return any((stat(r,k,t) or 0)>0 for k in ('red_cards','second_yellow') for t in ('h','a'))
 def recent(r,hist,k,t,minutes):
+    return recent_measure(r,hist,k,t,minutes)['value']
+
+def recent_measure(r,hist,k,t,minutes):
+    out={'value':None,'origin':None,'anchor_id':None,'anchor_at':None,'window_minutes':minutes,
+         'collected_at':r.get('collected_at'),'reason':'Fenêtre non disponible',
+         'provider_stat_timestamp':None}
+    def finish(value=None,reason=None,origin=None,anchor=None):
+        out.update(value=value,reason=reason,origin=origin)
+        if anchor:out.update(anchor_id=anchor.get('sample_id'),anchor_at=anchor.get('collected_at'))
+        return out
     minute=r.get('minute')
-    if not num(minute) or minute<minutes or 45<minute<45+minutes: return None
+    if not num(minute) or minute<minutes or 45<minute<45+minutes:return finish(reason='Début de période : fenêtre incomplète')
     # Restart attacking windows after a goal to avoid treating a completed
     # attack as evidence for another goal. Fouls are independent cumulative
     # events: retain their measured window across score changes.
     sample_time=date(r.get('collected_at'))
-    if not sample_time: return None
+    if not sample_time:return finish(reason='Horodatage absent')
     window_start=sample_time-dt.timedelta(minutes=minutes)
     usable=[]
     for h in hist:
         old=h['_parsed'] if isinstance(h,dict) and '_parsed' in h else dec(h['data'],{}); at=date(old.get('collected_at') or h['received_at'])
-        if not at or old.get('state')!='LIVE' or not num(old.get('minute')): continue
+        received=date(h.get('received_at')) if isinstance(h,dict) else date(h['received_at'])
+        current_received=date(r.get('received_at'))
+        if not at or at>sample_time or (received and current_received and received>current_received) or old.get('quality_errors') or old.get('state')!='LIVE' or not num(old.get('minute')):continue
         if (old['minute']<=45)!=(minute<=45): continue
-        if k!='fouls' and window_start<=at<=sample_time and old.get('score')!=r.get('score'): return None
-        if at<=window_start and 0<=(window_start-at).total_seconds()<=100 and minutes-.5<=minute-old['minute']<=minutes+2: usable.append((at,old))
+        if k!='fouls' and window_start<=at<=sample_time and old.get('score')!=r.get('score'):return finish(reason='Score modifié dans la fenêtre')
+        if at<=window_start and 0<=(window_start-at).total_seconds()<=100 and minutes-.5<=minute-old['minute']<=minutes+2:usable.append((at,dict(old,sample_id=dict(h).get('id',old.get('sample_id')))))
     supplied=stat(r,k+str(minutes),t,'ind'+str(minutes))
     total=stat(r,k,t)
     if supplied is not None:
-        if total is None or supplied>total: return None
-        return supplied
-    if not usable or total is None: return None
+        if total is None or supplied>total:return finish(reason='Fenêtre fournie supérieure au cumul ou cumul absent',origin='provider_window')
+        return finish(supplied,origin='provider_window')
+    if not usable or total is None:return finish(reason='Ancre historique ou cumul absent')
     old=max(usable,key=lambda z:z[0])[1]; before=stat(old,k,t)
-    return total-before if before is not None and total>=before else None
+    return finish(total-before if before is not None and total>=before else None,
+                  reason=None if before is not None and total>=before else 'Compteur corrigé ou ancre absente',origin='cumulative_delta',anchor=old)
 
 def base_decision(market,team): return {'market':market,'team':team,'status':'watch','reason':'Observation en cours','intensity':0,'metrics':{},'context_notes':[],'quote':None,'line':None,'threshold':70}
 def evaluate(r,profile,context,market,team,now,hist,settings):
@@ -1154,6 +1167,7 @@ def dispatch(c,x,now):
     if action in ('analyst','packball'): return import_bundle(c,action,x.get('bundle'),now)
     if action=='export_analysis': return export_analysis(c,now)
     if action=='export_learning': return export_learning(c,now)
+    if action=='export_window_audit':return export_window_audit(c,x,now)
     if action=='history':
         offset=x.get('offset',0)
         if type(offset) is not int or not 0<=offset<=1000000:raise ValueError('Pagination invalide')
@@ -1165,7 +1179,7 @@ def dispatch(c,x,now):
         for signal in signals:
             if not signal['data'].get('review'):signal['data']['review']=signal_review(c,signal,signal['outcome'],now,replay=False)
         groups=[dict(row) for row in c.execute("SELECT market,outcome,COUNT(*) n FROM v4_signals GROUP BY market,outcome")]
-        return {'schema':'stratedge.audit.v4','exported_at':iso(now),'timezone':'Europe/Paris','coverage':{'exported_signals':len(signals),'total_signals':all_count,'scope':'100 derniers signaux ; 200 derniers incidents ; dernières lectures enregistrées, sans relecture historique' },'health':feed_health(c,now),'incidents':incidents,'all_history_counts':groups,'match_audits':export_quality_readings(c),'signals':signals,'learning':export_learning(c,now),'instructions':'Analyser les faits, les problèmes de collecte, les limites du modèle et les hypothèses séparément. Comparer gagnants et perdants, pas seulement les pertes. Respecter les informations disponibles au moment du signal ; les relevés ultérieurs décrivent le déroulement, pas une information prédictive connue. Un résultat perdu ne prouve ni erreur ni cause précise. Ne pas inventer xG, arbitre ou absence. Les signaux sont corrélés par match et les cotes observées ne prouvent aucun avantage. Proposer des tests hors échantillon avant toute modification des seuils. Aucun changement automatique du moteur.'}
+        return {'schema':'stratedge.audit.v4','exported_at':iso(now),'timezone':'Europe/Paris','coverage':{'exported_signals':len(signals),'total_signals':all_count,'scope':'100 derniers signaux ; 200 derniers incidents ; dernières lectures enregistrées, sans relecture historique','window_audit_export':'Exporter séparément les fenêtres pour GPT pour la journée étudiée : évaluations acceptées et rejetées depuis l’activation de cette archive' },'health':feed_health(c,now),'incidents':incidents,'all_history_counts':groups,'match_audits':export_quality_readings(c),'signals':signals,'learning':export_learning(c,now),'instructions':'Analyser les faits, les problèmes de collecte, les limites du modèle et les hypothèses séparément. Comparer gagnants et perdants, pas seulement les pertes. Respecter les informations disponibles au moment du signal ; les relevés ultérieurs décrivent le déroulement, pas une information prédictive connue. Un résultat perdu ne prouve ni erreur ni cause précise. Ne pas inventer xG, arbitre ou absence. Les signaux sont corrélés par match et les cotes observées ne prouvent aucun avantage. Proposer des tests hors échantillon avant toute modification des seuils. Aucun changement automatique du moteur.'}
     if action=='settle': return settle(c,x,now)
     if action=='settings':
         s=x.get('settings',{})
@@ -1216,6 +1230,9 @@ CREATE TABLE IF NOT EXISTS v5_learning_reviews(radar_id INTEGER PRIMARY KEY,outc
 CREATE TABLE IF NOT EXISTS v5_learning_review_versions(id INTEGER PRIMARY KEY,radar_id INTEGER,revision INTEGER,created_at TEXT,data TEXT,UNIQUE(radar_id,revision));
 CREATE TABLE IF NOT EXISTS v5_learning_memory(id INTEGER PRIMARY KEY,digest TEXT UNIQUE,created_at TEXT,data TEXT);
 CREATE TABLE IF NOT EXISTS v5_shadow_readings(match_id TEXT,team TEXT,market TEXT,minute INTEGER,policy TEXT,sample_id INTEGER,created_at TEXT,data TEXT,PRIMARY KEY(match_id,team,market,minute,policy));
+CREATE TABLE IF NOT EXISTS v5_window_audits(id INTEGER PRIMARY KEY,sample_id INTEGER,match_id TEXT,team TEXT,market TEXT,engine TEXT,created_at TEXT,data TEXT,UNIQUE(sample_id,team,market,engine));
+CREATE INDEX IF NOT EXISTS v5_window_audits_created ON v5_window_audits(created_at,id);
+CREATE TABLE IF NOT EXISTS v5_audit_inputs(hash TEXT PRIMARY KEY,data TEXT);
 '''
 def desk_number(v):
     return format(v,'.2f').rstrip('0').rstrip('.').replace('.',',') if num(v) else '—'
@@ -1410,7 +1427,37 @@ def prematch_live_coherence(r,p,ctx,team,market,metrics,evidence):
     out['status']='missing' if missing else 'conflict' if conflicts else 'confirmed'
     return out
 
-def live_situation(r,team,market,m,hist):
+def shot_quality_audit(r,hist,team):
+    fields=('shots','sot','shots_inside','shots_outside','shots_off_target','blocked_shots')
+    result={'policy':'shot_windows_v1','provider_synchronization':'unknown',
+            'note':'Même capture ne prouve pas une mise à jour simultanée du fournisseur ; horodatages par statistique absents.', 'windows':{}}
+    for w in (0,5,10):
+        measures={}
+        for k in fields:
+            v=stat(r,k,team) if w==0 else None
+            q=({'value':v,'origin':'cumulative','reason':None if v is not None else 'Valeur absente'} if w==0 else recent_measure(r,hist,k,team,w))
+            q['usable']=num(q['value']) and q['value']>=0 and q['value']==int(q['value'])
+            if q['value'] is not None and not q['usable']:q['reason']='Compteur non entier'
+            measures[k]=q
+        total=measures['shots']
+        for k in fields[1:]:
+            q=measures[k]
+            if not q['usable']:continue
+            if not total['usable']:q.update(usable=False,reason='Total de tirs non exploitable');continue
+            same=q['origin']==total['origin'] and (q['origin']!='cumulative_delta' or (q.get('anchor_at')==total.get('anchor_at') and q.get('anchor_id')==total.get('anchor_id')))
+            if not same:q.update(usable=False,reason='Fenêtres non synchronisées : origines ou ancres différentes')
+            elif q['value']>total['value']:q.update(usable=False,reason='Sous-statistique : tirs supérieurs au total')
+        inside,outside=measures['shots_inside'],measures['shots_outside']
+        if inside['usable'] and outside['usable'] and inside['value']+outside['value']>total['value']:
+            for q in (inside,outside):q.update(usable=False,reason='Tirs surface + hors surface supérieurs au total')
+        result['windows'][str(w)]=measures
+    for k in fields:
+        short,long=result['windows']['5'][k],result['windows']['10'][k]
+        if short['usable'] and long['usable'] and short['value']>long['value']:
+            for q in (short,long):q.update(usable=False,reason='Fenêtre 5 min supérieure à 10 min')
+    return result
+
+def live_situation(r,team,market,m,hist,shot_audit=None):
     """Observed context only. Extra metrics never invent xG, players or probabilities."""
     other='a' if team=='h' else 'h';gap=r['score'][team]-r['score'][other]
     remaining=max(0,(45 if market=='goals' and r['minute']<=45 else 90)-r['minute'])
@@ -1422,6 +1469,16 @@ def live_situation(r,team,market,m,hist):
         m[k]=stat(r,k,team)
         for w in (5,10):m[k+str(w)]=recent(r,hist,k,team,w)
         out['coverage'][k]=m[k+'10'] is not None
+    if market=='goals':
+        audit=shot_audit or shot_quality_audit(r,hist,team)
+        for k in ('shots_inside','shots_outside','shots_off_target','blocked_shots'):
+            for w in (0,5,10):
+                q=audit['windows'][str(w)][k]
+                if not q['usable']:
+                    m[k+(str(w) if w else '')]=None
+                    if q['value'] is not None:out['warnings'].append(k+' '+str(w)+' min : '+str(q['reason'])+' ; donnée ignorée.')
+            out['coverage'][k]=m[k+'10'] is not None
+        out['warnings'].append(audit['note'])
     core='shots' if market=='goals' else 'fouls'
     last,whole=m.get(core+'5'),m.get(core+'10')
     previous=whole-last if num(last) and num(whole) and 0<=last<=whole else None
@@ -1555,6 +1612,7 @@ def desk_reading(r,p,ctx,team,market,now,hist):
        'sample':n,'baseline_origin':baseline_origin,'facts':[],'limits':[],'metrics':{},'window':'10 dernières minutes','period':'HT' if num(r.get('minute')) and r['minute']<=45 else 'FT'}
     if market=='cards':d.update(period='FT',card_policy=CARD_MOMENTUM_POLICY)
     if market=='goals':d['goal_policy']=GOAL_POLICY
+    if market=='goals' and r.get('state')=='LIVE':d['shot_quality']=shot_quality_audit(r,hist,team)
     d['context_evidence']=context_evidence(valid_ctx,team,market,r.get('minute'),goal_reference_period(r) if market=='goals' else 'full_time')
     if market=='goals':
         d['interval_evidence']={'status':'not_used','lines':[]}
@@ -1604,6 +1662,10 @@ def desk_reading(r,p,ctx,team,market,now,hist):
         if m['sot'] is not None and m['shots'] is not None and m['sot']>m['shots']:return stop('missing','Tirs incohérents','Les cadrés dépassent le total des tirs.')
         if any(m[k] is None for k in ('shots10','sot10','shots5')):return stop('missing','Fenêtre incomplète','Il manque les tirs/cadrés récents, ou un but vient de réinitialiser la comparaison.')
         if any(num(m.get('shots'+str(w))) and num(m.get('sot'+str(w))) and m['sot'+str(w)]>m['shots'+str(w)] for w in (5,10)):return stop('missing','Tirs incohérents','Les cadrés récents dépassent les tirs de la même fenêtre.')
+        for w,k in (('0','shots'),('0','sot'),('10','shots'),('10','sot'),('5','shots')):
+            quality=d['shot_quality']['windows'][w][k]
+            if quality['value'] is not None and not quality['usable']:
+                return stop('missing','Tirs incohérents',quality['reason']+' : '+k+' / '+w+' min. Attendre une fenêtre comparable.')
         volume=m['shots10']>=3 and m['sot10']>=1
         two_sot=m['sot10']>=2
         candidate=(volume or two_sot) and m['shots5']>=1
@@ -1642,7 +1704,7 @@ def desk_reading(r,p,ctx,team,market,now,hist):
         d['limits'].insert(0,'Type de faute et répétition par joueur non fournis. Un jaune déjà reçu ne ferme pas l’analyse ; aucun nombre de fautes ne garantit un carton.')
         d['criteria']='Séquence rapide : au moins 3 fautes en 5 min ; ou au moins 3 en 10 min dont 1 en 5 min. Dans les deux cas : possession cumulée ≤ 45 % ou au moins 2 tirs adverses en 10 min, rythme de fautes supérieur au repère historique sur la même durée, références arbitre/équipes et deux relevés de la même voie. Météo, tacles et possession historique restent descriptifs. Seuils expérimentaux.'
     if market in DESK_MARKETS:
-        d['situation']=live_situation(r,team,market,m,hist)
+        d['situation']=live_situation(r,team,market,m,hist,d.get('shot_quality'))
         if market=='cards':d['situation']['card_context']=d.get('card_context',{})
         d['facts'].extend([d['situation']['clock_line'],*d['situation']['lines']])
         d['limits'].extend(d['situation']['warnings'])
@@ -1681,6 +1743,8 @@ def desk_advice(c,s,p,ctx,now):
                     same_path=(market not in DESK_MARKETS or old_d.get('trigger_path')==d.get('trigger_path'))
                     if same_path and at and before and 20<=(at-before).total_seconds()<=100 and old_d['status']=='candidate' and old_d['period']==d['period'] and old_d['observed']==d['observed'] and old.get('score')==r.get('score') and num(old.get('minute')) and 0<=r['minute']-old['minute']<=2:
                         d.update(status='active',title='Avant-match + live concordants')
+                        d['confirmation']={'engine':ENGINE_FINGERPRINT,'evaluated_at':iso(now),'gap_seconds':(at-before).total_seconds(),
+                                           'samples':[frozen_confirmation(old,old_d),frozen_confirmation(r,d)]}
             d.update(sample_id=s['id'],updated_at=iso(now))
             out.append(apply_card_scope(c,r,d,p,ctx,now))
     return out
@@ -1898,7 +1962,7 @@ def queue_radar(c,r,d,now):
     # Same counter = same opportunity, even across restarts, pauses and status flicker.
     event_key=radar_event_key(mid,d)
     if radar_recent_same_period(c,mid,d,now):return
-    saved={'home':r.get('home'),'away':r.get('away'),'score':r.get('score'),'reading':d,'minute':r.get('minute')}
+    saved={'home':r.get('home'),'away':r.get('away'),'score':r.get('score'),'reading':d,'minute':r.get('minute'),'initial_confirmation':d.get('confirmation')}
     c.execute("UPDATE v5_radar_notifications SET created_at=?,sample_id=?,data=?,delivery='queued',delivery_error=NULL WHERE event_key=? AND delivery='price_wait'",(iso(now),r['sample_id'],enc(saved),event_key))
     inserted=c.execute('INSERT OR IGNORE INTO v5_radar_notifications(event_key,match_id,team,market,counter,created_at,sample_id,data,delivery) VALUES(?,?,?,?,?,?,?,?,?)',
               (event_key,mid,d['team'],d['market'],counter,iso(now),r['sample_id'],enc(saved),'queued')).rowcount
@@ -2004,7 +2068,7 @@ def deliver_radar(c,now,realtime=False):
                 if not gate['eligible']:
                     cuts=dict(cuts,quotes=[],reason='Cote et cut non vérifiés pour cette observation.')
                 message=radar_message(r,d,cuts,event['id'])
-                c.execute('UPDATE v5_radar_notifications SET data=? WHERE id=?',(enc(dict(saved,reading=d,message=message,cuts=cuts,result_target=radar_target(r,d,cuts),learning_snapshot=learning_snapshot(r,d,p,ctx,now))),event['id']));c.commit()
+                c.execute('UPDATE v5_radar_notifications SET data=? WHERE id=?',(enc(dict(saved,reading=d,message=message,cuts=cuts,result_target=radar_target(r,d,cuts),learning_snapshot=learning_snapshot(r,d,p,ctx,now,initial_confirmation=saved.get('initial_confirmation')))),event['id']));c.commit()
                 if radar_enabled(c):state,error,mid=notify(message);sent_attempts+=1
                 else:state,error='disabled','Radar Telegram désactivé'
         c.execute('UPDATE v5_radar_notifications SET delivery=?,delivery_error=?,telegram_id=? WHERE id=?',(state,error,mid,event['id']));c.commit()
@@ -2189,9 +2253,56 @@ def deliver_radar_results(c,now,realtime=False):
         state,error,mid=notify(event['message'],reply_to=event['original_message']);attempts+=1
         c.execute('UPDATE v5_radar_result_events SET delivery=?,delivery_error=?,telegram_id=? WHERE id=?',(state,error,mid,event['id']));c.commit()
 
-def learning_snapshot(r,d,p,ctx,now):
+def frozen_confirmation(r,d):
+    return {'sample':{k:r.get(k) for k in ('sample_id','collected_at','received_at','packball_id','home','away','league','kickoff_ts','state','minute','minute_extra','score','stats','ind5','ind10','quality_errors','collector_version')},
+            'reading':{k:d.get(k) for k in ('status','period','observed','trigger_path','metrics','coherence','context_evidence','situation','shot_quality')}}
+
+def record_window_audit(c,r,d,p,ctx,now):
+    # Every distinct sample actually evaluated in LIVE, regardless of decision or later result.
+    # Raw rows already live in samples: retain IDs rather than duplicating all JSON per market.
+    if r.get('state')!='LIVE' or not r.get('sample_id'):return
+    inputs_json=enc({'profile':p,'context':ctx});inputs_hash=hashlib.sha256(inputs_json.encode()).hexdigest()
+    c.execute('INSERT OR IGNORE INTO v5_audit_inputs(hash,data) VALUES(?,?)',(inputs_hash,inputs_json))
+    data={k:d.get(k) for k in ('status','reason','period','observed','trigger_path','metrics','coherence','conversion')}
+    data.update(minute=r.get('minute'),score=r.get('score'),profile_imported_at=(p or {}).get('imported_at'),context_generated_at=(ctx or {}).get('generated_at'),
+                profile_usable=(p or {}).get('usable'),context_usable=(ctx or {}).get('usable'),
+                confirmation_sample_ids=[x['sample']['sample_id'] for x in (d.get('confirmation') or {}).get('samples',[])])
+    data['inputs_hash']=inputs_hash
+    if d['market']=='goals':data['shot_quality']=d.get('shot_quality')
+    c.execute('INSERT OR IGNORE INTO v5_window_audits(sample_id,match_id,team,market,engine,created_at,data) VALUES(?,?,?,?,?,?,?)',
+              (r['sample_id'],str(r['packball_id']),d['team'],d['market'],ENGINE_FINGERPRINT,iso(now),enc(data)))
+
+def export_window_audit(c,x,now):
+    day=x.get('day') or now.astimezone(ZoneInfo('Europe/Paris')).date().isoformat()
+    try:start=dt.datetime.combine(dt.date.fromisoformat(day),dt.time(),ZoneInfo('Europe/Paris'));end=start+dt.timedelta(days=1)
+    except (ValueError,TypeError):raise ValueError('Jour invalide : AAAA-MM-JJ requis')
+    cursor=x.get('cursor',0);ceiling=x.get('ceiling')
+    if type(cursor) is not int or cursor<0 or ceiling is not None and (type(ceiling) is not int or ceiling<0):raise ValueError('Curseur invalide')
+    if ceiling is None:ceiling=c.execute('SELECT COALESCE(MAX(id),0) FROM v5_window_audits').fetchone()[0]
+    params=(iso(start.astimezone(UTC)),iso(end.astimezone(UTC)),ceiling)
+    total=c.execute('SELECT COUNT(*) FROM v5_window_audits WHERE created_at>=? AND created_at<? AND id<=?',params).fetchone()[0]
+    rows=c.execute('SELECT * FROM v5_window_audits WHERE created_at>=? AND created_at<? AND id<=? AND id>? ORDER BY id LIMIT 501',params+(cursor,)).fetchall()
+    more=len(rows)>500;rows=rows[:500];out=[];samples={};inputs={}
+    for row in rows:
+        item=dict(row,data=dec(row['data'],{}));out.append(item)
+        ids={row['sample_id'],*item['data'].get('confirmation_sample_ids',[])}
+        for window in (item['data'].get('shot_quality') or {}).get('windows',{}).values():
+            ids.update(q.get('anchor_id') for q in window.values())
+        for sid in ids-{None}:
+            if sid not in samples:
+                source=c.execute('SELECT * FROM samples WHERE id=?',(sid,)).fetchone()
+                samples[sid]=frozen_confirmation(sample_data(source),{})['sample'] if source else None
+        ih=item['data'].get('inputs_hash')
+        if ih and ih not in inputs:
+            source=c.execute('SELECT data FROM v5_audit_inputs WHERE hash=?',(ih,)).fetchone()
+            inputs[ih]=dec(source['data'],{}) if source else None
+    return {'schema':'stratedge.windows.v1','day':day,'timezone':'Europe/Paris','ceiling':ceiling,'total':total,'returned':len(out),
+            'next_cursor':rows[-1]['id'] if more else None,'complete':not more and cursor==0,'readings':out,'samples':samples,'inputs':inputs,
+            'instructions':'Toutes les évaluations LIVE archivées par le moteur depuis cette version, acceptées ou rejetées, une fois par relevé/équipe/marché/version. Pas tous les instants du match ni les matchs hors programme. Paginer jusqu’à next_cursor=null avec le même day et ceiling ; dédupliquer par id. Résultats à rapprocher séparément, sans sélectionner seulement les échecs. Les archives antérieures ne sont pas reconstruites. Une fenêtre fournie dans la même capture n’a pas forcément le même horodatage fournisseur.'}
+
+def learning_snapshot(r,d,p,ctx,now,initial_confirmation=None):
     """Only information present before sending. Never reconstruct from today's imports."""
-    return {'version':LEARNING_VERSION,'engine':ENGINE_FINGERPRINT,'captured_at':iso(now),
+    return {'version':LEARNING_VERSION,'engine':ENGINE_FINGERPRINT,'captured_at':iso(now),'initial_confirmation':initial_confirmation,
             'prompt_revision':'2026-10-24-goal-periods1','profile':p,'context':ctx,'reading':d,
             'live':{k:r.get(k) for k in ('sample_id','collected_at','received_at','packball_id','home','away',
                     'league','kickoff_ts','state','minute','minute_extra','status_raw','score','stats','ind5','ind10','collector_version','client_id','quality_errors')}}
@@ -2388,6 +2499,7 @@ def run_dashboard(path,now=None):
                     c.execute('INSERT OR IGNORE INTO v5_observations(match_id,team,market,sample_id,created_at,data) VALUES(?,?,?,?,?,?)',(s['match_id'],d['team'],d['market'],s['id'],iso(now),enc(saved)))
                 if radar_eligible(r,d,now):price_candidates.append((r,d))
                 record_shadow(c,r,d,now)
+                record_window_audit(c,r,d,p,ctx,now)
                 c.execute('INSERT OR REPLACE INTO v5_readings VALUES(?,?,?,?,?,?)',(s['match_id'],d['team'],d['market'],s['id'],iso(now),enc(d)))
             c.commit()
         refresh_radar_prices(c,now,price_candidates)
