@@ -169,7 +169,29 @@ $('#packball-day').value=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Paris
 $('#packball-files').onchange=e=>{const fs=[...e.target.files],dates=fs.map(f=>f.name.match(/(\d{2})-(\d{2})-(\d{4})/)).filter(Boolean);if(dates.length===2&&dates[0][0]===dates[1][0])$('#packball-day').value=`${dates[0][3]}-${dates[0][2]}-${dates[0][1]}`;$('#packball-preview').textContent=fs.map(f=>f.name).join('\n')};
 $('#packball-save').onclick=async()=>{const b=$('#packball-save');b.disabled=true;try{const files=[...$('#packball-files').files];if(files.length!==2)throw Error('Choisis exactement les deux exports complémentaires Packball.');if(files.some(f=>f.size>900000))throw Error('Chaque fichier est limité à 900 Ko.');const tables=pbOrderTables(await Promise.all(files.map(async f=>parseCSV(await f.text()))));const matches=pbJoin(...tables,$('#packball-day').value,'Europe/Paris');const bundle={schema:'stratedge.packball.v4',exported_at:new Date().toISOString(),timezone:'Europe/Paris',headers:{export_a:tables[0][0],export_b:tables[1][0]},matches};const x=await request({action:'packball',bundle});$('#packball-preview').textContent=x.duplicate?'Dossier déjà enregistré.':`${x.imported} profils importés. ${x.preserved} profils avant-match conservés. ${x.late} matchs déjà commencés : visibles, sans antidatation.`;$('#packball-preview').textContent+=importCoverageText(x);const notes=[...new Set(matches.flatMap(m=>m.issues||[]))];if(notes.length)$('#packball-preview').textContent+='\nÀ vérifier : '+notes.join(' · ');await refresh();notice('Packball importé. Clique sur 2 · Exporter pour GPT pour préparer ton analyse.')}catch(e){$('#packball-preview').textContent=e.message}finally{b.disabled=false}};
 $('#scenario-file').onchange=e=>{analystFiles=[...(e.target.files||[])];$('#analyst-preview').textContent=analystFiles.map(f=>f.name).join('\n')};
-$('#analyst-save').onclick=async()=>{const b=$('#analyst-save');b.disabled=true;const done=[];try{if(!analystFiles.length)throw Error('Choisis le fichier JSON fourni par la conversation V4.');for(const f of analystFiles){if(f.size>1900000)throw Error('Dossier limité à 1,9 Mo : '+f.name);let bundle;try{bundle=JSON.parse(await f.text())}catch{throw Error('JSON illisible : '+f.name)}if(bundle.schema!=='stratedge.context.v4')throw Error('Ce dossier utilise un ancien format. Télécharge le nouveau prompt V4 et demande un fichier stratedge.context.v4.');const x=await request({action:'analyst',bundle});done.push(f.name+' : '+(x.duplicate?'déjà importé':`${x.imported} contextes, ${x.preserved} versions avant-match conservées`)+importCoverageText(x));$('#analyst-preview').textContent=done.join('\n')}await refresh();notice('Import vérifié. Consulte le bilan de rattachement affiché.')}catch(e){$('#analyst-preview').textContent=[...done,e.message].join('\n')}finally{b.disabled=false}};
+// The input file may be pretty-printed. Limit the UTF-8 request sent to PHP,
+// including its envelope, rather than rejecting harmless formatting on disk.
+function analystImportPayload(bundle,name){
+ if(bundle?.schema!=='stratedge.context.v4')throw Error('Ce dossier utilise un ancien format. Télécharge le nouveau prompt V4 et demande un fichier stratedge.context.v4.');
+ const payload={action:'analyst',bundle};
+ if(new TextEncoder().encode(JSON.stringify(payload)).byteLength>1900000)throw Error('Dossier trop volumineux après préparation : '+name+' (limite de 1,9 Mo envoyés). Aucune donnée importée pour ce fichier.');
+ return payload;
+}
+$('#analyst-save').onclick=async()=>{
+ const b=$('#analyst-save');b.disabled=true;const done=[];
+ try{
+  if(!analystFiles.length)throw Error('Choisis le fichier JSON fourni par la conversation V4.');
+  for(const f of analystFiles){
+   if(f.size>10000000)throw Error('Fichier JSON limité à 10 Mo : '+f.name);
+   let bundle;try{bundle=JSON.parse(await f.text())}catch{throw Error('JSON illisible : '+f.name)}
+   const x=await request(analystImportPayload(bundle,f.name));
+   done.push(f.name+' : '+(x.duplicate?'déjà importé':`${x.imported} contextes, ${x.preserved} versions avant-match conservées`)+importCoverageText(x));
+   $('#analyst-preview').textContent=done.join('\n');
+  }
+  await refresh();notice('Import vérifié. Consulte le bilan de rattachement affiché.');
+ }catch(e){$('#analyst-preview').textContent=[...done,e.message].join('\n')}finally{b.disabled=false}
+};
+
 async function exportAnalysis(){
  const buttons=[$('#export-analysis'),$('#packball-export')],result=$('#packball-export-result');
  if(buttons.some(b=>b.disabled))return;

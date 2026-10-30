@@ -38,3 +38,18 @@ assert.equal(value('quoteMeta("Plus Cartons - Première ligne", "inp-90").verifi
 assert.equal(value('quoteMeta("Plus points de cartons domicile", "inp-90").verified'),false);
 assert.equal(value('quoteMeta("Plus Buts domicile première mi-temps", "inp-90").period'),'HT');
 console.log('7 assertions V4 : cartons par équipe, fautes et refus des marchés ambigus.');
+
+// Analyst imports measure the compact UTF-8 request, preserving all content.
+{
+ const source=require('node:fs').readFileSync(require('node:path').join(__dirname,'../public/admin/slate/live90/assets/app.js'),'utf8');
+ const code=source.slice(source.indexOf('function analystImportPayload('),source.indexOf("$('#analyst-save').onclick="));
+ const scope={TextEncoder};require('node:vm').createContext(scope);require('node:vm').runInContext(code,scope);
+ const bundle={schema:'stratedge.context.v4',matches:[{note:'é🟢',value:null,watch:true}],padding:''};
+ const prepared=scope.analystImportPayload(bundle,'test.json');assert.equal(prepared.bundle,bundle);
+ const overhead=Buffer.byteLength(JSON.stringify(prepared));bundle.padding='x'.repeat(1900000-overhead);
+ assert.equal(Buffer.byteLength(JSON.stringify(scope.analystImportPayload(bundle,'boundary.json'))),1900000);
+ bundle.padding+='x';assert.throws(()=>scope.analystImportPayload(bundle,'oversize.json'),/trop volumineux/);
+ bundle.padding='é'.repeat(1000000);assert(JSON.stringify(bundle).length<1900000);assert.throws(()=>scope.analystImportPayload(bundle,'unicode.json'),/trop volumineux/);
+ assert.throws(()=>scope.analystImportPayload(null,'null.json'),/ancien format/);
+ console.log('Analyst import: exact byte boundary, UTF-8, envelope, null and lossless payload OK.');
+}
