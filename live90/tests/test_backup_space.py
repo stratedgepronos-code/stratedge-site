@@ -2,6 +2,7 @@ import gzip
 import importlib.util
 import json
 import os
+import subprocess
 from pathlib import Path
 import tempfile
 import unittest
@@ -10,6 +11,28 @@ spec=importlib.util.spec_from_file_location('backup_space',Path(__file__).resolv
 backup=importlib.util.module_from_spec(spec);spec.loader.exec_module(backup)
 
 class BackupSpaceTests(unittest.TestCase):
+    def test_workflow_preflight_only_skips_when_both_installed_engine_files_match(self):
+        repo=Path(__file__).resolve().parents[2]
+        workflow=(repo/'.github/workflows/deploy-vps.yml').read_text()
+        block=workflow.split('# LIVE90_PREFLIGHT_BEGIN\n',1)[1].split('# LIVE90_PREFLIGHT_END',1)[0]
+        installed=self.root/'installed';installed.mkdir()
+        source=self.root/'live90/server';source.mkdir(parents=True)
+        ops=self.root/'ops';ops.mkdir()
+        marker=self.root/'preflight-called'
+        (ops/'live90-backup-space.py').write_text('from pathlib import Path\nPath('+repr(str(marker))+').write_text("called")\n')
+        for name in ('engine.py','live_v4.py'):
+            (source/name).write_text(name);(installed/name).write_text(name)
+        script='set -e\nsudo(){ shift; "$@"; }\n'+block.replace('/opt/stratedge/live90',str(installed))
+        def run():
+            marker.unlink(missing_ok=True)
+            subprocess.run(['bash','-c',script],env=dict(os.environ,LIVE90_ROOT=str(self.root)),check=True,capture_output=True)
+            return marker.exists()
+        self.assertFalse(run())
+        for name in ('engine.py','live_v4.py'):
+            (installed/name).write_text('different');self.assertTrue(run())
+            (installed/name).write_text(name)
+        (installed/'engine.py').unlink();self.assertTrue(run())
+
     def test_stream_preflight_budgets_archive_beyond_reserve(self):
         size=10*1024**3
         self.assertEqual(backup.required_space(size),size+2*1024**3)

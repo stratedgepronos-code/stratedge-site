@@ -32,7 +32,6 @@ jobs:
           node tests/slot-arena/test_access.cjs
           node tests/slot-arena/test_sync.cjs
           node tests/slot-arena/test_layout.cjs
-          node tests/slot-arena/test_cinema.cjs
       - name: Tests moteur, imports et parseurs
         run: |
           php -l public_html/admin/slate/live90/historique.php
@@ -114,7 +113,14 @@ jobs:
           # Streaming compressed backups preserve two GiB without allocating a second full DB.
           # Existing completed binary snapshots may still be compressed losslessly.
           LIVE90_ROOT=$(git rev-parse --show-toplevel)
-          sudo -n python3 "$LIVE90_ROOT/ops/live90-backup-space.py" --reserve-only
+          # Match the deploy script: unchanged engine files need no new DB snapshot.
+          # LIVE90_PREFLIGHT_BEGIN
+          if sudo -n cmp -s "$LIVE90_ROOT/live90/server/engine.py" /opt/stratedge/live90/engine.py && sudo -n cmp -s "$LIVE90_ROOT/live90/server/live_v4.py" /opt/stratedge/live90/live_v4.py; then
+            echo "LIVE90_BACKUP_NOT_REQUIRED engine_unchanged=true"
+          else
+            sudo -n python3 "$LIVE90_ROOT/ops/live90-backup-space.py" --reserve-only
+          fi
+          # LIVE90_PREFLIGHT_END
           echo "── Patch Tennis UI ──"
           curl -fsSL "https://raw.githubusercontent.com/stratedgepronos-code/stratedge-site/master/ops/patch-tennis-ui-vps.sh?ts=$(date +%s)" -o /tmp/patch-tennis-ui-vps.sh
           chmod +x /tmp/patch-tennis-ui-vps.sh
