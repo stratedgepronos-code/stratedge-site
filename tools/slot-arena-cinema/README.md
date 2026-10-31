@@ -34,7 +34,21 @@ normalisation loudnorm I=-16 / TP=-1.5 / LRA=11 et encodage MP3 192 kbit/s.
 L'attribution visible et le lien de licence sont obligatoires lors de toute réutilisation.
 Voir `public_html/tournoi-slots/assets/ATTRIBUTION.txt`.
 
-Le lecteur utilise l'horloge vidéo pour les titres et la musique Web Audio.
-Il suspend la musique pendant la mise en mémoire tampon et reprend au même point.
+## Lecteur fluide (v4)
+
+La version livrée `crown-film-v4.mp4` incorpore la musique AAC :
+
+```bash
+ffmpeg -i crown-film-v3.mp4 -i crown-score-v3.mp3 -map 0:v:0 -map 1:a:0 -c:v copy -c:a aac -b:a 160k -af apad -t 34 -movflags +faststart crown-film-v4.mp4
+```
+
+Le navigateur gère la synchronisation audio/vidéo native. Le lecteur télécharge
+le film entier, puis utilise une URL Blob avant de lancer la séquence ; il réutilise
+ce téléchargement lors du rejeu. Si ce préchargement échoue, le lecteur utilise
+le fichier servi directement. Il n'y a plus de piste Web Audio séparée ni de recalage
+par redémarrages. Les titres suivent l'horloge vidéo, sans réécrire leur phase à
+chaque image. Les flous de fond et le grain SVG plein écran ont été retirés.
+Un blocage de lecture sonore propose l'activation du son, ou un démarrage manuel
+si le navigateur bloque également la vidéo muette.
 Les tests `tests/slot-arena/test_cinema.cjs` couvrent ces comportements ainsi que
 la fermeture, le rejeu, les animations réduites et les erreurs de lecture.
