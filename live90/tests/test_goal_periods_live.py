@@ -79,7 +79,8 @@ class HalfMomentum(unittest.TestCase):
  bundle=D.DeskTests.bundle
  add=D.DeskTests.add
  def prepare(self):
-  self.c.execute('DELETE FROM v4_contexts');self.c.execute('DELETE FROM v4_imports');self.c.commit()
+  for table in ('samples','v5_stream_watermarks','v5_stream_incidents','v4_contexts','v4_imports'):self.c.execute('DELETE FROM '+table)
+  self.c.commit()
   D.DeskTests.prepare(self)
  reading=D.DeskTests.reading
  def test_user_example_confirms_and_queues_without_intervals(self):
@@ -203,7 +204,7 @@ class HalfMomentum(unittest.TestCase):
   original=copy.deepcopy(self.ctx)
   for minute,half in ((25,'first_half'),(65,'second_half')):
    for team,own,opp in (('h','home','away'),('a','away','home')):
-    for scored,conceded,expected in ((.8,.8,'active'),(.79,1.3,'context_conflict'),(1.3,.79,'context_conflict'),(.7,.9,'context_conflict'),(.9,.7,'context_conflict')):
+    for scored,conceded,expected in ((.799,.8,'context_conflict'),(.8,.799,'context_conflict'),(.801,.801,'active'),(.8,.8,'active'),(.79,1.3,'context_conflict'),(1.3,.79,'context_conflict'),(.7,.9,'context_conflict'),(.9,.7,'context_conflict')):
      with self.subTest(minute=minute,team=team,scored=scored,conceded=conceded):
       self.ctx=copy.deepcopy(original);self.r['minute']=minute
       other='a' if team=='h' else 'h'
@@ -225,3 +226,4 @@ class HalfMomentum(unittest.TestCase):
   self.assertNotIn('tranche actuelle de 15 minutes',out['instructions'])
 
 if __name__=='__main__':unittest.main()
+

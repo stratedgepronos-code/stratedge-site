@@ -46,6 +46,7 @@ class RadarTests(unittest.TestCase):
   self.assertEqual(len(self.rows()),0)
  def test_queued_alert_expires_at_cutoff_even_without_new_sample(self):
   for latest_minute,delay in ((80,1),(79,60)):
+   for table in ('samples','v5_stream_watermarks','v5_stream_incidents'):self.c.execute('DELETE FROM '+table)
    self.c.execute('DELETE FROM v5_radar_notifications');self.c.commit()
    self.r['minute']=79;self.add(self.r,self.now-dt.timedelta(seconds=30));self.add(self.r,self.now);r,d=self.one()
    V.queue_radar(self.c,r,d,self.now);self.c.commit()
@@ -57,6 +58,7 @@ class RadarTests(unittest.TestCase):
  def test_expire_if_finished_score_counter_or_freshness_changes(self):
   original=copy.deepcopy(self.r)
   for change in ('finished','score','counter','stale'):
+   for table in ('samples','v5_stream_watermarks','v5_stream_incidents'):self.c.execute('DELETE FROM '+table)
    self.c.execute('DELETE FROM v5_radar_notifications');self.c.commit();self.r=copy.deepcopy(original);self.add(self.r,self.now-dt.timedelta(seconds=30));self.add(self.r,self.now);self.queue()
    if change=='finished':self.r['state']='FT'
    elif change=='score':self.r['score']['a']=1
@@ -106,4 +108,5 @@ class RadarTests(unittest.TestCase):
   self.send.side_effect=send;V.deliver_radar(self.c,self.now);self.assertTrue(V.setting(self.c,'during_notify',False));self.send.reset_mock()
   b=V.board(self.c,self.now);self.send.assert_not_called();self.assertTrue(b['radar_telegram']['enabled'])
 if __name__=='__main__':unittest.main()
+
 

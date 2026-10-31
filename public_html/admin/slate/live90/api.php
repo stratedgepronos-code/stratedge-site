@@ -18,7 +18,7 @@ try {
  $pythonEnv=['PATH'=>'/usr/bin:/bin','LANG'=>'C.UTF-8','PYTHONIOENCODING'=>'utf-8','PYTHONDONTWRITEBYTECODE'=>'1'];
  foreach(['TELEGRAM_BOT_TOKEN','TELEGRAM_CHAT_ID'] as $k)if(isset($env[$k]))$pythonEnv[$k]=(string)$env[$k];
  $command=['/usr/bin/python3',dirname(__DIR__,4).'/live90/server/live_v4.py',$path];
- if(in_array($x['action']??'', ['export_review','export_learning','export_window_audit'],true))$command=array_merge(['/usr/bin/timeout','--signal=TERM','--kill-after=2','35'],$command);
+ if(in_array($x['action']??'', ['export_review','export_learning','export_window_audit','export_coverage'],true))$command=array_merge(['/usr/bin/timeout','--signal=TERM','--kill-after=2','35'],$command);
  $proc=proc_open($command,[0=>['pipe','r'],1=>['pipe','w'],2=>['file','/dev/null','a']],$pipes,null,$pythonEnv);
  if(!is_resource($proc))reply90(['error'=>'Python/proc_open indisponible'],503);
  $payload=json_encode($x,JSON_THROW_ON_ERROR);$offset=0;
@@ -28,4 +28,5 @@ try {
  if(!is_array($result))reply90(['error'=>'Réponse du moteur indisponible'],503);
  reply90($result,$code===0?200:($code===2?422:503));
 }catch(Throwable $e){error_log('Live90 V4 admin: '.get_class($e));reply90(['error'=>'Service Live indisponible'],500);}
+
 

@@ -26,9 +26,9 @@ async function request(payload,options={}){
  finally{if(timer!==null)clearTimeout(timer)}
 }
 function download(name,x,result=null){
- const url=URL.createObjectURL(new Blob([JSON.stringify(x,null,2)],{type:'application/json;charset=utf-8'}));
+ const url=URL.createObjectURL(x instanceof Blob?x:new Blob([JSON.stringify(x,null,2)],{type:'application/json;charset=utf-8'}));
  const a=document.createElement('a');a.href=url;a.download=name;
- if(result){a.textContent='Télécharger le JSON';a.className='button';result.appendChild(a)}
+ if(result){a.textContent=name.endsWith('.zip')?'Télécharger les fichiers ZIP':'Télécharger le JSON';a.className='button';result.appendChild(a)}
  else{a.hidden=true;document.body.appendChild(a)}
  try{a.click()}finally{if(!result)a.remove()}
  setTimeout(()=>{URL.revokeObjectURL(url);if(result&&a.isConnected){a.removeAttribute('href');a.textContent='Lien expiré : relance l’export.'}},result?600000:60000);
@@ -165,16 +165,28 @@ function importCoverageText(x){
  if(c.unusable_prematch)parts.push(`${c.unusable_prematch} dossiers présents mais tardifs ou trop anciens pour les signaux`);
  return '\n'+parts.join(' · ');
 }
+function programmeSummary(matches){
+ const dates={};for(const m of matches||[]){const t=new Date(m.kickoff);if(!Number.isNaN(t.getTime())){const d=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Paris'}).format(t);dates[d]=(dates[d]||0)+1}}
+ return Object.entries(dates).sort().map(([d,n])=>`${d} : ${n} match(s)`).join(' · ');
+}
+function checkProgrammeDates(matches){
+ const text=programmeSummary(matches),today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Paris'}).format(new Date(data.server_time||Date.now()));
+ $('#packball-preview').textContent='Dates réelles du programme (Paris) : '+text;
+ const past=(matches||[]).some(m=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Paris'}).format(new Date(m.kickoff))<today);
+ if(past&&!window.confirm('Attention : ce fichier contient des rencontres de jours précédents. '+text+' . Remplacer quand même le programme actif ?'))throw Error('Programme inchangé. Vérifie la date des exports Packball.');
+ return text;
+}
 $('#packball-day').value=new Intl.DateTimeFormat('sv-SE',{timeZone:'Europe/Paris'}).format(new Date());
 $('#packball-files').onchange=e=>{const fs=[...e.target.files],dates=fs.map(f=>f.name.match(/(\d{2})-(\d{2})-(\d{4})/)).filter(Boolean);if(dates.length===2&&dates[0][0]===dates[1][0])$('#packball-day').value=`${dates[0][3]}-${dates[0][2]}-${dates[0][1]}`;$('#packball-preview').textContent=fs.map(f=>f.name).join('\n')};
-$('#packball-save').onclick=async()=>{const b=$('#packball-save');b.disabled=true;try{const files=[...$('#packball-files').files];if(files.length!==2)throw Error('Choisis exactement les deux exports complémentaires Packball.');if(files.some(f=>f.size>900000))throw Error('Chaque fichier est limité à 900 Ko.');const tables=pbOrderTables(await Promise.all(files.map(async f=>parseCSV(await f.text()))));const matches=pbJoin(...tables,$('#packball-day').value,'Europe/Paris');const bundle={schema:'stratedge.packball.v4',exported_at:new Date().toISOString(),timezone:'Europe/Paris',headers:{export_a:tables[0][0],export_b:tables[1][0]},matches};const x=await request({action:'packball',bundle});$('#packball-preview').textContent=x.duplicate?'Dossier déjà enregistré.':`${x.imported} profils importés. ${x.preserved} profils avant-match conservés. ${x.late} matchs déjà commencés : visibles, sans antidatation.`;$('#packball-preview').textContent+=importCoverageText(x);const notes=[...new Set(matches.flatMap(m=>m.issues||[]))];if(notes.length)$('#packball-preview').textContent+='\nÀ vérifier : '+notes.join(' · ');await refresh();notice('Packball importé. Clique sur 2 · Exporter pour GPT pour préparer ton analyse.')}catch(e){$('#packball-preview').textContent=e.message}finally{b.disabled=false}};
+$('#packball-save').onclick=async()=>{const b=$('#packball-save');b.disabled=true;try{const files=[...$('#packball-files').files];if(files.length!==2)throw Error('Choisis exactement les deux exports complémentaires Packball.');if(files.some(f=>f.size>900000))throw Error('Chaque fichier est limité à 900 Ko.');const tables=pbOrderTables(await Promise.all(files.map(async f=>parseCSV(await f.text()))));const matches=pbJoin(...tables,$('#packball-day').value,'Europe/Paris');checkProgrammeDates(matches);const bundle={schema:'stratedge.packball.v4',exported_at:new Date().toISOString(),timezone:'Europe/Paris',headers:{export_a:tables[0][0],export_b:tables[1][0]},matches};const x=await request({action:'packball',bundle});$('#packball-preview').textContent=x.duplicate?'Dossier déjà enregistré.':`${x.imported} profils importés. ${x.preserved} profils avant-match conservés. ${x.late} matchs déjà commencés : visibles, sans antidatation.`;$('#packball-preview').textContent+='\nDates des rencontres : '+programmeSummary(matches)+importCoverageText(x);const notes=[...new Set(matches.flatMap(m=>m.issues||[]))];if(notes.length)$('#packball-preview').textContent+='\nÀ vérifier : '+notes.join(' · ');await refresh();notice('Packball importé. Clique sur 2 · Exporter pour GPT pour préparer ton analyse.')}catch(e){$('#packball-preview').textContent=e.message}finally{b.disabled=false}};
 $('#scenario-file').onchange=e=>{analystFiles=[...(e.target.files||[])];$('#analyst-preview').textContent=analystFiles.map(f=>f.name).join('\n')};
 // The input file may be pretty-printed. Limit the UTF-8 request sent to PHP,
 // including its envelope, rather than rejecting harmless formatting on disk.
 function analystImportPayload(bundle,name){
  if(bundle?.schema!=='stratedge.context.v4')throw Error('Ce dossier utilise un ancien format. Télécharge le nouveau prompt V4 et demande un fichier stratedge.context.v4.');
  const payload={action:'analyst',bundle};
- if(new TextEncoder().encode(JSON.stringify(payload)).byteLength>1900000)throw Error('Dossier trop volumineux après préparation : '+name+' (limite de 1,9 Mo envoyés). Aucune donnée importée pour ce fichier.');
+ const bytes=new TextEncoder().encode(JSON.stringify(payload)).byteLength;
+ if(bytes>1900000)throw Error('Dossier trop volumineux après préparation : '+name+' — '+bytes+' octets envoyés, limite 1900000 octets. Aucune donnée importée pour ce fichier.');
  return payload;
 }
 $('#analyst-save').onclick=async()=>{
@@ -182,10 +194,11 @@ $('#analyst-save').onclick=async()=>{
  try{
   if(!analystFiles.length)throw Error('Choisis le fichier JSON fourni par la conversation V4.');
   for(const f of analystFiles){
-   if(f.size>10000000)throw Error('Fichier JSON limité à 10 Mo : '+f.name);
+   if(f.size>10000000)throw Error('Fichier JSON : '+f.size+' octets ; limite de lecture 10000000 octets : '+f.name);
    let bundle;try{bundle=JSON.parse(await f.text())}catch{throw Error('JSON illisible : '+f.name)}
-   const x=await request(analystImportPayload(bundle,f.name));
-   done.push(f.name+' : '+(x.duplicate?'déjà importé':`${x.imported} contextes, ${x.preserved} versions avant-match conservées`)+importCoverageText(x));
+   const payload=analystImportPayload(bundle,f.name),wireBytes=new TextEncoder().encode(JSON.stringify(payload)).byteLength;
+   const x=await request(payload);
+   done.push(f.name+' ('+f.size+' octets fichier / '+wireBytes+' octets envoyés) : '+(x.duplicate?'déjà importé':`${x.imported} contextes, ${x.preserved} versions avant-match conservées`)+importCoverageText(x));
    $('#analyst-preview').textContent=done.join('\n');
   }
   await refresh();notice('Import vérifié. Consulte le bilan de rattachement affiché.');
@@ -199,8 +212,10 @@ async function exportAnalysis(){
  try{
   const x=await request({action:'export_analysis'});
   if(!x.matches?.length)throw Error('Importe les CSV Packball pour préparer le fichier des matchs à transmettre à GPT.');
+  const dates=programmeSummary(x.matches);
+  if(x.programme?.past_date_matches&&!window.confirm('Programme contenant '+x.programme.past_date_matches+' rencontres de jours précédents : '+dates+'. Exporter quand même ?'))throw Error('Export annulé : importe le programme souhaité.');
   download('StratEdge-a-analyser-V4.json',x);
-  const message=`Téléchargement lancé : ${x.matches.length} matchs dans StratEdge-a-analyser-V4.json. À joindre à ta conversation avec le prompt analyste V4.`;
+  const message=`Téléchargement lancé : ${x.matches.length} matchs dans StratEdge-a-analyser-V4.json. Dates : ${dates}. À joindre à ta conversation avec le prompt analyste V4.`;
   result.textContent=message;notice(message);
  }catch(e){result.textContent=e.message;notice(e.message)}
  finally{buttons.forEach(b=>b.disabled=false)}
@@ -527,21 +542,41 @@ $('#export-windows').onclick=async()=>{
  const b=$('#export-windows'),result=$('#window-export-result'),day=$('#window-audit-day').value;
  b.disabled=true;result.hidden=false;result.textContent='Préparation des fenêtres du '+day+'…';
  try{
-  let cursor=0,ceiling=null,bundle=null;const ids=new Set();
+  let cursor=0,ceiling=null,bundle=null;const ids=new Set(),pages=[];
   do{
-   const page=await request({action:'export_window_audit',day,cursor,...(ceiling===null?{}:{ceiling})},{timeoutMs:45000});
+   const page=await request({action:'export_window_audit',day,cursor,page_size:100,...(ceiling===null?{}:{ceiling})},{timeoutMs:45000});
    if(page.schema!=='stratedge.windows.v1'||!Array.isArray(page.readings))throw Error('Réponse de fenêtres invalide.');
    if(!bundle){ceiling=page.ceiling;bundle={...page,readings:[],samples:{},inputs:{}}}
    if(page.ceiling!==ceiling||page.total!==bundle.total)throw Error('Export modifié pendant la lecture : réessaie.');
-   for(const row of page.readings){if(ids.has(row.id))throw Error('Doublon dans les fenêtres.');ids.add(row.id);bundle.readings.push(row)}
-   Object.assign(bundle.samples,page.samples);Object.assign(bundle.inputs,page.inputs);
-   result.textContent=bundle.readings.length+' / '+bundle.total+' lectures récupérées…';
+   pages.push(page);
+   for(const row of page.readings){if(ids.has(row.id))throw Error('Doublon dans les fenêtres.');ids.add(row.id);if(bundle.total<=500)bundle.readings.push(row)}
+   if(bundle.total<=500){Object.assign(bundle.samples,page.samples);Object.assign(bundle.inputs,page.inputs)}
+   result.textContent=ids.size+' / '+bundle.total+' lectures récupérées…';
    if(page.next_cursor!==null&&(!Number.isInteger(page.next_cursor)||page.next_cursor<=cursor))throw Error('Pagination de fenêtres invalide.');
    cursor=page.next_cursor;
   }while(cursor!==null);
-  if(bundle.readings.length!==bundle.total)throw Error('Export incomplet : réessaie.');
-  bundle.complete=true;bundle.next_cursor=null;bundle.returned=bundle.readings.length;
+  if(ids.size!==bundle.total)throw Error('Export incomplet : réessaie.');
+  bundle.complete=true;bundle.next_cursor=null;bundle.returned=ids.size;
   result.textContent=bundle.returned+' lectures exportées pour le '+day+' (Europe/Paris). Archives disponibles depuis cette mise à jour uniquement. ';
-  download('StratEdge-fenetres-'+day+'.json',bundle,result);
+  if(bundle.total>500){
+   const entries=pages.map((p,i)=>['fenetres-'+day+'-'+String(i+1).padStart(4,'0')+'.json',p]);
+   entries.unshift(['manifest.json',{schema:'stratedge.windows.archive.v1',day,ceiling,total:bundle.total,parts:entries.map(([name,p])=>({name,cursor:p.cursor,returned:p.returned,next_cursor:p.next_cursor})),export_complete:true,continuous_monitoring:'not_asserted',instructions:'Lire les parties JSON et dédupliquer par id ; complete concerne l’export, pas la surveillance. Exporter aussi le diagnostic de couverture.'}]);
+   download('StratEdge-fenetres-'+day+'.zip',auditZip(entries),result);
+  }else download('StratEdge-fenetres-'+day+'.json',bundle,result);
  }catch(e){result.textContent=e.message}finally{b.disabled=false}
 };
+
+
+function auditZip(entries){
+ const encoder=new TextEncoder(),parts=[],directory=[];let offset=0;
+ const crc=bytes=>{let v=0xffffffff;for(const b of bytes){v^=b;for(let i=0;i<8;i++)v=(v>>>1)^((v&1)?0xedb88320:0)}return (v^0xffffffff)>>>0};
+ for(const [name,value] of entries){
+  const n=encoder.encode(name),bytes=encoder.encode(JSON.stringify(value)),sum=crc(bytes),h=new Uint8Array(30+n.length),v=new DataView(h.buffer);
+  v.setUint32(0,0x04034b50,true);v.setUint16(4,20,true);v.setUint32(14,sum,true);v.setUint32(18,bytes.length,true);v.setUint32(22,bytes.length,true);v.setUint16(26,n.length,true);h.set(n,30);
+  const c=new Uint8Array(46+n.length),d=new DataView(c.buffer);d.setUint32(0,0x02014b50,true);d.setUint16(4,20,true);d.setUint16(6,20,true);d.setUint32(16,sum,true);d.setUint32(20,bytes.length,true);d.setUint32(24,bytes.length,true);d.setUint16(28,n.length,true);d.setUint32(42,offset,true);c.set(n,46);
+  parts.push(h,bytes);directory.push(c);offset+=h.length+bytes.length;
+ }
+ const end=new Uint8Array(22),v=new DataView(end.buffer);v.setUint32(0,0x06054b50,true);v.setUint16(8,entries.length,true);v.setUint16(10,entries.length,true);v.setUint32(12,directory.reduce((n,p)=>n+p.length,0),true);v.setUint32(16,offset,true);
+ return new Blob([...parts,...directory,end],{type:'application/zip'});
+}
+$('#export-coverage').onclick=async()=>{const r=$('#window-export-result');r.hidden=false;try{const x=await request({action:'export_coverage',day:$('#window-audit-day').value},{timeoutMs:45000});r.textContent='Couverture reçue/évaluée, limites et trous de collecte : ';download('StratEdge-couverture-'+x.day+'.json',x,r)}catch(e){r.textContent=e.message}};

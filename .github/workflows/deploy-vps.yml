@@ -40,6 +40,7 @@ jobs:
           node live90/tests/test_collector.cjs
           node live90/tests/test_packball_flow.cjs
           node live90/tests/test_download_flow.cjs
+          node live90/tests/test_audit_zip.cjs
       - name: Recette interface desktop et mobile
         run: |
           npm install --prefix "$RUNNER_TEMP/live90-ui" playwright@1.51.1 --no-audit --no-fund
@@ -183,3 +184,4 @@ jobs:
         run: |
           sleep 2
           curl -s -o /dev/null -w "HTTP %{http_code}\n" https://stratedgepronos.fr/ || true
+
