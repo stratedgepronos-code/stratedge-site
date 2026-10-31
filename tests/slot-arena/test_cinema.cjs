@@ -1,26 +1,26 @@
 'use strict';
-const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const app=fs.readFileSync(require('node:path').join(__dirname,'../../public_html/tournoi-slots/app.php'),'utf8');
-const source=app.slice(app.indexOf('// Finale CROWN v2:'),app.indexOf('\nlet liveReady='));
-function setup({reduce=false,canvas=true,width=1366,height=936}={}){
- let now=0,next=1,draws=0;const timers=new Map(),frames=new Map(),listeners=new Map(),nodes={};
- const finite=(...args)=>{for(const a of args)if(typeof a==='number')assert(Number.isFinite(a),'finite canvas coordinates');draws++};
- const ctx2d=new Proxy({createRadialGradient:()=>({addColorStop(){}}),createLinearGradient:()=>({addColorStop(){}})},{get:(o,k)=>k in o?o[k]:finite,set:(o,k,v)=>(o[k]=v,true)});
- function node(id){return nodes[id]??={textContent:'',innerHTML:'',dataset:{},classList:{add(){},remove(){},toggle(){}},style:{setProperty(){}},children:[],clientWidth:width,clientHeight:height,open:false,disabled:false,addEventListener(){},setAttribute(){},replaceChildren(){this.children=[]},append(n){this.children.push(n)},showModal(){this.open=true},close(){this.open=false},focus(){},getContext(){return canvas?ctx2d:null}}}
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
+const app=fs.readFileSync(path.join(__dirname,'../../public_html/tournoi-slots/app.php'),'utf8');
+const source=app.slice(app.indexOf('// Finale CROWN v3:'),app.indexOf('\nlet liveReady='));
+function setup({reduce=false,brokenVideo=false,blocked=false}={}){
+ let now=0,next=1;const frames=new Map(),nodes={},starts=[],contexts=[];
+ function node(id){if(nodes[id])return nodes[id];const events=new Map();return nodes[id]={id,textContent:'',innerHTML:'',dataset:{},style:{setProperty(){}},classList:{add(){},remove(){},toggle(){}},children:[],hidden:false,clientWidth:1366,clientHeight:936,open:false,disabled:false,paused:true,currentTime:0,error:id==='cinemaVideo'&&brokenVideo?{code:4}:null,muted:true,playCount:0,events,addEventListener(k,f){if(!events.has(k))events.set(k,new Set());events.get(k).add(f)},removeEventListener(k,f){events.get(k)?.delete(f)},emit(k){for(const f of events.get(k)||[])f()},setAttribute(){},replaceChildren(){this.children=[]},append(n){this.children.push(n)},showModal(){this.open=true},close(){this.open=false},focus(){},pause(){this.paused=true;this.emit('pause')},async play(){this.playCount++;if(blocked){const e=Error('gesture required');e.name='NotAllowedError';throw e}this.paused=false;this.emit('playing')}}}
+ class AudioContext{constructor(){this.state='running';this.currentTime=0;this.destination={};contexts.push(this)}async resume(){this.state='running';this.onstatechange?.()}async close(){this.state='closed'}createGain(){return{gain:{value:1,setTargetAtTime(){}},connect(){}}}async decodeAudioData(){return{duration:34}}createBufferSource(){return{connect(){},disconnect(){},start(_,offset){starts.push(offset)},stop(){}}}}
  const state={title:'Fixture',players:['Alex','Marc'],slots:[1,2],rounds:[]};
- const sandbox={console,state,$:node,document:{activeElement:node('focused'),body:{style:{overflow:'auto'}},createElement:()=>node('gold')},window:{innerWidth:width,innerHeight:height,devicePixelRatio:2,matchMedia:()=>({matches:reduce}),addEventListener:(k,fn)=>listeners.set(k,fn),removeEventListener:(k)=>listeners.delete(k)},performance:{now:()=>now},setTimeout:(fn,t)=>{const id=next++;timers.set(id,{fn,t:now+t});return id},clearTimeout:id=>timers.delete(id),requestAnimationFrame:fn=>{const id=next++;frames.set(id,fn);return id},cancelAnimationFrame:id=>frames.delete(id),preparedAudio:null,name:id=>id==='a'?'<Winner & Co>':'Opponent',owner:()=>0,number:s=>s===''?null:Number(s),esc:s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;')};
- vm.createContext(sandbox);vm.runInContext(source,sandbox);
- const run=js=>vm.runInContext(js,sandbox);
- function tick(t){now=t;for(const[id,v]of[...timers])if(v.t<=t){timers.delete(id);v.fn()}const current=[...frames];frames.clear();for(const[,fn]of current)fn(t)}
+ const sandbox={console,state,$:node,document:{activeElement:node('focused'),body:{style:{overflow:'auto'}},createElement:()=>node('gold')},window:{AudioContext,matchMedia:()=>({matches:reduce}),addEventListener(){},removeEventListener(){}},performance:{now:()=>now},setTimeout(){return next++},clearTimeout(){},requestAnimationFrame:fn=>{const id=next++;frames.set(id,fn);return id},cancelAnimationFrame:id=>frames.delete(id),fetch:async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(8)}),preparedAudio:null,name:id=>id==='a'?'<Winner & Co>':'<opponent>',owner:()=>0,number:s=>s===''?null:Number(s),esc:s=>String(s).replaceAll('&','&amp;').replaceAll('<','&lt;')};
+ vm.createContext(sandbox);vm.runInContext(source,sandbox);const run=js=>vm.runInContext(js,sandbox);
+ function tick(t,wall=t){node('cinemaVideo').currentTime=t;now=wall*1000;for(const c of contexts)c.currentTime=wall;const f=[...frames];frames.clear();for(const[,fn]of f)fn(now)}
  function champion(){state.rounds=[[{players:['a','b'],scores:['500','50'],winner:'a',bye:false}]]}
- return{run,tick,champion,node,timers,frames,listeners,state,get draws(){return draws}};
+ return{run,tick,champion,node,frames,starts,contexts,unblock(){blocked=false}};
 }
-for(const size of[{width:1366,height:936},{width:390,height:844},{width:844,height:390}]){
- const t=setup(size);assert.equal(t.run('startCinema()'),false);assert.equal(t.timers.size,0);t.champion();assert(t.run('startCinema()'));assert(t.node('victory').open);assert.equal(t.node('cinemaName').children[0].textContent,'<Winner & Co>');
- for(const ms of[80,2800,5700,6100,8000,9000,11000,12000,14300,16000,22000,26000])t.tick(ms);
- assert.equal(t.node('victory').dataset.phase,'glory');assert.equal(t.node('victory').dataset.stats,'true');assert(t.draws>1000);assert.equal(t.frames.size,0);assert.equal(t.listeners.size,0);assert(t.node('cinemaMute').disabled);
- t.run('stopCinema()');assert(!t.node('victory').open);assert.equal(t.timers.size,0);t.run('startCinema()');t.tick(26100);t.run('stopCinema()');assert.equal(t.frames.size,0);assert.equal(t.timers.size,0);
-}
-const reduced=setup({reduce:true});reduced.champion();reduced.run('startCinema()');assert.equal(reduced.frames.size,0);assert.equal(reduced.timers.size,0);assert.equal(reduced.node('victory').dataset.phase,'glory');reduced.run('stopCinema()');
-const fallback=setup({canvas:false});fallback.champion();fallback.run('startCinema()');fallback.tick(26000);assert.equal(fallback.node('victory').dataset.phase,'glory');fallback.run('stopCinema()');
-console.log('CROWN: champion gate, exact result text, desktop/mobile/landscape rendering, every scene, cleanup/replay, reduced motion and canvas fallback OK');
+async function settled(){for(let i=0;i<12;i++)await Promise.resolve()}
+(async()=>{
+ const t=setup();assert.equal(t.run('startCinema()'),false);assert.equal(t.node('cinemaVideo').playCount,0);t.champion();assert(t.run('startCinema()'));await settled();assert(t.node('victory').open);assert.equal(t.node('cinemaName').children[0].textContent,'<Winner & Co>');assert(t.node('cinemaRoute').innerHTML.includes('&lt;opponent>'));assert(t.starts.length);
+ t.tick(2,20);assert.equal(t.node('victory').dataset.phase,'intro','Timeline follows media, not wall clock');t.tick(6,21);assert.equal(t.node('victory').dataset.phase,'road');t.node('cinemaVideo').emit('waiting');assert.equal(t.run('cinema.track'),null,'Buffering stops the score');assert.equal(t.node('cinemaLoading').hidden,false);t.node('cinemaVideo').emit('playing');assert.equal(t.starts.at(-1),6,'Music resumes at current video position');
+ t.tick(14);assert.equal(t.node('victory').dataset.phase,'reveal');t.tick(18);assert.equal(t.node('victory').dataset.phase,'glory');assert.equal(t.node('victory').dataset.stats,'true');t.tick(34);assert.equal(t.frames.size,0);assert(t.node('cinemaMute').disabled);t.run('stopCinema()');assert(!t.node('victory').open);for(const listeners of t.node('cinemaVideo').events.values())assert.equal(listeners.size,0);
+ t.run('startCinema()');await settled();assert.equal(t.node('cinemaVideo').currentTime,0);t.run('stopCinema()');assert.equal(t.frames.size,0);assert(t.contexts.every(c=>c.state==='closed'));
+ const reduced=setup({reduce:true});reduced.champion();reduced.run('startCinema()');assert.equal(reduced.node('cinemaVideo').playCount,0);assert.equal(reduced.contexts.length,0);assert.equal(reduced.frames.size,0);assert.equal(reduced.node('victory').dataset.phase,'glory');reduced.run('stopCinema()');
+ const fallback=setup({brokenVideo:true});fallback.champion();fallback.run('startCinema()');await settled();fallback.tick(0,34);assert.equal(fallback.node('victory').dataset.phase,'glory');assert.equal(fallback.frames.size,0);fallback.run('stopCinema()');
+ const blocked=setup({blocked:true});blocked.champion();blocked.run('startCinema()');await settled();assert.equal(blocked.node('cinemaPlay').hidden,false);blocked.unblock();blocked.node('cinemaPlay').onclick();await settled();assert.equal(blocked.node('cinemaPlay').hidden,true);blocked.run('stopCinema()');
+ console.log('CROWN film: champion gate, video-clock timing, buffering/audio sync, escaping, end/close/replay cleanup, reduced motion, failed media and autoplay recovery OK');
+})().catch(e=>{console.error(e);process.exitCode=1});

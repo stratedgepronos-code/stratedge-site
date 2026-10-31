@@ -1,0 +1,9 @@
+Slot Arena — CROWN v3
+
+Film 3D original créé avec Blender 4.3.2 et monté avec FFmpeg.
+Musique : « Titan » de Scott Buckley — www.scottbuckley.com.au
+Source : https://www.scottbuckley.com.au/library/titan/
+Licence : Creative Commons Attribution 4.0 International
+https://creativecommons.org/licenses/by/4.0/
+Adaptation : extrait 141,8 s à 175,8 s, normalisation et fondus, synchronisé avec la cinématique du tournoi.
+Aucun morceau de Hans Zimmer n’est utilisé.
