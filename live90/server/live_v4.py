@@ -2354,7 +2354,7 @@ def export_coverage(c,day,now):
     except (ValueError,TypeError):raise ValueError('Jour invalide')
     bounds=(iso(start.astimezone(UTC)),iso(end.astimezone(UTC)))
     # Use cycle_id's existing unique index; avoid scanning all raw sample JSON.
-    rows=c.execute('SELECT s.id,s.match_id,s.received_at FROM cycles cy JOIN samples s ON s.cycle_id=cy.id WHERE cy.received_at>=? AND cy.received_at<? ORDER BY s.match_id,s.id',bounds).fetchall()
+    rows=c.execute('SELECT s.id,s.match_id,s.received_at FROM cycles cy CROSS JOIN samples s ON s.cycle_id=cy.id WHERE cy.received_at>=? AND cy.received_at<? ORDER BY s.match_id,s.id',bounds).fetchall()
     by_match={};sample_ids=set();processed={}
     for row in c.execute('SELECT sample_id,match_id,data FROM v5_sample_audits WHERE created_at>=? AND created_at<? ORDER BY created_at',bounds):
         processed[row['sample_id']]=dec(row['data'],{})
@@ -2670,7 +2670,7 @@ def run_dashboard(path,now=None):
             c.rollback()
             with c:runtime(c,'learning_error',{'at':iso(now),'type':type(exc).__name__})
         if realtime:now=now_utc()
-        runtime(c,'engine',{'at':iso(now),'version':'decision5.0','telegram_active':radar_enabled(c) and radar_configured(),'legacy_telegram_active':False,'notification_mode':'confirmed_cards','mode':'decision','external_calls':radar_enabled(c) and radar_configured(),'ai_calls':False,'automatic_odds':setting(c,'radar_odds_auto',True),'priced_only':setting(c,'radar_priced_only',True),'feature_policy':'stake_price_gate5.2','goal_policy':GOAL_POLICY,'goal_interval_gate':GOAL_INTERVAL_GATE,'goal_half_min_rate':GOAL_HALF_MIN_RATE,'card_momentum_policy':CARD_MOMENTUM_POLICY,'research_mode':'shadow'})
+        runtime(c,'engine',{'at':iso(now),'engine_fingerprint':ENGINE_FINGERPRINT,'integrity_policy':'sporting_continuity_v1','audit_policy':'coverage_pages_v1','version':'decision5.0','telegram_active':radar_enabled(c) and radar_configured(),'legacy_telegram_active':False,'notification_mode':'confirmed_cards','mode':'decision','external_calls':radar_enabled(c) and radar_configured(),'ai_calls':False,'automatic_odds':setting(c,'radar_odds_auto',True),'priced_only':setting(c,'radar_priced_only',True),'feature_policy':'stake_price_gate5.2','goal_policy':GOAL_POLICY,'goal_interval_gate':GOAL_INTERVAL_GATE,'goal_half_min_rate':GOAL_HALF_MIN_RATE,'card_momentum_policy':CARD_MOMENTUM_POLICY,'research_mode':'shadow'})
         record_health(c,health,now);c.commit()
     finally:c.close()
 

@@ -1,5 +1,5 @@
 """Audit 30/31 October: integrity, not fitted predictive thresholds."""
-import copy,datetime as dt,json,unittest
+import copy,datetime as dt,json,unittest,inspect
 import test_decision_v5 as F
 import test_card_momentum as C
 import live_v4 as V
@@ -75,6 +75,12 @@ class Integrity(unittest.TestCase):
   self.assertEqual((row['received'],row['evaluated'],row['received_not_processed']),(2,1,1))
   self.assertEqual(row['input_states']['context_absent'],1)
   self.assertIn('ne prouve pas',report['complete_means'])
+ def test_coverage_plan_starts_with_cycles_not_all_sample_history(self):
+  self.c.execute('CREATE UNIQUE INDEX test_cycle_samples ON samples(cycle_id,match_id)')
+  query="SELECT s.id,s.match_id,s.received_at FROM cycles cy CROSS JOIN samples s ON s.cycle_id=cy.id WHERE cy.received_at>=? AND cy.received_at<? ORDER BY s.match_id,s.id"
+  plan=[row[3] for row in self.c.execute('EXPLAIN QUERY PLAN '+query,('a','z'))]
+  self.assertTrue(any('SEARCH s USING INDEX test_cycle_samples' in line for line in plan));self.assertFalse(any(line.startswith('SCAN s ') for line in plan))
+  self.assertIn(query,inspect.getsource(V.export_coverage))
  def test_window_pages_are_bounded_and_have_explicit_scope(self):
   for i in range(3):self.c.execute('INSERT INTO v5_window_audits(sample_id,match_id,team,market,engine,created_at,data) VALUES(?,?,?,?,?,?,?)',(i,'123','h','goals','test',V.iso(self.now),'{}'))
   report=V.export_window_audit(self.c,{'day':self.now.date().isoformat(),'page_size':2},self.now)

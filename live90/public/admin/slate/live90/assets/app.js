@@ -198,7 +198,7 @@ $('#analyst-save').onclick=async()=>{
    let bundle;try{bundle=JSON.parse(await f.text())}catch{throw Error('JSON illisible : '+f.name)}
    const payload=analystImportPayload(bundle,f.name),wireBytes=new TextEncoder().encode(JSON.stringify(payload)).byteLength;
    const x=await request(payload);
-   done.push(f.name+' ('+f.size+' octets fichier / '+wireBytes+' octets envoyés) : '+(x.duplicate?'déjà importé':`${x.imported} contextes, ${x.preserved} versions avant-match conservées`)+importCoverageText(x));
+   done.push(f.name+' : '+(x.duplicate?'déjà importé':`${x.imported} contextes, ${x.preserved} versions avant-match conservées`)+' ('+f.size+' octets fichier / '+wireBytes+' octets envoyés)'+importCoverageText(x));
    $('#analyst-preview').textContent=done.join('\n');
   }
   await refresh();notice('Import vérifié. Consulte le bilan de rattachement affiché.');
