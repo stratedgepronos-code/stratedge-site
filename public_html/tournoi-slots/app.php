@@ -97,6 +97,19 @@ aside button.text{font-size:14px}
 #victory .cinema-controls button,#victory .cinema-route article{backdrop-filter:none}
 #victory .cinema-intro p,#victory .cinema-name{filter:none;transition-property:opacity,transform}
 #victory .cinema-progress{width:100%;transform:scaleX(0);transform-origin:left;will-change:transform}
+/* CROWN v5: comic winner film; composited faces remain in the native video. */
+#victory .cinema-trophy-space{height:61%}
+#victory .cinema-name{font-size:clamp(32px,4.6vw,66px);margin:6px 0}
+#victory .cinema-name.long-name{font-size:clamp(27px,3.8vw,52px)}
+#victory .cinema-recap{margin-top:12px}#victory .cinema-signature{margin-top:12px;letter-spacing:.16em}
+#victory .cinema-film-shade{background:linear-gradient(0deg,#000e 0%,#0008 14%,transparent 43%)}
+.cinema-oath{position:absolute;inset:0;z-index:7;display:flex;align-items:center;justify-content:center;flex-direction:column;background:#030407bc;opacity:0;transform:scale(.95);transition:opacity .6s,transform 1s;pointer-events:none;text-align:center;padding:28px}
+.cinema-oath small{color:#d2b574;letter-spacing:.28em;font-size:12px;margin-bottom:22px}
+.cinema-oath strong{font:900 clamp(45px,7vw,98px)/.95 Impact,'Arial Narrow',sans-serif;color:#fff0ca;letter-spacing:.025em}
+#victory[data-phase="forge"] .cinema-oath{opacity:1;transform:none}
+#victory.cinema-finished #cinemaVideo{visibility:hidden}#victory.cinema-finished .cinema-film-poster{display:block}
+@media(max-width:650px){#victory .cinema-trophy-space{height:59%}#victory .cinema-name{font-size:clamp(28px,8vw,44px)}#victory .cinema-name.long-name{font-size:26px}#victory .cinema-signature{max-width:88%;font-size:9px;line-height:1.5;margin-top:10px}.cinema-brand{max-width:100px;line-height:1.5}.cinema-oath small{font-size:10px;letter-spacing:.12em}}
+@media(max-height:650px) and (min-width:651px){#victory .cinema-trophy-space{height:55%}#victory .cinema-name{font-size:32px}#victory .cinema-recap{margin-top:7px}#victory .cinema-signature{margin-top:7px}}
 </style>
 </head>
 <body class="online-loading"><script id="online-boot" type="application/json"><?= json_encode($arenaBoot, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?></script>
@@ -107,15 +120,15 @@ aside button.text{font-size:14px}
 <dialog id="helpDialog" class="help"><h2>Ton tournoi, simplement.</h2><p><strong>1.</strong> Nomme les deux joueurs, puis ajoute le même nombre de slots à chacun. Le premier tour oppose toujours les deux joueurs : 5 contre 5 donne cinq duels.</p><p>Les duels sont répartis entre deux moitiés : 6 contre 6 donne 3 confrontations de chaque côté. Chaque moitié progresse séparément jusqu’à la finale. Si une moitié produit un nombre impair de gagnantes, sa dernière place avance automatiquement. Le tirage initial fixe cet ordre. Ensuite, deux slots du même joueur peuvent se rencontrer : le tableau reste à élimination directe.</p><p><strong>2.</strong> Dans chaque duel, entre les multiplicateurs (ex. 12,5 pour ×12,5), puis clique sur <strong>Valider le duel</strong>. Un nouveau score est saisi à chaque tour.</p><p><strong>3.</strong> En cas d’égalité, rejoue et modifie les scores, ou choisis une slot avec un bouton de départage.</p><p><strong>Corriger :</strong> clique sur « Corriger » dans un duel validé. Les résultats qui dépendent de ce duel seront effacés. Tu peux annuler la dernière action.</p><p><strong>En direct :</strong> les modifications de l’organisateur sont sauvegardées sur StratEdge. Le lien spectateur se met à jour automatiquement, environ chaque seconde. Une copie locale protège les modifications en cas de coupure.</p><p><strong>Copie de secours :</strong> « Exporter » crée un JSON à réimporter dans cette page organisateur ou dans ton fichier local.</p><p><strong>Finale :</strong> laisse cette page ouverte au premier plan et clique une fois sur « Activer le son de la finale » pour autoriser le son. La séquence démarre après la sauvegarde du résultat. Un onglet en arrière-plan ou une connexion lente peuvent décaler le lancement.</p><p><strong>Musique de la finale :</strong> « Titan » de Scott Buckley — www.scottbuckley.com.au — licence CC BY 4.0. Extrait adapté avec des fondus pour la vidéo du tournoi.</p><div class="actions"><button data-close="helpDialog" class="primary">C’est parti</button></div></dialog>
 <input id="importFile" type="file" accept=".json,application/json" hidden><div id="toast" class="toast" role="status" hidden></div>
 
-<dialog id="victory" aria-labelledby="cinemaName" aria-describedby="cinemaPlayer" data-film="crown-v4-smooth">
- <div class="cinema-film-poster" aria-hidden="true"></div><video id="cinemaVideo" preload="none" playsinline muted disablepictureinpicture aria-hidden="true" poster="assets/crown-poster-v3.jpg"><source src="assets/crown-film-v4.mp4" type="video/mp4"></video><div class="cinema-film-shade" aria-hidden="true"></div>
- <div class="cinema-vignette"></div><div class="cinema-grain" aria-hidden="true"></div><div class="cinema-flare" aria-hidden="true"></div>
+<dialog id="victory" aria-labelledby="cinemaName" aria-describedby="cinemaPlayer" data-film="crown-v5-roast">
+ <div id="cinemaPoster" class="cinema-film-poster" aria-hidden="true"></div><video id="cinemaVideo" preload="none" playsinline muted disablepictureinpicture aria-hidden="true" poster="assets/crown-poster-v3.jpg"></video><div class="cinema-film-shade" aria-hidden="true"></div>
+ <div class="cinema-vignette"></div><div class="cinema-grain" aria-hidden="true"></div><div class="cinema-flare" aria-hidden="true"></div><div class="cinema-oath" aria-hidden="true"><small>LA VICTOIRE AVAIT UN VISAGE.</small><strong>ON N’ÉTAIT<br>PAS PRÊTS.</strong></div>
  <div class="cinema-bar top"></div><div class="cinema-bar bottom"></div>
- <div class="cinema-brand"><b>SLOT</b> ARENA / FINALE</div>
+ <div class="cinema-brand"><b>SLOT</b> ARENA / LE SACRE DU CHAOS</div>
  <div class="cinema-controls"><button id="cinemaMute" aria-pressed="false">Activer le son</button><button id="cinemaClose" autofocus>Retour au tableau ×</button></div>
  <div class="cinema-intro" aria-hidden="true"><small id="cinemaChapter">LE DERNIER ACTE</small><p id="cinemaIntro"></p><div class="cinema-intro-line"></div></div>
  <div class="cinema-road" aria-hidden="true"><small>Chaque duel a compté</small><h2>Le chemin vers le titre.</h2><div class="cinema-route" id="cinemaRoute"></div></div>
- <div class="cinema-stage"><div class="cinema-trophy-space" id="cinemaTrophySpace" aria-hidden="true"><span class="cinema-static-cup">♛</span></div><div class="cinema-kicker" id="cinemaTournament"></div><div class="cinema-word">Championne du tournoi</div><h1 class="cinema-name" id="cinemaName"></h1><div class="cinema-player" id="cinemaPlayer"></div><div class="cinema-recap" id="cinemaRecap"></div><div class="cinema-signature" id="cinemaSignature">Une seule place au sommet.</div></div>
+ <div class="cinema-stage"><div class="cinema-trophy-space" id="cinemaTrophySpace" aria-hidden="true"><span class="cinema-static-cup">♛</span></div><div class="cinema-kicker" id="cinemaTournament"></div><div class="cinema-word">Son altesse du chaos</div><h1 class="cinema-name" id="cinemaName"></h1><div class="cinema-player" id="cinemaPlayer"></div><div class="cinema-recap" id="cinemaRecap"></div><div class="cinema-signature" id="cinemaSignature">La couronne est méritée. Le dentiste aussi.</div></div>
  <div id="cinemaLoading" class="cinema-loading" role="status">Préparation de la finale…</div><button id="cinemaPlay" class="cinema-play" hidden>Démarrer la finale ▶</button><div class="cinema-credit">Musique : <a href="https://www.scottbuckley.com.au/library/titan/" target="_blank" rel="noopener">« Titan » — Scott Buckley</a> · <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a> · Extrait adapté</div><div class="cinema-progress" id="cinemaProgress" aria-hidden="true"></div>
 </dialog>
 
@@ -195,14 +208,15 @@ window.addEventListener('beforeunload',()=>{if(diskTimer&&diskHandle){clearTimeo
 // Finale CROWN v3: rendered film and attributed orchestral score, only after a confirmed result.
 let cinema=null;
 const FILM={intro:3.4,road:4.5,oath:8.5,forge:10,reveal:14,glory:16.4,stats:18,end:34};
-const CINEMA_MEDIA={video:'assets/crown-film-v4.mp4',poster:'assets/crown-poster-v3.jpg'};
-let cinemaMediaPromise=null,cinemaMediaURL=null;
+const CINEMA_MEDIA=[{video:'assets/crown-roast-alex-v5.mp4',poster:'assets/crown-roast-alex-v5.jpg'},{video:'assets/crown-roast-marc-v5.mp4',poster:'assets/crown-roast-marc-v5.jpg'}];
+const cinemaMediaPromise=[null,null],cinemaMediaURL=[null,null];
 function championship(){const final=state.rounds.at(-1)?.[0];return final&&final.winner&&!final.bye?final:null}
-function preloadCinemaMedia(){
- if(cinemaMediaURL)return Promise.resolve(cinemaMediaURL);
- if(!cinemaMediaPromise){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
-  cinemaMediaPromise=fetch(CINEMA_MEDIA.video,{cache:'force-cache',signal:controller.signal}).then(r=>{if(!r.ok)throw Error('Film indisponible');return r.blob()}).then(blob=>{cinemaMediaURL=URL.createObjectURL(blob);return cinemaMediaURL}).catch(e=>{cinemaMediaPromise=null;throw e}).finally(()=>clearTimeout(timer));
- }return cinemaMediaPromise;
+function preloadCinemaMedia(player=0){
+ player=player===1?1:0;
+ if(cinemaMediaURL[player])return Promise.resolve(cinemaMediaURL[player]);
+ if(!cinemaMediaPromise[player]){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);
+  cinemaMediaPromise[player]=fetch(CINEMA_MEDIA[player].video,{cache:'force-cache',signal:controller.signal}).then(r=>{if(!r.ok)throw Error('Film indisponible');return r.blob()}).then(blob=>{cinemaMediaURL[player]=URL.createObjectURL(blob);return cinemaMediaURL[player]}).catch(e=>{cinemaMediaPromise[player]=null;throw e}).finally(()=>clearTimeout(timer));
+ }return cinemaMediaPromise[player];
 }
 function filmTime(run){return run.fallback?Math.min(FILM.end,(performance.now()-run.begin)/1000):Math.min(FILM.end,run.video.currentTime||0)}
 function stopCinema(){if(!cinema)return;const run=cinema;cinema=null;cancelAnimationFrame(run.raf);run.listeners.forEach(([el,event,fn])=>el.removeEventListener(event,fn));window.removeEventListener('resize',run.resize);run.video.pause();run.video.muted=true;const d=$('victory');d.classList.remove('cinema-running');d.dataset.phase='';d.dataset.stats='false';if(d.open)d.close();document.body.style.overflow=run.overflow;run.focus?.focus?.()}
@@ -212,14 +226,14 @@ function cinemaPhase(t){return t<FILM.intro?'intro':t<FILM.road?'':t<FILM.oath?'
 function finishCinema(run){if(cinema!==run||run.finished)return;run.finished=true;cancelAnimationFrame(run.raf);run.video.pause();const d=$('victory');d.dataset.phase='glory';d.dataset.stats='true';d.classList.add('cinema-finished');$('cinemaProgress').style.transform='scaleX(1)';$('cinemaLoading').hidden=true;$('cinemaPlay').hidden=true;cinemaSoundLabel(run)}
 function tickCinema(run){if(cinema!==run||run.finished)return;const t=filmTime(run),d=$('victory');if(run.started){const phase=cinemaPhase(t),stats=String(t>=FILM.stats);if(d.dataset.phase!==phase)d.dataset.phase=phase;if(d.dataset.stats!==stats)d.dataset.stats=stats;$('cinemaProgress').style.transform='scaleX('+t/FILM.end+')';if(t>=FILM.end-.04){finishCinema(run);return}}run.raf=requestAnimationFrame(()=>tickCinema(run))}
 async function playCinemaFilm(run){if(cinema!==run||run.finished||run.fallback)return;try{await run.video.play();if(cinema!==run)return;$('cinemaPlay').hidden=true;cinemaSoundLabel(run)}catch(e){if(cinema!==run)return;if(e.name==='NotAllowedError'&&!run.video.muted){run.video.muted=true;cinemaSoundLabel(run);return playCinemaFilm(run)}if(e.name==='NotAllowedError'){$('cinemaLoading').hidden=true;$('cinemaPlay').hidden=false}else if(e.name!=='AbortError')fallbackCinema(run)}}
-async function prepareCinemaFilm(run){let url;try{url=await preloadCinemaMedia()}catch{url=CINEMA_MEDIA.video}if(cinema!==run||run.finished)return;if(run.video.getAttribute('src')!==url){run.video.src=url;run.video.load()}run.video.currentTime=0;playCinemaFilm(run)}
+async function prepareCinemaFilm(run){let url;try{url=await preloadCinemaMedia(run.player)}catch{url=CINEMA_MEDIA[run.player].video}if(cinema!==run||run.finished)return;if(run.video.getAttribute('src')!==url){run.video.src=url;run.video.load()}run.video.currentTime=0;playCinemaFilm(run)}
 function fallbackCinema(run){if(cinema!==run||run.fallback||run.finished)return;run.video.pause();run.video.muted=true;run.fallback=true;run.started=true;run.begin=performance.now();$('victory').classList.add('cinema-fallback');$('cinemaLoading').hidden=true;$('cinemaPlay').hidden=true;cinemaSoundLabel(run)}
 function startCinema(){
  const final=championship();if(!final)return false;if(cinema)stopCinema();const winner=final.winner,score=number(final.scores[final.players.indexOf(winner)]),path=state.rounds.flatMap((round,r)=>round.filter(m=>m.winner===winner&&!m.bye).map(m=>({m,r}))),dialog=$('victory'),video=$('cinemaVideo'),reduce=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
- const run={listeners:[],raf:0,finished:false,started:false,fallback:false,begin:performance.now(),focus:document.activeElement,overflow:document.body.style.overflow,resize:()=>fitCinemaText(dialog),video};cinema=run;
+ const run={player:owner(winner)===1?1:0,listeners:[],raf:0,finished:false,started:false,fallback:false,begin:performance.now(),focus:document.activeElement,overflow:document.body.style.overflow,resize:()=>fitCinemaText(dialog),video};cinema=run;dialog.dataset.player=run.player===1?'marc':'alex';$('cinemaPoster').style.backgroundImage='url('+CINEMA_MEDIA[run.player].poster+')';
  const title=$('cinemaName');title.replaceChildren();const gold=document.createElement('span');gold.textContent=name(winner);title.append(gold);title.classList.toggle('long-name',name(winner).length>24);$('cinemaPlayer').textContent=state.players[owner(winner)];$('cinemaTournament').textContent=state.title||'Slot Arena';$('cinemaRecap').innerHTML=`<div><strong>×${score?.toLocaleString('fr-FR')??'—'}</strong><small>En finale</small></div><div><strong>${path.length}</strong><small>Duels gagnés</small></div><div><strong>${state.slots.length}</strong><small>Slots au départ</small></div>`;
  const highlights=path.length<=4?path:[path[0],...path.slice(-3)];$('cinemaRoute').innerHTML=highlights.map(({m,r},i)=>{const k=m.players.indexOf(winner);return`<article style="--i:${i}"><small>${r===state.rounds.length-1?'Finale':'Tour '+(r+1)}</small><strong>${esc(name(m.players[1-k]))}</strong><span>×${number(m.scores[k])?.toLocaleString('fr-FR')??'—'}</span><i>Duel remporté</i></article>`}).join('');
- dialog.style.setProperty('--winner-color',owner(winner)===0?'#73d9ef':'#f295c6');dialog.dataset.phase='';dialog.dataset.stats='false';dialog.classList.remove('cinema-finished','cinema-fallback');dialog.classList.add('cinema-running');$('cinemaProgress').style.transform='scaleX(0)';$('cinemaMute').disabled=false;$('cinemaMute').setAttribute('aria-pressed','false');$('cinemaChapter').textContent='LE DERNIER ACTE';$('cinemaIntro').innerHTML='La victoire<br><em>se mérite.</em>';$('cinemaLoading').hidden=false;$('cinemaPlay').hidden=true;document.body.style.overflow='hidden';dialog.showModal();fitCinemaText(dialog);window.addEventListener('resize',run.resize);
+ dialog.style.setProperty('--winner-color',owner(winner)===0?'#73d9ef':'#f295c6');dialog.dataset.phase='';dialog.dataset.stats='false';dialog.classList.remove('cinema-finished','cinema-fallback');dialog.classList.add('cinema-running');$('cinemaProgress').style.transform='scaleX(0)';$('cinemaMute').disabled=false;$('cinemaMute').setAttribute('aria-pressed','false');$('cinemaChapter').textContent='SLOT ARENA PRÉSENTE';$('cinemaIntro').innerHTML='Une légende.<br><em>Zéro dentiste.</em>';$('cinemaLoading').hidden=false;$('cinemaPlay').hidden=true;document.body.style.overflow='hidden';dialog.showModal();fitCinemaText(dialog);window.addEventListener('resize',run.resize);
  video.pause();video.muted=false;video.volume=.85;
  if(reduce){run.finished=true;dialog.classList.add('cinema-fallback','cinema-finished');dialog.dataset.phase='glory';dialog.dataset.stats='true';$('cinemaLoading').hidden=true;$('cinemaMute').textContent='Animation réduite';$('cinemaMute').disabled=true;return true}
  const listen=(el,event,fn)=>{el.addEventListener(event,fn);run.listeners.push([el,event,fn])};
@@ -230,7 +244,7 @@ function startCinema(){
 }
 $('cinemaClose').onclick=stopCinema;$('victory').addEventListener('cancel',e=>{e.preventDefault();stopCinema()});$('victory').addEventListener('close',()=>{if(cinema)stopCinema()});$('cinemaPlay').onclick=()=>{if(cinema){cinema.video.muted=false;playCinemaFilm(cinema)}};
 $('cinemaMute').onclick=()=>{const run=cinema;if(!run||run.finished||run.fallback)return;run.video.muted=!run.video.muted;cinemaSoundLabel(run);if(run.video.paused)playCinemaFilm(run)};$('champion').addEventListener('click',e=>{if(e.target.closest('[data-replay]')&&championship())startCinema()});
-preloadCinemaMedia().catch(()=>{});
+preloadCinemaMedia(0).catch(()=>{});preloadCinemaMedia(1).catch(()=>{});
 
 let liveReady=false,liveRevision=0,liveDirty=false,liveSending=false,liveConflict=false,liveEdit=0,liveTimer=null,livePollTimer=null,livePollBusy=false,liveEvent=null,liveEventTimer=null,liveEventAt=0,liveFinalKey=null;
 function liveStatus(message,error=false){$('saveStatus').textContent=message;$('saveStatus').style.color=error?'var(--gold)':'var(--green)'}
@@ -248,12 +262,13 @@ async function requestLive(options){const controller=new AbortController(),timer
 async function flushLive(){if(!BOOT.admin||!liveReady||liveSending||!liveDirty||liveConflict)return;liveSending=true;const edit=liveEdit,snapshot=clone(state);try{const data=await requestLive({method:'POST',headers:{'Content-Type':'application/json','X-CSRF-Token':BOOT.csrf},body:JSON.stringify({revision:liveRevision,state:snapshot})});liveRevision=data.revision;if(edit===liveEdit){liveDirty=false;liveStatus('● Enregistré sur StratEdge · En direct');liveMessage('')}acceptEvent(data.event,data.serverNow,false)}catch(e){if(e.status===409||e.status===403||e.status===422){liveConflict=true;liveStatus('⚠ Modifications non synchronisées',true);liveMessage(e.message,true)}else{liveStatus('⚠ Hors ligne · Copie locale conservée',true);liveMessage('Connexion interrompue. Reconnexion automatique ; garde cette page ouverte.')}}finally{liveSending=false;if(liveDirty&&!liveConflict){clearTimeout(liveTimer);liveTimer=setTimeout(flushLive,1500)}}}
 async function pollLive(initial=false){if(livePollBusy||liveSending||(BOOT.admin&&(liveDirty||liveConflict))){clearTimeout(livePollTimer);livePollTimer=setTimeout(()=>pollLive(!liveReady),1500);return}livePollBusy=true;try{const data=await requestLive();if(initial||data.revision!==liveRevision){state=data.state?validState(data.state):fresh();liveRevision=data.revision;history=[];render();acceptEvent(data.event,data.serverNow,initial)}if(initial){liveReady=true;document.body.classList.remove('online-loading')}liveStatus(BOOT.admin?'● Enregistré sur StratEdge · En direct':'● En direct · Mise à jour automatique');liveMessage('');if(!data.state&&!BOOT.admin)$('bracket').innerHTML='<div class="empty"><div class="empty-symbol">1 VS 1</div><h2>Le tournoi va commencer.</h2><p>L’organisateur prépare les slots. Le tableau apparaîtra automatiquement ici.</p></div>'}catch(e){liveStatus('⚠ Connexion en attente…',true);liveMessage('Connexion au tournoi indisponible. Nouvelle tentative automatique…')}finally{livePollBusy=false;clearTimeout(livePollTimer);livePollTimer=setTimeout(()=>pollLive(!liveReady),BOOT.admin?3000:1000)}}
 $('shareLive').onclick=async()=>{const url=location.origin+'/tournoi-slots/';try{await navigator.clipboard.writeText(url);toast('Lien spectateur copié.')}catch{prompt('Lien spectateur à partager :',url)}};
-$('enableSound').onclick=()=>{preloadCinemaMedia().catch(()=>{});$('enableSound').textContent='✓ Son prêt pour la finale';toast('Son préparé. Si ton navigateur le bloque, clique sur Activer le son pendant la finale.');};
+$('enableSound').onclick=()=>{preloadCinemaMedia(0).catch(()=>{});preloadCinemaMedia(1).catch(()=>{});$('enableSound').textContent='✓ Son prêt pour la finale';toast('Son préparé. Si ton navigateur le bloque, clique sur Activer le son pendant la finale.');};
 window.addEventListener('online',()=>{if(liveDirty)flushLive();else pollLive(!liveReady)});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){if(liveDirty)flushLive();else pollLive(!liveReady)}});
 window.addEventListener('beforeunload',e=>{if(BOOT.admin&&liveDirty){e.preventDefault();e.returnValue=''}});
 render();applyRole();pollLive(true);
 
 </script></body></html>
+
 
 
