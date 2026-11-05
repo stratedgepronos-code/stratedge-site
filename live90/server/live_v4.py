@@ -10,11 +10,15 @@ with open(__file__, 'rb') as _source:
     ENGINE_FINGERPRINT = hashlib.sha256(_source.read()).hexdigest()[:16]
 MIN_TELEGRAM_ODDS = 1.50
 ALERT_STOP_MINUTE = 80
+STREAM_POLICY = 'sporting_continuity_v2'
 MARKETS = ('goal_ht', 'goal_ft', 'card_ft')
 LABELS = {'goal_ht': 'But avant la mi-temps', 'goal_ft': 'But avant la fin du match', 'card_ft': 'Un carton supplémentaire · équipe'}
 SCHEMA = '''
 CREATE TABLE IF NOT EXISTS v5_stream_watermarks(match_id TEXT PRIMARY KEY,checked_id INTEGER NOT NULL,data TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS v5_stream_checks(match_id TEXT PRIMARY KEY,policy TEXT NOT NULL);
 CREATE TABLE IF NOT EXISTS v5_stream_incidents(sample_id INTEGER PRIMARY KEY,match_id TEXT NOT NULL,blocked INTEGER NOT NULL,data TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS v5_stream_incidents_match ON v5_stream_incidents(match_id);
+CREATE TABLE IF NOT EXISTS v5_stream_incident_revisions(sample_id INTEGER,policy TEXT,match_id TEXT,data TEXT,PRIMARY KEY(sample_id,policy));
 CREATE TABLE IF NOT EXISTS v5_sample_audits(sample_id INTEGER,engine TEXT,match_id TEXT,created_at TEXT,data TEXT,PRIMARY KEY(sample_id,engine));
 CREATE INDEX IF NOT EXISTS v5_sample_audit_date ON v5_sample_audits(created_at);
 CREATE TABLE IF NOT EXISTS v4_imports(id INTEGER PRIMARY KEY,kind TEXT,digest TEXT UNIQUE,created_at TEXT,data TEXT);
@@ -530,7 +534,7 @@ def dismissal(r): return any((stat(r,k,t) or 0)>0 for k in ('red_cards','second_
 def recent(r,hist,k,t,minutes):
     return recent_measure(r,hist,k,t,minutes)['value']
 
-def recent_measure(r,hist,k,t,minutes):
+def recent_measure(r,hist,k,t,minutes,use_provider=True):
     out={'value':None,'origin':None,'anchor_id':None,'anchor_at':None,'window_minutes':minutes,
          'collected_at':r.get('collected_at'),'reason':'Fenêtre non disponible',
          'provider_stat_timestamp':None}
@@ -554,8 +558,9 @@ def recent_measure(r,hist,k,t,minutes):
         if not at or at>sample_time or (received and current_received and received>current_received) or old.get('quality_errors') or old.get('state')!='LIVE' or not num(old.get('minute')):continue
         if (old['minute']<=45)!=(minute<=45): continue
         if k!='fouls' and window_start<=at<=sample_time and old.get('score')!=r.get('score'):return finish(reason='Score modifié dans la fenêtre')
-        if at<=window_start and 0<=(window_start-at).total_seconds()<=100 and minutes-.5<=minute-old['minute']<=minutes+2:usable.append((at,dict(old,sample_id=dict(h).get('id',old.get('sample_id')))))
-    supplied=stat(r,k+str(minutes),t,'ind'+str(minutes))
+        same_source=all(old.get(key)==r.get(key) for key in ('client_id','collector_version'))
+        if same_source and at<=window_start and 0<=(window_start-at).total_seconds()<=100 and minutes-.5<=minute-old['minute']<=minutes+2:usable.append((at,dict(old,sample_id=dict(h).get('id',old.get('sample_id')))))
+    supplied=stat(r,k+str(minutes),t,'ind'+str(minutes)) if use_provider else None
     total=stat(r,k,t)
     if supplied is not None:
         if total is None or supplied>total:return finish(reason='Fenêtre fournie supérieure au cumul ou cumul absent',origin='provider_window')
@@ -650,6 +655,25 @@ def label(r,d):
     if d['market']=='card_ft': return name+' · plus de '+str(d['line']).replace('.',',')+' jaunes dans le match (un carton supplémentaire · suivi Packball)'
     return name+' · plus de '+str(d['line']).replace('.',',')+' but(s) '+('en première mi-temps' if d['market']=='goal_ht' else 'dans le match')
 
+def collection_diagnostic(c,now):
+    result={'policy':'single_live_source_v1','collectors':[],'competing':False,'active_version':None}
+    try:
+        primary=c.execute('SELECT * FROM collection_primary WHERE id=1').fetchone()
+        result['primary']=dict(primary) if primary else None
+        if primary and date(primary['last_good_at']) and 0<=(now-date(primary['last_good_at'])).total_seconds()<=100:
+            result['active_version']=primary['version']
+        for row in c.execute('SELECT * FROM collection_sources ORDER BY last_seen_at DESC LIMIT 30'):
+            at=date(row['last_seen_at'])
+            if not at or not 0<=(now-at).total_seconds()<=900:continue
+            item=dict(row);item['capabilities']=dec(item['capabilities'],[])
+            item['selected']=bool(primary and row['client_id']==primary['client_id'])
+            result['collectors'].append(item)
+        result['competing']=sum(0<=(now-date(x['last_seen_at'])).total_seconds()<=100 for x in result['collectors'])>1
+    except sqlite3.OperationalError:
+        result['policy']='awaiting_ingest_upgrade'
+    return result
+
+
 def latest(c):
     return c.execute('SELECT s.* FROM samples s JOIN (SELECT match_id,MAX(id) id FROM samples GROUP BY match_id) m ON s.id=m.id ORDER BY s.id DESC LIMIT 1500').fetchall()
 def sample_data(s):
@@ -672,11 +696,16 @@ def stream_transition(high, r):
         elif at and date(high.get('collected_at')) and at<date(high['collected_at'])-dt.timedelta(seconds=120):issue='capture_time_regression'
         elif phase is not None and phase<high['phase']:issue='phase_regression'
         elif phase==high['phase'] and num(minute) and num(high.get('minute')) and minute<high['minute']-2:issue='clock_regression'
+        elif state=='LIVE' and num(minute) and num(high.get('minute')) and at and date(high.get('collected_at')):
+            # A fresh HTTP capture can still contain an impossible sporting clock.
+            # Do not poison the durable watermark (and its 80-minute stop) with it.
+            elapsed=max(0,(at-date(high['collected_at'])).total_seconds()/60)
+            if minute-high['minute']>max(5,elapsed+3):issue='clock_forward_jump'
     if issue:return high,{'blocked':True,'reason':issue,'previous':high,'incoming':{k:r.get(k) for k in ('state','minute','score','collected_at')}}
     if phase is None or not at or r.get('quality_errors'):return high,None
     score=r.get('score') or {};previous=(high or {}).get('score') or {}
     correction=any(num(score.get(t)) and num(previous.get(t)) and score[t]<previous[t] for t in ('h','a'))
-    new={'identity':identity,'phase':phase,'state':state,'minute':max(minute,high['minute']) if high and phase==high['phase'] and num(minute) and num(high.get('minute')) else minute,'score':score,'sample_id':r.get('sample_id'),'collected_at':r.get('collected_at')}
+    new={'policy':STREAM_POLICY,'identity':identity,'phase':phase,'state':state,'minute':max(minute,high['minute']) if high and phase==high['phase'] and num(minute) and num(high.get('minute')) else minute,'score':score,'sample_id':r.get('sample_id'),'collected_at':r.get('collected_at')}
     return new,{'blocked':False,'reason':'score_correction_unattributed','previous':high,'incoming':{k:r.get(k) for k in ('state','minute','score','collected_at')}} if correction else None
 
 
@@ -686,11 +715,20 @@ def prepare_stream(c, match_id, limit=1000):
     if own_transaction:c.execute('BEGIN IMMEDIATE')
     saved=c.execute('SELECT * FROM v5_stream_watermarks WHERE match_id=?',(match_id,)).fetchone()
     checked=saved['checked_id'] if saved else 0;high=dec(saved['data']) if saved else None
+    policy=c.execute('SELECT policy FROM v5_stream_checks WHERE match_id=?',(match_id,)).fetchone()
+    if saved and (not policy or policy[0]!=STREAM_POLICY):
+        # Rebuild old watermarks from raw samples in bounded batches. Retain the
+        # previous incident evidence; never delete alerts/results or raw captures.
+        c.execute('INSERT OR IGNORE INTO v5_stream_incident_revisions SELECT sample_id,?,match_id,data FROM v5_stream_incidents WHERE match_id=?',('sporting_continuity_v1',match_id))
+        c.execute('DELETE FROM v5_stream_incidents WHERE match_id=?',(match_id,))
+        checked=0;high=None
     rows=c.execute('SELECT * FROM samples WHERE match_id=? AND id>? ORDER BY id LIMIT ?',(match_id,checked,limit)).fetchall()
     for row in rows:
         high,incident=stream_transition(high,sample_data(row));checked=row['id']
         if incident:c.execute('INSERT OR IGNORE INTO v5_stream_incidents VALUES(?,?,?,?)',(checked,match_id,int(incident['blocked']),enc(incident)))
-    if rows:c.execute('INSERT OR REPLACE INTO v5_stream_watermarks VALUES(?,?,?)',(match_id,checked,enc(high)))
+    if rows:
+        c.execute('INSERT OR REPLACE INTO v5_stream_watermarks VALUES(?,?,?)',(match_id,checked,enc(high)))
+        c.execute('INSERT OR REPLACE INTO v5_stream_checks VALUES(?,?)',(match_id,STREAM_POLICY))
     if own_transaction:c.commit()
     return checked
 
@@ -1175,7 +1213,7 @@ def board(c,now):
             z=dict(s);z['context']=dec(z['context'],{});legacy.append(z)
     except sqlite3.OperationalError:pass
     c.commit()
-    return {'ok':True,'version':'decision5.0','mode':'decision','observations':desk_history(c),'server_time':iso(now),'health':feed_health(c,now),'matches':records,'signals':history(c),'history_total':totals['total'],'totals':totals,'legacy':legacy,'feed':{'received_at':cycle['received_at'] if cycle else None,'rows':feed.get('page_rows'), 'collector_version':feed.get('collector_version'),'headers':feed.get('stat_headers',[]),'odds_meta':feed.get('odds_meta',{})},'engine':dec((c.execute("SELECT value FROM v4_runtime WHERE key='engine'").fetchone() or [None])[0]),'radar_telegram':radar_status(c),'learning':learning_status(c),'settings':options(c),'pulsescore':pulse,'telegram':{'configured':bool(os.environ.get('TELEGRAM_BOT_TOKEN') and os.environ.get('TELEGRAM_CHAT_ID'))}}
+    return {'ok':True,'version':'decision5.0','mode':'decision','observations':desk_history(c),'server_time':iso(now),'health':feed_health(c,now),'matches':records,'signals':history(c),'history_total':totals['total'],'totals':totals,'legacy':legacy,'feed':{'received_at':cycle['received_at'] if cycle else None,'rows':feed.get('page_rows'), 'collector_version':feed.get('collector_version'),'headers':feed.get('stat_headers',[]),'odds_meta':feed.get('odds_meta',{}),'source_status':collection_diagnostic(c,now)},'engine':dec((c.execute("SELECT value FROM v4_runtime WHERE key='engine'").fetchone() or [None])[0]),'radar_telegram':radar_status(c),'learning':learning_status(c),'settings':options(c),'pulsescore':pulse,'telegram':{'configured':bool(os.environ.get('TELEGRAM_BOT_TOKEN') and os.environ.get('TELEGRAM_CHAT_ID'))}}
 
 def export_analysis(c,now):
     matches=[];active=active_fixtures(c)
@@ -1231,6 +1269,7 @@ def dispatch(c,x,now):
         return {'ok':True,'signals':history(c,100,offset)}
     if action=='export_history': return {'schema':'stratedge.history.v4','exported_at':iso(now),'signals':history(c,100000)}
     if action=='export_review':
+        if x.get('day'):return export_daily_review(c,x['day'],now)
         signals=history(c,100);all_count=c.execute('SELECT COUNT(*) FROM v4_signals').fetchone()[0]
         incidents=[dict(row,data=dec(row['data'],{})) for row in c.execute('SELECT * FROM v4_health_events ORDER BY id DESC LIMIT 200')]
         for signal in signals:
@@ -1484,7 +1523,7 @@ def prematch_live_coherence(r,p,ctx,team,market,metrics,evidence):
     out['status']='missing' if missing else 'conflict' if conflicts else 'confirmed'
     return out
 
-def shot_quality_audit(r,hist,team):
+def shot_quality_audit(r,hist,team,aligned=False):
     fields=('shots','sot','shots_inside','shots_outside','shots_off_target','blocked_shots')
     result={'policy':'shot_windows_v1','provider_synchronization':'unknown',
             'note':'Même capture ne prouve pas une mise à jour simultanée du fournisseur ; horodatages par statistique absents.', 'windows':{}}
@@ -1492,7 +1531,7 @@ def shot_quality_audit(r,hist,team):
         measures={}
         for k in fields:
             v=stat(r,k,team) if w==0 else None
-            q=({'value':v,'origin':'cumulative','reason':None if v is not None else 'Valeur absente'} if w==0 else recent_measure(r,hist,k,team,w))
+            q=({'value':v,'origin':'cumulative','reason':None if v is not None else 'Valeur absente'} if w==0 else recent_measure(r,hist,k,team,w,use_provider=not aligned))
             q['usable']=num(q['value']) and q['value']>=0 and q['value']==int(q['value'])
             if q['value'] is not None and not q['usable']:q['reason']='Compteur non entier'
             measures[k]=q
@@ -1512,6 +1551,11 @@ def shot_quality_audit(r,hist,team):
         short,long=result['windows']['5'][k],result['windows']['10'][k]
         if short['usable'] and long['usable'] and short['value']>long['value']:
             for q in (short,long):q.update(usable=False,reason='Fenêtre 5 min supérieure à 10 min')
+    if not aligned and hist:
+        aligned_windows=shot_quality_audit(r,hist,team,aligned=True)['windows']
+        # A separate research lane: never substitute it into existing trigger
+        # metrics or combine its counts with provider windows of different origins.
+        result['aligned_cumulative']={'usage':'shadow_only','windows':{w:aligned_windows[w] for w in ('5','10')}}
     return result
 
 def live_situation(r,team,market,m,hist,shot_audit=None):
@@ -1644,6 +1688,19 @@ def record_shadow(c,r,d,now):
     c.execute('INSERT OR IGNORE INTO v5_shadow_readings VALUES(?,?,?,?,?,?,?,?)',
               (str(r['packball_id']),d['team'],d['market'],int(r['minute']),d['research']['policy'],r['sample_id'],iso(now),enc(payload)))
 
+def window_diagnostic(measures, required):
+    missing={key:measures[key] for key in required if measures[key]['value'] is None}
+    reasons={x.get('reason') for x in missing.values()}
+    if reasons=={'Début de période : fenêtre incomplète'}:
+        code,title='warming_up','Fenêtre en constitution'
+    elif reasons=={'Score modifié dans la fenêtre'}:
+        code,title='post_goal_reset','Comparaison réinitialisée après but'
+    else:
+        code,title='missing_window','Fenêtre non disponible'
+    detail=' · '.join(key+' : '+str(value.get('reason') or 'donnée inconnue') for key,value in missing.items())
+    return {'code':code,'title':title,'reason':detail,'fields':missing}
+
+
 def desk_reading(r,p,ctx,team,market,now,hist):
     other='a' if team=='h' else 'h'
     prematch=(p or {}).get('prematch') or {}
@@ -1708,9 +1765,13 @@ def desk_reading(r,p,ctx,team,market,now,hist):
     if not num(observed) or observed<0 or observed!=int(observed):return stop('missing','Compteur absent','Afficher '+{'goals':'Buts','corners':'Corners','cards':'Cartons jaunes'}[market]+' dans Packball et mettre le collecteur à jour.')
     keys={'goals':['shots','sot'],'corners':['shots','corners','blocked_shots'],'cards':['fouls']}[market]
     m=d['metrics']
+    d['window_quality']={}
     for k in keys:
         m[k]=stat(r,k,team)
-        for window in (5,10):m[k+str(window)]=recent(r,hist,k,team,window)
+        for window in (5,10):
+            measured=recent_measure(r,hist,k,team,window)
+            d['window_quality'][k+str(window)]=measured
+            m[k+str(window)]=measured['value']
     if market=='goals':
         if any(num(m.get(k+str(w))) and m[k+str(w)]!=int(m[k+str(w)]) for k in ('shots','sot') for w in (5,10)) or any(num(m.get(k+'5')) and num(m.get(k+'10')) and m[k+'5']>m[k+'10'] for k in ('shots','sot')):
             return stop('missing','Tirs incohérents','Les fenêtres de tirs 5/10 min doivent être des compteurs entiers cohérents : les 5 minutes sont incluses dans les 10.')
@@ -1719,7 +1780,9 @@ def desk_reading(r,p,ctx,team,market,now,hist):
         d['facts'].extend(d['conversion']['lines'])
         d['limits'].append(d['conversion']['caution'])
         if m['sot'] is not None and m['shots'] is not None and m['sot']>m['shots']:return stop('missing','Tirs incohérents','Les cadrés dépassent le total des tirs.')
-        if any(m[k] is None for k in ('shots10','sot10','shots5')):return stop('missing','Fenêtre incomplète','Il manque les tirs/cadrés récents, ou un but vient de réinitialiser la comparaison.')
+        if any(m[k] is None for k in ('shots10','sot10','shots5')):
+            d['window_diagnostic']=window_diagnostic(d['window_quality'],('shots10','sot10','shots5'))
+            return stop('missing',d['window_diagnostic']['title'],d['window_diagnostic']['reason'])
         if any(num(m.get('shots'+str(w))) and num(m.get('sot'+str(w))) and m['sot'+str(w)]>m['shots'+str(w)] for w in (5,10)):return stop('missing','Tirs incohérents','Les cadrés récents dépassent les tirs de la même fenêtre.')
         for w,k in (('0','shots'),('0','sot'),('10','shots'),('10','sot'),('5','shots')):
             quality=d['shot_quality']['windows'][w][k]
@@ -1749,7 +1812,9 @@ def desk_reading(r,p,ctx,team,market,now,hist):
         if any(num(m.get('fouls'+str(w))) and m['fouls'+str(w)]!=int(m['fouls'+str(w)]) for w in (5,10)) or (num(m.get('fouls5')) and num(m.get('fouls10')) and m['fouls5']>m['fouls10']):
             return stop('missing','Fautes incohérentes','Fenêtres de fautes 5/10 min incompatibles : attendre un relevé fiable.')
         rapid=num(m.get('fouls5')) and m['fouls5']>=3
-        if not rapid and any(m[k] is None for k in ('fouls10','fouls5')):return stop('missing','Fautes récentes manquantes','Attendre une fenêtre mesurée : 3 fautes en 5 min, ou les fenêtres 5/10 min de la voie habituelle.')
+        if not rapid and any(m[k] is None for k in ('fouls10','fouls5')):
+            d['window_diagnostic']=window_diagnostic(d['window_quality'],('fouls10','fouls5'))
+            return stop('missing',d['window_diagnostic']['title'],d['window_diagnostic']['reason'])
         support=(m['possession'] is not None and m['possession']<=45) or (m['opponent_shots10'] is not None and m['opponent_shots10']>=2)
         candidate=(rapid or m['fouls10']>=3 and m['fouls5']>=1) and support
         m['comparison_window']=5 if rapid else 10
@@ -2324,7 +2389,7 @@ def record_window_audit(c,r,d,p,ctx,now):
     if r.get('state')!='LIVE' or not r.get('sample_id'):return
     inputs_json=enc({'profile':p,'context':ctx});inputs_hash=hashlib.sha256(inputs_json.encode()).hexdigest()
     c.execute('INSERT OR IGNORE INTO v5_audit_inputs(hash,data) VALUES(?,?)',(inputs_hash,inputs_json))
-    data={k:d.get(k) for k in ('status','reason','period','observed','trigger_path','metrics','coherence','conversion','continuity','window')}
+    data={k:d.get(k) for k in ('status','reason','period','observed','trigger_path','metrics','coherence','conversion','continuity','window','window_diagnostic')}
     data.update(minute=r.get('minute'),score=r.get('score'),profile_imported_at=(p or {}).get('imported_at'),context_generated_at=(ctx or {}).get('generated_at'),
                 profile_usable=(p or {}).get('usable'),context_usable=(ctx or {}).get('usable'),
                 confirmation_sample_ids=[x['sample']['sample_id'] for x in (d.get('confirmation') or {}).get('samples',[])])
@@ -2594,6 +2659,42 @@ def learning_status(c):
     return {k:memory.get(k) for k in ('revision','generated_at','review_count','settled_count','match_count','priorities','prompt_addendum')} | {'recent':recent,'error':error}
 
 
+def export_daily_review(c,day,now):
+    try:
+        start=dt.datetime.combine(dt.date.fromisoformat(day),dt.time(),ZoneInfo('Europe/Paris'))
+        end=start+dt.timedelta(days=1)
+    except (ValueError,TypeError):raise ValueError('Jour invalide : AAAA-MM-JJ requis')
+    bounds=(iso(start.astimezone(UTC)),iso(end.astimezone(UTC)))
+    own_transaction=not c.in_transaction
+    if own_transaction:c.execute('BEGIN')
+    try:
+        rows=[review_presentation(dec(r['data'],{})) for r in c.execute('''SELECT l.data FROM v5_learning_reviews l
+            JOIN v5_radar_notifications n ON n.id=l.radar_id WHERE n.created_at>=? AND n.created_at<? ORDER BY l.radar_id''',bounds)]
+        revisions=[dict(r) for r in c.execute('''SELECT e.id,e.radar_id,e.previous,e.outcome,e.created_at,e.sample_id,e.delivery
+            FROM v5_radar_result_events e JOIN v5_radar_notifications n ON n.id=e.radar_id
+            WHERE n.created_at>=? AND n.created_at<? ORDER BY e.id''',bounds)]
+        sent=c.execute("SELECT COUNT(*) FROM v5_radar_notifications WHERE created_at>=? AND created_at<? AND delivery='sent'",bounds).fetchone()[0]
+        incidents=[dict(r,data=dec(r['data'],{})) for r in c.execute('SELECT * FROM v4_health_events WHERE opened_at<? AND last_seen>=? ORDER BY id',(bounds[1],bounds[0]))]
+        # Legacy bets are explicitly separate and never added to radar counts.
+        legacy=[dict(r,data=dec(r['data'],{})) for r in c.execute('SELECT * FROM v4_signals WHERE created_at>=? AND created_at<? ORDER BY id',bounds)]
+    finally:
+        if own_transaction:c.rollback()
+    outcomes={k:sum(r.get('outcome')==k for r in rows) for k in ('observed','not_observed','unknown','pending')}
+    learning={'schema':'stratedge.learning.v1','exported_at':iso(now),'day':day,'timezone':'Europe/Paris',
+              'reviews':rows,'result_revisions':revisions,'memory':{'scope':'selected_day_only','review_count':len(rows),
+              'settled_count':outcomes['observed']+outcomes['not_observed'],'match_count':len({r.get('match_id') for r in rows}),
+              'outcomes':outcomes,'changes_executable_rules':False},
+              'coverage':{'exported_reviews':len(rows),'total_reviews':len(rows),'sent_alerts':sent,'reviews_not_yet_available':max(0,sent-len(rows)),
+                          'complete':True,'complete_means':'Toutes les revues disponibles des alertes créées ce jour ; pas une surveillance continue ni une garantie de résultat réglé.'}}
+    return {'schema':'stratedge.audit.v4','exported_at':iso(now),'timezone':'Europe/Paris','day':day,
+            'bounds':{'from':bounds[0],'to_exclusive':bounds[1]},'learning':learning,'incidents':incidents,'signals':legacy,
+            'coverage':{'scope':'Alertes créées pendant la journée Europe/Paris sélectionnée ; dernières révisions disponibles à l’export.',
+                        'complete':True,'exported_signals':len(legacy),'total_signals':len(legacy),
+                        'complete_means':'Complétude de cet export, pas une surveillance continue.',
+                        'legacy_signals_separate':True,'window_audit_export':'Exporter les fenêtres et la couverture pour la même journée.'},
+            'instructions':'Dédupliquer par radar_id et dernière révision. Les signals V4 anciens sont séparés du radar dans learning. Les révisions peuvent être postérieures à la journée de création. Inconnus et attentes exclus des succès/échecs. La mémoire globale se télécharge séparément ; ne pas additionner ses copies. Aucun changement automatique des règles.'}
+
+
 def export_learning(c,now):
     # An explicit download, unlike the bounded UI preview, includes every review.
     # Read one SQLite snapshot so counts, latest revisions and memory agree.
@@ -2670,7 +2771,7 @@ def run_dashboard(path,now=None):
             c.rollback()
             with c:runtime(c,'learning_error',{'at':iso(now),'type':type(exc).__name__})
         if realtime:now=now_utc()
-        runtime(c,'engine',{'at':iso(now),'engine_fingerprint':ENGINE_FINGERPRINT,'integrity_policy':'sporting_continuity_v1','audit_policy':'coverage_pages_v1','version':'decision5.0','telegram_active':radar_enabled(c) and radar_configured(),'legacy_telegram_active':False,'notification_mode':'confirmed_cards','mode':'decision','external_calls':radar_enabled(c) and radar_configured(),'ai_calls':False,'automatic_odds':setting(c,'radar_odds_auto',True),'priced_only':setting(c,'radar_priced_only',True),'feature_policy':'stake_price_gate5.2','goal_policy':GOAL_POLICY,'goal_interval_gate':GOAL_INTERVAL_GATE,'goal_half_min_rate':GOAL_HALF_MIN_RATE,'card_momentum_policy':CARD_MOMENTUM_POLICY,'research_mode':'shadow'})
+        runtime(c,'engine',{'at':iso(now),'engine_fingerprint':ENGINE_FINGERPRINT,'integrity_policy':STREAM_POLICY,'audit_policy':'coverage_pages_v1','version':'decision5.0','telegram_active':radar_enabled(c) and radar_configured(),'legacy_telegram_active':False,'notification_mode':'confirmed_cards','mode':'decision','external_calls':radar_enabled(c) and radar_configured(),'ai_calls':False,'automatic_odds':setting(c,'radar_odds_auto',True),'priced_only':setting(c,'radar_priced_only',True),'feature_policy':'stake_price_gate5.2','goal_policy':GOAL_POLICY,'goal_interval_gate':GOAL_INTERVAL_GATE,'goal_half_min_rate':GOAL_HALF_MIN_RATE,'card_momentum_policy':CARD_MOMENTUM_POLICY,'research_mode':'shadow'})
         record_health(c,health,now);c.commit()
     finally:c.close()
 
@@ -2680,7 +2781,7 @@ def current_diagnostic(c,now):
     started=time.monotonic();b=board(c,now)
     result={k:b[k] for k in ('version','engine','telegram','radar_telegram','totals','health')}
     result['learning']={k:b['learning'].get(k) for k in ('revision','generated_at','review_count','settled_count','match_count','error')}
-    result['feed']={k:b['feed'].get(k) for k in ('received_at','rows','collector_version')}
+    result['feed']={k:b['feed'].get(k) for k in ('received_at','rows','collector_version','source_status')}
     result['recent_imports']=[dict(x) for x in c.execute('SELECT kind,created_at FROM v4_imports ORDER BY id DESC LIMIT 6')]
     result['recent_notifications']=[dict(x) for x in c.execute('SELECT id,match_id,team,market,created_at,delivery FROM v5_radar_notifications ORDER BY id DESC LIMIT 10')]
     result['last_sent_at']=(c.execute("SELECT created_at FROM v5_radar_notifications WHERE delivery='sent' ORDER BY id DESC LIMIT 1").fetchone() or [None])[0]

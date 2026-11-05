@@ -32,6 +32,8 @@ try {
    $s->execute([$now,'out_of_order',is_string($x['client_id']??null)?substr($x['client_id'],0,100):'legacy']);
    $db->commit();reply90(['error'=>'Relevé plus ancien que le dernier reçu : vérifier les autres onglets et l’horloge du PC','code'=>'OUT_OF_ORDER','inserted'=>0],422);
  }
+ $source=source90($db,$x,$now);
+ if(!$source['accepted']){$db->commit();reply90($source+['inserted'=>0],409);}
  $s=$db->prepare('INSERT OR IGNORE INTO cycles VALUES(?,?,?,?)'); $s->execute([$x['cycle_id'],$x['collected_at'],$now,json_encode($x)]);
  if (!$s->rowCount()) {$db->commit(); reply90(['ok'=>true,'duplicate'=>true,'inserted'=>0]);}
  $s=$db->prepare('INSERT OR IGNORE INTO samples(cycle_id,match_id,received_at,data) VALUES(?,?,?,?)'); $n=0;
@@ -40,6 +42,7 @@ try {
    $r['collected_at']=$x['collected_at'];
    $r['collector_version']=is_string($x['collector_version']??null)?substr($x['collector_version'],0,40):null;
    $r['client_id']=is_string($x['client_id']??null)?substr($x['client_id'],0,100):null;
+   $r['installation_id']=is_string($x['installation_id']??null)?substr($x['installation_id'],0,100):null;
    $s->execute([$x['cycle_id'],(string)$r['packball_id'],$now,json_encode($r,JSON_UNESCAPED_UNICODE)]); $n+=$s->rowCount();
  }
  $db->commit();

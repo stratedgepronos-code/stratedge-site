@@ -37,5 +37,21 @@ class IngestV4Tests(unittest.TestCase):
      self.assertEqual(c.execute('SELECT COUNT(*) FROM cycles').fetchone()[0],1)
      self.assertEqual(c.execute('SELECT COUNT(*) FROM samples').fetchone()[0],1)
      self.assertEqual(c.execute("SELECT COUNT(*) FROM collection_rejections WHERE reason='out_of_order'").fetchone()[0],1)
+    base=time.time()
+    def producer(client,version,offset):
+     return dict(x,cycle_id='synthetic-source-'+str(offset),client_id=client,collector_version=version,
+      collected_at=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime(base+offset)),
+      rows=[{'packball_id':'123','state':'LIVE','minute':30,'score':{'h':0,'a':0},
+       'stats':{'red_cards':{'h':0,'a':0},'fouls':{'h':9,'a':2}}}])
+    self.assertEqual(post(producer('old','5.0.0',1))[0],200)
+    self.assertEqual(post(producer('new','5.2.0',2))[0],200)
+    status,result=post(producer('old','5.0.0',3))
+    self.assertEqual((status,result['code']),(409,'SOURCE_CONFLICT'))
+    with sqlite3.connect(db) as c:
+     self.assertEqual(c.execute('SELECT COUNT(*) FROM samples').fetchone()[0],3)
+     self.assertEqual(c.execute('SELECT COUNT(*) FROM cycles').fetchone()[0],3)
+     last=json.loads(c.execute('SELECT data FROM samples ORDER BY id DESC LIMIT 1').fetchone()[0])
+     self.assertEqual(last['collector_version'],'5.2.0')
+     self.assertEqual(c.execute('SELECT client_id FROM collection_primary').fetchone()[0],'new')
    finally:proc.terminate();proc.wait(timeout=5)
 

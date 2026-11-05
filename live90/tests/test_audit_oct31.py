@@ -13,7 +13,7 @@ class Integrity(unittest.TestCase):
  reading=F.DeskTests.reading
  def guarded(self):return V.guarded_sample(self.c,V.latest(self.c)[0])
  def advance(self,minute,score,state='LIVE'):
-  self.now+=dt.timedelta(seconds=30);self.r.update(minute=minute,score=score,state=state);self.add(self.r,self.now)
+  self.now+=dt.timedelta(seconds=max(30,(minute-self.r['minute'])*60));self.r.update(minute=minute,score=score,state=state);self.add(self.r,self.now)
  def test_documented_rollbacks_stay_blocked_after_restart(self):
   for minute,first,second in [(45,{'h':1,'a':4},{'h':1,'a':2}),(13,{'h':2,'a':1},{'h':0,'a':0})]:
    with self.subTest(minute=minute):

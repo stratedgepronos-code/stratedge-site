@@ -27,7 +27,7 @@ class GoalHalvesTests(unittest.TestCase):
  def test_missing_second_half_only_blocks_second_half(self):
   self.ctx['teams']['h']['goal_halves']['home']['second_half']=None
   self.prepare();self.assertEqual(self.reading()['status'],'active')
-  self.r['minute']=60;self.now+=dt.timedelta(seconds=30);self.add(self.r,self.now)
+  self.now+=dt.timedelta(minutes=60-self.r['minute']);self.r['minute']=60;self.add(self.r,self.now)
   self.assertEqual(self.reading()['status'],'context_wait')
  def test_half_switch_restarts_confirmation(self):
   for side,scope in [('h','home'),('a','away')]:
@@ -76,3 +76,4 @@ class GoalHalvesTests(unittest.TestCase):
   self.assertFalse(V.radar_eligible(V.sample_data(V.latest(self.c)[0]),d,self.now))
 
 if __name__=='__main__':unittest.main()
+

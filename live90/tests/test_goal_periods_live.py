@@ -33,12 +33,12 @@ class HalfResults(unittest.TestCase):
   self.now+=dt.timedelta(hours=7);V.settle_radar_results(self.c,self.now)
   self.assertEqual(self.result()['outcome'],'unknown')
  def test_stoppage_goal_and_correction_are_tracked_in_first_half(self):
-  self.emit();self.r.update(minute=45,minute_extra=2);self.twice(value=1)
+  self.emit();self.now+=dt.timedelta(minutes=12);self.r.update(minute=45,minute_extra=2);self.twice(value=1)
   self.assertEqual(self.result()['outcome'],'observed')
   self.twice(value=0,state='HT');self.assertEqual(self.result()['outcome'],'not_observed')
  def test_ht_and_ft_same_counter_are_distinct_but_each_deduplicated(self):
   self.emit();self.twice(state='HT')
-  self.now+=dt.timedelta(minutes=25);self.r.update(state='LIVE',minute=65)
+  self.now+=dt.timedelta(minutes=40);self.r.update(state='LIVE',minute=65)
   self.add(dict(self.r,minute=64),self.now-dt.timedelta(seconds=30));self.add(self.r,self.now)
   t=self.emit();self.assertEqual(t['period'],'FT')
   r=V.sample_data(V.latest(self.c)[0]);d=self.reading()
@@ -199,7 +199,7 @@ class HalfMomentum(unittest.TestCase):
   self.assertEqual(d['period'],'FT');self.assertEqual(d['context_evidence']['period'],'second_half')
   msg=V.radar_message(V.sample_data(V.latest(self.c)[0]),d,{'quotes':[]})
   self.assertIn('2e mi-temps',msg);self.assertIn('avant la fin',msg);self.assertNotIn('tranche',msg)
-  self.r['minute']=80;self.add(self.r,self.now);self.assertEqual(self.reading()['status'],'waiting')
+  self.now+=dt.timedelta(minutes=80-self.r['minute']);self.r['minute']=80;self.add(self.r,self.now);self.assertEqual(self.reading()['status'],'waiting')
  def test_half_minimum_applies_separately_at_exact_boundary(self):
   original=copy.deepcopy(self.ctx)
   for minute,half in ((25,'first_half'),(65,'second_half')):

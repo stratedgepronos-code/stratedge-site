@@ -87,6 +87,7 @@ class CardMomentum(unittest.TestCase):
   V.dispatch(self.c,{'action':'radar_telegram','enabled':True,'card_leagues':[],'disable_cards':True},self.now)
   self.assertEqual(self.reading('cards')['status'],'excluded')
   V.dispatch(self.c,{'action':'radar_telegram','enabled':True,'card_leagues':['Test']},self.now)
-  self.r['minute']=80;self.add(self.r,self.now);self.assertEqual(self.reading('cards')['status'],'waiting')
+  self.now+=dt.timedelta(minutes=80-self.r['minute']);self.r['minute']=80;self.add(self.r,self.now);self.assertEqual(self.reading('cards')['status'],'waiting')
 
 if __name__=='__main__':unittest.main()
+
