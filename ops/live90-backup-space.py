@@ -115,6 +115,9 @@ def main(db, reserve_only=False):
     if free < required:
         archives=[p for p in ROOT.glob('stratedge-live90-v4.*/*') if p.name in ('live90.sql.gz','live90.sqlite.gz') and p.is_file() and not p.is_symlink()]
         print('LIVE90_COMPRESSED_BACKUPS count='+str(len(archives)), 'bytes='+str(sum(p.stat().st_size for p in archives)), 'preserved=true', flush=True)
+        for p in sorted(archives, key=lambda p: (p.stat().st_mtime, str(p))):
+            info = p.stat()
+            print('LIVE90_ARCHIVE_RETAINED '+json.dumps({'path':str(p),'bytes':info.st_size,'modified_at':dt.datetime.fromtimestamp(info.st_mtime, dt.timezone.utc).isoformat()}, ensure_ascii=False), flush=True)
         for p in backups:
             if p.exists(): print('LIVE90_BACKUP_RETAINED', p, 'bytes='+str(p.stat().st_size), flush=True)
         raise SystemExit('Espace encore insuffisant ; aucun historique actif supprimé')
@@ -122,4 +125,5 @@ def main(db, reserve_only=False):
 if __name__ == '__main__':
     args=[a for a in sys.argv[1:] if a != '--reserve-only']
     main(pathlib.Path(args[0] if args else '/var/lib/stratedge/live90.sqlite'), '--reserve-only' in sys.argv)
+
 
