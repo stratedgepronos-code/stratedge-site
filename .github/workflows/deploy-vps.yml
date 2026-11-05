@@ -116,6 +116,8 @@ jobs:
           LIVE90_ROOT=$(git rev-parse --show-toplevel)
           # One-off exact inventory approved by the owner on 1 November. No retention rule.
           sudo -n python3 "$LIVE90_ROOT/ops/live90-cleanup-approved-20261101.py" --approval owner-approved-2026-11-01-oct16-oct18
+          # Eight exact archives approved by the owner on 5 November; all newer backups preserved.
+          sudo -n python3 "$LIVE90_ROOT/ops/live90-cleanup-approved-20261105.py" --approval owner-approved-2026-11-05-eight-oct22-oct23
           # Match the deploy script: unchanged engine files need no new DB snapshot.
           # LIVE90_PREFLIGHT_BEGIN
           if sudo -n cmp -s "$LIVE90_ROOT/live90/server/engine.py" /opt/stratedge/live90/engine.py && sudo -n cmp -s "$LIVE90_ROOT/live90/server/live_v4.py" /opt/stratedge/live90/live_v4.py; then

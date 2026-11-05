@@ -11,6 +11,7 @@
 <label class="history-check"><input type="checkbox" id="history-unsent">Inclure les non-envoyés</label>
 </section>
 <section id="history-summary" class="history-summary" aria-label="Bilan de la journée"></section>
+<details id="history-breakdown" class="history-ledger" hidden><summary class="history-ledger-head">Bilan par marché, période et voie</summary><div id="history-breakdown-content" class="history-scroll"></div></details>
 <section class="history-ledger"><div class="history-ledger-head"><div><h2 id="history-title">Alertes de la journée</h2><p id="history-updated" role="status">Chargement de l’historique…</p></div><button id="history-refresh" class="button">↻ Actualiser</button></div>
 <div class="history-scroll"><table class="history-table"><thead><tr><th>Alerte</th><th>Match / équipe</th><th>Objectif suivi</th><th>Cote relevée</th><th>Résultat</th><th>Telegram</th><th></th></tr></thead><tbody id="history-rows"></tbody></table></div>
 <p id="history-empty" class="history-empty" hidden>Aucune alerte pour cette journée et ces filtres.</p>

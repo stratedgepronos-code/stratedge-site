@@ -563,7 +563,7 @@ $('#export-windows').onclick=async()=>{
   result.textContent=bundle.returned+' lectures exportées pour le '+day+' (Europe/Paris). Archives disponibles depuis cette mise à jour uniquement. ';
   if(bundle.total>500){
    const entries=pages.map((p,i)=>['fenetres-'+day+'-'+String(i+1).padStart(4,'0')+'.json',p]);
-   entries.unshift(['manifest.json',{schema:'stratedge.windows.archive.v1',day,ceiling,total:bundle.total,parts:entries.map(([name,p])=>({name,cursor:p.cursor,returned:p.returned,next_cursor:p.next_cursor})),export_complete:true,continuous_monitoring:'not_asserted',instructions:'Lire les parties JSON et dédupliquer par id ; complete concerne l’export, pas la surveillance. Exporter aussi le diagnostic de couverture.'}]);
+   entries.unshift(['manifest.json',{schema:'stratedge.windows.archive.v1',day,ceiling,total:bundle.total,parts:entries.map(([name,p])=>({name,cursor:p.cursor,returned:p.returned,next_cursor:p.next_cursor})),export_complete:true,continuous_monitoring:'not_asserted',instructions:'page_complete valide chaque partie ; complete indique qu’une réponse contient à elle seule toute la journée. export_complete valide l’assemblage après contrôle du total et des identifiants uniques, pas la surveillance. Conserver day et ceiling lors d’une reprise ; dédupliquer par id. Exporter aussi le diagnostic de couverture.'}]);
    download('StratEdge-fenetres-'+day+'.zip',auditZip(entries),result);
   }else download('StratEdge-fenetres-'+day+'.json',bundle,result);
  }catch(e){result.textContent=e.message}finally{b.disabled=false}
