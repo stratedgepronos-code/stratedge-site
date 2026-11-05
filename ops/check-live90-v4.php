@@ -37,14 +37,14 @@ do {
  if(!is_resource($proc))throw new RuntimeException('Diagnostic Python indisponible');
  $text=stream_get_contents($pipes[1]);fclose($pipes[1]);$status=proc_close($proc);$d=json_decode($text,true);
  $at=is_array($d)?strtotime((string)($d['engine']['at']??'')):false;
- if($status===0&&$at!==false&&abs(time()-$at)<=65&&($d['engine']['version']??'')==='decision5.0'&&($d['engine']['legacy_telegram_active']??true)===false&&($d['engine']['notification_mode']??'')==='confirmed_cards'&&($d['engine']['goal_policy']??'')==='goal_periods_intervals_v1'&&($d['engine']['goal_half_min_rate']??null)===0.8&&($d['engine']['goal_interval_gate']??'')==='half_only_min08_two_sot_v5'&&($d['engine']['card_momentum_policy']??'')==='card_rapid5_context_v1'&&($d['engine']['integrity_policy']??'')==='sporting_continuity_v1'&&($d['engine']['audit_policy']??'')==='coverage_pages_v1'&&($d['engine']['engine_fingerprint']??'')===substr(hash_file('sha256',$root.'/live90/server/live_v4.py'),0,16)){
+ if($status===0&&$at!==false&&abs(time()-$at)<=65&&($d['engine']['version']??'')==='decision5.0'&&($d['engine']['legacy_telegram_active']??true)===false&&($d['engine']['notification_mode']??'')==='confirmed_cards'&&($d['engine']['goal_policy']??'')==='goal_periods_intervals_v1'&&($d['engine']['goal_half_min_rate']??null)===0.8&&($d['engine']['goal_interval_gate']??'')==='half_only_min08_two_sot_v5'&&($d['engine']['card_momentum_policy']??'')==='card_rapid5_context_v1'&&($d['engine']['integrity_policy']??'')==='sporting_continuity_v2'&&($d['engine']['audit_policy']??'')==='coverage_pages_v1'&&($d['engine']['engine_fingerprint']??'')===substr(hash_file('sha256',$root.'/live90/server/live_v4.py'),0,16)){
   echo 'LIVE90_V4_HEALTH '.json_encode($d,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES).PHP_EOL;
   exit(0);
  }
  usleep(1000000);
 } while(microtime(true)<$deadline);
 if(is_array($d))echo 'LIVE90_V4_DIAGNOSTIC '.json_encode($d,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES).PHP_EOL;
-fwrite(STDERR,'LIVE90_V4_HEALTH_ERROR: aucun cycle décision V5 récent ou mode radar non confirmé'.PHP_EOL);exit(1);
+fwrite(STDERR,'LIVE90_V4_HEALTH_ERROR: cycle décision, configuration ou empreinte moteur non conforme'.PHP_EOL);exit(1);
 
 
 
