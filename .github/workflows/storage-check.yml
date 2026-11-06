@@ -1,4 +1,4 @@
-name: Storage maintenance (approved cleanup)
+name: Storage verification
 on:
   push:
     branches: [master]
@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 5
     steps:
       - run: sudo apt-get update -q && sudo apt-get install -y -q sshpass
-      - name: Clean approved obsolete files and inspect storage
+      - name: Verify archive cleanup and service health
         env:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
           VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
@@ -28,15 +28,12 @@ jobs:
           fi
           $SSH_CMD alex@31.97.196.145 bash -s <<'REMOTE'
           set -e
-          # Explicit request of 7 Nov: old package cache and obsolete archived Edge Finder.
-          CLEANUP=$(mktemp /tmp/stratedge-storage-cleanup.XXXXXX.py)
-          curl -fsSL "https://raw.githubusercontent.com/stratedgepronos-code/stratedge-site/${{ github.sha }}/ops/storage-cleanup-20261107.py" -o "$CLEANUP"
-          sudo -n python3 "$CLEANUP" --apply
-          rm -f "$CLEANUP"
+          # Read-only verification of the completed, owner-approved cleanup.
           ARCHIVE_CLEANUP=$(mktemp /tmp/stratedge-archives-cleanup.XXXXXX.py)
           curl -fsSL "https://raw.githubusercontent.com/stratedgepronos-code/stratedge-site/${{ github.sha }}/ops/storage-cleanup-archives-20261107.py" -o "$ARCHIVE_CLEANUP"
-          sudo -n python3 "$ARCHIVE_CLEANUP"
+          sudo -n python3 "$ARCHIVE_CLEANUP" --audit
           rm -f "$ARCHIVE_CLEANUP"
+          sudo -n cat /var/backups/stratedge-storage-archives-20261107.json
           sudo -n python3 /var/www/stratedgepronos.fr/ops/storage-audit.py /var/www/stratedgepronos.fr
           sudo -n find /var/backups -maxdepth 2 -type f -name '*.recompression.json' -exec cat {} \;
           sudo -n find /var/backups -maxdepth 2 -type f -name '*.recompress.partial' -printf '\nSTORAGE_COMPRESSION_RUNNING %s %p\n'

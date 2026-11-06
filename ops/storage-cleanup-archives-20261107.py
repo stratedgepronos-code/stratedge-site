@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Remove only inspected, retired August Edge Finder copies and old pip downloads."""
-import datetime as dt,json,os,pathlib,shutil,stat,time
+import datetime as dt,json,os,pathlib,shutil,stat,sys,time
 ROOT=pathlib.Path('/home/alex/_archive_20260830')
 TARGETS=[ROOT/x for x in ('stratedge-edge-finder','tennis-edge-finder','web/edge-finder','web/edge-finder-tennis')]
 MARKER=pathlib.Path('/var/backups/stratedge-storage-archives-20261107.json')
@@ -32,7 +32,9 @@ def in_use(target, bases=None, proc_root=pathlib.Path("/proc")):
             for name in files:
                 p=pathlib.Path(directory)/name
                 try:
-                    if not p.is_symlink() and p.stat().st_size<=2_000_000 and needle in p.read_bytes():return 'external_reference'
+                    if not p.is_symlink() and p.stat().st_size<=2_000_000 and needle in p.read_bytes():
+                        print('STORAGE_ARCHIVE_REFERENCE '+json.dumps({'archive':str(target),'referencing_path':str(p)}),flush=True)
+                        return 'external_reference'
                 except OSError:pass
     return None
 
@@ -70,4 +72,8 @@ def main():
     with MARKER.open('x') as f:json.dump(report,f);f.flush();os.fsync(f.fileno())
     os.chmod(MARKER,0o600);print('STORAGE_ARCHIVES_CLEANUP_OK '+json.dumps(report),flush=True)
 
-if __name__=='__main__':main()
+if __name__=='__main__':
+    if '--audit' in sys.argv:
+        for target in TARGETS:
+            if target.exists():print('STORAGE_ARCHIVE_USAGE '+json.dumps({'path':str(target),'reason':in_use(target)}),flush=True)
+    else:main()
