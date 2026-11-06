@@ -26,7 +26,7 @@ class CardMomentum(unittest.TestCase):
   self.assertEqual(d['metrics']['fouls_previous5'],1)
   self.assertEqual(d['situation']['trend'],'rising')
   msg=V.radar_message(r,d,{'quotes':[]})
-  for text in ('Séquence rapide','3 fautes en 5 min','Arbitre Test','Possession cumulée','joueurs et motifs des fautes inconnus'):self.assertIn(text,msg)
+  for text in ('Séquence rapide','3 fautes sur 5 min nominales fournisseur','Arbitre Test','Possession cumulée','joueurs et motifs des fautes inconnus'):self.assertIn(text,msg)
   self.assertTrue(V.radar_eligible(r,d,self.now))
  def test_early_rapid_sequence_does_not_require_ten_minute_window(self):
   self.r['minute']=7;self.prepare();d=self.reading('cards')

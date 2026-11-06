@@ -30,5 +30,8 @@ foreach (['export_review'=>'stratedge.audit.v4','export_learning'=>'stratedge.le
     $learning=$action==='export_learning'?$payload:($payload['learning']??[]);
     $coverage=$learning['coverage']??[];
     if(($coverage['complete']??false)!==true || count($learning['reviews']??[])!==($coverage['total_reviews']??-1))throw new RuntimeException('LIVE90_EXPORT_INCOMPLETE: '.$action);
-    echo 'LIVE90_EXPORT_OK '.json_encode(['action'=>$action,'schema'=>$schema,'bytes'=>strlen($body),'seconds'=>round(microtime(true)-$start,3),'reviews'=>$coverage['total_reviews'],'complete'=>true],JSON_UNESCAPED_SLASHES).PHP_EOL;
+    $proofs=$learning['decision_proofs']??[];
+    if(($proofs['schema']??'')!=='stratedge.decision-proofs.v1' || !is_array($proofs['samples']??null) || !is_array($proofs['unavailable_sample_ids']??null))throw new RuntimeException('LIVE90_DECISION_PROOFS_INVALID: '.$action);
+    echo 'LIVE90_EXPORT_OK '.json_encode(['action'=>$action,'schema'=>$schema,'bytes'=>strlen($body),'seconds'=>round(microtime(true)-$start,3),'reviews'=>$coverage['total_reviews'],'complete'=>true,'decision_proof_samples'=>count($proofs['samples']),'unavailable_sample_ids'=>count($proofs['unavailable_sample_ids'])],JSON_UNESCAPED_SLASHES).PHP_EOL;
 }
+

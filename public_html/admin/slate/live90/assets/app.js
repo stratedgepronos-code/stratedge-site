@@ -361,7 +361,9 @@ function attentionItems(matches){
    let headline='',detail='',reserve='',notable=false;
    if(d.market==='cards'&&attentionNumber(m.fouls)&&m.fouls>=8&&observed===0){
     headline=`${fmt(m.fouls)} fautes, aucun jaune`;
-    detail=attentionNumber(m.fouls10)?`${fmt(m.fouls10)} fautes sur les 10 dernières minutes`:'Rythme des fautes sur 10 minutes encore indisponible';
+    const elapsed=d.window_quality?.fouls10?.timing?.elapsed_seconds;
+    const duration=attentionNumber(elapsed)&&elapsed>=0?`${Math.floor(Math.round(elapsed)/60)} min ${Math.round(elapsed)%60} s entre captures`:'10 min nominales (durée réelle inconnue)';
+    detail=attentionNumber(m.fouls10)?`${fmt(m.fouls10)} fautes sur ${duration}`:'Rythme des fautes sur 10 minutes encore indisponible';
     const ref=r.analyst?.usable?r.analyst?.referee:null,rs=ref?.stats;
     if(attentionNumber(rs?.yellow_per_match))detail+=` · ${ref.name} : ${fmt(rs.yellow_per_match)} jaunes / match, deux équipes réunies`;
     reserve='La gravité des fautes compte ; aucun carton n’est automatique.';notable=true;
@@ -549,11 +551,11 @@ $('#export-windows').onclick=async()=>{
   do{
    const page=await request({action:'export_window_audit',day,cursor,page_size:100,...(ceiling===null?{}:{ceiling})},{timeoutMs:45000});
    if(page.schema!=='stratedge.windows.v1'||!Array.isArray(page.readings))throw Error('Réponse de fenêtres invalide.');
-   if(!bundle){ceiling=page.ceiling;bundle={...page,readings:[],samples:{},inputs:{}}}
+   if(!bundle){ceiling=page.ceiling;bundle={...page,readings:[],samples:{},raw_samples:{},unavailable_sample_ids:[],inputs:{}}}
    if(page.ceiling!==ceiling||page.total!==bundle.total)throw Error('Export modifié pendant la lecture : réessaie.');
    pages.push(page);
    for(const row of page.readings){if(ids.has(row.id))throw Error('Doublon dans les fenêtres.');ids.add(row.id);if(bundle.total<=500)bundle.readings.push(row)}
-   if(bundle.total<=500){Object.assign(bundle.samples,page.samples);Object.assign(bundle.inputs,page.inputs)}
+   if(bundle.total<=500){Object.assign(bundle.samples,page.samples);Object.assign(bundle.raw_samples,page.raw_samples||{});Object.assign(bundle.inputs,page.inputs);bundle.unavailable_sample_ids=[...new Set([...bundle.unavailable_sample_ids,...(page.unavailable_sample_ids||[])])]}
    result.textContent=ids.size+' / '+bundle.total+' lectures récupérées…';
    if(page.next_cursor!==null&&(!Number.isInteger(page.next_cursor)||page.next_cursor<=cursor))throw Error('Pagination de fenêtres invalide.');
    cursor=page.next_cursor;
