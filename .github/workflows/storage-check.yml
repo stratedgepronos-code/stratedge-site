@@ -1,0 +1,35 @@
+name: Storage inventory (read only)
+on:
+  push:
+    branches: [master]
+    paths: ['.github/workflows/storage-check.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - run: sudo apt-get update -q && sudo apt-get install -y -q sshpass
+      - name: Read storage and active service
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          if [ -n "$VPS_SSH_KEY" ]; then
+            mkdir -p ~/.ssh
+            printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+            chmod 600 ~/.ssh/deploy_key
+            SSH_CMD="ssh -i $HOME/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o IdentitiesOnly=yes"
+          else
+            SSH_CMD="sshpass -e ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o PreferredAuthentications=password -o PubkeyAuthentication=no"
+            export SSHPASS="$VPS_PASSWORD"
+          fi
+          $SSH_CMD alex@31.97.196.145 bash -s <<'REMOTE'
+          set -e
+          sudo -n python3 /var/www/stratedgepronos.fr/ops/storage-audit.py /var/www/stratedgepronos.fr
+          sudo -n find /var/backups -maxdepth 2 -type f -name '*.recompression.json' -exec cat {} \;
+          sudo -n find /var/backups -maxdepth 2 -type f -name '*.recompress.partial' -printf '\nSTORAGE_COMPRESSION_RUNNING %s %p\n'
+          systemctl is-active seuil90-live.service
+          REMOTE
