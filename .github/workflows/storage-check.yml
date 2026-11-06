@@ -37,4 +37,6 @@ jobs:
           sudo -n find /var/backups -maxdepth 2 -type f -name '*.recompression.json' -exec cat {} \;
           sudo -n find /var/backups -maxdepth 2 -type f -name '*.recompress.partial' -printf '\nSTORAGE_COMPRESSION_RUNNING %s %p\n'
           systemctl is-active seuil90-live.service
+          sudo -n du -x -B1 --max-depth=2 /home/alex/_archive_20260830 /home/alex/.cache
+          sudo -n find /home/alex/_archive_20260830 -maxdepth 3 -type f -size +50M -printf 'STORAGE_OLD_ARCHIVE_FILE %s %p\n'
           REMOTE
