@@ -1,8 +1,5 @@
-name: Storage maintenance final
+name: Storage verification
 on:
-  push:
-    branches: [master]
-    paths: ['.github/workflows/storage-check.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -28,15 +25,10 @@ jobs:
           fi
           $SSH_CMD alex@31.97.196.145 bash -s <<'REMOTE'
           set -e
-          # Finish the explicitly approved obsolete Edge Finder cleanup; shell history is not a dependency.
-          ARCHIVE_CLEANUP=$(mktemp /tmp/stratedge-archives-cleanup.XXXXXX.py)
-          curl -fsSL "https://raw.githubusercontent.com/stratedgepronos-code/stratedge-site/${{ github.sha }}/ops/storage-cleanup-archives-20261107.py" -o "$ARCHIVE_CLEANUP"
-          sudo -n python3 "$ARCHIVE_CLEANUP" --finish-approved
-          rm -f "$ARCHIVE_CLEANUP"
-          sudo -n cat /var/backups/stratedge-storage-archives-20261107.json
+          # Read-only, manual verification; the dated cleanup is complete.
+          sudo -n cat /var/backups/stratedge-storage-archives-20261107.json /var/backups/stratedge-storage-edge-final-20261107.json
           sudo -n python3 /var/www/stratedgepronos.fr/ops/storage-audit.py /var/www/stratedgepronos.fr
           sudo -n find /var/backups -maxdepth 2 -type f -name '*.recompression.json' -exec cat {} \;
           sudo -n find /var/backups -maxdepth 2 -type f -name '*.recompress.partial' -printf '\nSTORAGE_COMPRESSION_RUNNING %s %p\n'
           systemctl is-active seuil90-live.service
-          sudo -n du -x -B1 --max-depth=2 /home/alex/_archive_20260830 /home/alex/.cache
           REMOTE

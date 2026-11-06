@@ -189,6 +189,8 @@ jobs:
           sudo -n bash "$REPO_ROOT/ops/deploy-live90-v4.sh" "$REPO_ROOT"
           sudo -n -u www-data php "$REPO_ROOT/ops/check-live90-v4.php" "$REPO_ROOT"
           sudo -n -u www-data php "$REPO_ROOT/ops/check-live90-exports.php" "$REPO_ROOT"
+          python3 -c 'import json,shutil; print("STORAGE_FINAL "+json.dumps(shutil.disk_usage("/var/backups")._asdict()))'
+          systemctl is-active seuil90-live.service
           REMOTE
 
       - name: Vérification code_version en prod
