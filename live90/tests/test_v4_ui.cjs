@@ -188,9 +188,13 @@ const server=http.createServer((r,res)=>{if(r.url==='/download.php?file=collecto
  await page.locator('#scenario-file').setInputFiles({name:'analyste-grand.json',mimeType:'application/json',buffer:padded});
  await page.locator('#analyst-save').click();await page.waitForFunction(()=>document.querySelector('#analyst-preview').textContent.includes('analyste-grand.json : 1 contextes'));
  assert.deepEqual(posted.filter(x=>x.action==='analyst').at(-1).bundle,context);
- // UTF-8 bytes, not JavaScript character count, enforce the unchanged wire bound.
+ // Regression: a real 1,940,575-byte request passes intact; UTF-8 above 2 MiB fails.
+ const sizeable={...context,extra:''};sizeable.extra='x'.repeat(1940575-Buffer.byteLength(JSON.stringify({action:'analyst',bundle:sizeable})));
+ await page.locator('#scenario-file').setInputFiles({name:'StratEdge_analyste_2026-11-07.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(sizeable))});
+ await page.locator('#analyst-save').click();await page.waitForFunction(()=>document.querySelector('#analyst-preview').textContent.includes('1940575 octets envoyés'));
+ assert.deepEqual(posted.filter(x=>x.action==='analyst').at(-1).bundle,sizeable);
  const beforeRejected=posted.filter(x=>x.action==='analyst').length;
- await page.locator('#scenario-file').setInputFiles({name:'analyste-trop-grand.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({...context,extra:'é'.repeat(1000000)}))});
+ await page.locator('#scenario-file').setInputFiles({name:'analyste-trop-grand.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({...context,extra:'é'.repeat(1100000)}))});
  await page.locator('#analyst-save').click();await page.waitForFunction(()=>document.querySelector('#analyst-preview').textContent.includes('Dossier trop volumineux après préparation'));
  assert.equal(posted.filter(x=>x.action==='analyst').length,beforeRejected);assert.equal(await page.locator('#analyst-save').isEnabled(),true);
  await page.locator('[data-close="analyst-modal"]').click();

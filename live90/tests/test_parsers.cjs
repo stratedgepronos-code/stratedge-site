@@ -46,10 +46,13 @@ console.log('7 assertions V4 : cartons par équipe, fautes et refus des marchés
  const scope={TextEncoder};require('node:vm').createContext(scope);require('node:vm').runInContext(code,scope);
  const bundle={schema:'stratedge.context.v4',matches:[{note:'é🟢',value:null,watch:true}],padding:''};
  const prepared=scope.analystImportPayload(bundle,'test.json');assert.equal(prepared.bundle,bundle);
- const overhead=Buffer.byteLength(JSON.stringify(prepared));bundle.padding='x'.repeat(1900000-overhead);
- assert.equal(Buffer.byteLength(JSON.stringify(scope.analystImportPayload(bundle,'boundary.json'))),1900000);
+ const overhead=Buffer.byteLength(JSON.stringify(prepared));bundle.padding='x'.repeat(2097152-overhead);
+ assert.equal(Buffer.byteLength(JSON.stringify(scope.analystImportPayload(bundle,'boundary.json'))),2097152);
  bundle.padding+='x';assert.throws(()=>scope.analystImportPayload(bundle,'oversize.json'),/trop volumineux/);
- bundle.padding='é'.repeat(1000000);assert(JSON.stringify(bundle).length<1900000);assert.throws(()=>scope.analystImportPayload(bundle,'unicode.json'),/trop volumineux/);
+ bundle.padding='é'.repeat(1100000);assert(JSON.stringify(bundle).length<2097152);assert.throws(()=>scope.analystImportPayload(bundle,'unicode.json'),/trop volumineux/);
+ bundle.padding='x'.repeat(1940575-overhead);assert.equal(Buffer.byteLength(JSON.stringify(scope.analystImportPayload(bundle,'StratEdge_analyste_2026-11-07.json'))),1940575);assert.equal(scope.analystImportPayload(bundle,'lossless.json').bundle,bundle);
+ const php=require('node:fs').readFileSync(require('node:path').join(__dirname,'../public/api/live90/core.php'),'utf8');assert(php.includes('strlen($raw)>2097152'));
  assert.throws(()=>scope.analystImportPayload(null,'null.json'),/ancien format/);
  console.log('Analyst import: exact byte boundary, UTF-8, envelope, null and lossless payload OK.');
 }
+

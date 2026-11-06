@@ -189,7 +189,7 @@ function analystImportPayload(bundle,name){
  if(bundle?.schema!=='stratedge.context.v4')throw Error('Ce dossier utilise un ancien format. Télécharge le nouveau prompt V4 et demande un fichier stratedge.context.v4.');
  const payload={action:'analyst',bundle};
  const bytes=new TextEncoder().encode(JSON.stringify(payload)).byteLength;
- if(bytes>1900000)throw Error('Dossier trop volumineux après préparation : '+name+' — '+bytes+' octets envoyés, limite 1900000 octets. Aucune donnée importée pour ce fichier.');
+ if(bytes>2097152)throw Error('Dossier trop volumineux après préparation : '+name+' — '+bytes+' octets envoyés, limite 2097152 octets. Aucune donnée importée pour ce fichier.');
  return payload;
 }
 $('#analyst-save').onclick=async()=>{
