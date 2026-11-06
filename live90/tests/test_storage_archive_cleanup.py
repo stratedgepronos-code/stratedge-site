@@ -7,6 +7,7 @@ class ArchiveCleanup(unittest.TestCase):
  def test_external_dependencies_and_open_files_block_archive_removal(self):
   with tempfile.TemporaryDirectory() as tmp:
    root=pathlib.Path(tmp);archive=root/'archive';archive.mkdir();outside=root/'outside';outside.mkdir();proc=root/'proc';proc.mkdir()
+   (outside/'.bash_history').write_text('ls '+str(archive))
    self.assertIsNone(M.in_use(archive,[outside],proc))
    ref=outside/'service';ref.write_text('WorkingDirectory='+str(archive))
    self.assertEqual(M.in_use(archive,[outside],proc),'external_reference');ref.unlink()

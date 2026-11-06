@@ -1,4 +1,4 @@
-name: Storage verification
+name: Storage maintenance final
 on:
   push:
     branches: [master]
@@ -28,10 +28,10 @@ jobs:
           fi
           $SSH_CMD alex@31.97.196.145 bash -s <<'REMOTE'
           set -e
-          # Read-only verification of the completed, owner-approved cleanup.
+          # Finish the explicitly approved obsolete Edge Finder cleanup; shell history is not a dependency.
           ARCHIVE_CLEANUP=$(mktemp /tmp/stratedge-archives-cleanup.XXXXXX.py)
           curl -fsSL "https://raw.githubusercontent.com/stratedgepronos-code/stratedge-site/${{ github.sha }}/ops/storage-cleanup-archives-20261107.py" -o "$ARCHIVE_CLEANUP"
-          sudo -n python3 "$ARCHIVE_CLEANUP" --audit
+          sudo -n python3 "$ARCHIVE_CLEANUP" --finish-approved
           rm -f "$ARCHIVE_CLEANUP"
           sudo -n cat /var/backups/stratedge-storage-archives-20261107.json
           sudo -n python3 /var/www/stratedgepronos.fr/ops/storage-audit.py /var/www/stratedgepronos.fr

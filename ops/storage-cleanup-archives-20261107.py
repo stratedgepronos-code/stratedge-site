@@ -30,6 +30,8 @@ def in_use(target, bases=None, proc_root=pathlib.Path("/proc")):
                     except (OSError,RuntimeError):pass
             dirs[:]=[x for x in dirs if not x.startswith('.') and x not in ('venv','node_modules','data','uploads','logs','backups','assets')]
             for name in files:
+                # Shell history records past commands; it does not execute an archive.
+                if name in ('.bash_history','.zsh_history','.python_history'):continue
                 p=pathlib.Path(directory)/name
                 try:
                     if not p.is_symlink() and p.stat().st_size<=2_000_000 and needle in p.read_bytes():
@@ -73,7 +75,11 @@ def main():
     os.chmod(MARKER,0o600);print('STORAGE_ARCHIVES_CLEANUP_OK '+json.dumps(report),flush=True)
 
 if __name__=='__main__':
-    if '--audit' in sys.argv:
+    if '--finish-approved' in sys.argv:
+        TARGETS=[ROOT/'stratedge-edge-finder']
+        MARKER=pathlib.Path('/var/backups/stratedge-storage-edge-final-20261107.json')
+        main()
+    elif '--audit' in sys.argv:
         for target in TARGETS:
             if target.exists():print('STORAGE_ARCHIVE_USAGE '+json.dumps({'path':str(target),'reason':in_use(target)}),flush=True)
     else:main()
