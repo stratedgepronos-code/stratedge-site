@@ -1,6 +1,11 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
 requireAdmin();
+// Owner's daily workspace; retain an explicit route to the site's overview.
+if (isSuperAdmin() && ($_GET['vue'] ?? '') !== 'overview') {
+    header('Location: /panel-x9k3m/slate/live90/');
+    exit;
+}
 $pageActive = 'index';
 $db = getDB();
 
@@ -66,3 +71,4 @@ $derniersTickets = $db->query("SELECT t.*, m.nom FROM tickets t JOIN membres m O
 <?php require_once __DIR__.'/sidebar.php'; ?>
 <main class="main" id="se-main-content" tabindex="-1"><?php require __DIR__.'/design/dashboard.php'; ?></main>
 </body></html>
+

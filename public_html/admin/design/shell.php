@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__.'/icons.php';
 $sePageNames = ['journal'=>'Journal public','index'=>'Vue d’ensemble','membres'=>'Membres','admins'=>'Équipe admin','tickets'=>'Tickets SAV','messages'=>'Messages','messagerie-interne'=>'Messagerie interne','creer-card'=>'Studio de création','valider-bets'=>'Validation des bets','poster-bet'=>'Publier un bet','historique'=>'Historique','idees'=>'Idées & bugs','code-promo'=>'Codes promo','giveaway'=>'GiveAway','broadcast'=>'Broadcast','twitter-post'=>'Publication sur X','live90'=>'Live Intelligence','slate'=>'Edge Finder','prono-commu-admin'=>'Prono de la communauté','montante-tennis'=>'Montante Tennis','montante-foot'=>'Montante Foot','ht-tracker'=>'Bet Mi-Temps','edit-bet-image'=>'Modifier une image','football-lab-import'=>'Importer PackBall','football-lab-analyses'=>'Analyses football','football-lab-history'=>'Suivi des résultats'];
-$sePageTitle = $sePageNames[$pageActive ?? ''] ?? 'Espace de travail';
+$sePageTitle = !empty($seLiveHistory) ? 'Historique du live' : ($sePageNames[$pageActive ?? ''] ?? 'Espace de travail');
 $seRole = function_exists('isSuperAdmin') && isSuperAdmin() ? 'Super admin' : 'Administrateur';
 ?>
 <style data-se-design="2026-10"><?php readfile(__DIR__.'/system.css'); ?></style>
@@ -16,3 +16,4 @@ $seRole = function_exists('isSuperAdmin') && isSuperAdmin() ? 'Super admin' : 'A
   <p class="se-command-hint">NAVIGATION RAPIDE</p><div id="se-command-results" class="se-command-results"></div><p class="se-command-empty" hidden>Aucune page ne correspond à cette recherche.</p><footer>↑ ↓ pour parcourir <span>Entrée pour ouvrir · Échap pour fermer</span></footer>
 </dialog>
 <script><?php readfile(__DIR__.'/interactions.js'); ?></script>
+

@@ -35,6 +35,8 @@ jobs:
       - name: Tests moteur, imports et parseurs
         run: |
           php -l public_html/admin/slate/live90/historique.php
+          for file in public_html/admin/sidebar.php public_html/admin/index.php public_html/admin/design/shell.php public_html/login.php; do php -l "$file"; done
+          python3 tests/admin-navigation/test_navigation.py
           python3 -m unittest discover -s live90/tests -p 'test_*.py'
           node live90/tests/test_parsers.cjs
           node live90/tests/test_collector.cjs
@@ -137,6 +139,10 @@ jobs:
           curl -fsSL "https://raw.githubusercontent.com/stratedgepronos-code/stratedge-site/master/ops/patch-tennis-ui-vps.sh?ts=$(date +%s)" -o /tmp/patch-tennis-ui-vps.sh
           chmod +x /tmp/patch-tennis-ui-vps.sh
           /tmp/patch-tennis-ui-vps.sh
+          # Exercise actual deployed routing/templates with synthetic local sessions.
+          for page in "$LIVE90_ROOT/public_html/admin/sidebar.php" "$LIVE90_ROOT/public_html/admin/index.php" "$LIVE90_ROOT/public_html/admin/design/shell.php" "$LIVE90_ROOT/public_html/login.php"; do php -l "$page"; done
+          python3 "$LIVE90_ROOT/tests/admin-navigation/test_navigation.py"
+          echo "ADMIN_NAVIGATION_OK live_landing=true retired_tracker_links=false"
           # Check the actual public assets, including bytes: a login page with HTTP 200 is not CSS.
           LAB_CHECK_DIR=$(mktemp -d /tmp/lab-assets.XXXXXX)
           for asset in lab.css lab.js; do
@@ -197,4 +203,5 @@ jobs:
         run: |
           sleep 2
           curl -s -o /dev/null -w "HTTP %{http_code}\n" https://stratedgepronos.fr/ || true
+
 

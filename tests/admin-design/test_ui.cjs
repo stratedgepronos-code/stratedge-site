@@ -51,8 +51,8 @@ const server=http.createServer((req,res)=>{
  assert.equal(await page.locator('#sidebar a.active').getAttribute('aria-current'),'page');
  await page.screenshot({path:path.join(output,'desktop.png'),fullPage:true});
  await page.keyboard.press('Control+k');assert.equal(await page.locator('#se-command').evaluate(e=>e.open),true);
- await page.locator('#se-command-input').fill('live');assert.equal(await page.locator('#se-command-results a').count(),1);
- assert.equal(await page.locator('#se-command-results a').getAttribute('href'),'/panel-x9k3m/slate/live90/');
+ await page.locator('#se-command-input').fill('live');assert.equal(await page.locator('#se-command-results a').count(),2);
+ assert.deepEqual(await page.locator('#se-command-results a').evaluateAll(links=>links.map(a=>a.getAttribute('href'))),['/panel-x9k3m/slate/live90/','/panel-x9k3m/slate/live90/historique.php']);
  await page.keyboard.press('Escape');assert.equal(await page.locator('#se-command').evaluate(e=>e.open),false);
  await page.locator('[data-group="betting"]>button').click();assert.equal(await page.locator('[data-group="betting"]>button').getAttribute('aria-expanded'),'true');
  await page.locator('.se-repartition summary').click();assert.equal(await page.locator('.se-split').isVisible(),true);
@@ -90,3 +90,4 @@ const server=http.createServer((req,res)=>{
  if(process.env.ADMIN_CAPTURE_LOG==='1')for(const name of ['desktop.png','mobile.png','membres-desktop.png','creer-card-desktop.png','live90-desktop.png'])console.log('ADMIN_CAPTURE '+name+' '+fs.readFileSync(path.join(output,name)).toString('base64'));
  }finally{await browser.close();server.close();}
 })().catch(e=>{console.error(e);server.close();process.exitCode=1});
+

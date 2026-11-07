@@ -10,12 +10,15 @@ try { $nbMsgNonLus      = (int)$db->query("SELECT COUNT(*) FROM messages WHERE e
 try { $nbBetsHistorique = (int)$db->query("SELECT COUNT(*) FROM bets WHERE resultat IS NOT NULL AND resultat NOT IN ('en_cours','pending')")->fetchColumn(); } catch(Exception $e) {}
 try { $nbChatNonLus     = (int)$db->query("SELECT COUNT(*) FROM chat_messages WHERE expediteur='membre' AND lu=0")->fetchColumn(); } catch(Exception $e) {}
 try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (int)$db->query("SELECT COUNT(*) FROM admin_inbox WHERE lu=0")->fetchColumn(); } catch(Exception $e) {}
+$seLiveAccess = function_exists('isSuperAdmin') && isSuperAdmin();
+$seAdminHome = $seLiveAccess ? '/panel-x9k3m/slate/live90/' : '/panel-x9k3m/index.php';
+$seLiveHistory = ($pageActive ?? '') === 'live90' && basename(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '') === 'historique.php';
 ?>
 <?php require __DIR__ . '/design/shell.php'; ?>
 
 <!-- TOPBAR MOBILE -->
 <div class="mobile-topbar">
-  <a href="/panel-x9k3m/index.php" class="mob-logo">StratEdge <small>ADMIN</small></a>
+  <a href="<?= $seAdminHome ?>" class="mob-logo">StratEdge <small>ADMIN</small></a>
   <div class="se-mobile-tools"><button class="se-search-trigger" type="button" data-se-search aria-label="Rechercher une page"><?= se_admin_icon('search',18) ?></button><button type="button" class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="Ouvrir le menu" aria-controls="sidebar" aria-expanded="false"><span></span><span></span><span></span></button></div>
 </div>
 
@@ -24,16 +27,35 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 
 <!-- SIDEBAR -->
 <div class="sidebar" id="sidebar" aria-label="Menu administrateur">
-  <div class="sidebar-logo"><a class="se-brand" href="/panel-x9k3m/index.php" aria-label="StratEdge — tableau de bord"><span class="se-brand-symbol" aria-hidden="true">S</span><span class="se-brand-word">StratEdge<small>Administration</small></span></a></div>
+  <div class="sidebar-logo"><a class="se-brand" href="<?= $seAdminHome ?>" aria-label="StratEdge — accueil admin"><span class="se-brand-symbol" aria-hidden="true">S</span><span class="se-brand-word">StratEdge<small>Administration</small></span></a></div>
 
   <div class="sidebar-label">Espace de travail</div>
   <nav aria-label="Navigation principale">
-    <a href="/panel-x9k3m/index.php" <?= ($pageActive==='index') ?'class="active"':'' ?>>
+    <?php if ($seLiveAccess): ?>
+    <a href="/panel-x9k3m/slate/live90/" class="nav-item <?= ($pageActive==='live90' && !$seLiveHistory) ? 'active' : '' ?>">
+      <?= se_admin_icon('live') ?> Live
+    </a>
+    <a href="/panel-x9k3m/slate/live90/historique.php" class="nav-item <?= $seLiveHistory ? 'active' : '' ?>">
+      <?= se_admin_icon('history') ?> Historique du live
+    </a>
+    <div class="nav-group <?= strpos((string)$pageActive, 'football-lab-') === 0 ? 'open' : '' ?>" data-group="football-lab">
+      <button type="button" class="nav-group-toggle" onclick="toggleNavGroup(this)" style="color:#00d4ff;">
+        <?= se_admin_icon('lab') ?> StratEdge Lab
+        <span class="chevron">›</span>
+      </button>
+      <div class="nav-group-inner">
+        <a href="/panel-x9k3m/football-lab/import.php" <?= ($pageActive==='football-lab-import') ? 'class="active"' : '' ?>>Importer PackBall</a>
+        <a href="/panel-x9k3m/football-lab/index.php" <?= ($pageActive==='football-lab-analyses') ? 'class="active"' : '' ?>>Analyses football</a>
+        <a href="/panel-x9k3m/football-lab/history.php" <?= ($pageActive==='football-lab-history') ? 'class="active"' : '' ?>>Suivi des résultats</a>
+      </div>
+    </div>
+    <?php endif; ?>
+    <a href="/panel-x9k3m/index.php?vue=overview" <?= ($pageActive==='index') ?'class="active"':'' ?>>
       <?= se_admin_icon('grid') ?> Vue d’ensemble
     </a>
 
     <?php
-    $bettingOpenPages = ['valider-bets','creer-card','edit-bet-image','prono-commu-admin','montante-tennis','montante-foot','ht-tracker','engine'];
+    $bettingOpenPages = ['valider-bets','creer-card','edit-bet-image','prono-commu-admin'];
     if (function_exists('isSuperAdmin') && isSuperAdmin()) {
         $bettingOpenPages[] = 'historique';
     }
@@ -48,14 +70,7 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
         <a href="/panel-x9k3m/valider-bets.php" <?= ($pageActive==='valider-bets') ?'class="active"':'' ?>><?= se_admin_icon('check') ?> Valider les bets</a>
         <a href="/panel-x9k3m/creer-card.php" <?= ($pageActive==='creer-card') ?'class="active"':'' ?>><?= se_admin_icon('image') ?> Créer une Card</a>
         <a href="/panel-x9k3m/prono-commu-admin.php" <?= ($pageActive==='prono-commu-admin') ?'class="active"':'' ?>><?= se_admin_icon('target') ?> Prono de la commu</a>
-        <?php if (isSuperAdmin() || getAdminRole() === 'admin_tennis'): ?>
-        <a href="/panel-x9k3m/montante-tennis.php" <?= ($pageActive==='montante-tennis') ?'class="active"':'' ?>><?= se_admin_icon('target') ?> Montante Tennis</a>
-        <?php endif; ?>
-        <?php if (isSuperAdmin() || getAdminRole() === 'admin_foot'): ?>
-        <a href="/panel-x9k3m/montante-foot.php" <?= ($pageActive==='montante-foot') ?'class="active"':'' ?>><?= se_admin_icon('target') ?> Montante Foot</a>
-        <?php endif; ?>
         <a href="/panel-x9k3m/edit-bet-image.php" <?= ($pageActive==='edit-bet-image') ?'class="active"':'' ?>><?= se_admin_icon('image') ?> Modifier image bet</a>
-        <a href="/panel-x9k3m/ht-tracker.php" <?= ($pageActive==='ht-tracker') ?'class="active"':'' ?> style="<?= ($pageActive==='ht-tracker') ? '' : 'color:rgba(0,212,255,0.85);' ?>"><?= se_admin_icon('target') ?> Bet Mi-Temps</a>
         <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
         <a href="/panel-x9k3m/historique.php" <?= ($pageActive==='historique') ?'class="active"':'' ?>>
           <?= se_admin_icon('history') ?> Historique
@@ -132,26 +147,6 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
     <a href="/panel-x9k3m/journal.php" <?= ($pageActive==='journal') ?'class="active"':'' ?>><?= se_admin_icon('image') ?> Journal public</a>
     <?php endif; ?>
 
-    <!-- Edge Finder (super admin uniquement) -->
-    <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
-    <div class="nav-group <?= strpos((string)$pageActive, 'football-lab-') === 0 ? 'open' : '' ?>" data-group="football-lab">
-      <button type="button" class="nav-group-toggle" onclick="toggleNavGroup(this)" style="color:#00d4ff;">
-        <?= se_admin_icon('lab') ?> StratEdge Lab
-        <span class="chevron">›</span>
-      </button>
-      <div class="nav-group-inner">
-        <a href="/panel-x9k3m/football-lab/import.php" <?= ($pageActive==='football-lab-import') ? 'class="active"' : '' ?>>Importer PackBall</a>
-        <a href="/panel-x9k3m/football-lab/index.php" <?= ($pageActive==='football-lab-analyses') ? 'class="active"' : '' ?>>Analyses football</a>
-        <a href="/panel-x9k3m/football-lab/history.php" <?= ($pageActive==='football-lab-history') ? 'class="active"' : '' ?>>Suivi des résultats</a>
-      </div>
-    </div>
-    <a href="/panel-x9k3m/slate/" class="nav-item <?= ($pageActive==='slate') ?'active':'' ?>" style="color:#ff2d78;">
-      <?= se_admin_icon('target') ?> Edge Finder
-    </a>
-    <a href="/panel-x9k3m/slate/live90/" class="nav-item <?= ($pageActive==='live90') ?'active':'' ?>" style="<?= ($pageActive==='live90') ? '' : 'color:#00d4ff;' ?>">
-      <?= se_admin_icon('live') ?> Live
-    </a>
-    <?php endif; ?>
   </nav>
 
   <div class="sidebar-footer">
@@ -164,7 +159,11 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
   </div>
 </div>
 <nav class="admin-mob-tabs" aria-label="Navigation mobile">
-  <a href="/panel-x9k3m/index.php" class="<?= ($pageActive==='index') ? 'active' : '' ?>"><span class="ico"><?= se_admin_icon('grid') ?></span><span>Dashboard</span></a>
+  <?php if ($seLiveAccess): ?>
+  <a href="/panel-x9k3m/slate/live90/" class="<?= ($pageActive==='live90') ? 'active' : '' ?>"><span class="ico"><?= se_admin_icon('live') ?></span><span>Live</span></a>
+  <?php else: ?>
+  <a href="/panel-x9k3m/index.php" class="<?= ($pageActive==='index') ? 'active' : '' ?>"><span class="ico"><?= se_admin_icon('grid') ?></span><span>Accueil</span></a>
+  <?php endif; ?>
   <a href="/panel-x9k3m/valider-bets.php" class="<?= ($pageActive==='valider-bets') ? 'active' : '' ?>"><span class="ico"><?= se_admin_icon('check') ?></span><span>Valider</span></a>
   <a href="/panel-x9k3m/creer-card.php" class="<?= ($pageActive==='creer-card') ? 'active' : '' ?>"><span class="ico"><?= se_admin_icon('image') ?></span><span>Créer</span></a>
   <a href="/panel-x9k3m/messages.php" class="<?= ($pageActive==='messages') ? 'active' : '' ?>"><span class="ico"><?= se_admin_icon('message') ?></span><span>Messages</span></a>
@@ -178,3 +177,4 @@ try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (i
 <script defer src="/panel-x9k3m/assets/tennis-ui-bootstrap.js?v=20260725-2"></script>
 <?php endif; ?>
 <!-- STRATEDGE_TENNIS_UI_BOOTSTRAP_END -->
+

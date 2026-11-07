@@ -4,7 +4,7 @@ require_once __DIR__ . '/includes/packs-config.php';
 require_once __DIR__ . '/includes/public-site/Offers.php';
 
 if (isLoggedIn()) {
-    header('Location: dashboard.php');
+    header('Location: ' . (isAdmin() ? (isSuperAdmin() ? '/panel-x9k3m/slate/live90/' : '/panel-x9k3m/') : '/dashboard.php'));
     exit;
 }
 
@@ -26,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($result['success']) {
                 // Si admin, rediriger vers le panel
                 if (isAdmin()) {
-                    header('Location: /panel-x9k3m/');
+                    header('Location: ' . (isSuperAdmin() ? '/panel-x9k3m/slate/live90/' : '/panel-x9k3m/'));
                     exit;
                 }
                 unset($_SESSION['public_offer'], $_SESSION['public_offer_at'], $_SESSION['public_source']);
@@ -151,3 +151,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <?php require_once __DIR__ . '/includes/footer-main.php'; ?>
 </body>
 </html>
+
