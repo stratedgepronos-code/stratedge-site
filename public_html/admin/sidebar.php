@@ -10,7 +10,7 @@ try { $nbMsgNonLus      = (int)$db->query("SELECT COUNT(*) FROM messages WHERE e
 try { $nbBetsHistorique = (int)$db->query("SELECT COUNT(*) FROM bets WHERE resultat IS NOT NULL AND resultat NOT IN ('en_cours','pending')")->fetchColumn(); } catch(Exception $e) {}
 try { $nbChatNonLus     = (int)$db->query("SELECT COUNT(*) FROM chat_messages WHERE expediteur='membre' AND lu=0")->fetchColumn(); } catch(Exception $e) {}
 try { if (function_exists('isSuperAdmin') && isSuperAdmin()) $nbInboxNonLus = (int)$db->query("SELECT COUNT(*) FROM admin_inbox WHERE lu=0")->fetchColumn(); } catch(Exception $e) {}
-$seLiveAccess = function_exists('isSuperAdmin') && isSuperAdmin();
+$seLiveAccess = function_exists('isAdmin') && isAdmin();
 $seAdminHome = $seLiveAccess ? '/panel-x9k3m/slate/live90/' : '/panel-x9k3m/index.php';
 $seLiveHistory = ($pageActive ?? '') === 'live90' && basename(parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '') === 'historique.php';
 ?>
@@ -38,6 +38,8 @@ $seLiveHistory = ($pageActive ?? '') === 'live90' && basename(parse_url($_SERVER
     <a href="/panel-x9k3m/slate/live90/historique.php" class="nav-item <?= $seLiveHistory ? 'active' : '' ?>">
       <?= se_admin_icon('history') ?> Historique du live
     </a>
+    <?php endif; ?>
+    <?php if (function_exists('isSuperAdmin') && isSuperAdmin()): ?>
     <div class="nav-group <?= strpos((string)$pageActive, 'football-lab-') === 0 ? 'open' : '' ?>" data-group="football-lab">
       <button type="button" class="nav-group-toggle" onclick="toggleNavGroup(this)" style="color:#00d4ff;">
         <?= se_admin_icon('lab') ?> StratEdge Lab
@@ -177,4 +179,5 @@ $seLiveHistory = ($pageActive ?? '') === 'live90' && basename(parse_url($_SERVER
 <script defer src="/panel-x9k3m/assets/tennis-ui-bootstrap.js?v=20260725-2"></script>
 <?php endif; ?>
 <!-- STRATEDGE_TENNIS_UI_BOOTSTRAP_END -->
+
 

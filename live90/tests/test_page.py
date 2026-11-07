@@ -18,7 +18,7 @@ class PageTests(unittest.TestCase):
             self.assertIn(f"'{name}'",page,f'{name} n’est pas intégré à sa page')
     def test_daily_history_has_auth_csrf_and_inline_assets(self):
         src=(PAGE.parent/'historique.php').read_text()
-        for text in ('requireSuperAdmin();', 'live90_csrf', 'no-store', "'history.js'", "'history.css'", "'</style'", "'</script'"):
+        for text in ('requireAdmin();', 'live90_csrf', 'no-store', "'history.js'", "'history.css'", "'</style'", "'</script'"):
             self.assertIn(text,src)
         self.assertIsNone(re.search(r'(?:href|src)\s*=\s*["\']?assets/',src))
         self.assertIn('historique.php',(ASSETS/'shell.html').read_text())
@@ -41,4 +41,5 @@ class PageTests(unittest.TestCase):
         self.assertIn('[...(e.target.files||[])]',ctx)
         self.assertNotIn("e.target.files[0]",ctx)
 if __name__=='__main__':unittest.main()
+
 

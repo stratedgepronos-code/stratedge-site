@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once dirname(__DIR__,3).'/includes/auth.php';
-requireSuperAdmin();
+requireAdmin();
 require_once dirname(__DIR__,3).'/api/live90/core.php';
 if(session_status()!==PHP_SESSION_ACTIVE)session_start();
 try {
@@ -28,5 +28,6 @@ try {
  if(!is_array($result))reply90(['error'=>'Réponse du moteur indisponible'],503);
  reply90($result,$code===0?200:($code===2?422:503));
 }catch(Throwable $e){error_log('Live90 V4 admin: '.get_class($e));reply90(['error'=>'Service Live indisponible'],500);}
+
 
 

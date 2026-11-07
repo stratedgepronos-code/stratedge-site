@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once dirname(__DIR__,3).'/includes/auth.php';
-requireSuperAdmin();
+requireAdmin();
 if(session_status()!==PHP_SESSION_ACTIVE)session_start();
 $_SESSION['live90_csrf']??=bin2hex(random_bytes(32));
 header('Cache-Control: no-store');
@@ -47,3 +47,4 @@ try {
 </script><script>
 <?= $app ?>
 </script></body></html>
+
