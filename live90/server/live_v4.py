@@ -21,6 +21,8 @@ CREATE INDEX IF NOT EXISTS v5_stream_incidents_match ON v5_stream_incidents(matc
 CREATE TABLE IF NOT EXISTS v5_stream_incident_revisions(sample_id INTEGER,policy TEXT,match_id TEXT,data TEXT,PRIMARY KEY(sample_id,policy));
 CREATE TABLE IF NOT EXISTS v5_sample_audits(sample_id INTEGER,engine TEXT,match_id TEXT,created_at TEXT,data TEXT,PRIMARY KEY(sample_id,engine));
 CREATE INDEX IF NOT EXISTS v5_sample_audit_date ON v5_sample_audits(created_at);
+CREATE TABLE IF NOT EXISTS v5_programme_events(id INTEGER PRIMARY KEY,created_at TEXT NOT NULL,data TEXT NOT NULL);
+CREATE INDEX IF NOT EXISTS v5_programme_events_date ON v5_programme_events(created_at);
 CREATE TABLE IF NOT EXISTS v4_imports(id INTEGER PRIMARY KEY,kind TEXT,digest TEXT UNIQUE,created_at TEXT,data TEXT);
 CREATE TABLE IF NOT EXISTS v4_fixtures(fixture TEXT PRIMARY KEY,home TEXT,away TEXT,kickoff TEXT,league TEXT,match_id TEXT);
 CREATE INDEX IF NOT EXISTS v4_fixture_kickoff ON v4_fixtures(kickoff);
@@ -431,7 +433,7 @@ def import_bundle(c, kind, bundle, now=None):
     digest=hashlib.sha256((kind+enc(bundle)).encode()).hexdigest()
     if c.execute('SELECT 1 FROM v4_imports WHERE digest=?',(digest,)).fetchone():
         if kind=='packball':
-            with c:runtime(c,'active_packball_fixtures',[key(m) for m in matches])
+            with c:activate_programme(c,matches,digest,now)
         return {'ok':True,'duplicate':True,'imported':0,'programme':programme_dates(matches,now),'coverage':import_coverage(c,matches,now)}
     seen=set(); prepared=[]
     for m in matches:
@@ -452,7 +454,7 @@ def import_bundle(c, kind, bundle, now=None):
         prepared.append((fk,m))
     kept=0
     with c:
-        if kind=='packball':runtime(c,'active_packball_fixtures',[fk for fk,_ in prepared])
+        if kind=='packball':activate_programme(c,matches,digest,now)
         c.execute('INSERT INTO v4_imports(kind,digest,created_at,data) VALUES(?,?,?,?)',(kind,digest,iso(now),enc(bundle)))
         for fk,m in prepared:
             c.execute('INSERT OR IGNORE INTO v4_fixtures VALUES(?,?,?,?,?,?)',(fk,m['home'],m['away'],iso(date(m['kickoff'])),m.get('league',''),None))
@@ -479,6 +481,34 @@ def import_coverage(c,matches,now):
         counts['unusable_prematch']+=int(bool(p and ctx) and not usable)
         counts['ready']+=int(enabled and usable)
     return counts
+
+def programme_state(c):
+    row=c.execute("SELECT value FROM v4_runtime WHERE key='programme_provenance'").fetchone()
+    return dec(row['value'],{}) if row else None
+
+
+def activate_programme(c,matches,digest,now):
+    """Record actual activations; never reconstruct an earlier programme version."""
+    fixtures=[key(m) for m in matches];previous=programme_state(c)
+    old=active_fixtures(c)
+    runtime(c,'active_packball_fixtures',fixtures)
+    if previous and previous.get('import_digest')==digest and old==set(fixtures):return
+    data={'import_digest':digest,'activated_at':iso(now),'previous_version':(previous or {}).get('version'),
+          'dates':programme_dates(matches,now),'fixtures':fixtures,
+          'added_fixtures':sorted(set(fixtures)-(old or set())),
+          'removed_fixtures':sorted((old or set())-set(fixtures)),
+          'previous_selection_known':old is not None,
+          'existing_alert_results_followed_independently':True}
+    event=c.execute('INSERT INTO v5_programme_events(created_at,data) VALUES(?,?)',(iso(now),enc(data)))
+    data['version']=event.lastrowid
+    c.execute('UPDATE v5_programme_events SET data=? WHERE id=?',(enc(data),event.lastrowid))
+    runtime(c,'programme_provenance',data)
+
+
+def programme_events(c,bounds):
+    return [dict(row,data=dec(row['data'],{})) for row in c.execute(
+        'SELECT * FROM v5_programme_events WHERE created_at>=? AND created_at<? ORDER BY id',bounds)]
+
 
 def active_fixtures(c):
     saved=c.execute("SELECT value FROM v4_runtime WHERE key='active_packball_fixtures'").fetchone()
@@ -2472,6 +2502,7 @@ def record_window_audit(c,r,d,p,ctx,now):
                 profile_usable=(p or {}).get('usable'),context_usable=(ctx or {}).get('usable'),
                 confirmation_sample_ids=[x['sample']['sample_id'] for x in (d.get('confirmation') or {}).get('samples',[])])
     data['inputs_hash']=inputs_hash
+    data['programme_version']=(programme_state(c) or {}).get('version')
     if d['market']=='goals':data['shot_quality']=d.get('shot_quality')
     c.execute('INSERT OR IGNORE INTO v5_window_audits(sample_id,match_id,team,market,engine,created_at,data) VALUES(?,?,?,?,?,?,?)',
               (r['sample_id'],str(r['packball_id']),d['team'],d['market'],ENGINE_FINGERPRINT,iso(now),enc(data)))
@@ -2491,7 +2522,7 @@ def programme_dates(matches,now):
 
 
 def record_sample_audit(c,s,now,status,**details):
-    c.execute('INSERT OR IGNORE INTO v5_sample_audits VALUES(?,?,?,?,?)',(s['id'],ENGINE_FINGERPRINT,s['match_id'],iso(now),enc(dict(status=status,**details))))
+    c.execute('INSERT OR IGNORE INTO v5_sample_audits VALUES(?,?,?,?,?)',(s['id'],ENGINE_FINGERPRINT,s['match_id'],iso(now),enc(dict(status=status,programme_version=(programme_state(c) or {}).get('version'),**details))))
 
 
 def export_coverage(c,day,now):
@@ -2504,13 +2535,15 @@ def export_coverage(c,day,now):
     for row in c.execute('SELECT sample_id,match_id,data FROM v5_sample_audits WHERE created_at>=? AND created_at<? ORDER BY created_at',bounds):
         processed[row['sample_id']]=dec(row['data'],{})
     for row in rows:
-        sample_ids.add(row['id']);m=by_match.setdefault(row['match_id'],{'received':0,'processed':0,'evaluated':0,'first_received_at':row['received_at'],'last_received_at':None,'max_gap_seconds':0,'gaps_over_120s':0,'statuses':{},'input_states':{},'rejection_reasons':{},'reset_counts':{},'continuity_blocked':0})
+        sample_ids.add(row['id']);m=by_match.setdefault(row['match_id'],{'received':0,'processed':0,'evaluated':0,'first_received_at':row['received_at'],'last_received_at':None,'max_gap_seconds':0,'gaps_over_120s':0,'statuses':{},'input_states':{},'rejection_reasons':{},'reset_counts':{},'continuity_blocked':0,'programme_versions':{}})
         at=date(row['received_at']);old=date(m['last_received_at'])
         if at and old:
             gap=max(0,(at-old).total_seconds());m['max_gap_seconds']=max(m['max_gap_seconds'],gap);m['gaps_over_120s']+=int(gap>120)
         m['received']+=1;m['last_received_at']=row['received_at']
         a=processed.get(row['id'])
         if a:
+            version=str(a['programme_version']) if a.get('programme_version') is not None else 'unknown'
+            m['programme_versions'][version]=m['programme_versions'].get(version,0)+1
             m['processed']+=1;m['evaluated']+=int(a['status']=='evaluated');m['statuses'][a['status']]=m['statuses'].get(a['status'],0)+1
             m['continuity_blocked']+=int(bool((a.get('continuity') or {}).get('blocked')))
             for kind,changed in a.get('resets',{}).items():
@@ -2522,6 +2555,7 @@ def export_coverage(c,day,now):
     for f in programme:f['collection_status']='received' if f['match_id'] in by_match else 'not_identified' if not f['match_id'] else 'no_capture_in_day'
     return {'schema':'stratedge.coverage.v1','day':day,'timezone':'Europe/Paris','generated_at':iso(now),'bounds':{'from':bounds[0],'to_exclusive':bounds[1]},
             'received_samples':len(sample_ids),'matches':by_match,'known_fixtures_on_day':programme,
+            'programme_transitions':programme_events(c,bounds),'programme_at_export':programme_state(c),
             'instrumentation_started_at':(c.execute('SELECT MIN(created_at) FROM v5_sample_audits').fetchone() or [None])[0],
             'complete_means':'Inventaire des captures reliées aux cycles et du diagnostic archivé ; ne prouve pas une surveillance continue.',
             'limits':['Les causes des trous antérieurs à cette instrumentation ne sont pas reconstruites.','Reçu sans diagnostic : moteur non passé, relevé intermédiaire non évalué, ou instrumentation absente ; cause non déduite.','Les écarts sont entre captures reçues, pas la durée sportive exacte ni une garantie de couverture avant/après ces captures.','Les rencontres connues sans identifiant ne prouvent pas une absence de collecte.','Les rejets prédictifs détaillés figurent dans les fenêtres ; les profils et contextes tardifs sont distingués des absents.']}
@@ -2856,30 +2890,35 @@ def export_result_proofs(c,reviews,revisions,bounds=None):
 
 def radar_breakdown(c,bounds,market='all'):
     """Current verdicts of sent notifications only, one row per alert."""
-    sql="""SELECT n.id,n.match_id,n.market,n.created_at,n.data,r.outcome FROM v5_radar_notifications n
+    sql="""SELECT n.id,n.match_id,n.team,n.market,n.created_at,n.data,r.outcome FROM v5_radar_notifications n
         LEFT JOIN v5_radar_results r ON r.radar_id=n.id WHERE n.delivery='sent'"""
     args=()
     if bounds:sql+=' AND n.created_at>=? AND n.created_at<?';args=tuple(bounds)
     if market!='all':sql+=' AND n.market=?';args+=(market,)
     sql+=' ORDER BY n.created_at,n.id'
-    groups={};first=set();matches=set();versions={};prompt_labels={};total=0
+    groups={};first=set();first_team=set();matches=set();versions={};prompt_labels={};total=0
     for r in c.execute(sql,args):
         saved=dec(r['data'],{});snap=saved.get('learning_snapshot') or {};reading=snap.get('reading') or saved.get('reading') or {}
         period=(saved.get('result_target') or {}).get('period') or 'unknown';path=reading.get('trigger_path') or 'unknown'
         engine=snap.get('engine') or 'unknown';key=(r['market'],period,path,engine)
         g=groups.setdefault(key,{'market':key[0],'period':period,'trigger_path':path,'engine':engine,'alert_count':0,'match_ids':set(),
             'outcomes':{v:0 for v in ('observed','not_observed','unknown','pending')},
-            'first_alert_control':{v:0 for v in ('observed','not_observed','unknown','pending')}})
+            'first_alert_control':{v:0 for v in ('observed','not_observed','unknown','pending')},
+            'first_team_alert_control':{v:0 for v in ('observed','not_observed','unknown','pending')}})
         outcome=r['outcome'] if r['outcome'] in g['outcomes'] else 'pending' if not r['outcome'] else 'unknown'
         match=r['match_id'] or 'unidentified-alert-'+str(r['id'])
         g['alert_count']+=1;g['match_ids'].add(match);g['outcomes'][outcome]+=1;matches.add(match);total+=1
         first_key=(match,r['market'],period)
         if first_key not in first:g['first_alert_control'][outcome]+=1;first.add(first_key)
+        team_key=(match,r['team'] or 'unidentified-team-'+str(r['id']),r['market'],period)
+        if team_key not in first_team:g['first_team_alert_control'][outcome]+=1;first_team.add(team_key)
         version=(snap.get('live') or {}).get('collector_version') or 'unknown';versions[version]=versions.get(version,0)+1
         label=snap.get('prompt_revision') or 'not_attested';prompt_labels[label]=prompt_labels.get(label,0)+1
     for g in groups.values():g['match_count']=len(g.pop('match_ids'))
     return {'alert_count':total,'match_count':len(matches),'groups':list(groups.values()),
             'collector_versions_at_signal':versions,'archived_prompt_labels':prompt_labels,
+            'counting_controls':{name:{'total':sum(sum(g[name].values()) for g in groups.values()),'outcomes':{v:sum(g[name][v] for g in groups.values()) for v in ('observed','not_observed','unknown','pending')}} for name in ('outcomes','first_alert_control','first_team_alert_control')},
+            'first_team_alert_control_rule':'Première notification envoyée par match, équipe, marché et période ; conserve les deux équipes.',
             'first_alert_control_rule':'Première notification envoyée par match, marché et période, toutes équipes et voies confondues.',
             'note':'Notifications envoyées uniquement, verdict courant ; les matchs distincts ne garantissent pas l’indépendance des alertes. Anciens signaux V4 exclus. Les anciens libellés de prompt codés en dur ne prouvent pas le chargement du texte R6. Aucune rentabilité sans prix et mise.'}
 
@@ -2901,6 +2940,8 @@ def export_daily_review(c,day,now):
         proofs=export_result_proofs(c,rows,revisions,bounds)
         decisions=export_decision_proofs(c,rows)
         breakdown=radar_breakdown(c,bounds)
+        transitions=programme_events(c,bounds)
+        programme_current=programme_state(c)
         sent=breakdown['alert_count']
         incidents=[dict(r,data=dec(r['data'],{})) for r in c.execute('SELECT * FROM v4_health_events WHERE opened_at<? AND last_seen>=? ORDER BY id',(bounds[1],bounds[0]))]
         # Legacy bets are explicitly separate and never added to radar counts.
@@ -2916,9 +2957,12 @@ def export_daily_review(c,day,now):
                           'complete':True,'complete_means':'Toutes les revues disponibles des alertes créées ce jour ; pas une surveillance continue ni une garantie de résultat réglé.'}}
     return {'schema':'stratedge.audit.v4','exported_at':iso(now),'timezone':'Europe/Paris','day':day,
             'bounds':{'from':bounds[0],'to_exclusive':bounds[1]},'learning':learning,'incidents':incidents,'signals':legacy,
+            'programme_transitions':transitions,'programme_at_export':programme_current,
             'coverage':{'scope':'Alertes créées pendant la journée Europe/Paris sélectionnée ; dernières révisions disponibles à l’export.',
                         'complete':True,'exported_signals':len(legacy),'total_signals':len(legacy),
                         'complete_means':'Complétude de cet export, pas une surveillance continue.',
+                        'day_closed_at_export':now>=end.astimezone(UTC),'snapshot_at':iso(now),
+                        'radar_source':'learning.reviews','radar_sent_alerts':sent,'radar_available_reviews':len(rows),
                         'legacy_signals_separate':True,'window_audit_export':'Exporter les fenêtres et la couverture pour la même journée.'},
             'instructions':'Dédupliquer par radar_id et dernière révision. Les signals V4 anciens sont séparés du radar dans learning. Les révisions peuvent être postérieures à la journée de création. Inconnus et attentes exclus des succès/échecs. La mémoire globale se télécharge séparément ; ne pas additionner ses copies. Aucun changement automatique des règles.'}
 
