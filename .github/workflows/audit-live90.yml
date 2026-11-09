@@ -1,0 +1,41 @@
+# Contrôles en LECTURE SEULE de live90.sqlite, lancés uniquement depuis les branches audit/**.
+# Ne déploie rien et ne modifie rien sur le serveur : chaque script ouvre la base en mode ro.
+# Le dépôt est public, donc ce journal aussi : les scripts n'affichent ni secret ni configuration.
+name: Audit live90 (lecture seule)
+on:
+  push:
+    branches: ['audit/**']
+    paths: ['ops/audit/**', '.github/workflows/audit-live90.yml']
+permissions:
+  contents: read
+concurrency:
+  group: audit-live90
+  cancel-in-progress: true
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get update -q && sudo apt-get install -y -q sshpass
+      - name: Lancer les scripts listés dans ops/audit/RUN
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
+        run: |
+          if [ -n "$VPS_SSH_KEY" ]; then
+            mkdir -p ~/.ssh
+            printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+            chmod 600 ~/.ssh/deploy_key
+            SSH_CMD="ssh -i $HOME/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o IdentitiesOnly=yes"
+          else
+            SSH_CMD="sshpass -e ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o PreferredAuthentications=password -o PubkeyAuthentication=no"
+            export SSHPASS="$VPS_PASSWORD"
+          fi
+          while IFS= read -r script; do
+            case "$script" in ''|\#*) continue ;; esac
+            case "$script" in *[!A-Za-z0-9_.-]*) echo "nom refusé : $script"; exit 1 ;; esac
+            echo "::group::$script"
+            $SSH_CMD alex@31.97.196.145 "sudo -n -u www-data python3 -I - /var/lib/stratedge/live90.sqlite" < "ops/audit/$script"
+            echo "::endgroup::"
+          done < ops/audit/RUN
