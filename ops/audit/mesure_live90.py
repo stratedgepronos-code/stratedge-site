@@ -647,3 +647,77 @@ model2('BUT avant la fin, vu entre la 57′ et la 75′ (sans attaques dangereus
 model2('BUT avant la fin, vu entre la 57′ et la 75′ (avec attaques dangereuses)', 'goal', [r for r in rows if r['m'] in G2],
        [('minute', P('m')), ('mène', lambda r: float(r['gap'] > 0)), ('mené', lambda r: float(r['gap'] < 0)), ('cadrés/min cumul', per_min('sot')),
         ('att.dang./min cumul', per_min('da')), ('att.dang. adverses/min', per_min('o_da')), ('tirs 10′', P('shots10')), ('marqués+encaissés FT', P('gsum'))], 'rule_goal')
+
+# ───────────────────────── règles simples candidates ─────────────────────────
+print('\n═══ 9 · RÈGLES SIMPLES CANDIDATES (seuils fixés sur les matchs anciens, vérifiés sur les récents) ═══')
+print('  « haut » = au-dessus du 67e centile des matchs d’apprentissage. Une ligne par match-équipe : premier instant où la règle est vraie.')
+def quant(vs, q): vs = sorted(v for v in vs if v is not None); return vs[int(len(vs) * q)] if vs else None
+def rules(title, key, rs_all, hi, fixed, combos):
+    rs = [r for r in rs_all if r[key] is not None]
+    if len(rs) < 500: print(f'  ── {title} : trop peu de lignes'); return
+    cut = sorted({r['rank'] for r in rs}); cut = cut[int(len(cut) * .7)]
+    tr = [r for r in rs if r['rank'] < cut]; te = [r for r in rs if r['rank'] >= cut]
+    thr = {n_: quant([f(r) for r in tr], .67) for n_, f in hi.items()}
+    def ok(r, n_):
+        if n_ in hi:
+            v = hi[n_](r); return None if v is None or thr[n_] is None else v >= thr[n_]
+        return fixed[n_](r)
+    print(f"  ── {title} · taux de base : apprentissage {show(tr, key)} · test {show(te, key)}")
+    print('     seuils « haut » : ' + ' · '.join(f'{n_} ≥ {thr[n_]:.2f}' for n_ in hi if thr[n_] is not None))
+    for combo in [()] + list(combos):
+        out = []
+        for part in (tr, te):
+            first = {}
+            for r in sorted(part, key=lambda r: r['m']):
+                u = (r['mid'], r['t'])
+                if u in first: continue
+                if all(ok(r, n_) is True for n_ in combo): first[u] = r[key]
+            out.append((sum(first.values()), len(first)))
+        (k1, n1), (k2, n2) = out
+        print(f"     {(' + '.join(combo) or 'AUCUNE CONDITION (premier instant relevé) = référence'):78} apprentissage {pct(k1, n1).strip():>4} (n={n1:4}) · TEST {pct(k2, n2).strip():>4} (n={n2})")
+F = lambda k: (lambda r: r[k])
+cur_g = lambda r: None if r['rule_goal'] is None else bool(r['rule_goal'])
+cur_c = lambda r: None if r['rule_card'] is None else bool(r['rule_card'])
+second = [r for r in rows if r['m'] in G2]
+rules('BUT avant la fin, 57′–75′', 'goal', second,
+      {'att.dang./min haut': per_min('da'), 'tirs/min haut': per_min('shots'), 'cadrés/min haut': per_min('sot'), 'avant-match haut': F('gsum')},
+      {'règle actuelle': cur_g, 'ne mène pas de 2+': lambda r: r['gap'] <= 1},
+      [('règle actuelle',), ('att.dang./min haut',), ('tirs/min haut',), ('avant-match haut',), ('règle actuelle', 'avant-match haut'), ('règle actuelle', 'att.dang./min haut'),
+       ('tirs/min haut', 'avant-match haut'), ('att.dang./min haut', 'avant-match haut'), ('règle actuelle', 'tirs/min haut', 'avant-match haut'), ('règle actuelle', 'att.dang./min haut', 'avant-match haut')])
+rules('BUT avant la pause, 15′–25′', 'goal', early,
+      {'tirs/min haut': per_min('shots'), 'cadrés/min haut': per_min('sot'), 'avant-match haut': F('gsum'), 'att.dang./min haut': per_min('da')},
+      {'règle actuelle': cur_g},
+      [('règle actuelle',), ('tirs/min haut',), ('avant-match haut',), ('att.dang./min haut',), ('règle actuelle', 'avant-match haut'), ('tirs/min haut', 'avant-match haut'), ('cadrés/min haut', 'avant-match haut'),
+       ('règle actuelle', 'tirs/min haut', 'avant-match haut')])
+rules('JAUNE avant la pause, 15′–25′', 'card', early,
+      {'fautes/min haut': per_min('fouls'), 'jaunes/m équipe haut': F('pk_y'), 'ligue haute': F('lg_y1'), 'fautes depuis jaune haut': F('since_card')},
+      {'règle actuelle': cur_c, 'adversaire déjà averti': lambda r: None if r['o_yellow_cards'] is None else r['o_yellow_cards'] >= 1, 'mené': lambda r: r['gap'] < 0,
+       'équipe pas encore avertie': lambda r: None if r['yellow_cards'] is None else r['yellow_cards'] == 0},
+      [('règle actuelle',), ('fautes/min haut',), ('jaunes/m équipe haut',), ('ligue haute',), ('adversaire déjà averti',), ('mené',), ('fautes/min haut', 'ligue haute'), ('fautes/min haut', 'jaunes/m équipe haut'),
+       ('fautes/min haut', 'adversaire déjà averti'), ('ligue haute', 'jaunes/m équipe haut'), ('fautes/min haut', 'ligue haute', 'jaunes/m équipe haut'), ('fautes depuis jaune haut', 'ligue haute'),
+       ('fautes/min haut', 'mené')])
+rules('JAUNE supplémentaire avant la fin, 57′–75′', 'card', second,
+      {'fautes/min haut': per_min('fouls'), 'jaunes/m équipe haut': F('pk_y'), 'ligue haute': F('lg_y2'), 'fautes depuis jaune haut': F('since_card')},
+      {'règle actuelle': cur_c, 'au plus 1 jaune': lambda r: None if r['yellow_cards'] is None else r['yellow_cards'] <= 1, 'ne mène pas': lambda r: r['gap'] <= 0, 'égalité': lambda r: r['gap'] == 0},
+      [('règle actuelle',), ('fautes/min haut',), ('jaunes/m équipe haut',), ('ligue haute',), ('au plus 1 jaune',), ('ne mène pas',), ('égalité',), ('fautes/min haut', 'au plus 1 jaune'),
+       ('fautes/min haut', 'ne mène pas'), ('fautes/min haut', 'jaunes/m équipe haut'), ('fautes/min haut', 'au plus 1 jaune', 'ne mène pas'), ('fautes/min haut', 'jaunes/m équipe haut', 'au plus 1 jaune'),
+       ('fautes depuis jaune haut', 'au plus 1 jaune')])
+first_half_ft = [r for r in rows if r['m'] in (20, 25, 30, 35)]
+rules('JAUNE avant la FIN DU MATCH, vu entre la 20′ et la 35′', 'card_ft', first_half_ft,
+      {'fautes/min haut': per_min('fouls'), 'jaunes/m équipe haut': F('pk_y'), 'ligue haute': F('lg_yft')},
+      {'règle actuelle': cur_c, 'équipe pas encore avertie': lambda r: None if r['yellow_cards'] is None else r['yellow_cards'] == 0, 'ne mène pas': lambda r: r['gap'] <= 0},
+      [('règle actuelle',), ('fautes/min haut',), ('jaunes/m équipe haut',), ('ligue haute',), ('équipe pas encore avertie',), ('fautes/min haut', 'équipe pas encore avertie'),
+       ('fautes/min haut', 'jaunes/m équipe haut'), ('fautes/min haut', 'ligue haute'), ('fautes/min haut', 'jaunes/m équipe haut', 'équipe pas encore avertie')])
+print('  Décision au coup d’envoi (une ligne par équipe)')
+rules('JAUNE de l’équipe en 1re mi-temps', 'y1', ko,
+      {'jaunes/m équipe haut': F('pk_y'), 'ligue haute': F('lg_y1'), 'jaunes/m adversaire haut': F('pk_y_o'), 'fautes/m équipe haut': F('a_f'), 'arbitre haut': F('ref_y')},
+      {'extérieur': lambda r: r['home'] == 0},
+      [('jaunes/m équipe haut',), ('ligue haute',), ('fautes/m équipe haut',), ('arbitre haut',), ('extérieur',), ('ligue haute', 'jaunes/m équipe haut'), ('ligue haute', 'jaunes/m équipe haut', 'jaunes/m adversaire haut'),
+       ('fautes/m équipe haut', 'arbitre haut'), ('fautes/m équipe haut', 'ligue haute'), ('ligue haute', 'jaunes/m équipe haut', 'extérieur')])
+rules('BUT de l’équipe en 1re mi-temps', 'g1', ko,
+      {'marqués+encaissés FT haut': F('gsum'), 'marqués+encaissés 1re MT haut': F('pksum1')}, {'domicile': lambda r: r['home'] == 1},
+      [('marqués+encaissés FT haut',), ('marqués+encaissés 1re MT haut',), ('domicile',), ('marqués+encaissés FT haut', 'marqués+encaissés 1re MT haut'), ('marqués+encaissés FT haut', 'domicile'),
+       ('marqués+encaissés FT haut', 'marqués+encaissés 1re MT haut', 'domicile')])
+rules('BUT de l’équipe en 2e mi-temps', 'g2', ko,
+      {'marqués+encaissés FT haut': F('gsum')}, {'domicile': lambda r: r['home'] == 1},
+      [('marqués+encaissés FT haut',), ('domicile',), ('marqués+encaissés FT haut', 'domicile')])
