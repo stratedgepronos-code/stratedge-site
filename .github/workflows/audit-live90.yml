@@ -27,9 +27,9 @@ jobs:
             mkdir -p ~/.ssh
             printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
             chmod 600 ~/.ssh/deploy_key
-            SSH_CMD="ssh -i $HOME/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o IdentitiesOnly=yes"
+            SSH_CMD="ssh -i $HOME/.ssh/deploy_key -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=30 -o IdentitiesOnly=yes"
           else
-            SSH_CMD="sshpass -e ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o PreferredAuthentications=password -o PubkeyAuthentication=no"
+            SSH_CMD="sshpass -e ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 -o ServerAliveInterval=30 -o PreferredAuthentications=password -o PubkeyAuthentication=no"
             export SSHPASS="$VPS_PASSWORD"
           fi
           while IFS= read -r script; do
