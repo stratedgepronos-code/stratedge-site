@@ -84,6 +84,7 @@ sid_rec = {}
 M = {}
 wk_n = collections.Counter(); wk_has = collections.defaultdict(collections.Counter)
 n_live = 0
+day_n = collections.Counter(); day_has = collections.defaultdict(collections.Counter); day_ver = collections.defaultdict(collections.Counter)
 for sid, mid, rec, raw in c.execute(
         "select id,match_id,received_at,data from samples where data like '%\"LIVE\"%' or data like '%\"HT\"%' or data like '%\"FT\"%' order by id"):
     mid = str(mid)
@@ -109,6 +110,10 @@ for sid, mid, rec, raw in c.execute(
         if ex or r.get('quality_errors') or minute in m['live']: continue
         m['live'][int(minute)] = p
         w = week(rec); wk_n[w] += 1
+        dday = rec[:10]; day_n[dday] += 1
+        for k in ('da', 'tackles', 'fouls', 'shots_inside', 'corners'):
+            if val(p, k, 'h') is not None and val(p, k, 'a') is not None: day_has[dday][k] += 1
+        day_ver[dday][str(r.get('collector_version') or 'ancien')] += 1
         for k in ('shots', 'sot', 'shots_inside', 'da', 'fouls', 'tackles', 'possession', 'yellow_cards'):
             if val(p, k, 'h') is not None and val(p, k, 'a') is not None: wk_has[w][k] += 1
         if ind(p, 'shots10', 'h') is not None: wk_has[w]['ind10'] += 1
@@ -122,6 +127,9 @@ print('  ' + f"{'semaine':9}{'minutes':>8}" + ''.join(f'{k[:9]:>10}' for k in co
 for w in sorted(wk_n):
     print('  ' + f'{w:9}{wk_n[w]:8}' + ''.join(f'{pct(wk_has[w][k], wk_n[w]):>10}' for k in cols))
 
+print('  détail par jour, 16 derniers jours (colonnes susceptibles d’avoir disparu du filtre Packball) :')
+for dday in sorted(day_n)[-16:]:
+    print(f"    {dday} {day_n[dday]:6} min · att.dang. {pct(day_has[dday]['da'], day_n[dday])} · tacles {pct(day_has[dday]['tackles'], day_n[dday])} · fautes {pct(day_has[dday]['fouls'], day_n[dday])} · tirs surface {pct(day_has[dday]['shots_inside'], day_n[dday])} · corners {pct(day_has[dday]['corners'], day_n[dday])} · collecteur {dict(day_ver[dday].most_common(2))}")
 # vérité de fin de période
 def truth(m):
     ht = m['ht']; src_ht = 'HT' if ht else None
@@ -244,6 +252,11 @@ for minute in (25, 35, 65, 75):
     print(f"   {minute}′  " + ' · '.join(f"{lab} : {show([r for r in rs if r['yellow_cards'] is not None and f(r['yellow_cards'])], 'card')}"
                                         for lab, f in (('0 jaune', lambda v: v == 0), ('1 jaune', lambda v: v == 1), ('2 et +', lambda v: v >= 2))))
 
+print('  jaune SUPPLÉMENTAIRE avant la fin du match, vu en 1re mi-temps, selon les jaunes déjà reçus :')
+for minute in (25, 35, 40):
+    rs = [r for r in rows if r['m'] == minute]
+    print(f"   {minute}′  " + ' · '.join(f"{lab} : {show([r for r in rs if r['yellow_cards'] is not None and f(r['yellow_cards'])], 'card_ft')}"
+                                        for lab, f in (('0 jaune', lambda v: v == 0), ('1 jaune', lambda v: v == 1), ('2 et +', lambda v: v >= 2))))
 # ───────────────────────── apport de chaque statistique ─────────────────────────
 def lift(rs, key, label, feat, bins):
     parts = []
@@ -466,13 +479,20 @@ def nearest(minute):
     g = min(grid, key=lambda v: abs(v - minute))
     return g if abs(g - minute) <= 6 else None
 seen = set(); tab = collections.defaultdict(lambda: collections.Counter())
-agree = collections.Counter()
+agree = collections.Counter(); mins = collections.defaultdict(list)
+def base_rate(key, g, st, y=None):
+    rs = [r for r in rows if r['m'] == g and state(r['gap']) == st and (y is None or (r['yellow_cards'] is not None and min(r['yellow_cards'], 2) == y))]
+    return rate(rs, key)
+bcache = {}
 for a in sent:
-    mk = (a['market'], a['period'])
+    m = M.get(a['mid']); sp = sid_rec.get(a['sid'])
+    minute = sp[1][0] if sp else None
+    half = '?' if not num(minute) else '1re MT' if minute <= 45 else '2e MT'
+    mk = (a['market'], a['period'], half)
     tab[mk]['toutes'] += 1; tab[mk][a['outcome']] += 1
+    if num(minute): mins[mk].append(minute)
     unit = (a['mid'], a['team'], a['market'], a['period'])
     first = unit not in seen; seen.add(unit)
-    m = M.get(a['mid']); sp = sid_rec.get(a['sid'])
     mine = None; exp = None
     if m and sp and num(a['line']):
         st, p = sp; ti = 1 + (a['team'] == 'a'); oi = 3 - ti
@@ -480,13 +500,15 @@ for a in sent:
         if end is not None:
             v = end[ti] if a['market'] == 'goals' else val(end, 'yellow_cards', a['team'])
             if v is not None: mine = int(v > a['line'])
-        minute = p[0]
-        if num(minute) and p[1] is not None and p[2] is not None:
-            g = nearest(minute); key = 'goal' if a['market'] == 'goals' else ('card' if minute > 45 else 'card_ft')
+        if num(minute) and p[1] is not None and p[2] is not None and a['market'] in ('goals', 'cards'):
+            g = nearest(minute)
+            if a['market'] == 'goals': key = 'goal' if (a['period'] == 'HT' or minute > 45) else 'goal_ft'; y = None
+            else:
+                key = 'card' if minute > 45 else 'card_ft'; y = val(p, 'yellow_cards', a['team']); y = None if y is None else int(min(y, 2))
             if g is not None:
-                if key == 'card_ft':
-                    rs = [r for r in rows if r['m'] == g and state(r['gap']) == state(p[ti] - p[oi])]; k, n = rate(rs, 'card_ft')
-                else: k, n = base.get((key, g, state(p[ti] - p[oi])), (0, 0))
+                ck = (key, g, state(p[ti] - p[oi]), y)
+                if ck not in bcache: bcache[ck] = base_rate(*ck)
+                k, n = bcache[ck]
                 if n >= 30: exp = k / n
     if a['outcome'] in ('observed', 'not_observed') and mine is not None:
         agree['accord' if (a['outcome'] == 'observed') == bool(mine) else 'désaccord'] += 1
@@ -495,17 +517,19 @@ for a in sent:
         if mine is not None:
             tab[mk]['1re réglée'] += 1; tab[mk]['1re réussie'] += mine
             if exp is not None: tab[mk]['1re avec base'] += 1; tab[mk]['1re réussie (avec base)'] += mine; tab[mk]['base'] += exp
+print('  (taux de base apparié : même cible, même minute à ±6, même état du score ; pour les cartons, même nombre de jaunes déjà reçus)')
 for mk, t in sorted(tab.items()):
-    print(f"  {mk[0]:6} {mk[1]:3} : {t['toutes']} envoyées · verdict moteur observé {t['observed']} / non observé {t['not_observed']} / en attente {t['pending']} / autre {t['toutes'] - t['observed'] - t['not_observed'] - t['pending']}")
+    md = sorted(mins[mk])[len(mins[mk]) // 2] if mins[mk] else '?'
+    print(f"  {mk[0]:7} cible {mk[1]:2} · signal en {mk[2]:6} : {t['toutes']} envoyées (minute médiane {md}) · verdict moteur observé {t['observed']} / non observé {t['not_observed']} / autre {t['toutes'] - t['observed'] - t['not_observed']}")
     if t['1re réglée']:
         print(f"             première alerte par match-équipe : {t['1re alerte']} · réglées ici {t['1re réglée']} · réussies {pct(t['1re réussie'], t['1re réglée']).strip()}")
     if t['1re avec base']:
-        print(f"             comparaison appariée (même minute, même score) : alertes {pct(t['1re réussie (avec base)'], t['1re avec base']).strip()} contre taux de base {t['base'] / t['1re avec base']:.0%} · n={t['1re avec base']}")
+        print(f"             comparaison appariée : alertes {pct(t['1re réussie (avec base)'], t['1re avec base']).strip()} contre taux de base {t['base'] / t['1re avec base']:.0%} · n={t['1re avec base']}")
 print('  contrôle de mon règlement contre celui du moteur :', dict(agree))
 
 if 'v5_shadow_readings' in tables:
     print('  lectures internes sans alerte (v5_shadow_readings), une par match-équipe-marché-minute :')
-    sh = collections.defaultdict(lambda: collections.Counter()); cand_units = {}; non_units = {}
+    sh = collections.defaultdict(lambda: collections.Counter()); bk = collections.defaultdict(lambda: {'c': {}, 'n': {}})
     for mid, team, market, minute, policy, data in c.execute('select match_id,team,market,minute,policy,data from v5_shadow_readings order by match_id,team,market,minute'):
         try: d = json.loads(data)
         except Exception: continue
@@ -523,19 +547,17 @@ if 'v5_shadow_readings' in tables:
         if market == 'goals' and bc:
             l2 = 'hypothèse qualité vraie' if cd else 'hypothèse qualité fausse' if cd is False else 'hypothèse non évaluée'
             sh[(market, period)][l2 + ' n'] += 1; sh[(market, period)][l2 + ' ok'] += win
-        u = (str(mid), team, market, period)
-        if bc: cand_units.setdefault(u, win)
-        else: non_units.setdefault(u, []).append(win)
+        cell = bk[(market, period)]['c' if bc else 'n'].setdefault(int(minute) // 5, [0, 0]); cell[0] += 1; cell[1] += win
     for mk, t in sorted(sh.items()):
         parts = [f"{lab} {pct(t[lab + ' ok'], t[lab + ' n']).strip()} (n={t[lab + ' n']})" for lab in ('candidat', 'non candidat', 'hypothèse qualité vraie', 'hypothèse qualité fausse') if t[lab + ' n']]
         print(f'    {mk[0]:6} {mk[1]:3} : ' + ' · '.join(parts))
-    agg = collections.defaultdict(lambda: [0, 0, 0, 0])
-    for u, w in cand_units.items(): a = agg[(u[2], u[3])]; a[0] += 1; a[1] += w
-    for u, w in non_units.items():
-        if u not in cand_units: a = agg[(u[2], u[3])]; a[2] += 1; a[3] += sum(w) / len(w)
-    print('    par match-équipe : premier instant candidat, contre match-équipes jamais candidates (moyenne de leurs lectures)')
-    for mk, a in sorted(agg.items()):
-        print(f"    {mk[0]:6} {mk[1]:3} : candidats {pct(a[1], a[0]).strip()} (n={a[0]}) · jamais candidats {a[3] / a[2]:.0%} (n={a[2]})" if a[0] and a[2] else f'    {mk} : effectifs insuffisants')
+    print('    à minute égale (tranches de 5 min) : candidats contre non-candidats de la même tranche')
+    for mk in sorted(sh):
+        tot = k = 0; expd = 0.0
+        for b, (cn, cw) in sorted(bk[mk]['c'].items()):
+            nn, nw = bk[mk]['n'].get(b, (0, 0))
+            if nn >= 30: tot += cn; k += cw; expd += cn * nw / nn
+        if tot: print(f'    {mk[0]:6} {mk[1]:3} : candidats {pct(k, tot).strip()} contre {expd / tot:.0%} attendus sans signal · n={tot} lectures')
 
 # ───────────────────────── cotes archivées ─────────────────────────
 print('\n═══ 7 · COTES « BUTS DE L’ÉQUIPE » ARCHIVÉES (ligne = buts déjà marqués + 0,5, match entier) ═══')
@@ -549,3 +571,79 @@ for minute in (25, 35, 60, 70):
     for lab, f in OB:
         sub = [r for r in rs if f(r['odds'])]
         if len(sub) >= 15: print(f"      cote {lab:10} n={len(sub):4} · réussite {pct(sum(r['win'] for r in sub), len(sub)).strip()} · implicite {mean([r['imp'] for r in sub]):.0%} · gain moyen par unité misée {mean([r['win'] * r['odds'] - 1 for r in sub]):+.1%}")
+
+# ───────────────────────── avant-match + direct, test chronologique ─────────────────────────
+print('\n═══ 8 · AVANT-MATCH SEUL, PUIS AVANT-MATCH + DIRECT (test sur les matchs les plus récents) ═══')
+by_mid = collections.defaultdict(dict)
+seen_mid = collections.Counter()
+for x in ko:
+    x['t'] = 'h' if seen_mid[x['mid']] == 0 else 'a'; seen_mid[x['mid']] += 1
+    by_mid[x['mid']][x['t']] = x; x['rank'] = rank[x['mid']]; x['m'] = 0; x['home'] = float(x['t'] == 'h')
+# propension de la ligue, calculée uniquement sur les matchs ANTÉRIEURS (aucune fuite du futur)
+acc = collections.defaultdict(lambda: [0, 0, 0, 0, 0.0, 0])
+for mid in order:
+    pair_ = by_mid.get(mid)
+    if not pair_: continue
+    lgk = next(iter(pair_.values()))['league']; a = acc[lgk]
+    for x in pair_.values():
+        x['lg_y1'] = (a[1] + 20 * .5) / (a[0] + 20); x['lg_y2'] = (a[3] + 20 * .7) / (a[2] + 20); x['lg_yft'] = (a[4] + 20 * 2.0) / (a[5] + 20)
+    for x in pair_.values():
+        if x['y1'] is not None: a[0] += 1; a[1] += x['y1']
+        if x['y2'] is not None: a[2] += 1; a[3] += x['y2']
+        if x['yft'] is not None: a[5] += 1; a[4] += x['yft']
+for x in ko:
+    o = by_mid[x['mid']].get('a' if x['t'] == 'h' else 'h') or {}
+    x['pk_y_o'] = o.get('pk_y')
+for r in rows:
+    x = by_mid.get(r['mid'], {}).get(r['t'])
+    for k in ('lg_y1', 'lg_y2', 'lg_yft', 'pk_y', 'pk_y_o', 'gsum', 'pksum1', 'a_f', 'ref_y'):
+        r[k] = x.get(k) if x else None
+        if r[k] is not None and not num(r[k]): r[k] = None
+
+def model2(title, key, rs_all, feats, rule=None):
+    rs = [r for r in rs_all if r[key] is not None and all(f(r) is not None for _, f in feats)]
+    if len(rs) < 500: print(f'  ── {title} : trop peu de lignes complètes ({len(rs)})'); return
+    cut = sorted({r['rank'] for r in rs}); cut = cut[int(len(cut) * .7)]
+    tr = [r for r in rs if r['rank'] < cut]; te = [r for r in rs if r['rank'] >= cut]
+    mu = [mean([f(r) for r in tr]) for _, f in feats]
+    sd = [max(1e-9, math.sqrt(mean([(f(r) - mu[i]) ** 2 for r in tr]))) for i, (_, f) in enumerate(feats)]
+    def vec(r): return [1.0] + [(f(r) - mu[i]) / sd[i] for i, (_, f) in enumerate(feats)]
+    w = fit([vec(r) for r in tr], [r[key] for r in tr])
+    p = [sig(sum(a * b for a, b in zip(w, vec(r)))) for r in te]; y = [r[key] for r in te]
+    print(f'  ── {title}')
+    print(f"     apprentissage {len(tr)} lignes / {len({r['mid'] for r in tr})} matchs · test {len(te)} lignes / {len({r['mid'] for r in te})} matchs · taux de base en test {mean(y):.0%} · AUC {auc(p, y):.3f}")
+    z = sorted(zip(p, y, te), key=lambda t: -t[0]); n = len(z)
+    print('       ' + ' | '.join(f"{lab} : annoncé {mean([s_[0] for s_ in z[int(n * a):int(n * b)]]):.0%}, réalisé {mean([s_[1] for s_ in z[int(n * a):int(n * b)]]):.0%} (n={int(n * b) - int(n * a)}, {len({s_[2]['mid'] for s_ in z[int(n * a):int(n * b)]})} matchs)"
+                                 for lab, a, b in (('top 10 %', 0, .1), ('top 20 %', 0, .2), ('milieu', .4, .6), ('bas 20 %', .8, 1))))
+    if rule:
+        sub = [r for r in te if r.get(rule) == 1]
+        if sub: print(f'       règle actuelle vraie, mêmes matchs : réalisé {show(sub, key)}')
+    print('     poids : ' + ' · '.join(f'{n_} {v:+.2f}' for n_, v in sorted(zip([n_ for n_, _ in feats], w[1:]), key=lambda t: -abs(t[1]))))
+
+P = lambda k: (lambda r: r[k])
+print('  A. Décision au COUP D’ENVOI (aucune statistique du direct)')
+model2('JAUNE de l’équipe en 1re mi-temps · ligue + moyenne de jaunes des deux équipes (Packball)', 'y1', ko,
+       [('ligue (passé)', P('lg_y1')), ('jaunes/m équipe', P('pk_y')), ('jaunes/m adversaire', P('pk_y_o')), ('domicile', P('home'))])
+model2('JAUNE de l’équipe en 1re mi-temps · + fautes/m de l’équipe et jaunes/m de l’arbitre (dossier analyste)', 'y1', ko,
+       [('ligue (passé)', P('lg_y1')), ('jaunes/m équipe', P('pk_y')), ('fautes/m équipe', P('a_f')), ('jaunes/m arbitre', P('ref_y')), ('domicile', P('home'))])
+model2('BUT de l’équipe en 1re mi-temps · marqués + encaissés adverses (FT et 1re MT, Packball)', 'g1', ko,
+       [('marqués+encaissés FT', P('gsum')), ('marqués+encaissés 1re MT', P('pksum1')), ('domicile', P('home'))])
+model2('BUT de l’équipe en 2e mi-temps · marqués + encaissés adverses FT (Packball)', 'g2', ko,
+       [('marqués+encaissés FT', P('gsum')), ('domicile', P('home'))])
+print('  B. Décision PENDANT le match (direct + avant-match)')
+early = [r for r in rows if r['m'] in (15, 20, 25)]
+model2('JAUNE avant la pause, vu entre la 15′ et la 25′', 'card', early,
+       [('minute', P('m')), ('mené', lambda r: float(r['gap'] < 0)), ('fautes/min cumul', per_min('fouls')), ('fautes depuis jaune', P('since_card')),
+        ('jaunes adversaire', P('o_yellow_cards')), ('jaunes équipe', P('yellow_cards')), ('ligue (passé)', P('lg_y1')), ('jaunes/m équipe', P('pk_y'))], 'rule_card')
+model2('JAUNE supplémentaire avant la fin, vu entre la 57′ et la 75′', 'card', [r for r in rows if r['m'] in G2],
+       [('minute', P('m')), ('mené', lambda r: float(r['gap'] < 0)), ('mène', lambda r: float(r['gap'] > 0)), ('fautes/min cumul', per_min('fouls')),
+        ('jaunes équipe', P('yellow_cards')), ('jaunes adversaire', P('o_yellow_cards')), ('ligue (passé)', P('lg_y2')), ('jaunes/m équipe', P('pk_y'))], 'rule_card')
+model2('BUT avant la pause, vu entre la 15′ et la 25′ (sans attaques dangereuses)', 'goal', early,
+       [('minute', P('m')), ('mène', lambda r: float(r['gap'] > 0)), ('cadrés/min cumul', per_min('sot')), ('tirs/min cumul', per_min('shots')),
+        ('tirs 10′', P('shots10')), ('cadrés 10′', P('sot10')), ('marqués+encaissés FT', P('gsum'))], 'rule_goal')
+model2('BUT avant la fin, vu entre la 57′ et la 75′ (sans attaques dangereuses)', 'goal', [r for r in rows if r['m'] in G2],
+       [('minute', P('m')), ('mène', lambda r: float(r['gap'] > 0)), ('mené', lambda r: float(r['gap'] < 0)), ('cadrés/min cumul', per_min('sot')), ('tirs/min cumul', per_min('shots')),
+        ('tirs 10′', P('shots10')), ('cadrés 10′', P('sot10')), ('marqués+encaissés FT', P('gsum'))], 'rule_goal')
+model2('BUT avant la fin, vu entre la 57′ et la 75′ (avec attaques dangereuses)', 'goal', [r for r in rows if r['m'] in G2],
+       [('minute', P('m')), ('mène', lambda r: float(r['gap'] > 0)), ('mené', lambda r: float(r['gap'] < 0)), ('cadrés/min cumul', per_min('sot')),
+        ('att.dang./min cumul', per_min('da')), ('att.dang. adverses/min', per_min('o_da')), ('tirs 10′', P('shots10')), ('marqués+encaissés FT', P('gsum'))], 'rule_goal')
