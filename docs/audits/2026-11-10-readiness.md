@@ -31,3 +31,7 @@ Ce script exploratoire ne remplace pas un rejeu complet, par version, des entré
 ## Action sur le poste Packball
 
 Garder un seul collecteur actif et vérifier les six cases de FILTRES_LIVE_V4.md. Le serveur ne peut pas cocher les cases du navigateur local. Les colonnes sont déjà reconnues par le collecteur : pas de réinstallation nécessaire.
+
+## Contrôle de déploiement et export
+
+Le contrôle réel a atteint la limite de 35 secondes sur export_window_audit après installation. La requête paginée utilise maintenant explicitement l’index de date existant, pour éviter un parcours de tout l’historique par identifiant. Le délai limite reste inchangé. La correction ne modifie que le plan de lecture ; ordre, plafond, curseur et contenu sont conservés. Le déploiement de cette seule substitution SQL est protégé par une comparaison exacte du fichier complet et une sauvegarde du code avec retour arrière ; tout autre changement moteur conserve la sauvegarde complète de la base. La sauvegarde complète réalisée avant cette mise à jour reste disponible.

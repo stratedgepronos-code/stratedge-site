@@ -2630,7 +2630,7 @@ def export_window_audit(c,x,now):
     if ceiling is None:ceiling=c.execute('SELECT COALESCE(MAX(id),0) FROM v5_window_audits').fetchone()[0]
     params=(iso(start.astimezone(UTC)),iso(end.astimezone(UTC)),ceiling)
     total=c.execute('SELECT COUNT(*) FROM v5_window_audits WHERE created_at>=? AND created_at<? AND id<=?',params).fetchone()[0]
-    rows=c.execute('SELECT * FROM v5_window_audits WHERE created_at>=? AND created_at<? AND id<=? AND id>? ORDER BY id LIMIT ?',params+(cursor,size+1)).fetchall()
+    rows=c.execute('SELECT * FROM v5_window_audits INDEXED BY v5_window_audits_created WHERE created_at>=? AND created_at<? AND id<=? AND id>? ORDER BY id LIMIT ?',params+(cursor,size+1)).fetchall()
     more=len(rows)>size;rows=rows[:size];out=[];samples={};inputs={}
     for row in rows:
         item=dict(row,data=dec(row['data'],{}));out.append(item)
