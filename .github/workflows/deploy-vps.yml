@@ -119,7 +119,7 @@ jobs:
           sudo -n python3 "$LIVE90_ROOT/ops/storage-audit.py" "$LIVE90_ROOT"
           # One-off lossless recompression for the Nov 10 prospective audit deployment.
           # Preserve every archive, SQL hash, and the existing 2 GiB backup guard.
-          if [ ! -e /var/lib/stratedge/recompression-audit-20261110.done ]; then
+          if ! sudo -n test -e /var/lib/stratedge/recompression-audit-20261110.done; then
             sudo -n python3 "$LIVE90_ROOT/ops/recompress-live90.py" --apply --target-free-gib 8 --max-archives 4
             sudo -n touch /var/lib/stratedge/recompression-audit-20261110.done
           fi
