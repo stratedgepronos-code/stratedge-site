@@ -42,7 +42,7 @@ FAUTEURS — Nom (poste ; titulaire confirmé|probable|incertain) : 2,4 fautes/9
 
 Pour l’arbitre, ajouter dans `referee.note`, si la source le publie avec son effectif : la part de ses jaunes donnés en première mi-temps, et son ratio fautes sifflées par jaune. Sans source, ne rien écrire.
 
-Sources utiles pour ces profils (à citer dans `sources` lorsqu’elles ont été consultées) : playerstats.football (fautes commises, fautes subies, fautes en 1re mi-temps par joueur et par match, jaunes, pages arbitres) ; FotMob, Sofascore et WhoScored (fautes et jaunes par joueur, compositions) ; Transfermarkt (suspensions et totaux de cartons) ; FootyStats (équipes, mi-temps, arbitres par ligue) ; la désignation officielle de la ligue ou de l’UEFA. Une page inaccessible ou payante n’est pas une source consultée.
+Sources utiles pour ces profils (à citer dans `sources` lorsqu’elles ont été consultées) : StatsHub en premier, gratuit (fautes commises et subies par joueur et par match, fautes de 1re mi-temps, jaunes, fiches arbitres) ; playerstats.football seulement pour un chiffre absent de StatsHub ; FotMob, Sofascore et WhoScored (fautes et jaunes par joueur, compositions) ; Transfermarkt (suspensions et totaux de cartons) ; FootyStats (équipes, mi-temps, arbitres par ligue) ; la désignation officielle de la ligue ou de l’UEFA. Une page inaccessible ou payante n’est pas une source consultée.
 
 ### Bilan de livraison — ajouter quatre listes courtes
 
@@ -213,7 +213,7 @@ Préserver le nombre de matchs réellement couverts, la compétition, saison, p�
 
 Une moyenne de 0,8 but en première mi-temps n’est ni 80 % de chances de marquer ni une prévision des minutes restantes. Ne pas en déduire un but dû si l’équipe n’a pas marqué. Valeur inconnue = null, zéro seulement si mesuré. Ne pas demander de clé privée. Un xG live cumulé de tirs n’est pas l’ExG 10 minutes Packball.
 
-Priorité des sources : désignation officielle de l’arbitre, StatsHub pour sa fiche (si accessible), FootyStats pour équipes et mi-temps, puis autre fournisseur explicitement documenté. Pour les fautes par équipe et par joueur : playerstats.football, puis FotMob, Sofascore ou WhoScored. Références techniques utiles : https://footystats.org/api/documentations/team ; https://footystats.org/api/documentations/team-last-5-6-10-stats ; https://www.statshub.com/ . Ces liens de documentation ne remplacent PAS une source de statistiques du match/équipe consultée.
+Priorité des sources : désignation officielle de l’arbitre, StatsHub pour sa fiche (si accessible), FootyStats pour équipes et mi-temps, puis autre fournisseur explicitement documenté. Pour les fautes par équipe et par joueur : StatsHub, puis FotMob, Sofascore ou WhoScored ; playerstats.football seulement en complément. Références techniques utiles : https://footystats.org/api/documentations/team ; https://footystats.org/api/documentations/team-last-5-6-10-stats ; https://www.statshub.com/ . Ces liens de documentation ne remplacent PAS une source de statistiques du match/équipe consultée.
 
 ## Rédaction courte, utile à la décision
 
