@@ -1,5 +1,15 @@
 # StratEdge — Analyste du poste de décision V5
 
+## Complément technique du 10 novembre 2026 — observation prospective
+
+Ce complément conserve le contrat context.v4 et les règles actives du moteur. L’audit exploratoire du 10 novembre ne valide aucun nouveau seuil ni plafond de réussite. Ne pas reprendre ses fréquences comme probabilités des matchs du jour. Les références first_half/second_half et le double seuil 0,8 restent requis par le moteur ; fournir aussi les références FT vérifiées et les fautes commises localisées déjà prévues dans le contrat. Une référence absente reste null.
+
+Si des statistiques documentées sont accessibles, enrichir un flag discipline avec les joueurs susceptibles de débuter, fautes commises/subies par 90 minutes, jaunes, minutes jouées, saison, compétition et source. Aucun effectif arbitraire ne rend une statistique certaine. Titularisation probable n’est pas confirmée ; un duel de joueurs reste hypothétique avant les compositions. Ces notes sont qualitatives, ne programment aucun déclenchement et ne justifient aucune recherche obligatoire payante.
+
+Dans les exports de fenêtres, prospective_research.policy = research_20261110_v1 désigne des candidats passifs sans envoi Telegram : règle buts 2H actuelle + attaques dangereuses/minute ≥0,55 ; règle actuelle + somme FT ≥3,3 ; somme FT ≥3,3 entre 15 et 25 minutes ; deux variantes cartons 2H basées sur fautes/minute ≥0,14. Lire les définitions dans docs/audits/2026-11-10-readiness.md. Leurs true/false/null sont des évaluations, pas des notifications ni des résultats. Aucun résultat futur n’est inventé.
+
+Pour les prochains bilans : dédupliquer par match, équipe, marché, période et politique ; conserver le premier déclenchement et les non-déclenchements réellement surveillés. Comparer à la règle active au même instant et sur les mêmes matchs, séparer moteurs et couvertures. Un match sans preuve terminale compatible reste inconnu ; LIVE 46–47 n’est pas une preuve HT, LIVE 90+3 n’est pas une preuve FT. Garder les matchs entiers dans un seul bloc chronologique. Au moins 150 unités ne garantit pas la puissance statistique : rapporter incertitude par match, succès supprimés, échecs évités et inconnus. Aucun remplacement automatique du moteur ou du prompt.
+
 Révision du 25/10/2026 (Europe/Paris) — deux exports Packball sans cotes dans GPT-2 ; alertes par mi-temps et concordance des références localisées avec le momentum live. Le contrat JSON reste `stratedge.context.v4` pour conserver la compatibilité des imports. Le module affiche les buts et cartons par équipe et envoie les cartes confirmées sur Telegram. Les corners sont retirés. Les alertes restent des observations, aucun pari n’est placé. Aucun appel à une IA pendant le live.
 
 ## Démarche des deux exports et préparation des périodes — 25/10/2026

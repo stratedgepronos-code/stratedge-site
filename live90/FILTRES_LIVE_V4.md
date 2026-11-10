@@ -1,4 +1,10 @@
-# StratEdge Live — 25 cases, collecteur 5.1.0
+# StratEdge Live — 25 cases requises pour la collecte complète
+
+Complément du 10 novembre 2026 : conserver le collecteur 5.2.0 déjà installé, sans revenir à 5.1.0. Un seul onglet/poste doit collecter à la fois. Le diagnostic du site signale désormais six statistiques complémentaires non reçues ou vides ; cette réserve ne bloque pas à elle seule les alertes actuelles. Vérifier les six ajouts ci-dessous sur le poste qui collecte réellement. Un zéro reçu est une donnée, une cellule vide reste inconnue.
+
+Les candidats research_20261110_v1 sont archivés en observation uniquement : aucun nouveau seuil de tirs, de fautes ou de buts ne pilote Telegram. Les références actives sont celles de la mi-temps en cours, chacune ≥0,8 en attaque/défense localisées ; arrêt des nouvelles alertes à 80:00.
+
+Les indications d’installation et de comportement datées d’octobre ci-dessous constituent l’historique de ce document ; elles ne demandent aucune réinstallation. Les cotes bet365 de Packball restent distinctes des prix Stake. Le total des cartons du match ne remplace pas les cartons par équipe. ExG 10 min n’est pas supposé annoncer les dix prochaines minutes et n’est pas un xG de tirs documenté.
 
 Mise à jour du 21 octobre 2026. Dans **Statistiques en direct**, conserver ton groupe actuel. Les cases affichent des colonnes ; elles ne doivent pas éliminer des matchs. Cette liste reprend les 19 cases de ton PDF et ajoute 6 cases, pour un total de **25 sur 40**.
 
@@ -41,3 +47,4 @@ Laisser Packball ouvert sur le tableau live. Les lignes hors écran sont lues un
 - Une nouvelle alerte suit un événement supplémentaire FT. Un cut qui en demande plusieurs est signalé comme marché distinct ; les anciennes cibles de résultats sont conservées.
 - Les nouveaux seuils de qualité des tirs sont enregistrés en comparaison interne, avec les non-signaux, dans l'export des observations. Ils ne pilotent pas les notifications avant validation hors échantillon.
 - Aucun abonnement, nouvel appel IA ou appel automatique de cotes n'est ajouté.
+

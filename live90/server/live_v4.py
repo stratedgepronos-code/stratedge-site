@@ -990,6 +990,8 @@ def feed_health(c,now):
         if not num(r.get('minute')):issue('clock',label+' : minute non lisible.',mid)
         missing=[k+' '+t for k in ('shots','sot','fouls','possession','yellow_cards','red_cards') for t in ('h','a') if stat(r,k,t) is None]
         if missing:issue('stats',label+' : données absentes du relevé : '+', '.join(missing),mid)
+        extra=research_collection_gaps(r)
+        if extra:issue('research_stats',label+' : statistiques complémentaires non reçues ou vides : '+', '.join(extra)+'. Vérifier les cases Packball ; ne bloque pas à lui seul les alertes actuelles.',mid)
     # A schedule is not proof that a match is live. Report the verification gap.
     if active:
         for f in c.execute('SELECT * FROM v4_fixtures'):
@@ -2491,6 +2493,63 @@ def frozen_confirmation(r,d):
     return {'sample':{k:r.get(k) for k in ('sample_id','collected_at','received_at','packball_id','home','away','league','kickoff_ts','state','status_raw','minute','minute_extra','score','stats','ind5','ind10','quality_errors','collector_version','client_id','continuity')},
             'reading':dec(enc({k:v for k,v in d.items() if k!='confirmation'}),{})}
 
+def research_collection_gaps(r):
+    expected=(('stats','shots_off_target','Tirs hors cible'),('stats','shots_outside','Tirs hors boîte'),
+              ('stats','tackles','Tacles'),('stats','da','Attaques dangereuses FT'),
+              ('ind10','da10','Attaques dangereuses 10 min'),('ind5','da5','Attaques dangereuses 5 min'))
+    absent=[]
+    for group,key,label in expected:
+        values=(r.get(group) or {}).get(key)
+        if not isinstance(values,dict) or any(not num(values.get(side)) for side in ('h','a')):absent.append(label)
+    return absent
+
+
+def prospective_research(r,d,p,ctx,now):
+    """Passive, versioned hypotheses. Never consumed by eligibility or Telegram."""
+    out={'policy':'research_20261110_v1','sends_notifications':False,'status':'ineligible',
+         'current_status':d.get('status'),'candidates':{},'collection_gaps':research_collection_gaps(r)}
+    minute=r.get('minute');team=d.get('team');market=d.get('market')
+    if team not in ('h','a') or market not in ('goals','cards'):return out
+    other='a' if team=='h' else 'h';at=date(r.get('collected_at'));received=date(r.get('received_at'))
+    if (r.get('state')!='LIVE' or not num(minute) or not 0<minute<80 or r.get('minute_extra')
+        or alert_cutoff_reached(r,now) or ((d.get('continuity') or {}).get('alert_clock_floor') or 0)>=80
+        or not at or not received or not 0<=(now-at).total_seconds()<=100 or not 0<=(now-received).total_seconds()<=100
+        or (d.get('continuity') or {}).get('blocked') or r.get('quality_errors')
+        or d.get('status') in ('excluded','stale','waiting','missing','caution')):return out
+    if any(stat(r,'red_cards',side)!=0 for side in ('h','a')) or dismissal(r):return out
+    score=r.get('score') or {}
+    if any(not num(score.get(side)) for side in ('h','a')):return out
+    out.update(status='observed',period='HT' if minute<45 else 'FT',minute=minute,team=team,market=market,
+               baseline=score[team] if market=='goals' else stat(r,'yellow_cards',team),
+               provider_time_basis='cumulative_match_counter_divided_by_displayed_minute',
+               current_rule_confirmed=d.get('status')=='active')
+    def ratio(key):
+        v=stat(r,key,team)
+        return v/minute if num(v) and v>=0 else None
+    def threshold(v,t):return v>=t if num(v) else None
+    def both(a,b):return False if a is False or b is False else None if a is None or b is None else True
+    prematch=(p or {}).get('prematch') or {}
+    gf,ga=prematch.get('gf_'+team),prematch.get('ga_'+other)
+    total=gf+ga if p and p.get('usable') and num(gf) and num(ga) else None
+    da=ratio('da');fouls=ratio('fouls');yellow=stat(r,'yellow_cards',team)
+    reference=((((ctx or {}).get('teams') or {}).get(team) or {}).get('card_references') or {}).get('home' if team=='h' else 'away') or {}
+    historical_yellow=reference.get('for_per_match') if ctx and ctx.get('usable') and reference.get('unit')=='yellow_cards' else None
+    out['features']={'dangerous_attacks_per_minute':da,'fouls_per_minute':fouls,'yellow_cards':yellow,
+                     'prematch_ft_sum':total,'prematch_ft_sum_scope':'Packball profile; localization not inferred from h/a',
+                     'localized_yellow_per_match':historical_yellow,'score_gap':score[team]-score[other]}
+    baseline=d.get('status')=='active'
+    if market=='goals' and 57<=minute<=75:
+        out['candidates']={'current_plus_da055':both(baseline,threshold(da,.55)),
+                           'current_plus_ftsum33':both(baseline,threshold(total,3.3))}
+    elif market=='goals' and 15<=minute<=25:
+        out['candidates']={'ht_ftsum33_exploratory':threshold(total,3.3)}
+    elif market=='cards' and 57<=minute<=75:
+        out['candidates']={'cards_fouls014_yellow2':both(threshold(fouls,.14),threshold(historical_yellow,2)),
+                           'cards_fouls014_low_yellow_not_leading':both(threshold(fouls,.14),
+                               (yellow<=1 and score[team]<=score[other]) if num(yellow) else None)}
+    return out
+
+
 def record_window_audit(c,r,d,p,ctx,now):
     # Every distinct sample actually evaluated in LIVE, regardless of decision or later result.
     # Raw rows already live in samples: retain IDs rather than duplicating all JSON per market.
@@ -2503,6 +2562,7 @@ def record_window_audit(c,r,d,p,ctx,now):
                 confirmation_sample_ids=[x['sample']['sample_id'] for x in (d.get('confirmation') or {}).get('samples',[])])
     data['inputs_hash']=inputs_hash
     data['programme_version']=(programme_state(c) or {}).get('version')
+    data['prospective_research']=prospective_research(r,d,p,ctx,now)
     if d['market']=='goals':data['shot_quality']=d.get('shot_quality')
     c.execute('INSERT OR IGNORE INTO v5_window_audits(sample_id,match_id,team,market,engine,created_at,data) VALUES(?,?,?,?,?,?,?)',
               (r['sample_id'],str(r['packball_id']),d['team'],d['market'],ENGINE_FINGERPRINT,iso(now),enc(data)))
