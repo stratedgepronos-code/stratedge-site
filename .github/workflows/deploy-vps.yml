@@ -123,6 +123,11 @@ jobs:
             sudo -n python3 "$LIVE90_ROOT/ops/recompress-live90.py" --apply --target-free-gib 8 --max-archives 4
             sudo -n touch /var/lib/stratedge/recompression-audit-20261110.done
           fi
+          # One-off lossless compression to restore the required backup margin.
+          if ! sudo -n test -e /var/lib/stratedge/recompression-nations-20261112.done; then
+            sudo -n python3 "$LIVE90_ROOT/ops/recompress-live90.py" --apply --target-free-gib 6.2 --max-archives 1
+            sudo -n touch /var/lib/stratedge/recompression-nations-20261112.done
+          fi
           # The import page is served from the checkout independently of the /opt engine.
           # Verify the readable inline source and its matching existing PHP body limit.
           sudo -n -u www-data php -r '$root=$argv[1]; $app=file_get_contents($root."/public_html/admin/slate/live90/assets/app.js"); $core=file_get_contents($root."/public_html/api/live90/core.php"); $index=file_get_contents($root."/public_html/admin/slate/live90/index.php"); if(!str_contains($app,"if(bytes>2097152)") || !str_contains($core,"strlen(\$raw)>2097152") || !str_contains($index,"app.js"))exit(1); echo "LIVE90_IMPORT_LIMIT_OK browser_bytes=2097152 server_bytes=2097152 inline_source_readable=true\n";' "$LIVE90_ROOT"
