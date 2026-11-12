@@ -2027,6 +2027,7 @@ CARD_COMPETITIONS={
     'Allemagne · 2. Bundesliga': (('ger','deu','de','germany','allemagne','deutschland'),('2. bundesliga','2 bundesliga','bundesliga 2','bundesliga ii','germany 2. bundesliga')),
     'France · Ligue 1': (('fra','france'),('ligue 1','ligue 1 mcdonalds',"ligue 1 mcdonald's")),
     'Arabie saoudite · Saudi Pro League': (('ksa','sau','saudi arabia','arabie saoudite'),('pro league','saudi pro league','professional league','saudi professional league','saudi arabia pro league','roshn saudi league')),
+    'UEFA · Nations League': (('eur','europe','uefa'),('uefa nations league','nations league','ligue des nations','ligue des nations uefa','uefa nations league a','uefa nations league b','uefa nations league c','uefa nations league d')),
     'UEFA · Champions League': (('eur','europe','uefa'),('uefa champions league','champions league','ligue des champions','ligue des champions uefa','uefa ligue des champions')),
     'UEFA · Europa League': (('eur','europe','uefa'),('uefa europa league','europa league','ligue europa','uefa ligue europa')),
     'UEFA · Conference League': (('eur','europe','uefa'),('uefa conference league','conference league','uefa europa conference league','europa conference league','ligue conference','ligue europa conference','uefa ligue conference')),
@@ -2069,6 +2070,12 @@ def install_card_selection(c):
         if not setting(c,'card_selection_bundesliga2_20261023',False):
             selected=list(dict.fromkeys([*setting(c,'card_leagues',[]),'Allemagne · 2. Bundesliga']))
             for k,v in (('card_leagues',selected),('card_selection_bundesliga2_20261023',True)):
+                c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,enc(v)))
+
+        # Owner requested Nations League cards on 12 November; preserve all other settings.
+        if not setting(c,'card_selection_nations_20261112',False):
+            selected=list(dict.fromkeys([*setting(c,'card_leagues',[]),'UEFA · Nations League']))
+            for k,v in (('card_leagues',selected),('card_selection_nations_20261112',True)):
                 c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,enc(v)))
 
 def install_radar_observation_mode(c):

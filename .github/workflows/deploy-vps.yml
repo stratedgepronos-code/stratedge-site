@@ -202,6 +202,7 @@ jobs:
           for page in "$REPO_ROOT/public_html/admin/slate/live90/"*.php "$REPO_ROOT/public_html/api/live90/"*.php; do php -l "$page"; done
           sudo -n bash "$REPO_ROOT/ops/deploy-live90-v4.sh" "$REPO_ROOT"
           sudo -n -u www-data php "$REPO_ROOT/ops/check-live90-v4.php" "$REPO_ROOT"
+          sudo -n -u www-data python3 "$REPO_ROOT/ops/check-live90-nations.py"
           sudo -n -u www-data php "$REPO_ROOT/ops/check-live90-exports.php" "$REPO_ROOT"
           python3 -c 'import json,shutil; print("STORAGE_FINAL "+json.dumps(shutil.disk_usage("/var/backups")._asdict()))'
           systemctl is-active seuil90-live.service

@@ -15,7 +15,7 @@ class Competitions(unittest.TestCase):
    p={'league':league,'packball':{'export_a':[country]}}
    self.assertEqual(V.selected_card_competition({'league':league},p),wanted)
    self.assertTrue(V.card_market_allowed(self.c,{'league':league},'h',self.now,p=p))
-  self.assertEqual(len(V.radar_status(self.c)['card_leagues']),12)
+  self.assertEqual(len(V.radar_status(self.c)['card_leagues']),13)
  def test_uefa_region_aliases_and_both_teams(self):
   V.install_card_selection(self.c)
   for country in ('EUR','Europe','UEFA'):
@@ -26,14 +26,14 @@ class Competitions(unittest.TestCase):
      self.assertTrue(V.card_market_allowed(self.c,{},team,self.now,p=p),(country,league,team))
  def test_other_continents_cups_and_ambiguous_names_remain_excluded(self):
   V.install_card_selection(self.c)
-  for country,league in [('Africa','Champions League'),('Asia','Champions League'),('','Champions League'),('Asia','Conference League'),('', 'Conference League'),('EUR','Conference League Women'),('EUR','UEFA Conference League U19'),('EUR',"UEFA Women's Champions League"),('EUR','UEFA Youth League'),('EUR','Champions League Women'),('EUR','UEFA Nations League'),('EUR','UEFA Champions League U19')]:
+  for country,league in [('Africa','Champions League'),('Asia','Champions League'),('','Champions League'),('Asia','Conference League'),('', 'Conference League'),('EUR','Conference League Women'),('EUR','UEFA Conference League U19'),('EUR',"UEFA Women's Champions League"),('EUR','UEFA Youth League'),('EUR','Champions League Women'),('EUR','CONCACAF Nations League'),('EUR','UEFA Champions League U19')]:
    self.assertFalse(V.card_market_allowed(self.c,{'country':country,'league':league},'h',self.now),(country,league))
  def test_upgrade_adds_only_uefa_and_does_not_reset_owner_settings(self):
   for k,v in [('card_selection_20261018',True),('card_leagues',['France · Ligue 1','Custom League']),('card_league_policy','strict_allowlist'),('radar_telegram_enabled',False)]:
    self.c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,V.enc(v)))
   self.c.commit()
   V.install_card_selection(self.c)
-  self.assertEqual(V.setting(self.c,'card_leagues',[]),['France · Ligue 1','Custom League',*V.UEFA_CARD_COMPETITIONS,'UEFA · Conference League','Australie · A-League Men','Allemagne · 2. Bundesliga'])
+  self.assertEqual(V.setting(self.c,'card_leagues',[]),['France · Ligue 1','Custom League',*V.UEFA_CARD_COMPETITIONS,'UEFA · Conference League','Australie · A-League Men','Allemagne · 2. Bundesliga','UEFA · Nations League'])
   self.assertFalse(V.radar_enabled(self.c))
   V.dispatch(self.c,{'action':'radar_telegram','enabled':False,'card_leagues':['France · Ligue 1']},self.now)
   V.install_card_selection(self.c)
@@ -252,5 +252,44 @@ class Competitions(unittest.TestCase):
   self.assertEqual(V.setting(self.c,'card_leagues',[]),['France · Ligue 1'])
   self.assertFalse(V.radar_enabled(self.c))
 
+
+ def test_nations_league_aliases_and_both_teams(self):
+  V.install_card_selection(self.c)
+  for country in ('EUR','Europe','UEFA'):
+   for league in ('UEFA Nations League','Nations League','Ligue des nations','UEFA Nations League A','UEFA Nations League B','UEFA Nations League C','UEFA Nations League D'):
+    p={'country':country,'league':league}
+    self.assertEqual(V.selected_card_competition({},p),'UEFA · Nations League')
+    for team in ('h','a'):
+     self.assertTrue(V.card_market_allowed(self.c,{},team,self.now,p=p))
+  self.m['league']=self.ctx['league']='UEFA Nations League'
+  self.m['packball']={'export_a':['EUR']}
+  self.prepare()
+  self.assertEqual(self.reading('cards')['status'],'active')
+  self.assertTrue(self.reading('cards')['telegram_allowed'])
+  self.assertEqual(self.reading('goals')['status'],'active')
+  self.c.execute('DELETE FROM samples');self.c.commit()
+  for d in V.board(self.c,self.now)['matches'][0]['advice']:
+   if d['market']=='cards':self.assertNotEqual(d['status'],'excluded')
+
+ def test_nations_league_scope_excludes_other_confederations_and_ages(self):
+  V.install_card_selection(self.c)
+  for country,league in [('EUR','CONCACAF Nations League'),('CONCACAF','Nations League'),('EUR','UEFA Nations League Women'),('EUR','UEFA Nations League U21'),('','Nations League'),('EUR','Friendly International')]:
+   self.assertFalse(V.card_market_allowed(self.c,{'country':country,'league':league},'h',self.now))
+
+ def test_nations_league_upgrade_preserves_controls_and_later_removal(self):
+  V.install_card_selection(self.c)
+  self.c.execute("DELETE FROM v4_settings WHERE key='card_selection_nations_20261112'")
+  for k,v in [('card_leagues',['France · Ligue 1','Custom League']),('radar_telegram_enabled',False),('radar_priced_only',False),('radar_odds_auto',False)]:
+   self.c.execute('INSERT OR REPLACE INTO v4_settings VALUES(?,?)',(k,V.enc(v)))
+  self.c.commit()
+  V.install_card_selection(self.c);V.install_card_selection(self.c)
+  self.assertEqual(V.setting(self.c,'card_leagues',[]),['France · Ligue 1','Custom League','UEFA · Nations League'])
+  self.assertFalse(V.radar_enabled(self.c))
+  self.assertFalse(V.setting(self.c,'radar_priced_only',True))
+  self.assertFalse(V.setting(self.c,'radar_odds_auto',True))
+  V.dispatch(self.c,{'action':'radar_telegram','enabled':False,'card_leagues':['France · Ligue 1']},self.now)
+  V.install_card_selection(self.c)
+  self.assertEqual(V.setting(self.c,'card_leagues',[]),['France · Ligue 1'])
 if __name__=='__main__':unittest.main()
+
 
