@@ -33,3 +33,18 @@ for(const [events,row] of [
 assert.equal(live({...r,minute:79,at:ago(59999)},now),true);
 assert.equal(live({...r,minute:79,at:ago(60000)},now),false);
 console.log('Lecteur disciplinaire : attribution, chronologie et garde-fous OK');
+
+const {providerMatch,squadNames}=require('../live90-discipline.user.js');
+const kickoff='2026-11-24T19:00:00Z', fmatch={id:555,time:{timestamp:Date.parse(kickoff)/1000},teams:{home:{name:'Nice'},away:{name:'Paris'}}};
+assert.equal(providerMatch([fmatch],{home:'Nice',away:'Paris',kickoff}).id,555);
+assert.equal(providerMatch([fmatch,fmatch],{home:'Nice',away:'Paris',kickoff}),null);
+assert.equal(providerMatch([fmatch],{home:'Paris',away:'Nice',kickoff}),null);
+const squad=(f,l)=>({confirmed_formation:1,squad:[{player:{firstname:f,lastname:l}}]});
+const roster=squadNames({home:squad('Joe','Smith'),away:squad('Bob','Smith')});
+assert.equal(detect('Foul by Smith.',roster),null);
+assert.equal(detect('Fouled by Joe Smith (Nice).',roster).side,'h');
+assert.equal(detect('Bob Smith is given a final warning.',roster).kind,'warning');
+assert.equal(detect('The referee verbally warns Bob Smith.',roster).kind,'warning');
+assert.equal(detect('Bob Smith is shown a yellow card.',roster).kind,'reset');
+assert.equal(detect('No foul by Joe Smith.',roster),null);
+assert.equal(detect('Bob Smith wins a free kick.',roster),null);

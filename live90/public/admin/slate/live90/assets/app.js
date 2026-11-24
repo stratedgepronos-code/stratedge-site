@@ -104,8 +104,8 @@ function normSearch(v){return String(v||'').normalize('NFD').replace(/[\u0300-\u
 function privateDisciplineSnapshot(){
  const host=document.querySelector('#discipline-private');if(!host)return;
  const rows=(data.matches||[]).filter(r=>r.on_packball_page===true&&r.in_analysis_program===true&&r.packball_id&&r.state==='LIVE'&&r.minute>0&&r.minute<80&&!r.minute_extra&&!r.quality_errors?.length)
- .map(r=>({id:String(r.packball_id),home:r.home,away:r.away,minute:r.minute,sample:r.sample_id,at:r.collected_at,received:r.received_at,score:r.score,yellow:r.stats?.yellow_cards,red:r.stats?.red_cards,fouls:r.stats?.fouls,
- sides:(r.advice||[]).filter(d=>d.market==='cards'&&d.telegram_allowed===true).map(d=>({side:d.team,confirmed:d.sample_id===r.sample_id&&d.status==='active'&&d.coherence?.status==='confirmed'&&d.coherence?.policy==='prematch_live_context_v4',why:d.reason,allowSend:data.radar_telegram?.enabled===true&&(!data.radar_telegram?.priced_only||d.stake_gate?.eligible===true)}))})).filter(r=>r.sides.length);
+ .map(r=>({id:String(r.packball_id),home:r.home,away:r.away,kickoff:r.kickoff_ts||r.profile?.kickoff,minute:r.minute,sample:r.sample_id,at:r.collected_at,received:r.received_at,score:r.score,yellow:r.stats?.yellow_cards,red:r.stats?.red_cards,fouls:r.stats?.fouls,
+ sides:(r.advice||[]).filter(d=>d.market==='cards'&&d.telegram_allowed===true).map(d=>({side:d.team,confirmed:d.sample_id===r.sample_id&&d.status==='active'&&d.coherence?.status==='confirmed'&&d.coherence?.policy==='prematch_live_context_v4',why:d.reason,allowSend:data.radar_telegram?.enabled===true&&(data.radar_telegram?.priced_only===false||d.stake_gate?.eligible===true)}))})).filter(r=>r.sides.length);
  host.dataset.snapshot=JSON.stringify({server:data.server_time,rows});
 }
 async function refresh(){if(busy)return;busy=true;const requestedAt=Date.now();try{data=await request();boardReceivedAt=requestedAt;privateDisciplineSnapshot();render();const modal=$('#detail-modal');if(modal.open&&modal.dataset.match){const scroll=modal.scrollTop;showMatch(modal.dataset.match);modal.scrollTop=scroll}}catch(e){notice(e.message)}finally{busy=false}}
