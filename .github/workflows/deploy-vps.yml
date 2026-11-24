@@ -39,6 +39,7 @@ jobs:
           python3 tests/admin-navigation/test_navigation.py
           python3 -m unittest discover -s live90/tests -p 'test_*.py'
           node live90/tests/test_parsers.cjs
+          node live90/tests/test_discipline_reader.cjs
           node live90/tests/test_collector.cjs
           node live90/tests/test_packball_flow.cjs
           node live90/tests/test_download_flow.cjs
@@ -47,6 +48,7 @@ jobs:
         run: |
           npm install --prefix "$RUNNER_TEMP/live90-ui" playwright@1.51.1 --no-audit --no-fund
           LIVE90_UI_MODULES="$RUNNER_TEMP/live90-ui/node_modules" LIVE90_UI_OUTPUT="$RUNNER_TEMP/live90-captures" node live90/tests/test_v4_ui.cjs
+          LIVE90_UI_MODULES="$RUNNER_TEMP/live90-ui/node_modules" node live90/tests/test_discipline_tabs.cjs
           LIVE90_UI_MODULES="$RUNNER_TEMP/live90-ui/node_modules" LIVE90_UI_OUTPUT="$RUNNER_TEMP/live90-captures" node live90/tests/test_daily_history_ui.cjs
       - uses: actions/upload-artifact@v4
         if: always()

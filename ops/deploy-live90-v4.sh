@@ -15,7 +15,7 @@ done
 # Tous les fichiers source requis par PHP restent lisibles après un checkout.
 find "$repo_root/live90/server" "$repo_root/public_html/admin/slate/live90" "$repo_root/public_html/api/live90" -type d -exec chmod a+rx {} +
 find "$repo_root/live90/server" "$repo_root/public_html/admin/slate/live90" "$repo_root/public_html/api/live90" -type f \( -name '*.php' -o -name '*.js' -o -name '*.css' -o -name '*.html' -o -name '*.py' \) -exec chmod a+r {} +
-chmod a+r "$repo_root/live90/PROMPT_ANALYSTE_V4.md" "$repo_root/live90/FILTRES_LIVE_V4.md" "$repo_root/live90/live90-packball.user.js"
+chmod a+r "$repo_root/live90/PROMPT_ANALYSTE_V4.md" "$repo_root/live90/FILTRES_LIVE_V4.md" "$repo_root/live90/live90-packball.user.js" "$repo_root/live90/live90-discipline.user.js"
 if cmp -s "$repo_root/live90/server/engine.py" "$target_dir/engine.py" && cmp -s "$repo_root/live90/server/live_v4.py" "$target_dir/live_v4.py"; then
   echo 'LIVE90_V4_OK: fichiers moteur déjà à jour'
   exit 0
