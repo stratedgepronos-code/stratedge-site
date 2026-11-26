@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 require_once dirname(__DIR__,3).'/includes/auth.php';
-require_once dirname(__DIR__,3).'/api/live90/core.php';
-if(!isAdmin())reply90(['error'=>'Session administrateur expirée : reconnecte-toi puis recharge le radar.'],401);
 requireAdmin();
+require_once dirname(__DIR__,3).'/api/live90/core.php';
+if(session_status()!==PHP_SESSION_ACTIVE)session_start();
 try {
  $method=$_SERVER['REQUEST_METHOD']??'GET';
  if(!in_array($method,['GET','POST'],true))reply90(['error'=>'Méthode non autorisée'],405);
