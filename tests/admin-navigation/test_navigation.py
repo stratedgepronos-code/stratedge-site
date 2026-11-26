@@ -72,8 +72,10 @@ if($role!=='guest'){
 }
 $_SESSION['live90_csrf']='fixture';
 """
-        for name, boundary in [('index.php', 'if(session_status()'), ('historique.php', 'if(session_status()'), ('download.php', '$root='), ('api.php', ' db90();')]:
-            source = (ROOT/'public_html/admin/slate/live90'/name).read_text().split(boundary, 1)[0]
+        for name, boundary in [('index.php', 'if(session_status()'), ('historique.php', 'if(session_status()'), ('download.php', '$root='), ('api.php', ' $env=config90();')]:
+            source = (ROOT/'public_html/admin/slate/live90'/name).read_text()
+            assert boundary in source, f'Auth-test boundary missing in {name}'
+            source = source.split(boundary, 1)[0]
             source = source.replace("require_once dirname(__DIR__,3).'/includes/auth.php';", "require __DIR__.'/auth.php';"+fixture_session)
             source = source.replace("require_once dirname(__DIR__,3).'/api/live90/core.php';", "function reply90($data,$status){http_response_code($status);echo json_encode($data);exit;} function body90(){return json_decode(file_get_contents('php://input'),true)??[];}")
             if name=='api.php':
