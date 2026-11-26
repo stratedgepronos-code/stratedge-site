@@ -81,6 +81,14 @@ jobs:
           fi
           $SSH_CMD alex@31.97.196.145 bash -s << 'REMOTE'
           set -e
+          # Bootstrap in memory: nginx cannot spool request bodies and git cannot pull at 0 free bytes.
+          if [ "$(df -B1 --output=avail /var/www/stratedgepronos.fr | tail -1)" -lt 268435456 ]; then
+            IMPORT_REPAIR=$(mktemp /dev/shm/stratedge-import-headroom.XXXXXX)
+            curl -fsSL --max-time 25 "https://raw.githubusercontent.com/stratedgepronos-code/stratedge-site/${{ github.sha }}/ops/live90-import-headroom.py" -o "$IMPORT_REPAIR"
+            echo "17b36511248ea7be378f732c9f6cc2b874b038b3d57bdbfeb9c613a6b7dd6385  $IMPORT_REPAIR" | sha256sum -c -
+            sudo -n env PYTHONDONTWRITEBYTECODE=1 python3 -I -B "$IMPORT_REPAIR" --recover
+            rm -f "$IMPORT_REPAIR"
+          fi
           cd /var/www/stratedgepronos.fr/public_html
           echo "── Etat local avant pull ──"
           git status --porcelain | head -10
@@ -133,6 +141,9 @@ jobs:
           # The import page is served from the checkout independently of the /opt engine.
           # Verify the readable inline source and its matching existing PHP body limit.
           sudo -n -u www-data php -r '$root=$argv[1]; $app=file_get_contents($root."/public_html/admin/slate/live90/assets/app.js"); $core=file_get_contents($root."/public_html/api/live90/core.php"); $index=file_get_contents($root."/public_html/admin/slate/live90/index.php"); if(!str_contains($app,"if(bytes>2097152)") || !str_contains($core,"strlen(\$raw)>2097152") || !str_contains($index,"app.js"))exit(1); echo "LIVE90_IMPORT_LIMIT_OK browser_bytes=2097152 server_bytes=2097152 inline_source_readable=true\n";' "$LIVE90_ROOT"
+          # A body larger than nginx's RAM buffer must reach PHP without a real session or programme.
+          python3 -c 'import json; print(json.dumps(dict(action="board",padding=" "*65536)))' | curl -sS --max-time 15 -o /dev/null -w '%{http_code}' -H 'Content-Type: application/json' --data-binary @- https://stratedgepronos.fr/panel-x9k3m/slate/live90/api.php | grep -qx '401'
+          echo 'IMPORT_HTTP_BODY_OK anonymous=401 bytes_over_65536=true'
           # Read-only replay includes successes as well as losses. No messages sent.
           sudo -n -u www-data python3 "$LIVE90_ROOT/ops/replay-live90-windows.py" --db /var/lib/stratedge/live90.sqlite --radar-ids 669,670,672,673,678
           # One-off exact inventory approved by the owner on 1 November. No retention rule.

@@ -20,7 +20,15 @@ async function request(payload,options={}){
  const timer=controller?setTimeout(()=>controller.abort(),options.timeoutMs):null;
  try{
   const r=await fetch('api.php',{method:payload?'POST':'GET',credentials:'same-origin',headers:payload?{'Content-Type':'application/json','X-CSRF-Token':$('meta[name=csrf-token]')?.content||''}:{},body:payload?JSON.stringify(payload):undefined,...(controller?{signal:controller.signal}:{})});
-  let x;try{x=await r.json()}catch(e){if(e.name==='AbortError')throw e;throw Error(`Réponse illisible du serveur${r.status?' (HTTP '+r.status+')':''}. Recharge la page si ta session a expiré.`)}
+  if(r.redirected && /\/login\.php$/.test(new URL(r.url,location.href).pathname))throw Error('Session administrateur expirée : reconnecte-toi puis recharge le radar.');
+  let x;try{x=await r.json()}catch(e){
+   if(e.name==='AbortError')throw e;
+   if(r.status===401 || r.status===403)throw Error('Accès refusé (HTTP '+r.status+'). Reconnecte-toi puis recharge le radar.');
+   if(r.status===413)throw Error('Fichier préparé trop volumineux pour le serveur (HTTP 413).');
+   if(r.status===507)throw Error('Espace disque insuffisant sur le serveur (HTTP 507). Garde tes fichiers.');
+   if(r.status>=500)throw Error('Erreur du serveur StratEdge (HTTP '+r.status+'). '+(payload?.action==='packball'?'Import non confirmé. Garde les deux CSV et vérifie le programme avant de réessayer.':'Réessaie après le rétablissement du serveur.'));
+   throw Error('Réponse inattendue du serveur (HTTP '+r.status+').');
+  }
   if(!r.ok||x.error&&x.ok!==false)throw Error(x.error||'Réponse invalide');return x;
  }catch(e){if(e.name==='AbortError')throw Error('L’export prend trop de temps. Réessaie ; les alertes live continuent.');throw e}
  finally{if(timer!==null)clearTimeout(timer)}
@@ -61,6 +69,8 @@ function filteredDecisions(r){return (r.decisions||[]).filter(d=>market==='all'|
 function renderHealth(){const h=data.health;if(!h){$('#health-summary').textContent='Diagnostic indisponible pour ce relevé.';return}$('#health-summary').textContent=h.issues?.length?`${h.issues.length} points à vérifier · contrôle ${time(h.checked_at)}`:`Aucune anomalie détectée actuellement · ${time(h.checked_at)}`;$('#health-summary').textContent+=` · ${h.incidents_24h||0} épisodes enregistrés sur les dernières 24 h`;$('#health-issues').innerHTML=(h.issues||[]).map(x=>`<p><b>${esc(x.code)}</b> · ${esc(x.detail)}</p>`).join('')+`<p class="help">${esc(h.note)}</p>`}
 function reviewHTML(r){if(!r)return '<p>Bilan disponible après un résultat, ou dans l’export du bilan pour GPT.</p>';return `<div class="detail-box"><h3>Bilan automatique du signal</h3><p>${esc(time(r.generated_at))}</p><h4>Faits observés</h4><ul>${(r.facts||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul><h4>Limites des données</h4><ul>${(r.limits||[]).map(x=>`<li>${esc(x)}</li>`).join('')||'<li>Aucune limite repérée par ces contrôles ; cela ne prouve pas la qualité prédictive du signal.</li>'}</ul><p>${esc(r.conclusion)}</p><h4>À examiner</h4><ul>${(r.next_steps||[]).map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`}
 function render(){
+ const storage=$('#storage-notice');if(storage){const free=data.storage_free_bytes;storage.hidden=!(Number.isFinite(free)&&free<1073741824);if(!storage.hidden)storage.textContent='Stockage serveur faible : '+Math.floor(free/1048576)+' Mio libres. Les imports et la collecte peuvent être interrompus.';}
+
  renderHealth();collectorVersionStatus();
  const currentMatches=data.matches.filter(r=>!tableFinished(r)&&(view!=='live'||(deskLayout==='table'?r.on_packball_page!==false:r.in_analysis_program!==false)));
  const feedAge=age(data.feed?.received_at),engineAge=age(data.engine?.at),live=currentMatches.filter(r=>['LIVE','HT'].includes(r.state)&&age(r.received_at)<=100);

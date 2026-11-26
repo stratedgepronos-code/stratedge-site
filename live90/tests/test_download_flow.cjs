@@ -16,5 +16,11 @@ await el('#packball-save').onclick();assert.equal(posted.bundle.matches[0].packb
 await el('#packball-export').onclick();assert(el('#packball-export-result').textContent.includes('Téléchargement lancé : 1 matchs'));assert.equal(el('#packball-export').disabled,false);assert.equal(downloaded.matches[0].packball.global.sot_ht_unallocated,4.3);assert.equal(downloaded.matches[0].packball.teams.h.sot_for_ht,null);assert(el('#packball-preview').textContent.includes('À vérifier'));
 exported={matches:[]};await el('#packball-export').onclick();assert(el('#packball-export-result').textContent.includes('Importe les CSV'));assert.equal(el('#export-analysis').disabled,false);
 const fetchOk=c.fetch;c.fetch=async()=>{throw Error('Erreur réseau de test')};await el('#packball-export').onclick();assert.equal(el('#packball-export-result').textContent,'Erreur réseau de test');assert.equal(el('#packball-export').disabled,false);c.fetch=fetchOk;
+for(const [status,expected] of [[500,/Import non confirmé/],[413,/trop volumineux/],[507,/disque insuffisant/],[401,/Reconnecte/]]){
+ c.fetch=async()=>({status,ok:false,json:async()=>{throw new SyntaxError('not json')}});
+ await assert.rejects(vm.runInContext("request({action:'packball'})",c),expected);
+}
+c.fetch=async()=>({status:507,ok:false,json:async()=>({error:'Stockage serveur presque plein : import suspendu avant écriture.'})});
+await assert.rejects(vm.runInContext("request({action:'packball'})",c),/avant écriture/);
 console.log('V4 : import CSV anciens/nouveaux groupes, ordre des fichiers inversé et export GPT validés.');})().catch(e=>{console.error(e);process.exitCode=1});
 

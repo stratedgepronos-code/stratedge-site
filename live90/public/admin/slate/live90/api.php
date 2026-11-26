@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 require_once dirname(__DIR__,3).'/includes/auth.php';
-requireAdmin();
 require_once dirname(__DIR__,3).'/api/live90/core.php';
-if(session_status()!==PHP_SESSION_ACTIVE)session_start();
+if(!isAdmin())reply90(['error'=>'Session administrateur expirée : reconnecte-toi puis recharge le radar.'],401);
+requireAdmin();
 try {
  $method=$_SERVER['REQUEST_METHOD']??'GET';
  if(!in_array($method,['GET','POST'],true))reply90(['error'=>'Méthode non autorisée'],405);
@@ -13,8 +13,12 @@ try {
   $x=body90();
  }
  if(session_status()===PHP_SESSION_ACTIVE)session_write_close(); // Un export ne verrouille pas les autres requêtes du tableau.
- db90(); // Schéma historique conservé ; migration V4 additive dans Python.
  $env=config90();$path=$env['SE90_DB']??'/var/lib/stratedge/live90.sqlite';
+ if(in_array($x['action']??'', ['packball','analyst'],true)){
+  $free=@disk_free_space(dirname($path));
+  if($free!==false && $free<32*1024*1024)reply90(['error'=>'Stockage serveur presque plein : import suspendu avant écriture. Garde tes fichiers.'],507);
+ }
+ db90(); // Schéma historique conservé ; migration V4 additive dans Python.
  $pythonEnv=['PATH'=>'/usr/bin:/bin','LANG'=>'C.UTF-8','PYTHONIOENCODING'=>'utf-8','PYTHONDONTWRITEBYTECODE'=>'1'];
  foreach(['TELEGRAM_BOT_TOKEN','TELEGRAM_CHAT_ID'] as $k)if(isset($env[$k]))$pythonEnv[$k]=(string)$env[$k];
  $command=['/usr/bin/python3',dirname(__DIR__,4).'/live90/server/live_v4.py',$path];
@@ -26,6 +30,9 @@ try {
  fclose($pipes[0]);$out=stream_get_contents($pipes[1]);fclose($pipes[1]);$code=proc_close($proc);$result=json_decode($out,true);
  if(in_array($code,[124,137],true))reply90(['error'=>'La préparation de l’export a dépassé 35 secondes. Réessaie ; les alertes live continuent.'],503);
  if(!is_array($result))reply90(['error'=>'Réponse du moteur indisponible'],503);
+ if($code===0 && ($x['action']??'')==='board'){
+  $n=@disk_free_space(dirname($path));if($n!==false)$result['storage_free_bytes']=(int)$n;
+ }
  reply90($result,$code===0?200:($code===2?422:503));
 }catch(Throwable $e){error_log('Live90 V4 admin: '.get_class($e));reply90(['error'=>'Service Live indisponible'],500);}
 
