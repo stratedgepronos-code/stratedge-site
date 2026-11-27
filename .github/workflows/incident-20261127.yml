@@ -18,7 +18,7 @@ jobs:
           persist-credentials: false
       - run: |
           if ! command -v sshpass >/dev/null; then sudo apt-get update -q && sudo apt-get install -y -q sshpass; fi
-      - name: Inventaire et suppression uniquement si les identités des fichiers correspondent au plan
+      - name: Vérifier le service HTTP sur le VPS sans nouvelle suppression
         env:
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
           VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
@@ -47,5 +47,4 @@ jobs:
             client=(sshpass -e ssh)
           fi
           trap 'rm -f "$RUNNER_TEMP/live90-incident-key" "${cfg[0]}"' EXIT
-          "${client[@]}" "${opt[@]}" alex@31.97.196.145 "sudo -n python3 -I -B - '$approval'" < ops/incident-20261127/archives.py
-          "${client[@]}" "${opt[@]}" alex@31.97.196.145 'systemctl list-units --type=service --all --no-legend --no-pager nginx.service seuil90-live.service "php*-fpm.service" mariadb.service mysql.service'
+          "${client[@]}" "${opt[@]}" alex@31.97.196.145 'sudo -n python3 -I -B -' < ops/incident-20261127/diagnose.py
