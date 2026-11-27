@@ -1,0 +1,51 @@
+name: Incident stockage Live90 du 27 novembre
+on:
+  push:
+    branches: [maintenance/live90-backups-20261127]
+    paths: ['ops/incident-20261127/approval.txt', '.github/workflows/incident-20261127.yml']
+permissions:
+  contents: read
+concurrency:
+  group: live90-one-off-backups-20261127
+  cancel-in-progress: false
+jobs:
+  inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: |
+          if ! command -v sshpass >/dev/null; then sudo apt-get update -q && sudo apt-get install -y -q sshpass; fi
+      - name: Inventaire et suppression uniquement si les identités des fichiers correspondent au plan
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          umask 077
+          approval=$(cat ops/incident-20261127/approval.txt)
+          [[ "$approval" == "plan" || "$approval" =~ ^[a-f0-9]{64}$ ]]
+          cfg=("$RUNNER_TEMP/live90-hosts")
+          opt=(-o ConnectTimeout=12 -o ServerAliveInterval=10 -o UserKnownHostsFile="${cfg[0]}")
+          if [[ -n "$VPS_KNOWN_HOSTS" ]]; then
+            printf '%s\n' "$VPS_KNOWN_HOSTS" > "${cfg[0]}"
+            opt+=(-o StrictHostKeyChecking=yes)
+          else
+            opt+=(-o StrictHostKeyChecking=accept-new)
+          fi
+          if [[ -n "$VPS_SSH_KEY" ]]; then
+            printf '%s\n' "$VPS_SSH_KEY" > "$RUNNER_TEMP/live90-incident-key"
+            opt+=(-i "$RUNNER_TEMP/live90-incident-key" -o IdentitiesOnly=yes -o BatchMode=yes)
+            client=(ssh)
+          else
+            export SSHPASS="$VPS_PASSWORD"
+            opt+=(-o PreferredAuthentications=password -o PubkeyAuthentication=no)
+            client=(sshpass -e ssh)
+          fi
+          trap 'rm -f "$RUNNER_TEMP/live90-incident-key" "${cfg[0]}"' EXIT
+          "${client[@]}" "${opt[@]}" alex@31.97.196.145 "sudo -n python3 -I -B - '$approval'" < ops/incident-20261127/archives.py
+          "${client[@]}" "${opt[@]}" alex@31.97.196.145 'systemctl list-units --type=service --all --no-legend --no-pager nginx.service seuil90-live.service "php*-fpm.service" mariadb.service mysql.service'
